@@ -76,7 +76,7 @@ linux_task:
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
     - conda update -y -n base conda
-    - conda install -y python=$PY_VER
+    - conda install -y -c conda-forge python=$PY_VER
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
   xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
@@ -147,7 +147,7 @@ mac_task:
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
     - conda update -y -n base conda
-    - conda install -y python=$PY_VER
+    - conda install -y -c conda-forge python=$PY_VER
 
   pip_cache:
     folder: $HOME/Library/Caches/pip
