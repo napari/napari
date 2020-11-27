@@ -12,10 +12,7 @@ from typing import Tuple
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ....layers.image.experimental import (
-    SliceConfig,
-    create_multi_scale_from_image,
-)
+from ....layers.image.experimental import SliceConfig, create_multi_scale
 from ....utils.perf import block_timer
 
 
@@ -109,7 +106,6 @@ def create_test_image_multi(text, slice_config: SliceConfig) -> np.ndarray:
     draw_text_grid(image, text)
     data = np.array(image)
 
-    with block_timer("create_multi_scale_from_image", print_time=True):
-        # This is create all the octree layers, each coarser one
-        # downsampled from the previous level.
-        return create_multi_scale_from_image(data, slice_config.tile_size)
+    with block_timer("create_multi_scale", print_time=True):
+        # Creates the downsampled levels.
+        return create_multi_scale(data, slice_config.tile_size)

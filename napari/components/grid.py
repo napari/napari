@@ -2,31 +2,31 @@ from typing import Tuple
 
 import numpy as np
 
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class GridCanvas:
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
     camera, but future grid modes could support multiple canvases.
 
-    Parameters
+    Attributes
     ----------
     enabled : bool
         If grid is enabled or not.
-    shape : 2-tuple of int
-        Number of rows and columns in the grid. A value of -1 for either or
-        both of will be used the row and column numbers will trigger an
-        auto calculation of the necessary grid shape to appropriately fill
-        all the layers at the appropriate stride.
     stride : int
         Number of layers to place in each grid square before moving on to
         the next square. The default ordering is to place the most visible
         layer in the top left corner of the grid. A negative stride will
         cause the order in which the layers are placed in the grid to be
         reversed.
+    shape : 2-tuple of int
+        Number of rows and columns in the grid. A value of -1 for either or
+        both of will be used the row and column numbers will trigger an
+        auto calculation of the necessary grid shape to appropriately fill
+        all the layers at the appropriate stride.
     """
 
     enabled: bool = False
