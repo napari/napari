@@ -92,7 +92,7 @@ class VispyCamera:
         if self._view.camera == self._3D_camera:
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
-            # cagmera which is updated in vispy here
+            # camera which is updated in vispy here
             # https://github.com/vispy/vispy/blob/v0.6.5/vispy/scene/cameras/perspective.py#L301-L313
             scale = self._view.camera.scale_factor
         else:

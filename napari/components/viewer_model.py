@@ -83,7 +83,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
-        self.camera = Camera(center=(0,) * self.dims.ndisplay)
+        self.camera = Camera()
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
