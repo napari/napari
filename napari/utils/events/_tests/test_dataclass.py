@@ -151,7 +151,11 @@ def test_dataclass_coerces_types():
     m.anchor = 'center'
     assert isinstance(m._anchor, Anchor)
     assert isinstance(m.anchor, str)
+
     assert isinstance(m.blending, Blending)
+    m.blending = 'additive'
+    assert isinstance(m._blending, Blending)
+    assert m.blending == Blending.ADDITIVE
 
 
 def test_Property_validation():
