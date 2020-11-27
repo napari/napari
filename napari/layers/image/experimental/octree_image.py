@@ -359,12 +359,8 @@ class OctreeImage(Image):
         super()._update_draw(scale_factor, corner_pixels, shape_threshold)
 
         # Compute our 2D corners from the incoming n-d corner_pixels
-        # TODO_OCTREE: Throw in the two copies to fix weird bug, need
-        # to fix it for real soon.
-        data_corners = (
-            self._transforms[1:].simplified.inverse(corner_pixels).copy()
-        )
-        corners = data_corners[:, self._dims.displayed].copy()
+        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
+        corners = data_corners[:, self._dims.displayed]
 
         # Update our self._view to to catpure the state of things right
         # before we are drawn. Our self._view will used by our

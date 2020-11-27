@@ -1,7 +1,7 @@
 """OctreeLevel and OctreeLevelInfo classes.
 """
 import math
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
@@ -166,3 +166,32 @@ class OctreeLevel:
         #    data = _add_delay(data, delay_ms)
 
         return data
+
+
+def print_levels(
+    label: str, levels: List[OctreeLevel], start: int = 0
+) -> None:
+    """Print the dimensions of each level nicely.
+
+    Parameters
+    ----------
+    label : str
+        Prepend this to the header line.
+    levels : List[OctreeLevel]
+        Print information about these levels.
+    start : int
+        Start the indexing at this number, shift the indexes up.
+    """
+    from ...._vendor.experimental.humanize.src.humanize import intword
+
+    def _dim_str(dim: tuple) -> None:
+        return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
+
+    print(f"{label} {len(levels)} levels:")
+    for index, level in enumerate(levels):
+        level_index = start + index
+        image_str = _dim_str(level.info.image_shape)
+        tiles_str = _dim_str(level.info.shape_in_tiles)
+        print(
+            f"    Level {level_index}: {image_str} pixels -> {tiles_str} tiles"
+        )

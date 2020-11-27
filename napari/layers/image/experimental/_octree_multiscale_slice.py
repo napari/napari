@@ -14,7 +14,7 @@ from .._image_view import ImageView
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
-from .octree_level import OctreeLevelInfo
+from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
@@ -33,7 +33,8 @@ class OctreeMultiscaleSlice:
 
         self._slice_config = slice_config
 
-        self._octree = Octree(id(self), data, slice_config)
+        slice_id = id(self)
+        self._octree = Octree(slice_id, data, slice_config)
         self._octree_level = self._octree.num_levels - 1
 
         thumbnail_image = np.zeros(
@@ -85,20 +86,53 @@ class OctreeMultiscaleSlice:
             return None
         return self._octree.levels[self._octree_level].info
 
-    def get_intersection(self, view: OctreeView):
-        """Return this view's intersection with the octree."""
-        assert self._octree
-        level = self._get_octree_level(view)
+    def get_intersection(self, view: OctreeView) -> OctreeIntersection:
+        """Return this view's intersection with the octree.
+
+        Parameters
+        ----------
+        view : OctreeView
+            Intersect this view with the octree.
+
+        Return
+        ------
+        OctreeIntersection
+            The view's intersection with the octree.
+        """
+        level = self._get_auto_level(view)
         return OctreeIntersection(level, view)
 
-    def _get_octree_level(self, view: OctreeView):
-        index = self._get_octree_level_index(view)
+    def _get_auto_level(self, view: OctreeView) -> OctreeLevel:
+        """Get the automatically selected octree level for this view.
+
+        Parameters
+        ----------
+        view : OctreeView
+            Get the OctreeLevel for this view.
+
+        Return
+        ------
+        OctreeLevel
+            The automatically chosen OctreeLevel.
+        """
+        index = self._get_auto_level_index(view)
         if index < 0 or index >= self._octree.num_levels:
             raise ValueError(f"Invalid octree level {index}")
         return self._octree.levels[index]
 
-    def _get_octree_level_index(self, view: OctreeView):
+    def _get_auto_level_index(self, view: OctreeView) -> int:
+        """Get the automatically selected octree level index for this view.
 
+        Parameters
+        ----------
+        view : OctreeView
+            Get the octree level index for this view.
+
+        Return
+        ------
+        int
+            The automatically chosen octree level index.
+        """
         if not view.auto_level:
             # Return current level, do not update it.
             return self._octree_level

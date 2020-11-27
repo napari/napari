@@ -1,4 +1,5 @@
 import dataclasses as _dc
+import sys
 import typing
 from contextlib import contextmanager
 from typing import (
@@ -13,6 +14,7 @@ from typing import (
     cast,
 )
 
+import numpy as np
 import toolz as tz
 import typing_extensions as _te
 
@@ -88,11 +90,14 @@ def set_with_events(self: C, name: str, value: Any) -> None:
                 object.__setattr__(self, name, before)
             meth_name = f"{self.__class__.__name__}.{ON_SET.format(name=name)}"
             raise type(e)(f"Error in {meth_name} (value not set): {e}")
-    # otherwise, we emit the event
-    # TODO: use np.all(old_val == new_val)
 
+    # if different we emit the event with new value
     after = getattr(self, name)
-    if before != after:
+    if isinstance(before, np.ndarray) or isinstance(after, np.ndarray):
+        different = np.any(before != after)
+    else:
+        different = before != after
+    if different:
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
 
@@ -306,15 +311,27 @@ class Property:
         return _te._AnnotatedAlias(origin, metadata)
 
 
-@contextmanager
-def stripped_annotated_types(cls):
-    """temporarily strip Annotated types (for cleaner function signatures)."""
-    original_annotations = cls.__annotations__
-    cls.__annotations__ = {
-        n: _te._strip_annotations(t) for n, t in original_annotations.items()
-    }
-    yield
-    cls.__annotations__ = original_annotations
+# TEMP WORKAROUND FOR Python 3.9 DO NOT MERGE
+if sys.version_info[:2] < (3, 9):
+
+    @contextmanager
+    def stripped_annotated_types(cls):
+        """temporarily strip Annotated types (for cleaner function signatures)."""
+        original_annotations = cls.__annotations__
+        cls.__annotations__ = {
+            n: _te._strip_annotations(t)
+            for n, t in original_annotations.items()
+        }
+        yield
+        cls.__annotations__ = original_annotations
+
+
+else:
+
+    @contextmanager
+    def stripped_annotated_types(cls):
+        """There's no _te._strip_annotations in Python 3.9"""
+        yield
 
 
 @tz.curry
