@@ -8,7 +8,7 @@ from ..utils.events.dataclass import Property, dataclass
 class Axes:
     """Axes indicating world coordinate origin and orientation.
 
-    Parameters
+    Attributes
     ----------
     visible : bool
         If axes are visible or not.
