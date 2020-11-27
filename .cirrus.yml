@@ -29,7 +29,6 @@ linux_task:
   matrix:
     env:
       PY_VER: "3.7"
-      PYTEST_FLAGS: ""
       PIP_FLAGS: ""
     env:
       PY_VER: "3.7"
@@ -40,7 +39,6 @@ linux_task:
       PIP_FLAGS: ""
     env:
       PY_VER: "3.8"
-      PYTEST_FLAGS: ""
       PIP_FLAGS: ""
     env:
       PY_VER: "3.8"
@@ -56,6 +54,9 @@ linux_task:
       # Early warning signal if upcoming dependency releases will break napari
       PY_VER: "3.8"
       PIP_FLAGS: "--pre"
+    env:
+      PY_VER: "3.9"
+      PIP_FLAGS: ""
 
   name: linux ${PY_VER}
 
