@@ -194,11 +194,22 @@ class LayerList(EventedList):
         -------
         extent_world : array, shape (2, D)
         """
+        return self._get_extent_world([layer.extent for layer in self])
+
+    def _get_extent_world(self, layer_extent_list):
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
         if len(self) == 0:
             min_v = [np.nan] * self.ndim
             max_v = [np.nan] * self.ndim
         else:
-            extrema = [layer.extent.world for layer in self]
+            extrema = [extent.world for extent in layer_extent_list]
             mins = [e[0][::-1] for e in extrema]
             maxs = [e[1][::-1] for e in extrema]
 
@@ -238,10 +249,13 @@ class LayerList(EventedList):
         -------
         step_size : array, shape (D,)
         """
+        return self._get_step_size([layer.extent for layer in self])
+
+    def _get_step_size(self, layer_extent_list):
         if len(self) == 0:
             return np.ones(self.ndim)
         else:
-            scales = [layer.extent.step[::-1] for layer in self]
+            scales = [extent.step[::-1] for extent in layer_extent_list]
             full_scales = list(
                 np.array(
                     list(itertools.zip_longest(*scales, fillvalue=np.nan))
@@ -253,8 +267,11 @@ class LayerList(EventedList):
     @property
     def extent(self) -> Extent:
         """Extent of layers in data and world coordinates."""
+        extent_list = [layer.extent for layer in self]
         return Extent(
-            data=None, world=self._extent_world, step=self._step_size
+            data=None,
+            world=self._get_extent_world(extent_list),
+            step=self._get_step_size(extent_list),
         )
 
     @property

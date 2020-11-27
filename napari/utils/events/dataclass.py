@@ -13,6 +13,7 @@ from typing import (
     cast,
 )
 
+import numpy as np
 import toolz as tz
 import typing_extensions as _te
 
@@ -88,11 +89,14 @@ def set_with_events(self: C, name: str, value: Any) -> None:
                 object.__setattr__(self, name, before)
             meth_name = f"{self.__class__.__name__}.{ON_SET.format(name=name)}"
             raise type(e)(f"Error in {meth_name} (value not set): {e}")
-    # otherwise, we emit the event
-    # TODO: use np.all(old_val == new_val)
 
+    # if different we emit the event with new value
     after = getattr(self, name)
-    if before != after:
+    if isinstance(before, np.ndarray) or isinstance(after, np.ndarray):
+        different = np.any(before != after)
+    else:
+        different = before != after
+    if different:
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
 

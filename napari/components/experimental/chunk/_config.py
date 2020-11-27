@@ -17,12 +17,12 @@ LOGGER = logging.getLogger("napari.async")
 
 # NAPARI_ASYNC=0 will use these settings, although currently with async
 # in experimental this module will not even be imported if NAPARI_ASYNC=0.
-DEFAULT_SYNC_CONFIG = {"synchronous": True}
+DEFAULT_SYNC_CONFIG = {"force_synchronous": True}
 
 # NAPARI_ASYNC=1 will use these default settings:
 DEFAULT_ASYNC_CONFIG = {
     "log_path": None,
-    "synchronous": False,
+    "force_synchronous": False,
     "num_workers": 6,
     "use_processes": False,
     "auto_sync_ms": 30,
@@ -34,7 +34,7 @@ AsyncConfig = namedtuple(
     "AsyncConfig",
     [
         "log_path",
-        "synchronous",
+        "force_synchronous",
         "num_workers",
         "use_processes",
         "auto_sync_ms",
@@ -105,8 +105,8 @@ def _get_config_data() -> dict:
         # imported.
         #
         # However long term, using DEFAULT_SYNC_CONFIG means the
-        # ChunkLoader is being used, but ChunkLoader.synchronous
-        # is set True. Meaning every single load is synchronous.
+        # ChunkLoader is being used, but ChunkLoader.force_synchronous is
+        # set True. Meaning every single load is synchronous.
         #
         # Once the feature is not experimental that will probably
         # be the way to turn async "off". It will still run through
@@ -142,7 +142,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
 
     config = AsyncConfig(
         log_path=data.get("log_path"),
-        synchronous=data.get("synchronous", True),
+        force_synchronous=data.get("synchronous", True),
         num_workers=data.get("num_workers", 6),
         use_processes=data.get("use_processes", False),
         auto_sync_ms=data.get("auto_sync_ms", 30),
