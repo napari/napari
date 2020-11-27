@@ -29,8 +29,15 @@ def numpy_dumps(data: dict) -> str:
 def base64_encoded_json(data: dict) -> str:
     """Return base64 encoded version of this data as JSON.
 
+    Parameters
+    ----------
     data : dict
         The data to write as JSON then base64 encode.
+
+    Return
+    ------
+    str
+        The base64 encoded JSON string.
     """
     json_str = numpy_dumps(data)
     json_bytes = json_str.encode('ascii')
