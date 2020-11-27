@@ -35,6 +35,7 @@ def sys_info(as_html=False):
             f"<b>Qt</b>: {QtCore.__version__}<br>"
             f"<b>{API_NAME}</b>: {API_VERSION}<br>"
         )
+
     except Exception as e:
         text += f"<b>Qt</b>: Import failed ({e})<br>"
 
@@ -77,6 +78,17 @@ def sys_info(as_html=False):
         if plugin_strings
         else '  None'
     )
+
+    text += "<br><br><b>Screen info:</b><br>"
+
+    try:
+        from qtpy.QtGui import QGuiApplication
+
+        screen_list = QGuiApplication.screens()
+        for i, screen in enumerate(screen_list, start=1):
+            text += f"<b>Screen {i}:</b> Resolution: {screen.geometry().width()}x{screen.geometry().height()}, Scale: {screen.devicePixelRatio()}<br>"
+    except ImportError as e:
+        text += f"Failed to load screen information {e}"
 
     if not as_html:
         text = (
