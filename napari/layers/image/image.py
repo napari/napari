@@ -336,6 +336,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data()
+        self._set_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""

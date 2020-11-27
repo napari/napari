@@ -112,8 +112,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.layers.events.removed.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.inserted.connect(self._on_add_layer)
-        self.layers.events.inserted.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
+        self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -420,12 +419,13 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers.extent.world
-            ss = self.layers.extent.step
-            ndim = extent.shape[1]
+            extent = self.layers.extent
+            world = extent.world
+            ss = extent.step
+            ndim = world.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
+                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.events.layers_change()
         self._update_active_layer(event)
 
@@ -453,11 +453,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
+        extent = self._sliced_extent_world
+        n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
-            i_row, i_column = self.grid.position(
-                len(self.layers) - 1 - i, len(self.layers)
-            )
-            self._subplot(layer, (i_row, i_column))
+            i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
+            self._subplot(layer, (i_row, i_column), extent)
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
@@ -508,7 +508,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
         self.grid.enabled = False
 
-    def _subplot(self, layer, position):
+    def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -517,10 +517,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
-        size : 2-tuple of int
-            Size of the grid that is being used.
+        extent : array, shape (2, D)
+            Extent of the world.
         """
-        extent = self._sliced_extent_world
         scene_shift = extent[1] - extent[0] + 1
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
@@ -538,7 +537,42 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         return ExperimentalNamespace(self.layers)
 
     def _on_add_layer(self, event):
-        """Add a layer to the viewer.
+        """Connect new layer events.
+
+        Parameters
+        ----------
+        event : :class:`napari.layers.Layer`
+            Layer to add.
+        """
+        layer = event.value
+        layer.events.select.connect(self._update_active_layer)
+        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.interactive.connect(self._update_interactive)
+        layer.events.cursor.connect(self._update_cursor)
+        layer.events.cursor_size.connect(self._update_cursor_size)
+        layer.events.data.connect(self._on_layers_change)
+        layer.name = self.layers._coerce_name(layer.name, layer)
+        layer.events.name.connect(self.layers._update_name)
+        layer.selected = True
+        # For the labels layer we need to reset the undo/ redo
+        # history whenever the displayed slice changes. Once
+        # we have full undo/ redo functionality, this can be
+        # dropped.
+        if hasattr(layer, '_reset_history'):
+            self.dims.events.ndisplay.connect(layer._reset_history)
+            self.dims.events.order.connect(layer._reset_history)
+            self.dims.events.current_step.connect(layer._reset_history)
+
+        self.layers.unselect_all(ignore=layer)
+        self._update_layers(layers=[layer])
+
+        if len(self.layers) == 1:
+            self.reset_view()
+
+        self._on_layers_change(None)
+
+    def _on_remove_layer(self, event):
+        """Disconnect old layer events.
 
         Parameters
         ----------
@@ -551,20 +585,15 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             The layer that was added (same as input).
         """
         layer = event.value
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
-        layer.events.interactive.connect(self._update_interactive)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
-        layer.name = self.layers._coerce_name(layer.name, layer)
-        layer.events.name.connect(self.layers._update_name)
-        layer.selected = True
-        self.layers.unselect_all(ignore=layer)
-        self._update_layers(layers=[layer])
-
-        if len(self.layers) == 1:
-            self.reset_view()
+        layer.events.disconnect()
+        for em in layer.events.emitters.values():
+            em.disconnect()
+        # Disconnect dims events. Once layer._dims removed this
+        # can be removed too.
+        layer._dims.events.disconnect()
+        for em in layer._dims.events.emitters.values():
+            em.disconnect()
+        self._on_layers_change(None)
 
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
@@ -579,6 +608,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
+        warnings.warn(
+            (
+                "The viewer.add_layer method is deprecated and will be removed after version 0.4.4."
+                " Instead you should use viewer.layers.append."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         self.layers.append(layer)
         return layer
 
@@ -777,13 +814,13 @@ class ViewerModel(KeymapHandler, KeymapProvider):
                         "did you mean to specify a 'channel_axis'? "
                     )
 
-            return self.add_layer(image_class(data, **kwargs))
+            return self.layers.append(image_class(data, **kwargs))
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.add_layer(image_class(image, **i_kwargs))
+                layer = self.layers.append(image_class(image, **i_kwargs))
                 layer_list.append(layer)
 
             return layer_list

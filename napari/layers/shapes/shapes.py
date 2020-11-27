@@ -436,10 +436,6 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
-        self.events.deselect.connect(self._finish_drawing)
-        self.events.face_color.connect(self._update_thumbnail)
-        self.events.edge_color.connect(self._update_thumbnail)
-
         self._init_shapes(
             data,
             shape_type=shape_type,
@@ -548,6 +544,24 @@ class Shapes(Layer):
 
         self._update_dims()
         self.events.data()
+        self._set_editable()
+
+    @property
+    def selected(self):
+        """bool: Whether this layer is selected or not."""
+        return self._selected
+
+    @selected.setter
+    def selected(self, selected):
+        if selected == self.selected:
+            return
+        self._selected = selected
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
+            self._finish_drawing()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -635,6 +649,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, self._current_edge_color)
             self.events.edge_color()
+            self._update_thumbnail()
         self.events.current_edge_color()
 
     @property
@@ -650,6 +665,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_face_color(i, self._current_face_color)
             self.events.face_color()
+            self._update_thumbnail()
         self.events.current_face_color()
 
     @property
@@ -688,6 +704,7 @@ class Shapes(Layer):
     def edge_color(self, edge_color):
         self._set_color(edge_color, 'edge')
         self.events.edge_color()
+        self._update_thumbnail()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -754,6 +771,7 @@ class Shapes(Layer):
     def face_color(self, face_color):
         self._set_color(face_color, 'face')
         self.events.face_color()
+        self._update_thumbnail()
 
     @property
     def face_color_cycle(self) -> np.ndarray:

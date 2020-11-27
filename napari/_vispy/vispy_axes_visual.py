@@ -185,6 +185,7 @@ class VispyAxesVisual:
         self._axes.events.visible.connect(self._on_visible_change)
         self._axes.events.colored.connect(self._on_data_change)
         self._axes.events.dashed.connect(self._on_data_change)
+        self._axes.events.background_color.connect(self._on_data_change)
         self._axes.events.labels.connect(self._on_data_change)
         self._axes.events.arrows.connect(self._on_data_change)
         self._dims.events.order.connect(self._on_data_change)
@@ -223,14 +224,15 @@ class VispyAxesVisual:
                 for ra in reversed_axes
             ]
         else:
-            color = np.subtract(1, self._axes.background_color)[:3]
+            color = np.subtract(1, self._axes.background_color)
+            color[-1] = self._axes.background_color[-1]
             axes_colors = [color] * self._dims.ndisplay
 
         # Make sure have enough colors and labels for displayed dimensions
         if len(axes_colors) < self._dims.ndisplay:
-            axes_colors += [self._axes.background_color] * (
-                self._dims.ndisplay - len(axes_colors)
-            )
+            color = np.subtract(1, self._axes.background_color)
+            color[-1] = self._axes.background_color[-1]
+            axes_colors += [color] * (self._dims.ndisplay - len(axes_colors))
         if len(axes_labels) < self._dims.ndisplay:
             axes_labels += [''] * (self._dims.ndisplay - len(axes_labels))
 

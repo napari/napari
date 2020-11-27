@@ -281,7 +281,6 @@ class Layer(KeymapProvider, ABC):
         )
         self.name = name
 
-        self.events.data.connect(lambda e: self._set_editable())
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
         self.mouse_wheel_callbacks = []
@@ -959,7 +958,8 @@ class Layer(KeymapProvider, ABC):
     @property
     def displayed_coordinates(self):
         """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self._dims.displayed]
+        coordinates = self.coordinates
+        return [coordinates[i] for i in self._dims.displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value
