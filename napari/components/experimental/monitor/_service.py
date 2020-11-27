@@ -34,7 +34,7 @@ can be decoded like this:
 
         return json.loads(config_str)
 
-The client configuration is:
+Today the client configuration is only:
 
     {
         "server_port": "<number>"
