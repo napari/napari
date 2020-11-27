@@ -174,14 +174,13 @@ def create_downsampled_levels(
     List[np.ndarray]
         A list of levels where levels[0] is the first downsampled level.
     """
-    if image.ndim == 2:
-        zoom = [0.5, 0.5]
-    else:
-        assert image.ndim == 3
-        zoom = [0.5, 0.5, 1]
+    zoom = [0.5, 0.5]
 
-    previous = image
+    if image.ndim == 3:
+        zoom.append(1)  # don't downsample the colors!
+
     levels = []
+    previous = image
 
     # Repeat until we have level that will fit in a single tile, that will
     # be come the root/highest level.
@@ -195,9 +194,7 @@ def create_downsampled_levels(
     return levels
 
 
-def create_multi_scale_from_image(
-    image: np.ndarray, tile_size: int
-) -> List[np.ndarray]:
+def create_multi_scale(image: np.ndarray, tile_size: int) -> List[np.ndarray]:
     """Turn an image into a multi-scale image with levels.
 
     Parameters
@@ -210,5 +207,4 @@ def create_multi_scale_from_image(
     List[np.ndarray]
         A list of levels where levels[0] is the input image.
     """
-    levels = [image] + create_downsampled_levels(image)
-    return levels
+    return [image] + create_downsampled_levels(image, tile_size)

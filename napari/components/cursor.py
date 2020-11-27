@@ -1,14 +1,14 @@
 from typing import Tuple
 
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 from ._viewer_constants import CursorStyle
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class Cursor:
     """Cursor object with position and properties of the cursor.
 
-    Parameters
+    Attributes
     ----------
     position : tuple or None
         Position of the cursor in world coordinates. None if outside the
@@ -17,6 +17,9 @@ class Cursor:
         Flag to indicate whether cursor size should be scaled to zoom.
         Only relevant for circle and square cursors which are drawn
         with a particular size.
+    size : float
+        Size of the cursor in canvas pixels.Only relevant for circle
+        and square cursors which are drawn with a particular size.
     style : str
         Style of the cursor. Must be one of
             * square: A square
@@ -25,9 +28,6 @@ class Cursor:
             * forbidden: A forbidden symbol
             * pointing: A finger for pointing
             * standard: The standard cursor
-    size : float
-        Size of the cursor in canvas pixels.Only relevant for circle
-        and square cursors which are drawn with a particular size.
     """
 
     position: Property[Tuple, None, tuple] = ()

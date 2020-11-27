@@ -54,7 +54,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     list of paths, and returns a list of data to be added to the ``Viewer``.
 
     The main place this hook is used is in :func:`Viewer.open()
-    <napari.components.add_layers_mixin.AddLayersMixin.open>`, via the
+    <napari.components.viewer_model.ViewerModel.open>`, via the
     :func:`~napari.plugins.io.read_data_with_plugins` function.
 
     It will also be called on ``File -> Open...`` or when a user drops a file
@@ -68,12 +68,12 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
     ``napari`` will then use each tuple in the returned list to generate a new
     layer in the viewer using the :func:`Viewer._add_layer_from_data()
-    <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
+    <napari.components.viewer_model.ViewerModel._add_layer_from_data>`
     method.  The first, (optional) second, and (optional) third items in each
     tuple in the returned layer_data list, therefore correspond to the
     ``data``, ``meta``, and ``layer_type`` arguments of the
     :func:`Viewer._add_layer_from_data()
-    <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
+    <napari.components.viewer_model.ViewerModel._add_layer_from_data>`
     method, respectively.
 
     .. important::
