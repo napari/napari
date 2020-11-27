@@ -1,5 +1,4 @@
 import dataclasses as _dc
-import sys
 import typing
 from contextlib import contextmanager
 from typing import (
@@ -311,27 +310,15 @@ class Property:
         return _te._AnnotatedAlias(origin, metadata)
 
 
-# TEMP WORKAROUND FOR Python 3.9 DO NOT MERGE
-if sys.version_info[:2] < (3, 9):
-
-    @contextmanager
-    def stripped_annotated_types(cls):
-        """temporarily strip Annotated types (for cleaner function signatures)."""
-        original_annotations = cls.__annotations__
-        cls.__annotations__ = {
-            n: _te._strip_annotations(t)
-            for n, t in original_annotations.items()
-        }
-        yield
-        cls.__annotations__ = original_annotations
-
-
-else:
-
-    @contextmanager
-    def stripped_annotated_types(cls):
-        """There's no _te._strip_annotations in Python 3.9"""
-        yield
+@contextmanager
+def stripped_annotated_types(cls):
+    """temporarily strip Annotated types (for cleaner function signatures)."""
+    original_annotations = cls.__annotations__
+    cls.__annotations__ = {
+        n: _te._strip_annotations(t) for n, t in original_annotations.items()
+    }
+    yield
+    cls.__annotations__ = original_annotations
 
 
 @tz.curry
