@@ -156,7 +156,7 @@ def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
                         name = layer_datum[1].get('name')
                         viewer.layers[name].data = layer_datum[0]
                         continue
-                    except KeyError:
+                    except ValueError:
                         pass
                 # otherwise create a new layer from the layer data
                 viewer._add_layer_from_data(*layer_datum)
@@ -170,6 +170,6 @@ def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
     # the simpler behavior where they only return the layer data.
     try:
         viewer.layers[gui.result_name].data = result
-    except KeyError:
+    except ValueError:
         adder = getattr(viewer, f'add_{return_type.__name__.lower()}')
         adder(data=result, name=gui.result_name)
