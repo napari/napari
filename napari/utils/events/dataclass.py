@@ -15,7 +15,7 @@ from typing import (
 
 import numpy as np
 import toolz as tz
-import typing_extensions as _te
+from typing_extensions import get_args, get_origin, get_type_hints
 
 from .event import EmitterGroup
 
@@ -26,10 +26,169 @@ C = TypeVar("C")
 NO_ATTR = object()
 
 
-class FrozenAttributeError(AttributeError):
-    """Raised when an attempt is made to modify a frozen attribute."""
+# from dataclasses.py in the standard library
+def _is_classvar(a_type, typing):
+    # This test uses a typing internal class, but it's the best way to
+    # test if this is a ClassVar.
+    return a_type is typing.ClassVar or (
+        type(a_type) is typing._GenericAlias
+        and a_type.__origin__ is typing.ClassVar
+    )
 
-    pass
+
+# from dataclasses.py in the standard library
+def _is_initvar(a_type, dataclasses):
+    # The module we're checking against is the module we're
+    # currently in (dataclasses.py).
+    return a_type is dataclasses.InitVar or type(a_type) is dataclasses.InitVar
+
+
+# #####################################
+# START Vendored from typing_extensions
+# #####################################
+
+try:
+    from typing import _tp_cache
+except ImportError:
+
+    def _tp_cache(x):
+        return x
+
+
+if hasattr(typing, 'Annotated'):
+    Annotated = typing.Annotated
+    _AnnotatedAlias = typing._AnnotatedAlias
+else:
+    import operator
+
+    class _AnnotatedAlias(typing._GenericAlias, _root=True):
+        """Runtime representation of an annotated type.
+
+        At its core 'Annotated[t, dec1, dec2, ...]' is an alias for the type 't'
+        with extra annotations. The alias behaves like a normal typing alias,
+        instantiating is the same as instantiating the underlying type, binding
+        it to types is also the same.
+        """
+
+        def __init__(self, origin, metadata):
+            if isinstance(origin, _AnnotatedAlias):
+                metadata = origin.__metadata__ + metadata
+                origin = origin.__origin__
+            super().__init__(origin, origin)
+            self.__metadata__ = metadata
+
+        def copy_with(self, params):
+            assert len(params) == 1
+            new_type = params[0]
+            return _AnnotatedAlias(new_type, self.__metadata__)
+
+        def __repr__(self):
+            return "typing_extensions.Annotated[{}, {}]".format(
+                typing._type_repr(self.__origin__),
+                ", ".join(repr(a) for a in self.__metadata__),
+            )
+
+        def __reduce__(self):
+            return (
+                operator.getitem,
+                (Annotated, (self.__origin__,) + self.__metadata__,),
+            )
+
+        def __eq__(self, other):
+            if not isinstance(other, _AnnotatedAlias):
+                return NotImplemented
+            if self.__origin__ != other.__origin__:
+                return False
+            return self.__metadata__ == other.__metadata__
+
+        def __hash__(self):
+            return hash((self.__origin__, self.__metadata__))
+
+    class Annotated:
+        """Add context specific metadata to a type.
+
+        Example: Annotated[int, runtime_check.Unsigned] indicates to the
+        hypothetical runtime_check module that this type is an unsigned int.
+        Every other consumer of this type can ignore this metadata and treat
+        this type as int.
+
+        The first argument to Annotated must be a valid type (and will be in
+        the __origin__ field), the remaining arguments are kept as a tuple in
+        the __extra__ field.
+
+        Details:
+
+        - It's an error to call `Annotated` with less than two arguments.
+        - Nested Annotated are flattened::
+
+            Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
+
+        - Instantiating an annotated type is equivalent to instantiating the
+        underlying type::
+
+            Annotated[C, Ann1](5) == C(5)
+
+        - Annotated can be used as a generic type alias::
+
+            Optimized = Annotated[T, runtime.Optimize()]
+            Optimized[int] == Annotated[int, runtime.Optimize()]
+
+            OptimizedList = Annotated[List[T], runtime.Optimize()]
+            OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+        """
+
+        __slots__ = ()
+
+        def __new__(cls, *args, **kwargs):
+            raise TypeError("Type Annotated cannot be instantiated.")
+
+        @_tp_cache
+        def __class_getitem__(cls, params):
+            if not isinstance(params, tuple) or len(params) < 2:
+                raise TypeError(
+                    "Annotated[...] should be used "
+                    "with at least two arguments (a type and an "
+                    "annotation)."
+                )
+            msg = "Annotated[t, ...]: t must be a type."
+            origin = typing._type_check(params[0], msg)
+            metadata = tuple(params[1:])
+            return _AnnotatedAlias(origin, metadata)
+
+        def __init_subclass__(cls, *args, **kwargs):
+            raise TypeError(
+                "Cannot subclass {}.Annotated".format(cls.__module__)
+            )
+
+
+def _strip_annotations(t):
+    """Strips the annotations from a given type."""
+    if isinstance(t, _AnnotatedAlias):
+        return _strip_annotations(t.__origin__)
+    if isinstance(t, typing._GenericAlias):
+        stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
+        if stripped_args == t.__args__:
+            return t
+        res = t.copy_with(stripped_args)
+        res._special = t._special
+        return res
+    return t
+
+
+# #####################################
+# END Vendored from typing_extensions
+# #####################################
+
+
+@contextmanager
+def stripped_annotated_types(cls):
+    """Temporarily strip Annotated types (for cleaner function signatures)."""
+    original_annotations = cls.__annotations__
+    cls.__annotations__ = {
+        n: _strip_annotations(t) for n, t in original_annotations.items()
+    }
+    yield
+    cls.__annotations__ = original_annotations
 
 
 def set_with_events(self: C, name: str, value: Any) -> None:
@@ -213,10 +372,10 @@ def try_coerce(func, name, value):
 
 def parse_annotated_types(cls: Type):
     out: Dict[str, TypeGetSet] = {}
-    for name, typ in _te.get_type_hints(cls, include_extras=True).items():
+    for name, typ in get_type_hints(cls, include_extras=True).items():
         d = [typ, None, None]
-        if _te.get_origin(typ) is _te.Annotated:
-            args = _te.get_args(typ)
+        if get_origin(typ) is Annotated:
+            args = get_args(typ)
             d[: len(args)] = args
         d[1] = try_coerce(d[1], name)
         d[2] = try_coerce(d[2], name)
@@ -254,8 +413,7 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
         # ClassVar and InitVar types are exempt from dataclasses and properties
         # https://docs.python.org/3/library/dataclasses.html#class-variables
-        # TODO: private methods !
-        if _dc._is_classvar(type_, typing) or _dc._is_initvar(type_, _dc):
+        if _is_classvar(type_, typing) or _is_initvar(type_, _dc):
             continue
         private_name = f"_{name}"
         # store the original value for the property
@@ -292,7 +450,7 @@ class Property:
     def __init_subclass__(cls, *args, **kwargs):
         raise TypeError(f"Cannot subclass {cls.__module__}.Property")
 
-    @_te._tp_cache
+    @_tp_cache
     def __class_getitem__(cls, params):
         if not isinstance(params, tuple) or not (1 < len(params) < 4):
             raise TypeError(
@@ -307,18 +465,7 @@ class Property:
             if params[2] is not None and not callable(params[2]):
                 raise TypeError(f"Property getter not callable: {params[1]}")
         metadata = tuple(params[1:])
-        return _te._AnnotatedAlias(origin, metadata)
-
-
-@contextmanager
-def stripped_annotated_types(cls):
-    """temporarily strip Annotated types (for cleaner function signatures)."""
-    original_annotations = cls.__annotations__
-    cls.__annotations__ = {
-        n: _te._strip_annotations(t) for n, t in original_annotations.items()
-    }
-    yield
-    cls.__annotations__ = original_annotations
+        return _AnnotatedAlias(origin, metadata)
 
 
 @tz.curry
@@ -363,12 +510,12 @@ def evented_dataclass(
     events : bool, optional
         If true, an ``EmmitterGroup`` instance is added as attribute "events".
         Events will be emitted each time one of the dataclass fields are
-        altered, by default False
+        altered, by default True
     properties : bool, optional
         If true, field attributes will be converted to property descriptors.
         If the class has a class docstring in numpydocs format, docs for each
         property will be taken from the ``Parameters`` section for the
-        corresponding parameter, by default False
+        corresponding parameter, by default True
 
     Returns
     -------
@@ -396,13 +543,16 @@ def evented_dataclass(
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`
     with stripped_annotated_types(cls):
-        # TODO: don't use private
-        cls = _dc._process_class(
-            cls, init, repr, eq, order, unsafe_hash, frozen
+        cls = _dc.dataclass(  # type: ignore
+            cls,
+            init=init,
+            repr=repr,
+            eq=eq,
+            order=order,
+            unsafe_hash=unsafe_hash,
+            frozen=frozen,
         )
 
-    # XXX: Open question: should properties=True make ALL fields properties?
-    # or should we declare that on each one...
     if properties:
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
