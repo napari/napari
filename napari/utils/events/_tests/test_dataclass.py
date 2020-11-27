@@ -9,7 +9,7 @@ from typing_extensions import Annotated
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.utils.events import EmitterGroup
-from napari.utils.events.dataclass import Property, dataclass
+from napari.utils.events.dataclass import Property, evented_dataclass
 
 
 @pytest.mark.parametrize("props, events", [(1, 1), (0, 1), (0, 0), (1, 0)])
@@ -20,7 +20,7 @@ def test_dataclass_with_properties(props, events):
     and events to make sure they work alone as well as together.
     """
 
-    @dataclass(properties=props, events=events)
+    @evented_dataclass(properties=props, events=events)
     class M:
         """Just a test.
 
@@ -109,7 +109,7 @@ def test_dataclass_with_properties(props, events):
 
 
 def test_dataclass_missing_vars_raises():
-    @dataclass(properties=True)
+    @evented_dataclass(properties=True, events=False)
     class M:
         a: int
         b: list = field(default_factory=list)
@@ -140,7 +140,7 @@ def test_dataclass_missing_vars_raises():
 
 
 def test_dataclass_coerces_types():
-    @dataclass(properties=True)
+    @evented_dataclass(properties=True, events=False)
     class M:
         x: int = 2
         anchor: Annotated[Anchor, str, Anchor] = Anchor.UPPER_LEFT
@@ -171,7 +171,7 @@ def test_Property_validation():
 
 
 def test_exception_resets_value():
-    @dataclass(events=True)
+    @evented_dataclass(events=True, properties=False)
     class M:
         x: int = 2
 
@@ -188,12 +188,12 @@ def test_exception_resets_value():
 def test_event_inheritance():
     """Test that subclasses include events from the superclass."""
 
-    @dataclass(events=True)
+    @evented_dataclass(events=True, properties=False)
     class A:
         a: int = 4
         x: int = 2
 
-    @dataclass(events=True)
+    @evented_dataclass(events=True, properties=False)
     class B(A):
         a: int = 2
         z: int = 4
@@ -210,24 +210,24 @@ def test_event_inheritance():
 def test_event_partial_inheritance():
     """Test events only included from classes decorated with events=True."""
 
-    @dataclass
+    @evented_dataclass(events=False, properties=False)
     class A:
         a: int = 4
         x: int = 2
 
-    @dataclass(events=True)
+    @evented_dataclass(events=True, properties=False)
     class B(A):
         a: int = 2
         z: int = 4
 
     assert set(B().events.emitters) == {'z', 'a'}
 
-    @dataclass(events=True)
+    @evented_dataclass(events=True, properties=False)
     class C:
         a: int = 4
         x: int = 2
 
-    @dataclass
+    @evented_dataclass(events=False, properties=False)
     class D(C):
         a: int = 2
         z: int = 4
@@ -236,7 +236,7 @@ def test_event_partial_inheritance():
 
 
 def test_dataclass_signature():
-    @dataclass(properties=True, events=True)
+    @evented_dataclass(properties=True, events=True)
     class A:
         a: str
         b: int = 2

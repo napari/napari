@@ -322,7 +322,7 @@ def stripped_annotated_types(cls):
 
 
 @tz.curry
-def dataclass(
+def evented_dataclass(
     cls: Type[C],
     *,
     init: bool = True,
@@ -331,14 +331,17 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    events: bool = False,
-    properties: bool = False,
+    events: bool = True,
+    properties: bool = True,
 ) -> Type[C]:
     """Enhanced dataclass decorator with events and property descriptors.
 
     Examines PEP 526 __annotations__ to determine fields.  Fields are defined
     as class attributes with a type annotation.  Everything but ``events`` and
     ``properties`` are defined on the builtin dataclass decorator.
+
+    Note: if ``events==False`` and ``properties==False``, this is functionally
+    equivalent to the builtin ``dataclasses.dataclass``
 
     Parameters
     ----------
