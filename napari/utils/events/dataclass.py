@@ -321,7 +321,6 @@ def parse_annotated_types(cls: Type,) -> Dict[str, TypeGetSet]:
         if get_origin(typ) is Annotated:
             args = get_args(typ)
             d[: len(args)] = args
-        print('getorigin', name, typ, get_origin(typ), d[1], d[2])
         d[1] = _try_coerce(d[1], name)
         d[2] = _try_coerce(d[2], name)
         out[name] = TypeGetSet(*d)
