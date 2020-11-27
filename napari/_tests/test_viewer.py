@@ -218,7 +218,9 @@ def test_windows_grouping_overwrite(make_test_viewer):
 
     def get_app_id():
         mem = ctypes.POINTER(ctypes.c_wchar)()
-        ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID(ctypes.byref(mem))
+        ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID(
+            ctypes.byref(mem)
+        )
         res = ctypes.wstring_at(mem)
         ctypes.windll.Ole32.CoTaskMemFree(mem)
         return res
@@ -246,3 +248,26 @@ def test_windows_grouping_overwrite(make_test_viewer):
     make_test_viewer(viewer_class=OwnViewer2)
 
     assert "test_text" == get_app_id()
+
+
+def test_icon_overwrite(make_test_viewer, monkeypatch):
+    from napari._qt.qt_main_window import QApplication
+
+    class OwnViewer(Viewer):
+        _napari_global_logo = False
+
+    called = [0]
+
+    def set_icon_mock(self, _icon):
+        called[0] = 1
+
+    monkeypatch.setattr(QApplication, "setWindowIcon", set_icon_mock)
+
+    make_test_viewer()
+
+    assert called[0] == 1
+    called = [0]
+
+    make_test_viewer(viewer_class=OwnViewer)
+
+    assert called[0] == 0
