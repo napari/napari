@@ -2,21 +2,6 @@
 
 Experimental shared memory service.
 
-1) Creates a ShareableList with two slots:
-    FRAME_NUMBER = 0
-    JSON_DATA = 1
-
-2) Starts all clients specified in the config file.
-
-3) Anywhere in napari can call MonitorService.add_data any number of times.
-
-4) When MonitorService.poll() is called, the *union* of all the data is
-   writted to slot JSON_DATA. JSON string. And the frame number is
-   incremented in slot FRAME_NUMBER.
-
-When a shared memory client sees the frame number has incremented, it can
-grab the latest JSON from JSON_DATA.
-
 Monitor Config File
 -------------------
 Only if NAPARI_MON is set and points to a config file will the monitor even
@@ -52,31 +37,39 @@ can be decoded like this:
 The client configuration is:
 
     {
-        "shared_list_name": "<name>",
         "server_port": "<number>"
     }
 
-The client can access the ShareableList like this:
+Client Startup
+--------------
 
-    shared_list = ShareableList(name=data['shared_list_name'])
+See a working client: https://github.com/pwinston/webmon
 
 The client can access the MonitorApi by creating a SharedMemoryManager:
+
+    napari_api = ['shutdown_event', 'command_queue', 'data']
+    for name in napari_api:
+        SharedMemoryManager.register(name)
 
     SharedMemoryManager.register('command_queue')
     self.manager = SharedMemoryManager(
         address=('localhost', config['server_port']),
         authkey=str.encode('napari')
     )
-    self._commands = self._manager.command_queue()
+
+    # Get the shared resources.
+    shutdown = self._manager.shutdown_event()
+    commands = self._manager.command_queue()
+    data = self._manager.data()
 
 It can send command like:
 
-    self._commands.put(
+    commands.put(
        {"test_command": {"value": 42, "names": ["fred", "joe"]}}
     )
 
-Passing Data
-------------
+Passing Data From Napari To The Client
+--------------------------------------
 In napari add data like:
 
     if monitor:
@@ -89,23 +82,21 @@ In napari add data like:
         })
 
 The client can access data['tiled_image_layer']. Clients should be
-resilient if data is missing, in case the napari version is different than
-expected.
+resilient to missing data. Nn case the napari version is different than
+expected, or is just not producing that data for some reason.
 
 Future Work
 -----------
-We plan to use numpy shared memory buffers /w recarray for bulk binary
-data. JSON is not appropriate for bulk data, but it was simple thing
-to start with. And is pretty fast given it's in shared memory.
-
-The JSON_DATA might be replaced with a Queue or something as well.
+We plan to investigate the use of numpy shared memory buffers for bulk
+binary data. Possibly using recarray to organized things.
 """
 import copy
 import logging
+import os
 import subprocess
 from multiprocessing.managers import SharedMemoryManager
 
-from ._utils import base64_encoded_json, numpy_dumps
+from ._utils import base64_encoded_json
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -115,44 +106,27 @@ START_CLIENTS = True
 # We pass the data in this template to each client as an encoded
 # NAPARI_MON_CLIENT environment variable.
 client_config_template = {
-    "shared_list_name": "<name>",
     "server_port": "<number>",
 }
-
-# Create empty string of this size up front, since cannot grow it.
-BUFFER_SIZE = 1024 * 1024
-
-# Slots in our ShareableList.
-FRAME_NUMBER = 0
-JSON_DATA = 1
 
 
 class MonitorService:
     """Make data available to a client via shared memory.
 
-    We are using JSON via ShareableList for prototyping with small amounts
-    of data. For bulk binary data, like images, it looks like using numpy's
-    recarray with complex fields is the most powerful approach. Definitely
-    do not use JSON for "lots" of data.
+    Originally we used a ShareableList and serialized JSON into one of the
+    slots in the list. However now we are using the MonitorApi._data
+    dict proxy object instead. That serializes to JSON under the hood,
+    but it's nicer that doing int ourselves.
+
+    So this class is not doing much right now. However if we add true
+    shared memory buffers for numpy, etc. then this class might manager
+    those.
     """
 
     def __init__(self, config: dict, manager: SharedMemoryManager):
         super().__init__()
         self._config = config
         self._manager = manager
-
-        # Anyone can add to data with our self.add_data() then once per
-        # frame we encode it into JSON and write into the shared list.
-        #
-        # Using JSON and a shared list slot might be replaced by
-        # SyncManager objects. But it was a quick way to get started.
-        # And quite fast really.
-        self._data = {}
-        self.frame_number = 0
-
-        # We expect to have more shared memory resources soon, but right
-        # now it's just this shared list.
-        self.shared_list = self._create_shared_list()
 
         if START_CLIENTS:
             self._start_clients()
@@ -167,11 +141,7 @@ class MonitorService:
         num_clients = len(self._config['clients'])
         LOGGER.info("Starting %d clients...", num_clients)
 
-        # Every client gets the same config, stuff in current values.
-        client_config = copy.deepcopy(client_config_template)
-        client_config['shared_list_name'] = self.shared_list.shm.name
-        client_config['server_port'] = server_port
-        env = {"NAPARI_MON_CLIENT": base64_encoded_json(client_config)}
+        env = self._create_env(server_port)
 
         # Start every client.
         for args in self._config['clients']:
@@ -182,32 +152,23 @@ class MonitorService:
 
         LOGGER.info("Started %d clients.", num_clients)
 
-    def _create_shared_list(self) -> None:
-        """Create our shared list."""
-        # Create placeholder so we reserve the space. Probably not the best
-        # way to pass JSON but it works. See shared memory with numpy
-        # for much more powerful options or all types including strings.
-        buffer_str = "{}" + " " * BUFFER_SIZE
+    def _create_env(self, server_port: int) -> dict:
+        """Create and return the environment for the client.
 
-        # These are our two shared memory slots.
-        # FRAME_NUMBER = 0
-        # JSON_DATA = 1
-        slots = [self.frame_number, buffer_str, buffer_str]
-        shared_list = self._manager.ShareableList(slots)
+        Parameters
+        ----------
+        server_port : int
+            The port the client should connect to.
+        """
+        # Every client gets the same config. Copy template and then stuff
+        # in the correct values.
+        client_config = copy.deepcopy(client_config_template)
+        client_config['server_port'] = server_port
 
-        return shared_list
-
-    def poll(self) -> None:
-        """Write accumulated data into shared memory."""
-        self.shared_list[JSON_DATA] = numpy_dumps(self._data)
-
-        # Increment the frame number so clients know something changed.
-        self.frame_number += 1
-        self.shared_list[FRAME_NUMBER] = self.frame_number
-
-    def add_data(self, data) -> None:
-        """Add data, combined data will be posted once per frame."""
-        self._data.update(data)
+        # Start with our environment and just add in the one variable.
+        env = os.environ.copy()
+        env.update({"NAPARI_MON_CLIENT": base64_encoded_json(client_config)})
+        return env
 
     def stop(self) -> None:
         """Stop the shared memory service."""

@@ -11,12 +11,9 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from ...layerlist import LayerList
-
-if TYPE_CHECKING:
-    from ._service import MonitorService
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -137,6 +134,7 @@ class Monitor:
         # a parseable config file, have Python 3.9, etc.
         self._service = None
         self._api = None
+        self._running = False
 
     def __nonzero__(self):
         """Return True if the service is running.
@@ -146,7 +144,7 @@ class Monitor:
             if monitor:
                 monitor.add(...)
         """
-        return self._service is not None
+        return self._running
 
     def start(self, layers: LayerList) -> bool:
         """Start the monitor service, if it hasn't been started already.
@@ -156,7 +154,7 @@ class Monitor:
         bool
             True if we started the service or it was already started.
         """
-        if self._service is not None:
+        if self._running:
             return True  # It was already started.
 
         config = _get_monitor_config()
@@ -178,32 +176,28 @@ class Monitor:
         # Now we can start our service.
         self._service = MonitorService(config, self._api.manager)
 
+        self._running = True
         return True  # We started the service.
 
     def stop(self) -> None:
         """Stop the monitor service."""
-        if self._service is not None:
-            self._api.stop()
-            self._service.stop()
-            self._service = None
+        if not self._running:
+            return
 
-    def get(self) -> 'Optional[MonitorService]':
-        """Return the MonitorService instance if it was started.
+        self._api.stop()
+        self._api = None
 
-        Return
-        ------
-        Optional[MonitorService]
-            The running service, if there is one.
-        """
-        return self._service
+        self._service.stop()
+        self._service = None
 
-    def poll(self):
+        self._running = False
+
+    def poll(self) -> None:
         """Poll the monitor service if it was started."""
-        if self._service is not None:
-            self._service.poll()
+        if self._running:
             self._api.poll()
 
-    def add(self, data):
+    def add(self, data) -> None:
         """Add data to the monitor service.
 
         Caller should use this pattern:
@@ -213,8 +207,8 @@ class Monitor:
         So they do not waste time putting the data together if the
         monitor is not running.
         """
-        if self._service is not None:
-            self._service.add_data(data)
+        if self._running:
+            self._api.add_data(data)
 
 
 monitor = Monitor()

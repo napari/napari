@@ -48,6 +48,7 @@ class MonitorApi:
     # by the manager are.
     _event = Event()
     _queue = Queue()
+    _dict = dict()
 
     @staticmethod
     def _get_event() -> Event:
@@ -56,6 +57,10 @@ class MonitorApi:
     @staticmethod
     def _get_queue() -> Queue:
         return MonitorApi._queue
+
+    @staticmethod
+    def _get_dict() -> dict:
+        return MonitorApi._dict
 
     def __init__(self, layers: LayerList):
         # We expect there's a MonitorCommands method for every command
@@ -70,6 +75,7 @@ class MonitorApi:
             'shutdown_event', callable=self._get_event
         )
         SharedMemoryManager.register('command_queue', callable=self._get_queue)
+        SharedMemoryManager.register('data', callable=self._get_dict)
 
         # We ask for port 0 which means let the OS choose a port. We send
         # the chosen port to the client in its NAPARI_MON_CLIENT variable.
@@ -81,6 +87,7 @@ class MonitorApi:
         # Now we have these proxy objects.
         self._shutdown_event = self._manager.shutdown_event()
         self._command_queue = self._manager.command_queue()
+        self._data = self._manager.data()
 
     @property
     def manager(self) -> SharedMemoryManager:
@@ -135,3 +142,13 @@ class MonitorApi:
                 method(args)
             except AttributeError:
                 LOGGER.error("MonitorCommands.%s does not exist.", name)
+
+    def add_data(self, data: dict) -> None:
+        """Add data for shared memory clients to read.
+
+        Parameters
+        ----------
+        data : dict
+            Add this data, replacing anything with the same key.
+        """
+        self._data.update(data)
