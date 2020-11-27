@@ -210,8 +210,8 @@ class Monitor:
             if monitor:
                 monitor.add(...)
 
-        If they do not want to waste time create the input dict unless
-        the service is running.
+        So they do not waste time putting the data together if the
+        monitor is not running.
         """
         if self._service is not None:
             self._service.add_data(data)

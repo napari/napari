@@ -58,7 +58,8 @@ class QtRender(QWidget):
 
         self.setLayout(layout)
 
-    def _monitor(self):
+    def _update_monitor(self) -> None:
+        """Send information to the monitor."""
         # TODO_OCTREE: The OctreeLevelInfo and SliceConfig and
         # their attributes are messy. This becomes clear trying
         # to send a coherent message to the monitor. Ideally
@@ -115,4 +116,4 @@ class QtRender(QWidget):
         self.frame_rate.on_camera_move()
 
         if monitor:
-            self._monitor()
+            self._update_monitor()

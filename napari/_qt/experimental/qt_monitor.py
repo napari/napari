@@ -11,9 +11,11 @@ POLL_INTERVAL_MS = 33  # About 30Hz.
 class QtMonitor(QObject):
     """Polls the monitor service.
 
-    The goal is really to poll the service "once per frame" but we tie
-    into the camera as a proxy for that for now. We also might need to
-    poll based on a timer, one reason why this is a QObject.
+    This object is only created if NAPARI_MON is set.
+
+    To send data, it's only necessary to poll when the camera moves.
+    However to receive commands right now we need to poll all the time,
+    with a timer. We should be able to rid of timed polling eventually.
 
     Parameters
     ----------
