@@ -2,10 +2,10 @@ from typing import Tuple
 
 import numpy as np
 
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class GridCanvas:
     """Grid for canvas.
 

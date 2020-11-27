@@ -1,11 +1,11 @@
 import numpy as np
 
 from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 from ._viewer_constants import Position
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class ScaleBar:
     """Scale bar indicating size in world coordinates.
 
