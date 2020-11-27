@@ -108,11 +108,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
-        self.layers.events.inserted.connect(self._on_grid_change)
-        self.layers.events.removed.connect(self._on_grid_change)
-        self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.removed.connect(self._on_remove_layer)
+        self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -570,6 +568,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.reset_view()
 
         self._on_layers_change(None)
+        self._on_grid_change(None)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -593,7 +592,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer._dims.events.disconnect()
         for em in layer._dims.events.emitters.values():
             em.disconnect()
+
         self._on_layers_change(None)
+        self._on_grid_change(None)
 
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
