@@ -29,34 +29,28 @@ linux_task:
   matrix:
     env:
       PY_VER: "3.7"
-      PIP_FLAGS: ""
     env:
       PY_VER: "3.7"
       MIN_REQ: "1"
       # needed for NumPy 1.16 compatibility with dask arrays; see:
       # https://github.com/napari/napari/pull/1617#issuecomment-692372655
       NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: "1"
-      PIP_FLAGS: ""
     env:
       PY_VER: "3.8"
-      PIP_FLAGS: ""
     env:
       PY_VER: "3.8"
       PYTEST_FLAGS: --perfmon-only
       NAPARI_PERFMON: "1"
-      PIP_FLAGS: ""
     env:
       PY_VER: "3.8"
       PYTEST_FLAGS: --async_only
       NAPARI_ASYNC: "1"
-      PIP_FLAGS: ""
     env:
       # Early warning signal if upcoming dependency releases will break napari
       PY_VER: "3.8"
       PIP_FLAGS: "--pre"
     env:
       PY_VER: "3.9"
-      PIP_FLAGS: ""
 
   name: linux ${PY_VER}
 
@@ -81,7 +75,7 @@ linux_task:
     - bash install.sh -b -p $HOME/conda
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda install -y -n base conda=4.8.3
+    - conda update -y -n base conda
     - conda install -y python=$PY_VER
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
@@ -152,7 +146,7 @@ mac_task:
     - bash install.sh -b -p $HOME/conda
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda install -y -n base conda=4.8.3
+    - conda update -y -n base conda
     - conda install -y python=$PY_VER
 
   pip_cache:
@@ -226,7 +220,7 @@ win_task:
     - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda install -y -n base conda=4.8.3
+    - conda update -y -n base conda
     - conda install -y python=%PY_VER%
 
   pip_cache:
