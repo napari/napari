@@ -41,7 +41,6 @@ class MonitorCommands:
         show : bool
             If True the grid is shown.
         """
-        print(f"SHOW GRID: {show}")
         for layer in self.layers.selected:
             if isinstance(layer, OctreeImage):
                 layer.show_grid = show

@@ -71,6 +71,8 @@ class MonitorApi:
         )
         SharedMemoryManager.register('command_queue', callable=self._get_queue)
 
+        # We ask for port 0 which means let the OS choose a port. We send
+        # the chosen port to the client in its NAPARI_MON_CLIENT variable.
         self._manager = SharedMemoryManager(
             address=('127.0.0.1', 0), authkey=str.encode('napari')
         )
@@ -124,7 +126,7 @@ class MonitorApi:
         #
         #     { "set_grid": True }
         #
-        # Then we'll call self._commands.set_grid(True)
+        # Then we would call self._commands.set_grid(True)
         #
         for name, args in command.items():
             try:
