@@ -531,6 +531,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     @property
     def experimental(self):
         """Experimental commands for IPython console.
+
         For example run "viewer.experimental.cmds.loader.help".
         """
         from .experimental.commands import ExperimentalNamespace
@@ -539,10 +540,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
+
         Parameters
         ----------
         layer : :class:`napari.layers.Layer`
             Layer to add.
+
         Returns
         -------
         layer : :class:`napari.layers.Layer` or list
@@ -591,6 +594,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         multiscale=None,
     ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layer list.
+
         Parameters
         ----------
         data : array or list of array
@@ -693,6 +697,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be multiscale. The first image in the list
             should be the largest.
+
         Returns
         -------
         layer : :class:`napari.layers.Image` or list
@@ -779,9 +784,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         **kwargs,
     ) -> List[layers.Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
+
         A list of paths will be handed one-by-one to the napari_get_reader hook
         if stack is False, otherwise the full list is passed to each plugin
         hook.
+
         Parameters
         ----------
         path : str or list of str
@@ -805,6 +812,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
+
         Returns
         -------
         layers : list
@@ -840,9 +848,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer_type: Optional[str] = None,
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
+
         This function is mostly called from self.open_path, where the ``stack``
         argument determines whether a list of strings is handed to plugins one
         at a time, or en-masse.
+
         Parameters
         ----------
         path_or_paths : str or list of str
@@ -861,6 +871,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
+
         Returns
         -------
         List[layers.Layer]
@@ -900,7 +911,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self, data, meta: dict = None, layer_type: Optional[str] = None
     ) -> Union[layers.Layer, List[layers.Layer]]:
         """Add arbitrary layer data to the viewer.
+
         Primarily intended for usage by reader plugin hooks.
+
         Parameters
         ----------
         data : Any
@@ -915,6 +928,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             on the viewer instance.  If not provided, the layer is assumed to
             be "image", unless data.dtype is one of (np.int32, np.uint32,
             np.int64, np.uint64), in which case it is assumed to be "labels".
+
         Raises
         ------
         ValueError
@@ -922,10 +936,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         TypeError
             If any keyword arguments in ``meta`` are unexpected for the
             corresponding `add_*` method for this layer_type.
+
         Examples
         --------
         A typical use case might be to upack a tuple of layer data with a
         specified layer_type.
+
         >>> viewer = napari.Viewer()
         >>> data = (
         ...     np.random.random((10, 2)) * 20,
@@ -933,6 +949,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         ...     'points',
         ... )
         >>> viewer._add_layer_from_data(*data)
+
         """
 
         layer_type = (layer_type or '').lower()
@@ -990,14 +1007,17 @@ def _start_monitor(layers: LayerList) -> None:
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
+
     Parameters
     ----------
     data : LayerData
         1-, 2-, or 3-tuple with (data, meta, layer_type).
+
     Returns
     -------
     FullLayerData
         3-tuple with (data, meta, layer_type)
+
     Raises
     ------
     ValueError
@@ -1032,15 +1052,20 @@ def _unify_data_and_user_kwargs(
     fallback_name: str = None,
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
+
     If ``data == (_data, _meta, _type)``.  Then:
+
     - ``kwargs`` will be used to update ``_meta``
     - ``layer_type`` will replace ``_type`` and, if provided, ``_meta`` keys
         will be pruned to layer_type-appropriate kwargs
     - ``fallback_name`` is used if ``not _meta.get('name')``
+
     .. note:
+
         If a user specified both layer_type and additional keyword arguments
         to viewer.open(), it is their responsibility to make sure the kwargs
         match the layer_type.
+
     Parameters
     ----------
     data : LayerData
@@ -1054,6 +1079,7 @@ def _unify_data_and_user_kwargs(
     fallback_name : str, optional
         A name for the layer, to override any name in ``meta`` supplied by the
         plugin.
+
     Returns
     -------
     FullLayerData
@@ -1083,6 +1109,7 @@ def _unify_data_and_user_kwargs(
 
 def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
+
     Parameters
     ----------
     kwargs : dict
@@ -1090,16 +1117,19 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
         for the corresponding ``Viewer.add_<layer_type>`` method.
     layer_type : str
         The type of layer that is going to be added with these ``kwargs``.
+
     Returns
     -------
     pruned_kwargs : dict
         A key: value mapping where all of the keys are valid parameter names
         for the corresponding ``Viewer.add_<layer_type>`` method.
+
     Raises
     ------
     ValueError
         If ``ViewerModel`` does not provide an ``add_<layer_type>`` method
         for the provided ``layer_type``.
+
     Examples
     --------
     >>> test_kwargs = {
@@ -1109,6 +1139,7 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
+
     >>> # only labels has the ``num_colors`` argument
     >>> prune_kwargs(test_kwargs, 'labels')
     {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
