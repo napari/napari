@@ -2,7 +2,7 @@ from enum import auto
 
 import numpy as np
 
-from ..events.dataclass import Property, dataclass
+from ..events.dataclass import Property, evented_dataclass
 from ..misc import StringEnum
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
@@ -22,14 +22,16 @@ class ColormapInterpolationMode(StringEnum):
     ZERO = auto()
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class Colormap:
     """Colormap that relates intensity values to colors.
 
-    Parameters
+    Attributes
     ----------
     colors : array, shape (N, 4)
         Data used in the colormap.
+    name : str
+        Name of the colormap.
     controls : array, shape (N,) or (N+1,)
         Control points of the colormap.
     interpolation : str
@@ -37,8 +39,6 @@ class Colormap:
         'zero'. If 'linear', ncontrols = ncolors (one
         color per control point). If 'zero', ncontrols
         = ncolors+1 (one color per bin).
-    name : str
-        Name of the colormap.
     """
 
     colors: Property[np.ndarray, None, transform_color]
