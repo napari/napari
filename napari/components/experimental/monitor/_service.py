@@ -107,6 +107,8 @@ import logging
 import subprocess
 from multiprocessing.managers import SharedMemoryManager
 
+from ._utils import numpy_dumps
+
 LOGGER = logging.getLogger("napari.monitor")
 
 # If False we don't start any clients, for debugging.
@@ -226,9 +228,9 @@ class MonitorService:
 
     def poll(self) -> None:
         """Write accumulated data into shared memory."""
-        self.shared_list[JSON_DATA] = json.dumps(self._data)
+        self.shared_list[JSON_DATA] = numpy_dumps(self._data)
 
-        # Update the frame number so clients know something changed.
+        # Increment the frame number so clients know something changed.
         self.frame_number += 1
         self.shared_list[FRAME_NUMBER] = self.frame_number
 
