@@ -433,7 +433,6 @@ class OctreeImage(Image):
         base_shape = self.data[0].shape
         base_shape_2d = [base_shape[i] for i in self._dims.displayed]
 
-
         slice_config = SliceConfig(
             base_shape_2d, len(self.data), self._tile_size, self._delay_ms
         )
