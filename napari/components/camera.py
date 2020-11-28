@@ -18,6 +18,6 @@ class Camera:
         Only used during 3D viewing.
     """
 
-    center: Property[Tuple, None, tuple] = (0, 0, 0)
+    center: Property[Tuple[float, float, float], None, tuple] = (0, 0, 0)
     zoom: int = 1
     angles: Property[Tuple, None, tuple] = (0, 0, 90)
