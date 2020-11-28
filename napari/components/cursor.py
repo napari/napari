@@ -1,10 +1,10 @@
 from typing import Tuple
 
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 from ._viewer_constants import CursorStyle
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class Cursor:
     """Cursor object with position and properties of the cursor.
 
