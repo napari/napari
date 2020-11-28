@@ -187,6 +187,7 @@ def set_with_events(self: C, name: str, value: Any) -> None:
     if different:
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
+        self.events.values_updated()
 
 
 def add_events_to_class(cls: Type[C]) -> Type[C]:
@@ -222,10 +223,13 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             for em in self.events.emitters:
                 e_fields.pop(em, None)
-            self.events.add(**e_fields)
+            self.events.add(values_updated=None, **e_fields)
         else:
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **e_fields
+                source=self,
+                auto_connect=False,
+                values_updated=None,
+                **e_fields,
             )
         # call original __post_init__
         if orig_post_init is not None:
