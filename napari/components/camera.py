@@ -1,6 +1,9 @@
 from typing import Tuple
 
 from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.misc import force_3_tuple
+
+_3_Tuple = Tuple[float, float, float]
 
 
 @evented_dataclass
@@ -9,8 +12,8 @@ class Camera:
 
     Attributes
     ----------
-    center : 2-tuple or 3-tuple
-        Center of the camera for either 2D or 3D viewing.
+    center : 3-tuple
+        Center of the camera. In 2D viewing the last two values are used.
     zoom : float
         Scale from canvas pixels to world pixels.
     angles : 3-tuple
@@ -18,6 +21,6 @@ class Camera:
         Only used during 3D viewing.
     """
 
-    center: Property[Tuple[float, float, float], None, tuple] = (0, 0, 0)
-    zoom: int = 1
-    angles: Property[Tuple, None, tuple] = (0, 0, 90)
+    center: Property[_3_Tuple, None, force_3_tuple] = (0,) * 3
+    zoom: float = 1
+    angles: Property[_3_Tuple, None, force_3_tuple] = (0,) * 3

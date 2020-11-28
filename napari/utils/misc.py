@@ -336,3 +336,24 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def force_3_tuple(value):
+    """Force into a length 3-tuple.
+
+    Parameters
+    ----------
+    value : iterable
+        Iterable to be forced into length 3-tuple.
+
+    Returns
+    -------
+    3-tuple
+        Forced tuple.
+    """
+    tuple_value = tuple(value)
+    if len(tuple_value) < 3:
+        tuple_value = (0,) * (3 - len(tuple_value)) + tuple_value
+    elif len(tuple_value) > 3:
+        tuple_value = tuple_value[-3:]
+    return tuple_value

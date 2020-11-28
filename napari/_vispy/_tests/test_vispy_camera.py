@@ -39,7 +39,7 @@ def test_vispy_camera_update_from_model(make_test_viewer):
     viewer.camera.zoom = 4
 
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
-    np.testing.assert_almost_equal(viewer.camera.center, (11, 12))
+    np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
     np.testing.assert_almost_equal(viewer.camera.zoom, 4)
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
     np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
@@ -65,7 +65,7 @@ def test_camera_model_update_from_vispy(make_test_viewer):
     vispy_camera.on_draw(None)
 
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
-    np.testing.assert_almost_equal(viewer.camera.center, (11, 12))
+    np.testing.assert_almost_equal(viewer.camera.center, (0, 11, 12))
     np.testing.assert_almost_equal(viewer.camera.zoom, 4)
     np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
     np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
