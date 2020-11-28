@@ -38,33 +38,28 @@ def reorder_after_dim_reduction(order):
 class Dims:
     """Dimensions object modeling slicing and displaying.
 
-    Parameters
-    ----------
-    ndim : int, optional
-        Number of dimensions
-    ndisplay : int, optional
-        Number of displayed dimensions.
-    order : list of int, optional
-        Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3.
-    axis_labels : list of str, optional
-        Dimension names
-
     Attributes
     ----------
+    ndim : int
+        Number of dimensions.
+    ndisplay : int
+        Number of displayed dimensions.
+    last_used : int
+        Dimension which was last used.
     range : list of 3-tuple
         List of tuples (min, max, step), one for each dimension. In a world
         coordinates space.
+    current_step : tuple of int
+        Tuple the slider position for each dims slider, in slider coordinates.
+    order : tuple of int
+        Tuple of ordering the dimensions, where the last dimensions are rendered.
+    axis_labels : tuple of str
+        Tuple of labels for each dimension.
+    nsteps : tuple of int
+        Number of steps available to each slider.
     point : list of float
         List of floats setting the current value of the range slider when in
         POINT mode, one for each dimension. In a world coordinates space.
-    current_step : tuple of int
-        Tuple the slider position for each dims slider, in slider coordinates.
-    nsteps : tuple of int
-        Number of steps available to each slider.
-    ndim : int
-        Number of dimensions.
     displayed : tuple
         List of dimensions that are displayed.
     not_displayed : tuple
