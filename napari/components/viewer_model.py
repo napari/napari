@@ -128,6 +128,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
 
+        _start_monitor(self.layers)  # Experimental monitor service.
+
     def __str__(self):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
@@ -556,6 +558,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer.events.data.connect(self._on_layers_change)
         layer.name = self.layers._coerce_name(layer.name, layer)
         layer.events.name.connect(self.layers._update_name)
+        layer.events.scale.connect(self._on_layers_change)
+        layer.events.translate.connect(self._on_layers_change)
+        layer.events.rotate.connect(self._on_layers_change)
+        layer.events.shear.connect(self._on_layers_change)
+        layer.events.affine.connect(self._on_layers_change)
         layer.selected = True
         self.layers.append(layer)
         self.layers.unselect_all(ignore=layer)
@@ -992,6 +999,14 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
+
+
+def _start_monitor(layers: LayerList) -> None:
+    """Start the monitor service if configured to use it."""
+    if os.getenv("NAPARI_MON") not in [None, "0"]:
+        from ..components.experimental.monitor import monitor
+
+        monitor.start(layers)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
