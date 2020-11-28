@@ -3,7 +3,7 @@ from typing import Tuple
 from ..utils.events.dataclass import Property, evented_dataclass
 from ..utils.misc import force_3_tuple
 
-_3_Tuple = Tuple[float, float, float]
+Len_3_Tuple = Tuple[float, float, float]
 
 
 @evented_dataclass
@@ -21,6 +21,6 @@ class Camera:
         Only used during 3D viewing.
     """
 
-    center: Property[_3_Tuple, None, force_3_tuple] = (0,) * 3
+    center: Property[Len_3_Tuple, None, force_3_tuple] = (0,) * 3
     zoom: float = 1
-    angles: Property[_3_Tuple, None, force_3_tuple] = (0,) * 3
+    angles: Property[Len_3_Tuple, None, force_3_tuple] = (0,) * 3
