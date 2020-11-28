@@ -2,7 +2,7 @@ from typing import ClassVar, Sequence, Tuple, Union
 
 import numpy as np
 
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 
 
 def only_2D_3D(ndisplay):
@@ -34,7 +34,7 @@ def reorder_after_dim_reduction(order):
     return arr.tolist()
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class Dims:
     """Dimensions object modeling slicing and displaying.
 
