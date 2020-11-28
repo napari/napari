@@ -338,22 +338,21 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-def force_3_tuple(value):
-    """Force into a length 3-tuple.
+def ensure_n_tuple(val, n, fill=0):
+    """Ensure input is a length n tuple.
 
     Parameters
     ----------
-    value : iterable
-        Iterable to be forced into length 3-tuple.
+    val : iterable
+        Iterable to be forced into length n-tuple.
+    n : int
+        Length of tuple.
 
     Returns
     -------
-    3-tuple
-        Forced tuple.
+    tuple
+        Coerced tuple.
     """
-    tuple_value = tuple(value)
-    if len(tuple_value) < 3:
-        tuple_value = (0,) * (3 - len(tuple_value)) + tuple_value
-    elif len(tuple_value) > 3:
-        tuple_value = tuple_value[-3:]
-    return tuple_value
+    assert n > 0, 'n must be greater than 0'
+    tuple_value = tuple(val)
+    return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
