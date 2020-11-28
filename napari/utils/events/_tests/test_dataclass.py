@@ -1,5 +1,6 @@
 import inspect
 from dataclasses import asdict, field
+from functools import partial
 from typing import ClassVar, List
 from unittest.mock import Mock
 
@@ -259,3 +260,30 @@ def test_dataclass_events_deprecated():
     obj = A("a")
     with pytest.warns((FutureWarning,)):
         assert obj.events.c is obj.events.b
+
+
+def test_values_updated():
+    @evented_dataclass(properties=True, events=True)
+    class A:
+        a: str
+        b: int = 2
+
+    obj1 = A("a", 2)
+    obj2 = A("b", 2)
+
+    assert obj1.as_dict() == {"a": "a", "b": 2}
+    assert obj2.as_dict() == {"a": "b", "b": 2}
+
+    count = {"a": 0, "b": 0, "values_updated": 0}
+
+    def count_calls(name, event):
+        count[name] += 1
+
+    obj2.events.a.connect(partial(count_calls, "a"))
+    obj2.events.b.connect(partial(count_calls, "b"))
+    obj2.events.values_updated.connect(partial(count_calls, "values_updated"))
+
+    obj2.update_from_dict(obj1.as_dict())
+
+    assert obj2.as_dict() == {"a": "a", "b": 2}
+    assert count == {"a": 1, "b": 0, "values_updated": 1}

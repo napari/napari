@@ -396,6 +396,21 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     return cls
 
 
+def update_from_dict(self, values):
+    if self.as_dict == values:
+        return
+
+    if hasattr(self, "events"):
+        self.events.values_updated.block()
+
+    for key, value in values.items():
+        setattr(self, key, value)
+
+    if hasattr(self, "events"):
+        self.events.values_updated.unblock()
+    self.events.values_updated()
+
+
 @tz.curry
 def evented_dataclass(
     cls: Type[C],
@@ -485,4 +500,6 @@ def evented_dataclass(
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
     setattr(cls, '_get_state', _dc.asdict)
+    setattr(cls, 'as_dict', _dc.asdict)
+    setattr(cls, 'update_from_dict', update_from_dict)
     return cls
