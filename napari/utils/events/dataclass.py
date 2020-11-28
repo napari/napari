@@ -181,7 +181,9 @@ def set_with_events(self: C, name: str, value: Any) -> None:
     # if different we emit the event with new value
     after = getattr(self, name)
     if isinstance(before, np.ndarray) or isinstance(after, np.ndarray):
-        different = np.any(before != after)
+        different = (
+            np.any(before != after) if before.size == after.size else True
+        )
     else:
         different = before != after
     if different:
@@ -228,6 +230,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             self.events = EmitterGroup(
                 source=self,
                 auto_connect=False,
+                deprecated=getattr(cls, "deprecated_events", None),
                 values_updated=None,
                 **e_fields,
             )

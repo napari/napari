@@ -247,3 +247,15 @@ def test_dataclass_signature():
         # c: Property[Anchor, str, Anchor] = Anchor.CENTER
 
     assert str(inspect.signature(A)) == '(a: str, b: int = 2) -> None'
+
+
+def test_dataclass_events_deprecated():
+    @evented_dataclass(properties=True, events=True)
+    class A:
+        a: str
+        b: int = 2
+        deprecated_events = {"c": "b"}
+
+    obj = A("a")
+    with pytest.warns((FutureWarning,)):
+        assert obj.events.c is obj.events.b
