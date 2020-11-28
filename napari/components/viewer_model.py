@@ -551,6 +551,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer.events.data.connect(self._on_layers_change)
         layer.name = self.layers._coerce_name(layer.name, layer)
         layer.events.name.connect(self.layers._update_name)
+        layer.events.scale.connect(self._on_layers_change)
+        layer.events.translate.connect(self._on_layers_change)
+        layer.events.rotate.connect(self._on_layers_change)
+        layer.events.shear.connect(self._on_layers_change)
+        layer.events.affine.connect(self._on_layers_change)
         layer.selected = True
         # For the labels layer we need to reset the undo/ redo
         # history whenever the displayed slice changes. Once
