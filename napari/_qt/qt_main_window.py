@@ -298,6 +298,8 @@ class Window:
                 # Is there a better place to make sure this is done on exit?
                 perf.timers.stop_trace_file()
 
+            _stop_monitor()
+
         exitAction.triggered.connect(handle_exit)
 
         self.file_menu = self.main_menu.addMenu('&File')
@@ -736,3 +738,11 @@ class Window:
         self.qt_viewer.close()
         self._qt_window.close()
         del self._qt_window
+
+
+def _stop_monitor() -> None:
+    """Stop the monitor service if configured to use it."""
+    if os.getenv("NAPARI_MON") not in [None, "0"]:
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()

@@ -581,3 +581,17 @@ def test_camera():
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
+
+
+def test_update_scale():
+    viewer = ViewerModel()
+    np.random.seed(0)
+    shape = (10, 15, 20)
+    data = np.random.random(shape)
+    viewer.add_image(data)
+    assert viewer.dims.range == [(0.0, x - 1.0, 1.0) for x in shape]
+    scale = (3.0, 2.0, 1.0)
+    viewer.layers[0].scale = scale
+    assert viewer.dims.range == [
+        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
+    ]
