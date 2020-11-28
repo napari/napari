@@ -25,7 +25,7 @@ class QtMonitor(QObject):
 
     def __init__(self, parent: QObject, camera: Camera):
         super().__init__(parent)
-        camera.events.center.connect(self._on_camera_move)
+        camera.events.connect(self._on_camera_move)
 
         self.timer = QTimer()
         self.timer.setInterval(POLL_INTERVAL_MS)
