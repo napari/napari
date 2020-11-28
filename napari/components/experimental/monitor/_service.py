@@ -2,6 +2,8 @@
 
 Experimental shared memory service.
 
+Requires Python 3.9, for now at least.
+
 Monitor Config File
 -------------------
 Only if NAPARI_MON is set and points to a config file will the monitor even
