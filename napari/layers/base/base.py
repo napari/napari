@@ -489,7 +489,7 @@ class Layer(KeymapProvider, ABC):
     def dims(self):
         warnings.warn(
             (
-                "The layer.dims parameter is deprecated and will be removed in version 0.4.2."
+                "The layer.dims parameter is deprecated and will be removed in version 0.4.3."
                 " Instead you should use the viewer.dims parameter on the main viewer object."
             ),
             category=DeprecationWarning,
@@ -622,7 +622,7 @@ class Layer(KeymapProvider, ABC):
         """
         warnings.warn(
             (
-                "The shape attribute is deprecated and will be removed in version 0.4.2."
+                "The shape attribute is deprecated and will be removed in version 0.4.3."
                 " Instead you should use the extent.data and extent.world attributes"
                 " to get the extent of the data in data or world coordinates."
             ),

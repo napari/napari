@@ -176,7 +176,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """tuple: Size of grid."""
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -188,7 +188,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_size(self, grid_size):
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -201,7 +201,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """int: Number of layers in each grid square."""
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -213,7 +213,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_stride(self, grid_stride):
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -480,7 +480,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
@@ -501,7 +501,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
             ),
             category=DeprecationWarning,
