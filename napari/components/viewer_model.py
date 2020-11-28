@@ -128,6 +128,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
 
+        _start_monitor(self.layers)  # Experimental monitor service.
+
     def __str__(self):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
@@ -998,6 +1000,14 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
+
+
+def _start_monitor(layers: LayerList) -> None:
+    """Start the monitor service if configured to use it."""
+    if os.getenv("NAPARI_MON") not in [None, "0"]:
+        from ..components.experimental.monitor import monitor
+
+        monitor.start(layers)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

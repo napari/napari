@@ -118,6 +118,21 @@ class OctreeImage(Image):
         """
         return self._tile_size
 
+    @tile_size.setter
+    def tile_size(self, tile_size: int) -> None:
+        """Set new tile_size.
+
+        Parameters
+        ----------
+        tile_size : int
+            The new tile size.
+        """
+        self._tile_size = tile_size
+        self.events.tile_size()
+
+        self._slice = None  # For now must explicitly delete it
+        self.refresh()  # Creates a new slice.
+
     @property
     def tile_shape(self) -> tuple:
         """Return the shape of a single tile, for example 256x256x3.
@@ -141,13 +156,6 @@ class OctreeImage(Image):
             tile_shape += (init_shape[-1],)
 
         return tile_shape
-
-    @tile_size.setter
-    def tile_size(self, tile_size: int) -> None:
-        self._tile_size = tile_size
-        self.events.tile_size()
-        self._slice = None  # For now must explicitly delete it
-        self.refresh()  # Create a new slice.
 
     @property
     def slice_config(self) -> SliceConfig:
@@ -506,5 +514,6 @@ class OctreeImage(Image):
         show : bool
             True if we should draw a grid on top of the tiles.
         """
-        self._show_grid = show
-        self.events.loaded()  # redraw
+        if self._show_grid != show:
+            self._show_grid = show
+            self.events.loaded()  # redraw
