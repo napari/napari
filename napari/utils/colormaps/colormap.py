@@ -43,7 +43,7 @@ class Colormap:
 
     colors: Property[np.ndarray, None, transform_color]
     name: str = 'custom'
-    controls: np.ndarray = np.zeros((0, 4))
+    controls: Property[np.ndarray, None, np.asarray] = np.zeros((0, 4))
     interpolation: Property[
         ColormapInterpolationMode, str, ColormapInterpolationMode
     ] = ColormapInterpolationMode.LINEAR
