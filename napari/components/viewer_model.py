@@ -83,7 +83,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
-        self.camera = Camera(self.dims)
+        self.camera = Camera()
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -125,6 +125,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
+
+        _start_monitor(self.layers)  # Experimental monitor service.
 
     def __str__(self):
         """Simple string representation"""
@@ -172,7 +174,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """tuple: Size of grid."""
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -184,7 +186,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_size(self, grid_size):
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -197,7 +199,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """int: Number of layers in each grid square."""
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -209,7 +211,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_stride(self, grid_stride):
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -323,7 +325,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
-
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -477,7 +478,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
@@ -498,7 +499,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
             ),
             category=DeprecationWarning,
@@ -1052,6 +1053,14 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
+
+
+def _start_monitor(layers: LayerList) -> None:
+    """Start the monitor service if configured to use it."""
+    if os.getenv("NAPARI_MON") not in [None, "0"]:
+        from ..components.experimental.monitor import monitor
+
+        monitor.start(layers)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

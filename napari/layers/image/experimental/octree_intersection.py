@@ -63,6 +63,7 @@ class OctreeIntersection:
 
     def __init__(self, level: OctreeLevel, view: OctreeView):
         self.level = level
+        self.corners = view.corners
 
         info = self.level.info
 
@@ -155,3 +156,52 @@ class OctreeIntersection:
                     chunks.append(chunk)
 
         return chunks
+
+    @property
+    def tile_state(self) -> dict:
+        """Return tile state.
+
+        Return
+        ------
+        dict
+            The tile state.
+        """
+        x, y = np.mgrid[self._row_range, self._col_range]
+        seen = np.vstack((x.ravel(), y.ravel())).T
+
+        return {
+            "tile_state": {
+                # A list of (row, col) pairs of visible tiles.
+                "seen": seen,
+                # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
+                "corners": self.corners,
+            }
+        }
+
+    @property
+    def tile_config(self) -> dict:
+        """Return tile config
+
+        Return
+        ------
+        dict
+            The file config.
+        """
+        # TODO_OCTREE: Need to cleanup and re-name and organize
+        # OctreeLevelInfo and SliceConfig attrbiutes. Messy.
+        level = self.level
+        image_shape = level.info.image_shape
+        shape_in_tiles = level.info.shape_in_tiles
+
+        slice_config = level.info.slice_config
+        base_shape = slice_config.base_shape
+        tile_size = slice_config.tile_size
+
+        return {
+            "tile_config": {
+                "base_shape": base_shape,
+                "image_shape": image_shape,
+                "shape_in_tiles": shape_in_tiles,
+                "tile_size": tile_size,
+            }
+        }

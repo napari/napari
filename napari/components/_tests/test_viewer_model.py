@@ -569,20 +569,17 @@ def test_camera():
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
-    assert viewer.camera.ndisplay == 3
     assert viewer.camera.center == (4.5, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
 
