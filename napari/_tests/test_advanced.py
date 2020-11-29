@@ -259,3 +259,27 @@ def test_labels_undo_redo(make_test_viewer):
     # cannot undo as limit exceeded
     labels.undo()
     assert np.array_equal(l2, labels.data)
+
+
+def test_adding_removing_layer(make_test_viewer):
+    """Test adding and removing a layer."""
+    np.random.seed(0)
+    viewer = make_test_viewer()
+
+    # add layer
+    data = np.random.random((2, 6, 30, 40))
+    viewer.add_image(data)
+    assert np.all(viewer.layers[0].data == data)
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4
+
+    # remove layer, viewer resets
+    layer = viewer.layers[0]
+    viewer.layers.remove(layer)
+    assert len(viewer.layers) == 0
+    assert viewer.dims.ndim == 2
+
+    # readd layer
+    viewer.layers.append(layer)
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4
