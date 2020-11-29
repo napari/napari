@@ -174,4 +174,5 @@ class MonitorService:
 
     def stop(self) -> None:
         """Stop the shared memory service."""
+        LOGGER.info("MonitorService.stop")
         self._manager.shutdown()
