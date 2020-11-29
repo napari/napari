@@ -544,20 +544,24 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             Layer to add.
         """
         layer = event.value
+
+        # Connect individual layer events to viewer events
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
-        layer.name = self.layers._coerce_name(layer.name, layer)
-        layer.events.name.connect(self.layers._update_name)
         layer.events.scale.connect(self._on_layers_change)
         layer.events.translate.connect(self._on_layers_change)
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
-        layer.selected = True
+
+        # Coerce name into being unique and connect event to ensure uniqueness
+        layer.name = self.layers._coerce_name(layer.name, layer)
+        layer.events.name.connect(self.layers._update_name)
+
         # For the labels layer we need to reset the undo/ redo
         # history whenever the displayed slice changes. Once
         # we have full undo/ redo functionality, this can be
@@ -567,14 +571,18 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.dims.events.order.connect(layer._reset_history)
             self.dims.events.current_step.connect(layer._reset_history)
 
+        # Make layer selected and unselect all others
+        layer.selected = True
         self.layers.unselect_all(ignore=layer)
+
+        # Update dims and grid model
+        self._on_layers_change(None)
+        self._on_grid_change(None)
+        # Slice current layer based on dims
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
             self.reset_view()
-
-        self._on_layers_change(None)
-        self._on_grid_change(None)
 
     def _on_remove_layer(self, event):
         """Disconnect old layer events.
@@ -820,14 +828,17 @@ class ViewerModel(KeymapHandler, KeymapProvider):
                         f"Received sequence for argument '{k}', "
                         "did you mean to specify a 'channel_axis'? "
                     )
+            layer = image_class(data, **kwargs)
+            self.layers.append(layer)
 
-            return self.layers.append(image_class(data, **kwargs))
+            return layer
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.layers.append(image_class(image, **i_kwargs))
+                layer = image_class(image, **i_kwargs)
+                self.layers.append(layer)
                 layer_list.append(layer)
 
             return layer_list
