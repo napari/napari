@@ -59,9 +59,11 @@ def test_no_callbacks(Layer, data, ndim):
     assert layer.ndim == ndim
 
     # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
     # This can be removed once `_dims` is dropped
+    len(layer._dims.events.callbacks) == 0
     for em in layer._dims.events.emitters.values():
         assert len(em.callbacks) == 0

@@ -1,6 +1,8 @@
 import numpy as np
 import pytest
 
+from napari.layers import Image
+
 
 def test_4D_5D_images(make_test_viewer):
     """Test adding 4D followed by 5D image layers to the viewer.
@@ -266,18 +268,41 @@ def test_adding_removing_layer(make_test_viewer):
     np.random.seed(0)
     viewer = make_test_viewer()
 
-    # add layer
+    # Create layer
     data = np.random.random((2, 6, 30, 40))
-    viewer.add_image(data)
+    layer = Image(data)
+
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+    # This can be removed once `_dims` is dropped
+    len(layer._dims.events.callbacks) == 0
+    for em in layer._dims.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+    # Add layer
+    viewer.layers.append(layer)
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
 
-    # remove layer, viewer resets
+    # Remove layer, viewer resets
     layer = viewer.layers[0]
     viewer.layers.remove(layer)
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
+
+    # Check that no other internal callbacks have been registered
+    assert len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+    # This can be removed once `_dims` is dropped
+    len(layer._dims.events.callbacks) == 0
+    for em in layer._dims.events.emitters.values():
+        assert len(em.callbacks) == 0
 
     # readd layer
     viewer.layers.append(layer)

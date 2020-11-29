@@ -598,15 +598,23 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             The layer that was added (same as input).
         """
         layer = event.value
+
+        # Disconnect all events from layer
         layer.events.disconnect()
         for em in layer.events.emitters.values():
             em.disconnect()
+
         # Disconnect dims events. Once layer._dims removed this
         # can be removed too.
         layer._dims.events.disconnect()
         for em in layer._dims.events.emitters.values():
             em.disconnect()
 
+        # For the labels layer disconnect history resets
+        if hasattr(layer, '_reset_history'):
+            self.dims.events.ndisplay.disconnect(layer._reset_history)
+            self.dims.events.order.disconnect(layer._reset_history)
+            self.dims.events.current_step.disconnect(layer._reset_history)
         self._on_layers_change(None)
         self._on_grid_change(None)
 
