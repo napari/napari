@@ -250,7 +250,9 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             for em in self.events.emitters:
                 e_fields.pop(em, None)
-            self.events.add(values_updated=None, **e_fields)
+            self.events.add(**e_fields)
+            if "values_updated" not in self.events.emitters:
+                self.events.add(values_updated=None)
         else:
             self.events = EmitterGroup(
                 source=self,

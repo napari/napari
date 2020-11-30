@@ -207,7 +207,7 @@ def test_event_inheritance():
 
     b = B(1)
     assert asdict(b) == {'a': 1, 'x': 2, 'z': 4}
-    assert set(b.events.emitters) == {'z', 'a', 'x'}
+    assert set(b.events.emitters) == {'z', 'a', 'x', 'values_updated'}
     for key in {'z', 'a', 'x'}:
         setattr(b.events, key, Mock(getattr(b.events, key)))
         setattr(b, key, 10)
@@ -227,7 +227,7 @@ def test_event_partial_inheritance():
         a: int = 2
         z: int = 4
 
-    assert set(B().events.emitters) == {'z', 'a'}
+    assert set(B().events.emitters) == {'z', 'a', 'values_updated'}
 
     @evented_dataclass(events=True, properties=False)
     class C:
@@ -239,7 +239,7 @@ def test_event_partial_inheritance():
         a: int = 2
         z: int = 4
 
-    assert set(D().events.emitters) == {'x', 'a'}
+    assert set(D().events.emitters) == {'x', 'a', 'values_updated'}
 
 
 def test_dataclass_signature():
