@@ -1,5 +1,6 @@
 """MonitorApi class.
 """
+import json
 import logging
 from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
@@ -161,6 +162,7 @@ class MonitorApi:
         """
         self._remote.data.update(data)
 
-    def post(self, message: dict) -> None:
-        """Post a message to shared memory clients."""
+    def send(self, message: dict) -> None:
+        """Send a message to shared memory clients."""
+        LOGGER.info("MonitorApi.send: %s", json.dumps(message))
         self._remote.client_messages.put(message)

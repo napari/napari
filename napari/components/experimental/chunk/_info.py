@@ -149,7 +149,9 @@ class LoadStats:
         self.recent_loads = self.recent_loads[-keep:] + [load_info]
 
         if monitor:
-            monitor.add({"load": {"num_bytes": num_bytes, "load_ms": load_ms}})
+            monitor.send(
+                {"load": {"num_bytes": num_bytes, "load_ms": load_ms}}
+            )
 
     @property
     def mbits(self) -> float:

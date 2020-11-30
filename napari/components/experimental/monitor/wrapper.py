@@ -73,7 +73,7 @@ def _setup_logging(config: dict) -> None:
         return  # No log file.
 
     # Nuke/reset log for now.
-    Path(log_path).unlink()
+    # Path(log_path).unlink()
 
     fh = logging.FileHandler(log_path)
     LOGGER.addHandler(fh)
@@ -214,16 +214,19 @@ class Monitor:
         if self._running:
             self._api.add(data)
 
-    def post(self, message: dict) -> None:
-        """Post a message to shared memory clients.
+    def send(self, message: dict) -> None:
+        """Send a message to shared memory clients.
 
         Parameters
         ----------
         message : dict
             Post this message to clients.
         """
+        assert False
         if self._running:
-            self._api.post(message)
+            self._api.send(message)
+        else:
+            assert False
 
 
 monitor = Monitor()
