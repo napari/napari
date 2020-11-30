@@ -291,6 +291,24 @@ def test_values_updated():
     assert count == {"a": 1, "b": 0, "values_updated": 1}
 
 
+def test_values_updated_array():
+    @evented_dataclass(properties=True, events=True)
+    class A:
+        a: str
+        b: int = 2
+
+    obj1 = A("a", 2)
+    count = {"b": 0}
+
+    def count_calls(name, event):
+        count[name] += 1
+
+    obj1.events.b.connect(partial(count_calls, "b"))
+
+    obj1.b = np.array([2, 2])
+    assert count["b"] == 1
+
+
 class TestCompare:
     def test_simple(self):
         assert compare(1, 1)
