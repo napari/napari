@@ -4,13 +4,15 @@ from functools import partial
 from typing import ClassVar, List
 from unittest.mock import Mock
 
+import dask.array as da
+import numpy as np
 import pytest
 from typing_extensions import Annotated
 
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.utils.events import EmitterGroup
-from napari.utils.events.dataclass import Property, evented_dataclass
+from napari.utils.events.dataclass import Property, compare, evented_dataclass
 
 
 @pytest.mark.parametrize("props, events", [(1, 1), (0, 1), (0, 0), (1, 0)])
@@ -287,3 +289,40 @@ def test_values_updated():
 
     assert obj2.as_dict() == {"a": "a", "b": 2}
     assert count == {"a": 1, "b": 0, "values_updated": 1}
+
+
+class TestCompare:
+    def test_simple(self):
+        assert compare(1, 1)
+        assert compare(1, 1.0)
+        assert not compare(1, 2)
+
+    def test_array(self):
+        assert compare([1, 2, 3], [1, 2, 3])
+        assert not compare((1, 2, 3), [1, 2, 3])
+        assert not compare([1, 2, 4], [1, 2, 3])
+        assert not compare([1, 2, 3], np.array([1, 2, 3]))
+        assert not compare([1, 2, 4], np.array([1, 2, 3]))
+        assert compare(np.array([1, 2, 3]), np.array([1, 2, 3]))
+        assert not compare(np.array([1, 2, 4]), np.array([1, 2, 3]))
+
+    def test_dask(self):
+        assert not compare(da.from_array([1, 2, 3]), da.from_array([1, 2, 3]))
+        assert not compare(da.from_array([1, 2, 3]), np.array([1, 2, 3]))
+        assert not compare(np.array([1, 2, 3]), da.from_array([1, 2, 3]))
+
+    def test_dict(self):
+        assert compare({1: 2, 2: 3}, {1: 2, 2: 3})
+        assert not compare({1: 2, 2: 3}, {1: 2, 2: 4})
+
+    def test_warnings(self):
+        with pytest.warns(UserWarning, match="Comparison method failed*"):
+            assert not compare(
+                [np.ones(2), np.zeros(2)], [np.ones(2), np.zeros(2)]
+            )
+
+        with pytest.warns(UserWarning, match="Comparison method failed*"):
+            assert not compare(
+                {1: np.ones(2), 2: np.zeros(2)},
+                {1: np.ones(2), 2: np.zeros(2)},
+            )

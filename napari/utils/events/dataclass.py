@@ -1,5 +1,6 @@
 import dataclasses as _dc
 import typing
+import warnings
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -12,6 +13,7 @@ from typing import (
     cast,
 )
 
+import dask.array as da
 import numpy as np
 import toolz as tz
 from typing_extensions import (
@@ -180,16 +182,39 @@ def set_with_events(self: C, name: str, value: Any) -> None:
 
     # if different we emit the event with new value
     after = getattr(self, name)
-    if isinstance(before, np.ndarray) or isinstance(after, np.ndarray):
-        different = (
-            np.any(before != after) if before.size == after.size else True
-        )
-    else:
-        different = before != after
-    if different:
+    if not compare(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
         self.events.values_updated()
+
+
+def compare(v1, v2):
+    """
+    Function for basic comparison compare.
+    For data of different type its return false (except for an int and float)
+    For dask array it returns False.
+
+    Parameters
+    ----------
+    v1: Any
+        first value
+    v2: Any
+        second value
+    """
+    if type(v1) != type(v2) and {int, float} != {type(v1), type(v2)}:
+        return
+    if isinstance(v1, da.core.Array):
+        return False
+    try:
+        if isinstance(v1, np.ndarray):
+            return np.array_equal(v1, v2)
+        return bool(v1 == v2)
+    except Exception as e:
+        warnings.warn(
+            "Comparison method failed. Returned False. "
+            f"There may be need to define custom _on_<name>_set method. Exception {e}"
+        )
+        return False
 
 
 def add_events_to_class(cls: Type[C]) -> Type[C]:
