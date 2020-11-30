@@ -222,11 +222,8 @@ class Monitor:
         message : dict
             Post this message to clients.
         """
-        assert False
         if self._running:
             self._api.send(message)
-        else:
-            assert False
 
 
 monitor = Monitor()
