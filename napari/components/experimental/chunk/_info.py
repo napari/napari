@@ -6,6 +6,7 @@ from enum import Enum
 
 import dask.array as da
 
+from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
 from ._config import async_config
 from ._request import ChunkRequest
@@ -146,6 +147,9 @@ class LoadStats:
         load_info = LoadInfo(num_bytes, load_ms, sync=sync)
         keep = self.NUM_RECENT_LOADS - 1
         self.recent_loads = self.recent_loads[-keep:] + [load_info]
+
+        if monitor:
+            monitor.add({"load": {"num_bytes": num_bytes, "load_ms": load_ms}})
 
     @property
     def mbits(self) -> float:

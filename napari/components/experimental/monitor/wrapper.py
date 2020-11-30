@@ -13,8 +13,6 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from ...layerlist import LayerList
-
 LOGGER = logging.getLogger("napari.monitor")
 
 # If False monitor is disabled even if we meet all other requirements.
@@ -136,7 +134,7 @@ class Monitor:
         self._api = None
         self._running = False
 
-    def __nonzero__(self):
+    def __nonzero__(self) -> bool:
         """Return True if the service is running.
 
         So that callers can do:
@@ -146,7 +144,13 @@ class Monitor:
         """
         return self._running
 
-    def start(self, layers: LayerList) -> bool:
+    @property
+    def run_command_event(self):
+        """The MonitorAPI fires this event for commands from clients."""
+        assert self._running
+        return self._api.events.run_command
+
+    def start(self) -> bool:
         """Start the monitor service, if it hasn't been started already.
 
         Return
@@ -171,7 +175,7 @@ class Monitor:
 
         # Create the API first. It will register our callbacks, then
         # we start the manager that will serve those callbacks.
-        self._api = MonitorApi(layers)
+        self._api = MonitorApi()
 
         # Now we can start our service.
         self._service = MonitorService(config, self._api.manager)
@@ -204,11 +208,22 @@ class Monitor:
             if monitor:
                 monitor.add(...)
 
-        So they do not waste time putting the data together if the
-        monitor is not running.
+        So they do not waste time putting creating their dict if the
+        monitor is not even running.
         """
         if self._running:
-            self._api.add_data(data)
+            self._api.add(data)
+
+    def post(self, message: dict) -> None:
+        """Post a message to shared memory clients.
+
+        Parameters
+        ----------
+        message : dict
+            Post this message to clients.
+        """
+        if self._running:
+            self._api.post(message)
 
 
 monitor = Monitor()
