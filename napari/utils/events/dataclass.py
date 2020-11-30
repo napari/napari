@@ -202,7 +202,7 @@ def compare(v1, v2):
         second value
     """
     if type(v1) != type(v2) and {int, float} != {type(v1), type(v2)}:
-        return
+        return False
     if isinstance(v1, da.core.Array):
         return False
     try:
