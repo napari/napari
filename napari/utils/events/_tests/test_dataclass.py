@@ -207,7 +207,7 @@ def test_event_inheritance():
 
     b = B(1)
     assert asdict(b) == {'a': 1, 'x': 2, 'z': 4}
-    assert set(b.events.emitters) == {'z', 'a', 'x', 'values_updated'}
+    assert set(b.events.emitters) == {'z', 'a', 'x'}
     for key in {'z', 'a', 'x'}:
         setattr(b.events, key, Mock(getattr(b.events, key)))
         setattr(b, key, 10)
@@ -227,7 +227,7 @@ def test_event_partial_inheritance():
         a: int = 2
         z: int = 4
 
-    assert set(B().events.emitters) == {'z', 'a', 'values_updated'}
+    assert set(B().events.emitters) == {'z', 'a'}
 
     @evented_dataclass(events=True, properties=False)
     class C:
@@ -239,7 +239,7 @@ def test_event_partial_inheritance():
         a: int = 2
         z: int = 4
 
-    assert set(D().events.emitters) == {'x', 'a', 'values_updated'}
+    assert set(D().events.emitters) == {'x', 'a'}
 
 
 def test_dataclass_signature():
@@ -283,12 +283,16 @@ def test_values_updated():
 
     obj2.events.a.connect(partial(count_calls, "a"))
     obj2.events.b.connect(partial(count_calls, "b"))
-    obj2.events.values_updated.connect(partial(count_calls, "values_updated"))
+    obj2.events.connect(partial(count_calls, "values_updated"))
 
     obj2.update_from_dict(obj1.as_dict())
 
     assert obj2.as_dict() == {"a": "a", "b": 2}
     assert count == {"a": 1, "b": 0, "values_updated": 1}
+
+    count = {"a": 0, "b": 0, "values_updated": 0}
+    obj2.update_from_dict({"a": "c", "b": 3})
+    assert count == {"a": 1, "b": 1, "values_updated": 1}
 
 
 def test_values_updated_array():

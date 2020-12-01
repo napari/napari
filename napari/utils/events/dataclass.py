@@ -32,7 +32,7 @@ except ImportError:
         return x
 
 
-from .event import EmitterGroup
+from .event import EmitterGroup, Event
 
 ON_SET = "_on_{name}_set"
 ON_GET = "_on_{name}_get"
@@ -185,7 +185,6 @@ def set_with_events(self: C, name: str, value: Any) -> None:
     if not compare(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
-        self.events.values_updated()
 
 
 def compare(v1, v2):
@@ -251,14 +250,11 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             for em in self.events.emitters:
                 e_fields.pop(em, None)
             self.events.add(**e_fields)
-            if "values_updated" not in self.events.emitters:
-                self.events.add(values_updated=None)
         else:
             self.events = EmitterGroup(
                 source=self,
                 auto_connect=False,
                 deprecated=getattr(cls, "deprecated_events", None),
-                values_updated=None,
                 **e_fields,
             )
         # call original __post_init__
@@ -427,15 +423,13 @@ def update_from_dict(self, values):
     if self.as_dict == values:
         return
 
-    if hasattr(self, "events"):
-        self.events.values_updated.block()
+    self.events.block()
 
     for key, value in values.items():
         setattr(self, key, value)
 
-    if hasattr(self, "events"):
-        self.events.values_updated.unblock()
-    self.events.values_updated()
+    self.events.unblock()
+    self.events(Event(self))
 
 
 @tz.curry
