@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
 
 from .. import __version__
 from ..resources import get_stylesheet
-from ..utils import perf
+from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.perf import perf_config
@@ -742,7 +742,7 @@ class Window:
 
 def _stop_monitor() -> None:
     """Stop the monitor service if configured to use it."""
-    if os.getenv("NAPARI_MON") not in [None, "0"]:
+    if config.async_octree:
         from ..components.experimental.monitor import monitor
 
         monitor.stop()

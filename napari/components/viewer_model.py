@@ -1004,7 +1004,7 @@ def _get_image_class() -> layers.Image:
 
 def _create_remote_commands(layers: LayerList) -> None:
     """Start the monitor service if configured to use it."""
-    if os.getenv("NAPARI_MON") in [None, "0"]:
+    if not config.async_octree:
         return None
 
     from ..components.experimental.monitor import monitor

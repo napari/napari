@@ -831,7 +831,7 @@ def _create_qt_monitor(
     Optional[QtMonitor]
         The new monitor instance, if any
     """
-    if os.getenv("NAPARI_MON") not in [None, "0"]:
+    if config.async_octree:
         from .experimental.qt_monitor import QtMonitor
 
         return QtMonitor(parent, camera)
