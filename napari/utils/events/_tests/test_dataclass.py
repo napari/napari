@@ -272,9 +272,10 @@ def test_values_updated():
 
     obj1 = A("a", 2)
     obj2 = A("b", 2)
+    obj3 = A("a", 1)
 
-    assert obj1.as_dict() == {"a": "a", "b": 2}
-    assert obj2.as_dict() == {"a": "b", "b": 2}
+    assert obj1.asdict() == {"a": "a", "b": 2}
+    assert obj2.asdict() == {"a": "b", "b": 2}
 
     count = {"a": 0, "b": 0, "values_updated": 0}
 
@@ -285,13 +286,17 @@ def test_values_updated():
     obj2.events.b.connect(partial(count_calls, "b"))
     obj2.events.connect(partial(count_calls, "values_updated"))
 
-    obj2.update_from_dict(obj1.as_dict())
+    obj2.update(obj1.asdict())
 
-    assert obj2.as_dict() == {"a": "a", "b": 2}
+    assert obj2.asdict() == {"a": "a", "b": 2}
     assert count == {"a": 1, "b": 0, "values_updated": 1}
 
     count = {"a": 0, "b": 0, "values_updated": 0}
-    obj2.update_from_dict({"a": "c", "b": 3})
+    obj2.update({"a": "c", "b": 3})
+    assert count == {"a": 1, "b": 1, "values_updated": 1}
+
+    count = {"a": 0, "b": 0, "values_updated": 0}
+    obj2.update(obj3)
     assert count == {"a": 1, "b": 1, "values_updated": 1}
 
 

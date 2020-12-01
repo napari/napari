@@ -419,8 +419,12 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     return cls
 
 
-def update_from_dict(self, values):
-    if self.as_dict == values:
+def update_from_dict(self, values, compare_fun=compare):
+    if isinstance(values, self.__class__):
+        values = values.asdict()
+    if not isinstance(values, dict):
+        raise ValueError(f"Unsupported update from {type(values)}")
+    if all(compare(values[k], v) for k, v in self.asdict().items()) == values:
         return
 
     self.events.block()
@@ -520,7 +524,6 @@ def evented_dataclass(
     if properties:
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
-    setattr(cls, '_get_state', _dc.asdict)
-    setattr(cls, 'as_dict', _dc.asdict)
-    setattr(cls, 'update_from_dict', update_from_dict)
+    setattr(cls, 'asdict', _dc.asdict)
+    setattr(cls, 'update', update_from_dict)
     return cls
