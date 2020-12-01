@@ -203,5 +203,6 @@ class OctreeIntersection:
                 "image_shape": image_shape,
                 "shape_in_tiles": shape_in_tiles,
                 "tile_size": tile_size,
+                "level_index": level.info.level_index,
             }
         }

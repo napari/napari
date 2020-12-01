@@ -11,7 +11,7 @@ def _set(env_var: str) -> bool:
     bool
         True if the env var was set to a non-zero value.
     """
-    return os.getenv(env_var, "0") != "0"
+    return os.getenv(env_var) not in [None, "0"]
 
 
 # Added this temporarily for octree debugging. The welcome visual causes

@@ -112,6 +112,25 @@ client_config_template = {
 }
 
 
+def _create_client_env(server_port: int) -> dict:
+    """Create and return the environment for the client.
+
+    Parameters
+    ----------
+    server_port : int
+        The port the client should connect to.
+    """
+    # Every client gets the same config. Copy template and then stuff
+    # in the correct values.
+    client_config = copy.deepcopy(client_config_template)
+    client_config['server_port'] = server_port
+
+    # Start with our environment and just add in the one variable.
+    env = os.environ.copy()
+    env.update({"NAPARI_MON_CLIENT": base64_encoded_json(client_config)})
+    return env
+
+
 class MonitorService:
     """Make data available to a client via shared memory.
 
@@ -143,7 +162,7 @@ class MonitorService:
         num_clients = len(self._config['clients'])
         LOGGER.info("Starting %d clients...", num_clients)
 
-        env = self._create_env(server_port)
+        env = _create_client_env(server_port)
 
         # Start every client.
         for args in self._config['clients']:
@@ -154,24 +173,7 @@ class MonitorService:
 
         LOGGER.info("Started %d clients.", num_clients)
 
-    def _create_env(self, server_port: int) -> dict:
-        """Create and return the environment for the client.
-
-        Parameters
-        ----------
-        server_port : int
-            The port the client should connect to.
-        """
-        # Every client gets the same config. Copy template and then stuff
-        # in the correct values.
-        client_config = copy.deepcopy(client_config_template)
-        client_config['server_port'] = server_port
-
-        # Start with our environment and just add in the one variable.
-        env = os.environ.copy()
-        env.update({"NAPARI_MON_CLIENT": base64_encoded_json(client_config)})
-        return env
-
     def stop(self) -> None:
         """Stop the shared memory service."""
+        LOGGER.info("MonitorService.stop")
         self._manager.shutdown()
