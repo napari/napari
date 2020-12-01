@@ -28,6 +28,8 @@ class RemoteCommands:
     ----------
     layers : LayerList
         The viewer's layers, so we can call into them.
+    run_command_event : Event
+        This event fires when the remote client sends napari a command.
 
     Notes
     -----
