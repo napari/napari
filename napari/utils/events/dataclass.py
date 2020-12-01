@@ -428,14 +428,13 @@ def update_from_dict(self, values, compare_fun=compare):
         return
 
     if hasattr(self, "events"):
-        self.events.block()
-
-    for key, value in values.items():
-        setattr(self, key, value)
-
-    if hasattr(self, "events"):
-        self.events.unblock()
+        with self.events.blocker():
+            for key, value in values.items():
+                setattr(self, key, value)
         self.events(Event(self))
+    else:
+        for key, value in values.items():
+            setattr(self, key, value)
 
 
 @tz.curry
