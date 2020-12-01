@@ -427,13 +427,15 @@ def update_from_dict(self, values, compare_fun=compare):
     if all(compare(values[k], v) for k, v in self.asdict().items()) == values:
         return
 
-    self.events.block()
+    if hasattr(self, "events"):
+        self.events.block()
 
     for key, value in values.items():
         setattr(self, key, value)
 
-    self.events.unblock()
-    self.events(Event(self))
+    if hasattr(self, "events"):
+        self.events.unblock()
+        self.events(Event(self))
 
 
 @tz.curry
