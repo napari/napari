@@ -424,7 +424,7 @@ def update_from_dict(self, values, compare_fun=compare):
         values = values.asdict()
     if not isinstance(values, dict):
         raise ValueError(f"Unsupported update from {type(values)}")
-    if all(compare(values[k], v) for k, v in self.asdict().items()) == values:
+    if all(compare_fun(values[k], v) for k, v in self.asdict().items()):
         return
 
     if hasattr(self, "events"):

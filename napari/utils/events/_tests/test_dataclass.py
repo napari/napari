@@ -299,6 +299,10 @@ def test_values_updated():
     obj2.update(obj3)
     assert count == {"a": 1, "b": 1, "values_updated": 1}
 
+    count = {"a": 0, "b": 0, "values_updated": 0}
+    obj2.update(obj2)
+    assert count == {"a": 0, "b": 0, "values_updated": 0}
+
 
 def test_values_updated_array():
     @evented_dataclass(properties=True, events=True)
