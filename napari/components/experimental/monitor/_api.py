@@ -59,33 +59,31 @@ class MonitorApi:
         The viewer's layers.
     """
 
-    # Is there a better way to do this? These can't be an attribute of
-    # MonitorApi or the manager will try to pickle them. These instances
-    # are NOT updated. Only the proxies returned by the manager are.
+    # BaseManager.register() is a bit weird. There must be a better wa
+    # to do this. But most things including lambda result in pickling
+    # errors due to multiprocessing stuff.
     #
-    # And we need callables that return them, but lambda's don't work
-    # because then THEY need to be pickled. So have these silly
-    # staticmethods right now.
-    _event = Event()
-    _command_queue = Queue()
-    _messages_queue = Queue()
-    _dict = dict()
+    # So we create these and then use staticmethods as our callables.
+    _napari_shutting_down_event = Event()
+    _commands_queue = Queue()
+    _client_messages_queue = Queue()
+    _data_dict = dict()
 
     @staticmethod
-    def _get_event() -> Event:
-        return MonitorApi._event
+    def _napari_shutting_down() -> Event:
+        return MonitorApi._napari_shutting_down_event
 
     @staticmethod
-    def _get_command_queue() -> Queue:
-        return MonitorApi._command_queue
+    def _commands() -> Queue:
+        return MonitorApi._commands_queue
 
     @staticmethod
-    def _get_messages_queue() -> Queue:
-        return MonitorApi._messages_queue
+    def _client_messages() -> Queue:
+        return MonitorApi._client_messages_queue
 
     @staticmethod
-    def _get_dict() -> dict:
-        return MonitorApi._dict
+    def _data() -> dict:
+        return MonitorApi._data_dict
 
     def __init__(self):
         # We expose the run_command event so RemoteCommands can hook to it,
@@ -94,19 +92,16 @@ class MonitorApi:
             source=self, auto_connect=True, run_command=None
         )
 
-        # We need to register all our callbacks before we create our
-        # instance of SharedMemoryManager. Callbacks generally return
-        # objects that SyncManager can create proxy objects for.
+        # Must register all callbacks before we create our instance of
+        # SharedMemoryManager.
         SharedMemoryManager.register(
-            'napari_shutting_down', callable=self._get_event
+            'napari_shutting_down', callable=self._napari_shutting_down
         )
+        SharedMemoryManager.register('commands', callable=self._commands)
         SharedMemoryManager.register(
-            'commands', callable=self._get_command_queue
+            'client_messages', callable=self._client_messages
         )
-        SharedMemoryManager.register(
-            'client_messages', callable=self._get_messages_queue
-        )
-        SharedMemoryManager.register('data', callable=self._get_dict)
+        SharedMemoryManager.register('data', callable=self._data)
 
         # We ask for port 0 which means let the OS choose a port. We send
         # the chosen port to the client in its NAPARI_MON_CLIENT variable.
