@@ -183,12 +183,12 @@ def set_with_events(self: C, name: str, value: Any) -> None:
 
     # if different we emit the event with new value
     after = getattr(self, name)
-    if not compare(after, before):
+    if not is_equal(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
 
 
-def compare(v1, v2):
+def is_equal(v1, v2):
     """
     Function for basic comparison compare.
     For data of different type its return false (except for an int and float)
@@ -200,6 +200,18 @@ def compare(v1, v2):
         first value
     v2: Any
         second value
+
+    Returns
+    -------
+    result : bool
+        Returns ``True`` if ``v1`` and ``v2`` are equivalent.
+        Dask arrays, and any two objects of different ``type`` will always return ``False``.
+        If an exception is raised during comparison, returns ``False``.
+
+    Warns
+    -----
+    UserWarning
+        If an exception is raised during comparison.
     """
     if type(v1) != type(v2) and {int, float} != {type(v1), type(v2)}:
         return False
@@ -417,7 +429,7 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     return cls
 
 
-def update_from_dict(self, values, compare_fun=compare):
+def update_from_dict(self, values, compare_fun=is_equal):
     if isinstance(values, self.__class__):
         values = values.asdict()
     if not isinstance(values, dict):
