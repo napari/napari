@@ -257,6 +257,8 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
                 deprecated=getattr(cls, "deprecated_events", None),
                 **e_fields,
             )
+        if not hasattr(self, "_hidden_event"):
+            self._hidden_event = Event(self)
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
@@ -431,7 +433,7 @@ def update_from_dict(self, values, compare_fun=compare):
         with self.events.blocker():
             for key, value in values.items():
                 setattr(self, key, value)
-        self.events(Event(self))
+        self.events(self._hidden_event)
     else:
         for key, value in values.items():
             setattr(self, key, value)
