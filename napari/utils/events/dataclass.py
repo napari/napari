@@ -33,6 +33,7 @@ except ImportError:
 
 
 from .event import EmitterGroup, Event
+from .types import SupportsEvents
 
 ON_SET = "_on_{name}_set"
 ON_GET = "_on_{name}_get"
@@ -427,7 +428,7 @@ def update_from_dict(self, values, compare_fun=compare):
     if all(compare_fun(values[k], v) for k, v in self.asdict().items()):
         return
 
-    if hasattr(self, "events"):
+    if isinstance(self, SupportsEvents):
         with self.events.blocker():
             for key, value in values.items():
                 setattr(self, key, value)
