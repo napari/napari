@@ -247,6 +247,10 @@ class TextureAtlas2D(Texture2D):
             The image data for this one tile.
         """
         data = octree_chunk.data
+
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
+
         assert isinstance(data, np.ndarray)
 
         if not self.spec.is_compatible(data):
