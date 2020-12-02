@@ -253,10 +253,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             self.events.add(**e_fields)
         else:
             self.events = EmitterGroup(
-                source=self,
-                auto_connect=False,
-                deprecated=getattr(cls, "deprecated_events", None),
-                **e_fields,
+                source=self, auto_connect=False, **e_fields,
             )
         # call original __post_init__
         if orig_post_init is not None:
