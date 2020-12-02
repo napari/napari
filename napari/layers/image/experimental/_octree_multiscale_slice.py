@@ -84,7 +84,14 @@ class OctreeMultiscaleSlice:
         """
         if self._octree is None:
             return None
-        return self._octree.levels[self._octree_level].info
+        try:
+            return self._octree.levels[self._octree_level].info
+        except IndexError:
+            index = self._octree_level
+            count = len(self._octree.levels)
+            raise IndexError(
+                f"Octree level {index} is not in range(0, {count})"
+            )
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
         """Return this view's intersection with the octree.
