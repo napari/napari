@@ -97,6 +97,8 @@ class OctreeIntersection:
             _clamp(span_tiles[1], 0, num_tiles - 1) + 1,
         ]
 
+        # TODO_OCTREE: BUG, range is not empty when it should be?
+
         # int() truncates which is what we want
         span_int = [int(x) for x in clamped]
         return range(*span_int)
