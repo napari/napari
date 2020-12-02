@@ -604,19 +604,36 @@ class Window:
         else:
             self._qt_window.removeDockWidget(widget)
 
-    def add_magic_function(self, function, magic=None, dock=None):
-        """Turn a function into a dock widget via magic gui.
+    def add_function_widget(
+        self,
+        function,
+        *,
+        magic_kwargs=None,
+        name: str = '',
+        area: str = 'bottom',
+        allowed_areas=None,
+        shortcut=None,
+    ):
+        """Turn a function into a dock widget via magicgui.
 
         Parameters
         ----------
         function : callable
             Function that you want to add.
-        magic : dict, optional
+        magic_kwargs : dict, optional
             Keyword arguments to the magicgui function that
             can be used to specify widget.
-        dock : dict, optional
-            Keyword arguments to add_dock_widget function
-            that specify how the widget gets added.
+        name : str, optional
+            Name of dock widget to appear in window menu.
+        area : str
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
+        allowed_areas : list[str], optional
+            Areas, relative to main window, that the widget is allowed dock.
+            Each item in list must be in {'left', 'right', 'top', 'bottom'}
+            By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
 
         Returns
         -------
@@ -625,26 +642,29 @@ class Window:
         """
         from magicgui import magicgui
 
-        if dock is None:
-            dock = {}
+        if name == '':
+            function_name = function.__name__.replace('_', ' ')
+        else:
+            function_name = name
 
-        if 'name' not in dock:
-            function_name = function.__name__
-            function_name.replace('_', ' ')
-            dock['name'] = function_name
-
-        if magic is None:
-            magic = {}
+        if magic_kwargs is None:
+            magic_kwargs = {}
 
         # Get widget from magicgui
-        widget = magicgui(**magic)(function).Gui()
+        widget = magicgui(**magic_kwargs)(function).Gui()
 
         # Keep the dropdown menus in the widget in sync with the layer model
         self.qt_viewer.viewer.layers.events.changed.connect(
             lambda x: widget.refresh_choices()
         )
 
-        return self.add_dock_widget(widget, **dock)
+        return self.add_dock_widget(
+            widget,
+            name=function_name,
+            area=area,
+            allowed_areas=allowed_areas,
+            shortcut=shortcut,
+        )
 
     def resize(self, width, height):
         """Resize the window.

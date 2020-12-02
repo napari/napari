@@ -19,7 +19,8 @@ def image_arithmetic(layerA: napari.layers.Image, operation: Operation, layerB: 
     return operation.value(layerA.data, layerB.data)
 
 
-# We also use the additional `call_button` option
+# We also use the additional `call_button` option to add a button that
+# will trigger function execution.
 magic = {'call_button': "execute"}
 
 
