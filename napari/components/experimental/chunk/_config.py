@@ -1,4 +1,8 @@
-"""AsyncConfig.
+"""AsyncConfig and OctreeConfig.
+
+Async/octree has its own little JSON config file. This is temporary because
+napari does not yet its own system-wide config file. Once that config file
+exists, we can roll these settings into there.
 """
 import errno
 import json
@@ -13,12 +17,12 @@ LOGGER = logging.getLogger("napari.async")
 
 # NAPARI_ASYNC=0 will use these settings, although currently with async
 # in experimental this module will not even be imported if NAPARI_ASYNC=0.
-DEFAULT_SYNC_CONFIG = {"synchronous": True}
+DEFAULT_SYNC_CONFIG = {"force_synchronous": True}
 
 # NAPARI_ASYNC=1 will use these default settings:
 DEFAULT_ASYNC_CONFIG = {
     "log_path": None,
-    "synchronous": False,
+    "force_synchronous": False,
     "num_workers": 6,
     "use_processes": False,
     "auto_sync_ms": 30,
@@ -30,13 +34,19 @@ AsyncConfig = namedtuple(
     "AsyncConfig",
     [
         "log_path",
-        "synchronous",
+        "force_synchronous",
         "num_workers",
         "use_processes",
         "auto_sync_ms",
         "delay_queue_ms",
+        "octree",
     ],
 )
+
+# The octree config settings.
+OctreeConfig = namedtuple("OctreeConfig", ["tile_size"],)
+
+DEFAULT_OCTREE_CONFIG = {"tile_size": 256}
 
 
 def _log_to_file(path: str) -> None:
@@ -88,11 +98,25 @@ def _get_config_data() -> dict:
     """
     value = os.getenv("NAPARI_ASYNC")
 
-    if value == "1" or config.async_octree:
-        return DEFAULT_ASYNC_CONFIG  # Async is enabled with defaults.
+    if (value in [None, "0"]) and not config.async_octree:
+        # Async is disabled. Note, while async is experimental if
+        # NAPARI_ASYNC and NAPARI_OCTREE are both not set, then actually
+        # this code will not be run. No async related code is even
+        # imported.
+        #
+        # However long term, using DEFAULT_SYNC_CONFIG means the
+        # ChunkLoader is being used, but ChunkLoader.force_synchronous is
+        # set True. Meaning every single load is synchronous.
+        #
+        # Once the feature is not experimental that will probably
+        # be the way to turn async "off". It will still run through
+        # the ChunkLoader, but the loads will be synchronous.
+        return DEFAULT_SYNC_CONFIG
 
-    if value is None or value == "0":
-        return DEFAULT_SYNC_CONFIG  # Async is disabled.
+    # Async is enabled with defaults.
+    async_defaults = DEFAULT_ASYNC_CONFIG
+    async_defaults['octree'] = DEFAULT_OCTREE_CONFIG
+    return async_defaults
 
     return _load_config(value)  # Load the user's JSON config file.
 
@@ -110,13 +134,20 @@ def _create_async_config(data: dict) -> AsyncConfig:
     AsyncConfig
         The config settings to use.
     """
+    octree_data = data.get("octree")
+    if octree_data is None:
+        octree_data = DEFAULT_OCTREE_CONFIG
+
+    octree_config = OctreeConfig(tile_size=octree_data.get("tile_size", 64))
+
     config = AsyncConfig(
         log_path=data.get("log_path"),
-        synchronous=data.get("synchronous", True),
+        force_synchronous=data.get("synchronous", True),
         num_workers=data.get("num_workers", 6),
         use_processes=data.get("use_processes", False),
         auto_sync_ms=data.get("auto_sync_ms", 30),
         delay_queue_ms=data.get("delay_queue_ms", 100),
+        octree=octree_config,
     )
 
     _log_to_file(config.log_path)

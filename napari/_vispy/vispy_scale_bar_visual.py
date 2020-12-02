@@ -42,6 +42,7 @@ class VispyScaleBarVisual:
 
         self._scale_bar.events.visible.connect(self._on_visible_change)
         self._scale_bar.events.colored.connect(self._on_data_change)
+        self._scale_bar.events.background_color.connect(self._on_data_change)
         self._scale_bar.events.ticks.connect(self._on_data_change)
         self._scale_bar.events.position.connect(self._on_position_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
@@ -101,7 +102,8 @@ class VispyScaleBarVisual:
         if self._scale_bar.colored:
             color = self._default_color
         else:
-            color = np.subtract(1, self._scale_bar.background_color)[:3]
+            color = np.subtract(1, self._scale_bar.background_color)
+            color[-1] = self._scale_bar.background_color[-1]
 
         if self._scale_bar.ticks:
             data = self._data

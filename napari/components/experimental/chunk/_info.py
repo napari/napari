@@ -6,6 +6,7 @@ from enum import Enum
 
 import dask.array as da
 
+from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
 from ._config import async_config
 from ._request import ChunkRequest
@@ -118,8 +119,9 @@ class LoadStats:
             True if the load was synchronous.
         """
         try:
-            # Use the special "load_chunks" timer for all chunks combined.
-            load_ms = request.timers['load_chunks'].duration_ms
+            # Use the special "ChunkRequest.load_chunks" timer to time
+            # the loading of all the chunks in this request combine.
+            load_ms = request.timers['ChunkRequest.load_chunks'].duration_ms
 
             # Update our StatWindow.
             self.window_ms.add(load_ms)
@@ -135,7 +137,7 @@ class LoadStats:
         self.counts.bytes += num_bytes
 
         # Time to load all chunks.
-        load_ms = request.timers['load_chunks'].duration_ms
+        load_ms = request.timers['ChunkRequest.load_chunks'].duration_ms
 
         # Update our StatWindows.
         self.window_bytes.add(num_bytes)
@@ -145,6 +147,12 @@ class LoadStats:
         load_info = LoadInfo(num_bytes, load_ms, sync=sync)
         keep = self.NUM_RECENT_LOADS - 1
         self.recent_loads = self.recent_loads[-keep:] + [load_info]
+
+        if monitor:
+            # Send stats about this one load.
+            monitor.send(
+                {"load": {"num_bytes": num_bytes, "load_ms": load_ms}}
+            )
 
     @property
     def mbits(self) -> float:

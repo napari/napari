@@ -80,7 +80,7 @@ def test_z_order_images(make_test_viewer):
     # Check that blue is visible
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
-    viewer.layers[0, 1] = viewer.layers[1, 0]
+    viewer.layers.move(1, 0)
     screenshot = viewer.screenshot(canvas_only=True)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that red is now visible
@@ -101,7 +101,7 @@ def test_z_order_image_points(make_test_viewer):
     # Check that blue is visible
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
-    viewer.layers[0, 1] = viewer.layers[1, 0]
+    viewer.layers.move(1, 0)
     screenshot = viewer.screenshot(canvas_only=True)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that red is now visible
@@ -237,7 +237,7 @@ def test_grid_mode(make_test_viewer):
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -251,7 +251,7 @@ def test_grid_mode(make_test_viewer):
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -290,8 +290,9 @@ def test_grid_mode(make_test_viewer):
         )
         np.testing.assert_almost_equal(screenshot[coord], c)
 
-    # reorder layers
-    viewer.layers[0, 5] = viewer.layers[5, 0]
+    # reorder layers, swapping 0 and 5
+    viewer.layers.move(5, 0)
+    viewer.layers.move(1, 6)
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True)
@@ -313,7 +314,7 @@ def test_grid_mode(make_test_viewer):
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -399,10 +400,11 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
+@pytest.mark.skip("Welcome visual temporarily disabled")
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_test_viewer):
-    """Test that something appears when axes become visible."""
+    """Test that something visible on launch."""
     viewer = make_test_viewer(show=True)
 
     # Check something is visible

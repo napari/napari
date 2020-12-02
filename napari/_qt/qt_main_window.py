@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
 
 from .. import __version__
 from ..resources import get_stylesheet
-from ..utils import perf
+from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.perf import perf_config
@@ -65,9 +65,6 @@ class Window:
         Window menu.
     """
 
-    # set _napari_app_id to False to avoid overwriting dock icon on windows
-    # set _napari_app_id to custom string to prevent grouping different base viewer
-    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer, *, show: bool = True):
@@ -105,22 +102,29 @@ class Window:
 
             # Will patch based on config file.
             perf_config.patch_callables()
-
+        _napari_app_id = getattr(
+            viewer,
+            "_napari_app_id",
+            'napari.napari.viewer.' + str(__version__),
+        )
         if (
             platform.system() == "Windows"
             and not getattr(sys, 'frozen', False)
-            and self._napari_app_id
+            and _napari_app_id
         ):
             import ctypes
 
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                self._napari_app_id
+                _napari_app_id
             )
 
         logopath = os.path.join(
             os.path.dirname(__file__), '..', 'resources', 'logo.png'
         )
-        app.setWindowIcon(QIcon(logopath))
+
+        if getattr(viewer, "_napari_global_logo", True):
+            app = QApplication.instance()
+            app.setWindowIcon(QIcon(logopath))
 
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
@@ -130,6 +134,7 @@ class Window:
         self.qt_viewer = QtViewer(viewer)
 
         self._qt_window = QMainWindow()
+        self._qt_window.setWindowIcon(QIcon(logopath))
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
 
@@ -293,6 +298,8 @@ class Window:
                 # Is there a better place to make sure this is done on exit?
                 perf.timers.stop_trace_file()
 
+            _stop_monitor()
+
         exitAction.triggered.connect(handle_exit)
 
         self.file_menu = self.main_menu.addMenu('&File')
@@ -349,6 +356,13 @@ class Window:
             checked=self.qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        axes_labels_action = QAction(
+            'Labels',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.labels,
+        )
+        axes_labels_action.triggered.connect(self._toggle_axes_labels)
         axes_dashed_action = QAction(
             'Dashed',
             parent=self._qt_window,
@@ -365,6 +379,7 @@ class Window:
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
+        axes_menu.addAction(axes_labels_action)
         axes_menu.addAction(axes_dashed_action)
         axes_menu.addAction(axes_arrows_action)
         self.view_menu.addMenu(axes_menu)
@@ -489,6 +504,9 @@ class Window:
 
     def _toggle_axes_colored(self, state):
         self.qt_viewer.viewer.axes.colored = state
+
+    def _toggle_axes_labels(self, state):
+        self.qt_viewer.viewer.axes.labels = state
 
     def _toggle_axes_dashed(self, state):
         self.qt_viewer.viewer.axes.dashed = state
@@ -762,3 +780,11 @@ class Window:
         self.qt_viewer.close()
         self._qt_window.close()
         del self._qt_window
+
+
+def _stop_monitor() -> None:
+    """Stop the monitor service if configured to use it."""
+    if config.monitor:
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()
