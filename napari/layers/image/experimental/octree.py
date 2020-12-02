@@ -177,11 +177,16 @@ class Octree:
 
 
 def _check_downscale_ratio(data) -> None:
-    """Report error if downscale ratio is not 2.
+    """Raise exception if downscale ratio is not 2.
 
     For now we only support downscale ratios of 2. We could support other
     ratios, but the assumption that each octree level is half the size of
     the previous one is baked in pretty deeply right now.
+
+    Raises
+    ------
+    ValueError
+        If downscale ratio is not 2.
     """
     if not isinstance(data, list) or len(data) < 2:
         return  # There aren't even two levels.
