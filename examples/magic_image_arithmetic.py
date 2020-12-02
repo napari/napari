@@ -31,4 +31,4 @@ with napari.gui_qt():
     viewer.add_image(np.random.rand(20, 20), name="Layer 2")
 
     # Add our magic function to napari
-    viewer.window.add_magic_function(image_arithmetic, magic)
+    viewer.window.add_function_widget(image_arithmetic, magic_kwargs=magic)

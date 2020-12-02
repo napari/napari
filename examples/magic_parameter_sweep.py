@@ -36,4 +36,4 @@ with napari.gui_qt():
     viewer.add_image(skimage.data.grass().astype("float"), name="grass")
 
     # Add our magic function to napari
-    viewer.window.add_magic_function(gaussian_blur, magic)
+    viewer.window.add_function_widget(gaussian_blur, magic_kwargs=magic)
