@@ -831,7 +831,7 @@ def _create_qt_monitor(
     Optional[QtMonitor]
         The new monitor instance, if any
     """
-    if config.async_octree:
+    if config.monitor:
         from .experimental.qt_monitor import QtMonitor
 
         return QtMonitor(parent, camera)

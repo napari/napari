@@ -742,7 +742,7 @@ class Window:
 
 def _stop_monitor() -> None:
     """Stop the monitor service if configured to use it."""
-    if config.async_octree:
+    if config.monitor:
         from ..components.experimental.monitor import monitor
 
         monitor.stop()
