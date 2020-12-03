@@ -10,38 +10,39 @@ import tifffile
 from itertools import cycle
 
 # The texture slice of the incoming camera image
-# is highlighted by adding a fixed offset to the 
+# is highlighted by adding a fixed offset to the
 # grevalues. Adjust this offset to find something
 # you find visually pleasing.
 
-highlight_offset=30
+highlight_offset = 30
 
 # Get list of files that simulate the camera images
 # TODO: provide a public download link
 img_path = Path("./lls_2ch_uint8_")
 channels = ("ch0", "ch1")
-_tmp = [list(img_path.glob(f"*{ch}*.tif")) for ch in  channels]
+_tmp = [list(img_path.glob(f"*{ch}*.tif")) for ch in channels]
 files = np.array(_tmp).T
 
 # determine volume shape from files
-nz = max(list(map(lambda x: int(str(x.stem)[-3:]), files[:,0])))+1
-single_slice = tifffile.imread(files[0,0]) 
-ny, nx = single_slice.shape 
+nz = max(list(map(lambda x: int(str(x.stem)[-3:]), files[:, 0]))) + 1
+single_slice = tifffile.imread(files[0, 0])
+ny, nx = single_slice.shape
 print(f'Stack has shape (nz, ny, nx) = ({nz}, {ny}, {nx}).')
 
 
 # blank volume to initialize the image layer before
 # images come in from the camera worker thread
-blank = np.zeros_like(np.array(nz*[single_slice]))
+blank = np.zeros_like(np.array(nz * [single_slice]))
 
-# build the affine matrix for deskewing the 
+# build the affine matrix for deskewing the
 # sample data set from Talley Lambert
-deskew=np.eye(4)
-deskew[2,0] = 4.086
+deskew = np.eye(4)
+deskew[2, 0] = 4.086
+
 
 @thread_worker
 def camera_simulator():
-    """ Simulate reading slice images that are written 
+    """Simulate reading slice images that are written
     to disk by some camera acquisition software.
     Here, we just cycle through a list of images,
     each image representing one slice of a stack.
@@ -58,16 +59,16 @@ def camera_simulator():
     previous: np.ndarray, previous image
     current: np.ndarray, current image
     """
-    
+
     count = -1
-    
-    file_iterator = cycle(files) 
+
+    file_iterator = cycle(files)
 
     previous = [np.zeros_like(single_slice)] * files.shape[1]
     current = [tifffile.imread(f) for f in next(file_iterator)]
-    
+
     for chfiles in file_iterator:
-        if count % nz == nz-1:
+        if count % nz == nz - 1:
             # simulate some delay between
             # subsequent stacks
             time.sleep(0.5)
@@ -83,34 +84,57 @@ def camera_simulator():
 
 with napari.gui_qt():
     # Initialize viewer with a blank volume
-    viewer = napari.Viewer(ndisplay=3, title="Live volume acquisition visualization")
-    viewer.add_image(blank, name="spindle", affine=deskew, scale=(3,1,1), colormap='green', blending='additive')
-    viewer.add_image(blank, name="dna", affine=deskew, scale=(3,1,1), colormap='magenta', blending='additive')
+    viewer = napari.Viewer(
+        ndisplay=3, title="Live volume acquisition visualization"
+    )
+    viewer.add_image(
+        blank,
+        name="spindle",
+        affine=deskew,
+        scale=(3, 1, 1),
+        colormap='green',
+        blending='additive',
+    )
+    viewer.add_image(
+        blank,
+        name="dna",
+        affine=deskew,
+        scale=(3, 1, 1),
+        colormap='magenta',
+        blending='additive',
+    )
 
-  
-    vispy_nuclei_layer = viewer.window.qt_viewer.layer_to_visual[viewer.layers[0]]
-    vispy_spindle_layer = viewer.window.qt_viewer.layer_to_visual[viewer.layers[1]]
-    volumes = [l._volume_node for l in (vispy_nuclei_layer, vispy_spindle_layer)]
-    
+    vispy_nuclei_layer = viewer.window.qt_viewer.layer_to_visual[
+        viewer.layers[0]
+    ]
+    vispy_spindle_layer = viewer.window.qt_viewer.layer_to_visual[
+        viewer.layers[1]
+    ]
+    volumes = [
+        l._volume_node for l in (vispy_nuclei_layer, vispy_spindle_layer)
+    ]
+
     def update_slice_vol(params):
-        """ Callback that updates the texture buffers when the
+        """Callback that updates the texture buffers when the
         worker thread yields new images for the channels.
         The current slice is highlighted by adding a fixed offset."""
         zslice, data_previous, data_current = params
 
-        for previous, current, volume in zip(data_previous, data_current, volumes):
+        for previous, current, volume in zip(
+            data_previous, data_current, volumes
+        ):
             texture = volume._tex
-            if zslice < nz-1:
+            if zslice < nz - 1:
                 texture.set_data(
-                    np.array([previous, current+highlight_offset]), offset=(zslice, 0, 0)
+                    np.array([previous, current + highlight_offset]),
+                    offset=(zslice, 0, 0),
                 )
-            elif zslice == nz-1:
+            elif zslice == nz - 1:
                 texture.set_data(
-                    np.array([current, current]), offset=(zslice-1, 0, 0)
+                    np.array([current, current]), offset=(zslice - 1, 0, 0)
                 )
             volume.update()
 
-    
     worker = camera_simulator()
     worker.yielded.connect(update_slice_vol)
     worker.start()
