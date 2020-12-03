@@ -266,15 +266,17 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         for fld in _fields
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
-
+    compare_dict_base = getattr(cls.__equality_checks__, {})
     compare_dict = {
         n: t
         for n, t in {
             name: _type_to_compare(type_)
             for name, type_ in cls.__dict__.get('__annotations__', {}).items()
+            if name not in compare_dict_base
         }.items()
         if t is not None
     }
+    compare_dict.update(compare_dict_base)
 
     def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
