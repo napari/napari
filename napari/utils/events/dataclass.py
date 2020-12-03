@@ -1,4 +1,5 @@
 import dataclasses as _dc
+import operator
 import typing
 import warnings
 from contextlib import contextmanager
@@ -8,6 +9,7 @@ from typing import (
     ClassVar,
     Dict,
     NamedTuple,
+    Optional,
     Type,
     TypeVar,
     cast,
@@ -90,9 +92,12 @@ class Property:
         origin = typing._type_check(params[0], msg)
         if params[1] is not None and not callable(params[1]):
             raise TypeError(f"Property getter not callable: {params[1]}")
-        if len(params) > 2:
-            if params[2] is not None and not callable(params[2]):
-                raise TypeError(f"Property getter not callable: {params[1]}")
+        if (
+            len(params) > 2
+            and params[2] is not None
+            and not callable(params[2])
+        ):
+            raise TypeError(f"Property getter not callable: {params[1]}")
         metadata = tuple(params[1:])
         return _AnnotatedAlias(origin, metadata)
 
@@ -183,7 +188,7 @@ def set_with_events(self: C, name: str, value: Any) -> None:
 
     # if different we emit the event with new value
     after = getattr(self, name)
-    if not is_equal(after, before):
+    if not self.__equality_checks__.get(name, is_equal)(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
 
@@ -191,8 +196,6 @@ def set_with_events(self: C, name: str, value: Any) -> None:
 def is_equal(v1, v2):
     """
     Function for basic comparison compare.
-    For data of different type its return false (except for an int and float)
-    For dask array it returns False.
 
     Parameters
     ----------
@@ -205,7 +208,6 @@ def is_equal(v1, v2):
     -------
     result : bool
         Returns ``True`` if ``v1`` and ``v2`` are equivalent.
-        Dask arrays, and any two objects of different ``type`` will always return ``False``.
         If an exception is raised during comparison, returns ``False``.
 
     Warns
@@ -213,13 +215,7 @@ def is_equal(v1, v2):
     UserWarning
         If an exception is raised during comparison.
     """
-    if type(v1) != type(v2) and {int, float} != {type(v1), type(v2)}:
-        return False
-    if isinstance(v1, da.core.Array):
-        return False
     try:
-        if isinstance(v1, np.ndarray):
-            return np.array_equal(v1, v2)
         return bool(v1 == v2)
     except Exception as e:
         warnings.warn(
@@ -227,6 +223,21 @@ def is_equal(v1, v2):
             f"There may be need to define custom _on_<name>_set method. Exception {e}"
         )
         return False
+
+
+def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
+    import inspect
+
+    if isinstance(type_, _AnnotatedAlias):
+        type_ = type_.__origin__
+    if not inspect.isclass(type_):
+        if not getattr(type_, "__module__", None) == "typing":
+            warnings.warn(f"Bug in type recognition {type_}")
+        return
+    if issubclass(type_, np.ndarray):
+        return np.array_equal
+    if issubclass(type_, da.core.Array):
+        return operator.is_
 
 
 def add_events_to_class(cls: Type[C]) -> Type[C]:
@@ -256,6 +267,15 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
 
+    compare_dict = {
+        n: t
+        for n, t in {
+            name: _type_to_compare(type_)
+            for name, type_ in cls.__dict__.get('__annotations__', {}).items()
+        }.items()
+        if t is not None
+    }
+
     def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
         # in the dataclass, skip those with metadata={'events' = False}
@@ -274,6 +294,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
     # modify __setattr__ with version that emits an event when setting
     setattr(cls, '__setattr__', set_with_events)
     setattr(cls, '__post_init__', evented_post_init)
+    setattr(cls, '__equality_checks__', compare_dict)
     return cls
 
 

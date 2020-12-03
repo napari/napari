@@ -1,4 +1,5 @@
 import inspect
+import operator
 from dataclasses import asdict, field
 from functools import partial
 from typing import ClassVar, List
@@ -12,7 +13,12 @@ from typing_extensions import Annotated
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.utils.events import EmitterGroup
-from napari.utils.events.dataclass import Property, evented_dataclass, is_equal
+from napari.utils.events.dataclass import (
+    Property,
+    _type_to_compare,
+    evented_dataclass,
+    is_equal,
+)
 
 
 @pytest.mark.parametrize("props, events", [(1, 1), (0, 1), (0, 0), (1, 0)])
@@ -292,6 +298,76 @@ def test_values_updated():
     assert count == {"a": 0, "b": 0, "values_updated": 0}
 
 
+def test_is_equal_warnings():
+    with pytest.warns(UserWarning, match="Comparison method failed*"):
+        assert not is_equal(np.ones(2), np.ones(2))
+
+    with pytest.warns(UserWarning, match="Comparison method failed*"):
+        assert not is_equal(
+            [np.ones(2), np.zeros(2)], [np.ones(2), np.zeros(2)]
+        )
+
+    with pytest.warns(UserWarning, match="Comparison method failed*"):
+        assert not is_equal(
+            {1: np.ones(2), 2: np.zeros(2)}, {1: np.ones(2), 2: np.zeros(2)},
+        )
+
+
+def test_is_equal():
+    assert is_equal(1, 1)
+    assert is_equal(1, 1.0)
+    assert not is_equal(1, 2)
+
+
+def test_type_to_compare():
+    assert _type_to_compare(int) is None
+    assert _type_to_compare(Property[int, None, int]) is None
+    assert _type_to_compare(np.ndarray) is np.array_equal
+    assert (
+        _type_to_compare(Property[np.ndarray, None, np.array])
+        is np.array_equal
+    )
+    assert _type_to_compare(da.core.Array) is operator.is_
+    assert (
+        _type_to_compare(Property[da.core.Array, None, da.from_array])
+        is operator.is_
+    )
+
+
+def test_values_updated_complex_type():
+    @evented_dataclass(properties=True, events=True)
+    class A:
+        a: int
+        b: np.ndarray
+        c: da.core.Array
+
+    da_array = da.from_array(np.zeros(2))
+    obj1 = A(1, np.ones(2), da_array)
+    count = {"a": 0, "b": 0, "c": 0}
+
+    def count_calls(name, event):
+        count[name] += 1
+
+    obj1.events.a.connect(partial(count_calls, "a"))
+    obj1.events.b.connect(partial(count_calls, "b"))
+    obj1.events.c.connect(partial(count_calls, "c"))
+
+    obj1.a = 1
+    assert count == {"a": 0, "b": 0, "c": 0}
+    obj1.a = 2
+    assert count == {"a": 1, "b": 0, "c": 0}
+    obj1.b = np.ones(2)
+    assert count == {"a": 1, "b": 0, "c": 0}
+    obj1.b = np.zeros(2)
+    assert count == {"a": 1, "b": 1, "c": 0}
+    obj1.c = da_array
+    assert count == {"a": 1, "b": 1, "c": 0}
+    obj1.c = da.from_array(np.zeros(2))
+    assert count == {"a": 1, "b": 1, "c": 1}
+    obj1.c = da.from_array(np.ones(2))
+    assert count == {"a": 1, "b": 1, "c": 2}
+
+
 def test_values_updated_array():
     @evented_dataclass(properties=True, events=True)
     class A:
@@ -305,43 +381,6 @@ def test_values_updated_array():
         count[name] += 1
 
     obj1.events.b.connect(partial(count_calls, "b"))
-
-    obj1.b = np.array([2, 2])
+    with pytest.warns(UserWarning, match="Comparison method failed*"):
+        obj1.b = np.array([2, 2])
     assert count["b"] == 1
-
-
-class TestCompare:
-    def test_simple(self):
-        assert is_equal(1, 1)
-        assert is_equal(1, 1.0)
-        assert not is_equal(1, 2)
-
-    def test_array(self):
-        assert is_equal([1, 2, 3], [1, 2, 3])
-        assert not is_equal((1, 2, 3), [1, 2, 3])
-        assert not is_equal([1, 2, 4], [1, 2, 3])
-        assert not is_equal([1, 2, 3], np.array([1, 2, 3]))
-        assert not is_equal([1, 2, 4], np.array([1, 2, 3]))
-        assert is_equal(np.array([1, 2, 3]), np.array([1, 2, 3]))
-        assert not is_equal(np.array([1, 2, 4]), np.array([1, 2, 3]))
-
-    def test_dask(self):
-        assert not is_equal(da.from_array([1, 2, 3]), da.from_array([1, 2, 3]))
-        assert not is_equal(da.from_array([1, 2, 3]), np.array([1, 2, 3]))
-        assert not is_equal(np.array([1, 2, 3]), da.from_array([1, 2, 3]))
-
-    def test_dict(self):
-        assert is_equal({1: 2, 2: 3}, {1: 2, 2: 3})
-        assert not is_equal({1: 2, 2: 3}, {1: 2, 2: 4})
-
-    def test_warnings(self):
-        with pytest.warns(UserWarning, match="Comparison method failed*"):
-            assert not is_equal(
-                [np.ones(2), np.zeros(2)], [np.ones(2), np.zeros(2)]
-            )
-
-        with pytest.warns(UserWarning, match="Comparison method failed*"):
-            assert not is_equal(
-                {1: np.ones(2), 2: np.zeros(2)},
-                {1: np.ones(2), 2: np.zeros(2)},
-            )
