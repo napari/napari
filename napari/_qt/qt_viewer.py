@@ -352,9 +352,10 @@ class QtViewer(QSplitter):
         """
         vispy_layer = create_vispy_visual(layer)
 
-        # Visuals might need to be polled when the camera moves and during
-        # a short period after the movement stops.
-        self._qt_poll.events.poll.connect(vispy_layer._on_poll)
+        if self._qt_poll is not None:
+            # Visuals might need to be polled when the camera moves and during
+            # a short period after the movement stops.
+            self._qt_poll.events.poll.connect(vispy_layer._on_poll)
 
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(self.viewer.layers) - 1
