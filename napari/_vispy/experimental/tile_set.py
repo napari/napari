@@ -1,4 +1,6 @@
 """TileSet class.
+
+TiledImageVisual uses this to track its tiles.
 """
 from dataclasses import dataclass
 from typing import List
