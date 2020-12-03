@@ -266,6 +266,10 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         for fld in _fields
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
+
+    # create dict with compare functions for fields which cannot be compared
+    # using standard equal operator, like numpy arrays.
+    # it will be set to __equality_checks__ class parameter.
     compare_dict_base = getattr(cls, "__equality_checks__", {})
     compare_dict = {
         n: t
@@ -274,8 +278,9 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             for name, type_ in cls.__dict__.get('__annotations__', {}).items()
             if name not in compare_dict_base
         }.items()
-        if t is not None
+        if t is not None  # walrus operator is supported from python 3.8
     }
+    # use compare functions provided by class creator.
     compare_dict.update(compare_dict_base)
 
     def evented_post_init(self: T, *initvars) -> None:
