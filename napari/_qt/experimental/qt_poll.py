@@ -45,17 +45,15 @@ class QtPoll(QObject):
 
     def _on_camera(self, _event) -> None:
         """Called when camera view changes at all."""
-        if self.timer.isActive():
-            # Do nothing since the timer is already going. It's possible we
-            # should poll anyway, and risk double poll? But for now let's
-            # let the timer do it until we know more.
-            return
-
-        # Poll right away to kick things off instantly.
+        # Poll right away. If the timer is running, it's probably being
+        # starved out by the mouse button being down. If we do double poll
+        # nothing should break, but if we don't poll then everything is
+        # frozen. Poll away.
         self._poll()
 
         # Start the timer so that we keep polling even if the camera
-        # doesn't move again.
+        # doesn't move again. Again if mouse is down the timer is
+        # starved, but we want it running in case the mouse stops.
         self.timer.start()
 
     def _on_timer(self) -> None:
@@ -72,7 +70,18 @@ class QtPoll(QObject):
             self.timer.stop()
             return
 
-        # Somone handled the event. They need to be polled even if the
-        # camera stops moving. So start the timer. So they can finish
-        # loading data or animating something.
+        # Someone handled the event. They need to be polled even if the
+        # camera stops moving. So start the timer. They can finish loading
+        # data or animating something even while the camera is stopped.
         self.timer.start()
+
+    def closeEvent(self, event) -> None:
+        """Cleanup and close.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        self.timer.stop()
+        self.deleteLater()
