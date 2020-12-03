@@ -160,12 +160,12 @@ class TiledImageVisual(ImageVisual):
         return self._tiles.chunks
 
     def add_chunks(self, chunks: List[OctreeChunk]) -> int:
-        """Any any chunks that we are not already drawing.
+        """Any one or more chunks that we are not already drawing.
 
         Parameters
         ----------
         chunks : List[OctreeChunk]
-            Add any of these we are not already drawing.
+            Chunks that we may or may not already be drawing.
 
         Return
         ------
@@ -186,18 +186,17 @@ class TiledImageVisual(ImageVisual):
             # ideally we want to add as many chunks as possible, but
             # without tanking the frame rate.
             #
-            # But recent measurements showed it taking 50ms to add one
-            # 256x256 pixel chunk! So there is only time to add one. Long
-            # term hopefully we set a budget like 10ms, and add as many
-            # chunks as we can without going over that budget.
+            # But recent measurements showed it taking 40ms to add one
+            # 256x256 pixel chunk! So there is only time to add about one.
+            #
+            # Long term hopefully we set a budget like 10ms, and add as
+            # many chunks as we can without going over that budget.
+            # Dynamically monitoring how much we've added.
             break
 
-        # Return how many chunks we did NOT add, so the system knows we
-        # need to be drawn even if there is no movement of anything.
-        #
-        # Essentially we are animating here, animating the transfer of new
-        # chunks into VRAM over time. So that animation should continue
-        # until its done even if the user is doing nothing.
+        # Return how many chunks we did NOT add. So the system knows we
+        # have more chunks to add. So we will get polled and drawn event if
+        # the camera is not moving.
         return len(new_chunks)
 
     def add_one_chunk(self, octree_chunk: OctreeChunk) -> None:
