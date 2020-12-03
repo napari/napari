@@ -63,13 +63,13 @@ def test_paint(Event, brush_shape, expected_sum):
 
 
 @pytest.mark.parametrize(
-    "brush_shape, expected_sum", [("circle", 240), ("square", 250)]
+    "brush_shape, expected_sum", [("circle", 244), ("square", 274)]
 )
 def test_paint_scale(Event, brush_shape, expected_sum):
     """Test painting labels with circle/square brush when scaled."""
     data = np.ones((20, 20))
     layer = Labels(data, scale=(2, 2))
-    layer.brush_size = 20
+    layer.brush_size = 10
     layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.selected_label = 3

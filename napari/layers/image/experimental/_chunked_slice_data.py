@@ -53,6 +53,7 @@ class ChunkedSliceData(ImageSliceData):
         #    classmethod. It will set the completed self.request.
         #
         self.request = request
+        self.thumbnail_image = None
 
     def load_chunks(self, key: ChunkKey) -> bool:
         """Load this slice data's chunks sync or async.
@@ -99,7 +100,7 @@ class ChunkedSliceData(ImageSliceData):
         request : ChunkRequest
             The request that was loaded.
         """
-        indices = request.key.indices
+        indices = request.key.layer_key.indices
         image = request.chunks.get('image')
         thumbnail_slice = request.chunks.get('thumbnail_slice')
         return cls(layer, indices, image, thumbnail_slice, request)

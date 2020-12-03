@@ -124,7 +124,7 @@ class TrackManager:
         # will be an integer - however, the time index does not necessarily
         # need to be an int, and the shader will render correctly.
         frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
-        self._points_lookup = [None] * (max(frames) + 1)
+        self._points_lookup = {}
         for f in frames:
             idx = np.where(self._points[:, 0] == f)[0]
             self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
@@ -385,6 +385,9 @@ class TrackManager:
     def track_labels(self, current_time: int) -> tuple:
         """ return track labels at the current time """
         # this is the slice into the time ordered points array
+        if current_time not in self._points_lookup:
+            return [], []
+
         lookup = self._points_lookup[current_time]
         pos = self._points[lookup, ...]
         lbl = [f'ID:{i}' for i in self._points_id[lookup]]

@@ -98,11 +98,11 @@ def qtbot(qtbot):
 def make_test_viewer(qtbot, request):
     viewers: List[Viewer] = []
 
-    def actual_factory(*model_args, **model_kwargs):
+    def actual_factory(*model_args, viewer_class=Viewer, **model_kwargs):
         model_kwargs['show'] = model_kwargs.pop(
             'show', request.config.getoption("--show-viewer")
         )
-        viewer = Viewer(*model_args, **model_kwargs)
+        viewer = viewer_class(*model_args, **model_kwargs)
         viewers.append(viewer)
         return viewer
 
@@ -336,7 +336,7 @@ def configure_loading(request):
 @pytest.fixture(autouse=True)
 def skip_sync_only(request):
     """Skip tests depending on our sync/async settings."""
-    async_mode = not chunk_loader.synchronous
+    async_mode = not chunk_loader.force_synchronous
     sync_only_test = request.node.get_closest_marker('sync_only')
     if async_mode and sync_only_test:
         pytest.skip("running with --async_only")

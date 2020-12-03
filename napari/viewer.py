@@ -1,3 +1,4 @@
+from . import __version__
 from ._qt import Window
 from .components import ViewerModel
 from .utils import config
@@ -21,6 +22,13 @@ class Viewer(ViewerModel):
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
     """
+
+    # set _napari_app_id to False to avoid overwriting dock icon on windows
+    # set _napari_app_id to custom string to prevent grouping different base viewer
+    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
+
+    # set _napari_global_logo to control if napari logo should be set as application logo
+    _napari_global_logo = True
 
     def __init__(
         self,
@@ -92,7 +100,9 @@ class Viewer(ViewerModel):
         if config.async_loading:
             from .components.experimental.chunk import chunk_loader
 
-            # TODO_ASYNC: Find a cleaner way to do this? Fixes some tests.
+            # TODO_ASYNC: Find a cleaner way to do this? This fixes some
+            # tests. We are telling the ChunkLoader that this layer is
+            # going away:
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)

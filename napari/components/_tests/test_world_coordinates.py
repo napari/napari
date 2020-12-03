@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari.components import ViewerModel
 
@@ -65,3 +66,31 @@ def test_both_scaled_and_translated_images():
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
         assert viewer.dims.current_step[0] == i
+
+
+def test_no_warning_non_affine_slicing():
+    """Test no warning if not slicing into an affine."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 10, 10))
+    viewer.add_image(data, scale=[2, 1, 1], translate=[10, 15, 20])
+    with pytest.warns(None) as recorded_warnings:
+        viewer.layers[0].refresh()
+    assert len(recorded_warnings) == 0
+
+
+def test_warning_affine_slicing():
+    """Test warning if slicing into an affine."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 10, 10))
+    viewer.add_image(
+        data,
+        scale=[2, 1, 1],
+        translate=[10, 15, 20],
+        shear=[[1, 0, 0], [0, 1, 0], [10, 0, 1]],
+    )
+    with pytest.warns(None) as recorded_warnings:
+        viewer.layers[0].refresh()
+    # note right now refresh tiggers two `_slice_indices` calls
+    assert len(recorded_warnings) == 2

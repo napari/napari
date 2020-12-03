@@ -20,7 +20,7 @@ def _create_loader_class() -> ImageLoader:
     Return
     ------
     ImageLoader
-        ImageLoader for sync or ChunkImageLoader for async.
+        Return ImageLoader for sync or ChunkImageLoader for async.
     """
     if config.async_loading:
         from .experimental._chunked_image_loader import ChunkedImageLoader
