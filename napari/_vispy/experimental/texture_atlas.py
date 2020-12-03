@@ -58,7 +58,7 @@ class AtlasTile(NamedTuple):
     """Information about one specific tile in the atlas.
 
     AtlasTile is returned from TextureAtlas2D.add_tile() so the caller has
-    the texture coordinates to render each tile in the atlas.
+    the verts and texture coordinates to render each tile in the atlas.
     """
 
     index: int

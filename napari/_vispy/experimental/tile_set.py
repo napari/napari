@@ -11,10 +11,10 @@ from .texture_atlas import AtlasTile
 
 @dataclass
 class TileData:
-    """Statistics about chunks during the update process."""
+    """Tie together the chunk and its tile."""
 
-    octree_chunk: OctreeChunk  # The data that produced this tile.
-    atlas_tile: AtlasTile  # Information from the texture atlas.
+    octree_chunk: OctreeChunk  # The chunk that created the tile.
+    atlas_tile: AtlasTile  # Verts and tex coords for the tile.
 
 
 class TileSet:
