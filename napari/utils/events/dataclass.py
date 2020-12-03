@@ -266,7 +266,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         for fld in _fields
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
-    compare_dict_base = getattr(cls.__equality_checks__, {})
+    compare_dict_base = getattr(cls, "__equality_checks__", {})
     compare_dict = {
         n: t
         for n, t in {
