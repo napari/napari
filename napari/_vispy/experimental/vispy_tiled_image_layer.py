@@ -213,13 +213,24 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         return stats.remaining
 
-    def _on_camera_move(self, event=None) -> None:
-        """Called on any camera movement.
+    def _on_poll(self, event=None) -> None:
+        """Called when the camera moves or we otherwise need polling.
 
         Update tiles based on which chunks are currently visible.
         """
-        super()._on_camera_move()
-        self._update_view()
+        super()._on_poll()
+
+        # Mark the event "handled" if we have more chunks to load.
+        #
+        # By saying the poll event was "handled" we're telling QtPoll to
+        # keep polling us, even if the camera stops moving. So that we can
+        # finish up the loads/draws with a potentially still camera.
+        #
+        # We'll be polled until no visuals handle the event, meaning
+        # no visuals need polling. Then all is quiet until the camera
+        # moves again.
+        need_polling = self._update_view() > 0
+        event.handled = need_polling
 
     def _on_loaded(self, _event):
         self._update_view()

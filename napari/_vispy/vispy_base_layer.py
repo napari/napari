@@ -152,6 +152,11 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
 
-    def _on_camera_move(self, event=None):
-        """Camera was moved."""
+    def _on_poll(self, event=None):
+        """Called when camera moves, before we are drawn.
+
+        Optionally called for some period once the camera stops, so the
+        visual can finish up what it was doing, such as loading data into
+        VRAM or animating itself.
+        """
         pass
