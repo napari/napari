@@ -73,8 +73,9 @@ class TiledImageVisual(ImageVisual):
         # Initialize our parent ImageVisual.
         super().__init__(*args, **kwargs)
 
-        # Must create the texture atlas after calling __init__ so
-        # the attribute self._interpolation exists.
+        # We must create the texture atlas after calling __init__ because
+        # we need to use the attribute self._interpolation which
+        # ImageVisual.__init__ creates.
         self.unfreeze()
         self._texture_atlas = self._create_texture_atlas(tile_shape)
         self.freeze()
