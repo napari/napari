@@ -3,9 +3,9 @@
 TiledImageVisual uses this to track its tiles.
 """
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List, Set
 
-from ...layers.image.experimental import OctreeChunk
+from ...layers.image.experimental import OctreeChunk, OctreeChunkKey
 from .texture_atlas import AtlasTile
 
 
@@ -24,8 +24,8 @@ class TileSet:
     """
 
     def __init__(self):
-        self._tiles = {}
-        self._chunks = set()
+        self._tiles: Dict[int, TileData] = {}
+        self._chunks: Set[OctreeChunkKey] = set()
 
     def __len__(self) -> int:
         """Return the number of tiles in the set.
