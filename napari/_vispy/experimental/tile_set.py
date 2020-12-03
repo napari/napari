@@ -47,8 +47,10 @@ class TileSet:
 
         Parameters
         ----------
-        tile_data : TileData
-            Add this to the set.
+        octree_chunk : OctreeChunk
+            The chunk we are adding to the tile set.
+        atlas_tile : AtlasTile
+            The atlas tile that was created for this chunks.
         """
         tile_index = atlas_tile.index
         self._tiles[tile_index] = TileData(octree_chunk, atlas_tile)
