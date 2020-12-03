@@ -169,7 +169,7 @@ class TiledImageVisual(ImageVisual):
         Return
         ------
         int
-            The number of checks remaining that need to be added.
+            The number of chunks that still need to be added.
         """
         new_chunks = [
             octree_chunk
@@ -179,7 +179,7 @@ class TiledImageVisual(ImageVisual):
 
         while new_chunks:
             # Add the first one in the list.
-            self.add_one_tile(new_chunks.pop(0))
+            self.add_one_chunk(new_chunks.pop(0))
 
             # For now break so that we only add ONE chunk per frame. But
             # ideally we want to add as many chunks as possible, but
@@ -199,13 +199,13 @@ class TiledImageVisual(ImageVisual):
         # until its done even if the user is doing nothing.
         return len(new_chunks)
 
-    def add_one_tile(self, octree_chunk: OctreeChunk) -> None:
-        """Add one tile to the tiled image.
+    def add_one_chunk(self, octree_chunk: OctreeChunk) -> None:
+        """Add one chunk to the tiled image.
 
         Parameters
         ----------
         octree_chunk : OctreeChunk
-            The data for the tile we are adding.
+            The chunk we are adding.
 
         Return
         ------
@@ -233,8 +233,8 @@ class TiledImageVisual(ImageVisual):
             self._tiles.remove(tile_index)
             self._texture_atlas.remove_tile(tile_index)
             self._need_vertex_update = True
-        except IndexError:
-            raise RuntimeError(f"Tile index {tile_index} not found.")
+        except IndexError as exc:
+            raise RuntimeError(f"Tile index {tile_index} not found.") from exc
 
     def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
         """Remove tiles that are not part of the given visible set.
