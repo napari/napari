@@ -17,35 +17,45 @@ SHAPE_IN_TILES = (16, 16)
 
 
 class TiledImageVisual(ImageVisual):
-    """An image that is drawn using smaller tiles.
+    """An image that is drawn using one or more "tiles".
 
-    TiledImageVisual draws a single large image using a set of square image
-    tiles. The size of the tiles is configurable, but 256x256 or 512x512
-    might be good choices. All the tiles in one TiledImageVisual are the
-    same size.
+    Are regular ImageVisual is a single image drawn as a single rectangle
+    with a single texture. A tiled TiledImageVisual also has a single
+    texture, but that texture is a TextureAtlas2D.
 
-    The tiles are stored in larger textures as an "atlas". An atlas is
-    basically just a texture which looks like a grid of smaller images. The
-    grid has no borders between the tiles. The size of the larger textures
-    is also configurable. For example a single 4096x4096 texture could
-    store 256 different 256x256 tiles.
+    A texture atlas is basically a single texture that contains smaller
+    textures within it, like quilt. In our cases the smaller textures are
+    all the same size, for example (256, 256). For example a 4k x 4k
+    texture can hold 256 different (256, 256) tiles.
+
+    When the TiledImageVisual draws, it draws a single list of quads. Each
+    quad's texture coordinates refer to a potentially different texture in
+    the atlas.
+
+    The quads can be located anywhere, even in 3D. TiledImageVisual does
+    not know if it's drawn an octree or a grid, or just a scatter of tiles.
+    A key point is while the the textures are all the same size, the quads
+    can all be different sizes.
+
+    For example, one quad might have a (256, 256) texture, but it's
+    physically tiny on the screen. While the next quad is also showing a
+    (256, 256) texture, but it's really big on that same screen. This
+    ability comes in handy for octree rendering, because we will often draw
+    multiple levels of the octree at the same time.
 
     Adding or removing tiles from a TiledImageVisual is efficient. Only the
     bytes in the tile(s) being updated are sent to the card. The Vispy
     method BaseTexture.set_data() has an "offset" argument. When setting
     texture data with an offset under the hood Vispy calls
     glTexSubImage2D(). It will only update the rectangular region within
-    the texture that's being updated.
+    the texture that's being updated. This is critical to making the whole
+    thing work.
 
     In addition, uploading new tiles does not cause the shader to be
     rebuilt. This is another reason TiledImageVisual is faster than
-    creating a stand-alone ImageVisuals to draw each tile.
-
-    Finally, rendering the tiles is efficient. TiledImageVisual renders by
-    drawing one single list of quads. The texture coordinates of the quads
-    point to the various tiles in the texture atlas. If all the tiles are
-    stored in the same large texture, there will be zero texture swaps,
-    which are expensive.
+    creating a stand-alone ImageVisuals to draw each tile. Each new
+    ImageVisual results in a shader build today. Although, that could be
+    optimized in the future.
 
     Parameters
     ----------
