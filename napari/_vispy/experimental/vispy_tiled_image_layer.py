@@ -197,7 +197,7 @@ class VispyTiledImageLayer(VispyImageLayer):
              The number of chunks that still need to be added, in a future frame.
         """
         if not self.node.visible:
-            return
+            return 0
 
         self._update_tile_shape()  # In case the tile shape changed!
 
