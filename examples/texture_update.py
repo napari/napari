@@ -87,7 +87,7 @@ with napari.gui_qt():
     viewer = napari.Viewer(
         ndisplay=3, title="Live volume acquisition visualization"
     )
-    viewer.add_image(
+    spindle_l = viewer.add_image(
         blank,
         name="spindle",
         affine=deskew,
@@ -95,7 +95,7 @@ with napari.gui_qt():
         colormap='green',
         blending='additive',
     )
-    viewer.add_image(
+    dna_l = viewer.add_image(
         blank,
         name="dna",
         affine=deskew,
@@ -104,14 +104,11 @@ with napari.gui_qt():
         blending='additive',
     )
 
-    vispy_nuclei_layer = viewer.window.qt_viewer.layer_to_visual[
-        viewer.layers[0]
-    ]
-    vispy_spindle_layer = viewer.window.qt_viewer.layer_to_visual[
-        viewer.layers[1]
-    ]
+    vispy_dna_layer = viewer.window.qt_viewer.layer_to_visual[dna_l]
+    vispy_spindle_layer = viewer.window.qt_viewer.layer_to_visual[spindle_l]
     volumes = [
-        l._volume_node for l in (vispy_nuclei_layer, vispy_spindle_layer)
+        l._layer_node.get_node(3)
+        for l in (vispy_dna_layer, vispy_spindle_layer)
     ]
 
     def update_slice_vol(params):
