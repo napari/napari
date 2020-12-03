@@ -150,7 +150,7 @@ class TiledImageVisual(ImageVisual):
         return self._texture_atlas.num_slots_used
 
     @property
-    def octree_chunk(self) -> List[OctreeChunk]:
+    def octree_chunks(self) -> List[OctreeChunk]:
         """Return data for the chunks we are drawing.
 
         List[OctreeChunk]

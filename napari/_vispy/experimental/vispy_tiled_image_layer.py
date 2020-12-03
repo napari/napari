@@ -123,7 +123,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         stats.created = stats.final - stats.low
 
         if self.layer.show_grid:
-            self.grid.update_grid(self.node.octree_chunk)
+            self.grid.update_grid(self.node.octree_chunks)
         else:
             self.grid.clear()
 
