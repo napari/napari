@@ -105,7 +105,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Get the currently visible chunks from the layer.
         visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
 
-        # Record some stats about this update process.
+        # Record some stats about this update process, where stats.seen are
+        # the number of visible chunks.
         stats = ChunkStats(seen=len(visible_chunks))
 
         # Create the visible set of chunks using their keys.
