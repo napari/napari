@@ -188,11 +188,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         """Check if the tile shape was changed on us."""
         # This might be overly dynamic, but for now if we see there's a new
         # tile shape we nuke our texture atlas and start over with the new
-        # tile shape.
+        # shape.
         #
-        # We added this because the QtTestImage GUI sets the tile shape
-        # after the layer is created. But the ability might come in handy
-        # and it was not hard to implement.
+        # We added this because the QtTestImage GUI currently set the tile
+        # shape after the layer is created. Thus potentially changing the
+        # same on the fly. But this "on the fly change" might come in handy
+        # and it was not hard to implement, but we could probably drop it
+        # if it becomes a pain.
         tile_shape = self.layer.tile_shape
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
