@@ -148,17 +148,46 @@ class TiledImageVisual(ImageVisual):
         """
         return self._tiles.chunks
 
-    def add_chunks(self, chunks: List[OctreeChunk]):
+    def add_chunks(self, chunks: List[OctreeChunk]) -> int:
         """Any any chunks that we are not already drawing.
 
         Parameters
         ----------
         chunks : List[OctreeChunk]
             Add any of these we are not already drawing.
+
+        Return
+        ------
+        int
+            The number of checks remaining that need to be added.
         """
-        for octree_chunk in chunks:
-            if not self._tiles.contains_octree_chunk(octree_chunk):
-                self.add_one_tile(octree_chunk)
+        new_chunks = [
+            octree_chunk
+            for octree_chunk in chunks
+            if not self._tiles.contains_octree_chunk(octree_chunk)
+        ]
+
+        while new_chunks:
+            # Add the first one in the list.
+            self.add_one_tile(new_chunks.pop(0))
+
+            # For now break so that we only add ONE chunk per frame. But
+            # ideally we want to add as many chunks as possible, but
+            # without tanking the frame rate.
+            #
+            # But recent measurements showed it taking 50ms to add one
+            # 256x256 pixel chunk! So there is only time to add one. Long
+            # term hopefully we set a budget like 10ms, and add as many
+            # chunks as we can without going over that budget.
+            break
+
+        # Return how many chunks we did NOT add, so the system knows we
+        # need to be drawn even if there is no movement of anything.
+        #
+        # Essentially we are animating here, animating the transfer of new
+        # chunks into VRAM over time. So that animation should continue
+        # until its done even if the user is doing nothing.
+        return len(new_chunks)
 
     def add_one_tile(self, octree_chunk: OctreeChunk) -> None:
         """Add one tile to the tiled image.

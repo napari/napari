@@ -1,5 +1,6 @@
 """Octree class.
 """
+import math
 from typing import List
 
 from ....utils.perf import block_timer
@@ -46,6 +47,8 @@ class Octree:
         self.data = data
         self.slice_config = slice_config
 
+        _check_downscale_ratio(self.data)  # We expect a ratio of 2.
+
         self.levels = [
             OctreeLevel(slice_id, data[i], slice_config, i)
             for i in range(len(data))
@@ -69,7 +72,7 @@ class Octree:
         assert self.levels[-1].info.num_tiles == 1
 
         # This now the total number of levels.
-        self.num_levels = len(data)
+        self.num_levels = len(self.data)
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
         """Compute the extra levels and return them.
@@ -171,3 +174,28 @@ class Octree:
         """Print information about our tiles."""
         for level in self.levels:
             level.print_info()
+
+
+def _check_downscale_ratio(data) -> None:
+    """Raise exception if downscale ratio is not 2.
+
+    For now we only support downscale ratios of 2. We could support other
+    ratios, but the assumption that each octree level is half the size of
+    the previous one is baked in pretty deeply right now.
+
+    Raises
+    ------
+    ValueError
+        If downscale ratio is not 2.
+    """
+    if not isinstance(data, list) or len(data) < 2:
+        return  # There aren't even two levels.
+
+    ratio = math.sqrt(data[0].size / data[1].size)
+
+    # Really should be exact, but it will most likely be off by a ton
+    # if its off, so allow a small fudge factor.
+    if not math.isclose(ratio, 2, rel_tol=0.01):
+        raise ValueError(
+            f"Multiscale data has downsampling ratio of {ratio}, expected 2."
+        )
