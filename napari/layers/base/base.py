@@ -20,9 +20,6 @@ from ..utils.layer_utils import (
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
-Dims = namedtuple(
-    'Dims', 'ndim ndisplay displayed not_displayed order displayed_order'
-)
 
 
 class Layer(KeymapProvider, ABC):
@@ -194,8 +191,8 @@ class Layer(KeymapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
 
-        self._dims_ndim = ndim
-        self._dims_ndisplay = 2
+        self._ndim = ndim
+        self._ndisplay = 2
         self._dims_order = list(range(ndim))
 
         # Create a transform chain consisting of three transforms:
@@ -248,7 +245,7 @@ class Layer(KeymapProvider, ABC):
             ]
         )
 
-        self._position = (0,) * self._dims_ndim
+        self._position = (0,) * ndim
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -491,24 +488,27 @@ class Layer(KeymapProvider, ABC):
         self._update_value_and_status()
 
     @property
-    def _dims(self):
-        """To be removed private dims."""
-        order = np.array(self._dims_order[-self._dims_ndisplay :])
+    def _dims_displayed(self):
+        """To be removed displayed dimensions."""
+        return self._dims_order[-self._ndisplay :]
+
+    @property
+    def _dims_not_displayed(self):
+        """To be removed not displayed dimensions."""
+        return self._dims_order[: -self._ndisplay]
+
+    @property
+    def _dims_displayed_order(self):
+        """To be removed order of displayed dimensions."""
+        order = np.array(self._dims_displayed)
         order[np.argsort(order)] = list(range(len(order)))
-        return Dims(
-            ndim=self._dims_ndim,
-            ndisplay=self._dims_ndisplay,
-            order=self._dims_order,
-            displayed=self._dims_order[-self._dims_ndisplay :],
-            not_displayed=self._dims_order[: -self._dims_ndisplay],
-            displayed_order=tuple(order),
-        )
+        return tuple(order)
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
 
-        old_ndim = self._dims_ndim
+        old_ndim = self._ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
@@ -520,7 +520,7 @@ class Layer(KeymapProvider, ABC):
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
             self._position = (0,) * (ndim - old_ndim) + self._position
 
-        self._dims_ndim = ndim
+        self._ndim = ndim
 
         self.refresh()
         self._update_value_and_status()
@@ -584,10 +584,10 @@ class Layer(KeymapProvider, ABC):
         """(D, ) array: Slice indices in data coordinates."""
         inv_transform = self._transforms['data2world'].inverse
 
-        if self.ndim > self._dims_ndisplay:
+        if self.ndim > self._ndisplay:
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
-            for d in self._dims.not_displayed:
+            for d in self._dims_not_displayed:
                 non_displayed_subspace[d] = 1
             # Map subspace through inverse transform, ignoring translation
             mapped_nd_subspace = inv_transform(
@@ -595,7 +595,7 @@ class Layer(KeymapProvider, ABC):
             ) - inv_transform(np.zeros(self.ndim))
             # Look at displayed subspace
             displayed_mapped_subspace = [
-                mapped_nd_subspace[d] for d in self._dims.displayed
+                mapped_nd_subspace[d] for d in self._dims_displayed
             ]
             # Check that displayed subspace is null
             if not np.allclose(displayed_mapped_subspace, 0):
@@ -606,15 +606,15 @@ class Layer(KeymapProvider, ABC):
                     category=UserWarning,
                 )
 
-        slice_inv_transform = inv_transform.set_slice(self._dims.not_displayed)
+        slice_inv_transform = inv_transform.set_slice(self._dims_not_displayed)
 
-        world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
+        world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         data_pts = slice_inv_transform(world_pts)
         # A round is taken to convert these values to slicing integers
         data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
-        for i, ax in enumerate(self._dims.not_displayed):
+        for i, ax in enumerate(self._dims_not_displayed):
             indices[ax] = data_pts[i]
 
         return tuple(indices)
@@ -715,7 +715,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def ndim(self):
         """int: Number of dimensions in the data."""
-        return self._dims_ndim
+        return self._ndim
 
     @property
     def selected(self):
@@ -846,14 +846,14 @@ class Layer(KeymapProvider, ABC):
         # If no slide data has changed, then do nothing
         if (
             np.all(order == self._dims_order)
-            and ndisplay == self._dims_ndisplay
+            and ndisplay == self._ndisplay
             and np.all(point[offset:] == self._dims_point)
         ):
             return
 
         self._dims_order = order
-        if self._dims_ndisplay != ndisplay:
-            self._dims_ndisplay = ndisplay
+        if self._ndisplay != ndisplay:
+            self._ndisplay = ndisplay
             self.events._ndisplay()
 
         # Update the point values
@@ -946,14 +946,14 @@ class Layer(KeymapProvider, ABC):
             data_corners, self.extent.data[0], self.extent.data[1]
         )
 
-        if self._dims_ndisplay == 2 and self.multiscale:
+        if self._ndisplay == 2 and self.multiscale:
             level, displayed_corners = compute_multiscale_level_and_corners(
-                data_corners[:, self._dims.displayed],
+                data_corners[:, self._dims_displayed],
                 shape_threshold,
-                self.downsample_factors[:, self._dims.displayed],
+                self.downsample_factors[:, self._dims_displayed],
             )
             corners = np.zeros((2, self.ndim))
-            corners[:, self._dims.displayed] = displayed_corners
+            corners[:, self._dims_displayed] = displayed_corners
             corners = corners.astype(int)
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
@@ -968,7 +968,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def displayed_coordinates(self):
         """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self._dims.displayed]
+        return [self.coordinates[i] for i in self._dims_displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value

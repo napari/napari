@@ -274,7 +274,7 @@ class Labels(Image):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         data2world_scale = np.mean(
-            [self.scale[d] for d in self._dims.displayed]
+            [self.scale[d] for d in self._dims_displayed]
         )
         self.cursor_size = self.brush_size * data2world_scale
         self.status = format_float(self.brush_size)
@@ -523,7 +523,7 @@ class Labels(Image):
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims.displayed]
+                [self.scale[d] for d in self._dims_displayed]
             )
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
@@ -545,7 +545,7 @@ class Labels(Image):
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims.displayed]
+                [self.scale[d] for d in self._dims_displayed]
             )
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
@@ -577,7 +577,7 @@ class Labels(Image):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale or self._dims.ndisplay == 3:
+            if self.multiscale or self._ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -740,7 +740,7 @@ class Labels(Image):
         else:
             # work with just the sliced image
             labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self._dims.displayed)
+            slice_coord = tuple(int_coord[d] for d in self._dims_displayed)
 
         matches = labels == old_label
         if self.contiguous:
@@ -783,7 +783,7 @@ class Labels(Image):
         if self.brush_shape == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if not self.n_dimensional and self.ndim > 2:
-                for i in self._dims.not_displayed:
+                for i in self._dims_not_displayed:
                     brush_size_dims[i] = 1
 
             slice_coord = tuple(
@@ -804,8 +804,8 @@ class Labels(Image):
             slice_coord = [int(np.round(c)) for c in coord]
             shape = self.data.shape
             if not self.n_dimensional and self.ndim > 2:
-                coord = [coord[i] for i in self._dims.displayed]
-                shape = [shape[i] for i in self._dims.displayed]
+                coord = [coord[i] for i in self._dims_displayed]
+                shape = [shape[i] for i in self._dims_displayed]
 
             sphere_dims = len(coord)
             # Ensure circle doesn't have spurious point
@@ -826,9 +826,9 @@ class Labels(Image):
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
             if not self.n_dimensional and self.ndim > 2:
-                for j, i in enumerate(self._dims.displayed):
+                for j, i in enumerate(self._dims_displayed):
                     slice_coord[i] = slice_coord_temp[j]
-                for i in self._dims.not_displayed:
+                for i in self._dims_not_displayed:
                     slice_coord[i] = slice_coord[i] * np.ones(
                         mask_indices.shape[0], dtype=int
                     )

@@ -253,9 +253,7 @@ class QtImageControls(QtBaseImageControls):
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
         interp_enum = (
-            Interpolation3D
-            if self.layer._dims.ndisplay == 3
-            else Interpolation
+            Interpolation3D if self.layer._ndisplay == 3 else Interpolation
         )
         self.interpComboBox.addItems(interp_enum.keys())
         index = self.interpComboBox.findText(
@@ -272,7 +270,7 @@ class QtImageControls(QtBaseImageControls):
             The napari event that triggered this method, default is None.
         """
         self._update_interpolation_combo()
-        if self.layer._dims.ndisplay == 2:
+        if self.layer._ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()

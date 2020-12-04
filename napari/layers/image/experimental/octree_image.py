@@ -352,7 +352,7 @@ class OctreeImage(Image):
 
         # Compute our 2D corners from the incoming n-d corner_pixels
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        corners = data_corners[:, self._dims.displayed]
+        corners = data_corners[:, self._dims_displayed]
 
         # Update our self._view to to catpure the state of things right
         # before we are drawn. Our self._view will used by our
@@ -387,7 +387,7 @@ class OctreeImage(Image):
         """
 
         extent = self._extent_data
-        not_disp = self._dims.not_displayed
+        not_disp = self._dims_not_displayed
 
         return np.any(
             np.less(
@@ -423,7 +423,7 @@ class OctreeImage(Image):
 
         # TODO_OCTREE: easier way to do this?
         base_shape = self.data[0].shape
-        base_shape_2d = [base_shape[i] for i in self._dims.displayed]
+        base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
         slice_config = SliceConfig(
             base_shape_2d, len(self.data), self._tile_size, self._delay_ms
