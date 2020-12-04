@@ -631,14 +631,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        warnings.warn(
-            (
-                "The viewer.add_layer method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.layers.append."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
         self.layers.append(layer)
         return layer
 
