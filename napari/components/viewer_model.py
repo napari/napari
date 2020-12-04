@@ -632,6 +632,10 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
+        # Adding additional functionality inside `add_layer`
+        # should be avoided to keep full functionality
+        # from adding a layer through the `layers.append`
+        # method
         self.layers.append(layer)
         return layer
 
