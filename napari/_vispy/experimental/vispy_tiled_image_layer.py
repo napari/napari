@@ -95,12 +95,12 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         raise NotImplementedError()
 
-    def _update_chunks(self) -> ChunkStats:
+    def _update_drawn_chunks(self) -> ChunkStats:
         """Add or remove tiles to match the chunks which are currently visible.
 
         1) Remove tiles which are no longer visible.
         2) Create tiles for newly visible chunks.
-        3) Optionally update our grid to outline the visible chunks.
+        3) Optionally update our grid based on the now visible chunks.
         """
         # Get the currently visible chunks from the layer.
         visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
@@ -203,13 +203,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         """Update the tiled image based on what's visible in the layer.
 
         We call self._update_chunks() which asks the layer what chunks are
-        visible, then it potentially loads some of those chunk, if we
-        didn't already have them. This returns how many visible chunks,
-        that we don't have, still need to be added.
+        visible, then it potentially loads some of those chunks, if we
+        didn't already have them. This method returns how many visible
+        chunks still need to be added.
 
-        If we return non-zero, we expect to be polled and drawn again,
-        whether or not the camera moves, so we can finish adding the rest
-        of the visible chunks.
+        If we return non-zero, we expect to be polled and drawn again, even
+        if the camera isn't moving. Polled and drawn until we can finish
+        adding the rest of the visible chunks.
 
         Return
         ------
@@ -221,9 +221,11 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         self._update_tile_shape()  # In case the tile shape changed!
 
-        with block_timer("_update_chunks") as elapsed:
-            stats = self._update_chunks()
+        with block_timer("_update_drawn_chunks") as elapsed:
+            stats = self._update_drawn_chunks()
 
+        # Print for now, but switch log file soon. Should be no prints
+        # in production code.
         if stats.created > 0 or stats.deleted > 0:
             print(
                 f"tiles: {stats.start} -> {stats.final} "
