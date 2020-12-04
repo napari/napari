@@ -513,11 +513,17 @@ class Layer(KeymapProvider, ABC):
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
             self._dims_point = self._dims_point[-ndim:]
+            arr = np.array(self._dims_order[-ndim:])
+            arr[np.argsort(arr)] = range(len(arr))
+            self._dims_order = arr.tolist()
             self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
+            self._dims_order = list(range(ndim - old_ndim)) + [
+                o + ndim - old_ndim for o in self._dims_order
+            ]
             self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._ndim = ndim
