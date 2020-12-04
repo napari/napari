@@ -28,6 +28,13 @@ class TileSet:
     """The tiles we are drawing.
 
     Fast test for membership in both directions: dict and a set.
+
+    Attributes
+    ----------
+    _tiles : Dict[int, TileData]
+        Maps tile_index to the the TileData we have for that tile.
+    _chunks : Set[OctreeChunkKey]
+        The chunks we have in the set, for fast membership tests.
     """
 
     def __init__(self):
@@ -75,23 +82,23 @@ class TileSet:
 
     @property
     def chunks(self) -> List[OctreeChunk]:
-        """Return all the chunk data that we have.
+        """Return all the chunks we are tracking.
 
         Return
         ------
         List[OctreeChunk]
-            All the chunk data in the set.
+            All the chunks in the set.
         """
         return [tile_data.octree_chunk for tile_data in self._tiles.values()]
 
     @property
     def tile_data(self) -> List[TileData]:
-        """Return all the tile data in the set.
+        """Return data for all tiles in the set.
 
         Return
         ------
         List[TileData]
-            All the tile data in the set.
+            Data for all the tiles in the set.
         """
         return self._tiles.values()
 
