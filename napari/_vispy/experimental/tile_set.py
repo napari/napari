@@ -9,16 +9,18 @@ from .texture_atlas import AtlasTile
 
 
 class TileData(NamedTuple):
-    """TileSet stores these.
+    """TileSet stores one TileData per tile.
 
-    This class ties together the chunk and the tile that was creates for
-    that chunk.
+    Attributes
+    ----------
+    octree_chunk : OctreeChunk
+        The chunk that created the tile.
+
+    atlas_tile : AtlasTile
+        The tile that was created from the chunk.
     """
 
-    # The chunk that created the tile.
     octree_chunk: OctreeChunk
-
-    # Verts and tex coords for the tile.
     atlas_tile: AtlasTile
 
 
