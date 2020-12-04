@@ -66,16 +66,20 @@ class TiledImageVisual(ImageVisual):
     def __init__(self, tile_shape: np.ndarray, *args, **kwargs):
         self.tile_shape = tile_shape
 
-        self._tiles = TileSet()  # The tiles we are drawing.
+        self._tiles: TileSet = TileSet()  # The tiles we are drawing.
 
         self._clim = np.array([0, 1])  # TOOD_OCTREE: need to support clim
 
         # Initialize our parent ImageVisual.
         super().__init__(*args, **kwargs)
 
-        # We must create the texture atlas after calling __init__ because
-        # we need to use the attribute self._interpolation which
-        # ImageVisual.__init__ creates.
+        # We must create the texture atlas *after* calling super().__init__
+        # because super().__init__ creates self._interpolation which we
+        # our _create_texture_atlas references.
+        #
+        # The unfreeze/freeze stuff is just a vispy thing to guard against
+        # adding attributes after construction, which often leads to bugs,
+        # so we have to toggle it off here. Not a big deal.
         self.unfreeze()
         self._texture_atlas = self._create_texture_atlas(tile_shape)
         self.freeze()
@@ -129,7 +133,7 @@ class TiledImageVisual(ImageVisual):
 
     @property
     def size(self):
-        # TODO_OCTREE: need to compute the size...
+        # TODO_OCTREE: Who checks this? Need to compute the size...
         #
         # ImageVisual.size() does
         #     return self._data.shape[:2][::-1]
@@ -137,6 +141,7 @@ class TiledImageVisual(ImageVisual):
         # We don't have a self._data so what do we put here? Maybe need
         # a bounds for all the currently visible tiles?
         # return self._texture_atlas.texture_shape[:2]
+        #
         return (1024, 1024)
 
     @property
@@ -254,11 +259,14 @@ class TiledImageVisual(ImageVisual):
         our _prepare_draw().
 
         This is the heart of tiled rendering. Instead of drawing one quad
-        with one texture, we draw one quad per tile. And for each quad its
-        texture coordinates will pull from the right slot in the atlas.
+        with one texture, we draw one quad per tile. And for each quad we
+        use its own texture coordinates which will pull from the right slot
+        in the atlas.
 
         So as the card draws the tiles, where it's sampling from the
-        texture will hop around in the atlas texture.
+        texture will hop around in the atlas texture. We just have one
+        atlas texture, but we might have more in teh future. If so, we'll
+        want to sort the quads to minimize the number of texture swaps.
         """
         if len(self._tiles) == 0:
             return  # Nothing to draw.
@@ -268,13 +276,16 @@ class TiledImageVisual(ImageVisual):
 
         # TODO_OCTREE: We can probably avoid vstack here if clever,
         # maybe one one vertex buffer sized according to the max
-        # number of tiles we expect. But grow if needed.
+        # number of tiles we expect? But grow if needed?
         for tile_data in self._tiles.tile_data:
             tile = tile_data.atlas_tile
             verts = np.vstack((verts, tile.verts))
             tex_coords = np.vstack((tex_coords, tile.tex_coords))
 
-        # Set the base ImageVisual _subdiv_ buffers
+        # Set the base ImageVisual's _subdiv_ buffers. ImageVisual has two
+        # modes: imposter and subdivision. So far TiledImageVisual
+        # implicitly is always in subdivision mode. Not sure if we'd ever
+        # support imposter, or if that even makes sense with tiles.
         self._subdiv_position.set_data(verts)
         self._subdiv_texcoord.set_data(tex_coords)
         self._need_vertex_update = False
