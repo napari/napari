@@ -177,6 +177,7 @@ class TiledImageVisual(ImageVisual):
         int
             The number of chunks that still need to be added.
         """
+        # Get the new chunks, ones we are not currently drawing.
         new_chunks = [
             octree_chunk
             for octree_chunk in chunks
