@@ -236,10 +236,19 @@ class TiledImageVisual(ImageVisual):
         visible_set : Set[OctreeChunk]
             The set of currently visible chunks.
         """
-        for tile_data in list(self._tiles.tile_data):
+        for tile_state in list(self._tiles.tile_state):
+            tile_data = tile_state.data
+
             if tile_data.octree_chunk.key not in visible_set:
-                tile_index = tile_data.atlas_tile.index
-                self.remove_tile(tile_index)
+                # Mark any no-longer-visible tiles as stale. Stale means we might
+                # still draw it, but it's going to soon by replaced by something
+                # newer.
+                #
+                # If we are drawing tiles for an octree, the user is
+                # probably zooming in or out. We want to keep drawing the
+                # stale tiles until the tiles from the new octree level are
+                # loaded and adding to this visual.
+                tile_state.stale = True
 
     def _remove_tile(self, tile_index: int) -> None:
         """Remove one tile from the image.
@@ -282,10 +291,10 @@ class TiledImageVisual(ImageVisual):
         # TODO_OCTREE: We can probably avoid vstack here if clever,
         # maybe one one vertex buffer sized according to the max
         # number of tiles we expect? But grow if needed?
-        for tile_data in self._tiles.tile_data:
-            tile = tile_data.atlas_tile
-            verts = np.vstack((verts, tile.verts))
-            tex_coords = np.vstack((tex_coords, tile.tex_coords))
+        for tile_state in self._tiles.tile_state:
+            atlas_tile = tile_state.data.atlas_tile
+            verts = np.vstack((verts, atlas_tile.verts))
+            tex_coords = np.vstack((tex_coords, atlas_tile.tex_coords))
 
         # Set the base ImageVisual's _subdiv_ buffers. ImageVisual has two
         # modes: imposter and subdivision. So far TiledImageVisual

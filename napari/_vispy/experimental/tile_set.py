@@ -9,7 +9,7 @@ from .texture_atlas import AtlasTile
 
 
 class TileData(NamedTuple):
-    """TileSet stores one TileData per tile.
+    """TileSet stores one TileState per tile, each one has a TileData.
 
     Attributes
     ----------
@@ -24,6 +24,12 @@ class TileData(NamedTuple):
     atlas_tile: AtlasTile
 
 
+class TileState:
+    def __init__(self, octree_chunk: OctreeChunk, atlas_tile: AtlasTile):
+        self.data = TileData(octree_chunk, atlas_tile)
+        self.stale = False
+
+
 class TileSet:
     """The tiles we are drawing.
 
@@ -31,14 +37,14 @@ class TileSet:
 
     Attributes
     ----------
-    _tiles : Dict[int, TileData]
-        Maps tile_index to the the TileData we have for that tile.
+    _tiles : Dict[int, TileState]
+        Maps tile_index to the the TileStat we have for that tile.
     _chunks : Set[OctreeChunkKey]
         The chunks we have in the set, for fast membership tests.
     """
 
     def __init__(self):
-        self._tiles: Dict[int, TileData] = {}
+        self._tiles: Dict[int, TileState] = {}
         self._chunks: Set[OctreeChunkKey] = set()
 
     def __len__(self) -> int:
@@ -67,18 +73,33 @@ class TileSet:
             The atlas tile that was created for this chunks.
         """
         tile_index = atlas_tile.index
-        self._tiles[tile_index] = TileData(octree_chunk, atlas_tile)
+
+        self._tiles[tile_index] = TileState(octree_chunk, atlas_tile)
         self._chunks.add(octree_chunk.key)
 
+    def mark_stale(self, tile_index: int) -> None:
+        """Mark this tile as stale.
+
+        Stale means we might continue to draw the tile, but it's expected
+        to be replaced soon. Note with an octree the replacement might be
+        physically smaller or bigger. One tile might be replaced by four
+        smaller tiles. Or four tiles might be replaced by one bigger tile.
+
+        Parameters
+        ----------
+        tile_index : int
+            The tile to mark stale.
+        """
+
     def remove(self, tile_index: int) -> None:
-        """Remove the TileData at this index from the set.
+        """Remove the TileState at this index from the set.
 
         tile_index : int
-            Remove the TileData at this index.
+            Remove the TileState at this index.
         """
         octree_chunk = self._tiles[tile_index].octree_chunk
-        del self._tiles[tile_index]
         self._chunks.remove(octree_chunk.key)
+        del self._tiles[tile_index]
 
     @property
     def chunks(self) -> List[OctreeChunk]:
@@ -89,26 +110,28 @@ class TileSet:
         List[OctreeChunk]
             All the chunks in the set.
         """
-        return [tile_data.octree_chunk for tile_data in self._tiles.values()]
+        return [
+            tile_state.data.octree_chunk for tile_state in self._tiles.values()
+        ]
 
     @property
-    def tile_data(self) -> List[TileData]:
-        """Return data for all tiles in the set.
+    def tile_state(self) -> List[TileState]:
+        """Return the state for all tiles in the set.
 
         Return
         ------
-        List[TileData]
-            Data for all the tiles in the set.
+        List[TileState]
+            State for all the tiles in the set.
         """
         return self._tiles.values()
 
     def contains_octree_chunk(self, octree_chunk: OctreeChunk) -> bool:
-        """Return True if the set contains this chunk data.
+        """Return True if the set contains this chunk.
 
         Parameters
         ----------
         octree_chunk : OctreeChunk
-            Check if OctreeChunk is in the set.
+            Check if this chunk is in the set.
 
         Return
         ------
