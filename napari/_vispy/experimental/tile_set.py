@@ -1,20 +1,25 @@
 """TileSet class.
 
-TiledImageVisual uses this to track its tiles.
+TiledImageVisual uses this class to track the tiles its drawing.
 """
-from dataclasses import dataclass
-from typing import Dict, List, Set
+from typing import Dict, List, NamedTuple, Set
 
 from ...layers.image.experimental import OctreeChunk, OctreeChunkKey
 from .texture_atlas import AtlasTile
 
 
-@dataclass
-class TileData:
-    """Tie together the chunk and its tile."""
+class TileData(NamedTuple):
+    """TileSet stores these.
 
-    octree_chunk: OctreeChunk  # The chunk that created the tile.
-    atlas_tile: AtlasTile  # Verts and tex coords for the tile.
+    This class ties together the chunk and the tile that was creates for
+    that chunk.
+    """
+
+    # The chunk that created the tile.
+    octree_chunk: OctreeChunk
+
+    # Verts and tex coords for the tile.
+    atlas_tile: AtlasTile
 
 
 class TileSet:
