@@ -25,9 +25,24 @@ class TileData(NamedTuple):
 
 
 class TileState:
+    """The state stored for every tile in the TileSet.
+
+    Parameters
+    ----------
+    octree_chunk : OctreeChunk
+        The chunk that produced this tile.
+    atlas_tile : AtlasTile
+        The vert and tex coord information for the tile.
+
+    Attributes
+    ----------
+    stale : bool
+        Stale tiles are going to be replaced soon.
+    """
+
     def __init__(self, octree_chunk: OctreeChunk, atlas_tile: AtlasTile):
-        self.data = TileData(octree_chunk, atlas_tile)
-        self.stale = False
+        self.data: TileData = TileData(octree_chunk, atlas_tile)
+        self.stale: bool = False
 
 
 class TileSet:
