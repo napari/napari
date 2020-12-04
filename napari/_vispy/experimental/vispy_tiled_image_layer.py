@@ -234,9 +234,11 @@ class VispyTiledImageLayer(VispyImageLayer):
         return stats.remaining
 
     def _on_poll(self, event=None) -> None:
-        """Called when the camera moves or we otherwise need polling.
+        """Called before we are drawn.
 
-        Update tiles based on which chunks are currently visible.
+        This is called when the camera moves, or when we have chunks that
+        need to be loaded. We update which tiles we are drawing based on
+        which chunks are currently visible.
         """
         super()._on_poll()
 
