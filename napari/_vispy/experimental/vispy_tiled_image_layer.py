@@ -202,17 +202,19 @@ class VispyTiledImageLayer(VispyImageLayer):
     def _update_view(self) -> int:
         """Update the tiled image based on what's visible in the layer.
 
-        We asked the layer what chunks are visible, then we load some of
-        those chunk, if we don't already have them. We return how many
-        visible chunks, that we don't have, still need to be added.
+        We call self._update_chunks() which asks the layer what chunks are
+        visible, then it potentially loads some of those chunk, if we
+        didn't already have them. This returns how many visible chunks,
+        that we don't have, still need to be added.
 
-        If we return non-zero, we expect to drawn again quickly, so that we
-        can add some more chunks.
+        If we return non-zero, we expect to be polled and drawn again,
+        whether or not the camera moves, so we can finish adding the rest
+        of the visible chunks.
 
         Return
         ------
         int
-             The number of chunks that still need to be added, in a future frame.
+             The number of chunks that still need to be added.
         """
         if not self.node.visible:
             return 0
@@ -250,5 +252,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         need_polling = self._update_view() > 0
         event.handled = need_polling
 
-    def _on_loaded(self, _event):
+    def _on_loaded(self, _event) -> None:
+        """The layer loaded new data, so update or view."""
         self._update_view()
