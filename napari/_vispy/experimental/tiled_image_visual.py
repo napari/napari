@@ -224,9 +224,24 @@ class TiledImageVisual(ImageVisual):
             return  # No slot available in the atlas.
 
         self._tiles.add(octree_chunk, atlas_tile)
+
+        # Set this flag so we call self._build_vertex_data() the next time
+        # we are drawn. It will update our vertices and texture coordinates
+        # to include this new chunk.
         self._need_vertex_update = True
 
-    def remove_tile(self, tile_index: int) -> None:
+    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
+        """Mark tiles as stale if not part of the visible set.
+
+        visible_set : Set[OctreeChunk]
+            The set of currently visible chunks.
+        """
+        for tile_data in list(self._tiles.tile_data):
+            if tile_data.octree_chunk.key not in visible_set:
+                tile_index = tile_data.atlas_tile.index
+                self.remove_tile(tile_index)
+
+    def _remove_tile(self, tile_index: int) -> None:
         """Remove one tile from the image.
 
         Parameters
@@ -237,20 +252,10 @@ class TiledImageVisual(ImageVisual):
         try:
             self._tiles.remove(tile_index)
             self._texture_atlas.remove_tile(tile_index)
+
             self._need_vertex_update = True
         except IndexError as exc:
             raise RuntimeError(f"Tile index {tile_index} not found.") from exc
-
-    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
-        """Remove tiles that are not part of the given visible set.
-
-        visible_set : Set[OctreeChunk]
-            The set of currently visible chunks.
-        """
-        for tile_data in list(self._tiles.tile_data):
-            if tile_data.octree_chunk.key not in visible_set:
-                tile_index = tile_data.atlas_tile.index
-                self.remove_tile(tile_index)
 
     def _build_vertex_data(self) -> None:
         """Build vertex and texture coordinate buffers.
