@@ -44,8 +44,9 @@ class VispyTiledImageLayer(VispyImageLayer):
     An early tiled visual we had created a new ImageVisual for each tile.
     This led to crashes with PyQt5 due to the constant scene graph changes.
     Also each new ImageVisual caused a slow down, the shader build was one
-    reason. Finally rendering was slower because it required a texture swap
-    for each tile. This new tiled version solves those problems.
+    reason. Finally, rendering was slower because it required a texture
+    swap for each tile. This newer VispyTiledImageLayer solves those
+    problems.
 
     Parameters
     ----------
@@ -63,12 +64,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         visual = TiledImageNode(tile_shape=layer.tile_shape)
 
         # Pass our TiledImageVisual to the base class, it will become our
-        # self.node which is VispyBaseImage.node.
+        # self.node which VispyBaseImage holds.
         super().__init__(layer, visual)
 
-        # Optional grid shows tile borders.
+        # An optional grid that shows tile borders.
         self.grid = TileGrid(self.node)
 
+        # So we redraw when the layer loads new data.
         self.layer.events.loaded.connect(self._on_loaded)
 
     @property
@@ -103,25 +105,38 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Get the currently visible chunks from the layer.
         visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
 
+        # Record some stats about this update process.
         stats = ChunkStats(seen=len(visible_chunks))
 
         # Create the visible set of chunks using their keys.
-        # TODO_OCTREE: use __hash__ not OctreeChunk.key?
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key, using __hash__
+        # did not immediately work, but we should try again.
         visible_set = set(octree_chunk.key for octree_chunk in visible_chunks)
 
+        # Then number of tiles we have before the update.
         stats.start = self.num_tiles
 
         # Remove tiles for chunks which are no longer visible.
         self.node.prune_tiles(visible_set)
 
+        # The low point, after removing but before adding.
         stats.low = self.num_tiles
+
+        # Which means we deleted this many tiles.
         stats.deleted = stats.start - stats.low
 
+        # Remaining is how many tiles in visible_chunks still need to be
+        # added. We don't necessarily add them all so that we don't tank
+        # the framerate.
         stats.remaining = self._add_chunks(visible_chunks)
 
+        # Final number of tiles after adding, which implies how many were
+        # created.
         stats.final = self.num_tiles
         stats.created = stats.final - stats.low
 
+        # The grid is only for debugging and demos, yet it's quite useful
+        # otherwise the tiles are kind of invisible.
         if self.layer.show_grid:
             self.grid.update_grid(self.node.octree_chunks)
         else:
