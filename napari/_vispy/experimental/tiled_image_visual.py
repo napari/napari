@@ -232,25 +232,16 @@ class TiledImageVisual(ImageVisual):
         # to include this new chunk.
         self._need_vertex_update = True
 
-    def mark_tiles_stale(self, visible_set: Set[OctreeChunk]) -> None:
-        """Mark tiles as stale if not part of the visible set.
+    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
+        """Remove tiles that are not part of the given visible set.
 
         visible_set : Set[OctreeChunk]
             The set of currently visible chunks.
         """
-        for tile_state in list(self._tiles.tile_state):
-            tile_data = tile_state.data
-
+        for tile_data in list(self._tiles.tile_data):
             if tile_data.octree_chunk.key not in visible_set:
-                # Mark any no-longer-visible tiles as stale. Stale means we might
-                # still draw it, but it's going to soon by replaced by something
-                # newer.
-                #
-                # If we are drawing tiles for an octree, the camera is
-                # probably zooming in or out. We want to keep drawing the
-                # stale tiles until the tiles from the new octree level are
-                # loaded and added to this visual.
-                tile_state.stale = True
+                tile_index = tile_data.atlas_tile.index
+                self._remove_tile(tile_index)
 
     def _remove_tile(self, tile_index: int) -> None:
         """Remove one tile from the image.
@@ -293,8 +284,8 @@ class TiledImageVisual(ImageVisual):
         # TODO_OCTREE: We can probably avoid vstack here? Maybe one one
         # vertex buffer sized according to the max number of tiles we
         # expect? But grow it if we exceed our guess?
-        for tile_state in self._tiles.tile_state:
-            atlas_tile = tile_state.data.atlas_tile
+        for tile_data in self._tiles.tile_data:
+            atlas_tile = tile_data.atlas_tile
             verts = np.vstack((verts, atlas_tile.verts))
             tex_coords = np.vstack((tex_coords, atlas_tile.tex_coords))
 

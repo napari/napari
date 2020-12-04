@@ -119,7 +119,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         # Make tiles as stale if their chunk is no longer visible. However,
         # stale tiles will still be drawn until replaced by something newer.
-        self.node.mark_tiles_stale(visible_set)
+        self.node.prune_tiles(visible_set)
 
         # The low point, after removing but before adding.
         stats.low = self.num_tiles
