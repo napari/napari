@@ -187,21 +187,22 @@ class TiledImageVisual(ImageVisual):
             # Add the first one in the list.
             self.add_one_chunk(new_chunks.pop(0))
 
-            # For now break so that we only add ONE chunk per frame. But
-            # ideally we want to add as many chunks as possible, but
-            # without tanking the frame rate.
+            # In the future we might add several chunks here. We want
+            # to add as many as we can without harming the framerate
+            # too much.
             #
-            # But recent measurements showed it taking 40ms to add one
-            # 256x256 pixel chunk! So there is only time to add about one.
+            # For now just add ONE chunk per frame. We've timed (256, 256)
+            # pixel chunks taking a whopping 40ms to load into VRAM!
+            # Probably due to CPU-side processing we are doing. So today
+            # there really is only time to add one.
             #
-            # Long term hopefully we set a budget like 10ms, and add as
-            # many chunks as we can without going over that budget.
-            # Dynamically monitoring how much we've added.
+            # Even if adds were fast, adding just one is not horrible.
+            # The frame rate will stay smooth. But adding more if they
+            # fit within the budget is better.
             break
 
-        # Return how many chunks we did NOT add. So the system knows we
-        # have more chunks to add. So we will get polled and drawn event if
-        # the camera is not moving.
+        # Return how many chunks we did NOT add. So we will get polled and
+        # drawn until all the chunks have been added.
         return len(new_chunks)
 
     def add_one_chunk(self, octree_chunk: OctreeChunk) -> None:
@@ -244,10 +245,10 @@ class TiledImageVisual(ImageVisual):
                 # still draw it, but it's going to soon by replaced by something
                 # newer.
                 #
-                # If we are drawing tiles for an octree, the user is
+                # If we are drawing tiles for an octree, the camera is
                 # probably zooming in or out. We want to keep drawing the
                 # stale tiles until the tiles from the new octree level are
-                # loaded and adding to this visual.
+                # loaded and added to this visual.
                 tile_state.stale = True
 
     def _remove_tile(self, tile_index: int) -> None:
