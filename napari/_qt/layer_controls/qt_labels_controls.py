@@ -107,7 +107,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_contig_change()
 
         ndim_cb = QCheckBox()
-        ndim_cb.setToolTip('n-dimensional editing')
+        ndim_cb.setToolTip('edit all dimensions')
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change()
