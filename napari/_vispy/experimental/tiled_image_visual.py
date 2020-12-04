@@ -288,9 +288,9 @@ class TiledImageVisual(ImageVisual):
         verts = np.zeros((0, 2), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
 
-        # TODO_OCTREE: We can probably avoid vstack here if clever,
-        # maybe one one vertex buffer sized according to the max
-        # number of tiles we expect? But grow if needed?
+        # TODO_OCTREE: We can probably avoid vstack here? Maybe one one
+        # vertex buffer sized according to the max number of tiles we
+        # expect? But grow it if we exceed our guess?
         for tile_state in self._tiles.tile_state:
             atlas_tile = tile_state.data.atlas_tile
             verts = np.vstack((verts, atlas_tile.verts))
