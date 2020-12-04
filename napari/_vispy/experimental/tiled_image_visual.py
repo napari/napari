@@ -230,7 +230,7 @@ class TiledImageVisual(ImageVisual):
         # to include this new chunk.
         self._need_vertex_update = True
 
-    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
+    def mark_tiles_stale(self, visible_set: Set[OctreeChunk]) -> None:
         """Mark tiles as stale if not part of the visible set.
 
         visible_set : Set[OctreeChunk]
@@ -299,7 +299,7 @@ class TiledImageVisual(ImageVisual):
         # Set the base ImageVisual's _subdiv_ buffers. ImageVisual has two
         # modes: imposter and subdivision. So far TiledImageVisual
         # implicitly is always in subdivision mode. Not sure if we'd ever
-        # support imposter, or if that even makes sense with tiles.
+        # support imposter, or if that even makes sense with tiles?
         self._subdiv_position.set_data(verts)
         self._subdiv_texcoord.set_data(tex_coords)
         self._need_vertex_update = False

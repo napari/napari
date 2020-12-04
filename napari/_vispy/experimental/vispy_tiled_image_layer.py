@@ -117,8 +117,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Then number of tiles we have before the update.
         stats.start = self.num_tiles
 
-        # Remove tiles for chunks which are no longer visible.
-        self.node.prune_tiles(visible_set)
+        # Make tiles as stale if their chunk is no longer visible. However,
+        # stale tiles will still be drawn until replaced by something newer.
+        self.node.mark_tiles_stale(visible_set)
 
         # The low point, after removing but before adding.
         stats.low = self.num_tiles
