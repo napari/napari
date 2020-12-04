@@ -26,6 +26,7 @@ class ChunkStats:
     seen: int = 0
     start: int = 0
     deleted: int = 0
+    remaining: int = 0
     low: int = 0
     created: int = 0
     final: int = 0
@@ -116,9 +117,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         stats.low = self.num_tiles
         stats.deleted = stats.start - stats.low
 
-        if self.layer.track_view:
-            # Add tiles for visible chunks that do not already have a tile.
-            self.node.add_chunks(visible_chunks)
+        stats.remaining = self._add_chunks(visible_chunks)
 
         stats.final = self.num_tiles
         stats.created = stats.final - stats.low
@@ -129,6 +128,45 @@ class VispyTiledImageLayer(VispyImageLayer):
             self.grid.clear()
 
         return stats
+
+    def _add_chunks(self, visible_chunks: List[OctreeChunk]) -> int:
+        """Add some or all of these visible chunks to the tiled image.
+
+        Parameters
+        ----------
+        visible_chunks : List[OctreeChunk]
+            Chunks we should add, if not already in the tiled image.
+
+        Return
+        ------
+        int
+            The number of chunks that still need to be added.
+        """
+        if not self.layer.track_view:
+            # Tracking the view is the normal mode, where the tiles load in as
+            # the view moves. Not tracking the view is only used for debugging
+            # or demos, to show the tiles we "were" showing previously, without
+            # updating them.
+            return 0  # Nothing more to add
+
+        # Add tiles for visible chunks that do not already have a tile.
+        # This might not add all the chunks, because doing so might
+        # tank the framerate.
+        #
+        # Even though the chunks are already in RAM, we have to do some
+        # processing and then we have to move the data to VRAM. That time
+        # cost might not happen here, we probably are just queueing up a
+        # transfer that will happen when we next call glFlush() to let the
+        # card do its business.
+        #
+        # Any chunks not added this frame will have a chance to be
+        # added the next frame, if they are still on the visible_chunks
+        # list next frame. It's important we keep asking the layer for
+        # the visible chunks every frame. We don't want to queue up and
+        # add chunks which might no longer be needed, because the
+        # camera might move every frame. The situation might be
+        # evolving rapidly if the camera is moving a lot.
+        return self.node.add_chunks(visible_chunks)
 
     def _update_tile_shape(self) -> None:
         """Check if the tile shape was changed on us."""
@@ -143,7 +181,21 @@ class VispyTiledImageLayer(VispyImageLayer):
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
 
-    def _update_view(self):
+    def _update_view(self) -> int:
+        """Update the tiled image based on what's visible in the layer.
+
+        We asked the layer what chunks are visible, then we load some of
+        those chunk, if we don't already have them. We return how many
+        visible chunks, that we don't have, still need to be added.
+
+        If we return non-zero, we expect to drawn again quickly, so that we
+        can add some more chunks.
+
+        Return
+        ------
+        int
+             The number of chunks that still need to be added, in a future frame.
+        """
         if not self.node.visible:
             return
 
@@ -159,13 +211,26 @@ class VispyTiledImageLayer(VispyImageLayer):
                 f"time: {elapsed.duration_ms:.3f}ms"
             )
 
-    def _on_camera_move(self, event=None) -> None:
-        """Called on any camera movement.
+        return stats.remaining
+
+    def _on_poll(self, event=None) -> None:
+        """Called when the camera moves or we otherwise need polling.
 
         Update tiles based on which chunks are currently visible.
         """
-        super()._on_camera_move()
-        self._update_view()
+        super()._on_poll()
+
+        # Mark the event "handled" if we have more chunks to load.
+        #
+        # By saying the poll event was "handled" we're telling QtPoll to
+        # keep polling us, even if the camera stops moving. So that we can
+        # finish up the loads/draws with a potentially still camera.
+        #
+        # We'll be polled until no visuals handle the event, meaning
+        # no visuals need polling. Then all is quiet until the camera
+        # moves again.
+        need_polling = self._update_view() > 0
+        event.handled = need_polling
 
     def _on_loaded(self, _event):
         self._update_view()

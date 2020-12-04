@@ -83,7 +83,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
-        self.camera = Camera(self.dims)
+        self.camera = Camera()
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -127,6 +127,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
+
+        # Only created if NAPARI_MON is enabled.
+        self._remote_commands = _create_remote_commands(self.layers)
 
     def __str__(self):
         """Simple string representation"""
@@ -174,7 +177,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """tuple: Size of grid."""
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -186,7 +189,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_size(self, grid_size):
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -199,7 +202,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """int: Number of layers in each grid square."""
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -211,7 +214,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_stride(self, grid_stride):
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -325,7 +328,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
-
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -419,12 +421,13 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers.extent.world
-            ss = self.layers.extent.step
-            ndim = extent.shape[1]
+            extent = self.layers.extent
+            world = extent.world
+            ss = extent.step
+            ndim = world.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
+                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.events.layers_change()
         self._update_active_layer(event)
 
@@ -452,9 +455,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
-        for i, layer in enumerate(self.layers[::-1]):
-            i_row, i_column = self.grid.position(i, len(self.layers))
-            self._subplot(layer, (i_row, i_column))
+        extent = self._sliced_extent_world
+        n_layers = len(self.layers)
+        for i, layer in enumerate(self.layers):
+            i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
+            self._subplot(layer, (i_row, i_column), extent)
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
@@ -476,7 +481,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
@@ -497,7 +502,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
             ),
             category=DeprecationWarning,
@@ -505,7 +510,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
         self.grid.enabled = False
 
-    def _subplot(self, layer, position):
+    def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -514,10 +519,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
-        size : 2-tuple of int
-            Size of the grid that is being used.
+        extent : array, shape (2, D)
+            Extent of the world.
         """
-        extent = self._sliced_extent_world
         scene_shift = extent[1] - extent[0] + 1
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
@@ -555,6 +559,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer.events.data.connect(self._on_layers_change)
         layer.name = self.layers._coerce_name(layer.name, layer)
         layer.events.name.connect(self.layers._update_name)
+        layer.events.scale.connect(self._on_layers_change)
+        layer.events.translate.connect(self._on_layers_change)
+        layer.events.rotate.connect(self._on_layers_change)
+        layer.events.shear.connect(self._on_layers_change)
+        layer.events.affine.connect(self._on_layers_change)
         layer.selected = True
         self.layers.append(layer)
         self.layers.unselect_all(ignore=layer)
@@ -991,6 +1000,21 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
+
+
+def _create_remote_commands(layers: LayerList) -> None:
+    """Start the monitor service if configured to use it."""
+    if not config.monitor:
+        return None
+
+    from ..components.experimental.monitor import monitor
+    from ..components.experimental.remote_commands import RemoteCommands
+
+    monitor.start()  # Start if not already started.
+
+    # Create a RemoteCommands object which will run commands
+    # from remote clients that come through the monitor.
+    return RemoteCommands(layers, monitor.run_command_event)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

@@ -635,7 +635,7 @@ class Layer(KeymapProvider, ABC):
         """
         warnings.warn(
             (
-                "The shape attribute is deprecated and will be removed in version 0.4.2."
+                "The shape attribute is deprecated and will be removed in version 0.4.3."
                 " Instead you should use the extent.data and extent.world attributes"
                 " to get the extent of the data in data or world coordinates."
             ),
@@ -974,7 +974,8 @@ class Layer(KeymapProvider, ABC):
     @property
     def displayed_coordinates(self):
         """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self._dims_displayed]
+        coordinates = self.coordinates
+        return [coordinates[i] for i in self._dims_displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value

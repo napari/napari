@@ -1521,9 +1521,10 @@ class Points(Layer):
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
-        if len(self._view_data) > 0:
+        view_data = self._view_data
+        if len(view_data) > 0:
             # Get the point sizes
-            distances = abs(self._view_data - self.displayed_coordinates)
+            distances = abs(view_data - self.displayed_coordinates)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
@@ -1630,7 +1631,8 @@ class Points(Layer):
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        if len(self._view_data) > 0:
+        view_data = self._view_data
+        if len(view_data) > 0:
             de = self._extent_data
             min_vals = [de[0, i] for i in self._dims_displayed]
             shape = np.ceil(
@@ -1639,13 +1641,13 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
-            if len(self._view_data) > self._max_points_thumbnail:
+            if len(view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
-                    0, len(self._view_data), self._max_points_thumbnail
+                    0, len(view_data), self._max_points_thumbnail
                 )
-                points = self._view_data[thumbnail_indices]
+                points = view_data[thumbnail_indices]
             else:
-                points = self._view_data
+                points = view_data
                 thumbnail_indices = self._indices_view
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor

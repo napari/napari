@@ -493,7 +493,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         warnings.warn(
             (
-                "The shape attribute is deprecated and will be removed in version 0.4.2."
+                "The shape attribute is deprecated and will be removed in version 0.4.3."
                 " Instead you should use the extent.data and extent.world attributes"
                 " to get the extent of the data in data or world coordinates."
             ),

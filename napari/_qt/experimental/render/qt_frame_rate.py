@@ -11,6 +11,8 @@ from qtpy.QtCore import QTimer
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
+from ....components.experimental.monitor import monitor
+
 # Shape of the bitmap.
 BITMAP_SHAPE = (20, 270, 4)
 
@@ -390,6 +392,10 @@ class QtFrameRate(QLabel):
 
         if use_delta:
             delta_seconds = now - self._last_time
+
+            if monitor:
+                monitor.add({"frame_time": delta_seconds})
+
             self.leds.set_peak(now, delta_seconds)
 
         self._draw(now)  # Draw the whole meter.
