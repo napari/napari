@@ -108,7 +108,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     assert viewer.dims.ndisplay == 3
 
     # Flip dims order displayed
-    dims_order = list(range(ndim))
+    dims_order = tuple(range(ndim))
     viewer.dims.order = dims_order
     assert viewer.dims.order == dims_order
 
