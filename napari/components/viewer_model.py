@@ -411,6 +411,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
+            self.cursor.size = active_layer.cursor_size
             self.interactive = active_layer.interactive
             self.active_layer = active_layer
 

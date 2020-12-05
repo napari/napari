@@ -186,7 +186,7 @@ class Layer(KeymapProvider, ABC):
         self._status = 'Ready'
         self._help = ''
         self._cursor = 'standard'
-        self._cursor_size = None
+        self._cursor_size = 1
         self._interactive = True
         self._value = None
         self.scale_factor = 1
