@@ -547,6 +547,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         layer = event.value
 
+        # Coerce name into being unique and connect event to ensure uniqueness
+        layer.name = self.layers._coerce_name(layer.name, layer)
+
         # Connect individual layer events to viewer events
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)
@@ -559,9 +562,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
-
-        # Coerce name into being unique and connect event to ensure uniqueness
-        layer.name = self.layers._coerce_name(layer.name, layer)
         layer.events.name.connect(self.layers._update_name)
 
         # For the labels layer we need to reset the undo/ redo
@@ -602,9 +602,22 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer = event.value
 
         # Disconnect all events from layer
-        layer.events.disconnect()
-        for em in layer.events.emitters.values():
-            em.disconnect()
+        layer.events.select.disconnect(self._update_active_layer)
+        layer.events.deselect.disconnect(self._update_active_layer)
+        layer.events.interactive.disconnect(self._update_interactive)
+        layer.events.cursor.disconnect(self._update_cursor)
+        layer.events.cursor_size.disconnect(self._update_cursor_size)
+        layer.events.data.disconnect(self._on_layers_change)
+        layer.events.scale.disconnect(self._on_layers_change)
+        layer.events.translate.disconnect(self._on_layers_change)
+        layer.events.rotate.disconnect(self._on_layers_change)
+        layer.events.shear.disconnect(self._on_layers_change)
+        layer.events.affine.disconnect(self._on_layers_change)
+        layer.events.name.disconnect(self.layers._update_name)
+
+        # layer.events.disconnect()
+        # for em in layer.events.emitters.values():
+        #     em.disconnect()
 
         # For the labels layer disconnect history resets
         if hasattr(layer, '_reset_history'):

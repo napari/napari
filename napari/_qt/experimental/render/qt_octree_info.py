@@ -181,3 +181,9 @@ class QtOctreeInfo(QFrame):
     def _update(self, _event=None):
         """Set controls based on the current layer setting."""
         self.layout.set_controls(self.layer)
+
+    def close(self):
+        """Vispy visual is closing."""
+        self.layer.events.freeze_level.disconnect(self._update)
+        self.layer.events.octree_level.disconnect(self._update)
+        self.layer.events.tile_size.disconnect(self._update)

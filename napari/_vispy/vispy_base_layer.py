@@ -52,7 +52,7 @@ class VispyBaseLayer(ABC):
             self.MAX_TEXTURE_SIZE_3D,
         ) = get_max_texture_sizes()
 
-        self.layer.events.refresh.connect(lambda e: self.node.update())
+        self.layer.events.refresh.connect(self._on_refresh_change)
         self.layer.events.set_data.connect(self._on_data_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
@@ -102,6 +102,9 @@ class VispyBaseLayer(ABC):
     @abstractmethod
     def _on_data_change(self, event=None):
         raise NotImplementedError()
+
+    def _on_refresh_change(self, event=None):
+        self.node.update()
 
     def _on_visible_change(self, event=None):
         self.node.visible = self.layer.visible
@@ -160,3 +163,18 @@ class VispyBaseLayer(ABC):
         VRAM or animating itself.
         """
         pass
+
+    def close(self):
+        """Vispy visual is closing."""
+        self.node.transforms = MatrixTransform()
+        self.node.parent = None
+        self.layer.events.refresh.disconnect(self._on_refresh_change)
+        self.layer.events.set_data.disconnect(self._on_data_change)
+        self.layer.events.visible.disconnect(self._on_visible_change)
+        self.layer.events.opacity.disconnect(self._on_opacity_change)
+        self.layer.events.blending.disconnect(self._on_blending_change)
+        self.layer.events.scale.disconnect(self._on_matrix_change)
+        self.layer.events.translate.disconnect(self._on_matrix_change)
+        self.layer.events.rotate.disconnect(self._on_matrix_change)
+        self.layer.events.shear.disconnect(self._on_matrix_change)
+        self.layer.events.affine.disconnect(self._on_matrix_change)

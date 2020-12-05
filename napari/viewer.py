@@ -95,6 +95,9 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Remove all the layers from the viewer
+        self.layers.clear()
+        # Close the main window
         self.window.close()
 
         if config.async_loading:

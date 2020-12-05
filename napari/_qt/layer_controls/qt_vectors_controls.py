@@ -281,3 +281,14 @@ class QtVectorsControls(QtLayerControls):
                 prop = self.layer._edge_color_property
                 index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
                 self.color_prop_box.setCurrentIndex(index)
+
+    def close(self):
+        """Layer widget is closing."""
+        super().close()
+        self.layer.events.edge_width.disconnect(self._on_width_change)
+        self.layer.events.length.disconnect(self._on_len_change)
+        self.layer.events.edge_color_mode.disconnect(
+            self._on_edge_color_mode_change
+        )
+        self.layer.events.edge_color.disconnect(self._on_edge_color_change)
+        self.deleteLater()

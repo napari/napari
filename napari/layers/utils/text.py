@@ -355,6 +355,25 @@ class TextManager:
         # connect the function for updating the text node blending
         self.events.blending.connect(blending_update_function)
 
+    def _disconnect_update_events(
+        self, text_update_function, blending_update_function
+    ):
+        """Function to disconnect all property update events to the update callback.
+
+        This is typically used in the vispy view file.
+        """
+        # connect the function for updating the text node
+        self.events.text.disconnect(text_update_function)
+        self.events.rotation.disconnect(text_update_function)
+        self.events.translation.disconnect(text_update_function)
+        self.events.anchor.disconnect(text_update_function)
+        self.events.color.disconnect(text_update_function)
+        self.events.size.disconnect(text_update_function)
+        self.events.visible.disconnect(text_update_function)
+
+        # connect the function for updating the text node blending
+        self.events.blending.disconnect(blending_update_function)
+
     def __eq__(self, other):
         """Method to test equivalence
 

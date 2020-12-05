@@ -39,3 +39,8 @@ class VispyVectorsLayer(VispyBaseLayer):
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def close(self):
+        """Vispy visual is closing."""
+        super().close()
+        self.layer.events.edge_color.disconnect(self._on_data_change)

@@ -260,3 +260,8 @@ class VispyTiledImageLayer(VispyImageLayer):
     def _on_loaded(self, _event) -> None:
         """The layer loaded new data, so update or view."""
         self._update_view()
+
+    def close(self):
+        """Vispy visual is closing."""
+        super().close()
+        self.layer.events.loaded.disconnect(self._on_loaded)

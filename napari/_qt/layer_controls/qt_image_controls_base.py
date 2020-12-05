@@ -193,8 +193,15 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.status = self.layer._contrast_limits_msg
 
     def closeEvent(self, event):
-        self.deleteLater()
+        self.close()
         event.accept()
+
+    def close(self):
+        """Layer widget is closing."""
+        super().close()
+        self.layer.events.colormap.disconnect(self._on_colormap_change)
+        self.layer.events.gamma.disconnect(self.gamma_slider_update)
+        self.layer.events.contrast_limits.disconnect(self._on_clims_change)
 
 
 def create_range_popup(layer, attr, parent=None):

@@ -344,3 +344,22 @@ class QtPointsControls(QtLayerControls):
             ['select_button', 'addition_button', 'delete_button'],
             self.layer.editable,
         )
+
+    def close(self):
+        """Layer widget is closing."""
+        super().close()
+        self.layer.events.mode.disconnect(self.set_mode)
+        self.layer.events.n_dimensional.disconnect(self._on_n_dim_change)
+        self.layer._text.events.visible.disconnect(
+            self._on_text_visibility_change
+        )
+        self.layer.events.symbol.disconnect(self._on_symbol_change)
+        self.layer.events.size.disconnect(self._on_size_change)
+        self.layer.events.current_edge_color.disconnect(
+            self._on_edge_color_change
+        )
+        self.layer.events.current_face_color.disconnect(
+            self._on_face_color_change
+        )
+        self.layer.events.editable.disconnect(self._on_editable_change)
+        self.deleteLater()

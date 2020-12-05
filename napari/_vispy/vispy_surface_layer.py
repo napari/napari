@@ -77,3 +77,12 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._reset_base()
         self._on_colormap_change()
         self._on_contrast_limits_change()
+
+    def close(self):
+        """Vispy visual is closing."""
+        super().close()
+        self.layer.events.colormap.disconnect(self._on_colormap_change)
+        self.layer.events.contrast_limits.disconnect(
+            self._on_contrast_limits_change
+        )
+        self.layer.events.gamma.disconnect(self._on_gamma_change)

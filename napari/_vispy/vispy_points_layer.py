@@ -158,3 +158,15 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(self.layer.text.blending)
         self.node.update()
+
+    def close(self):
+        """Vispy visual is closing."""
+        super().close()
+        self.layer.events.symbol.disconnect(self._on_data_change)
+        self.layer.events.edge_width.disconnect(self._on_data_change)
+        self.layer.events.edge_color.disconnect(self._on_data_change)
+        self.layer.events.face_color.disconnect(self._on_data_change)
+        self.layer.text._disconnect_update_events(
+            self._on_text_change, self._on_blending_change
+        )
+        self.layer.events.highlight.disconnect(self._on_highlight_change)

@@ -191,7 +191,8 @@ class QtLabelsControls(QtLayerControls):
         self._on_color_mode_change()
 
         color_layout = QHBoxLayout()
-        color_layout.addWidget(QtColorBox(layer))
+        self.colorBox = QtColorBox(layer)
+        color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
         # grid_layout created in QtLayerControls
@@ -454,6 +455,22 @@ class QtLabelsControls(QtLayerControls):
             self.layer.editable,
         )
 
+    def close(self):
+        """Layer widget is closing."""
+        super().close()
+        self.layer.events.mode.disconnect(self._on_mode_change)
+        self.layer.events.selected_label.disconnect(self._on_selection_change)
+        self.layer.events.brush_size.disconnect(self._on_brush_size_change)
+        self.layer.events.contiguous.disconnect(self._on_contig_change)
+        self.layer.events.n_dimensional.disconnect(self._on_n_dim_change)
+        self.layer.events.editable.disconnect(self._on_editable_change)
+        self.layer.events.preserve_labels.disconnect(
+            self._on_preserve_labels_change
+        )
+        self.layer.events.color_mode.disconnect(self._on_color_mode_change)
+        self.colorBox.close()
+        self.deleteLater()
+
 
 class QtColorBox(QWidget):
     """A widget that shows a square with the current label color.
@@ -513,3 +530,9 @@ class QtColorBox(QWidget):
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
+
+    def close(self):
+        """Layer widget is closing."""
+        self.layer.events.selected_label.disconnect(self.update_color)
+        self.layer.events.opacity.disconnect(self.update_color)
+        self.deleteLater()

@@ -131,7 +131,8 @@ class QtLayerList(QScrollArea):
         widget = self.vbox_layout.itemAt(index).widget()
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
-        widget.deleteLater()
+        widget.layer.events.select.disconnect(self._scroll_on_select)
+        widget.close()
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
@@ -515,11 +516,11 @@ class QtLayerWidget(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.select.connect(lambda v: self.setSelected(True))
-        layer.events.deselect.connect(lambda v: self.setSelected(False))
-        layer.events.name.connect(self._on_layer_name_change)
-        layer.events.visible.connect(self._on_visible_change)
-        layer.events.thumbnail.connect(self._on_thumbnail_change)
+        self.layer.events.select.connect(self._on_selected_change)
+        self.layer.events.deselect.connect(self._on_deselected_change)
+        self.layer.events.name.connect(self._on_layer_name_change)
+        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.thumbnail.connect(self._on_thumbnail_change)
 
         self.setObjectName('layer')
 
@@ -638,6 +639,26 @@ class QtLayerWidget(QFrame):
         """
         event.ignore()
 
+    def _on_selected_change(self, event=None):
+        """Update selected state of the layer.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
+        """
+        self.setSelected(True)
+
+    def _on_deselected_change(self, event=None):
+        """Update selected state of the layer.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
+        """
+        self.setSelected(False)
+
     def _on_layer_name_change(self, event=None):
         """Update text displaying name of layer.
 
@@ -680,6 +701,10 @@ class QtLayerWidget(QFrame):
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
 
     def close(self):
-        """Viewer is closing."""
-        if self.chunk_receiver is not None:
-            self.chunk_receiver.close()
+        """Layer widget is closing."""
+        self.layer.events.select.disconnect(self._on_selected_change)
+        self.layer.events.deselect.disconnect(self._on_deselected_change)
+        self.layer.events.name.disconnect(self._on_layer_name_change)
+        self.layer.events.visible.disconnect(self._on_visible_change)
+        self.layer.events.thumbnail.disconnect(self._on_thumbnail_change)
+        self.deleteLater()

@@ -201,3 +201,13 @@ class QtTracksControls(QtLayerControls):
 
     def change_colormap(self, colormap: str):
         self.layer.colormap = colormap
+
+    def close(self):
+        """Layer widget is closing."""
+        super().close()
+        self.layer.events.tail_width.disconnect(self._on_tail_width_change)
+        self.layer.events.tail_length.disconnect(self._on_tail_length_change)
+        self.layer.events.properties.disconnect(self._on_properties_change)
+        self.layer.events.colormap.disconnect(self._on_colormap_change)
+        self.layer.events.color_by.disconnect(self._on_color_by_change)
+        self.deleteLater()
