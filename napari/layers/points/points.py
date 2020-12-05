@@ -303,9 +303,6 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
-        # update highlights when the layer is selected/deselected
-        self.events.select.connect(self._set_highlight)
-        self.events.deselect.connect(self._set_highlight)
 
         self._colors = get_color_namelist()
 
@@ -503,7 +500,7 @@ class Points(Layer):
                 adding = len(data) - cur_npoints
                 if len(self._size) > 0:
                     new_size = copy(self._size[-1])
-                    for i in self._dims.displayed:
+                    for i in self._dims_displayed:
                         new_size[i] = self.current_size
                 else:
                     # Add the default size, with a value for each dimension
@@ -533,6 +530,24 @@ class Points(Layer):
 
         self._update_dims()
         self.events.data()
+        self._set_editable()
+
+    @property
+    def selected(self):
+        """bool: Whether this layer is selected or not."""
+        return self._selected
+
+    @selected.setter
+    def selected(self, selected):
+        if selected == self.selected:
+            return
+        self._selected = selected
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
+        self._set_highlight()
 
     def _add_point_color(self, adding: int, attribute: str):
         """Add the edge or face colors for new points.
@@ -1268,7 +1283,7 @@ class Points(Layer):
                 self.current_face_color = face_color
 
         size = list(
-            set([self.size[i, self._dims.displayed].mean() for i in index])
+            set([self.size[i, self._dims_displayed].mean() for i in index])
         )
         if len(size) == 1:
             size = size[0]
@@ -1382,11 +1397,11 @@ class Points(Layer):
         """
         if len(self._indices_view) > 0:
 
-            data = self.data[np.ix_(self._indices_view, self._dims.displayed)]
+            data = self.data[np.ix_(self._indices_view, self._dims_displayed)]
 
         else:
             # if no points in this slice send dummy data
-            data = np.zeros((0, self._dims.ndisplay))
+            data = np.zeros((0, self._ndisplay))
 
         return data
 
@@ -1410,9 +1425,7 @@ class Points(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
-        return self.text.compute_text_coords(
-            self._view_data, self._dims.ndisplay
-        )
+        return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property
     def _view_size(self) -> np.ndarray:
@@ -1427,7 +1440,7 @@ class Points(Layer):
             # Get the point sizes and scale for ndim display
             sizes = (
                 self.size[
-                    np.ix_(self._indices_view, self._dims.displayed)
+                    np.ix_(self._indices_view, self._dims_displayed)
                 ].mean(axis=1)
                 * self._view_size_scale
             )
@@ -1464,7 +1477,7 @@ class Points(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._dims.ndisplay == 3:
+            if self._ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -1492,7 +1505,7 @@ class Points(Layer):
             less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the data for the points in this slice
-        not_disp = list(self._dims.not_displayed)
+        not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
@@ -1616,7 +1629,7 @@ class Points(Layer):
                 self._highlight_index = []
 
             # only display dragging selection box in 2D
-            if self._dims.ndisplay == 2 and self._is_selecting:
+            if self._ndisplay == 2 and self._is_selecting:
                 pos = create_box(self._drag_box)
                 pos = pos[list(range(4)) + [0]]
             else:
@@ -1636,9 +1649,9 @@ class Points(Layer):
         view_data = self._view_data
         if len(view_data) > 0:
             de = self._extent_data
-            min_vals = [de[0, i] for i in self._dims.displayed]
+            min_vals = [de[0, i] for i in self._dims_displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self._dims.displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._dims_displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -1702,7 +1715,7 @@ class Points(Layer):
         """
         if len(index) > 0:
             index = list(index)
-            disp = list(self._dims.displayed)
+            disp = list(self._dims_displayed)
             if self._drag_start is None:
                 center = self.data[np.ix_(index, disp)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
@@ -1719,7 +1732,7 @@ class Points(Layer):
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            not_disp = self._dims.not_displayed
+            not_disp = self._dims_not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]

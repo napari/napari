@@ -1,5 +1,7 @@
 import dataclasses as _dc
+import operator
 import typing
+import warnings
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -7,11 +9,13 @@ from typing import (
     ClassVar,
     Dict,
     NamedTuple,
+    Optional,
     Type,
     TypeVar,
     cast,
 )
 
+import dask.array as da
 import numpy as np
 import toolz as tz
 from typing_extensions import (
@@ -30,7 +34,8 @@ except ImportError:
         return x
 
 
-from .event import EmitterGroup
+from .event import EmitterGroup, Event
+from .types import SupportsEvents
 
 ON_SET = "_on_{name}_set"
 ON_GET = "_on_{name}_get"
@@ -87,9 +92,12 @@ class Property:
         origin = typing._type_check(params[0], msg)
         if params[1] is not None and not callable(params[1]):
             raise TypeError(f"Property getter not callable: {params[1]}")
-        if len(params) > 2:
-            if params[2] is not None and not callable(params[2]):
-                raise TypeError(f"Property getter not callable: {params[1]}")
+        if (
+            len(params) > 2
+            and params[2] is not None
+            and not callable(params[2])
+        ):
+            raise TypeError(f"Property getter not callable: {params[1]}")
         metadata = tuple(params[1:])
         return _AnnotatedAlias(origin, metadata)
 
@@ -180,13 +188,56 @@ def set_with_events(self: C, name: str, value: Any) -> None:
 
     # if different we emit the event with new value
     after = getattr(self, name)
-    if isinstance(before, np.ndarray) or isinstance(after, np.ndarray):
-        different = np.any(before != after)
-    else:
-        different = before != after
-    if different:
+    if not self.__equality_checks__.get(name, is_equal)(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
+
+
+def is_equal(v1, v2):
+    """
+    Function for basic comparison compare.
+
+    Parameters
+    ----------
+    v1: Any
+        first value
+    v2: Any
+        second value
+
+    Returns
+    -------
+    result : bool
+        Returns ``True`` if ``v1`` and ``v2`` are equivalent.
+        If an exception is raised during comparison, returns ``False``.
+
+    Warns
+    -----
+    UserWarning
+        If an exception is raised during comparison.
+    """
+    try:
+        return bool(v1 == v2)
+    except Exception as e:
+        warnings.warn(
+            "Comparison method failed. Returned False. "
+            f"There may be need to define custom _on_<name>_set method. Exception {e}"
+        )
+        return False
+
+
+def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
+    import inspect
+
+    if isinstance(type_, _AnnotatedAlias):
+        type_ = type_.__origin__
+    if not inspect.isclass(type_):
+        if not getattr(type_, "__module__", None) == "typing":
+            warnings.warn(f"Bug in type recognition {type_}")
+        return
+    if issubclass(type_, np.ndarray):
+        return np.array_equal
+    if issubclass(type_, da.core.Array):
+        return operator.is_
 
 
 def add_events_to_class(cls: Type[C]) -> Type[C]:
@@ -216,6 +267,22 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
 
+    # create dict with compare functions for fields which cannot be compared
+    # using standard equal operator, like numpy arrays.
+    # it will be set to __equality_checks__ class parameter.
+    compare_dict_base = getattr(cls, "__equality_checks__", {})
+    compare_dict = {
+        n: t
+        for n, t in {
+            name: _type_to_compare(type_)
+            for name, type_ in cls.__dict__.get('__annotations__', {}).items()
+            if name not in compare_dict_base
+        }.items()
+        if t is not None  # walrus operator is supported from python 3.8
+    }
+    # use compare functions provided by class creator.
+    compare_dict.update(compare_dict_base)
+
     def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
         # in the dataclass, skip those with metadata={'events' = False}
@@ -225,7 +292,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             self.events.add(**e_fields)
         else:
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **e_fields
+                source=self, auto_connect=False, **e_fields,
             )
         # call original __post_init__
         if orig_post_init is not None:
@@ -234,6 +301,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
     # modify __setattr__ with version that emits an event when setting
     setattr(cls, '__setattr__', set_with_events)
     setattr(cls, '__post_init__', evented_post_init)
+    setattr(cls, '__equality_checks__', compare_dict)
     return cls
 
 
@@ -389,6 +457,24 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     return cls
 
 
+def update_from_dict(self, values, compare_fun=is_equal):
+    if isinstance(values, self.__class__):
+        values = values.asdict()
+    if not isinstance(values, dict):
+        raise ValueError(f"Unsupported update from {type(values)}")
+    if all(compare_fun(values[k], v) for k, v in self.asdict().items()):
+        return
+
+    if isinstance(self, SupportsEvents):
+        with self.events.blocker():
+            for key, value in values.items():
+                setattr(self, key, value)
+        self.events(Event(self))
+    else:
+        for key, value in values.items():
+            setattr(self, key, value)
+
+
 @tz.curry
 def evented_dataclass(
     cls: Type[C],
@@ -477,5 +563,6 @@ def evented_dataclass(
     if properties:
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
-    setattr(cls, '_get_state', _dc.asdict)
+    setattr(cls, 'asdict', _dc.asdict)
+    setattr(cls, 'update', update_from_dict)
     return cls

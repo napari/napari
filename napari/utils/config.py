@@ -11,7 +11,7 @@ def _set(env_var: str) -> bool:
     bool
         True if the env var was set to a non-zero value.
     """
-    return os.getenv(env_var, "0") != "0"
+    return os.getenv(env_var) not in [None, "0"]
 
 
 # Added this temporarily for octree debugging. The welcome visual causes
@@ -49,15 +49,20 @@ Set NAPARI_OCTREE=1 to enable experimental octree visuals. This
 will also turn on async loading, however to configure async
 loading you can set NAPARI_ASYNC to a config file path as above.
 
-Future
-------
-When we're done with octree development we want to return to one single
-image class, with one single type of visual. All of this config complexity
-is temporary.
+Shared Memory Server
+--------------------
+Experimentally, only enable if NAPARI_MON is set to the path of a config
+file. See this PR for more info: https://github.com/napari/napari/pull/1909.
 """
 
+# Async loading with a quadtree/octree.
 async_octree = _set("NAPARI_OCTREE")
+
+# Async loading with regular non-tiled Image class.
 async_loading = _set("NAPARI_ASYNC") or async_octree
+
+# Shared Memory Server
+monitor = _set("NAPARI_MON")
 
 """
 Image Layer Creation

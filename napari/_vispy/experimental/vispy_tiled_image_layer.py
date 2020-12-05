@@ -26,6 +26,7 @@ class ChunkStats:
     seen: int = 0
     start: int = 0
     deleted: int = 0
+    remaining: int = 0
     low: int = 0
     created: int = 0
     final: int = 0
@@ -43,8 +44,9 @@ class VispyTiledImageLayer(VispyImageLayer):
     An early tiled visual we had created a new ImageVisual for each tile.
     This led to crashes with PyQt5 due to the constant scene graph changes.
     Also each new ImageVisual caused a slow down, the shader build was one
-    reason. Finally rendering was slower because it required a texture swap
-    for each tile. This new tiled version solves those problems.
+    reason. Finally, rendering was slower because it required a texture
+    swap for each tile. This newer VispyTiledImageLayer solves those
+    problems.
 
     Parameters
     ----------
@@ -62,12 +64,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         visual = TiledImageNode(tile_shape=layer.tile_shape)
 
         # Pass our TiledImageVisual to the base class, it will become our
-        # self.node which is VispyBaseImage.node.
+        # self.node which VispyBaseImage holds.
         super().__init__(layer, visual)
 
-        # Optional grid shows tile borders.
+        # An optional grid that shows tile borders.
         self.grid = TileGrid(self.node)
 
+        # So we redraw when the layer loads new data.
         self.layer.events.loaded.connect(self._on_loaded)
 
     @property
@@ -92,66 +95,138 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         raise NotImplementedError()
 
-    def _update_chunks(self) -> ChunkStats:
+    def _update_drawn_chunks(self) -> ChunkStats:
         """Add or remove tiles to match the chunks which are currently visible.
 
         1) Remove tiles which are no longer visible.
         2) Create tiles for newly visible chunks.
-        3) Optionally update our grid to outline the visible chunks.
+        3) Optionally update our grid based on the now visible chunks.
         """
         # Get the currently visible chunks from the layer.
         visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
 
+        # Record some stats about this update process, where stats.seen are
+        # the number of visible chunks.
         stats = ChunkStats(seen=len(visible_chunks))
 
         # Create the visible set of chunks using their keys.
-        # TODO_OCTREE: use __hash__ not OctreeChunk.key?
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key, using __hash__
+        # did not immediately work, but we should try again.
         visible_set = set(octree_chunk.key for octree_chunk in visible_chunks)
 
+        # Then number of tiles we have before the update.
         stats.start = self.num_tiles
 
-        # Remove tiles for chunks which are no longer visible.
+        # Make tiles as stale if their chunk is no longer visible. However,
+        # stale tiles will still be drawn until replaced by something newer.
         self.node.prune_tiles(visible_set)
 
+        # The low point, after removing but before adding.
         stats.low = self.num_tiles
+
+        # Which means we deleted this many tiles.
         stats.deleted = stats.start - stats.low
 
-        if self.layer.track_view:
-            # Add tiles for visible chunks that do not already have a tile.
-            self.node.add_chunks(visible_chunks)
+        # Remaining is how many tiles in visible_chunks still need to be
+        # added. We don't necessarily add them all so that we don't tank
+        # the framerate.
+        stats.remaining = self._add_chunks(visible_chunks)
 
+        # Final number of tiles after adding, which implies how many were
+        # created.
         stats.final = self.num_tiles
         stats.created = stats.final - stats.low
 
+        # The grid is only for debugging and demos, yet it's quite useful
+        # otherwise the tiles are kind of invisible.
         if self.layer.show_grid:
-            self.grid.update_grid(self.node.octree_chunk)
+            self.grid.update_grid(self.node.octree_chunks)
         else:
             self.grid.clear()
 
         return stats
 
+    def _add_chunks(self, visible_chunks: List[OctreeChunk]) -> int:
+        """Add some or all of these visible chunks to the tiled image.
+
+        Parameters
+        ----------
+        visible_chunks : List[OctreeChunk]
+            Chunks we should add, if not already in the tiled image.
+
+        Return
+        ------
+        int
+            The number of chunks that still need to be added.
+        """
+        if not self.layer.track_view:
+            # Tracking the view is the normal mode, where the tiles load in as
+            # the view moves. Not tracking the view is only used for debugging
+            # or demos, to show the tiles we "were" showing previously, without
+            # updating them.
+            return 0  # Nothing more to add
+
+        # Add tiles for visible chunks that do not already have a tile.
+        # This might not add all the chunks, because doing so might
+        # tank the framerate.
+        #
+        # Even though the chunks are already in RAM, we have to do some
+        # processing and then we have to move the data to VRAM. That time
+        # cost might not happen here, we probably are just queueing up a
+        # transfer that will happen when we next call glFlush() to let the
+        # card do its business.
+        #
+        # Any chunks not added this frame will have a chance to be
+        # added the next frame, if they are still on the visible_chunks
+        # list next frame. It's important we keep asking the layer for
+        # the visible chunks every frame. We don't want to queue up and
+        # add chunks which might no longer be needed, because the
+        # camera might move every frame. The situation might be
+        # evolving rapidly if the camera is moving a lot.
+        return self.node.add_chunks(visible_chunks)
+
     def _update_tile_shape(self) -> None:
         """Check if the tile shape was changed on us."""
         # This might be overly dynamic, but for now if we see there's a new
         # tile shape we nuke our texture atlas and start over with the new
-        # tile shape.
+        # shape.
         #
-        # We added this because the QtTestImage GUI sets the tile shape
-        # after the layer is created. But the ability might come in handy
-        # and it was not hard to implement.
+        # We added this because the QtTestImage GUI currently set the tile
+        # shape after the layer is created. Thus potentially changing the
+        # same on the fly. But this "on the fly change" might come in handy
+        # and it was not hard to implement, but we could probably drop it
+        # if it becomes a pain.
         tile_shape = self.layer.tile_shape
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
 
-    def _update_view(self):
+    def _update_view(self) -> int:
+        """Update the tiled image based on what's visible in the layer.
+
+        We call self._update_chunks() which asks the layer what chunks are
+        visible, then it potentially loads some of those chunks, if we
+        didn't already have them. This method returns how many visible
+        chunks still need to be added.
+
+        If we return non-zero, we expect to be polled and drawn again, even
+        if the camera isn't moving. Polled and drawn until we can finish
+        adding the rest of the visible chunks.
+
+        Return
+        ------
+        int
+             The number of chunks that still need to be added.
+        """
         if not self.node.visible:
-            return
+            return 0
 
         self._update_tile_shape()  # In case the tile shape changed!
 
-        with block_timer("_update_chunks") as elapsed:
-            stats = self._update_chunks()
+        with block_timer("_update_drawn_chunks") as elapsed:
+            stats = self._update_drawn_chunks()
 
+        # Print for now, but switch log file soon. Should be no prints
+        # in production code.
         if stats.created > 0 or stats.deleted > 0:
             print(
                 f"tiles: {stats.start} -> {stats.final} "
@@ -159,13 +234,29 @@ class VispyTiledImageLayer(VispyImageLayer):
                 f"time: {elapsed.duration_ms:.3f}ms"
             )
 
-    def _on_camera_move(self, event=None) -> None:
-        """Called on any camera movement.
+        return stats.remaining
 
-        Update tiles based on which chunks are currently visible.
+    def _on_poll(self, event=None) -> None:
+        """Called before we are drawn.
+
+        This is called when the camera moves, or when we have chunks that
+        need to be loaded. We update which tiles we are drawing based on
+        which chunks are currently visible.
         """
-        super()._on_camera_move()
-        self._update_view()
+        super()._on_poll()
 
-    def _on_loaded(self, _event):
+        # Mark the event "handled" if we have more chunks to load.
+        #
+        # By saying the poll event was "handled" we're telling QtPoll to
+        # keep polling us, even if the camera stops moving. So that we can
+        # finish up the loads/draws with a potentially still camera.
+        #
+        # We'll be polled until no visuals handle the event, meaning
+        # no visuals need polling. Then all is quiet until the camera
+        # moves again.
+        need_polling = self._update_view() > 0
+        event.handled = need_polling
+
+    def _on_loaded(self, _event) -> None:
+        """The layer loaded new data, so update or view."""
         self._update_view()

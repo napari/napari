@@ -210,6 +210,9 @@ class QtViewer(QSplitter):
         # Optional experimental monitor service.
         self._qt_monitor = _create_qt_monitor(self, self.viewer.camera)
 
+        # Experimental QtPool for Octree visuals.
+        self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -347,7 +350,11 @@ class QtViewer(QSplitter):
             Layer to be added.
         """
         vispy_layer = create_vispy_visual(layer)
-        self.viewer.camera.events.center.connect(vispy_layer._on_camera_move)
+
+        if self._qt_poll is not None:
+            # Visuals might need to be polled when the camera moves and during
+            # a short period after the movement stops.
+            self._qt_poll.events.poll.connect(vispy_layer._on_poll)
 
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(self.viewer.layers) - 1
@@ -809,6 +816,7 @@ class QtViewer(QSplitter):
 
 if TYPE_CHECKING:
     from .experimental.qt_monitor import QtMonitor
+    from .experimental.qt_poll import QtPoll
 
 
 def _create_qt_monitor(
@@ -830,9 +838,36 @@ def _create_qt_monitor(
     Optional[QtMonitor]
         The new monitor instance, if any
     """
-    if os.getenv("NAPARI_MON") not in [None, "0"]:
+    if config.monitor:
         from .experimental.qt_monitor import QtMonitor
 
+        # We can probably get rid of QtMonitor and use QtPoll instead,
+        # since it's the same idea but more general.
         return QtMonitor(parent, camera)
+
+    return None
+
+
+def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+    """Create and return a QtPoll instance, if enabled.
+
+    A QtPoll instance is only created if using octree for now.
+
+    Parameters
+    ----------
+    parent : QObject
+        Parent for the qtMonitor.
+    camera : VispyCamera
+        Camera that the monitor will tie into.
+
+    Return
+    ------
+    Optional[QtMonitor]
+        The new monitor instance, if any
+    """
+    if config.async_octree:
+        from .experimental.qt_poll import QtPoll
+
+        return QtPoll(parent, camera)
 
     return None

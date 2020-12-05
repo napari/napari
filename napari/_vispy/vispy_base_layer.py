@@ -115,7 +115,7 @@ class VispyBaseLayer(ABC):
 
     def _on_matrix_change(self, event=None):
         transform = self.layer._transforms.simplified.set_slice(
-            list(self.layer._dims.displayed)
+            list(self.layer._dims_displayed)
         )
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -128,14 +128,14 @@ class VispyBaseLayer(ABC):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        if self._array_like and self.layer._dims.ndisplay == 2:
+        if self._array_like and self.layer._ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = (
                 self.layer._transforms['data2world']
-                .set_slice(list(self.layer._dims.displayed))
+                .set_slice(list(self.layer._dims_displayed))
                 .linear_matrix
             )
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
@@ -152,6 +152,11 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
 
-    def _on_camera_move(self, event=None):
-        """Camera was moved."""
+    def _on_poll(self, event=None):
+        """Called when camera moves, before we are drawn.
+
+        Optionally called for some period once the camera stops, so the
+        visual can finish up what it was doing, such as loading data into
+        VRAM or animating itself.
+        """
         pass

@@ -98,7 +98,7 @@ def _get_config_data() -> dict:
     """
     value = os.getenv("NAPARI_ASYNC")
 
-    if (value is None or value == "0") and not config.async_octree:
+    if (value in [None, "0"]) and not config.async_octree:
         # Async is disabled. Note, while async is experimental if
         # NAPARI_ASYNC and NAPARI_OCTREE are both not set, then actually
         # this code will not be run. No async related code is even
