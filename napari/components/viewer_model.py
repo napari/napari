@@ -606,12 +606,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         for em in layer.events.emitters.values():
             em.disconnect()
 
-        # Disconnect dims events. Once layer._dims removed this
-        # can be removed too.
-        layer._dims.events.disconnect()
-        for em in layer._dims.events.emitters.values():
-            em.disconnect()
-
         # For the labels layer disconnect history resets
         if hasattr(layer, '_reset_history'):
             self.dims.events.ndisplay.disconnect(layer._reset_history)
