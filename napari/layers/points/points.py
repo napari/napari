@@ -303,9 +303,6 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
-        # update highlights when the layer is selected/deselected
-        self.events.select.connect(self._set_highlight)
-        self.events.deselect.connect(self._set_highlight)
 
         self._colors = get_color_namelist()
 
@@ -533,6 +530,24 @@ class Points(Layer):
 
         self._update_dims()
         self.events.data()
+        self._set_editable()
+
+    @property
+    def selected(self):
+        """bool: Whether this layer is selected or not."""
+        return self._selected
+
+    @selected.setter
+    def selected(self, selected):
+        if selected == self.selected:
+            return
+        self._selected = selected
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
+        self._set_highlight()
 
     def _add_point_color(self, adding: int, attribute: str):
         """Add the edge or face colors for new points.

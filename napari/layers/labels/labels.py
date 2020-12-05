@@ -243,10 +243,6 @@ class Labels(Image):
         self._update_dims()
         self._set_editable()
 
-        self._dims.events.ndisplay.connect(self._reset_history)
-        self._dims.events.order.connect(self._reset_history)
-        self._dims.events.current_step.connect(self._reset_history)
-
     @property
     def contiguous(self):
         """bool: fill bucket changes only connected pixels of same label."""

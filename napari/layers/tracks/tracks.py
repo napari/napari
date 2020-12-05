@@ -351,6 +351,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data()
+        self._set_editable()
         self._update_dims()
 
     @property
