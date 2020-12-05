@@ -71,7 +71,7 @@ class Dims:
         Number of displayed dimensions.
     last_used : int
         Dimension which was last used.
-    range : list of 3-tuple
+    range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension. In a world
         coordinates space.
     current_step : tuple of int
@@ -89,7 +89,7 @@ class Dims:
         Number of displayed dimensions.
     last_used : int
         Dimension which was last used.
-    range : list of 3-tuple
+    range : tuple of 3-tuple of float
         List of tuples (min, max, step), one for each dimension. In a world
         coordinates space.
     current_step : tuple of int
@@ -101,17 +101,17 @@ class Dims:
     nsteps : tuple of int
         Number of steps available to each slider. These are calculated from
         the ``range``.
-    point : list of float
+    point : tuple of float
         List of floats setting the current value of the range slider when in
         POINT mode, one for each dimension. In a world coordinates space. These
         are calculated from the ``current_step`` and ``range``.
-    displayed : tuple
+    displayed : tuple of int
         List of dimensions that are displayed. These are calculated from the
         ``order`` and ``ndisplay``.
-    not_displayed : tuple
+    not_displayed : tuple of int
         List of dimensions that are not displayed. These are calculated from the
         ``order`` and ``ndisplay``.
-    displayed_order : tuple
+    displayed_order : tuple of int
         Order of only displayed dimensions. These are calculated from the
         ``displayed`` dimensions.
     """
@@ -190,7 +190,7 @@ class Dims:
 
     @property
     def nsteps(self):
-        """Number of slider steps for each dimension.
+        """Tuple of int: Number of slider steps for each dimension.
         """
         return tuple(
             int((max_val - min_val) // step_size) + 1
@@ -199,8 +199,8 @@ class Dims:
 
     @property
     def point(self):
-        """List of float: value of each dimension."""
-        # The point value is computed from the current_step
+        """Tuple of float: Value of each dimension."""
+        # The point value is computed from the range and current_step
         point = tuple(
             min_val + step_size * value
             for (min_val, max_val, step_size), value in zip(
