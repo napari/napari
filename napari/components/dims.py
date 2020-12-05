@@ -20,18 +20,18 @@ def reorder_after_dim_reduction(order):
 
     Parameters
     ----------
-    order : list-like
+    order : tuple
         The data to reorder.
 
     Returns
     -------
-    arr : list
+    arr : tuple
         The original array with the unneeded dimension
         thrown away.
     """
     arr = np.array(order)
     arr[np.argsort(arr)] = range(len(arr))
-    return arr.tolist()
+    return tuple(arr.tolist())
 
 
 def assert_axis_in_bounds(axis: int, ndim: int) -> int:
@@ -142,22 +142,24 @@ class Dims:
         if len(self.range) < ndim:
             # Range value is (min, max, step) for the entire slider
             self._range = ((0, 2, 1),) * (ndim - len(self.range)) + self.range
-        if len(self.range) > ndim:
+        elif len(self.range) > ndim:
             self._range = self.range[-ndim:]
 
         if len(self.current_step) < ndim:
             self._current_step = (0,) * (
                 ndim - len(self.current_step)
             ) + self.current_step
-        if len(self.current_step) > ndim:
+        elif len(self.current_step) > ndim:
             self._current_step = self.current_step[-ndim:]
 
-        if len(self.order) != ndim:
+        if len(self.order) < ndim:
             self._order = tuple(range(ndim - len(self.order))) + tuple(
                 o + ndim - len(self.order) for o in self.order
             )
+        elif len(self.order) > ndim:
+            self._order = reorder_after_dim_reduction(self.order[-ndim:])
 
-        if len(self.axis_labels) != ndim:
+        if len(self.axis_labels) < ndim:
             # Append new "default" labels to existing ones
             if self.axis_labels == tuple(
                 map(str, range(len(self.axis_labels)))
@@ -168,10 +170,14 @@ class Dims:
                     tuple(map(str, range(ndim - len(self.axis_labels))))
                     + self.axis_labels
                 )
+        elif len(self.axis_labels) > ndim:
+            self._axis_labels = self.axis_labels[-ndim:]
+
         self._ndim = ndim
 
     def _on_order_set(self, order):
         if not set(order) == set(range(self.ndim)):
+            print('eeeeee')
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
             )
@@ -184,6 +190,7 @@ class Dims:
 
     def _on_range_set(self, range_var):
         if not len(range_var) == self.ndim:
+            print('hasdfhsd')
             raise ValueError(
                 f"Invalid length range {len(range_var)} for {self.ndim} dimensions"
             )
@@ -317,8 +324,7 @@ class Dims:
         """
         if axis is None:
             axis = self.last_used
-        if axis is not None:
-            self.set_current_step(axis, self.current_step[axis] + 1)
+        self.set_current_step(axis, self.current_step[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -330,8 +336,7 @@ class Dims:
         """
         if axis is None:
             axis = self.last_used
-        if axis is not None:
-            self.set_current_step(axis, self.current_step[axis] - 1)
+        self.set_current_step(axis, self.current_step[axis] - 1)
 
     def _focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -339,11 +344,8 @@ class Dims:
         if len(sliders) == 0:
             return
 
-        if self.last_used is None:
-            self.last_used = sliders[-1]
-        else:
-            index = (sliders.index(self.last_used) + 1) % len(sliders)
-            self.last_used = sliders[index]
+        index = (sliders.index(self.last_used) + 1) % len(sliders)
+        self.last_used = sliders[index]
 
     def _focus_down(self):
         """Shift focused dimension slider to be the next slider bellow."""
@@ -351,11 +353,8 @@ class Dims:
         if len(sliders) == 0:
             return
 
-        if self.last_used is None:
-            self.last_used = sliders[-1]
-        else:
-            index = (sliders.index(self.last_used) - 1) % len(sliders)
-            self.last_used = sliders[index]
+        index = (sliders.index(self.last_used) - 1) % len(sliders)
+        self.last_used = sliders[index]
 
     def _roll(self):
         """Roll order of dimensions for display."""
