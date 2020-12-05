@@ -787,11 +787,8 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(
-            0 <= c < s
-            for c, s in zip(coord[list(self._dims_displayed)], shape)
-        ):
-            value = raw[tuple(coord[list(self._dims_displayed)])]
+        if all(0 <= c < s for c, s in zip(coord[self._dims_displayed], shape)):
+            value = raw[tuple(coord[self._dims_displayed])]
         else:
             value = None
 
