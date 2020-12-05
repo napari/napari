@@ -92,19 +92,19 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        axis : int
-            Axis index.
+        event : napari.events.Event
+            Event that triggers update, emitted by viewer.dims.current_step.
         """
         for widget in self.slider_widgets:
             widget._update_slider()
 
-    def _update_range(self, axis: int):
+    def _update_range(self, event):
         """Updates range for a given slider.
 
         Parameters
         ----------
-        axis : int
-            Axis index.
+        event : napari.events.Event
+            Event that triggers update, emitted by viewer.dims.range.
         """
         for widget in self.slider_widgets:
             widget._update_range()
