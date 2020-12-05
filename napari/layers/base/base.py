@@ -490,16 +490,28 @@ class Layer(KeymapProvider, ABC):
     @property
     def _dims_displayed(self):
         """To be removed displayed dimensions."""
+        # Ultimately we aim to remove all slicing information from the layer
+        # itself so that layers can be sliced in different ways for multiple
+        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
+        # for additional discussion.
         return self._dims_order[-self._ndisplay :]
 
     @property
     def _dims_not_displayed(self):
         """To be removed not displayed dimensions."""
+        # Ultimately we aim to remove all slicing information from the layer
+        # itself so that layers can be sliced in different ways for multiple
+        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
+        # for additional discussion.
         return self._dims_order[: -self._ndisplay]
 
     @property
     def _dims_displayed_order(self):
         """To be removed order of displayed dimensions."""
+        # Ultimately we aim to remove all slicing information from the layer
+        # itself so that layers can be sliced in different ways for multiple
+        # canvas. See https://github.com/napari/napari/pull/1919#issuecomment-738585093
+        # for additional discussion.
         order = np.array(self._dims_displayed)
         order[np.argsort(order)] = list(range(len(order)))
         return tuple(order)
