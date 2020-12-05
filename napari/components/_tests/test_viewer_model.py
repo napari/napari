@@ -534,6 +534,24 @@ def test_active_layer_status_update():
     assert viewer.status == viewer.active_layer.status
 
 
+def test_active_layer_cursor_size():
+    """Test cursor size update on active layer."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((10, 10)))
+    # Base layer has a default cursor size of 1
+    assert viewer.cursor.size == 1
+
+    viewer.add_labels(np.random.random((10, 10)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    viewer.layers[1].mode = 'paint'
+    # Labels layer has a default cursor size of 10
+    # due to paintbrush
+    assert viewer.cursor.size == 10
+
+
 def test_sliced_world_extent():
     """Test world extent after adding layers and slicing."""
     np.random.seed(0)
