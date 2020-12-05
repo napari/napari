@@ -177,7 +177,6 @@ class Dims:
 
     def _on_order_set(self, order):
         if not set(order) == set(range(self.ndim)):
-            print('eeeeee')
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
             )
@@ -190,7 +189,6 @@ class Dims:
 
     def _on_range_set(self, range_var):
         if not len(range_var) == self.ndim:
-            print('hasdfhsd')
             raise ValueError(
                 f"Invalid length range {len(range_var)} for {self.ndim} dimensions"
             )
