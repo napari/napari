@@ -178,7 +178,19 @@ class OctreeMultiscaleSlice:
         # Return the chunks in this intersection.
         return intersection.get_chunks(id(self))
 
-    def _get_octree_chunk(self, location: OctreeLocation):
+    def _get_octree_chunk(self, location: OctreeLocation) -> OctreeChunk:
+        """Return the OctreeChunk at his location.
+
+        Parameters
+        ----------
+        location : OctreeLocation
+            Return the chunk at this location.
+
+        Return
+        ------
+        OctreeChunk
+            The returned chunk.
+        """
         level = self._octree.levels[location.level_index]
         return level.get_chunk(location.row, location.col)
 
@@ -202,9 +214,10 @@ class OctreeMultiscaleSlice:
 
         octree_chunk = self._get_octree_chunk(location)
         if not isinstance(octree_chunk, OctreeChunk):
-            # This location in the octree is not a OctreeChunk. That's unexpected,
-            # becauase locations are turned into OctreeChunk's when a load
-            # is initiated. So this is an error, but log it and keep going.
+            # This location in the octree does not contain an OctreeChunk.
+            # That's unexpected, becauase locations are turned into
+            # OctreeChunk's when a load is initiated. So this is an error,
+            # but log it and keep going, maybe some transient weirdness.
             LOGGER.error(
                 "on_chunk_loaded: missing OctreeChunk: %s", octree_chunk
             )
@@ -223,8 +236,9 @@ class OctreeMultiscaleSlice:
         # chunk now has an ndarray as its data, and it can be rendered.
         octree_chunk.data = incoming_data
 
-        # OctreeChunk should no longer need to be loaded. We can probably
-        # remove this check eventually, but for now to be sure.
+        # Now needs_load should be false, since this OctreeChunk was
+        # loaded. We can probably remove this check eventually, but for now
+        # to be sure.
         assert not self._get_octree_chunk(location).needs_load
 
         return True  # Chunk was loaded.

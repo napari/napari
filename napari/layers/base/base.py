@@ -256,7 +256,7 @@ class Layer(KeymapProvider, ABC):
         self._name = ''
         self.events = EmitterGroup(
             source=self,
-            auto_connect=True,
+            auto_connect=False,
             refresh=Event,
             set_data=Event,
             blending=Event,
@@ -283,7 +283,6 @@ class Layer(KeymapProvider, ABC):
         )
         self.name = name
 
-        self.events.data.connect(lambda e: self._set_editable())
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
         self.mouse_wheel_callbacks = []

@@ -262,6 +262,7 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data()
+        self._set_editable()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
