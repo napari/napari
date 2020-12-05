@@ -58,7 +58,7 @@ class AtlasTile(NamedTuple):
     """Information about one specific tile in the atlas.
 
     AtlasTile is returned from TextureAtlas2D.add_tile() so the caller has
-    the texture coordinates to render each tile in the atlas.
+    the verts and texture coordinates to render each tile in the atlas.
     """
 
     index: int
@@ -247,6 +247,10 @@ class TextureAtlas2D(Texture2D):
             The image data for this one tile.
         """
         data = octree_chunk.data
+
+        if data.dtype == np.float64:
+            data = data.astype(np.float32)
+
         assert isinstance(data, np.ndarray)
 
         if not self.spec.is_compatible(data):

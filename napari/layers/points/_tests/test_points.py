@@ -1397,12 +1397,12 @@ def test_view_data():
 
     layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer._dims.displayed)]
+        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
     )
 
     layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(
-        layer._view_data == coords[np.ix_([2], layer._dims.displayed)]
+        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
     )
 
     layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
@@ -1416,12 +1416,12 @@ def test_view_size():
 
     layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer._dims.displayed)]
+        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
     )
 
     layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims.displayed)]
+        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
     )
 
     layer.n_dimensional = True

@@ -85,7 +85,8 @@ class OctreeLevel:
     ) -> Optional[OctreeChunk]:
         """Return the OctreeChunk at this location if it exists.
 
-        If create is True, an OctreeChunk will be created if one does not exist.
+        If create_chunks is True, an OctreeChunk will be created if one
+        does not exist at this location.
 
         Parameters
         ----------

@@ -157,7 +157,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self._dims.ndisplay))
+        self._data_view = np.zeros((0, self._ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
@@ -193,6 +193,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._update_dims()
         self.refresh()
         self.events.data()
+        self._set_editable()
 
     @property
     def vertex_values(self) -> np.ndarray:
@@ -206,6 +207,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.refresh()
         self.events.data()
+        self._set_editable()
 
     @property
     def faces(self) -> np.ndarray:
@@ -219,6 +221,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.refresh()
         self.events.data()
+        self._set_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -284,7 +287,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                     must be non-displayed dimensions. Data will not be
                     visible."""
                 )
-                self._data_view = np.zeros((0, self._dims.ndisplay))
+                self._data_view = np.zeros((0, self._ndisplay))
                 self._view_faces = np.zeros((0, 3))
                 self._view_vertex_values = []
                 return
@@ -296,24 +299,24 @@ class Surface(IntensityVisualizationMixin, Layer):
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
-                for d in np.subtract(self._dims.displayed, values_ndim)
+                for d in np.subtract(self._dims_displayed, values_ndim)
                 if d >= 0
             ]
             not_disp = [
                 d
-                for d in np.subtract(self._dims.not_displayed, values_ndim)
+                for d in np.subtract(self._dims_not_displayed, values_ndim)
                 if d >= 0
             ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self._dims.not_displayed)
-            disp = list(self._dims.displayed)
+            not_disp = list(self._dims_not_displayed)
+            disp = list(self._dims_displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif vertex_ndim > self._dims.ndisplay:
+        elif vertex_ndim > self._ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))

@@ -2,13 +2,15 @@ import os.path
 import warnings
 from copy import copy
 from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QSize, Qt
+from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from vispy.visuals.transforms import ChainTransform
 
+from ..components.camera import Camera
 from ..resources import get_stylesheet
 from ..utils import config, perf
 from ..utils.interactions import (
@@ -206,6 +208,12 @@ class QtViewer(QSplitter):
         # Add axes, scale bar and welcome visuals.
         self._add_visuals(welcome)
 
+        # Optional experimental monitor service.
+        self._qt_monitor = _create_qt_monitor(self, self.viewer.camera)
+
+        # Experimental QtPool for Octree visuals.
+        self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -343,7 +351,11 @@ class QtViewer(QSplitter):
             Layer to be added.
         """
         vispy_layer = create_vispy_visual(layer)
-        self.viewer.camera.events.center.connect(vispy_layer._on_camera_move)
+
+        if self._qt_poll is not None:
+            # Visuals might need to be polled when the camera moves and during
+            # a short period after the movement stops.
+            self._qt_poll.events.poll.connect(vispy_layer._on_poll)
 
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(self.viewer.layers) - 1
@@ -801,3 +813,62 @@ class QtViewer(QSplitter):
             self.console.close()
         self.dockConsole.deleteLater()
         event.accept()
+
+
+if TYPE_CHECKING:
+    from .experimental.qt_monitor import QtMonitor
+    from .experimental.qt_poll import QtPoll
+
+
+def _create_qt_monitor(
+    parent: QObject, camera: Camera
+) -> 'Optional[QtMonitor]':
+    """Create and return a QtMonitor instance.
+
+    A monitor instance is only created if NAPARI_MON is set.
+
+    Parameters
+    ----------
+    parent : QObject
+        Parent for the qtMonitor.
+    camera : VispyCamera
+        Camera that the monitor will tie into.
+
+    Return
+    ------
+    Optional[QtMonitor]
+        The new monitor instance, if any
+    """
+    if config.monitor:
+        from .experimental.qt_monitor import QtMonitor
+
+        # We can probably get rid of QtMonitor and use QtPoll instead,
+        # since it's the same idea but more general.
+        return QtMonitor(parent, camera)
+
+    return None
+
+
+def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+    """Create and return a QtPoll instance, if enabled.
+
+    A QtPoll instance is only created if using octree for now.
+
+    Parameters
+    ----------
+    parent : QObject
+        Parent for the qtMonitor.
+    camera : VispyCamera
+        Camera that the monitor will tie into.
+
+    Return
+    ------
+    Optional[QtMonitor]
+        The new monitor instance, if any
+    """
+    if config.async_octree:
+        from .experimental.qt_poll import QtPoll
+
+        return QtPoll(parent, camera)
+
+    return None

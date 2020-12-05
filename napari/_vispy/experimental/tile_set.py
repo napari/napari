@@ -1,29 +1,45 @@
 """TileSet class.
-"""
-from dataclasses import dataclass
-from typing import List
 
-from ...layers.image.experimental import OctreeChunk
+TiledImageVisual uses this class to track the tiles it's drawing.
+"""
+from typing import Dict, List, NamedTuple, Set
+
+from ...layers.image.experimental import OctreeChunk, OctreeChunkKey
 from .texture_atlas import AtlasTile
 
 
-@dataclass
-class TileData:
-    """Statistics about chunks during the update process."""
+class TileData(NamedTuple):
+    """TileSet stores one TileData per tile.
 
-    octree_chunk: OctreeChunk  # The data that produced this tile.
-    atlas_tile: AtlasTile  # Information from the texture atlas.
+    Attributes
+    ----------
+    octree_chunk : OctreeChunk
+        The chunk that created the tile.
+
+    atlas_tile : AtlasTile
+        The tile that was created from the chunk.
+    """
+
+    octree_chunk: OctreeChunk
+    atlas_tile: AtlasTile
 
 
 class TileSet:
     """The tiles we are drawing.
 
     Fast test for membership in both directions: dict and a set.
+
+    Attributes
+    ----------
+    _tiles : Dict[int, TileData]
+        Maps tile_index to the the TileData we have for that tile.
+    _chunks : Set[OctreeChunkKey]
+        The chunks we have in the set, for fast membership tests.
     """
 
     def __init__(self):
-        self._tiles = {}
-        self._chunks = set()
+        self._tiles: Dict[int, TileData] = {}
+        self._chunks: Set[OctreeChunkKey] = set()
 
     def __len__(self) -> int:
         """Return the number of tiles in the set.
@@ -45,10 +61,13 @@ class TileSet:
 
         Parameters
         ----------
-        tile_data : TileData
-            Add this to the set.
+        octree_chunk : OctreeChunk
+            The chunk we are adding to the tile set.
+        atlas_tile : AtlasTile
+            The atlas tile that was created for this chunks.
         """
         tile_index = atlas_tile.index
+
         self._tiles[tile_index] = TileData(octree_chunk, atlas_tile)
         self._chunks.add(octree_chunk.key)
 
@@ -59,38 +78,38 @@ class TileSet:
             Remove the TileData at this index.
         """
         octree_chunk = self._tiles[tile_index].octree_chunk
-        del self._tiles[tile_index]
         self._chunks.remove(octree_chunk.key)
+        del self._tiles[tile_index]
 
     @property
     def chunks(self) -> List[OctreeChunk]:
-        """Return all the chunk data that we have.
+        """Return all the chunks we are tracking.
 
         Return
         ------
         List[OctreeChunk]
-            All the chunk data in the set.
+            All the chunks in the set.
         """
         return [tile_data.octree_chunk for tile_data in self._tiles.values()]
 
     @property
     def tile_data(self) -> List[TileData]:
-        """Return all the tile data in the set.
+        """Return the data for all tiles in the set.
 
         Return
         ------
         List[TileData]
-            All the tile data in the set.
+            Data for all the tiles in the set.
         """
         return self._tiles.values()
 
     def contains_octree_chunk(self, octree_chunk: OctreeChunk) -> bool:
-        """Return True if the set contains this chunk data.
+        """Return True if the set contains this chunk.
 
         Parameters
         ----------
         octree_chunk : OctreeChunk
-            Check if OctreeChunk is in the set.
+            Check if this chunk is in the set.
 
         Return
         ------

@@ -83,7 +83,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
-        self.camera = Camera(self.dims)
+        self.camera = Camera()
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -108,11 +108,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
-        self.layers.events.inserted.connect(self._on_grid_change)
-        self.layers.events.removed.connect(self._on_grid_change)
+        self.layers.events.inserted.connect(self._on_add_layer)
+        self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
-        self.layers.events.inserted.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
         self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -127,6 +125,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
+
+        # Only created if NAPARI_MON is enabled.
+        self._remote_commands = _create_remote_commands(self.layers)
 
     def __str__(self):
         """Simple string representation"""
@@ -174,7 +175,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """tuple: Size of grid."""
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -186,7 +187,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_size(self, grid_size):
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -199,7 +200,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """int: Number of layers in each grid square."""
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -211,7 +212,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_stride(self, grid_stride):
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -332,7 +333,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
-
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -410,6 +410,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
+            self.cursor.size = active_layer.cursor_size
             self.interactive = active_layer.interactive
 
         if self._active_layer in self.keymap_providers:
@@ -486,7 +487,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
@@ -507,7 +508,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
             ),
             category=DeprecationWarning,
@@ -543,6 +544,83 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
         return ExperimentalNamespace(self.layers)
 
+    def _on_add_layer(self, event):
+        """Connect new layer events.
+
+        Parameters
+        ----------
+        event : :class:`napari.layers.Layer`
+            Layer to add.
+        """
+        layer = event.value
+
+        # Connect individual layer events to viewer events
+        layer.events.select.connect(self._update_active_layer)
+        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.interactive.connect(self._update_interactive)
+        layer.events.cursor.connect(self._update_cursor)
+        layer.events.cursor_size.connect(self._update_cursor_size)
+        layer.events.data.connect(self._on_layers_change)
+        layer.events.scale.connect(self._on_layers_change)
+        layer.events.translate.connect(self._on_layers_change)
+        layer.events.rotate.connect(self._on_layers_change)
+        layer.events.shear.connect(self._on_layers_change)
+        layer.events.affine.connect(self._on_layers_change)
+
+        # Coerce name into being unique and connect event to ensure uniqueness
+        layer.name = self.layers._coerce_name(layer.name, layer)
+        layer.events.name.connect(self.layers._update_name)
+
+        # For the labels layer we need to reset the undo/ redo
+        # history whenever the displayed slice changes. Once
+        # we have full undo/ redo functionality, this can be
+        # dropped.
+        if hasattr(layer, '_reset_history'):
+            self.dims.events.ndisplay.connect(layer._reset_history)
+            self.dims.events.order.connect(layer._reset_history)
+            self.dims.events.current_step.connect(layer._reset_history)
+
+        # Make layer selected and unselect all others
+        layer.selected = True
+        self.layers.unselect_all(ignore=layer)
+
+        # Update dims and grid model
+        self._on_layers_change(None)
+        self._on_grid_change(None)
+        # Slice current layer based on dims
+        self._update_layers(layers=[layer])
+
+        if len(self.layers) == 1:
+            self.reset_view()
+
+    def _on_remove_layer(self, event):
+        """Disconnect old layer events.
+
+        Parameters
+        ----------
+        layer : :class:`napari.layers.Layer`
+            Layer to add.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Layer` or list
+            The layer that was added (same as input).
+        """
+        layer = event.value
+
+        # Disconnect all events from layer
+        layer.events.disconnect()
+        for em in layer.events.emitters.values():
+            em.disconnect()
+
+        # For the labels layer disconnect history resets
+        if hasattr(layer, '_reset_history'):
+            self.dims.events.ndisplay.disconnect(layer._reset_history)
+            self.dims.events.order.disconnect(layer._reset_history)
+            self.dims.events.current_step.disconnect(layer._reset_history)
+        self._on_layers_change(None)
+        self._on_grid_change(None)
+
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
 
@@ -556,21 +634,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
-        layer.events.interactive.connect(self._update_interactive)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
-        layer.name = self.layers._coerce_name(layer.name, layer)
-        layer.events.name.connect(self.layers._update_name)
-        layer.selected = True
+        # Adding additional functionality inside `add_layer`
+        # should be avoided to keep full functionality
+        # from adding a layer through the `layers.append`
+        # method
         self.layers.append(layer)
-        self.layers.unselect_all(ignore=layer)
-        self._update_layers(layers=[layer])
-
-        if len(self.layers) == 1:
-            self.reset_view()
         return layer
 
     def add_image(
@@ -767,14 +835,17 @@ class ViewerModel(KeymapHandler, KeymapProvider):
                         f"Received sequence for argument '{k}', "
                         "did you mean to specify a 'channel_axis'? "
                     )
+            layer = image_class(data, **kwargs)
+            self.layers.append(layer)
 
-            return self.add_layer(image_class(data, **kwargs))
+            return layer
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.add_layer(image_class(image, **i_kwargs))
+                layer = image_class(image, **i_kwargs)
+                self.layers.append(layer)
                 layer_list.append(layer)
 
             return layer_list
@@ -1000,6 +1071,21 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
+
+
+def _create_remote_commands(layers: LayerList) -> None:
+    """Start the monitor service if configured to use it."""
+    if not config.monitor:
+        return None
+
+    from ..components.experimental.monitor import monitor
+    from ..components.experimental.remote_commands import RemoteCommands
+
+    monitor.start()  # Start if not already started.
+
+    # Create a RemoteCommands object which will run commands
+    # from remote clients that come through the monitor.
+    return RemoteCommands(layers, monitor.run_command_event)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

@@ -8,6 +8,8 @@ from ....components.experimental.chunk import ChunkKey
 from ....layers import Layer
 from ....types import ArrayLike
 
+OctreeChunkKey = Tuple[int, int, int]
+
 
 class OctreeChunkGeom(NamedTuple):
     """Position and scale of the chunk, for rendering.
@@ -117,7 +119,7 @@ class OctreeChunk:
         self.loading = False
 
     @property
-    def key(self) -> Tuple[int, int, int]:
+    def key(self) -> OctreeChunkKey:
         """The unique key for this chunk.
 
         TODO_OCTREE: Switch to __hash__? Tried __hash__ a while ago and ran

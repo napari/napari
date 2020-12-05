@@ -1,18 +1,14 @@
 """QtRender widget.
 """
-
-
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
+from ....components.experimental.monitor import monitor
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_frame_rate import QtFrameRate
 from .qt_image_info import QtImageInfo
-from .qt_mini_map import QtMiniMap
 from .qt_octree_info import QtOctreeInfo
 from .qt_test_image import QtTestImage
-
-SHOW_MINIMAP = False
 
 
 class QtRender(QWidget):
@@ -43,10 +39,6 @@ class QtRender(QWidget):
             # Octree specific controls and widgets.
             layout.addWidget(QtOctreeInfo(layer))
 
-            if SHOW_MINIMAP:
-                self.mini_map = QtMiniMap(layer)
-                layout.addWidget(self.mini_map)
-
             self.viewer.camera.events.center.connect(self._on_camera_move)
 
         # Controls to create a new test image.
@@ -61,6 +53,9 @@ class QtRender(QWidget):
 
     def _on_camera_move(self, _event=None):
         """Called when the camera was moved."""
-        if SHOW_MINIMAP:
-            self.mini_map.update()
         self.frame_rate.on_camera_move()
+
+        if monitor:
+            intersection = self.layer.get_intersection()
+            monitor.add(intersection.tile_config)
+            monitor.add(intersection.tile_state)

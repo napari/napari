@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
 
 from .. import __version__
 from ..resources import get_stylesheet
-from ..utils import perf
+from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.perf import perf_config
@@ -297,6 +297,8 @@ class Window:
                 # Write trace file before exit, if we were writing one.
                 # Is there a better place to make sure this is done on exit?
                 perf.timers.stop_trace_file()
+
+            _stop_monitor()
 
         exitAction.triggered.connect(handle_exit)
 
@@ -736,3 +738,11 @@ class Window:
         self.qt_viewer.close()
         self._qt_window.close()
         del self._qt_window
+
+
+def _stop_monitor() -> None:
+    """Stop the monitor service if configured to use it."""
+    if config.monitor:
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()
