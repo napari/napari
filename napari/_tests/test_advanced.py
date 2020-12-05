@@ -277,11 +277,6 @@ def test_adding_removing_layer(make_test_viewer):
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
-    # This can be removed once `_dims` is dropped
-    len(layer._dims.events.callbacks) == 0
-    for em in layer._dims.events.emitters.values():
-        assert len(em.callbacks) == 0
-
     # Add layer
     viewer.layers.append(layer)
     assert np.all(viewer.layers[0].data == data)
@@ -299,12 +294,7 @@ def test_adding_removing_layer(make_test_viewer):
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
-    # This can be removed once `_dims` is dropped
-    len(layer._dims.events.callbacks) == 0
-    for em in layer._dims.events.emitters.values():
-        assert len(em.callbacks) == 0
-
-    # readd layer
+    # re-add layer
     viewer.layers.append(layer)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
