@@ -202,6 +202,9 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.colormap.disconnect(self._on_colormap_change)
         self.layer.events.gamma.disconnect(self.gamma_slider_update)
         self.layer.events.contrast_limits.disconnect(self._on_clims_change)
+        if hasattr(self, 'clim_pop'):
+            self.clim_pop.deleteLater()
+        self.deleteLater()
 
 
 def create_range_popup(layer, attr, parent=None):

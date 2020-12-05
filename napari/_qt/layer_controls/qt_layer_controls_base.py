@@ -109,5 +109,7 @@ class QtLayerControls(QFrame):
 
     def close(self):
         """Layer widget is closing."""
+        super().close()
         self.layer.events.blending.disconnect(self._on_blending_change)
         self.layer.events.opacity.disconnect(self._on_opacity_change)
+        self.deleteLater()

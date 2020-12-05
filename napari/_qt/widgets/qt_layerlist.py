@@ -702,6 +702,7 @@ class QtLayerWidget(QFrame):
 
     def close(self):
         """Layer widget is closing."""
+        super().close()
         self.layer.events.select.disconnect(self._on_selected_change)
         self.layer.events.deselect.disconnect(self._on_deselected_change)
         self.layer.events.name.disconnect(self._on_layer_name_change)
