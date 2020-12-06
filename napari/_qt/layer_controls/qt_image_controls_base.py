@@ -194,6 +194,16 @@ class QtBaseImageControls(QtLayerControls):
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
 
+    def closeEvent(self, event):
+        self.close()
+        event.accept()
+
+    def close(self):
+        """Layer widget is closing."""
+        if hasattr(self, 'clim_pop'):
+            self.clim_pop.deleteLater()
+        super().close()
+
 
 def create_range_popup(layer, attr, parent=None):
     """Create a QRangeSliderPopup linked to a specific layer attribute.
@@ -249,12 +259,6 @@ def create_range_popup(layer, attr, parent=None):
     popup.slider.valuesChanged.connect(set_values)
     popup.slider.rangeChanged.connect(set_range)
     return popup
-
-    def close(self):
-        """Layer widget is closing."""
-        if hasattr(self, 'clim_pop'):
-            self.clim_pop.deleteLater()
-        super().close()
 
 
 def create_clim_reset_buttons(layer):
