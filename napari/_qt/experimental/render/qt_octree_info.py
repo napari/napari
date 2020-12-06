@@ -29,7 +29,7 @@ def _get_table_values(layer: OctreeImage) -> dict:
     num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
 
     return {
-        "Level": f"{layer.octree_level}",
+        "Level": f"{layer.data_level}",
         "Tiles": f"{_shape(shape_in_tiles)} = {num_tiles}",
         "Tile Shape": _shape([layer.tile_size, layer.tile_size]),
         "Layer Shape": _shape(level_info.image_shape),

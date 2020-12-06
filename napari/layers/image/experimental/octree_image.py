@@ -52,9 +52,6 @@ class OctreeImage(Image):
     def __init__(self, *args, **kwargs):
         self._tile_size = async_config.octree.tile_size
 
-        # Is this the same as Image._data_level? Which should we use?
-        self._octree_level = None
-
         self._view: OctreeView = None
 
         self._freeze_level = False
@@ -229,12 +226,16 @@ class OctreeImage(Image):
         self.events.freeze_level()
 
     @property
-    def octree_level(self):
-        """Return the currently displayed octree level."""
-        return self._octree_level
+    def data_level(self) -> int:
+        """Current level of multiscale.
 
-    @octree_level.setter
-    def octree_level(self, level: int):
+        The base full resolution image is level 0. The highest and coarsest
+        level usually contains only a single tile.
+        """
+        return self._data_level
+
+    @data_level.setter
+    def data_level(self, level: int) -> None:
         """Set the octree level we should be displaying.
 
         Parameters
@@ -242,8 +243,10 @@ class OctreeImage(Image):
         level : int
             Display this octree level.
         """
+        if self._data_level == level:
+            return  # It didn't change.
         assert 0 <= level < self.num_octree_levels
-        self._octree_level = level
+        self._data_level = level
         self.events.octree_level()
         if self._slice is not None:
             self._slice.octree_level = level
@@ -293,11 +296,10 @@ class OctreeImage(Image):
             if key not in visible_set:
                 self._last_visible_set.remove(key)
 
-        # If we switched to a new octree level, update our currently shown level.
-        slice_level = self._slice.octree_level
-        if self._octree_level != slice_level:
-            self._octree_level = slice_level
-            self.events.octree_level()
+        # If calling _slice.get_visible_chunks() switched the slice to
+        # a new octree level, then update our data_level to match. This
+        # will do nothing if the level didn't change.
+        self.data_level = self._slice.octree_level
 
         def _log(i, count, label, chunk):
             LOGGER.debug(
