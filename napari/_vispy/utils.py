@@ -17,14 +17,15 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
-if config.async_octree:
+
+if config.create_octree_image():
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
     # Insert OctreeImage in front so it gets picked over plain Image.
-    new_order = {OctreeImage: VispyTiledImageLayer}
-    new_order.update(layer_to_visual)
-    layer_to_visual = new_order
+    new_mapping = {OctreeImage: VispyTiledImageLayer}
+    new_mapping.update(layer_to_visual)
+    layer_to_visual = new_mapping
 
 
 def create_vispy_visual(layer: Layer) -> VispyBaseLayer:

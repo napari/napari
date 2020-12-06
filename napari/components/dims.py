@@ -52,7 +52,7 @@ class Dims:
         # Events:
         self.events = EmitterGroup(
             source=self,
-            auto_connect=True,
+            auto_connect=False,
             current_step=None,
             axis_labels=None,
             ndim=None,

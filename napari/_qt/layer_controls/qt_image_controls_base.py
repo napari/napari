@@ -4,11 +4,12 @@ from functools import partial
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QComboBox, QLabel, QPushButton, QSlider
+from qtpy.QtWidgets import QLabel, QPushButton, QSlider
 
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
+from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
 
 
@@ -47,7 +48,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.gamma.connect(self.gamma_slider_update)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
-        comboBox = QComboBox(self)
+        comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)

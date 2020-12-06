@@ -1,5 +1,7 @@
 import dataclasses as _dc
+import operator
 import typing
+import warnings
 from contextlib import contextmanager
 from typing import (
     Any,
@@ -13,22 +15,117 @@ from typing import (
     cast,
 )
 
+import dask.array as da
+import numpy as np
 import toolz as tz
-import typing_extensions as _te
+from typing_extensions import (
+    Annotated,
+    _AnnotatedAlias,
+    get_args,
+    get_origin,
+    get_type_hints,
+)
 
-from .event import EmitterGroup
+try:
+    from typing import _tp_cache
+except ImportError:
+
+    def _tp_cache(x):
+        return x
+
+
+from .event import EmitterGroup, Event
+from .types import SupportsEvents
 
 ON_SET = "_on_{name}_set"
 ON_GET = "_on_{name}_get"
 C = TypeVar("C")
-
+T = TypeVar("T")
 NO_ATTR = object()
 
 
-class FrozenAttributeError(AttributeError):
-    """Raised when an attempt is made to modify a frozen attribute."""
+class Property:
+    """Declare a dataclass field as a property with getter/setter functions.
 
-    pass
+    This class is nearly an alias for `typing_extensions.Annotated` (or, in
+    ≥python3.9, `typing.Annotated`), except that it provides stricter type
+    checking.  See `__class_getitem__` for special considerations.
+
+    ``Property`` should be used with the actual type, followed by an optional
+    ``getter`` function (or ``None``), followed by an optional ``setter``
+    function (or ``None``): e.g. ``Property[Blending, str, Blending]``
+
+    Examples
+    --------
+
+    >>> @evented_dataclass
+    ... class Test:
+    ...     # x will be stored as an int but *retrieved* as a string.
+    ...     x: Property[int, str, int]
+    """
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Type Property cannot be instantiated")
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(f"Cannot subclass {cls.__module__}.Property")
+
+    @_tp_cache
+    def __class_getitem__(cls, params):
+        """Create the runtime type representation of a Property type.
+
+        Unfortunately, in order for this to behave like an `Annotated` type,
+        without us having to vendor a lot of the python
+        typing library, this must return an instance of
+        `typing_extensions._AnnotatedAlias` (which just points to
+        `typing._AnnotatedAlias` after python 3.9).  Hence the private import.
+        Since this works on python3.9 (when typing acquired the Annotated type)
+        it seems unlikely to break in future python releases.  But it should be
+        monitored.
+        """
+        if not isinstance(params, tuple) or not (1 < len(params) < 4):
+            raise TypeError(
+                "Property[...] should be used with exactly two or three "
+                "arguments (a type, a getter, and an optional setter)"
+            )
+        msg = "Property[T, ...]: T must be a type."
+        origin = typing._type_check(params[0], msg)
+        if params[1] is not None and not callable(params[1]):
+            raise TypeError(f"Property getter not callable: {params[1]}")
+        if (
+            len(params) > 2
+            and params[2] is not None
+            and not callable(params[2])
+        ):
+            raise TypeError(f"Property getter not callable: {params[1]}")
+        metadata = tuple(params[1:])
+        return _AnnotatedAlias(origin, metadata)
+
+
+# from dataclasses.py in the standard library
+def _is_classvar(a_type):
+    # This test uses a typing internal class, but it's the best way to
+    # test if this is a ClassVar.
+    return a_type is typing.ClassVar or (
+        type(a_type) is typing._GenericAlias
+        and a_type.__origin__ is typing.ClassVar
+    )
+
+
+# from dataclasses.py in the standard library
+def _is_initvar(a_type):
+    # The module we're checking against is the module we're
+    # currently in (dataclasses.py).
+    return a_type is _dc.InitVar or type(a_type) is _dc.InitVar
+
+
+@contextmanager
+def stripped_annotated_types(cls):
+    """Temporarily strip Annotated types (for cleaner function signatures)."""
+    original_annotations = cls.__annotations__
+    cls.__annotations__ = get_type_hints(cls, include_extras=False)
+    yield
+    cls.__annotations__ = original_annotations
 
 
 def set_with_events(self: C, name: str, value: Any) -> None:
@@ -88,13 +185,59 @@ def set_with_events(self: C, name: str, value: Any) -> None:
                 object.__setattr__(self, name, before)
             meth_name = f"{self.__class__.__name__}.{ON_SET.format(name=name)}"
             raise type(e)(f"Error in {meth_name} (value not set): {e}")
-    # otherwise, we emit the event
-    # TODO: use np.all(old_val == new_val)
 
+    # if different we emit the event with new value
     after = getattr(self, name)
-    if before != after:
+    if not self.__equality_checks__.get(name, is_equal)(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
+
+
+def is_equal(v1, v2):
+    """
+    Function for basic comparison compare.
+
+    Parameters
+    ----------
+    v1: Any
+        first value
+    v2: Any
+        second value
+
+    Returns
+    -------
+    result : bool
+        Returns ``True`` if ``v1`` and ``v2`` are equivalent.
+        If an exception is raised during comparison, returns ``False``.
+
+    Warns
+    -----
+    UserWarning
+        If an exception is raised during comparison.
+    """
+    try:
+        return bool(v1 == v2)
+    except Exception as e:
+        warnings.warn(
+            "Comparison method failed. Returned False. "
+            f"There may be need to define custom _on_<name>_set method. Exception {e}"
+        )
+        return False
+
+
+def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
+    import inspect
+
+    if isinstance(type_, _AnnotatedAlias):
+        type_ = type_.__origin__
+    if not inspect.isclass(type_):
+        if not getattr(type_, "__module__", None) == "typing":
+            warnings.warn(f"Bug in type recognition {type_}")
+        return
+    if issubclass(type_, np.ndarray):
+        return np.array_equal
+    if issubclass(type_, da.core.Array):
+        return operator.is_
 
 
 def add_events_to_class(cls: Type[C]) -> Type[C]:
@@ -124,6 +267,22 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
 
+    # create dict with compare functions for fields which cannot be compared
+    # using standard equal operator, like numpy arrays.
+    # it will be set to __equality_checks__ class parameter.
+    compare_dict_base = getattr(cls, "__equality_checks__", {})
+    compare_dict = {
+        n: t
+        for n, t in {
+            name: _type_to_compare(type_)
+            for name, type_ in cls.__dict__.get('__annotations__', {}).items()
+            if name not in compare_dict_base
+        }.items()
+        if t is not None  # walrus operator is supported from python 3.8
+    }
+    # use compare functions provided by class creator.
+    compare_dict.update(compare_dict_base)
+
     def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
         # in the dataclass, skip those with metadata={'events' = False}
@@ -133,7 +292,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             self.events.add(**e_fields)
         else:
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **e_fields
+                source=self, auto_connect=False, **e_fields,
             )
         # call original __post_init__
         if orig_post_init is not None:
@@ -142,6 +301,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
     # modify __setattr__ with version that emits an event when setting
     setattr(cls, '__setattr__', set_with_events)
     setattr(cls, '__post_init__', evented_post_init)
+    setattr(cls, '__equality_checks__', compare_dict)
     return cls
 
 
@@ -188,17 +348,16 @@ def prop_setter(
     setattr(obj, priv_name, fcoerce(value))
 
 
-T = TypeVar("T")
-
-
 class TypeGetSet(NamedTuple):
+    '''A simple named tuple with a type, getter func, and setter func.'''
+
     type: Type[T]
-    fget: Optional[Callable[[T], Any]]
-    fset: Optional[Callable[[Any], T]]
+    fget: Callable[[T], Any]
+    fset: Callable[[Any], T]
 
 
 @tz.curry
-def try_coerce(func, name, value):
+def _try_coerce(func, name, value):
     if func is not None:
         try:
             return func(value)
@@ -207,15 +366,31 @@ def try_coerce(func, name, value):
     return value
 
 
-def parse_annotated_types(cls: Type):
+def parse_annotated_types(cls: Type,) -> Dict[str, TypeGetSet]:
+    """Return a dict of field names and their types.
+
+    If any type annotations are instances of ``Property``, then their
+    paramereters will be used to create type-coercion functions that will be
+    called during getting/setting of this field.
+
+    Parameters
+    ----------
+    cls : Type
+        The class being processed as a dataclass
+
+    Returns
+    -------
+    dict
+        A dict of field names to ``TypeGetSet`` objects
+    """
     out: Dict[str, TypeGetSet] = {}
-    for name, typ in _te.get_type_hints(cls, include_extras=True).items():
+    for name, typ in get_type_hints(cls, include_extras=True).items():
         d = [typ, None, None]
-        if _te.get_origin(typ) is _te.Annotated:
-            args = _te.get_args(typ)
+        if get_origin(typ) is Annotated:
+            args = get_args(typ)
             d[: len(args)] = args
-        d[1] = try_coerce(d[1], name)
-        d[2] = try_coerce(d[2], name)
+        d[1] = _try_coerce(d[1], name)
+        d[2] = _try_coerce(d[2], name)
         out[name] = TypeGetSet(*d)
     return out
 
@@ -250,8 +425,7 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
         # ClassVar and InitVar types are exempt from dataclasses and properties
         # https://docs.python.org/3/library/dataclasses.html#class-variables
-        # TODO: private methods !
-        if _dc._is_classvar(type_, typing) or _dc._is_initvar(type_, _dc):
+        if _is_classvar(type_) or _is_initvar(type_):
             continue
         private_name = f"_{name}"
         # store the original value for the property
@@ -262,8 +436,12 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
         # `self.x` is the property, `self._x` contains the data
         cls.__annotations__[private_name] = ClassVar[type_]
 
-        fget = prop_getter(private_name, coerce_funcs.get(name).fget)
-        fset = prop_setter(private_name, default, coerce_funcs.get(name).fset)
+        if name in coerce_funcs:
+            fget = prop_getter(private_name, coerce_funcs[name].fget)
+            fset = prop_setter(private_name, default, coerce_funcs[name].fset)
+        else:
+            fget = _try_coerce(None, name)
+            fset = _try_coerce(None, name)
         # bring the docstring from the class to the property
         doc = None
         if name in params:
@@ -279,46 +457,26 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     return cls
 
 
-class Property:
-    """Declare a dataclass field as a property with getter/setter functions"""
+def update_from_dict(self, values, compare_fun=is_equal):
+    if isinstance(values, self.__class__):
+        values = values.asdict()
+    if not isinstance(values, dict):
+        raise ValueError(f"Unsupported update from {type(values)}")
+    if all(compare_fun(values[k], v) for k, v in self.asdict().items()):
+        return
 
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("Type Property cannot be instantiated")
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(f"Cannot subclass {cls.__module__}.Property")
-
-    @_te._tp_cache
-    def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or not (1 < len(params) < 4):
-            raise TypeError(
-                "Property[...] should be used with exactly two or three "
-                "arguments (a type, a getter, and an optional setter)"
-            )
-        msg = "Property[T, ...]: T must be a type."
-        origin = typing._type_check(params[0], msg)
-        if params[1] is not None and not callable(params[1]):
-            raise TypeError(f"Property getter not callable: {params[1]}")
-        if len(params) > 2:
-            if params[2] is not None and not callable(params[2]):
-                raise TypeError(f"Property getter not callable: {params[1]}")
-        metadata = tuple(params[1:])
-        return _te._AnnotatedAlias(origin, metadata)
-
-
-@contextmanager
-def stripped_annotated_types(cls):
-    """temporarily strip Annotated types (for cleaner function signatures)."""
-    original_annotations = cls.__annotations__
-    cls.__annotations__ = {
-        n: _te._strip_annotations(t) for n, t in original_annotations.items()
-    }
-    yield
-    cls.__annotations__ = original_annotations
+    if isinstance(self, SupportsEvents):
+        with self.events.blocker():
+            for key, value in values.items():
+                setattr(self, key, value)
+        self.events(Event(self))
+    else:
+        for key, value in values.items():
+            setattr(self, key, value)
 
 
 @tz.curry
-def dataclass(
+def evented_dataclass(
     cls: Type[C],
     *,
     init: bool = True,
@@ -327,14 +485,17 @@ def dataclass(
     order: bool = False,
     unsafe_hash: bool = False,
     frozen: bool = False,
-    events: bool = False,
-    properties: bool = False,
+    events: bool = True,
+    properties: bool = True,
 ) -> Type[C]:
     """Enhanced dataclass decorator with events and property descriptors.
 
     Examines PEP 526 __annotations__ to determine fields.  Fields are defined
     as class attributes with a type annotation.  Everything but ``events`` and
     ``properties`` are defined on the builtin dataclass decorator.
+
+    Note: if ``events==False`` and ``properties==False``, this is functionally
+    equivalent to the builtin ``dataclasses.dataclass``
 
     Parameters
     ----------
@@ -356,12 +517,12 @@ def dataclass(
     events : bool, optional
         If true, an ``EmmitterGroup`` instance is added as attribute "events".
         Events will be emitted each time one of the dataclass fields are
-        altered, by default False
+        altered, by default True
     properties : bool, optional
         If true, field attributes will be converted to property descriptors.
         If the class has a class docstring in numpydocs format, docs for each
         property will be taken from the ``Parameters`` section for the
-        corresponding parameter, by default False
+        corresponding parameter, by default True
 
     Returns
     -------
@@ -389,20 +550,19 @@ def dataclass(
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`
     with stripped_annotated_types(cls):
-        # TODO: don't use private
-        cls = _dc._process_class(
-            cls, init, repr, eq, order, unsafe_hash, frozen
+        cls = _dc.dataclass(  # type: ignore
+            cls,
+            init=init,
+            repr=repr,
+            eq=eq,
+            order=order,
+            unsafe_hash=unsafe_hash,
+            frozen=frozen,
         )
 
-    # XXX: Open question: should properties=True make ALL fields properties?
-    # or should we declare that on each one...
     if properties:
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
-    setattr(cls, '_get_state', _get_state)
+    setattr(cls, 'asdict', _dc.asdict)
+    setattr(cls, 'update', update_from_dict)
     return cls
-
-
-def _get_state(self):
-    """Get dictionary of dataclass fiels."""
-    return _dc.asdict(self)

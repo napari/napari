@@ -228,9 +228,9 @@ class Tracks(Layer):
         """Sets the view given the indices to slice with."""
 
         # if the displayed dims have changed, update the shader data
-        if self._dims.displayed != self._current_displayed_dims:
+        if self._dims_displayed != self._current_displayed_dims:
             # store the new dims
-            self._current_displayed_dims = self._dims.displayed
+            self._current_displayed_dims = self._dims_displayed
             # fire the events to update the shaders
             self.events.rebuild_tracks()
             self.events.rebuild_graph()
@@ -249,9 +249,9 @@ class Tracks(Layer):
 
         if self._view_data is not None and self.track_colors is not None:
             de = self._extent_data
-            min_vals = [de[0, i] for i in self._dims.displayed]
+            min_vals = [de[0, i] for i in self._dims_displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self._dims.displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._dims_displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -299,10 +299,10 @@ class Tracks(Layer):
         if vertices is None:
             return
 
-        data = vertices[:, self._dims.displayed]
+        data = vertices[:, self._dims_displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
-        if self._dims.ndisplay == 2:
+        if self._ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
         else:
@@ -325,7 +325,7 @@ class Tracks(Layer):
     def use_fade(self) -> bool:
         """toggle whether we fade the tail of the track, depending on whether
         the time dimension is displayed"""
-        return 0 in self._dims.not_displayed
+        return 0 in self._dims_not_displayed
 
     @property
     def data(self) -> np.ndarray:
@@ -351,6 +351,7 @@ class Tracks(Layer):
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
         self.events.data()
+        self._set_editable()
         self._update_dims()
 
     @property
@@ -533,12 +534,11 @@ class Tracks(Layer):
     @property
     def track_labels(self) -> tuple:
         """ return track labels at the current time """
+        labels, positions = self._manager.track_labels(self.current_time)
 
-        # check that current time is still within the frame map
-        if self.current_time < 0 or self.current_time > self._manager.max_time:
-            # need to return a tuple for pos to clear the vispy text visual
+        # if there are no labels, return empty for vispy
+        if not labels:
             return None, (None, None)
 
-        labels, positions = self._manager.track_labels(self.current_time)
         padded_positions = self._pad_display_data(positions)
         return labels, padded_positions

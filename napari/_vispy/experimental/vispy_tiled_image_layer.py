@@ -1,333 +1,262 @@
 """VispyTiledImageLayer class.
+
+A tiled image that uses TiledImageVisual and TextureAtlas2D so
+adding/removing tiles is extremely fast.
 """
-from collections import namedtuple
-from typing import List, Set
+from dataclasses import dataclass
+from typing import List
 
-import numpy as np
-from vispy.scene.node import Node
-from vispy.scene.visuals import Line
-from vispy.visuals.transforms import STTransform
+from vispy.scene.visuals import create_visual_node
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental import OctreeChunk
+from ...layers.image.experimental.octree_image import OctreeImage
 from ...utils.perf import block_timer
-from ..image import Image as ImageVisual
 from ..vispy_image_layer import VispyImageLayer
+from .tile_grid import TileGrid
+from .tiled_image_visual import TiledImageVisual
 
-# Grid is optionally drawn while debugging to show tile boundaries.
-GRID_WIDTH = 3
-GRID_COLOR = (1, 0, 0, 1)
-
-# Set order to the grid draws on top of the image tiles.
-IMAGE_NODE_ORDER = 0
-LINE_VISUAL_ORDER = 10
-
-# We are seeing crashing when creating too many ImageVisual's so we are
-# experimenting with having a reusable pool of them.
-INITIAL_POOL_SIZE = 0
-
-SHOW_GRID = True
-
-Stats = namedtuple(
-    'Stats', "num_seen num_start num_created num_deleted num_final"
-)
+# Create the scene graph Node version of this visual.
+TiledImageNode = create_visual_node(TiledImageVisual)
 
 
-class NullImageVisualPool:
-    """Allocate visuals without actually having a pool (for now).
-    """
+@dataclass
+class ChunkStats:
+    """Statistics about chunks during the update process."""
 
-    def get_visual(self):
-        return ImageVisual(None, method='auto')
-
-    def return_visual(self, visual):
-        assert visual
-        visual.parent = None  # Remove from scene graph.
-
-
-def _chunk_outline(chunk: ChunkData) -> np.ndarray:
-    """Return the line verts that outline this single chunk.
-
-    Parameters
-    ----------
-    chunk : ChunkData
-        Create outline of this chunk.
-
-    Return
-    ------
-    np.ndarray
-        The chunk verts for a line drawn with the 'segments' mode.
-    """
-    x, y = chunk.pos
-    h, w = chunk.data.shape[:2]
-    w *= chunk.scale[1]
-    h *= chunk.scale[0]
-
-    # We draw lines on all four sides of the chunk. This means are
-    # double-drawing all interior lines in the grid. We can avoid
-    # this duplication if it becomes a performance issue.
-    return np.array(
-        (
-            [x, y],
-            [x + w, y],
-            [x + w, y],
-            [x + w, y + h],
-            [x + w, y + h],
-            [x, y + h],
-            [x, y + h],
-            [x, y],
-        ),
-        dtype=np.float32,
-    )
-
-
-class ImageChunk:
-    """Holds the ImageVisual for a single chunk.
-
-    Parameters
-    ----------
-    chunk : ChunkData
-        The data for the ImageChunk.
-    node : Optional[ImageVisual]
-        The ImageVisual if one was available.
-    """
-
-    # TODO_OCTREE: make this a namedtuple if it doesn't grow.
-    def __init__(self, chunk_data: ChunkData):
-        self.chunk_data = chunk_data
-        self.data_id = id(chunk_data.data)
-
-        # ImageVisual should be assigned later
-        self.node = None
-
-
-class TileGrid:
-    """The grid that shows the outlines of all the tiles.
-
-    Attributes
-    ----------
-    parent : Node
-        The parent of the grid.
-    """
-
-    def __init__(self, parent: Node):
-        self.parent = parent
-        self.line = self._create_line()
-
-    def _create_line(self) -> Line:
-        """Create the Line visual for the grid.
-
-        Return
-        ------
-        Line
-            The new Line visual.
-        """
-        line = Line(connect='segments', color=GRID_COLOR, width=GRID_WIDTH)
-        line.order = LINE_VISUAL_ORDER
-        line.parent = self.parent
-        return line
-
-    def update_grid(self, chunks: List[ImageChunk]) -> None:
-        """Update grid for this set of chunks.
-
-        Parameters
-        ----------
-        chunks : List[ImageChunks]
-            Add a grid that outlines these chunks.
-        """
-        # TODO_OCTREE: create in one go without vstack?
-        verts = np.zeros((0, 2), dtype=np.float32)
-        for image_chunk in chunks:
-            chunk_verts = _chunk_outline(image_chunk.chunk_data)
-            verts = np.vstack([verts, chunk_verts])
-
-        self.line.set_data(verts)
-        self.verts = verts
+    seen: int = 0
+    start: int = 0
+    deleted: int = 0
+    remaining: int = 0
+    low: int = 0
+    created: int = 0
+    final: int = 0
 
 
 class VispyTiledImageLayer(VispyImageLayer):
-    """Tiled images using multiple ImageVisuals.
+    """A tiled image drawn using a single TiledImageVisual.
 
-    Render a set of image tiles. For example render the set of tiles that
-    need to be drawn from an octree in order to depict the current view.
+    Tiles are rendered using TiledImageVisual which uses a TextureAtlas2D,
+    see those classes for more details.
 
-    We create a parent ImageVisual, which is current empty. Then we create a
-    child ImageVisual for every image tile. The set of child ImageVisuals will
-    change over time as the user pans/zooms in the octree.
+    History
+    -------
 
-    Future Work
-    -----------
+    An early tiled visual we had created a new ImageVisual for each tile.
+    This led to crashes with PyQt5 due to the constant scene graph changes.
+    Also each new ImageVisual caused a slow down, the shader build was one
+    reason. Finally, rendering was slower because it required a texture
+    swap for each tile. This newer VispyTiledImageLayer solves those
+    problems.
 
-    This class will likely need to be replaced at some point. We plan to
-    write a TiledImageVisual class which stores the tile textures in an
-    atlas-like tile cache. Then in one draw command it can draw the all the
-    visible tiles in the right positions using texture coordinates.
+    Parameters
+    ----------
+    layer : OctreeImage
+        The layer we are drawing.
 
-    One reason TiledImageVisual will be faster is today calling
-    ImageVisual.set_data() causes a 15-20ms hiccup when that visual is next
-    drawn. It's not clear why the hiccup is so big, since transfering the
-    texture into VRAM should be under 2ms. However at least 4ms is spent
-    rebuilding the shader alone.
-
-    Since we might need to draw 10+ new tiles at one time, the total delay
-    could be up to 200ms total, which is too slow.
-
-    However, this initial approach with separate ImageVisuals should be a
-    good starting point, since it will let us iron out the octree
-    implementation and the tile placement math. Then we can upgrade
-    to the new TiledImageVisual when its ready, and everything should
-    still look the same, it will just be faster.
+    Attributes
+    ----------
+    grid : TileGrid
+        Optional grid outlining the tiles.
     """
 
-    def __init__(self, layer):
-        self.ready = False
-        self.image_chunks = {}
-        self.test_chunks = []
-        self.grid = None  # Can't create until after super() init
+    def __init__(self, layer: OctreeImage):
+        # All tiles are stored in a single TileImageVisual.
+        visual = TiledImageNode(tile_shape=layer.tile_shape)
 
-        self.pool = NullImageVisualPool()
+        # Pass our TiledImageVisual to the base class, it will become our
+        # self.node which VispyBaseImage holds.
+        super().__init__(layer, visual)
 
-        # This will call our self._on_data_change() but we guard
-        # that with self.read as a hack.
-        super().__init__(layer)
+        # An optional grid that shows tile borders.
+        self.grid = TileGrid(self.node)
 
-        if SHOW_GRID:
-            self.grid = TileGrid(self.node)
-
-        self.ready = True
+        # So we redraw when the layer loads new data.
+        self.layer.events.loaded.connect(self._on_loaded)
 
     @property
-    def _tiled_visual_parent(self):
-        """Return the parent under which ImageVisuals should be added."""
-        return self.node  # This is VispyBaseLayer.node
+    def num_tiles(self) -> int:
+        """Return the number of tiles currently being drawn.
 
-    def _add_image_chunk_node(self, image_chunk: ImageChunk) -> None:
-        """Add an ImageChunk's node to the scene.
+        Return
+        ------
+        int
+            The number of tiles currently being drawn.
+        """
+        return self.node.num_tiles
+
+    def set_data(self, node, data) -> None:
+        """Set our image data, not implemented.
+
+        ImageVisual has a set_data() method but we don't. No one can set
+        the data for the whole image, that's why it's a tiled image in the
+        first place. Instead of set_data() we pull our data one chunk at a
+        time by calling self.layer.visible_chunks in our _update_view()
+        method.
+        """
+        raise NotImplementedError()
+
+    def _update_drawn_chunks(self) -> ChunkStats:
+        """Add or remove tiles to match the chunks which are currently visible.
+
+        1) Remove tiles which are no longer visible.
+        2) Create tiles for newly visible chunks.
+        3) Optionally update our grid based on the now visible chunks.
+        """
+        # Get the currently visible chunks from the layer.
+        visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
+
+        # Record some stats about this update process, where stats.seen are
+        # the number of visible chunks.
+        stats = ChunkStats(seen=len(visible_chunks))
+
+        # Create the visible set of chunks using their keys.
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key, using __hash__
+        # did not immediately work, but we should try again.
+        visible_set = set(octree_chunk.key for octree_chunk in visible_chunks)
+
+        # Then number of tiles we have before the update.
+        stats.start = self.num_tiles
+
+        # Make tiles as stale if their chunk is no longer visible. However,
+        # stale tiles will still be drawn until replaced by something newer.
+        self.node.prune_tiles(visible_set)
+
+        # The low point, after removing but before adding.
+        stats.low = self.num_tiles
+
+        # Which means we deleted this many tiles.
+        stats.deleted = stats.start - stats.low
+
+        # Remaining is how many tiles in visible_chunks still need to be
+        # added. We don't necessarily add them all so that we don't tank
+        # the framerate.
+        stats.remaining = self._add_chunks(visible_chunks)
+
+        # Final number of tiles after adding, which implies how many were
+        # created.
+        stats.final = self.num_tiles
+        stats.created = stats.final - stats.low
+
+        # The grid is only for debugging and demos, yet it's quite useful
+        # otherwise the tiles are kind of invisible.
+        if self.layer.show_grid:
+            self.grid.update_grid(self.node.octree_chunks)
+        else:
+            self.grid.clear()
+
+        return stats
+
+    def _add_chunks(self, visible_chunks: List[OctreeChunk]) -> int:
+        """Add some or all of these visible chunks to the tiled image.
 
         Parameters
         ----------
-        image_chunk : ImageChunk
-            Add this chunk's node to the scene.
+        visible_chunks : List[OctreeChunk]
+            Chunks we should add, if not already in the tiled image.
+
+        Return
+        ------
+        int
+            The number of chunks that still need to be added.
         """
-        node = image_chunk.node
-        assert node
+        if not self.layer.track_view:
+            # Tracking the view is the normal mode, where the tiles load in as
+            # the view moves. Not tracking the view is only used for debugging
+            # or demos, to show the tiles we "were" showing previously, without
+            # updating them.
+            return 0  # Nothing more to add
 
-        chunk_data = image_chunk.chunk_data
+        # Add tiles for visible chunks that do not already have a tile.
+        # This might not add all the chunks, because doing so might
+        # tank the framerate.
+        #
+        # Even though the chunks are already in RAM, we have to do some
+        # processing and then we have to move the data to VRAM. That time
+        # cost might not happen here, we probably are just queueing up a
+        # transfer that will happen when we next call glFlush() to let the
+        # card do its business.
+        #
+        # Any chunks not added this frame will have a chance to be
+        # added the next frame, if they are still on the visible_chunks
+        # list next frame. It's important we keep asking the layer for
+        # the visible chunks every frame. We don't want to queue up and
+        # add chunks which might no longer be needed, because the
+        # camera might move every frame. The situation might be
+        # evolving rapidly if the camera is moving a lot.
+        return self.node.add_chunks(visible_chunks)
 
-        # Call VispyImageLayer._set_node_data() to process the data assign
-        # it to the ImageVisual node.
-        self._set_node_data(node, chunk_data.data)
+    def _update_tile_shape(self) -> None:
+        """Check if the tile shape was changed on us."""
+        # This might be overly dynamic, but for now if we see there's a new
+        # tile shape we nuke our texture atlas and start over with the new
+        # shape.
+        #
+        # We added this because the QtTestImage GUI currently set the tile
+        # shape after the layer is created. Thus potentially changing the
+        # same on the fly. But this "on the fly change" might come in handy
+        # and it was not hard to implement, but we could probably drop it
+        # if it becomes a pain.
+        tile_shape = self.layer.tile_shape
+        if self.node.tile_shape != tile_shape:
+            self.node.set_tile_shape(tile_shape)
 
-        # Add the node under us, transformed into the right place.
-        node.transform = STTransform(chunk_data.scale, chunk_data.pos)
-        node.parent = self._tiled_visual_parent
-        node.order = IMAGE_NODE_ORDER
+    def _update_view(self) -> int:
+        """Update the tiled image based on what's visible in the layer.
 
-    def _on_data_change(self, event=None) -> None:
-        """Our self.layer._data_view has been updated, update our node.
+        We call self._update_chunks() which asks the layer what chunks are
+        visible, then it potentially loads some of those chunks, if we
+        didn't already have them. This method returns how many visible
+        chunks still need to be added.
+
+        If we return non-zero, we expect to be polled and drawn again, even
+        if the camera isn't moving. Polled and drawn until we can finish
+        adding the rest of the visible chunks.
+
+        Return
+        ------
+        int
+             The number of chunks that still need to be added.
         """
-        if not self.layer.loaded or not self.ready:
-            return
+        if not self.node.visible:
+            return 0
 
-        # self._update_image_chunks()
+        self._update_tile_shape()  # In case the tile shape changed!
 
-    def _update_view(self) -> None:
-        """Update all ImageChunks that we are managing.
+        with block_timer("_update_drawn_chunks") as elapsed:
+            stats = self._update_drawn_chunks()
 
-        The basic algorithm is:
-        1) Assign ImageChunks and/or ImageVisuals to any chunks that
-        are currently visible. We might run out of visuals from the pool.
-
-        2) Remove no longer visible chunks and return them to the pool.
-
-        3) Create the optional grid around only the visible chunks.
-        """
-        # Get the currently visible chunks.
-        visible_chunks = self.layer.visible_chunks
-
-        num_seen = len(visible_chunks)
-
-        # Set is keyed by id(chunk_data.data) and chunk_data.level_index
-        visible_set = set([c.key for c in visible_chunks])
-
-        num_start = len(self.image_chunks)
-
-        # Remove chunks no longer visible.
-        self._remove_stale_chunks(visible_set)
-
-        num_low = len(self.image_chunks)
-        num_deleted = num_start - num_low
-
-        # Create ImageChunks/ImageVisuals for all visible chunks.
-        self._update_visible(visible_chunks)
-
-        num_final = len(self.image_chunks)
-        num_created = num_final - num_low
-
-        num_final = len(self.image_chunks)
-
-        if SHOW_GRID:
-            self.grid.update_grid(self.image_chunks.values())
-
-        return Stats(num_seen, num_start, num_created, num_deleted, num_final)
-
-    def _update_visible(self, visible_chunks: List[ChunkData]) -> None:
-        """Create or update all visible ImageChunks.
-
-        Go through all visible chunks:
-        1) Create a new ImageChunk if one doesn't exist.
-        2) Create a new ImageVisual if the existing ImageChunk does
-           not have a visual, because none were available in the pool.
-
-        Parameters
-        ----------
-        visible_chunks : List[ChunkData]
-        """
-        track_view = self.layer.track_view
-
-        for chunk_data in visible_chunks:
-            if chunk_data.key not in self.image_chunks:
-                # Create an ImageChunk for this ChunkData.
-                self.image_chunks[chunk_data.key] = ImageChunk(chunk_data)
-
-            if not track_view:
-                # We are not actively create ImageVisuals, for example to
-                # "freeze" the view for debugging. So we're done.
-                continue
-
-            # Whether we just created this ImageChunk or it's older, if it
-            # doesn't have an ImageVisual try to add one one
-            image_chunk = self.image_chunks[chunk_data.key]
-            if image_chunk.node is None:
-                # The ImageChunk already existed but there was no
-                # ImageVisual available. Attempt to assign one from the
-                # pool again. If still not available we do nothing.
-                image_chunk.node = self.pool.get_visual()
-                self._add_image_chunk_node(image_chunk)
-
-    def _remove_stale_chunks(self, visible_set: Set[ChunkData]) -> None:
-        """Remove stale chunks which are not longer visible.
-
-        Parameters
-        ----------
-        visible_ids : Set[int]
-            The data_id's of the currently visible chunks.
-        """
-        for image_chunk in list(self.image_chunks.values()):
-            chunk_data = image_chunk.chunk_data
-            if chunk_data.key not in visible_set:
-                if image_chunk.node is not None:
-                    self.pool.return_visual(image_chunk.node)
-                del self.image_chunks[chunk_data.key]
-
-    def _on_camera_move(self, event=None):
-        super()._on_camera_move()
-
-        with block_timer("_update_view") as elapsed:
-            stats = self._update_view()
-
-        if stats.num_created > 0 or stats.num_deleted > 0:
+        # Print for now, but switch log file soon. Should be no prints
+        # in production code.
+        if stats.created > 0 or stats.deleted > 0:
             print(
-                f"tiles: {stats.num_start} -> {stats.num_final} "
-                f"create: {stats.num_created} delete: {stats.num_deleted} "
-                f"total: {elapsed.duration_ms:.3f}ms"
+                f"tiles: {stats.start} -> {stats.final} "
+                f"create: {stats.created} delete: {stats.deleted} "
+                f"time: {elapsed.duration_ms:.3f}ms"
             )
+
+        return stats.remaining
+
+    def _on_poll(self, event=None) -> None:
+        """Called before we are drawn.
+
+        This is called when the camera moves, or when we have chunks that
+        need to be loaded. We update which tiles we are drawing based on
+        which chunks are currently visible.
+        """
+        super()._on_poll()
+
+        # Mark the event "handled" if we have more chunks to load.
+        #
+        # By saying the poll event was "handled" we're telling QtPoll to
+        # keep polling us, even if the camera stops moving. So that we can
+        # finish up the loads/draws with a potentially still camera.
+        #
+        # We'll be polled until no visuals handle the event, meaning
+        # no visuals need polling. Then all is quiet until the camera
+        # moves again.
+        need_polling = self._update_view() > 0
+        event.handled = need_polling
+
+    def _on_loaded(self, _event) -> None:
+        """The layer loaded new data, so update or view."""
+        self._update_view()

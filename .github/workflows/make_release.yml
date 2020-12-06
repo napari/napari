@@ -40,8 +40,8 @@ jobs:
           else
             RELEASE_NOTES="pre-release $TAG"
           fi
+          echo "tag=${TAG}" >> $GITHUB_ENV
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
-          echo "::set-env name=tag::$TAG"
           echo "::set-output name=contents::$RELEASE_NOTES"
       - name: Create Release
         id: create_release

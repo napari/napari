@@ -29,6 +29,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_data_change()
+        self._reset_base()
 
     def _on_data_change(self, event=None):
         if len(self.layer._indices_view) > 0:
@@ -42,7 +43,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
         if len(self.layer._indices_view) == 0:
-            data = np.zeros((1, self.layer._dims.ndisplay))
+            data = np.zeros((1, self.layer._ndisplay))
             size = [0]
         else:
             data = self.layer._view_data
@@ -74,7 +75,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
         else:
-            data = np.zeros((1, self.layer._dims.ndisplay))
+            data = np.zeros((1, self.layer._ndisplay))
             size = 0
 
         self.node._subvisuals[1].set_data(
@@ -88,12 +89,12 @@ class VispyPointsLayer(VispyBaseLayer):
         )
 
         # only draw a box in 2D
-        if self.layer._dims.ndisplay == 2:
+        if self.layer._ndisplay == 2:
             if (
                 self.layer._highlight_box is None
                 or 0 in self.layer._highlight_box.shape
             ):
-                pos = np.zeros((1, self.layer._dims.ndisplay))
+                pos = np.zeros((1, self.layer._ndisplay))
                 width = 0
             else:
                 pos = self.layer._highlight_box
@@ -104,7 +105,7 @@ class VispyPointsLayer(VispyBaseLayer):
             )
         else:
             self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._dims.ndisplay)), width=0,
+                pos=np.zeros((1, self.layer._ndisplay)), width=0,
             )
 
         self.node.update()
@@ -117,7 +118,7 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._dims.ndisplay
+        ndisplay = self.layer._ndisplay
         if (len(self.layer._indices_view) == 0) or (
             self.layer._text.visible is False
         ):

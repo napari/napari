@@ -4,7 +4,8 @@ from typing import Any, Dict, Union
 
 import numpy as np
 
-from ...utils.misc import StringEnum
+from ..events.dataclass import Property, evented_dataclass
+from ..misc import StringEnum
 from .color_transformations import transform_color_cycle
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
@@ -24,13 +25,16 @@ class ColormapInterpolationMode(StringEnum):
     ZERO = auto()
 
 
+@evented_dataclass
 class Colormap:
     """Colormap that relates intensity values to colors.
 
-    Parameters
+    Attributes
     ----------
     colors : array, shape (N, 4)
         Data used in the colormap.
+    name : str
+        Name of the colormap.
     controls : array, shape (N,) or (N+1,)
         Control points of the colormap.
     interpolation : str
@@ -38,27 +42,24 @@ class Colormap:
         'zero'. If 'linear', ncontrols = ncolors (one
         color per control point). If 'zero', ncontrols
         = ncolors+1 (one color per bin).
-    name : str
-        Name of the colormap.
     """
 
-    def __init__(
-        self, colors, *, controls=None, interpolation='linear', name='custom'
-    ):
+    colors: Property[np.ndarray, None, transform_color]
+    name: str = 'custom'
+    controls: Property[np.ndarray, None, np.asarray] = np.zeros((0, 4))
+    interpolation: Property[
+        ColormapInterpolationMode, str, ColormapInterpolationMode
+    ] = ColormapInterpolationMode.LINEAR
 
-        self.name = name
-        self.colors = transform_color(colors)
-        self._interpolation = ColormapInterpolationMode(interpolation)
-        if controls is None:
+    def __post_init__(self):
+        if len(self.controls) == 0:
             n_controls = len(self.colors) + int(
                 self._interpolation == ColormapInterpolationMode.ZERO
             )
             self.controls = np.linspace(0, 1, n_controls)
-        else:
-            self.controls = np.asarray(controls)
 
     def __iter__(self):
-        yield from (self.colors, self.controls, str(self.interpolation))
+        yield from (self.colors, self.controls, self.interpolation)
 
     def map(self, values):
         values = np.atleast_1d(values)
@@ -83,10 +84,6 @@ class Colormap:
     @property
     def colorbar(self):
         return make_colorbar(self)
-
-    @property
-    def interpolation(self):
-        return str(self._interpolation)
 
 
 class CategoricalColormap:
@@ -155,14 +152,3 @@ class CategoricalColormap:
         # map the colors
         colors = np.array([self.colormap[x] for x in color_properties])
         return colors
-
-    # def _map_value(self, value: Any) -> np.ndarray:
-    #     if value in self.colormap:
-    #         color = self.colormap[value]
-    #     else:
-    #         if isinstance(self.fallback_color, cycle):
-    #             color = next(self.fallback_color)
-    #         else:
-    #             color = self.fallback_color
-    #         self.colormap[value] = color
-    #     return color

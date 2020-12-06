@@ -19,7 +19,7 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-# Use sync or async SliceData class.
+# Use special ChunkedSlideData for async.
 if config.async_loading:
     from .experimental._chunked_slice_data import ChunkedSliceData
 
@@ -289,9 +289,9 @@ class Image(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded.
         """
         if self.rgb:
-            return np.zeros((1,) * self._dims.ndisplay + (3,))
+            return np.zeros((1,) * self._ndisplay + (3,))
         else:
-            return np.zeros((1,) * self._dims.ndisplay)
+            return np.zeros((1,) * self._ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -299,11 +299,11 @@ class Image(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims.displayed_order + (
-                max(self._dims.displayed_order) + 1,
+            return self._dims_displayed_order + (
+                max(self._dims_displayed_order) + 1,
             )
         else:
-            return self._dims.displayed_order
+            return self._dims_displayed_order
 
     @property
     def _data_view(self):
@@ -336,6 +336,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data = data
         self._update_dims()
         self.events.data()
+        self._set_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -427,19 +428,17 @@ class Image(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self._dims.ndisplay])
+        return str(self._interpolation[self._ndisplay])
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self._dims.ndisplay == 3:
-            self._interpolation[self._dims.ndisplay] = Interpolation3D(
+        if self._ndisplay == 3:
+            self._interpolation[self._ndisplay] = Interpolation3D(
                 interpolation
             )
         else:
-            self._interpolation[self._dims.ndisplay] = Interpolation(
-                interpolation
-            )
+            self._interpolation[self._ndisplay] = Interpolation(interpolation)
         self.events.interpolation()
 
     @property
@@ -495,7 +494,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         warnings.warn(
             (
-                "The shape attribute is deprecated and will be removed in version 0.4.1."
+                "The shape attribute is deprecated and will be removed in version 0.4.3."
                 " Instead you should use the extent.data and extent.world attributes"
                 " to get the extent of the data in data or world coordinates."
             ),
@@ -556,7 +555,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
-        not_disp = self._dims.not_displayed
+        not_disp = self._dims_not_displayed
 
         # Check if requested slice outside of data range
         indices = np.array(self._slice_indices)
@@ -577,7 +576,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
-            if self._dims.ndisplay == 3:
+            if self._ndisplay == 3:
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
@@ -595,12 +594,12 @@ class Image(IntensityVisualizationMixin, Layer):
             indices[not_disp] = downsampled_indices
 
             scale = np.ones(self.ndim)
-            for d in self._dims.displayed:
+            for d in self._dims_displayed:
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if self._dims.ndisplay == 2:
-                for d in self._dims.displayed:
+            if self._ndisplay == 2:
+                for d in self._dims_displayed:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
                         self.corner_pixels[1, d] + 1,
@@ -700,14 +699,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if not self._slice.loaded:
+        if not self.loaded:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
 
         image = self._slice.thumbnail.view
 
-        if self._dims.ndisplay == 3 and self._dims.ndim > 2:
+        if self._ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
@@ -788,8 +787,8 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self._dims.displayed], shape)):
-            value = raw[tuple(coord[self._dims.displayed])]
+        if all(0 <= c < s for c, s in zip(coord[self._dims_displayed], shape)):
+            value = raw[tuple(coord[self._dims_displayed])]
         else:
             value = None
 
@@ -798,7 +797,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
-    # One additional method for async
+    # For async we add an on_chunk_loaded() method.
     if config.async_loading:
         from ...components.experimental.chunk import ChunkRequest
 
