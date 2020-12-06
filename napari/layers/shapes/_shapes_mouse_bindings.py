@@ -7,19 +7,19 @@ from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
 
-def highlight(layer, event):
+def highlight(layer, cursor):
     """Highlight hovered shapes."""
     layer._set_highlight()
 
 
-def select(layer, event):
+def select(layer, cursor):
     """Select shapes or vertices either in select or direct select mode.
 
     Once selected shapes can be moved or resized, and vertices can be moved
     depending on the mode. Holding shift when resizing a shape will preserve
     the aspect ratio.
     """
-    shift = 'Shift' in event.modifiers
+    shift = 'Shift' in cursor.modifiers
     # on press
     layer._moving_value = copy(layer._value)
     shape_under_cursor, vertex_under_cursor = layer._value
@@ -41,7 +41,7 @@ def select(layer, event):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor.type == 'mouse_move':
         # Drag any selected shapes
         layer._move(layer.displayed_coordinates)
 
@@ -51,7 +51,7 @@ def select(layer, event):
         yield
 
     # on release
-    shift = 'Shift' in event.modifiers
+    shift = 'Shift' in cursor.modifiers
     if not layer._is_moving and not layer._is_selecting and not shift:
         if shape_under_cursor is not None:
             layer.selected_data = {shape_under_cursor}
@@ -73,17 +73,17 @@ def select(layer, event):
         layer._update_thumbnail()
 
 
-def add_line(layer, event):
+def add_line(layer, cursor):
     """Add a line."""
     size = layer._vertex_size * layer.scale_factor / 4
     corner = np.array(layer.displayed_coordinates)
     data = np.array([corner, corner + size])
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='line'
+        layer, cursor, data=data, shape_type='line'
     )
 
 
-def add_ellipse(layer, event):
+def add_ellipse(layer, cursor):
     """Add an ellipse."""
     size = layer._vertex_size * layer.scale_factor / 4
     corner = np.array(layer.displayed_coordinates)
@@ -91,11 +91,11 @@ def add_ellipse(layer, event):
         [corner, corner + [size, 0], corner + size, corner + [0, size]]
     )
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='ellipse'
+        layer, cursor, data=data, shape_type='ellipse'
     )
 
 
-def add_rectangle(layer, event):
+def add_rectangle(layer, cursor):
     """Add an rectangle."""
     size = layer._vertex_size * layer.scale_factor / 4
     corner = np.array(layer.displayed_coordinates)
@@ -103,11 +103,11 @@ def add_rectangle(layer, event):
         [corner, corner + [size, 0], corner + size, corner + [0, size]]
     )
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='rectangle'
+        layer, cursor, data=data, shape_type='rectangle'
     )
 
 
-def _add_line_rectangle_ellipse(layer, event, data, shape_type):
+def _add_line_rectangle_ellipse(layer, cursor, data, shape_type):
     """Helper function for adding a a line, rectangle or ellipse."""
 
     # on press
@@ -121,7 +121,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor.type == 'mouse_move':
         # Drag any selected shapes
         layer._move(layer.displayed_coordinates)
         yield
@@ -130,7 +130,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     layer._finish_drawing()
 
 
-def add_path_polygon(layer, event):
+def add_path_polygon(layer, cursor):
     """Add a path or polygon."""
     coord = layer.displayed_coordinates
 
@@ -164,13 +164,13 @@ def add_path_polygon(layer, event):
         layer._selected_box = layer.interaction_box(layer.selected_data)
 
 
-def add_path_polygon_creating(layer, event):
+def add_path_polygon_creating(layer, cursor):
     """While a path or polygon move next vertex to be added."""
     if layer._is_creating:
         layer._move(layer.displayed_coordinates)
 
 
-def vertex_insert(layer, event):
+def vertex_insert(layer, cursor):
     """Insert a vertex into a selected shape.
 
     The vertex will get inserted in between the vertices of the closest edge
@@ -242,7 +242,7 @@ def vertex_insert(layer, event):
     layer.refresh()
 
 
-def vertex_remove(layer, event):
+def vertex_remove(layer, cursor):
     """Remove a vertex from a selected shape.
 
     If a vertex is clicked on remove it from the shape it is in. If this cause

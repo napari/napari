@@ -3,7 +3,7 @@ import numpy as np
 from ._points_utils import points_in_box
 
 
-def select(layer, event):
+def select(layer, cursor):
     """Select points.
 
     Clicking on a point will select that point. If holding shift while clicking
@@ -21,7 +21,7 @@ def select(layer, event):
     """
     # on press
     modify_selection = (
-        'Shift' in event.modifiers or 'Control' in event.modifiers
+        'Shift' in cursor.modifiers or 'Control' in cursor.modifiers
     )
 
     # if modifying selection add / remove any from existing selection
@@ -47,7 +47,7 @@ def select(layer, event):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor.type == 'mouse_move':
         # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
             layer._move(layer.selected_data, layer.coordinates)
@@ -83,13 +83,13 @@ def select(layer, event):
     layer._set_highlight(force=True)
 
 
-def add(layer, event):
+def add(layer, cursor):
     """Add a new point at the clicked position."""
     # on press
     layer.add(layer.coordinates)
 
 
-def highlight(layer, event):
+def highlight(layer, cursor):
     """Highlight hovered points."""
     layer._set_highlight()
 

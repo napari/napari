@@ -37,3 +37,18 @@ class CursorStyle(StringEnum):
     FORBIDDEN = auto()
     POINTING = auto()
     STANDARD = auto()
+
+
+class CursorType(StringEnum):
+    """CursorType: Type of last cursor interaction.
+
+        * MOUSE_MOVE: A mouse move event
+        * MOUSE_PRESS: A mouse press event
+        * MOUSE_RELEASE: A mouse release event
+        * MOUSE_WHEEL: A mouse wheel event
+    """
+
+    MOUSE_MOVE = auto()
+    MOUSE_PRESS = auto()
+    MOUSE_RELEASE = auto()
+    MOUSE_WHEEL = auto()

@@ -2,7 +2,7 @@ from ._labels_constants import Mode
 from ._labels_utils import interpolate_coordinates
 
 
-def draw(layer, event):
+def draw(layer, cursor):
     """Draw with the currently selected label to a coordinate.
 
     This method have different behavior when draw is called
@@ -38,7 +38,7 @@ def draw(layer, event):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor.type == 'mouse_move':
         interp_coord = interpolate_coordinates(
             last_cursor_coord, layer.coordinates, layer.brush_size
         )
@@ -55,7 +55,7 @@ def draw(layer, event):
     layer._block_saving = False
 
 
-def pick(layer, event):
+def pick(layer, cursor):
     """Change the selected label to the same as the region clicked."""
     # on press
     layer.selected_label = layer._value or 0

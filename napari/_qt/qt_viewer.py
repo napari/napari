@@ -610,6 +610,25 @@ class QtViewer(QSplitter):
         """
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
+    def _update_viewer_cursor(self, event):
+        """Update viewer cursor from mouse event.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+        """
+        with self.viewer.events.blocker_all():
+            self.viewer.canvas_position = tuple(event.pos)
+            self.viewer.cursor.is_dragging = bool(event.is_dragging)
+            self.viewer.cursor.type = event.type
+            if hasattr(event.native, 'inverted'):
+                self.viewer.cursor.inverted = bool(event.native.inverted())
+            else:
+                self.viewer.cursor.inverted = False
+            self.viewer.cursor.delta = tuple(event.delta)
+            self.viewer.cursor.modifiers = tuple(event.modifiers)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
 
@@ -620,13 +639,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        event = ReadOnlyWrapper(event)
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_wheel_callbacks(self.viewer, event)
+        self._update_viewer_cursor(event)
+        cursor = ReadOnlyWrapper(self.viewer.cursor)
+        mouse_wheel_callbacks(self.viewer, cursor)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_wheel_callbacks(layer, event)
+            mouse_wheel_callbacks(layer, cursor)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -639,13 +658,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        event = ReadOnlyWrapper(event)
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_press_callbacks(self.viewer, event)
+        self._update_viewer_cursor(event)
+        cursor = ReadOnlyWrapper(self.viewer.cursor)
+        mouse_press_callbacks(self.viewer, cursor)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_press_callbacks(layer, event)
+            mouse_press_callbacks(layer, cursor)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -658,12 +677,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_move_callbacks(self.viewer, event)
+        self._update_viewer_cursor(event)
+        cursor = ReadOnlyWrapper(self.viewer.cursor)
+        mouse_move_callbacks(self.viewer, cursor)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_move_callbacks(layer, event)
+            mouse_move_callbacks(layer, cursor)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -676,12 +696,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_release_callbacks(self.viewer, event)
+        self._update_viewer_cursor(event)
+        cursor = ReadOnlyWrapper(self.viewer.cursor)
+        mouse_release_callbacks(self.viewer, cursor)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_release_callbacks(layer, event)
+            mouse_release_callbacks(layer, cursor)
 
     def on_key_press(self, event):
         """Called whenever key pressed in canvas.
