@@ -350,7 +350,9 @@ class OctreeImage(Image):
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
 
-    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+    def _update_draw(
+        self, scale_factor, corner_pixels, shape_threshold
+    ) -> None:
         """Override Layer._update_draw completely.
 
         The base Layer._update_draw does stuff for the legacy multi-scale
