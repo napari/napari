@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 )
 from vispy.color import get_color_dict
 
-from ...layers.utils.color_transformations import ColorType
+from ...utils.colormaps.color_transformations import ColorType
 from ...utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,

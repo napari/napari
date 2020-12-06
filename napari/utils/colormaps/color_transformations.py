@@ -10,7 +10,7 @@ from typing import AnyStr, List, Tuple, Union
 import numpy as np
 from vispy.color import Color, ColorArray
 
-from ...utils.colormaps.standardize_color import transform_color
+from napari.utils.colormaps.standardize_color import transform_color
 
 # All parsable input datatypes that a user can provide
 ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]

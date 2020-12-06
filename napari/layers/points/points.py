@@ -5,6 +5,13 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
+from napari.utils.colormaps.color_transformations import (
+    ColorType,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
+
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
@@ -15,12 +22,6 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..utils.color_transformations import (
-    ColorType,
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
-)
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,

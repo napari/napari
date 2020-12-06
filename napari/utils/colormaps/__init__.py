@@ -1,5 +1,5 @@
 from .colorbars import make_colorbar
-from .colormap import Colormap
+from .colormap import CategoricalColormap, Colormap
 from .colormap_utils import (
     ALL_COLORMAPS,
     AVAILABLE_COLORMAPS,

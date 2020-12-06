@@ -7,6 +7,13 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 from vispy.color import get_color_names
 
+from napari.utils.colormaps.color_transformations import (
+    ColorType,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
+
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.standardize_color import (
     hex_to_name,
@@ -17,12 +24,6 @@ from ...utils.events import Event
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..utils.color_transformations import (
-    ColorType,
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
-)
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,

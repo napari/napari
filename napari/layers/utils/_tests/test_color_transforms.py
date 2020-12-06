@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from vispy.color import ColorArray
 
-from napari.layers.utils.color_transformations import (
+from napari.utils.colormaps.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,

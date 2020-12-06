@@ -4,6 +4,8 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from napari.utils.colormaps.color_transformations import transform_color
+
 from ...utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
@@ -12,7 +14,6 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..image import Image
-from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
