@@ -28,7 +28,7 @@ with napari.gui_qt():
     @labels_layer.mouse_drag_callbacks.append
     def get_connected_component_shape(layer, event):
         cords = np.round(layer.coordinates).astype(int)
-        val = layer.get_value()
+        val = layer.get_value(layer.coordinates)
         if val is None:
             return
         if val != 0:

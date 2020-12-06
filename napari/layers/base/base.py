@@ -483,6 +483,7 @@ class Layer(KeymapProvider, ABC):
         if self._position == _position:
             return
         self._position = _position
+        self._value = self.get_value(self.position, world=True)
 
     @property
     def _dims_displayed(self):
@@ -538,6 +539,7 @@ class Layer(KeymapProvider, ABC):
         self._ndim = ndim
 
         self.refresh()
+        self._value = self.get_value(self.position, world=True)
 
     @property
     @abstractmethod
@@ -960,6 +962,7 @@ class Layer(KeymapProvider, ABC):
             self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
+            self._value = self.get_value(self.position, world=True)
             self._set_highlight(force=True)
 
     @property
