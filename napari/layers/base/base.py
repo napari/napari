@@ -119,8 +119,6 @@ class Layer(KeymapProvider, ABC):
         level.
     position : tuple
         Cursor position in world coordinates.
-    shape : tuple of int
-        Size of the data in the layer.
     ndim : int
         Dimensionality of the layer.
     selected : bool
@@ -635,28 +633,6 @@ class Layer(KeymapProvider, ABC):
             indices[ax] = data_pts[i]
 
         return tuple(indices)
-
-    @property
-    def shape(self):
-        """Size of layer in world coordinates (compatibility).
-
-        Returns
-        -------
-        shape : tuple
-        """
-        warnings.warn(
-            (
-                "The shape attribute is deprecated and will be removed in version 0.4.3."
-                " Instead you should use the extent.data and extent.world attributes"
-                " to get the extent of the data in data or world coordinates."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        extent = self._extent_world
-        # Rounding is for backwards compatibility reasons.
-        return tuple(np.round(extent[1] - extent[0]).astype(int))
 
     @abstractmethod
     def _get_ndim(self):
