@@ -1,19 +1,24 @@
 from dataclasses import field
-from itertools import cycle
 
 import numpy as np
 
-from ...utils.events.dataclass import Property, dataclass
-from ..utils.color_transformations import (
+from ...utils.colormaps import CategoricalColormap
+from ...utils.colormaps.color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
-    transform_color,
-    transform_color_cycle,
     transform_color_with_defaults,
 )
+from ...utils.events.dataclass import Property, dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
 from .layer_utils import guess_continuous
+
+
+def create_color_cycle(color_cycle):
+
+    return CategoricalColormap(
+        color_cycle, use_cycle=True, fallback_color='black'
+    )
 
 
 @dataclass(events=True, properties=True)
@@ -39,45 +44,10 @@ class ColorManager:
     colors: np.ndarray = np.empty((0, 4))
     mode: Property[ColorMode, str, None] = ColorMode.DIRECT
     color_property: str = ''
-    color_cycle: Property[cycle, None] = cycle(
-        np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
-    )
+    color_cycle: Property[
+        CategoricalColormap, None, CategoricalColormap
+    ] = np.array([[0, 0, 0, 1]])
     color_cycle_map: dict = field(default_factory=dict)
-
-    @property
-    def color_cycle(self):
-        return self._color_cycle_values
-
-    @color_cycle.setter
-    def color_cycle(self, color_cycle):
-        """ Set the face_color_cycle or edge_color_cycle property
-
-                Parameters
-                ----------
-                color_cycle : (N, 4) or (N, 1) array
-                    The value for setting color_cycle
-                """
-        if isinstance(color_cycle, dict):
-            if None not in color_cycle:
-                color_cycle[None] = 'white'
-            transformed_colors = {
-                key: transform_color(value)[0]
-                for key, value in color_cycle.items()
-            }
-            self._color_cycle = transformed_colors
-        else:
-            (
-                transformed_color_cycle,
-                transformed_colors,
-            ) = transform_color_cycle(
-                color_cycle=color_cycle,
-                elem_name='color_cycle',
-                default="white",
-            )
-            self._color_cycle_values = transformed_colors
-            self._color_cycle, transformed_color_cycle
-        if self._color_mode == ColorMode.CYCLE:
-            self.refresh_colors(update_color_mapping=True)
 
     def set_color(self, color: ColorType, n_colors: int, properties: dict):
         """ Set the face_color or edge_color property
@@ -131,44 +101,8 @@ class ColorManager:
 
         if self._color_mode == ColorMode.CYCLE:
             color_properties = properties[self.color_property]
-            if update_color_mapping:
-                if isinstance(self.color_cycle, dict):
-                    # we may want to remove this case and add
-                    # an explicit direct color mapping
-                    color_cycle_map = self.color_cycle
-                else:
-                    color_cycle_map = {
-                        k: np.squeeze(transform_color(c))
-                        for k, c in zip(
-                            np.unique(color_properties), self.color_cycle
-                        )
-                    }
-                    self.color_cycle_map = color_cycle_map
 
-            else:
-                # add properties if they are not in the colormap
-                # and update_color_mapping==False
-                color_cycle_keys = [*self.color_cycle_map]
-                props_in_map = np.in1d(color_properties, color_cycle_keys)
-                if not np.all(props_in_map):
-                    props_to_add = np.unique(
-                        color_properties[np.logical_not(props_in_map)]
-                    )
-                    for prop in props_to_add:
-                        if isinstance(self._color_cycle, dict):
-                            if prop in self._color_cycle:
-                                new_color = self._color_cycle[prop]
-                            else:
-                                new_color = self._color_cycle[None]
-                        else:
-                            new_color = next(self._color_cycle)
-                        self.color_cycle_map[prop] = np.squeeze(
-                            transform_color(new_color)
-                        )
-
-            colors = np.array(
-                [self.color_cycle_map[x] for x in color_properties]
-            )
+            colors = self.color_cycle.map(color_properties)
             if len(colors) == 0:
                 colors = np.empty((0, 4))
             self.colors = colors
