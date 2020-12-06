@@ -27,7 +27,7 @@ class QtLayerControls(QFrame):
         Slider controlling opacity of the layer.
     """
 
-    _connections = ['blending', 'opacity']
+    _connections = ('blending', 'opacity')
 
     def __init__(self, layer):
         super().__init__()

@@ -19,6 +19,7 @@ from ...layers.labels._labels_constants import (
     LabelColorMode,
     Mode,
 )
+from ...utils.events import connect, disconnect
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -67,7 +68,7 @@ class QtLabelsControls(QtLayerControls):
         FILL.
     """
 
-    _connections = QtLayerControls._connections + [
+    _connections = QtLayerControls._connections + (
         'mode',
         'selected_label',
         'brush_size',
@@ -76,7 +77,7 @@ class QtLabelsControls(QtLayerControls):
         'editable',
         'preserve_labels',
         'color_mode',
-    ]
+    )
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -470,19 +471,29 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
+    _connections = ('selected_label', 'opacity')
+
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
+        connect(self.layer, self, self._connections)
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
 
-        self.layer.events.selected_label.connect(self.update_color)
-        self.layer.events.opacity.connect(self.update_color)
+    def _on_selected_label_change(self, event):
+        """Receive layer model label selection change event & update colorbox.
 
-    def update_color(self, event):
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        self.update()
+
+    def _on_opacity_change(self, event):
         """Receive layer model label selection change event & update colorbox.
 
         Parameters
@@ -522,6 +533,6 @@ class QtColorBox(QWidget):
 
     def close(self):
         """Layer widget is closing."""
-        self.layer.events.selected_label.disconnect(self.update_color)
-        self.layer.events.opacity.disconnect(self.update_color)
+        super().close()
+        disconnect(self.layer, self, self._connections)
         self.deleteLater()

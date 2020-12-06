@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils import config
+from ...utils.events import connect, disconnect
 
 if TYPE_CHECKING:
     from ..experimental.qt_chunk_receiver import QtChunkReceiver
@@ -512,15 +513,19 @@ class QtLayerWidget(QFrame):
         Checkbox to toggle layer visibility.
     """
 
+    _connections = (
+        'select',
+        'deselect',
+        'name',
+        'visible',
+        'thumbnail',
+    )
+
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.select.connect(self._on_selected_change)
-        self.layer.events.deselect.connect(self._on_deselected_change)
-        self.layer.events.name.connect(self._on_layer_name_change)
-        self.layer.events.visible.connect(self._on_visible_change)
-        self.layer.events.thumbnail.connect(self._on_thumbnail_change)
+        connect(self.layer, self, self._connections)
 
         self.setObjectName('layer')
 
@@ -639,7 +644,7 @@ class QtLayerWidget(QFrame):
         """
         event.ignore()
 
-    def _on_selected_change(self, event=None):
+    def _on_select_change(self, event=None):
         """Update selected state of the layer.
 
         Parameters
@@ -649,7 +654,7 @@ class QtLayerWidget(QFrame):
         """
         self.setSelected(True)
 
-    def _on_deselected_change(self, event=None):
+    def _on_deselect_change(self, event=None):
         """Update selected state of the layer.
 
         Parameters
@@ -659,7 +664,7 @@ class QtLayerWidget(QFrame):
         """
         self.setSelected(False)
 
-    def _on_layer_name_change(self, event=None):
+    def _on_name_change(self, event=None):
         """Update text displaying name of layer.
 
         Parameters
@@ -703,9 +708,5 @@ class QtLayerWidget(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        self.layer.events.select.disconnect(self._on_selected_change)
-        self.layer.events.deselect.disconnect(self._on_deselected_change)
-        self.layer.events.name.disconnect(self._on_layer_name_change)
-        self.layer.events.visible.disconnect(self._on_visible_change)
-        self.layer.events.thumbnail.disconnect(self._on_thumbnail_change)
+        disconnect(self.layer, self, self._connections)
         self.deleteLater()

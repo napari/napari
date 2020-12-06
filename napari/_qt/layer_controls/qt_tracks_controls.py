@@ -27,13 +27,13 @@ class QtTracksControls(QtLayerControls):
     """
 
     # NOTE(arl): there are no events fired for changing checkboxes
-    _connections = QtLayerControls._connections + [
+    _connections = QtLayerControls._connections + (
         'tail_width',
         'tail_length',
         'properties',
         'colormap',
         'color_by',
-    ]
+    )
 
     def __init__(self, layer):
         super().__init__(layer)

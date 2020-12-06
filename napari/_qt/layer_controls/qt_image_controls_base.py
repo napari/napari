@@ -41,11 +41,11 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    _connections = QtLayerControls._connections + [
+    _connections = QtLayerControls._connections + (
         'colormap',
         'gamma',
         'contrast_limits',
-    ]
+    )
 
     def __init__(self, layer):
         super().__init__(layer)
