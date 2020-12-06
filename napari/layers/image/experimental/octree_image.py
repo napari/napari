@@ -351,9 +351,13 @@ class OctreeImage(Image):
         """The given data a was loaded, use it now."""
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+        """Override Layer._update_draw completely.
 
-        super()._update_draw(scale_factor, corner_pixels, shape_threshold)
+        The base Layer._update_draw does stuff for the legacy multi-scale
+        that we don't want. And it calls refresh() which we don't need.
 
+        We create our OctreeView() here which has the corners in it.
+        """
         # Compute our 2D corners from the incoming n-d corner_pixels
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
         corners = data_corners[:, self._dims_displayed]
