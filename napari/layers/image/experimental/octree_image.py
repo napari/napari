@@ -2,16 +2,18 @@
 
 OctreeImage is meant to eventually replace the existing Image class. The
 original Image class handled single-scale and multi-scale images, but they
-were handled quite differently. And the multi-scale did not use chunks or
+were handled quite differently. And its multi-scale did not use chunks or
 tiles.
 
-OctreeImage always uses chunk/tiles. Today those tiles are always small.
+OctreeImage always uses chunk/tiles. Today those tiles are always "small".
 However as a special case if an image is smaller than the max texture size,
-we could allow OctreeImage to set its tile size equal to that image size.
+we could some day allow OctreeImage to set its tile size equal to that
+image size.
 
 At that point small images are single-tile single-level OctreeImages, which
-should be as efficient as single-scale images are today. And larger images
-have multiple-levels and multiple-tiles.
+should be as efficient as single-scale images are today.  And larger images
+have multiple-levels and multiple-tiles. So we can use one class and one
+code path for all images.
 """
 import logging
 from typing import List
