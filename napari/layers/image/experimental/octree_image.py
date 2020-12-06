@@ -357,6 +357,17 @@ class OctreeImage(Image):
         that we don't want. And it calls refresh() which we don't need.
 
         We create our OctreeView() here which has the corners in it.
+
+        Parameters
+        ----------
+        scale_factor : float
+            Scale factor going from canvas to world coordinates.
+        corner_pixels : array
+            Coordinates of the top-left and bottom-right canvas pixels in the
+            world coordinates.
+        shape_threshold : tuple
+            Requested shape of field of view in data coordinates.
+
         """
         # Compute our 2D corners from the incoming n-d corner_pixels
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
