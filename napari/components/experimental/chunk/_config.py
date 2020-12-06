@@ -98,27 +98,37 @@ def _get_config_data() -> dict:
     """
     value = os.getenv("NAPARI_ASYNC")
 
-    # If the env var is a file path.
-    if value not in [None, "0", "1"]:
-        return _load_config(value)  # Load the user's config file.
+    # Path to the async config file is one was specified.
+    config_path = value if (value is not None and value != "1") else None
 
-    # If NAPARI_ASYNC is off and NAPARI_OCTREE is off, then we are sync.
-    if value in [None, "0"] and not config.async_octree:
-        # Note this means use the ChunkLoader, but set force_synchronous
-        # True so the ChunkLoader always loads synchronously.
-        #
-        # However while async is experimental, if nothing is defined we
-        # won't even import any of this code at all. So this force_synchronous
-        # path is not used very much. Because it means "use async code but
-        # do not load async".
-        return DEFAULT_SYNC_CONFIG
+    # If NAPARI_ASYNC was set then we are explicilty use async.
+    explicit_async = value not in [None, "0"]
 
-    # Either NAPARI_ASYNC as set, or async is on because NAPARI_ASYNC is
-    # on. Yet no config file was specified. So use defaults.
-    async_defaults = DEFAULT_ASYNC_CONFIG
-    async_defaults['octree'] = DEFAULT_OCTREE_CONFIG
-    print("DEFAULT ASYNC")
-    return async_defaults
+    # If config.async_octree was set, that implies we have to use async.
+    use_async = explicit_async or config.async_octree
+
+    if config_path is not None:
+        return _load_config(config_path)  # Load the user's JSON config file.
+
+    if use_async:
+        # Async is enabled with defaults.
+        async_defaults = DEFAULT_ASYNC_CONFIG
+        async_defaults['octree'] = DEFAULT_OCTREE_CONFIG
+        return async_defaults
+
+    # Async is disabled. Note, while async is experimental if
+    # NAPARI_ASYNC and NAPARI_OCTREE are both not set, then actually
+    # this code will not be run. No async related code is even
+    # imported.
+    #
+    # However long term, using DEFAULT_SYNC_CONFIG means the
+    # ChunkLoader is being used, but ChunkLoader.force_synchronous is
+    # set True. Meaning every single load is synchronous.
+    #
+    # Once the feature is not experimental that will probably
+    # be the way to turn async "off". It will still run through
+    # the ChunkLoader, but the loads will be synchronous.
+    return DEFAULT_SYNC_CONFIG
 
 
 def _create_async_config(data: dict) -> AsyncConfig:
