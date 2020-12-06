@@ -332,14 +332,17 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        value : int, None
+        value : None
             Value of the data at the coord.
         """
-
         return None

@@ -48,7 +48,6 @@ with napari.gui_qt():
             )
         else:
             msg = f'clicked at {cords} on background which is ignored'
-        layer.status = msg
         print(msg)
 
 

@@ -221,18 +221,6 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def mouseMoveEvent(self, event):
-        """On mouse move, set layer status equal to the current selected mode.
-
-        Available mode options are: PAN_ZOOM, PICKER, PAINT, ERASE or FILL
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.layer.status = str(self.layer.mode)
-
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.
 

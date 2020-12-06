@@ -189,9 +189,6 @@ class QtBaseImageControls(QtLayerControls):
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(int(self.layer.gamma * 100))
 
-    def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._contrast_limits_msg
-
     def closeEvent(self, event):
         self.deleteLater()
         event.accept()

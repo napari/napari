@@ -175,18 +175,6 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def mouseMoveEvent(self, event):
-        """On mouse move, update layer mode status.
-
-        Modes available for points layer: ADD, PAN_ZOOM, SELECT
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.layer.status = self.layer.mode
-
     def set_mode(self, event):
         """"Update ticks in checkbox widgets when points layer mode is changed.
 

@@ -402,13 +402,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
                 break
 
         if active_layer is None:
-            self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
             self.interactive = True
             self.active_layer = None
         else:
-            self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
@@ -449,7 +447,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
-            self.status = self.active_layer.status
+            self.status = self.active_layer.get_status(self.cursor.position)
             self.help = self.active_layer.help
 
     def _on_grid_change(self, event):

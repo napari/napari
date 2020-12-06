@@ -10,7 +10,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ...utils.status_messages import format_float
+from ...utils.status_messages import genetate_layer_status
 from ..image import Image
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -277,7 +277,6 @@ class Labels(Image):
             [self.scale[d] for d in self._dims_displayed]
         )
         self.cursor_size = self.brush_size * data2world_scale
-        self.status = format_float(self.brush_size)
         self.events.brush_size()
 
     @property
@@ -554,7 +553,6 @@ class Labels(Image):
         else:
             raise ValueError("Mode not recognized")
 
-        self.status = str(mode)
         self._mode = mode
 
         self.events.mode(mode=mode)
@@ -858,18 +856,35 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
-    def get_message(self):
-        msg = super().get_message()
+    def get_status(self, position):
+        """Generate a status message based on location in world coordinates.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in world coorindates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+        data_position = self._world_to_data(position)
+        value = self.get_value(data_position)
+        msg = genetate_layer_status(self.name, data_position, value)
+
         # if this labels layer has properties
         if self._label_index and self._properties:
             # if the cursor is not outside the image or on the background
-            if self._value is not None:
+            if value is not None:
                 if self.multiscale:
-                    value = self._value[1]
+                    label_value = value[1]
                 else:
-                    value = self._value
-                if value in self._label_index:
-                    idx = self._label_index[value]
+                    label_value = value
+                if label_value in self._label_index:
+                    idx = self._label_index[label_value]
                     for k, v in self._properties.items():
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'

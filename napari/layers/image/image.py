@@ -10,7 +10,6 @@ from scipy import ndimage as ndi
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -392,7 +391,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
-        self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
@@ -404,7 +402,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @attenuation.setter
     def attenuation(self, value):
-        self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
@@ -763,21 +760,25 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
         value : tuple
-            Value of the data at the coord.
+            Value of the data.
         """
         if self.multiscale:
             # for multiscale data map the coordinate from the data back to
             # the tile
-            coord = self._transforms['tile2data'].inverse(self.coordinates)
+            coord = self._transforms['tile2data'].inverse(position)
         else:
-            coord = self.coordinates
+            coord = position
 
         coord = np.round(coord).astype(int)
 
