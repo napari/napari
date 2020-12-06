@@ -1,19 +1,4 @@
 """OctreeImage class.
-
-OctreeImage is meant to eventually replace the existing Image class. The
-original Image class handled single-scale and multi-scale images, but they
-were handled quite differently. And its multi-scale did not use chunks or
-tiles.
-
-OctreeImage always uses chunk/tiles. Today those tiles are always "small".
-However as a special case if an image is smaller than the max texture size,
-we could some day allow OctreeImage to set its tile size equal to that
-image size.
-
-At that point small images are single-tile single-level OctreeImages, which
-should be as efficient as single-scale images are today.  And larger images
-have multiple-levels and multiple-tiles. So we can use one class and one
-code path for all images.
 """
 import logging
 from typing import List
@@ -40,9 +25,28 @@ LOGGER = logging.getLogger("napari.async.octree")
 class OctreeImage(Image):
     """OctreeImage layer.
 
-    Experimental variant of Image that renders using an Octree.
+    Experimental variant of Image that renders using an octree. For 2D
+    images the octree is really just a quadtree. For 3D volumes it will be
+    a real octree. This class is intended to eventually fully replace the
+    existing Image class.
 
-    Intended to eventually replace Image.
+    Background
+    ----------
+    OctreeImage is meant to eventually replace the existing Image class. The
+    original Image class handled single-scale and multi-scale images, but they
+    were handled quite differently. And its multi-scale did not use chunks or
+    tiles.
+
+    OctreeImage always uses chunk/tiles. Today those tiles are always
+    "small". However, as a special case, if an image is smaller than the
+    max texture size, we could some day allow OctreeImage to set its tile
+    size equal to that image size.
+
+    At that point "small" images would be single-tile single-level
+    OctreeImages. Therefore they should be as as efficient as the original
+    Image's single-scale images. But larger images would have
+    multiple-tiles and multiple-levels. The goal is to have one class and
+    one code path for all types of images.
     """
 
     def __init__(self, *args, **kwargs):
