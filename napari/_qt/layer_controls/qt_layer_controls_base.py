@@ -2,6 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
+from ...utils.events import connect, disconnect
 
 
 class QtLayerControls(QFrame):
@@ -26,12 +27,13 @@ class QtLayerControls(QFrame):
         Slider controlling opacity of the layer.
     """
 
+    _connections = ['blending', 'opacity']
+
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.opacity.connect(self._on_opacity_change)
+        connect(self.layer, self, self._connections)
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -110,6 +112,5 @@ class QtLayerControls(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        self.layer.events.blending.disconnect(self._on_blending_change)
-        self.layer.events.opacity.disconnect(self._on_opacity_change)
+        disconnect(self.layer, self, self._connections)
         self.deleteLater()

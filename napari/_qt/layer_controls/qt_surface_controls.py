@@ -43,8 +43,3 @@ class QtSurfaceControls(QtBaseImageControls):
         self.grid_layout.setRowStretch(5, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
-
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
-        self.deleteLater()

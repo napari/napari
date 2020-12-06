@@ -67,19 +67,19 @@ class QtLabelsControls(QtLayerControls):
         FILL.
     """
 
+    _connections = QtLayerControls._connections + [
+        'mode',
+        'selected_label',
+        'brush_size',
+        'contiguous',
+        'n_dimensional',
+        'editable',
+        'preserve_labels',
+        'color_mode',
+    ]
+
     def __init__(self, layer):
         super().__init__(layer)
-
-        self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.selected_label.connect(self._on_selection_change)
-        self.layer.events.brush_size.connect(self._on_brush_size_change)
-        self.layer.events.contiguous.connect(self._on_contig_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dim_change)
-        self.layer.events.editable.connect(self._on_editable_change)
-        self.layer.events.preserve_labels.connect(
-            self._on_preserve_labels_change
-        )
-        self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -89,7 +89,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setMaximum(2147483647)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
-        self._on_selection_change()
+        self._on_selected_label_change()
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -104,13 +104,13 @@ class QtLabelsControls(QtLayerControls):
         contig_cb.setToolTip('contiguous editing')
         contig_cb.stateChanged.connect(self.change_contig)
         self.contigCheckBox = contig_cb
-        self._on_contig_change()
+        self._on_contiguous_change()
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('edit all dimensions')
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
-        self._on_n_dim_change()
+        self._on_n_dimensional_change()
 
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
@@ -355,7 +355,7 @@ class QtLabelsControls(QtLayerControls):
         """
         self.layer.brush_shape = brush_shape
 
-    def _on_selection_change(self, event=None):
+    def _on_selected_label_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
         Parameters
@@ -380,7 +380,7 @@ class QtLabelsControls(QtLayerControls):
             value = np.clip(int(value), 1, 40)
             self.brushSizeSlider.setValue(value)
 
-    def _on_n_dim_change(self, event=None):
+    def _on_n_dimensional_change(self, event=None):
         """Receive layer model n-dim mode change event and update the checkbox.
 
         Parameters
@@ -391,7 +391,7 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
-    def _on_contig_change(self, event=None):
+    def _on_contiguous_change(self, event=None):
         """Receive layer model contiguous change event and update the checkbox.
 
         Parameters
@@ -457,19 +457,8 @@ class QtLabelsControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
-        super().close()
-        self.layer.events.mode.disconnect(self._on_mode_change)
-        self.layer.events.selected_label.disconnect(self._on_selection_change)
-        self.layer.events.brush_size.disconnect(self._on_brush_size_change)
-        self.layer.events.contiguous.disconnect(self._on_contig_change)
-        self.layer.events.n_dimensional.disconnect(self._on_n_dim_change)
-        self.layer.events.editable.disconnect(self._on_editable_change)
-        self.layer.events.preserve_labels.disconnect(
-            self._on_preserve_labels_change
-        )
-        self.layer.events.color_mode.disconnect(self._on_color_mode_change)
         self.colorBox.close()
-        self.deleteLater()
+        super().close()
 
 
 class QtColorBox(QWidget):

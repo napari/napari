@@ -41,15 +41,15 @@ class QtVectorsControls(QtLayerControls):
         Spin box widget controlling edge line width of vectors.
     """
 
+    _connections = QtLayerControls._connections + [
+        'edge_width',
+        'length',
+        'edge_color_mode',
+        'edge_color',
+    ]
+
     def __init__(self, layer):
         super().__init__(layer)
-
-        self.layer.events.edge_width.connect(self._on_width_change)
-        self.layer.events.length.connect(self._on_len_change)
-        self.layer.events.edge_color_mode.connect(
-            self._on_edge_color_mode_change
-        )
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
 
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
@@ -223,7 +223,7 @@ class QtVectorsControls(QtLayerControls):
 
         return property_values
 
-    def _on_len_change(self, event=None):
+    def _on_length_change(self, event=None):
         """Change length of vectors.
 
         Parameters
@@ -234,7 +234,7 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
-    def _on_width_change(self, event=None):
+    def _on_edge_width_change(self, event=None):
         """"Receive layer model width change event and update width spinbox.
 
         Parameters
@@ -281,14 +281,3 @@ class QtVectorsControls(QtLayerControls):
                 prop = self.layer._edge_color_property
                 index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
                 self.color_prop_box.setCurrentIndex(index)
-
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
-        self.layer.events.edge_width.disconnect(self._on_width_change)
-        self.layer.events.length.disconnect(self._on_len_change)
-        self.layer.events.edge_color_mode.disconnect(
-            self._on_edge_color_mode_change
-        )
-        self.layer.events.edge_color.disconnect(self._on_edge_color_change)
-        self.deleteLater()

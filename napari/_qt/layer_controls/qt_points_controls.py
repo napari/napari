@@ -62,23 +62,22 @@ class QtPointsControls(QtLayerControls):
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
 
+    _connections = QtLayerControls._connections + [
+        'mode',
+        'n_dimensional',
+        'symbol',
+        'size',
+        'current_edge_color',
+        'current_face_color',
+        'editable',
+    ]
+
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.mode.connect(self.set_mode)
-        self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer._text.events.visible.connect(
             self._on_text_visibility_change
         )
-        self.layer.events.symbol.connect(self._on_symbol_change)
-        self.layer.events.size.connect(self._on_size_change)
-        self.layer.events.current_edge_color.connect(
-            self._on_edge_color_change
-        )
-        self.layer.events.current_face_color.connect(
-            self._on_face_color_change
-        )
-        self.layer.events.editable.connect(self._on_editable_change)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -187,7 +186,7 @@ class QtPointsControls(QtLayerControls):
         """
         self.layer.status = self.layer.mode
 
-    def set_mode(self, event):
+    def _on_mode_change(self, event):
         """"Update ticks in checkbox widgets when points layer mode is changed.
 
         Available modes for points layer are:
@@ -272,7 +271,7 @@ class QtPointsControls(QtLayerControls):
         with self.layer._text.events.visible.blocker():
             self.textDispCheckBox.setChecked(self.layer._text.visible)
 
-    def _on_n_dim_change(self, event):
+    def _on_n_dimensional_change(self, event):
         """Receive layer model n-dimensional change event and update checkbox.
 
         Parameters
@@ -321,12 +320,12 @@ class QtPointsControls(QtLayerControls):
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
-    def _on_face_color_change(self, event=None):
+    def _on_current_face_color_change(self, event=None):
         """Receive layer.current_face_color() change event and update view."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_edge_color_change(self, event=None):
+    def _on_current_edge_color_change(self, event=None):
         """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
@@ -347,19 +346,7 @@ class QtPointsControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
-        super().close()
-        self.layer.events.mode.disconnect(self.set_mode)
-        self.layer.events.n_dimensional.disconnect(self._on_n_dim_change)
         self.layer._text.events.visible.disconnect(
             self._on_text_visibility_change
         )
-        self.layer.events.symbol.disconnect(self._on_symbol_change)
-        self.layer.events.size.disconnect(self._on_size_change)
-        self.layer.events.current_edge_color.disconnect(
-            self._on_edge_color_change
-        )
-        self.layer.events.current_face_color.disconnect(
-            self._on_face_color_change
-        )
-        self.layer.events.editable.disconnect(self._on_editable_change)
-        self.deleteLater()
+        super().close()

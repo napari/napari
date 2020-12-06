@@ -41,14 +41,16 @@ class QtImageControls(QtBaseImageControls):
         Label for the rendering mode dropdown menu.
     """
 
+    _connections = QtBaseImageControls._connections + [
+        'interpolation',
+        'rendering',
+        'iso_threshold',
+        'attenuation',
+        '_ndisplay',
+    ]
+
     def __init__(self, layer):
         super().__init__(layer)
-
-        self.layer.events.interpolation.connect(self._on_interpolation_change)
-        self.layer.events.rendering.connect(self._on_rendering_change)
-        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
-        self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
 
         self.interpComboBox = QComboBox(self)
         self.interpComboBox.activated[str].connect(self.changeInterpolation)
@@ -83,7 +85,7 @@ class QtImageControls(QtBaseImageControls):
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
-        self._on_ndisplay_change()
+        self._on__ndisplay_change()
 
         colormap_layout = QHBoxLayout()
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
@@ -261,7 +263,7 @@ class QtImageControls(QtBaseImageControls):
         )
         self.interpComboBox.setCurrentIndex(index)
 
-    def _on_ndisplay_change(self, event=None):
+    def _on__ndisplay_change(self, event=None):
         """Toggle between 2D and 3D visualization modes.
 
         Parameters
@@ -281,17 +283,3 @@ class QtImageControls(QtBaseImageControls):
             self.renderComboBox.show()
             self.renderLabel.show()
             self._toggle_rendering_parameter_visbility()
-
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
-        self.layer.events.interpolation.disconnect(
-            self._on_interpolation_change
-        )
-        self.layer.events.rendering.disconnect(self._on_rendering_change)
-        self.layer.events.iso_threshold.disconnect(
-            self._on_iso_threshold_change
-        )
-        self.layer.events.attenuation.disconnect(self._on_attenuation_change)
-        self.layer.events._ndisplay.disconnect(self._on_ndisplay_change)
-        self.deleteLater()

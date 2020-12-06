@@ -78,21 +78,20 @@ class QtShapesControls(QtLayerControls):
         Raise error if shapes mode is not recognized.
     """
 
+    _connections = QtLayerControls._connections + [
+        'mode',
+        'edge_width',
+        'current_edge_color',
+        'current_face_color',
+        'editable',
+    ]
+
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.mode.connect(self.set_mode)
-        self.layer.events.edge_width.connect(self._on_edge_width_change)
-        self.layer.events.current_edge_color.connect(
-            self._on_edge_color_change
-        )
-        self.layer.events.current_face_color.connect(
-            self._on_face_color_change
-        )
         self.layer._text.events.visible.connect(
             self._on_text_visibility_change
         )
-        self.layer.events.editable.connect(self._on_editable_change)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -192,12 +191,12 @@ class QtShapesControls(QtLayerControls):
             initial_color=self.layer.current_face_color,
             tooltip='click to set current face color',
         )
-        self._on_face_color_change()
+        self._on_current_face_color_change()
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_edge_color,
             tooltip='click to set current edge color',
         )
-        self._on_edge_color_change()
+        self._on_current_edge_color_change()
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
@@ -236,7 +235,7 @@ class QtShapesControls(QtLayerControls):
         """
         self.layer.status = str(self.layer.mode)
 
-    def set_mode(self, event):
+    def _on_mode_change(self, event):
         """"Update ticks in checkbox widgets when shapes layer mode changed.
 
         Available modes for shapes layer are:
@@ -362,7 +361,7 @@ class QtShapesControls(QtLayerControls):
             value = np.clip(int(2 * value), 0, 40)
             self.widthSlider.setValue(value)
 
-    def _on_edge_color_change(self, event=None):
+    def _on_current_edge_color_change(self, event=None):
         """Receive layer model edge color change event and update color swatch.
 
         Parameters
@@ -373,7 +372,7 @@ class QtShapesControls(QtLayerControls):
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
-    def _on_face_color_change(self, event=None):
+    def _on_current_face_color_change(self, event=None):
         """Receive layer model face color change event and update color swatch.
 
         Parameters
@@ -413,17 +412,7 @@ class QtShapesControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
-        super().close()
-        self.layer.events.mode.disconnect(self.set_mode)
-        self.layer.events.edge_width.disconnect(self._on_edge_width_change)
-        self.layer.events.current_edge_color.disconnect(
-            self._on_edge_color_change
-        )
-        self.layer.events.current_face_color.disconnect(
-            self._on_face_color_change
-        )
         self.layer._text.events.visible.disconnect(
             self._on_text_visibility_change
         )
-        self.layer.events.editable.disconnect(self._on_editable_change)
-        self.deleteLater()
+        super().close()

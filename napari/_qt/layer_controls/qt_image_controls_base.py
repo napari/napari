@@ -41,12 +41,14 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
+    _connections = QtLayerControls._connections + [
+        'colormap',
+        'gamma',
+        'contrast_limits',
+    ]
+
     def __init__(self, layer):
         super().__init__(layer)
-
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
@@ -76,7 +78,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setValue(100)
         sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
-        self.gamma_slider_update()
+        self._on_gamma_change()
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
@@ -121,7 +123,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_clims_change(self, event=None):
+    def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
@@ -178,7 +180,7 @@ class QtBaseImageControls(QtLayerControls):
         """
         self.layer.gamma = value / 100
 
-    def gamma_slider_update(self, event=None):
+    def _on_gamma_change(self, event=None):
         """Receive the layer model gamma change event and update the slider.
 
         Parameters
@@ -191,20 +193,6 @@ class QtBaseImageControls(QtLayerControls):
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
-
-    def closeEvent(self, event):
-        self.close()
-        event.accept()
-
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
-        self.layer.events.colormap.disconnect(self._on_colormap_change)
-        self.layer.events.gamma.disconnect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.disconnect(self._on_clims_change)
-        if hasattr(self, 'clim_pop'):
-            self.clim_pop.deleteLater()
-        self.deleteLater()
 
 
 def create_range_popup(layer, attr, parent=None):
@@ -261,6 +249,12 @@ def create_range_popup(layer, attr, parent=None):
     popup.slider.valuesChanged.connect(set_values)
     popup.slider.rangeChanged.connect(set_range)
     return popup
+
+    def close(self):
+        """Layer widget is closing."""
+        if hasattr(self, 'clim_pop'):
+            self.clim_pop.deleteLater()
+        super().close()
 
 
 def create_clim_reset_buttons(layer):
