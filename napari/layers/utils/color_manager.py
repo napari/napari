@@ -8,7 +8,7 @@ from ...utils.colormaps.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_with_defaults,
 )
-from ...utils.events.dataclass import Property, dataclass
+from ...utils.events.dataclass import Property, evented_dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
 from .layer_utils import guess_continuous
@@ -21,7 +21,7 @@ def create_color_cycle(color_cycle):
     )
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass(events=True, properties=True)
 class ColorManager:
     """Colors for a display property
 
