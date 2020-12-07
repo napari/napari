@@ -89,10 +89,10 @@ class QtOctreeInfoLayout(QVBoxLayout):
 
         def on_set_level(value: int) -> None:
             if value == 0:  # This is AUTO
-                self.layer.freeze_level = False
+                self.layer.display.freeze_level = False
             else:
                 level = value - 1  # Account for AUTO at 0
-                self.layer.freeze_level = True
+                self.layer.display.freeze_level = True
                 self.layer.octree_level = level
 
         def on_set_delay(_value: int) -> None:
@@ -155,7 +155,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             Set controls based on this layer.
         """
         self.level.set_value(
-            "AUTO" if not layer.freeze_level else layer.octree_level
+            "AUTO" if not layer.display.freeze_level else layer.octree_level
         )
         self.table.set_values(_get_table_values(layer))
 
@@ -176,7 +176,10 @@ class QtOctreeInfo(QFrame):
 
         # Initial update and connect for future updates.
         self._update()  # initial update
-        layer.events.freeze_level.connect(self._update)
+
+        # removing this event...
+        # layer.events.freeze_level.connect(self._update)
+
         layer.events.octree_level.connect(self._update)
         layer.events.tile_size.connect(self._update)
 

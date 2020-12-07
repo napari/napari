@@ -64,13 +64,11 @@ class OctreeImage(Image):
         self._delay_ms = NormalNoise()
 
         super().__init__(*args, **kwargs)
-        self.events.add(
-            freeze_level=Event, octree_level=Event, tile_size=Event
-        )
+        self.events.add(octree_level=Event, tile_size=Event)
 
     def _get_value(self):
         """Override Image._get_value()."""
-        return (0, (0, 0))  # Fake for now until have octree version.
+        return (0, (0, 0))  # TODO_OCTREE: need to implement this.
 
     @property
     def loaded(self) -> bool:
@@ -177,32 +175,6 @@ class OctreeImage(Image):
         if self._slice is None:
             return None
         return self._slice.octree_level_info
-
-    @property
-    def freeze_level(self) -> bool:
-        """Return True if we are forzen viewing a single octree level.
-
-        When viewing the octree normally, freeze_level is always False, but
-        during debugging or other special situations it might be on.
-
-        Returns
-        -------
-        bool
-            True if the view is currently frozen viewing on level.
-        """
-        return self._display.freeze_level
-
-    @freeze_level.setter
-    def freeze_level(self, freeze: bool) -> None:
-        """Set whether we are frozen viewing a single octree level.
-
-        Parameters
-        ----------
-        value : bool
-            True if we should determine the octree level automatically.
-        """
-        self._display.freeze_level = freeze
-        self.events.freeze_level()
 
     @property
     def data_level(self) -> int:
