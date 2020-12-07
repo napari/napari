@@ -1,16 +1,14 @@
 """OctreeImage class.
+
+An eventual replacement for Image that combines single-scale and
+chunked/tiled multi-scale into one implementation.
 """
 import logging
 from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import (
-    ChunkRequest,
-    LayerKey,
-    LayerRef,
-    get_data_id,
-)
+from ....components.experimental.chunk import ChunkRequest, LayerKey, LayerRef
 from ....utils.events import Event
 from ..image import Image
 from ._octree_chunk_loader import OctreeChunkLoader
@@ -257,10 +255,7 @@ class OctreeImage(Image):
         self.frame_count += 1
 
         indices = np.array(self._slice_indices)
-
-        layer_key = LayerKey(
-            id(self), get_data_id(self.data), self._data_level, indices
-        )
+        layer_key = LayerKey.from_layer(self, indices)
 
         return self._loader.get_drawable_chunks(chunks, layer_key)
 

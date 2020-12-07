@@ -2,60 +2,18 @@
 """
 import contextlib
 import logging
-from typing import NamedTuple, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 
 from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
+from .layer_key import LayerKey
 
 LOGGER = logging.getLogger("napari.async")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
-
-
-def _flatten(indices) -> tuple:
-    """Return a flat tuple of integers to represent the indices.
-
-    Slice objects are not hashable, so we convert them.
-    """
-    result = []
-    for x in indices:
-        if isinstance(x, slice):
-            result.extend([x.start, x.stop, x.step])
-        else:
-            result.append(x)
-    return tuple(result)
-
-
-class LayerKey(NamedTuple):
-    """The key for a layer and its important properties.
-
-    Attributes
-    ----------
-    layer_id : int
-        The id of the layer making the request.
-    data_id : int
-        The id of the data in the layer.
-    data_level : int
-        The level in the data (for multi-scale).
-    indices : Tuple[Optional[slice], ...]
-        The indices of the slice.
-    """
-
-    layer_id: int
-    data_id: int
-    data_level: int
-    indices: Tuple[Optional[slice], ...]
-
-    def _get_hash_values(self):
-        return (
-            self.layer_id,
-            self.data_id,
-            self.data_level,
-            _flatten(self.indices),
-        )
 
 
 class ChunkKey:

@@ -7,7 +7,6 @@ from napari.components.experimental.chunk import (
     LayerKey,
     LayerRef,
     chunk_loader,
-    get_data_id,
 )
 from napari.layers.image import Image
 from napari.utils import config
@@ -19,20 +18,14 @@ def _create_layer() -> Image:
     return Image(data)
 
 
-def _create_layer_key(layer, indices) -> LayerKey:
-    return LayerKey(
-        id(layer), get_data_id(layer.data), layer._data_level, indices,
-    )
-
-
 def test_chunk_key():
     """Test the ChunkKey class."""
 
     layer1 = _create_layer()
     layer2 = _create_layer()
 
-    layer_key1 = _create_layer_key(layer1, (0, 0))
-    layer_key2 = _create_layer_key(layer2, (0, 0))
+    layer_key1 = LayerKey.from_layer(layer1, (0, 0))
+    layer_key2 = LayerKey.from_layer(layer2, (0, 0))
 
     # key1 and key2 should be identical.
     key1 = ChunkKey(layer_key1)
@@ -50,7 +43,7 @@ def test_chunk_key():
     assert key1b != key2
 
     # key4 has different indices.
-    layer_key3 = _create_layer_key(layer2, (0, 1))
+    layer_key3 = LayerKey.from_layer(layer2, (0, 1))
     key3 = ChunkKey(layer_key3)
     assert key1 != key3
     assert key1b != key3
