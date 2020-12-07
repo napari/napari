@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QCheckBox, QFrame, QVBoxLayout
 
 from ....components.experimental import chunk_loader
 from ....layers.image.experimental.octree_image import OctreeImage
+from ....utils.events import disconnect_events
 from .qt_render_widgets import QtLabeledComboBox, QtSimpleTable
 
 
@@ -154,6 +155,4 @@ class QtOctreeInfo(QFrame):
 
     def close(self):
         """Vispy visual is closing."""
-        self.layer.events.freeze_level.disconnect(self._update)
-        self.layer.events.octree_level.disconnect(self._update)
-        self.layer.events.tile_size.disconnect(self._update)
+        disconnect_events(self.layer, self)
