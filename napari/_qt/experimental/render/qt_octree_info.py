@@ -85,7 +85,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             chunk_loader.cache.enabled = value != 0
 
         def on_set_grid(value: int) -> None:
-            self.layer.show_grid = value != 0
+            self.layer.display.show_grid = value != 0
 
         def on_set_level(value: int) -> None:
             if value == 0:  # This is AUTO
@@ -113,7 +113,9 @@ class QtOctreeInfoLayout(QVBoxLayout):
         )
 
         # Toggle debug grid drawn around tiles.
-        self._create_checkbox("Show Grid", layer.show_grid, on_set_grid)
+        self._create_checkbox(
+            "Show Grid", layer.display.show_grid, on_set_grid
+        )
 
         num_levels = layer.num_octree_levels
 

@@ -46,7 +46,6 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
-        self._display = OctreeDisplayOptions()
 
         self._view: OctreeView = None
 
@@ -63,8 +62,16 @@ class OctreeImage(Image):
         # computation.
         self._delay_ms = NormalNoise()
 
+        self._display = OctreeDisplayOptions()
+
+        # super().__init__ will call our _set_view_slice() which is kind
+        # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
+
         self.events.add(octree_level=Event, tile_size=Event)
+
+        # TODO_OCTREE: bad to have to set this after...
+        self._display.loaded_event = self.events.loaded
 
     def _get_value(self):
         """Override Image._get_value()."""
@@ -466,27 +473,3 @@ class OctreeImage(Image):
         self._delay_ms = delay_ms
         self._slice = None  # For now must explicitly delete it
         self.refresh()  # Create a new slice.
-
-    @property
-    def show_grid(self) -> bool:
-        """True if we are drawing a grid on top of the tiles.
-
-        Return
-        ------
-        bool
-            True if we are drawing a grid on top of the tiles.
-        """
-        return self._display.show_grid
-
-    @show_grid.setter
-    def show_grid(self, show: bool) -> None:
-        """Set whether we should draw a grid on top of the tiles.
-
-        Parameters
-        ----------
-        show : bool
-            True if we should draw a grid on top of the tiles.
-        """
-        if self._display.show_grid != show:
-            self._display.show_grid = show
-            self.events.loaded()  # redraw

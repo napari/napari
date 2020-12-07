@@ -53,7 +53,7 @@ class RemoteCommands:
         """
         for layer in self.layers.selected:
             if isinstance(layer, OctreeImage):
-                layer.show_grid = show
+                layer.display.show_grid = show
 
     def _process_command(self, event):
         """Process this one command from the remote client.

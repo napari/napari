@@ -139,7 +139,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         # The grid is only for debugging and demos, yet it's quite useful
         # otherwise the tiles are kind of invisible.
-        if self.layer.show_grid:
+        if self.layer.display.show_grid:
             self.grid.update_grid(self.node.octree_chunks)
         else:
             self.grid.clear()

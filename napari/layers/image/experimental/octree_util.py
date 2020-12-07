@@ -24,10 +24,39 @@ class OctreeDisplayOptions:
         If True draw a grid around the tiles for debugging or demos.
     """
 
+    def __init__(self):
+        self._show_grid = True
+
+        # TODO_OCTREE we set this after __init__ which is messy.
+        self.loaded_event = None
+
+    @property
+    def show_grid(self) -> bool:
+        """True if we are drawing a grid on top of the tiles.
+
+        Return
+        ------
+        bool
+            True if we are drawing a grid on top of the tiles.
+        """
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, show: bool) -> None:
+        """Set whether we should draw a grid on top of the tiles.
+
+        Parameters
+        ----------
+        show : bool
+            True if we should draw a grid on top of the tiles.
+        """
+        if self._show_grid != show:
+            self._show_grid = show
+            self.loaded_event()  # redraw
+
     tile_size: int = async_config.octree.tile_size
     freeze_level: bool = False
     track_view: bool = True
-    show_grid: bool = True
 
 
 class TestImageSettings(NamedTuple):
