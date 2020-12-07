@@ -31,21 +31,26 @@ class OctreeImage(Image):
 
     Background
     ----------
-    OctreeImage is meant to eventually replace the existing Image class. The
-    original Image class handled single-scale and multi-scale images, but they
-    were handled quite differently. And its multi-scale did not use chunks or
-    tiles.
+    The original Image class handled single-scale and multi-scale images,
+    but they were handled quite differently. And its multi-scale did not
+    use chunks or tiles. It worked well locally, but was basically unusable
+    for remote or high latency data.
 
     OctreeImage always uses chunk/tiles. Today those tiles are always
     "small". However, as a special case, if an image is smaller than the
     max texture size, we could some day allow OctreeImage to set its tile
     size equal to that image size.
 
-    At that point "small" images would be single-tile single-level
-    OctreeImages. Therefore they should be as as efficient as the original
-    Image's single-scale images. But larger images would have
-    multiple-tiles and multiple-levels. The goal is to have one class and
-    one code path for all types of images.
+    At that point "small" images would be draw with a single texture,
+    the same way the old Image class drew then. So it would be very
+    efficient.
+
+    But larger images would have multiple chunks/tiles and multiple levels.
+    Unlike the original Image class multi-scale, the chunks/tiles mean we
+    only have to incrementally load more data as the user pans and zooms.
+
+    The goal is OctreeImage gets renamed to just Image and it efficiently
+    handles images of any size. It make take a while to get there.
     """
 
     def __init__(self, *args, **kwargs):
