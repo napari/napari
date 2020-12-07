@@ -257,42 +257,45 @@ class OctreeImage(Image):
         The empty slice was needed to satisfy the old VispyImageLayer that
         used a single ImageVisual. But OctreeImage is drawn with
         VispyTiledImageVisual. It does not need an empty image. It gets
-        chunks from our self.visible_chunks property, and it will just draw
+        chunks from our self.drawable_chunks property, and it will just draw
         nothing if that returns an empty list.
 
         When OctreeImage become the only image class, this can go away.
         """
 
     @property
-    def visible_chunks(self) -> List[OctreeChunk]:
-        """Chunks in the current slice which in currently in view.
+    def drawable_chunks(self) -> List[OctreeChunk]:
+        """Chunks in the current slice which are drawable.
 
         Return
         ------
         List[OctreeChunk]
-            The visible chunks.
+            The drawable chunks.
         """
         if self._slice is None or self._view is None:
             return []
 
-        chunks = self._slice.get_visible_chunks(self._view)
+        visible_chunks = self._slice.get_visible_chunks(self._view)
 
-        # If calling _slice.get_visible_chunks() switched the slice to
+        # If calling _slice.drawable_chunks() switched the slice to
         # a new octree level, then update our data_level to match. This
         # will do nothing if the level didn't change.
         self.data_level = self._slice.octree_level
 
         LOGGER.debug(
-            "OctreeImage.visible_chunks: frame=%d num_chunks=%d",
+            "OctreeImage.drawable_chunks: frame=%d num_chunks=%d",
             self.frame_count,
-            len(chunks),
+            len(visible_chunks),
         )
         self.frame_count += 1
 
         indices = np.array(self._slice_indices)
         layer_key = LayerKey.from_layer(self, indices)
 
-        return self._loader.get_drawable_chunks(chunks, layer_key)
+        # Calling get_drawable_chunks() will get us the chunks that are
+        # ready to be draw. Also, it might initiate async loads on other
+        # chunks, so that they will become drawable in the future.
+        return self._loader.get_drawable_chunks(visible_chunks, layer_key)
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -321,7 +324,7 @@ class OctreeImage(Image):
 
         # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
-        # visible_chunks() method.
+        # drawable_chunks() method.
         self._view = OctreeView(corners, shape_threshold, self.display)
 
     def get_intersection(self) -> OctreeIntersection:

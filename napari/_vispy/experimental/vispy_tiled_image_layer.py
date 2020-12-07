@@ -23,7 +23,7 @@ TiledImageNode = create_visual_node(TiledImageVisual)
 class ChunkStats:
     """Statistics about chunks during the update process."""
 
-    seen: int = 0
+    drawable: int = 0
     start: int = 0
     deleted: int = 0
     remaining: int = 0
@@ -90,7 +90,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         ImageVisual has a set_data() method but we don't. No one can set
         the data for the whole image, that's why it's a tiled image in the
         first place. Instead of set_data() we pull our data one chunk at a
-        time by calling self.layer.visible_chunks in our _update_view()
+        time by calling self.layer.drawable_chunks in our _update_view()
         method.
 
         Raises
@@ -101,35 +101,37 @@ class VispyTiledImageLayer(VispyImageLayer):
         raise NotImplementedError()
 
     def _update_drawn_chunks(self) -> ChunkStats:
-        """Add or remove tiles to match the chunks which are currently visible.
+        """Add or remove tiles to match the chunks which are currently drawable.
 
-        1) Remove tiles which are no longer visible.
-        2) Create tiles for newly visible chunks.
-        3) Optionally update our grid based on the now visible chunks.
+        1) Remove tiles which are no longer drawable.
+        2) Create tiles for newly drawable chunks.
+        3) Optionally update our grid based on the now drawable chunks.
 
         Return
         ------
         ChunkStats
             Statistics about the update process.
         """
-        # Get the currently visible chunks from the layer.
-        visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
+        # Get the currently drawable chunks from the layer.
+        drawable_chunks: List[OctreeChunk] = self.layer.drawable_chunks
 
-        # Record some stats about this update process, where stats.seen are
-        # the number of visible chunks.
-        stats = ChunkStats(seen=len(visible_chunks))
+        # Record some stats about this update process, where stats.drawable are
+        # the number of drawable chunks.
+        stats = ChunkStats(drawable=len(drawable_chunks))
 
-        # Create the visible set of chunks using their keys.
+        # Create the drawable set of chunks using their keys.
         # TODO_OCTREE: use __hash__ not OctreeChunk.key, using __hash__
         # did not immediately work, but we should try again.
-        visible_set = set(octree_chunk.key for octree_chunk in visible_chunks)
+        drawable_set = set(
+            octree_chunk.key for octree_chunk in drawable_chunks
+        )
 
         # Then number of tiles we have before the update.
         stats.start = self.num_tiles
 
-        # Make tiles as stale if their chunk is no longer visible. However,
+        # Make tiles as stale if their chunk is no longer drawable. However,
         # stale tiles will still be drawn until replaced by something newer.
-        self.node.prune_tiles(visible_set)
+        self.node.prune_tiles(drawable_set)
 
         # The low point, after removing but before adding.
         stats.low = self.num_tiles
@@ -137,10 +139,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Which means we deleted this many tiles.
         stats.deleted = stats.start - stats.low
 
-        # Remaining is how many tiles in visible_chunks still need to be
+        # Remaining is how many tiles in drawable_chunks still need to be
         # added. We don't necessarily add them all so that we don't tank
         # the framerate.
-        stats.remaining = self._add_chunks(visible_chunks)
+        stats.remaining = self._add_chunks(drawable_chunks)
 
         # Final number of tiles after adding, which implies how many were
         # created.
@@ -148,7 +150,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         stats.created = stats.final - stats.low
 
         # The grid is only for debugging and demos, yet it's quite useful
-        # otherwise the tiles are kind of invisible.
+        # otherwise you can't really see the borders between the tiles.
         if self.layer.display.show_grid:
             self.grid.update_grid(self.node.octree_chunks)
         else:
@@ -156,12 +158,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         return stats
 
-    def _add_chunks(self, visible_chunks: List[OctreeChunk]) -> int:
-        """Add some or all of these visible chunks to the tiled image.
+    def _add_chunks(self, drawable_chunks: List[OctreeChunk]) -> int:
+        """Add some or all of these drawable chunks to the tiled image.
 
         Parameters
         ----------
-        visible_chunks : List[OctreeChunk]
+        drawable_chunks : List[OctreeChunk]
             Chunks we should add, if not already in the tiled image.
 
         Return
@@ -176,7 +178,7 @@ class VispyTiledImageLayer(VispyImageLayer):
             # updating them.
             return 0  # Nothing more to add
 
-        # Add tiles for visible chunks that do not already have a tile.
+        # Add tiles for drawable chunks that do not already have a tile.
         # This might not add all the chunks, because doing so might
         # tank the framerate.
         #
@@ -187,13 +189,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         # card do its business.
         #
         # Any chunks not added this frame will have a chance to be
-        # added the next frame, if they are still on the visible_chunks
+        # added the next frame, if they are still on the drawable_chunks
         # list next frame. It's important we keep asking the layer for
-        # the visible chunks every frame. We don't want to queue up and
+        # the drawable chunks every frame. We don't want to queue up and
         # add chunks which might no longer be needed, because the
         # camera might move every frame. The situation might be
         # evolving rapidly if the camera is moving a lot.
-        return self.node.add_chunks(visible_chunks)
+        return self.node.add_chunks(drawable_chunks)
 
     def _update_tile_shape(self) -> None:
         """If the tile shape was changed, update our node."""
@@ -211,16 +213,16 @@ class VispyTiledImageLayer(VispyImageLayer):
             self.node.set_tile_shape(tile_shape)
 
     def _update_view(self) -> int:
-        """Update the tiled image based on what's visible in the layer.
+        """Update the tiled image based on what's drawable in the layer.
 
         We call self._update_chunks() which asks the layer what chunks are
-        visible, then it potentially loads some of those chunks, if we
-        didn't already have them. This method returns how many visible
+        drawable, then it potentially loads some of those chunks, if we
+        didn't already have them. This method returns how many drawable
         chunks still need to be added.
 
         If we return non-zero, we expect to be polled and drawn again, even
         if the camera isn't moving. Polled and drawn until we can finish
-        adding the rest of the visible chunks.
+        adding the rest of the drawable chunks.
 
         Return
         ------
@@ -251,7 +253,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         This is called when the camera moves, or when we have chunks that
         need to be loaded. We update which tiles we are drawing based on
-        which chunks are currently visible.
+        which chunks are currently drawable.
         """
         super()._on_poll()
 

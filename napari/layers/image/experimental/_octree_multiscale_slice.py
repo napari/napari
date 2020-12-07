@@ -159,7 +159,12 @@ class OctreeMultiscaleSlice:
         return min(math.floor(math.log2(ratio)), self._octree.num_levels - 1)
 
     def get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
-        """Return the chunks currently in view.
+        """Get the chunks within this view that are visible.
+
+        Paramaters
+        ----------
+        view : OctreeView
+            Return chunks that are within this view.
 
         Return
         ------
