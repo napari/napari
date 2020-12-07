@@ -2,7 +2,18 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
-from ...utils.events import connect, disconnect
+from ...utils.events import connect
+
+
+def disconnect(source, destination):
+    for em in source.events.emitters.values():
+        for callback in em.callbacks:
+            # Callback is a tuple of a weak reference and method name
+            if (
+                isinstance(callback, tuple)
+                and callback[0] is destination.__weakref__
+            ):
+                em.disconnect(callback)
 
 
 class QtLayerControls(QFrame):
@@ -112,5 +123,5 @@ class QtLayerControls(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect(self.layer, self, self._connections)
+        disconnect(self.layer, self)
         self.deleteLater()
