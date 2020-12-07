@@ -81,10 +81,6 @@ class OctreeImage(Image):
         """
         return True
 
-    @property
-    def _empty(self) -> bool:
-        return False  # TODO_OCTREE: what here?
-
     def _update_thumbnail(self):
         # TODO_OCTREE: replace Image._update_thumbnail with nothing for
         # the moment until we decide how to do thumbnail.
