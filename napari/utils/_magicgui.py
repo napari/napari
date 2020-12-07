@@ -90,7 +90,8 @@ def get_layers(gui, layer_type: Type[Layer] = None) -> Tuple[Layer, ...]:
         dock widget.
     layer_type : type
         This is the exact type used in the type hint of the user's
-        function. It may be a subclass of napari.layers.Layer
+        function. It may be a subclass of napari.layers.Layer.
+        REMOVED in magicgui v0.2.0!
 
     Returns
     -------
@@ -107,6 +108,9 @@ def get_layers(gui, layer_type: Type[Layer] = None) -> Tuple[Layer, ...]:
     ...     return layer.data.mean()
 
     """
+    # in magicgui v0.2.0 `gui` will be the magicgui parameter widget itself,
+    # which contains all of the necessary information.
+    # the layer type (which was just the annotation), is at gui.annotation
     if layer_type is None:
         gui, layer_type = gui.native, gui.annotation
     # else:
