@@ -316,25 +316,35 @@ class OctreeImage(Image):
         octree_chunk.data = satisfied_request.chunks.get('data')
         return True
 
-    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+    def _update_draw(
+        self, scale_factor, corner_pixels, shape_threshold
+    ) -> None:
+        """Override Layer._update_draw completely.
 
-        # Need refresh if have not been draw at all yet.
-        # TODO_OCTREE: why? do we really?
-        need_refresh = self._view is None
+        The base Layer._update_draw does stuff for the legacy multi-scale
+        that we don't want. And it calls refresh() which we don't need.
 
-        super()._update_draw(scale_factor, corner_pixels, shape_threshold)
+        We create our OctreeView() here which has the corners in it.
 
+        Parameters
+        ----------
+        scale_factor : float
+            Scale factor going from canvas to world coordinates.
+        corner_pixels : array
+            Coordinates of the top-left and bottom-right canvas pixels in the
+            world coordinates.
+        shape_threshold : tuple
+            Requested shape of field of view in data coordinates.
+
+        """
         # Compute our 2D corners from the incoming n-d corner_pixels
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
         corners = data_corners[:, self._dims_displayed]
 
-        # Update our self._view to to catpure the state of things right
+        # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
         # visible_chunks() method.
         self._view = OctreeView(corners, shape_threshold, self.display)
-
-        if need_refresh:
-            self.refresh()
 
     def get_intersection(self) -> OctreeIntersection:
         """The the interesection between the current view and the octree.
