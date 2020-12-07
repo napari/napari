@@ -34,7 +34,6 @@ class QtLayerControls(QFrame):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
-        self.destroyed.connect(self._disconnect_events)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setObjectName('layer')
@@ -112,7 +111,11 @@ class QtLayerControls(QFrame):
             )
             self.blendComboBox.setCurrentIndex(index)
 
-    def _disconnect_events(self, ev):
+    def close(self):
         """Disconnect events when widget is closing."""
-        print('asfdasdfasdfsdf')
         disconnect_events(self.layer.events, self)
+        for child in self.children():
+            close_method = getattr(child, 'close', None)
+            if close_method is not None:
+                close_method()
+        super().close()

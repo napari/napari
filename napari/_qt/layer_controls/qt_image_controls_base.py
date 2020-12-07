@@ -194,9 +194,9 @@ class QtBaseImageControls(QtLayerControls):
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
 
-    def closeEvent(self, event):
-        self.close()
-        event.accept()
+    # def closeEvent(self, event):
+    #     self.close()
+    #     event.accept()
 
 
 def create_range_popup(layer, attr, parent=None):
