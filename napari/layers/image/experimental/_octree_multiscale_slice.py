@@ -159,7 +159,11 @@ class OctreeMultiscaleSlice:
         return min(math.floor(math.log2(ratio)), self._octree.num_levels - 1)
 
     def get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
-        """Get the chunks within this view that are visible.
+        """Get the chunks within this view at the right level of the octree.
+
+        The call to get_intersection() will chose the appropriate level
+        of the octree to intersect, and then return an intersection at
+        that level.
 
         Paramaters
         ----------
@@ -174,15 +178,16 @@ class OctreeMultiscaleSlice:
         intersection = self.get_intersection(view)
 
         if intersection is None:
-            return []
+            return []  # No visible chunks.
 
+        # If we are choosing the level automatically, then update our level
+        # with the level chosen for the intersection.
         if view.auto_level:
-            # Update our self._octree_level based on what level was automatically
-            # selected by the intersection.
             self._octree_level = intersection.level.info.level_index
 
-        # Return the chunks in this intersection.
-        return intersection.get_chunks(id(self))
+        # Return all of the chunks in this intersection, creating chunks if
+        # they don't already exist.
+        return intersection.get_chunks(create_chunks=True)
 
     def _get_octree_chunk(self, location: OctreeLocation) -> OctreeChunk:
         """Return the OctreeChunk at his location.

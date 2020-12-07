@@ -77,9 +77,6 @@ class OctreeImage(Image):
         self._slice: OctreeMultiscaleSlice = None
         self._display = OctreeDisplayOptions()
 
-        # For logging, probably temporary
-        self.frame_count = 0
-
         # super().__init__ will call our _set_view_slice() which is kind
         # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
@@ -273,28 +270,25 @@ class OctreeImage(Image):
             The drawable chunks.
         """
         if self._slice is None or self._view is None:
-            return []
+            return []  # There is nothing to draw.
 
+        # Start with the visible chunks. These are within the view, but may
+        # or may not be drawable.
         visible_chunks = self._slice.get_visible_chunks(self._view)
 
-        # If calling _slice.drawable_chunks() switched the slice to
-        # a new octree level, then update our data_level to match. This
-        # will do nothing if the level didn't change.
+        # Calling _slice.visible_chunks() above will select the appropriate
+        # octree level for the view. If the level changed, then update our
+        # data_level to match. This assignment will do nothing if the level
+        # didn't change.
         self.data_level = self._slice.octree_level
 
-        LOGGER.debug(
-            "OctreeImage.drawable_chunks: frame=%d num_chunks=%d",
-            self.frame_count,
-            len(visible_chunks),
-        )
-        self.frame_count += 1
-
+        # Create a LayerKey for the current layer/slice.
         indices = np.array(self._slice_indices)
         layer_key = LayerKey.from_layer(self, indices)
 
-        # Calling get_drawable_chunks() will get us the chunks that are
-        # ready to be draw. Also, it might initiate async loads on other
-        # chunks, so that they will become drawable in the future.
+        # Calling get_drawable_chunks() will return the chunks that are
+        # ready to be drawn. Also, it might initiate async loads so that
+        # more chunks will be drawable in the near future.
         return self._loader.get_drawable_chunks(visible_chunks, layer_key)
 
     def _update_draw(

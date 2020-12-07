@@ -1,6 +1,6 @@
 """OctreeChunkLoader class.
 
-Uses ChunkLoader to load OctreeChunk's in the octree.
+Uses ChunkLoader to load data into OctreeChunks in the octree.
 """
 import logging
 from typing import List, Set
@@ -12,7 +12,7 @@ LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeChunkLoader:
-    """Load data into the OctreeChunks in the octree.
+    """Load data into OctreeChunks in the octree.
 
     Parameters
     ----------
@@ -22,7 +22,7 @@ class OctreeChunkLoader:
     Attributes
     ----------
     _last_visible : Set[OctreeChunkKey]
-        Chunks we saw last frame, so we can recognize chunks have just
+        Chunks we saw last frame, so we can recognize chunks which have just
         come into view.
     """
 
@@ -33,17 +33,56 @@ class OctreeChunkLoader:
     def get_drawable_chunks(
         self, visible: List[OctreeChunk], layer_key: LayerKey
     ) -> List[OctreeChunk]:
-        """Return the chunks that can be drawn, of the visible chunks.
+        """Return the chunks that should be drawn.
 
         Visible chunks are within the bounds of the OctreeView, but those
         chunks may or may not be drawable. Drawable chunks are typically
-        ones that were fully in memory to start, or have been loaded
-        so the data is now in memory.
+        ones that were fully in memory to start, or have been
+        asynchronously loaded so their data is now in memory.
+
+        This routine might return drawable chunks for levels other than
+        the target level we are drawing. This is called multi-level rendering
+        and it's core feature of quadtree/octree rendering.
+
+        Background
+        -----------
+        Generally we want to draw the "best available" data. The target
+        level was chosen because its image pixels best match the screen
+        pixels. So if available we always prefer to draw chunks at the
+        target level.
+
+        However we strongly want to avoid drawing nothing. So if a chunk is
+        not available in the target level, we search of a suitable substitute.
+        There are just two directions to search:
+
+        1) Look for a drawable chunk at a higher (coarser) level.
+        2) Look for a drawable chunk at a lower (finer) level.
+
+        A parent chunk, at a higher level, will cover more than just the
+        missing target level chunk. While a child chunk, at a lower level,
+        will only cover a fraction of the missing target level chunk.
+
+        The TiledImageVisual can draw overlapping tiles/chunks. For example
+        suppose below B and C are in the target level. But in this case
+        B is drawable but C is not. We search up from C and find A.
+        ----------
+        |    A   |
+        | --- ---|
+        |  B | C |
+        |---------
+        We return B and A as drawable chunks. TiledImageVisual will render
+        A first and then B. So looking at the region coverede by A, the 1/4
+        occupied by B will be at the target resolution, the remaining 3/4
+        will be at a a lower resoution.
+
+        In many cases drawing one level lower resolution than the target will
+        be barely noticeable by the user. And once the chunk is loaded it
+        will update to full resolution.
 
         Parameters
         ----------
         visible : List[OctreeChunk]
-            The chunks which are visible to the camera.
+            The chunks which are visible to the current view.
         layer_key : LayerKey
             The layer we loading chunks into.
 
@@ -52,10 +91,7 @@ class OctreeChunkLoader:
         List[OctreeChunk]
             The chunks that can be drawn.
         """
-        # How many visible chunks are we dealing with.
-        count = len(visible)
-
-        # Create a set for fast access.
+        # Create a set for fast membership testing.
         visible_set = set(octree_chunk.key for octree_chunk in visible)
 
         # Remove chunks from self._last_visible if they are no longer
@@ -64,44 +100,12 @@ class OctreeChunkLoader:
             if key not in visible_set:
                 self._last_visible.remove(key)
 
-        def _log(i, label, chunk):
-            LOGGER.debug(
-                "Visible Chunk: %d of %d -> %s: %s", i, count, label, chunk
-            )
+        drawable = []  # Create this list of drawable chunks.
 
-        drawable = []  # TODO_OCTREE combine list/set
-        visible_set = set()
+        # Iterate through every visible chunk taking actions.
         for i, octree_chunk in enumerate(visible):
-
-            if not chunk_loader.cache.enabled:
-                new_in_view = octree_chunk.key not in self._last_visible
-                if new_in_view and octree_chunk.in_memory:
-                    # Not using cache, so if this chunk just came into view
-                    # clear it out, so it gets reloaded.
-                    octree_chunk.clear()
-
-            if octree_chunk.in_memory:
-                # The chunk is fully in memory, we can view it right away.
-                # _log(i, "ALREADY LOADED", octree_chunk)
+            if self._prepare_to_draw(octree_chunk, layer_key):
                 drawable.append(octree_chunk)
-                visible_set.add(octree_chunk.key)
-            elif octree_chunk.loading:
-                # The chunk is being loaded, do not view it yet.
-                _log(i, "LOADING:", octree_chunk)
-            else:
-                # The chunk is not in memory and is not being loaded, so
-                # we are going to load it.
-                sync_load = self._load_chunk(octree_chunk, layer_key)
-                if sync_load:
-                    # The chunk was loaded synchronously. Either it hit the
-                    # cache, or it's fast-loading data. We can draw it now.
-                    _log(i, "SYNC LOAD", octree_chunk)
-                    drawable.append(octree_chunk)
-                    visible_set.add(octree_chunk.key)
-                else:
-                    # An async load was initiated, sometime later our
-                    # self._on_chunk_loaded method will be called.
-                    _log(i, "ASYNC LOAD", octree_chunk)
 
         # Update our _last_visible set with what is in view.
         for octree_chunk in drawable:
@@ -156,3 +160,49 @@ class OctreeChunkLoader:
         # we will draw it this frame.
         octree_chunk.data = satisfied_request.chunks.get('data')
         return True
+
+    def _prepare_to_draw(
+        self, octree_chunk: OctreeChunk, layer_key: LayerKey
+    ) -> bool:
+        """Return True if this chunk is ready to be drawn.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Prepare to draw this chunk.
+
+        Return
+        ------
+        bool
+            True if this chunk can be drawn.
+        """
+        # If the cache is disabled, and this chunk just came into view,
+        # the we nuke the contents. This forces a re-load of the data.
+        #
+        # In the future we might strip every chunk that goes out of
+        # view. Then this will not be needed.
+        if not chunk_loader.cache.enabled:
+            new_in_view = octree_chunk.key not in self._last_visible
+            if new_in_view and octree_chunk.in_memory:
+                octree_chunk.clear()
+
+        # If the chunk is fully in memory, then it's drawable.
+        if octree_chunk.in_memory:
+            return True
+
+        # If the chunk is loading, it's not drawable yet.
+        if octree_chunk.loading:
+            return False
+
+        # The chunk is not in memory and is not being loaded, but it is
+        # in view. So try loading it.
+        sync_load = self._load_chunk(octree_chunk, layer_key)
+
+        # If the chunk was loaded synchronously, we can draw it now.
+        if sync_load:
+            return True
+
+        # Otherwise, an async load as initiated, and sometime later
+        # OctreeImage.on_chunk_loaded will be called with the chunk's
+        # loaded data. But we can't draw it now.
+        return False
