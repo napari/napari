@@ -78,14 +78,6 @@ class QtShapesControls(QtLayerControls):
         Raise error if shapes mode is not recognized.
     """
 
-    _connections = QtLayerControls._connections + (
-        'mode',
-        'edge_width',
-        'current_edge_color',
-        'current_face_color',
-        'editable',
-    )
-
     def __init__(self, layer):
         super().__init__(layer)
 

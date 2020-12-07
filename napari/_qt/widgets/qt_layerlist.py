@@ -513,19 +513,11 @@ class QtLayerWidget(QFrame):
         Checkbox to toggle layer visibility.
     """
 
-    _connections = (
-        'select',
-        'deselect',
-        'name',
-        'visible',
-        'thumbnail',
-    )
-
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        connect(self.layer, self, self._connections)
+        connect(self.layer, self)
 
         self.setObjectName('layer')
 
@@ -708,5 +700,5 @@ class QtLayerWidget(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect(self.layer, self, self._connections)
+        disconnect(self.layer, self)
         self.deleteLater()

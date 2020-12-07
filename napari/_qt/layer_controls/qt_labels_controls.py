@@ -68,17 +68,6 @@ class QtLabelsControls(QtLayerControls):
         FILL.
     """
 
-    _connections = QtLayerControls._connections + (
-        'mode',
-        'selected_label',
-        'brush_size',
-        'contiguous',
-        'n_dimensional',
-        'editable',
-        'preserve_labels',
-        'color_mode',
-    )
-
     def __init__(self, layer):
         super().__init__(layer)
 

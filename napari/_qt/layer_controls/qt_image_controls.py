@@ -41,14 +41,6 @@ class QtImageControls(QtBaseImageControls):
         Label for the rendering mode dropdown menu.
     """
 
-    _connections = QtBaseImageControls._connections + (
-        'interpolation',
-        'rendering',
-        'iso_threshold',
-        'attenuation',
-        '_ndisplay',
-    )
-
     def __init__(self, layer):
         super().__init__(layer)
 

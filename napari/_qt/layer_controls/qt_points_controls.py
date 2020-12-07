@@ -62,16 +62,6 @@ class QtPointsControls(QtLayerControls):
         Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
     """
 
-    _connections = QtLayerControls._connections + (
-        'mode',
-        'n_dimensional',
-        'symbol',
-        'size',
-        'current_edge_color',
-        'current_face_color',
-        'editable',
-    )
-
     def __init__(self, layer):
         super().__init__(layer)
 

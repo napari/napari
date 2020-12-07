@@ -2,18 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
-from ...utils.events import connect
-
-
-def disconnect(source, destination):
-    for em in source.events.emitters.values():
-        for callback in em.callbacks:
-            # Callback is a tuple of a weak reference and method name
-            if (
-                isinstance(callback, tuple)
-                and callback[0] is destination.__weakref__
-            ):
-                em.disconnect(callback)
+from ...utils.events import connect, disconnect
 
 
 class QtLayerControls(QFrame):
@@ -38,13 +27,11 @@ class QtLayerControls(QFrame):
         Slider controlling opacity of the layer.
     """
 
-    _connections = ('blending', 'opacity')
-
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        connect(self.layer, self, self._connections)
+        connect(self.layer, self)
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
