@@ -50,7 +50,7 @@ def test_chunk_key():
     assert key2 != key3
 
     # key4 matches key3.
-    key4 = ChunkKey(layer_key3, (0, 1))
+    key4 = ChunkKey(layer_key3)
     assert key1 != key4
     assert key1b != key4
     assert key2 != key4
