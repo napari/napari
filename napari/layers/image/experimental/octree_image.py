@@ -81,6 +81,15 @@ class OctreeImage(Image):
         """
         return True
 
+    @property
+    def _empty(self) -> bool:
+        """Is this layer completely empty so it can't be drawn.
+
+        As with self.loaded, we are never really empty. Our VispyTiledImageLayer
+        can always be drawn. Even if there is nothing to draw.
+        """
+        return False
+
     def _update_thumbnail(self):
         # TODO_OCTREE: replace Image._update_thumbnail with nothing for
         # the moment until we decide how to do thumbnail.
