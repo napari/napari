@@ -436,6 +436,7 @@ class OctreeImage(Image):
         request : ChunkRequest
             This request was loaded.
         """
+        # Pass it to the slice, it will insert the newly loaded data into
+        # the OctreeChunk at the right location.
         if self._slice.on_chunk_loaded(request):
-            # Tell the visual to redraw with this new chunk.
-            self.events.loaded()
+            self.events.loaded()  # Redraw with teh new chunk.
