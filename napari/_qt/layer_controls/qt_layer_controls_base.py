@@ -34,6 +34,9 @@ class QtLayerControls(QFrame):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
+        self.destroyed.connect(self._disconnect_events)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -109,8 +112,7 @@ class QtLayerControls(QFrame):
             )
             self.blendComboBox.setCurrentIndex(index)
 
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
+    def _disconnect_events(self, ev):
+        """Disconnect events when widget is closing."""
+        print('asfdasdfasdfsdf')
         disconnect_events(self.layer.events, self)
-        self.deleteLater()

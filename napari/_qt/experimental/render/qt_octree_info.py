@@ -3,6 +3,7 @@
 Shows octree-specific information in the QtRender widget.
 """
 import numpy as np
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QFrame, QVBoxLayout
 
 from ....components.experimental import chunk_loader
@@ -149,11 +150,13 @@ class QtOctreeInfo(QFrame):
         layer.events.octree_level.connect(self._update)
         layer.events.tile_size.connect(self._update)
 
+        self.destroyed.connect(self._disconnect_events)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
     def _update(self, _event=None):
         """Set controls based on the current layer setting."""
         self.layout.set_controls(self.layer)
 
-    def close(self):
-        """Close and disconnect any connections."""
+    def _disconnect_events(self):
+        """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        super().close()

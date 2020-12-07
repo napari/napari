@@ -458,12 +458,12 @@ class QtLabelsControls(QtLayerControls):
             self.layer.editable,
         )
 
-    def close(self):
-        """Layer widget is closing."""
-        # The colorBox must be explicitly closed as it contains
-        # layer connections which must be disconnected
-        self.colorBox.close()
-        super().close()
+    # def close(self):
+    #     """Layer widget is closing."""
+    #     # The colorBox must be explicitly closed as it contains
+    #     # layer connections which must be disconnected
+    #     self.colorBox.close()
+    #     super().close()
 
 
 class QtColorBox(QWidget):
@@ -483,6 +483,9 @@ class QtColorBox(QWidget):
             self._on_selected_label_change
         )
         self.layer.events.opacity.connect(self._on_opacity_change)
+
+        self.destroyed.connect(self._disconnect_events)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self._height = 24
         self.setFixedWidth(self._height)
@@ -537,8 +540,6 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
 
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
+    def _disconnect_events(self):
+        """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        self.deleteLater()

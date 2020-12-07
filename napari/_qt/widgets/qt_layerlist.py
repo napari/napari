@@ -523,6 +523,9 @@ class QtLayerWidget(QFrame):
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.thumbnail.connect(self._on_thumbnail_change)
 
+        self.destroyed.connect(self._disconnect_events)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self.setObjectName('layer')
 
         self.layout = QHBoxLayout()
@@ -701,8 +704,6 @@ class QtLayerWidget(QFrame):
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
 
-    def close(self):
-        """Layer widget is closing."""
-        super().close()
+    def _disconnect_events(self):
+        """Disconnect events when widget is closing."""
         disconnect_events(self.layer.events, self)
-        self.deleteLater()
