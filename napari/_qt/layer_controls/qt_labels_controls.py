@@ -478,7 +478,7 @@ class QtColorBox(QWidget):
         )
         self.layer.events.opacity.connect(self._on_opacity_change)
 
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        # self.setAttribute(Qt.WA_DeleteOnClose)
 
         self._height = 24
         self.setFixedWidth(self._height)
