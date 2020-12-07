@@ -35,29 +35,34 @@ class OctreeChunkLoader:
     ) -> List[OctreeChunk]:
         """Return the chunks that can be drawn, of the visible chunks.
 
-        Drawable chunks are typically the ones that are fully in memory.
-        Either they were always in memory, or they are now in memory after
-        having been loaded asynchronously by the hunkLoader.
+        Visible chunks are within the bounds of the OctreeView, but those
+        chunks may or may not be drawable. Drawable chunks are typically
+        ones that were fully in memory to start, or have been loaded
+        so the data is now in memory.
 
         Parameters
         ----------
         visible : List[OctreeChunk]
             The chunks which are visible to the camera.
+        layer_key : LayerKey
+            The layer we loading chunks into.
 
         Return
         ------
         List[OctreeChunk]
             The chunks that can be drawn.
         """
+        # How many visible chunks are we dealing with.
+        count = len(visible)
+
+        # Create a set for fast access.
         visible_set = set(octree_chunk.key for octree_chunk in visible)
 
-        # Remove any chunks from our self._last_visible set which are no
-        # longer in view.
+        # Remove chunks from self._last_visible if they are no longer
+        # in the visible set. If they are no longer in view.
         for key in list(self._last_visible):
             if key not in visible_set:
                 self._last_visible.remove(key)
-
-        count = len(visible)
 
         def _log(i, label, chunk):
             LOGGER.debug(
