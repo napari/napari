@@ -154,5 +154,6 @@ class QtOctreeInfo(QFrame):
         self.layout.set_controls(self.layer)
 
     def close(self):
-        """Vispy visual is closing."""
+        """Close and disconnect any connections."""
+        super().close()
         disconnect_events(self.layer, self)
