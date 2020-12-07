@@ -63,7 +63,8 @@ def test_loader():
         return  # temporary until we add the @async_only pytest mark
 
     layer = _create_layer()
-    key = ChunkKey(layer, (0, 0))
+    layer_key = LayerKey.from_layer(layer, (0, 0))
+    key = ChunkKey(layer_key)
 
     shape = (64, 32)
     transpose_shape = (32, 64)
