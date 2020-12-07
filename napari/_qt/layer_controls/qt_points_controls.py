@@ -67,9 +67,7 @@ class QtPointsControls(QtLayerControls):
         super().__init__(layer)
 
         # Note this event is emmited from the TextManager
-        self.layer._text.events.visible.connect(
-            self._on_text_visibility_change
-        )
+        self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -125,7 +123,7 @@ class QtPointsControls(QtLayerControls):
 
         text_disp_cb = QCheckBox()
         text_disp_cb.setToolTip('toggle text visibility')
-        text_disp_cb.setChecked(self.layer._text.visible)
+        text_disp_cb.setChecked(self.layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
@@ -248,9 +246,9 @@ class QtPointsControls(QtLayerControls):
             Checkbox indicating if text is visible.
         """
         if state == Qt.Checked:
-            self.layer._text.visible = True
+            self.layer.text.visible = True
         else:
-            self.layer._text.visible = False
+            self.layer.text.visible = False
 
     def _on_text_visibility_change(self, event):
         """Receive layer model text visibiltiy change change event and update checkbox.
@@ -260,8 +258,8 @@ class QtPointsControls(QtLayerControls):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.layer._text.events.visible.blocker():
-            self.textDispCheckBox.setChecked(self.layer._text.visible)
+        with self.layer.text.events.visible.blocker():
+            self.textDispCheckBox.setChecked(self.layer.text.visible)
 
     def _on_n_dimensional_change(self, event):
         """Receive layer model n-dimensional change event and update checkbox.
@@ -338,5 +336,5 @@ class QtPointsControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
-        disconnect_events(self.layer._text, self)
+        disconnect_events(self.layer.text, self)
         super().close()
