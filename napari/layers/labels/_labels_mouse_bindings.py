@@ -66,8 +66,6 @@ def draw(layer, event):
                 layer.fill(c, new_label, refresh=False)
         if not refresh_future or refresh_future.done():
             refresh_future = refresh_executor.submit(refresh, layer)
-        else:
-            print("skipped")
         last_cursor_coord = layer.coordinates
         yield
 
