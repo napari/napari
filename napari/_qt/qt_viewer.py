@@ -1,6 +1,5 @@
 import os.path
 import warnings
-from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -580,7 +579,7 @@ class QtViewer(QSplitter):
         mapped_position = transform.map(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
-        position_world = copy(self.viewer.dims.point)
+        position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
 
