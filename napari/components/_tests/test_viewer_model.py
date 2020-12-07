@@ -633,12 +633,15 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
     # Check layer added correctly
     assert len(viewer.layers) == 1
 
+# check that adding a layer created new callbacks
+assert any(len(em.callbacks) > 1 for em in layer.events.emitters.values())
+
     viewer.layers.remove(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 0
 
     # Check that all callbacks have been removed
-    len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
@@ -667,11 +670,14 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     # Check layer added correctly
     assert len(viewer.layers) == 1
 
+# check that adding a layer created new callbacks
+assert any(len(em.callbacks) > 1 for em in layer.events.emitters.values())
+
     viewer.layers.remove(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 0
 
     # Check that all internal callbacks have been removed
-    len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 1
