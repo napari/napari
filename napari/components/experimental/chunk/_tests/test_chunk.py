@@ -35,32 +35,33 @@ def test_chunk_key():
     layer_key2 = _create_layer_key(layer2, (0, 0))
 
     # key1 and key2 should be identical.
-    key1 = ChunkKey(layer_key1, (0, 0))
-    key2 = ChunkKey(layer_key1, (0, 0))
-    assert key1 == key2
-    assert key1.key == key2.key
+    key1 = ChunkKey(layer_key1)
+    key1b = ChunkKey(layer_key1)
+    assert key1 == key1b
+    assert key1.key == key1b.key
 
     # Check key1 attributes.
     assert key1.layer_key.layer_id == id(layer1)
     assert key1.layer_key.data_level == layer1.data_level
 
-    # key3 is for a different layer.
-    key3 = ChunkKey(layer_key2, (0, 0))
-    assert key1 != key3
-    assert key2 != key3
+    # key2 is for a different layer.
+    key2 = ChunkKey(layer_key2)
+    assert key1 != key2
+    assert key2 != key2
 
     # key4 has different indices.
-    key4 = ChunkKey(layer_key2, (0, 1))
-    assert key1 != key4
-    assert key2 != key4
-    assert key3 != key4
+    layer_key3 = _create_layer_key(layer2, (0, 1))
+    key3 = ChunkKey(layer_key3)
+    assert key1 != key3
+    assert key1b != key3
+    assert key2 != key3
 
-    # key5 matches key4.
-    key5 = ChunkKey(layer_key2, (0, 1))
-    assert key1 != key5
-    assert key2 != key5
-    assert key3 != key5
-    assert key4 == key5
+    # key4 matches key3.
+    key4 = ChunkKey(layer_key3, (0, 1))
+    assert key1 != key4
+    assert key1b != key4
+    assert key2 != key4
+    assert key3 == key4
 
 
 def test_loader():
