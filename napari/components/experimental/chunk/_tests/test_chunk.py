@@ -47,7 +47,7 @@ def test_chunk_key():
     # key2 is for a different layer.
     key2 = ChunkKey(layer_key2)
     assert key1 != key2
-    assert key2 != key2
+    assert key1b != key2
 
     # key4 has different indices.
     layer_key3 = _create_layer_key(layer2, (0, 1))
