@@ -139,7 +139,7 @@ class TiledImageVisual(ImageVisual):
         #     return self._data.shape[:2][::-1]
         #
         # We don't have a self._data so what do we put here? Maybe need
-        # a bounds for all the currently visible tiles?
+        # a bounds for all the currently drawable tiles?
         # return self._texture_atlas.texture_shape[:2]
         #
         return (1024, 1024)
@@ -232,14 +232,14 @@ class TiledImageVisual(ImageVisual):
         # to include this new chunk.
         self._need_vertex_update = True
 
-    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
-        """Remove tiles that are not part of the given visible set.
+    def prune_tiles(self, drawable_set: Set[OctreeChunk]) -> None:
+        """Remove tiles that are not part of the given drawable set.
 
-        visible_set : Set[OctreeChunk]
-            The set of currently visible chunks.
+        drawable_set : Set[OctreeChunk]
+            The set of currently drawable chunks.
         """
         for tile_data in list(self._tiles.tile_data):
-            if tile_data.octree_chunk.key not in visible_set:
+            if tile_data.octree_chunk.key not in drawable_set:
                 tile_index = tile_data.atlas_tile.index
                 self._remove_tile(tile_index)
 

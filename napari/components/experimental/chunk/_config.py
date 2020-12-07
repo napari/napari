@@ -150,7 +150,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
 
     octree_config = OctreeConfig(tile_size=octree_data.get("tile_size", 64))
 
-    config = AsyncConfig(
+    new_config = AsyncConfig(
         log_path=data.get("log_path"),
         force_synchronous=data.get("force_synchronous", True),
         num_workers=data.get("num_workers", 6),
@@ -160,11 +160,11 @@ def _create_async_config(data: dict) -> AsyncConfig:
         octree=octree_config,
     )
 
-    _log_to_file(config.log_path)
+    _log_to_file(new_config.log_path)
     LOGGER.info("_create_async_config = ")
-    LOGGER.info(json.dumps(data, indent=4, sort_keys=True))
+    LOGGER.info(json.dumps(new_config, indent=4, sort_keys=True))
 
-    return config
+    return new_config
 
 
 # The global config settings instance.

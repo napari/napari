@@ -1,11 +1,10 @@
 """OctreeChunk class
 """
-from typing import NamedTuple, Optional, Tuple
+from typing import NamedTuple
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkKey
-from ....layers import Layer
+from ....components.experimental.chunk import ChunkKey, LayerKey
 from ....types import ArrayLike
 
 
@@ -63,13 +62,10 @@ class OctreeChunkKey(ChunkKey):
     """
 
     def __init__(
-        self,
-        layer: Layer,
-        indices: Tuple[Optional[slice], ...],
-        location: OctreeLocation,
+        self, layer_key: LayerKey, location: OctreeLocation,
     ):
         self.location = location
-        super().__init__(layer, indices)
+        super().__init__(layer_key)
 
     def _get_hash_values(self):
         # TODO_OCTREE: can't we just has with parent's hashed key instead

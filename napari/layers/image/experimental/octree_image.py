@@ -1,15 +1,19 @@
 """OctreeImage class.
+
+An eventual replacement for Image that combines single-scale and
+chunked/tiled multi-scale into one implementation.
 """
 import logging
 from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, chunk_loader
+from ....components.experimental.chunk import ChunkRequest, LayerKey, LayerRef
 from ....utils.events import Event
 from ..image import Image
+from ._octree_chunk_loader import OctreeChunkLoader
 from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
-from .octree_chunk import OctreeChunk, OctreeChunkKey
+from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, SliceConfig
@@ -27,44 +31,67 @@ class OctreeImage(Image):
 
     Background
     ----------
-    OctreeImage is meant to eventually replace the existing Image class. The
-    original Image class handled single-scale and multi-scale images, but they
-    were handled quite differently. And its multi-scale did not use chunks or
-    tiles.
+    The original Image class handled single-scale and multi-scale images,
+    but they were handled quite differently. And its multi-scale did not
+    use chunks or tiles. It worked well locally, but was basically unusable
+    for remote or high latency data.
 
     OctreeImage always uses chunk/tiles. Today those tiles are always
     "small". However, as a special case, if an image is smaller than the
     max texture size, we could some day allow OctreeImage to set its tile
     size equal to that image size.
 
-    At that point "small" images would be single-tile single-level
-    OctreeImages. Therefore they should be as as efficient as the original
-    Image's single-scale images. But larger images would have
-    multiple-tiles and multiple-levels. The goal is to have one class and
-    one code path for all types of images.
+    At that point "small" images would be draw with a single texture,
+    the same way the old Image class drew then. So it would be very
+    efficient.
+
+    But larger images would have multiple chunks/tiles and multiple levels.
+    Unlike the original Image class multi-scale, the chunks/tiles mean we
+    only have to incrementally load more data as the user pans and zooms.
+
+    The goal is OctreeImage gets renamed to just Image and it efficiently
+    handles images of any size. It make take a while to get there.
+
+    Attributes
+    ----------
+    _view : OctreeView
+        Describes a view frustum which implies what portion of the OctreeImage
+        needs to be draw.
+    _slice : OctreeMultiscaleSlice
+        When _set_view_slice() is called we create a OctreeMultiscaleSlice()
+        that's looking at some specific slice of the data.
+
+        While the Image._slice was the data that was drawn on the screen,
+        an OctreeMultiscaleSlice contains a full Octree. The OctreeImage
+        visuals (VispyTiledImageLayer and TiledImageVisual) draw only
+        the portion for OctreeImage which is visible in the OctreeView.
+    _display : OctreeDisplayOptions
+        Settings for how we draw the octree, such as tile size.
+    _loader : OctreeChunkLoader
+        Uses the napari ChunkLoader to load OctreeChunks.
     """
 
     def __init__(self, *args, **kwargs):
 
         self._view: OctreeView = None
-
-        self._slice = None
-
-        # Temporary to implement a disabled cache.
-        self._last_visible_set = set()
-
-        # For logging only
-        self.frame_count = 0
-
+        self._slice: OctreeMultiscaleSlice = None
         self._display = OctreeDisplayOptions()
+
+        # For logging, probably temporary
+        self.frame_count = 0
 
         # super().__init__ will call our _set_view_slice() which is kind
         # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
 
+        # Call after super().__init__
+        layer_ref = LayerRef.create_from_layer(self)
+        self._loader: OctreeChunkLoader = OctreeChunkLoader(layer_ref)
+
         self.events.add(octree_level=Event, tile_size=Event)
 
-        # TODO_OCTREE: bad to have to set this after...
+        # TODO_OCTREE: this is hack that we assign OctreeDisplayOptions
+        # this event after super().__init__(). Will cleanup soon.
         self._display.loaded_event = self.events.loaded
 
     def _get_value(self):
@@ -211,7 +238,13 @@ class OctreeImage(Image):
 
     @property
     def num_octree_levels(self) -> int:
-        """Return the total number of octree levels."""
+        """Return the total number of octree levels.
+
+        Return
+        ------
+        int
+            The number of octree levels.
+        """
         return len(self.data)  # Multiscale
 
     def _new_empty_slice(self) -> None:
@@ -224,106 +257,45 @@ class OctreeImage(Image):
         The empty slice was needed to satisfy the old VispyImageLayer that
         used a single ImageVisual. But OctreeImage is drawn with
         VispyTiledImageVisual. It does not need an empty image. It gets
-        chunks from our self.visible_chunks property, and it will just draw
+        chunks from our self.drawable_chunks property, and it will just draw
         nothing if that returns an empty list.
 
         When OctreeImage become the only image class, this can go away.
         """
 
     @property
-    def visible_chunks(self) -> List[OctreeChunk]:
-        """Chunks in the current slice which in currently in view."""
+    def drawable_chunks(self) -> List[OctreeChunk]:
+        """Chunks in the current slice which are drawable.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The drawable chunks.
+        """
         if self._slice is None or self._view is None:
             return []
 
-        chunks = self._slice.get_visible_chunks(self._view)
+        visible_chunks = self._slice.get_visible_chunks(self._view)
 
-        LOGGER.debug(
-            "OctreeImage.visible_chunks: frame=%d num_chunks=%d",
-            self.frame_count,
-            len(chunks),
-        )
-        self.frame_count += 1
-
-        visible_set = set(octree_chunk.key for octree_chunk in chunks)
-
-        # Remove any chunks from our self._last_visible set which are no
-        # longer in view.
-        for key in list(self._last_visible_set):
-            if key not in visible_set:
-                self._last_visible_set.remove(key)
-
-        # If calling _slice.get_visible_chunks() switched the slice to
+        # If calling _slice.drawable_chunks() switched the slice to
         # a new octree level, then update our data_level to match. This
         # will do nothing if the level didn't change.
         self.data_level = self._slice.octree_level
 
-        def _log(i, count, label, chunk):
-            LOGGER.debug(
-                "Visible Chunk: %d of %d -> %s: %s", i, count, label, chunk
-            )
-
-        visible_chunks = []  # TODO_OCTREE combine list/set
-        visible_set = set()
-        for i, octree_chunk in enumerate(chunks):
-
-            if not chunk_loader.cache.enabled:
-                new_in_view = octree_chunk.key not in self._last_visible_set
-                if new_in_view and octree_chunk.in_memory:
-                    # Not using cache, so if this chunk just came into view
-                    # clear it out, so it gets reloaded.
-                    octree_chunk.clear()
-
-            if octree_chunk.in_memory:
-                # The chunk is fully in memory, we can view it right away.
-                # _log(i, len(chunks), "ALREADY LOADED", octree_chunk)
-                visible_chunks.append(octree_chunk)
-                visible_set.add(octree_chunk.key)
-            elif octree_chunk.loading:
-                # The chunk is being loaded, do not view it yet.
-                _log(i, len(chunks), "LOADING:", octree_chunk)
-            else:
-                # The chunk is not in memory and is not being loaded, so
-                # we are going to load it.
-                sync_load = self._load_chunk(octree_chunk)
-                if sync_load:
-                    # The chunk was loaded synchronously. Either it hit the
-                    # cache, or it's fast-loading data. We can draw it now.
-                    _log(i, len(chunks), "SYNC LOAD", octree_chunk)
-                    visible_chunks.append(octree_chunk)
-                    visible_set.add(octree_chunk.key)
-                else:
-                    # An async load was initiated, sometime later our
-                    # self._on_chunk_loaded method will be called.
-                    _log(i, len(chunks), "ASYNC LOAD", octree_chunk)
-
-        # Update our _last_visible_set with what is in view.
-        for octree_chunk in chunks:
-            self._last_visible_set.add(octree_chunk.key)
-
-        return visible_chunks
-
-    def _load_chunk(self, octree_chunk: OctreeChunk) -> None:
+        LOGGER.debug(
+            "OctreeImage.drawable_chunks: frame=%d num_chunks=%d",
+            self.frame_count,
+            len(visible_chunks),
+        )
+        self.frame_count += 1
 
         indices = np.array(self._slice_indices)
-        key = OctreeChunkKey(self, indices, octree_chunk.location)
+        layer_key = LayerKey.from_layer(self, indices)
 
-        chunks = {'data': octree_chunk.data}
-
-        octree_chunk.loading = True
-
-        # Create the ChunkRequest and load it with the ChunkLoader.
-        request = chunk_loader.create_request(self, key, chunks)
-
-        satisfied_request = chunk_loader.load_chunk(request)
-
-        if satisfied_request is None:
-            return False  # Load was async.
-
-        # Load was sync so we can insert the data into the octree
-        # and we will draw it this frame.
-        octree_chunk.data = satisfied_request.chunks.get('data')
-        return True
+        # Calling get_drawable_chunks() will get us the chunks that are
+        # ready to be draw. Also, it might initiate async loads on other
+        # chunks, so that they will become drawable in the future.
+        return self._loader.get_drawable_chunks(visible_chunks, layer_key)
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -352,7 +324,7 @@ class OctreeImage(Image):
 
         # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
-        # visible_chunks() method.
+        # drawable_chunks() method.
         self._view = OctreeView(corners, shape_threshold, self.display)
 
     def get_intersection(self) -> OctreeIntersection:

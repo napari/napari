@@ -6,6 +6,7 @@ from typing import Optional
 from ....components.experimental.chunk import (
     ChunkKey,
     ChunkRequest,
+    LayerRef,
     chunk_loader,
 )
 from ....types import ArrayLike
@@ -76,7 +77,8 @@ class ChunkedSliceData(ImageSliceData):
             chunks['thumbnail_source'] = self.thumbnail_source
 
         # Create the ChunkRequest and load it with the ChunkLoader.
-        self.request = chunk_loader.create_request(self.layer, key, chunks)
+        layer_ref = LayerRef.create_from_layer(self.layer)
+        self.request = chunk_loader.create_request(layer_ref, key, chunks)
         satisfied_request = chunk_loader.load_chunk(self.request)
 
         if satisfied_request is None:
