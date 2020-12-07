@@ -12,16 +12,22 @@ LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeChunkLoader:
-    """Load chunks for the octree."""
+    """Load chunks for the octree.
+
+    Parameters
+    ----------
+    layer_ref : LayerRef
+        A weak reference to the layer we are loading chunks for.
+    """
 
     def __init__(self, layer_ref: LayerRef):
         self._layer_ref = layer_ref
-        self._last_visible_set = set()
+        self._last_visible = set()
 
     def get_drawable_chunks(
         self, visible: List[OctreeChunk], layer_key: LayerKey
     ) -> List[OctreeChunk]:
-        """Of the given visible chunks, return only the ones that are drawable.
+        """Return the chunks that can be drawn, of the visible chunks.
 
         Drawable chunks are typically the ones that are fully in memory.
         Either they were always in memory, or they are now in memory after
@@ -31,14 +37,19 @@ class OctreeChunkLoader:
         ----------
         visible : List[OctreeChunk]
             The chunks which are visible to the camera.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The chunks that can be drawn.
         """
         visible_set = set(octree_chunk.key for octree_chunk in visible)
 
         # Remove any chunks from our self._last_visible set which are no
         # longer in view.
-        for key in list(self._last_visible_set):
+        for key in list(self._last_visible):
             if key not in visible_set:
-                self._last_visible_set.remove(key)
+                self._last_visible.remove(key)
 
         count = len(visible)
 
@@ -52,7 +63,7 @@ class OctreeChunkLoader:
         for i, octree_chunk in enumerate(visible):
 
             if not chunk_loader.cache.enabled:
-                new_in_view = octree_chunk.key not in self._last_visible_set
+                new_in_view = octree_chunk.key not in self._last_visible
                 if new_in_view and octree_chunk.in_memory:
                     # Not using cache, so if this chunk just came into view
                     # clear it out, so it gets reloaded.
@@ -81,9 +92,9 @@ class OctreeChunkLoader:
                     # self._on_chunk_loaded method will be called.
                     _log(i, "ASYNC LOAD", octree_chunk)
 
-        # Update our _last_visible_set with what is in view.
+        # Update our _last_visible set with what is in view.
         for octree_chunk in drawable:
-            self._last_visible_set.add(octree_chunk.key)
+            self._last_visible.add(octree_chunk.key)
 
         return drawable
 
