@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 
 
-def connect(source, destination, connections=None):
+def connect_events(source, destination, connections=None):
     if connections is None:
         # connection None then do automatically
         for event_name in source.events.emitters.keys():
@@ -25,7 +25,7 @@ def connect(source, destination, connections=None):
         raise ValueError('Connections not recognized')
 
 
-def disconnect(source, destination, connections=None):
+def disconnect_events(source, destination, connections=None):
     if connections is None:
         # connection None then do automatically
         for em in source.events.emitters.values():

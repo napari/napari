@@ -2,7 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
-from ...utils.events import connect, disconnect
+from ...utils.events import connect_events, disconnect_events
 
 
 class QtLayerControls(QFrame):
@@ -31,7 +31,7 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.layer = layer
-        connect(self.layer, self)
+        connect_events(self.layer, self)
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -110,5 +110,5 @@ class QtLayerControls(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect(self.layer, self)
+        disconnect_events(self.layer, self)
         self.deleteLater()

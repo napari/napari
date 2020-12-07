@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils import config
-from ...utils.events import connect, disconnect
+from ...utils.events import connect_events, disconnect_events
 
 if TYPE_CHECKING:
     from ..experimental.qt_chunk_receiver import QtChunkReceiver
@@ -132,6 +132,7 @@ class QtLayerList(QScrollArea):
         widget = self.vbox_layout.itemAt(index).widget()
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
+        disconnect_events(widget.layer, self)
         widget.layer.events.select.disconnect(self._scroll_on_select)
         widget.close()
         self.vbox_layout.removeWidget(divider)
@@ -517,7 +518,7 @@ class QtLayerWidget(QFrame):
         super().__init__()
 
         self.layer = layer
-        connect(self.layer, self)
+        connect_events(self.layer, self)
 
         self.setObjectName('layer')
 
@@ -700,5 +701,5 @@ class QtLayerWidget(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect(self.layer, self)
+        disconnect_events(self.layer, self)
         self.deleteLater()

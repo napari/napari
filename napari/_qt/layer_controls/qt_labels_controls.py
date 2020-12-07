@@ -19,7 +19,7 @@ from ...layers.labels._labels_constants import (
     LabelColorMode,
     Mode,
 )
-from ...utils.events import connect, disconnect
+from ...utils.events import connect_events, disconnect_events
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -460,13 +460,11 @@ class QtColorBox(QWidget):
         An instance of a napari layer.
     """
 
-    _connections = ('selected_label', 'opacity')
-
     def __init__(self, layer):
         super().__init__()
 
         self.layer = layer
-        connect(self.layer, self, self._connections)
+        connect_events(self.layer, self)
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
@@ -523,5 +521,5 @@ class QtColorBox(QWidget):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect(self.layer, self, self._connections)
+        disconnect_events(self.layer, self)
         self.deleteLater()
