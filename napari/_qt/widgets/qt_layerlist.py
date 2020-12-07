@@ -69,6 +69,8 @@ class QtLayerList(QScrollArea):
         super().__init__()
 
         self.layers = layers
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scrollWidget = QWidget()
@@ -134,6 +136,7 @@ class QtLayerList(QScrollArea):
         self.vbox_layout.removeWidget(widget)
         disconnect_events(widget.layer.events, self)
         widget.close()
+        widget.deleteLater()
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
