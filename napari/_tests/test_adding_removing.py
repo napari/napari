@@ -55,7 +55,7 @@ def test_adding_removing_layer(make_test_viewer):
     layer = Image(data)
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
+    assert len(layer.events.callbacks) == 0
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 0
 
@@ -64,6 +64,8 @@ def test_adding_removing_layer(make_test_viewer):
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
 
     # Remove layer, viewer resets
     layer = viewer.layers[0]
@@ -100,16 +102,18 @@ def test_add_remove_layer_external_callbacks(
     layer.events.connect(my_custom_callback)
 
     # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 1
+    assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
     assert len(viewer.layers) == 1
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
 
     viewer.layers.remove(layer)
-    # Check layer added correctly
+    # Check layer removed correctly
     assert len(viewer.layers) == 0
 
     # Check that all internal callbacks have been removed

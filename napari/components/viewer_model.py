@@ -543,6 +543,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         event : :class:`napari.layers.Layer`
             Layer to add.
         """
+        print('asdfasdfasdfasdfs')
         layer = event.value
 
         # Coerce name into being unique and connect event to ensure uniqueness
