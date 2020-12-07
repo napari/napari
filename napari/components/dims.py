@@ -139,6 +139,9 @@ class Dims:
         self._on_ndim_set(max_ndim)
 
     def _on_ndim_set(self, ndim):
+        """Adjust lengths of other attributes based on number of dimensions.
+        """
+        # Gets called after the ndim attribute is set.
         if len(self.range) < ndim:
             # Range value is (min, max, step) for the entire slider
             self._range = ((0, 2, 1),) * (ndim - len(self.range)) + self.range
@@ -173,21 +176,26 @@ class Dims:
         elif len(self.axis_labels) > ndim:
             self._axis_labels = self.axis_labels[-ndim:]
 
+        # Normally we wouldn't need to set the `ndim` here too
+        # but this lets us use the method in the post-init too
         self._ndim = ndim
 
     def _on_order_set(self, order):
+        """Check the values of the order attribute."""
         if not set(order) == set(range(self.ndim)):
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
             )
 
     def _on_axis_labels_set(self, axis_labels):
+        """Check the length of the axis_labels attribute."""
         if not len(axis_labels) == self.ndim:
             raise ValueError(
                 f"Invalid number of axis labels {len(axis_labels)} for {self.ndim} dimensions"
             )
 
     def _on_range_set(self, range_var):
+        """Check the length of the range attribute."""
         if not len(range_var) == self.ndim:
             raise ValueError(
                 f"Invalid length range {len(range_var)} for {self.ndim} dimensions"
