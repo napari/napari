@@ -1,16 +1,11 @@
 """OctreeImage class.
 """
 import logging
-from dataclasses import dataclass
 from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import (
-    ChunkRequest,
-    async_config,
-    chunk_loader,
-)
+from ....components.experimental.chunk import ChunkRequest, chunk_loader
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
@@ -18,31 +13,9 @@ from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import NormalNoise, SliceConfig
+from .octree_util import NormalNoise, OctreeDisplayOptions, SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
-
-
-@dataclass
-class OctreeDisplayOptions:
-    """Options for how to display the octree.
-
-    Attributes
-    -----------
-    tile_size : int
-        The size of the display tiles, for example 256.
-    freeze_level : bool
-        If True we do not automatically pick the right data level.
-    track_view : bool
-        If True the displayed tiles track the view, the normal mode.
-    show_grid : bool
-        If True draw a grid around the tiles for debugging or demos.
-    """
-
-    tile_size: int = async_config.octree.tile_size
-    freeze_level: bool = False
-    track_view: bool = True
-    show_grid: bool = True
 
 
 class OctreeImage(Image):
@@ -121,26 +94,9 @@ class OctreeImage(Image):
         return np.zeros((64, 64, 3))  # fake: does octree need this?
 
     @property
-    def track_view(self) -> bool:
-        """Return True if we changing what's dispays as the view changes.
-
-        Return
-        ------
-        bool
-            True if we are tracking the current view.
-        """
-        return self._display.track_view
-
-    @track_view.setter
-    def track_view(self, value: bool) -> None:
-        """Set whether we are tracking the current view.
-
-        Parameters
-        ----------
-        value : bool
-            True if we should track the current view.
-        """
-        self._display.track_view = value
+    def display(self) -> OctreeDisplayOptions:
+        """The display options for this octree image layer."""
+        return self._display
 
     @property
     def tile_size(self) -> int:
@@ -405,9 +361,7 @@ class OctreeImage(Image):
         # Update our self._view to to catpure the state of things right
         # before we are drawn. Our self._view will used by our
         # visible_chunks() method.
-        self._view = OctreeView(
-            corners, shape_threshold, self.freeze_level, self.track_view
-        )
+        self._view = OctreeView(corners, shape_threshold, self.display)
 
         if need_refresh:
             self.refresh()

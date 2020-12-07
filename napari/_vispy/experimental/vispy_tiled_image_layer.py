@@ -159,7 +159,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         int
             The number of chunks that still need to be added.
         """
-        if not self.layer.track_view:
+        if not self.layer.display.track_view:
             # Tracking the view is the normal mode, where the tiles load in as
             # the view moves. Not tracking the view is only used for debugging
             # or demos, to show the tiles we "were" showing previously, without

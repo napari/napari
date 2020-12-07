@@ -1,8 +1,33 @@
 """Octree utility classes.
 """
+from dataclasses import dataclass
 from typing import NamedTuple, Tuple
 
 import numpy as np
+
+from ....components.experimental.chunk import async_config
+
+
+@dataclass
+class OctreeDisplayOptions:
+    """Options for how to display the octree.
+
+    Attributes
+    -----------
+    tile_size : int
+        The size of the display tiles, for example 256.
+    freeze_level : bool
+        If True we do not automatically pick the right data level.
+    track_view : bool
+        If True the displayed tiles track the view, the normal mode.
+    show_grid : bool
+        If True draw a grid around the tiles for debugging or demos.
+    """
+
+    tile_size: int = async_config.octree.tile_size
+    freeze_level: bool = False
+    track_view: bool = True
+    show_grid: bool = True
 
 
 class TestImageSettings(NamedTuple):

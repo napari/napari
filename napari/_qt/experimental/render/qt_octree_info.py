@@ -101,14 +101,16 @@ class QtOctreeInfoLayout(QVBoxLayout):
             self.layer.delay_ms = NormalNoise(mean, std_dev)
 
         def on_set_track(value: int):
-            self.layer.track_view = value != 0
+            self.layer.display.track_view = value != 0
 
         # Toggle the ChunkCache.
         cache_enabled = chunk_loader.cache.enabled
         self._create_checkbox("Chunk Cache", cache_enabled, on_set_cache)
 
         # Toggle tracking: drawn tiles track view as it moves.
-        self._create_checkbox("Track View", layer.track_view, on_set_track)
+        self._create_checkbox(
+            "Track View", layer.display.track_view, on_set_track
+        )
 
         # Toggle debug grid drawn around tiles.
         self._create_checkbox("Show Grid", layer.show_grid, on_set_grid)
