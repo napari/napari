@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.points._points_constants import Mode, Symbol
+from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -337,7 +338,5 @@ class QtPointsControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
-        self.layer._text.events.visible.disconnect(
-            self._on_text_visibility_change
-        )
+        disconnect_events(self.layer._text, self)
         super().close()

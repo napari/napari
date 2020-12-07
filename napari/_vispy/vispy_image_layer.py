@@ -212,20 +212,3 @@ class VispyImageLayer(VispyBaseLayer):
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data
-
-    def close(self):
-        """Vispy visual is closing."""
-        super().close()
-        self.layer.events.rendering.disconnect(self._on_rendering_change)
-        self.layer.events.interpolation.disconnect(
-            self._on_interpolation_change
-        )
-        self.layer.events.colormap.disconnect(self._on_colormap_change)
-        self.layer.events.contrast_limits.disconnect(
-            self._on_contrast_limits_change
-        )
-        self.layer.events.gamma.disconnect(self._on_gamma_change)
-        self.layer.events.iso_threshold.disconnect(
-            self._on_iso_threshold_change
-        )
-        self.layer.events.attenuation.disconnect(self._on_attenuation_change)

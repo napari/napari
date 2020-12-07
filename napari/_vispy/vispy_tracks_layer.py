@@ -130,21 +130,3 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-
-    def close(self):
-        """Vispy visual is closing."""
-        super().close()
-        self.layer.events.tail_width.disconnect(self._on_appearance_change)
-        self.layer.events.tail_length.disconnect(self._on_appearance_change)
-        self.layer.events.display_id.disconnect(self._on_appearance_change)
-        self.layer.events.display_tail.disconnect(self._on_appearance_change)
-        self.layer.events.display_graph.disconnect(self._on_appearance_change)
-
-        self.layer.events.color_by.disconnect(self._on_appearance_change)
-        self.layer.events.colormap.disconnect(self._on_appearance_change)
-
-        # these events are fired when changes occur to the tracks or the
-        # graph - as the vertex buffer of the shader needs to be updated
-        # alongside the actual vertex data
-        self.layer.events.rebuild_tracks.disconnect(self._on_tracks_change)
-        self.layer.events.rebuild_graph.disconnect(self._on_graph_change)

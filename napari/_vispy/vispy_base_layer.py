@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
+from ..utils.events import disconnect_events
 from .utils_gl import get_max_texture_sizes
 
 
@@ -168,13 +169,4 @@ class VispyBaseLayer(ABC):
         """Vispy visual is closing."""
         self.node.transforms = MatrixTransform()
         self.node.parent = None
-        self.layer.events.refresh.disconnect(self._on_refresh_change)
-        self.layer.events.set_data.disconnect(self._on_data_change)
-        self.layer.events.visible.disconnect(self._on_visible_change)
-        self.layer.events.opacity.disconnect(self._on_opacity_change)
-        self.layer.events.blending.disconnect(self._on_blending_change)
-        self.layer.events.scale.disconnect(self._on_matrix_change)
-        self.layer.events.translate.disconnect(self._on_matrix_change)
-        self.layer.events.rotate.disconnect(self._on_matrix_change)
-        self.layer.events.shear.disconnect(self._on_matrix_change)
-        self.layer.events.affine.disconnect(self._on_matrix_change)
+        disconnect_events(self.layer, self)

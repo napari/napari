@@ -133,7 +133,6 @@ class QtLayerList(QScrollArea):
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
         disconnect_events(widget.layer, self)
-        widget.layer.events.select.disconnect(self._scroll_on_select)
         widget.close()
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()

@@ -15,7 +15,7 @@ from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.theme import palettes
@@ -599,23 +599,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         layer = event.value
 
-        # Disconnect all events from layer
-        layer.events.select.disconnect(self._update_active_layer)
-        layer.events.deselect.disconnect(self._update_active_layer)
-        layer.events.interactive.disconnect(self._update_interactive)
-        layer.events.cursor.disconnect(self._update_cursor)
-        layer.events.cursor_size.disconnect(self._update_cursor_size)
-        layer.events.data.disconnect(self._on_layers_change)
-        layer.events.scale.disconnect(self._on_layers_change)
-        layer.events.translate.disconnect(self._on_layers_change)
-        layer.events.rotate.disconnect(self._on_layers_change)
-        layer.events.shear.disconnect(self._on_layers_change)
-        layer.events.affine.disconnect(self._on_layers_change)
-        layer.events.name.disconnect(self.layers._update_name)
-
-        # layer.events.disconnect()
-        # for em in layer.events.emitters.values():
-        #     em.disconnect()
+        # Disconnect all connections from layer
+        disconnect_events(layer, self)
+        disconnect_events(layer, self.layers)
 
         # For the labels layer disconnect history resets
         if hasattr(layer, '_reset_history'):
