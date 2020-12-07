@@ -51,29 +51,47 @@ class OctreeImage(Image):
 
     The goal is OctreeImage gets renamed to just Image and it efficiently
     handles images of any size. It make take a while to get there.
+
+    Attributes
+    ----------
+    _view : OctreeView
+        Describes a view frustum which implies what portion of the OctreeImage
+        needs to be draw.
+    _slice : OctreeMultiscaleSlice
+        When _set_view_slice() is called we create a OctreeMultiscaleSlice()
+        that's looking at some specific slice of the data.
+
+        While the Image._slice was the data that was drawn on the screen,
+        an OctreeMultiscaleSlice contains a full Octree. The OctreeImage
+        visuals (VispyTiledImageLayer and TiledImageVisual) draw only
+        the portion for OctreeImage which is visible in the OctreeView.
+    _display : OctreeDisplayOptions
+        Settings for how we draw the octree, such as tile size.
+    _loader : OctreeChunkLoader
+        Uses the napari ChunkLoader to load OctreeChunks.
     """
 
     def __init__(self, *args, **kwargs):
 
         self._view: OctreeView = None
-
-        self._slice = None
-
-        # For logging only
-        self.frame_count = 0
-
+        self._slice: OctreeMultiscaleSlice = None
         self._display = OctreeDisplayOptions()
+
+        # For logging, probably temporary
+        self.frame_count = 0
 
         # super().__init__ will call our _set_view_slice() which is kind
         # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
 
+        # Call after super().__init__
         layer_ref = LayerRef.create_from_layer(self)
         self._loader: OctreeChunkLoader = OctreeChunkLoader(layer_ref)
 
         self.events.add(octree_level=Event, tile_size=Event)
 
-        # TODO_OCTREE: bad to have to set this after...
+        # TODO_OCTREE: this is hack that we assign OctreeDisplayOptions
+        # this event after super().__init__(). Will cleanup soon.
         self._display.loaded_event = self.events.loaded
 
     def _get_value(self):
@@ -220,7 +238,13 @@ class OctreeImage(Image):
 
     @property
     def num_octree_levels(self) -> int:
-        """Return the total number of octree levels."""
+        """Return the total number of octree levels.
+
+        Return
+        ------
+        int
+            The number of octree levels.
+        """
         return len(self.data)  # Multiscale
 
     def _new_empty_slice(self) -> None:
@@ -241,7 +265,13 @@ class OctreeImage(Image):
 
     @property
     def visible_chunks(self) -> List[OctreeChunk]:
-        """Chunks in the current slice which in currently in view."""
+        """Chunks in the current slice which in currently in view.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The visible chunks.
+        """
         if self._slice is None or self._view is None:
             return []
 
