@@ -92,6 +92,11 @@ class VispyTiledImageLayer(VispyImageLayer):
         first place. Instead of set_data() we pull our data one chunk at a
         time by calling self.layer.visible_chunks in our _update_view()
         method.
+
+        Raises
+        ------
+        NotImplementedError
+            Always raises this.
         """
         raise NotImplementedError()
 
@@ -101,6 +106,11 @@ class VispyTiledImageLayer(VispyImageLayer):
         1) Remove tiles which are no longer visible.
         2) Create tiles for newly visible chunks.
         3) Optionally update our grid based on the now visible chunks.
+
+        Return
+        ------
+        ChunkStats
+            Statistics about the update process.
         """
         # Get the currently visible chunks from the layer.
         visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
@@ -186,7 +196,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         return self.node.add_chunks(visible_chunks)
 
     def _update_tile_shape(self) -> None:
-        """Check if the tile shape was changed on us."""
+        """If the tile shape was changed, update our node."""
         # This might be overly dynamic, but for now if we see there's a new
         # tile shape we nuke our texture atlas and start over with the new
         # shape.
