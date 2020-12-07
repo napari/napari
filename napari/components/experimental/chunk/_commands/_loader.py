@@ -2,8 +2,6 @@
 """
 from typing import List
 
-import dask.array as da
-
 from ....._vendor.experimental.humanize.src.humanize import naturalsize
 from .....layers.base import Layer
 from .....layers.image import Image
@@ -75,30 +73,6 @@ class NoInfoDisplayer:
 
     def __getattr__(self, name):
         return "--"
-
-
-def _get_type_str(data) -> str:
-    """Get human readable name for the data's type.
-
-    Returns
-    -------
-    str
-        A string like "ndarray" or "dask".
-    """
-    if isinstance(data, list):
-        if len(data) == 0:
-            return "EMPTY"
-        else:
-            # Recursively get the type string of the zeroth level.
-            return _get_type_str(data[0])
-
-    if type(data) == da.Array:
-        # Special case this because otherwise data_type.__name__
-        # below would just return "Array".
-        return "dask"
-
-    # For class numpy.ndarray this returns "ndarray"
-    return type(data).__name__
 
 
 def _get_size_str(data) -> str:

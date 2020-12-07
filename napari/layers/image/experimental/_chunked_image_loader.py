@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from ....components.experimental.chunk import ChunkKey
+from ....components.experimental.chunk import ChunkKey, LayerKey, get_data_id
 from .._image_loader import ImageLoader
 from ._chunked_slice_data import ChunkedSliceData
 
@@ -36,7 +36,12 @@ class ChunkedImageLoader(ImageLoader):
         bool
             True if load happened synchronously.
         """
-        key = ChunkKey(data.layer, data.indices)
+        layer = data.layer
+        layer_key = LayerKey(
+            id(layer), get_data_id(layer.data), layer._data_level, data.indices
+        )
+
+        key = ChunkKey(layer_key)
         LOGGER.debug("ChunkedImageLoader.load: %s", key)
 
         if self.current_key is not None and self.current_key == key:

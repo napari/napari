@@ -2,7 +2,13 @@
 import numpy as np
 import pytest
 
-from napari.components.experimental.chunk import ChunkKey, chunk_loader
+from napari.components.experimental.chunk import (
+    ChunkKey,
+    LayerKey,
+    LayerRef,
+    chunk_loader,
+    get_data_id,
+)
 from napari.layers.image import Image
 from napari.utils import config
 
@@ -13,15 +19,24 @@ def _create_layer() -> Image:
     return Image(data)
 
 
+def _create_key(layer, indices) -> LayerKey:
+    return LayerKey(
+        id(layer), get_data_id(layer.data), layer._data_level, indices,
+    )
+
+
 def test_chunk_key():
     """Test the ChunkKey class."""
 
     layer1 = _create_layer()
     layer2 = _create_layer()
 
+    key1 = _create_key(layer1, (0, 0))
+    key2 = _create_key(layer2, (0, 0))
+
     # key1 and key2 should be identical.
-    key1 = ChunkKey(layer1, (0, 0))
-    key2 = ChunkKey(layer1, (0, 0))
+    key1 = ChunkKey(key1, (0, 0))
+    key2 = ChunkKey(key1, (0, 0))
     assert key1 == key2
     assert key1.key == key2.key
 
@@ -30,18 +45,18 @@ def test_chunk_key():
     assert key1.layer_key.data_level == layer1.data_level
 
     # key3 is for a different layer.
-    key3 = ChunkKey(layer2, (0, 0))
+    key3 = ChunkKey(key2, (0, 0))
     assert key1 != key3
     assert key2 != key3
 
     # key4 has different indices.
-    key4 = ChunkKey(layer2, (0, 1))
+    key4 = ChunkKey(key2, (0, 1))
     assert key1 != key4
     assert key2 != key4
     assert key3 != key4
 
     # key5 matches key4.
-    key5 = ChunkKey(layer2, (0, 1))
+    key5 = ChunkKey(key2, (0, 1))
     assert key1 != key5
     assert key2 != key5
     assert key3 != key5
@@ -67,7 +82,8 @@ def test_loader():
     data2 = data * 2
 
     # Create the ChunkRequest.
-    request = chunk_loader.create_request(layer, key, chunks)
+    layer_ref = LayerRef.create_from_layer(layer)
+    request = chunk_loader.create_request(layer_ref, key, chunks)
 
     # Should be compatible with the layer we made it from!
     # assert request.is_compatible(layer)

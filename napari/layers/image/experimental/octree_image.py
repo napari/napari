@@ -5,7 +5,13 @@ from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, chunk_loader
+from ....components.experimental.chunk import (
+    ChunkRequest,
+    LayerKey,
+    LayerRef,
+    chunk_loader,
+    get_data_id,
+)
 from ....utils.events import Event
 from ..image import Image
 from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
@@ -15,6 +21,106 @@ from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
+
+
+class OctreeChunkLoader:
+    """Load chunks for the octree."""
+
+    def __init__(self, layer_ref: LayerRef):
+        self._layer_ref = layer_ref
+        self._last_visible_set = set()
+
+    def get_drawable_chunks(
+        self, visible: List[OctreeChunk], layer_key: LayerKey
+    ) -> List[OctreeChunk]:
+        """Of the given visible chunks, return only the ones that are drawable.
+
+        Drawable chunks are typically the ones that are fully in memory.
+        Either they were always in memory, or they are now in memory after
+        having been loaded asynchronously by the hunkLoader.
+
+        Parameters
+        ----------
+        visible : List[OctreeChunk]
+            The chunks which are visible to the camera.
+        """
+        visible_set = set(octree_chunk.key for octree_chunk in visible)
+
+        # Remove any chunks from our self._last_visible set which are no
+        # longer in view.
+        for key in list(self._last_visible_set):
+            if key not in visible_set:
+                self._last_visible_set.remove(key)
+
+        count = len(visible)
+
+        def _log(i, label, chunk):
+            LOGGER.debug(
+                "Visible Chunk: %d of %d -> %s: %s", i, count, label, chunk
+            )
+
+        drawable = []  # TODO_OCTREE combine list/set
+        visible_set = set()
+        for i, octree_chunk in enumerate(visible):
+
+            if not chunk_loader.cache.enabled:
+                new_in_view = octree_chunk.key not in self._last_visible_set
+                if new_in_view and octree_chunk.in_memory:
+                    # Not using cache, so if this chunk just came into view
+                    # clear it out, so it gets reloaded.
+                    octree_chunk.clear()
+
+            if octree_chunk.in_memory:
+                # The chunk is fully in memory, we can view it right away.
+                # _log(i, "ALREADY LOADED", octree_chunk)
+                drawable.append(octree_chunk)
+                visible_set.add(octree_chunk.key)
+            elif octree_chunk.loading:
+                # The chunk is being loaded, do not view it yet.
+                _log(i, "LOADING:", octree_chunk)
+            else:
+                # The chunk is not in memory and is not being loaded, so
+                # we are going to load it.
+                sync_load = self._load_chunk(octree_chunk, layer_key)
+                if sync_load:
+                    # The chunk was loaded synchronously. Either it hit the
+                    # cache, or it's fast-loading data. We can draw it now.
+                    _log(i, "SYNC LOAD", octree_chunk)
+                    drawable.append(octree_chunk)
+                    visible_set.add(octree_chunk.key)
+                else:
+                    # An async load was initiated, sometime later our
+                    # self._on_chunk_loaded method will be called.
+                    _log(i, "ASYNC LOAD", octree_chunk)
+
+        # Update our _last_visible_set with what is in view.
+        for octree_chunk in drawable:
+            self._last_visible_set.add(octree_chunk.key)
+
+        return drawable
+
+    def _load_chunk(
+        self, octree_chunk: OctreeChunk, layer_key: LayerKey
+    ) -> None:
+
+        key = OctreeChunkKey(layer_key, octree_chunk.location)
+
+        chunks = {'data': octree_chunk.data}
+
+        octree_chunk.loading = True
+
+        # Create the ChunkRequest and load it with the ChunkLoader.
+        request = chunk_loader.create_request(self._layer_ref, key, chunks)
+
+        satisfied_request = chunk_loader.load_chunk(request)
+
+        if satisfied_request is None:
+            return False  # Load was async.
+
+        # Load was sync so we can insert the data into the octree
+        # and we will draw it this frame.
+        octree_chunk.data = satisfied_request.chunks.get('data')
+        return True
 
 
 class OctreeImage(Image):
@@ -50,9 +156,6 @@ class OctreeImage(Image):
 
         self._slice = None
 
-        # Temporary to implement a disabled cache.
-        self._last_visible_set = set()
-
         # For logging only
         self.frame_count = 0
 
@@ -61,6 +164,9 @@ class OctreeImage(Image):
         # super().__init__ will call our _set_view_slice() which is kind
         # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
+
+        layer_ref = LayerRef.create_from_layer(self)
+        self._loader: OctreeChunkLoader = OctreeChunkLoader(layer_ref)
 
         self.events.add(octree_level=Event, tile_size=Event)
 
@@ -238,6 +344,11 @@ class OctreeImage(Image):
 
         chunks = self._slice.get_visible_chunks(self._view)
 
+        # If calling _slice.get_visible_chunks() switched the slice to
+        # a new octree level, then update our data_level to match. This
+        # will do nothing if the level didn't change.
+        self.data_level = self._slice.octree_level
+
         LOGGER.debug(
             "OctreeImage.visible_chunks: frame=%d num_chunks=%d",
             self.frame_count,
@@ -245,92 +356,13 @@ class OctreeImage(Image):
         )
         self.frame_count += 1
 
-        return self._get_drawable_chunks(chunks)
-
-    def _get_drawable_chunks(
-        self, visible: List[OctreeChunk],
-    ) -> List[OctreeChunk]:
-        visible_set = set(octree_chunk.key for octree_chunk in visible)
-
-        # Remove any chunks from our self._last_visible set which are no
-        # longer in view.
-        for key in list(self._last_visible_set):
-            if key not in visible_set:
-                self._last_visible_set.remove(key)
-
-        # If calling _slice.get_visible_chunks() switched the slice to
-        # a new octree level, then update our data_level to match. This
-        # will do nothing if the level didn't change.
-        self.data_level = self._slice.octree_level
-
-        count = len(visible)
-
-        def _log(i, label, chunk):
-            LOGGER.debug(
-                "Visible Chunk: %d of %d -> %s: %s", i, count, label, chunk
-            )
-
-        drawable = []  # TODO_OCTREE combine list/set
-        visible_set = set()
-        for i, octree_chunk in enumerate(visible):
-
-            if not chunk_loader.cache.enabled:
-                new_in_view = octree_chunk.key not in self._last_visible_set
-                if new_in_view and octree_chunk.in_memory:
-                    # Not using cache, so if this chunk just came into view
-                    # clear it out, so it gets reloaded.
-                    octree_chunk.clear()
-
-            if octree_chunk.in_memory:
-                # The chunk is fully in memory, we can view it right away.
-                # _log(i, "ALREADY LOADED", octree_chunk)
-                drawable.append(octree_chunk)
-                visible_set.add(octree_chunk.key)
-            elif octree_chunk.loading:
-                # The chunk is being loaded, do not view it yet.
-                _log(i, "LOADING:", octree_chunk)
-            else:
-                # The chunk is not in memory and is not being loaded, so
-                # we are going to load it.
-                sync_load = self._load_chunk(octree_chunk)
-                if sync_load:
-                    # The chunk was loaded synchronously. Either it hit the
-                    # cache, or it's fast-loading data. We can draw it now.
-                    _log(i, "SYNC LOAD", octree_chunk)
-                    drawable.append(octree_chunk)
-                    visible_set.add(octree_chunk.key)
-                else:
-                    # An async load was initiated, sometime later our
-                    # self._on_chunk_loaded method will be called.
-                    _log(i, "ASYNC LOAD", octree_chunk)
-
-        # Update our _last_visible_set with what is in view.
-        for octree_chunk in drawable:
-            self._last_visible_set.add(octree_chunk.key)
-
-        return drawable
-
-    def _load_chunk(self, octree_chunk: OctreeChunk) -> None:
-
         indices = np.array(self._slice_indices)
-        key = OctreeChunkKey(self, indices, octree_chunk.location)
 
-        chunks = {'data': octree_chunk.data}
+        layer_key = LayerKey(
+            id(self), get_data_id(self.data), self._data_level, indices
+        )
 
-        octree_chunk.loading = True
-
-        # Create the ChunkRequest and load it with the ChunkLoader.
-        request = chunk_loader.create_request(self, key, chunks)
-
-        satisfied_request = chunk_loader.load_chunk(request)
-
-        if satisfied_request is None:
-            return False  # Load was async.
-
-        # Load was sync so we can insert the data into the octree
-        # and we will draw it this frame.
-        octree_chunk.data = satisfied_request.chunks.get('data')
-        return True
+        return self._loader.get_drawable_chunks(chunks, layer_key)
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold

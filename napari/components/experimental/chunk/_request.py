@@ -6,10 +6,8 @@ from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....layers.base.base import Layer
 from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
-from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -78,11 +76,8 @@ class ChunkKey:
         The combined key, everything hashed together.
     """
 
-    def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
-        self.layer_key = LayerKey(
-            id(layer), get_data_id(layer), layer._data_level, indices
-        )
-
+    def __init__(self, layer_key: LayerKey):
+        self.layer_key = layer_key
         self.key = hash(self._get_hash_values())
 
     def _get_hash_values(self):
@@ -132,21 +127,46 @@ class ChunkRequest:
 
     @property
     def data_id(self) -> int:
+        """Return the data_id for this request.
+
+        Return
+        ------
+        int
+            The data_id for this request.
+        """
         return self.key.layer_key.data_id
 
     @property
     def num_chunks(self) -> int:
-        """Return the number of chunks in this request."""
+        """Return the number of chunks in this request.
+
+        Return
+        ------
+        int
+            The number of chunks in this request.
+        """
         return len(self.chunks)
 
     @property
     def num_bytes(self) -> int:
-        """Return the number of bytes that were loaded."""
+        """Return the number of bytes that were loaded.
+
+        Return
+        ------
+        int
+            The number of bytes that were loaded.
+        """
         return sum(array.nbytes for array in self.chunks.values())
 
     @property
     def in_memory(self) -> bool:
-        """Return True if all chunks are ndarrays."""
+        """Return True if all chunks are ndarrays.
+
+        Return
+        ------
+        bool
+            True if all chunks are ndarrays.
+        """
         return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
     @contextlib.contextmanager
