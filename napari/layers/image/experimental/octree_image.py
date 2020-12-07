@@ -1,6 +1,7 @@
 """OctreeImage class.
 """
 import logging
+from dataclasses import dataclass
 from typing import List
 
 import numpy as np
@@ -20,6 +21,28 @@ from .octree_level import OctreeLevelInfo
 from .octree_util import NormalNoise, SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
+
+
+@dataclass
+class OctreeDisplayOptions:
+    """Options for how to display the octree.
+
+    Attributes
+    -----------
+    tile_size : int
+        The size of the display tiles, for example 256.
+    freeze_level : bool
+        If True we do not automatically pick the right data level.
+    track_view : bool
+        If True the displayed tiles track the view, the normal mode.
+    show_grid : bool
+        If True draw a grid around the tiles for debugging or demos.
+    """
+
+    tile_size: int = async_config.octree.tile_size
+    freeze_level: bool = False
+    track_view: bool = True
+    show_grid: bool = True
 
 
 class OctreeImage(Image):
@@ -50,15 +73,11 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
-        self._tile_size = async_config.octree.tile_size
+        self._display = OctreeDisplayOptions()
 
         self._view: OctreeView = None
 
-        self._freeze_level = False
-        self._track_view = True
         self._slice = None
-
-        self._show_grid = True
 
         # Temporary to implement a disabled cache.
         self._last_visible_set = set()
@@ -110,7 +129,7 @@ class OctreeImage(Image):
         bool
             True if we are tracking the current view.
         """
-        return self._track_view
+        return self._display.track_view
 
     @track_view.setter
     def track_view(self, value: bool) -> None:
@@ -121,7 +140,7 @@ class OctreeImage(Image):
         value : bool
             True if we should track the current view.
         """
-        self._track_view = value
+        self._display.track_view = value
 
     @property
     def tile_size(self) -> int:
@@ -132,7 +151,7 @@ class OctreeImage(Image):
         int
             The edge length of a single tile.
         """
-        return self._tile_size
+        return self._display.tile_size
 
     @tile_size.setter
     def tile_size(self, tile_size: int) -> None:
@@ -143,7 +162,7 @@ class OctreeImage(Image):
         tile_size : int
             The new tile size.
         """
-        self._tile_size = tile_size
+        self._display.tile_size = tile_size
         self.events.tile_size()
 
         self._slice = None  # For now must explicitly delete it
@@ -211,7 +230,7 @@ class OctreeImage(Image):
         bool
             True if the view is currently frozen viewing on level.
         """
-        return self._freeze_level
+        return self._display.freeze_level
 
     @freeze_level.setter
     def freeze_level(self, freeze: bool) -> None:
@@ -222,7 +241,7 @@ class OctreeImage(Image):
         value : bool
             True if we should determine the octree level automatically.
         """
-        self._freeze_level = freeze
+        self._display.freeze_level = freeze
         self.events.freeze_level()
 
     @property
@@ -455,7 +474,10 @@ class OctreeImage(Image):
         base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
         slice_config = SliceConfig(
-            base_shape_2d, len(self.data), self._tile_size, self._delay_ms
+            base_shape_2d,
+            len(self.data),
+            self._display.tile_size,
+            self._delay_ms,
         )
 
         # OctreeMultiscaleSlice wants all the levels, but only the dimensions
@@ -524,7 +546,7 @@ class OctreeImage(Image):
         bool
             True if we are drawing a grid on top of the tiles.
         """
-        return self._show_grid
+        return self._display.show_grid
 
     @show_grid.setter
     def show_grid(self, show: bool) -> None:
@@ -535,6 +557,6 @@ class OctreeImage(Image):
         show : bool
             True if we should draw a grid on top of the tiles.
         """
-        if self._show_grid != show:
-            self._show_grid = show
+        if self._display.show_grid != show:
+            self._display.show_grid = show
             self.events.loaded()  # redraw
