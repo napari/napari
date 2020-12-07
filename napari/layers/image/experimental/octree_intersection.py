@@ -6,6 +6,7 @@ import numpy as np
 
 from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
+from .octree_util import OctreeDisplayOptions
 
 
 class OctreeView(NamedTuple):
@@ -25,8 +26,7 @@ class OctreeView(NamedTuple):
 
     corners: np.ndarray
     canvas: np.ndarray
-    freeze_level: bool
-    track_view: bool
+    display: OctreeDisplayOptions
 
     @property
     def data_width(self) -> int:
@@ -47,7 +47,7 @@ class OctreeView(NamedTuple):
         bool
             True if the octree level should be selected automatically.
         """
-        return not self.freeze_level and self.track_view
+        return not self.display.freeze_level and self.display.track_view
 
 
 class OctreeIntersection:

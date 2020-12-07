@@ -82,7 +82,7 @@ class QtPoll(QObject):
         # work and continue to be drawn even while the camera is stopped.
         self.timer.start()
 
-    def closeEvent(self, event: QEvent) -> None:
+    def closeEvent(self, _event: QEvent) -> None:
         """Cleanup and close.
 
         Parameters

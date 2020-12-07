@@ -5,19 +5,14 @@ from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import (
-    ChunkRequest,
-    async_config,
-    chunk_loader,
-)
+from ....components.experimental.chunk import ChunkRequest, chunk_loader
 from ....utils.events import Event
 from ..image import Image
-from ._chunked_slice_data import ChunkedSliceData
 from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import NormalNoise, SliceConfig
+from .octree_util import OctreeDisplayOptions, SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
 
@@ -25,24 +20,35 @@ LOGGER = logging.getLogger("napari.async.octree")
 class OctreeImage(Image):
     """OctreeImage layer.
 
-    Experimental variant of Image that renders using an Octree.
+    Experimental variant of Image that renders using an octree. For 2D
+    images the octree is really just a quadtree. For 3D volumes it will be
+    a real octree. This class is intended to eventually fully replace the
+    existing Image class.
 
-    Intended to eventually replace Image.
+    Background
+    ----------
+    OctreeImage is meant to eventually replace the existing Image class. The
+    original Image class handled single-scale and multi-scale images, but they
+    were handled quite differently. And its multi-scale did not use chunks or
+    tiles.
+
+    OctreeImage always uses chunk/tiles. Today those tiles are always
+    "small". However, as a special case, if an image is smaller than the
+    max texture size, we could some day allow OctreeImage to set its tile
+    size equal to that image size.
+
+    At that point "small" images would be single-tile single-level
+    OctreeImages. Therefore they should be as as efficient as the original
+    Image's single-scale images. But larger images would have
+    multiple-tiles and multiple-levels. The goal is to have one class and
+    one code path for all types of images.
     """
 
     def __init__(self, *args, **kwargs):
-        self._tile_size = async_config.octree.tile_size
-
-        # Is this the same as Image._data_level? Which should we use?
-        self._octree_level = None
 
         self._view: OctreeView = None
 
-        self._freeze_level = False
-        self._track_view = True
         self._slice = None
-
-        self._show_grid = True
 
         # Temporary to implement a disabled cache.
         self._last_visible_set = set()
@@ -50,29 +56,39 @@ class OctreeImage(Image):
         # For logging only
         self.frame_count = 0
 
-        # For debugging and demos, inject a random delay in from of every
-        # octree chunk that we access. To simulate latency from IO or
-        # computation.
-        self._delay_ms = NormalNoise()
+        self._display = OctreeDisplayOptions()
 
+        # super().__init__ will call our _set_view_slice() which is kind
+        # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
-        self.events.add(
-            freeze_level=Event, octree_level=Event, tile_size=Event
-        )
+
+        self.events.add(octree_level=Event, tile_size=Event)
+
+        # TODO_OCTREE: bad to have to set this after...
+        self._display.loaded_event = self.events.loaded
 
     def _get_value(self):
         """Override Image._get_value()."""
-        return (0, (0, 0))  # Fake for now until have octree version.
+        return (0, (0, 0))  # TODO_OCTREE: need to implement this.
 
     @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet."""
-        # TODO_OCTREE: what here?
+    def loaded(self) -> bool:
+        """Has the data for this layer been loaded yet.
+
+        As far as the visual system is concerned we are always "loaded" in
+        that we can always be drawn. Because our VispyTiledImageLayer can
+        always be drawn. Even if no chunk/tiles are loaded yet.
+        """
         return True
 
     @property
     def _empty(self) -> bool:
-        return False  # TODO_OCTREE: what here?
+        """Is this layer completely empty so it can't be drawn.
+
+        As with self.loaded, we are never really empty. Our VispyTiledImageLayer
+        can always be drawn. Even if there is nothing to draw.
+        """
+        return False
 
     def _update_thumbnail(self):
         # TODO_OCTREE: replace Image._update_thumbnail with nothing for
@@ -86,26 +102,9 @@ class OctreeImage(Image):
         return np.zeros((64, 64, 3))  # fake: does octree need this?
 
     @property
-    def track_view(self) -> bool:
-        """Return True if we changing what's dispays as the view changes.
-
-        Return
-        ------
-        bool
-            True if we are tracking the current view.
-        """
-        return self._track_view
-
-    @track_view.setter
-    def track_view(self, value: bool) -> None:
-        """Set whether we are tracking the current view.
-
-        Parameters
-        ----------
-        value : bool
-            True if we should track the current view.
-        """
-        self._track_view = value
+    def display(self) -> OctreeDisplayOptions:
+        """The display options for this octree image layer."""
+        return self._display
 
     @property
     def tile_size(self) -> int:
@@ -116,7 +115,7 @@ class OctreeImage(Image):
         int
             The edge length of a single tile.
         """
-        return self._tile_size
+        return self._display.tile_size
 
     @tile_size.setter
     def tile_size(self, tile_size: int) -> None:
@@ -127,7 +126,7 @@ class OctreeImage(Image):
         tile_size : int
             The new tile size.
         """
-        self._tile_size = tile_size
+        self._display.tile_size = tile_size
         self.events.tile_size()
 
         self._slice = None  # For now must explicitly delete it
@@ -184,38 +183,16 @@ class OctreeImage(Image):
         return self._slice.octree_level_info
 
     @property
-    def freeze_level(self) -> bool:
-        """Return True if we are forzen viewing a single octree level.
+    def data_level(self) -> int:
+        """Current level of multiscale.
 
-        When viewing the octree normally, freeze_level is always False, but
-        during debugging or other special situations it might be on.
-
-        Returns
-        -------
-        bool
-            True if the view is currently frozen viewing on level.
+        The base full resolution image is level 0. The highest and coarsest
+        level usually contains only a single tile.
         """
-        return self._freeze_level
+        return self._data_level
 
-    @freeze_level.setter
-    def freeze_level(self, freeze: bool) -> None:
-        """Set whether we are frozen viewing a single octree level.
-
-        Parameters
-        ----------
-        value : bool
-            True if we should determine the octree level automatically.
-        """
-        self._freeze_level = freeze
-        self.events.freeze_level()
-
-    @property
-    def octree_level(self):
-        """Return the currently displayed octree level."""
-        return self._octree_level
-
-    @octree_level.setter
-    def octree_level(self, level: int):
+    @data_level.setter
+    def data_level(self, level: int) -> None:
         """Set the octree level we should be displaying.
 
         Parameters
@@ -223,8 +200,10 @@ class OctreeImage(Image):
         level : int
             Display this octree level.
         """
+        if self._data_level == level:
+            return  # It didn't change.
         assert 0 <= level < self.num_octree_levels
-        self._octree_level = level
+        self._data_level = level
         self.events.octree_level()
         if self._slice is not None:
             self._slice.octree_level = level
@@ -274,11 +253,10 @@ class OctreeImage(Image):
             if key not in visible_set:
                 self._last_visible_set.remove(key)
 
-        # If we switched to a new octree level, update our currently shown level.
-        slice_level = self._slice.octree_level
-        if self._octree_level != slice_level:
-            self._octree_level = slice_level
-            self.events.octree_level()
+        # If calling _slice.get_visible_chunks() switched the slice to
+        # a new octree level, then update our data_level to match. This
+        # will do nothing if the level didn't change.
+        self.data_level = self._slice.octree_level
 
         def _log(i, count, label, chunk):
             LOGGER.debug(
@@ -347,9 +325,6 @@ class OctreeImage(Image):
         octree_chunk.data = satisfied_request.chunks.get('data')
         return True
 
-    def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
-        """The given data a was loaded, use it now."""
-
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
     ) -> None:
@@ -378,9 +353,7 @@ class OctreeImage(Image):
         # Update our self._view to to capture the state of things right
         # before we are drawn. Our self._view will used by our
         # visible_chunks() method.
-        self._view = OctreeView(
-            corners, shape_threshold, self.freeze_level, self.track_view
-        )
+        self._view = OctreeView(corners, shape_threshold, self.display)
 
     def get_intersection(self) -> OctreeIntersection:
         """The the interesection between the current view and the octree.
@@ -444,7 +417,7 @@ class OctreeImage(Image):
         base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
         slice_config = SliceConfig(
-            base_shape_2d, len(self.data), self._tile_size, self._delay_ms
+            base_shape_2d, len(self.data), self._display.tile_size
         )
 
         # OctreeMultiscaleSlice wants all the levels, but only the dimensions
@@ -474,56 +447,7 @@ class OctreeImage(Image):
         request : ChunkRequest
             This request was loaded.
         """
+        # Pass it to the slice, it will insert the newly loaded data into
+        # the OctreeChunk at the right location.
         if self._slice.on_chunk_loaded(request):
-            # Tell the visual to redraw with this new chunk.
-            self.events.loaded()
-
-    @property
-    def delay_ms(self) -> NormalNoise:
-        """Return the currently configured artificial load delay.
-
-        Return
-        ------
-        NormalNoise
-            The current configured delay.
-        """
-        return self._delay_ms
-
-    @delay_ms.setter
-    def delay_ms(self, delay_ms: NormalNoise):
-        """Set the new artificial load delay.
-
-        We sometimes want to simulate latency for debugging or demos.
-
-        Parameters
-        ----------
-        delay_ms : NormalNoise
-            Optional delay to simulate latency.
-        """
-        self._delay_ms = delay_ms
-        self._slice = None  # For now must explicitly delete it
-        self.refresh()  # Create a new slice.
-
-    @property
-    def show_grid(self) -> bool:
-        """True if we are drawing a grid on top of the tiles.
-
-        Return
-        ------
-        bool
-            True if we are drawing a grid on top of the tiles.
-        """
-        return self._show_grid
-
-    @show_grid.setter
-    def show_grid(self, show: bool) -> None:
-        """Set whether we should draw a grid on top of the tiles.
-
-        Parameters
-        ----------
-        show : bool
-            True if we should draw a grid on top of the tiles.
-        """
-        if self._show_grid != show:
-            self._show_grid = show
-            self.events.loaded()  # redraw
+            self.events.loaded()  # Redraw with teh new chunk.

@@ -16,6 +16,8 @@ LOGGER = logging.getLogger("napari.async")
 
 
 class LoadCounts:
+    """Count statistics about loaded chunks."""
+
     def __init__(self):
         self.loads: int = 0
         self.chunks: int = 0
@@ -35,9 +37,8 @@ def _get_type_str(data) -> str:
     if data_type == list:
         if len(data) == 0:
             return "EMPTY"
-        else:
-            # Recursively get the type string of the zeroth level.
-            return _get_type_str(data[0])
+        # Recursively get the type string of the zeroth level.
+        return _get_type_str(data[0])
 
     if data_type == da.Array:
         # Special case this because otherwise data_type.__name__

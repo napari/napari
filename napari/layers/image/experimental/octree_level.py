@@ -163,9 +163,6 @@ class OctreeLevel:
 
         data = self.data[array_slice]
 
-        # if not delay_ms.is_zero:
-        #    data = _add_delay(data, delay_ms)
-
         return data
 
 
