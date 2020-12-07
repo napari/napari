@@ -8,7 +8,6 @@ import numpy as np
 from ....components.experimental.chunk import ChunkRequest, chunk_loader
 from ....utils.events import Event
 from ..image import Image
-from ._chunked_slice_data import ChunkedSliceData
 from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 from .octree_intersection import OctreeIntersection
@@ -320,9 +319,6 @@ class OctreeImage(Image):
         # and we will draw it this frame.
         octree_chunk.data = satisfied_request.chunks.get('data')
         return True
-
-    def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
-        """The given data a was loaded, use it now."""
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
