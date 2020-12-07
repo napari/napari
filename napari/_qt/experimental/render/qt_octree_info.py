@@ -8,7 +8,8 @@ from qtpy.QtWidgets import QCheckBox, QFrame, QVBoxLayout
 
 from ....components.experimental import chunk_loader
 from ....layers.image.experimental.octree_image import OctreeImage
-from ....utils.events import disconnect_events
+
+# from ....utils.events import disconnect_events
 from .qt_render_widgets import QtLabeledComboBox, QtSimpleTable
 
 
@@ -156,7 +157,7 @@ class QtOctreeInfo(QFrame):
         """Set controls based on the current layer setting."""
         self.layout.set_controls(self.layer)
 
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        super().close()
+    # def close(self):
+    #     """Disconnect events when widget is closing."""
+    #     disconnect_events(self.layer.events, self)
+    #     super().close()

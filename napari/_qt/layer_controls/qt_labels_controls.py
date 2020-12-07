@@ -19,7 +19,8 @@ from ...layers.labels._labels_constants import (
     LabelColorMode,
     Mode,
 )
-from ...utils.events import disconnect_events
+
+# from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -532,7 +533,7 @@ class QtColorBox(QWidget):
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
 
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        super().close()
+    # def close(self):
+    #     """Disconnect events when widget is closing."""
+    #     disconnect_events(self.layer.events, self)
+    #     super().close()

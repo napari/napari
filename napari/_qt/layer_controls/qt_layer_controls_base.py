@@ -2,7 +2,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
-from ...utils.events import disconnect_events
+
+# from ...utils.events import disconnect_events
 
 
 class QtLayerControls(QFrame):
@@ -111,11 +112,11 @@ class QtLayerControls(QFrame):
             )
             self.blendComboBox.setCurrentIndex(index)
 
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        for child in self.children():
-            close_method = getattr(child, 'close', None)
-            if close_method is not None:
-                close_method()
-        super().close()
+    # def close(self):
+    #     """Disconnect events when widget is closing."""
+    #     disconnect_events(self.layer.events, self)
+    #     for child in self.children():
+    #         close_method = getattr(child, 'close', None)
+    #         if close_method is not None:
+    #             close_method()
+    #     super().close()

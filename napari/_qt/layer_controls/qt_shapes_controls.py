@@ -11,7 +11,8 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.shapes._shapes_constants import Mode
-from ...utils.events import disconnect_events
+
+# from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -410,7 +411,7 @@ class QtShapesControls(QtLayerControls):
             self.layer.editable,
         )
 
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.text.events, self)
-        super().close()
+    # def close(self):
+    #     """Disconnect events when widget is closing."""
+    #     disconnect_events(self.layer.text.events, self)
+    #     super().close()

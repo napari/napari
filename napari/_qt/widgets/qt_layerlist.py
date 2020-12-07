@@ -706,7 +706,7 @@ class QtLayerWidget(QFrame):
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
 
-    def close(self):
-        """Disconnect events when widget is closing."""
-        disconnect_events(self.layer.events, self)
-        super().close()
+    # def close(self):
+    #     """Disconnect events when widget is closing."""
+    #     disconnect_events(self.layer.events, self)
+    #     super().close()
