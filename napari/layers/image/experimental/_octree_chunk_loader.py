@@ -3,7 +3,7 @@
 Uses ChunkLoader to load OctreeChunk's in the octree.
 """
 import logging
-from typing import List
+from typing import List, Set
 
 from ....components.experimental.chunk import LayerKey, LayerRef, chunk_loader
 from .octree_chunk import OctreeChunk, OctreeChunkKey
@@ -12,17 +12,23 @@ LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeChunkLoader:
-    """Load chunks for the octree.
+    """Load data into the OctreeChunks in the octree.
 
     Parameters
     ----------
     layer_ref : LayerRef
         A weak reference to the layer we are loading chunks for.
+
+    Attributes
+    ----------
+    _last_visible : Set[OctreeChunkKey]
+        Chunks we saw last frame, so we can recognize chunks have just
+        come into view.
     """
 
     def __init__(self, layer_ref: LayerRef):
         self._layer_ref = layer_ref
-        self._last_visible = set()
+        self._last_visible: Set[OctreeChunkKey] = set()
 
     def get_drawable_chunks(
         self, visible: List[OctreeChunk], layer_key: LayerKey
