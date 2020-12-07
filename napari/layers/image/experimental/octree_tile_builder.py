@@ -36,6 +36,8 @@ def _none(items):
 def _add_delay(array, delay_ms: NormalNoise):
     """Add a random delay when this array is first accessed.
 
+    TODO_OCTREE: unused not but might use again...
+
     Parameters
     ----------
     noise : NormalNoise

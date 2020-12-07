@@ -8,8 +8,6 @@ from ....components.experimental.chunk import ChunkKey
 from ....layers import Layer
 from ....types import ArrayLike
 
-OctreeChunkKey = Tuple[int, int, int]
-
 
 class OctreeChunkGeom(NamedTuple):
     """Position and scale of the chunk, for rendering.
@@ -45,6 +43,39 @@ class OctreeLocation(NamedTuple):
     def create_null(cls):
         """Create null location that points to nothing."""
         return cls(0, 0, 0, 0, np.zeros(0), np.zeros(0))
+
+
+class OctreeChunkKey(ChunkKey):
+    """A ChunkKey that adds some octree specific fields.
+
+    The ChunkLoader uses ChunkKey to identify chunks. So that it can cache
+    chunks if they have the same key. And so it can identify after they
+    have been loaded.
+
+    Parameters
+    ----------
+    layer : Layer
+        The OctreeImage layer.
+    indices : Tuple[Optional[slice], ...]
+        The indices of the image we are viewing.
+    location : OctreeLocation
+        The location of the chunk within the octree.
+    """
+
+    def __init__(
+        self,
+        layer: Layer,
+        indices: Tuple[Optional[slice], ...],
+        location: OctreeLocation,
+    ):
+        self.location = location
+        super().__init__(layer, indices)
+
+    def _get_hash_values(self):
+        # TODO_OCTREE: can't we just has with parent's hashed key instead
+        # of creating a single big has value? Probably.
+        parent = super()._get_hash_values()
+        return parent + (self.location,)
 
 
 class OctreeChunk:
@@ -167,32 +198,3 @@ class OctreeChunk:
         """
         self._data = self._orig_data
         self.loading = False
-
-
-class OctreeChunkKey(ChunkKey):
-    """A ChunkKey with octree specific fields.
-
-    Parameters
-    ----------
-    layer : Layer
-        The OctreeImage layer.
-    indices : Tuple[Optional[slice], ...]
-        The indices of the image we are viewing.
-    location : OctreeLocation
-        The location of the chunk within the octree.
-    """
-
-    def __init__(
-        self,
-        layer: Layer,
-        indices: Tuple[Optional[slice], ...],
-        location: OctreeLocation,
-    ):
-        self.location = location
-        super().__init__(layer, indices)
-
-    def _get_hash_values(self):
-        # TODO_OCTREE: can't we just has with parent's hashed key instead
-        # of creating a single big has value? Probably.
-        parent = super()._get_hash_values()
-        return parent + (self.location,)
