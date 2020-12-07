@@ -447,6 +447,8 @@ class QtLabelsControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
+        # The colorBox must be explicitly closed as it contains
+        # layer connections which must be disconnected
         self.colorBox.close()
         super().close()
 
