@@ -35,8 +35,8 @@ class Viewer(ViewerModel):
         *,
         title='napari',
         ndisplay=2,
-        order=None,
-        axis_labels=None,
+        order=(),
+        axis_labels=(),
         show=True,
     ):
         super().__init__(

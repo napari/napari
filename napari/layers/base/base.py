@@ -835,6 +835,8 @@ class Layer(KeymapProvider, ABC):
             nd = min(self.ndim, ndisplay)
             for i in order[-nd:]:
                 point[i] = slice(None)
+        else:
+            point = list(point)
 
         # If no slide data has changed, then do nothing
         if (
