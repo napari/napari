@@ -167,6 +167,6 @@ class VispyBaseLayer(ABC):
 
     def close(self):
         """Vispy visual is closing."""
+        disconnect_events(self.layer.events, self)
         self.node.transforms = MatrixTransform()
         self.node.parent = None
-        disconnect_events(self.layer, self)

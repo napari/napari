@@ -600,8 +600,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer = event.value
 
         # Disconnect all connections from layer
-        disconnect_events(layer, self)
-        disconnect_events(layer, self.layers)
+        disconnect_events(layer.events, self)
+        disconnect_events(layer.events, self.layers)
 
         # For the labels layer disconnect history resets
         if hasattr(layer, '_reset_history'):

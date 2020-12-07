@@ -132,7 +132,7 @@ class QtLayerList(QScrollArea):
         widget = self.vbox_layout.itemAt(index).widget()
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
-        disconnect_events(widget.layer, self)
+        disconnect_events(widget.layer.events, self)
         widget.close()
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
@@ -704,5 +704,5 @@ class QtLayerWidget(QFrame):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect_events(self.layer, self)
+        disconnect_events(self.layer.events, self)
         self.deleteLater()

@@ -540,5 +540,5 @@ class QtColorBox(QWidget):
     def close(self):
         """Layer widget is closing."""
         super().close()
-        disconnect_events(self.layer, self)
+        disconnect_events(self.layer.events, self)
         self.deleteLater()

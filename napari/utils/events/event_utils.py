@@ -1,16 +1,21 @@
-def disconnect_events(source, listener):
-    """Disconnect all events between a source and a listener.
+def disconnect_events(emitter, listener):
+    """Disconnect all events between an emitter group and a listener.
 
     Parameters
     ----------
-    source : Object
-        Any object with an event emitter.
+    emitter : napari.utils.events.event.EmitterGroup
+        Emitter group.
     listener: Object
-        Any object that has been connected too.
+        Any object that has been connected to.
     """
-    for em in source.events.emitters.values():
+    for em in emitter.emitters.values():
         for callback in em.callbacks:
-            # Callback is a tuple of a weak reference and method name
+            # *callback* may be either a callable object or a tuple
+            # (object, attr_name) where object.attr_name will point to a
+            # callable object. Note that only a weak reference to ``object``
+            # will be kept. If *callback* is a callable object then it is
+            # not attached to the listener and does not need to be
+            # disconnected
             if (
                 isinstance(callback, tuple)
                 and callback[0] is listener.__weakref__

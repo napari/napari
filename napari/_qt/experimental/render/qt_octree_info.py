@@ -155,5 +155,5 @@ class QtOctreeInfo(QFrame):
 
     def close(self):
         """Close and disconnect any connections."""
+        disconnect_events(self.layer.events, self)
         super().close()
-        disconnect_events(self.layer, self)

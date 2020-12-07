@@ -412,5 +412,5 @@ class QtShapesControls(QtLayerControls):
 
     def close(self):
         """Layer widget is closing."""
-        disconnect_events(self.layer.text, self)
+        disconnect_events(self.layer.text.events, self)
         super().close()

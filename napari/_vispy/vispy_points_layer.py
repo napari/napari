@@ -162,5 +162,5 @@ class VispyPointsLayer(VispyBaseLayer):
 
     def close(self):
         """Vispy visual is closing."""
+        disconnect_events(self.layer.text.events, self)
         super().close()
-        disconnect_events(self.layer.text, self)
