@@ -1,5 +1,21 @@
+from concurrent.futures import ThreadPoolExecutor
+
 from ._labels_constants import Mode
 from ._labels_utils import interpolate_coordinates
+
+refresh_executor = ThreadPoolExecutor(max_workers=1)
+
+
+def refresh(layer):
+    """Refresh the layer.
+
+    Move layer refresh to a method executed on another thread, to relieve main
+    event loop from heavy lifting and lagging due to cpu bound update through
+    vispy, see https://github.com/napari/product-heuristics-2020/issues/38.
+    (a better but not yet merged fix:https://github.com/vispy/vispy/pull/1912)
+
+    """
+    layer.refresh()
 
 
 def draw(layer, event):
@@ -22,6 +38,7 @@ def draw(layer, event):
     eraser
     """
     # on press
+    refresh_future = None
     layer._save_history()
     layer._block_saving = True
     if layer._mode == Mode.ERASE:
@@ -47,11 +64,15 @@ def draw(layer, event):
                 layer.paint(c, new_label, refresh=False)
             elif layer._mode == Mode.FILL:
                 layer.fill(c, new_label, refresh=False)
-        layer.refresh()
+        if not refresh_future or refresh_future.done():
+            refresh_future = refresh_executor.submit(refresh, layer)
+        else:
+            print("skipped")
         last_cursor_coord = layer.coordinates
         yield
 
     # on release
+    refresh_executor.submit(refresh, layer)
     layer._block_saving = False
 
 
