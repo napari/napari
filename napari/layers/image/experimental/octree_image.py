@@ -73,9 +73,13 @@ class OctreeImage(Image):
         return (0, (0, 0))  # Fake for now until have octree version.
 
     @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet."""
-        # TODO_OCTREE: what here?
+    def loaded(self) -> bool:
+        """Has the data for this layer been loaded yet.
+
+        As far as the visual system is concerned we are always "loaded" in
+        that we can always be drawn. Because our VispyTiledImageLayer can
+        always be drawn. Even if no chunk/tiles are loaded yet.
+        """
         return True
 
     @property
