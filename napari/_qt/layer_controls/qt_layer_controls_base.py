@@ -2,7 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
-from ...utils.events import connect_events, disconnect_events
+from ...utils.events import disconnect_events
 
 
 class QtLayerControls(QFrame):
@@ -31,7 +31,9 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.layer = layer
-        connect_events(self.layer, self)
+        self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.opacity.connect(self._on_opacity_change)
+
         self.setObjectName('layer')
         self.setMouseTracking(True)
 

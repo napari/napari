@@ -66,7 +66,17 @@ class QtPointsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        # Note this event is emmited from the TextManager
+        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.symbol.connect(self._on_symbol_change)
+        self.layer.events.size.connect(self._on_size_change)
+        self.layer.events.current_edge_color.connect(
+            self._on_current_edge_color_change
+        )
+        self.layer.events.current_face_color.connect(
+            self._on_current_face_color_change
+        )
+        self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Horizontal)

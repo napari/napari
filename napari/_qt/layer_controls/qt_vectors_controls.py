@@ -44,6 +44,13 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.length.connect(self._on_length_change)
+        self.layer.events.edge_color_mode.connect(
+            self._on_edge_color_mode_change
+        )
+        self.layer.events.edge_color.connect(self._on_edge_color_change)
+
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
         color_prop_box = QComboBox(self)

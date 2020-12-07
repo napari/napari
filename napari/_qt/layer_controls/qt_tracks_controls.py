@@ -29,6 +29,13 @@ class QtTracksControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
+        # NOTE(arl): there are no events fired for changing checkboxes
+        self.layer.events.tail_width.connect(self._on_tail_width_change)
+        self.layer.events.tail_length.connect(self._on_tail_length_change)
+        self.layer.events.properties.connect(self._on_properties_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.color_by.connect(self._on_color_by_change)
+
         # combo box for track coloring, we can get these from the properties
         # keys
         self.color_by_combobox = QComboBox()

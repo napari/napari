@@ -82,7 +82,15 @@ class QtShapesControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        # Note this event is emmited from the TextManager
+        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.current_edge_color.connect(
+            self._on_current_edge_color_change
+        )
+        self.layer.events.current_face_color.connect(
+            self._on_current_face_color_change
+        )
+        self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Horizontal)

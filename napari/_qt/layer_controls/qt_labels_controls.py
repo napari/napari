@@ -19,7 +19,7 @@ from ...layers.labels._labels_constants import (
     LabelColorMode,
     Mode,
 )
-from ...utils.events import connect_events, disconnect_events
+from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -70,6 +70,19 @@ class QtLabelsControls(QtLayerControls):
 
     def __init__(self, layer):
         super().__init__(layer)
+
+        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
+        self.layer.events.brush_size.connect(self._on_brush_size_change)
+        self.layer.events.contiguous.connect(self._on_contiguous_change)
+        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.preserve_labels.connect(
+            self._on_preserve_labels_change
+        )
+        self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -466,7 +479,11 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self.layer = layer
-        connect_events(self.layer, self)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
+        self.layer.events.opacity.connect(self._on_opacity_change)
+
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)

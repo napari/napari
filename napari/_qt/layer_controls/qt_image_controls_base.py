@@ -44,6 +44,12 @@ class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
+        self.layer.events.colormap.connect(self._on_colormap_change)
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
+
         comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)

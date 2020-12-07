@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils import config
-from ...utils.events import connect_events, disconnect_events
+from ...utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from ..experimental.qt_chunk_receiver import QtChunkReceiver
@@ -517,7 +517,11 @@ class QtLayerWidget(QFrame):
         super().__init__()
 
         self.layer = layer
-        connect_events(self.layer, self)
+        self.layer.events.select.connect(self._on_select_change)
+        self.layer.events.deselect.connect(self._on_deselect_change)
+        self.layer.events.name.connect(self._on_name_change)
+        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.thumbnail.connect(self._on_thumbnail_change)
 
         self.setObjectName('layer')
 
