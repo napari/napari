@@ -192,12 +192,6 @@ class QtBaseImageControls(QtLayerControls):
         self.close()
         event.accept()
 
-    def close(self):
-        """Layer widget is closing."""
-        if hasattr(self, 'clim_pop'):
-            self.clim_pop.deleteLater()
-        super().close()
-
 
 def create_range_popup(layer, attr, parent=None):
     """Create a QRangeSliderPopup linked to a specific layer attribute.
