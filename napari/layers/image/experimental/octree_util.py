@@ -131,7 +131,6 @@ class SliceConfig(NamedTuple):
     base_shape: np.ndarray
     num_levels: int
     tile_size: int
-    delay_ms: NormalNoise = NormalNoise()
 
     @property
     def aspect_ratio(self):

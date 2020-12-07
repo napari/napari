@@ -13,7 +13,7 @@ from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import NormalNoise, OctreeDisplayOptions, SliceConfig
+from .octree_util import OctreeDisplayOptions, SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
 
@@ -56,11 +56,6 @@ class OctreeImage(Image):
 
         # For logging only
         self.frame_count = 0
-
-        # For debugging and demos, inject a random delay in from of every
-        # octree chunk that we access. To simulate latency from IO or
-        # computation.
-        self._delay_ms = NormalNoise()
 
         self._display = OctreeDisplayOptions()
 
@@ -411,10 +406,7 @@ class OctreeImage(Image):
         base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
         slice_config = SliceConfig(
-            base_shape_2d,
-            len(self.data),
-            self._display.tile_size,
-            self._delay_ms,
+            base_shape_2d, len(self.data), self._display.tile_size
         )
 
         # OctreeMultiscaleSlice wants all the levels, but only the dimensions
@@ -447,29 +439,3 @@ class OctreeImage(Image):
         if self._slice.on_chunk_loaded(request):
             # Tell the visual to redraw with this new chunk.
             self.events.loaded()
-
-    @property
-    def delay_ms(self) -> NormalNoise:
-        """Return the currently configured artificial load delay.
-
-        Return
-        ------
-        NormalNoise
-            The current configured delay.
-        """
-        return self._delay_ms
-
-    @delay_ms.setter
-    def delay_ms(self, delay_ms: NormalNoise):
-        """Set the new artificial load delay.
-
-        We sometimes want to simulate latency for debugging or demos.
-
-        Parameters
-        ----------
-        delay_ms : NormalNoise
-            Optional delay to simulate latency.
-        """
-        self._delay_ms = delay_ms
-        self._slice = None  # For now must explicitly delete it
-        self.refresh()  # Create a new slice.

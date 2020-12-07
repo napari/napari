@@ -6,7 +6,7 @@ import numpy as np
 from qtpy.QtWidgets import QCheckBox, QFrame, QVBoxLayout
 
 from ....components.experimental import chunk_loader
-from ....layers.image.experimental.octree_image import NormalNoise, OctreeImage
+from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_render_widgets import QtLabeledComboBox, QtSimpleTable
 
 
@@ -34,32 +34,6 @@ def _get_table_values(layer: OctreeImage) -> dict:
         "Tile Shape": _shape([layer.tile_size, layer.tile_size]),
         "Layer Shape": _shape(level_info.image_shape),
     }
-
-
-def _create_mean_combo(on_set) -> QtLabeledComboBox:
-    """Return combo box for the mean noise setting.
-
-    Return
-    ------
-    QtLabeledComboBox
-        The new combo box.
-    """
-    options = {str(x): x for x in [0, 10, 20, 50, 100, 200, 500, 1000]}
-    return QtLabeledComboBox("Mean Delay (ms)", options, on_set)
-
-
-def _create_std_dev_combo(on_set) -> QtLabeledComboBox:
-    """Return combo box for the std dev noise setting.
-
-    Return
-    ------
-    QtLabeledComboBox
-        The new combo box.
-    """
-    options = {
-        str(x): x for x in [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-    }
-    return QtLabeledComboBox("Std Dev (ms)", options, on_set)
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
@@ -95,11 +69,6 @@ class QtOctreeInfoLayout(QVBoxLayout):
                 self.layer.display.freeze_level = True
                 self.layer.octree_level = level
 
-        def on_set_delay(_value: int) -> None:
-            mean = self.mean_combo.get_value()
-            std_dev = self.std_dev_combo.get_value()
-            self.layer.delay_ms = NormalNoise(mean, std_dev)
-
         def on_set_track(value: int):
             self.layer.display.track_view = value != 0
 
@@ -129,12 +98,6 @@ class QtOctreeInfoLayout(QVBoxLayout):
             "Octree Level", level_options, on_set_level
         )
         self.addWidget(self.level)
-
-        # Delay for debugging (simulates latency).
-        self.mean_combo = _create_mean_combo(on_set_delay)
-        self.addWidget(self.mean_combo)
-        self.std_dev_combo = _create_std_dev_combo(on_set_delay)
-        self.addWidget(self.std_dev_combo)
 
         # Show some keys and values about the octree.
         self.table = QtSimpleTable()
