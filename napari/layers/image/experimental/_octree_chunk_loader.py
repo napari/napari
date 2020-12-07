@@ -101,22 +101,47 @@ class OctreeChunkLoader:
     def _load_chunk(
         self, octree_chunk: OctreeChunk, layer_key: LayerKey
     ) -> None:
+        """Load the data for one OctreeChunk.
 
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Load the data for this chunk.
+        layer_key : LayerKey
+            The key for layer we are loading the data for.
+        """
+        # Key that points to a specific location in the octree.
         key = OctreeChunkKey(layer_key, octree_chunk.location)
 
+        # We only load one chunk per request right now, so we just
+        # call it 'data'.
         chunks = {'data': octree_chunk.data}
 
+        # Mark that a load is in progress for this OctreeChunk. So
+        # we don't initiate a second load for one reason.
         octree_chunk.loading = True
 
         # Create the ChunkRequest and load it with the ChunkLoader.
         request = chunk_loader.create_request(self._layer_ref, key, chunks)
-
         satisfied_request = chunk_loader.load_chunk(request)
 
         if satisfied_request is None:
-            return False  # Load was async.
+            # An async load as initiated. The load will probably happen
+            # in a worker thread. When the load completes QtChunkReceiver
+            # will call OctreeImage.on_chunk_loaded() with the data.
+            return False
 
-        # Load was sync so we can insert the data into the octree
-        # and we will draw it this frame.
+        # The load was sync so it's already done, some situations were
+        # the ChunkLoader loads synchronously:
+        #
+        # 1) Its force_synchronous config option is set.
+        # 2) The data already is an ndarray, there's nothing to load.
+        # 3) The data is Dask or similar, but based on past loads it's
+        #    loading so quickly, we decided to load it synchronously.
+        # 4) The data is Dask or similar, but we already loaded this
+        # exact chunk before, so it was in the cache.
+        #
+        # Whatever the reason, we can insert the data into the octree and
+        # we will draw it this frame.
         octree_chunk.data = satisfied_request.chunks.get('data')
         return True
