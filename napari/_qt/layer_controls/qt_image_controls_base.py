@@ -195,7 +195,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.status = self.layer._contrast_limits_msg
 
     def closeEvent(self, event):
-        self.close()
+        self.deleteLater()
         event.accept()
 
 
