@@ -2,7 +2,7 @@
 
 A tiled image that uses TiledImageVisual and TextureAtlas2D so that adding
 and removing tiles is faster than if we created a separate ImageVisual for
-each.
+each tile.
 """
 from dataclasses import dataclass
 from typing import List
@@ -16,9 +16,9 @@ from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
 
-# Create the scene graph Node version of this visual. Visuals are kind of mix
-# of the visual itself and a scene graph node that can added to the scene
-# and transformed.
+# Create the scene graph Node version of this visual. Visuals are a mix of
+# the visual itself and a scene graph node. The scene graph node is what
+# can added to the scene and transformed.
 TiledImageNode = create_visual_node(TiledImageVisual)
 
 
