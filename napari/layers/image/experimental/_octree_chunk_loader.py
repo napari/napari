@@ -142,8 +142,9 @@ class OctreeChunkLoader:
                 return [ideal_chunk]
 
             # It's in memory but it's NOT being drawn yet. Maybe it has not
-            # been paged into VRAM. Draw substitues until it starts being
-            # drawn.
+            # been paged into VRAM. Draw both the ideal chunk AND
+            # substitutes until it starts being drawn. We draw both so
+            # the visual keeps trying to add the idea one.
             print(f"in_memory and not drawn: level {ideal_chunk.location}")
             return [ideal_chunk] + self._get_substitutes(ideal_chunk)
 

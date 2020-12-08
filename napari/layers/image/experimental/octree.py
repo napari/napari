@@ -76,7 +76,7 @@ class Octree:
         self.num_levels = len(self.data)
 
     def get_parent(self, octree_chunk: OctreeChunk) -> Optional[OctreeChunk]:
-        """Return the parent of this octree_chunk or None if this is the root.
+        """Return the parent of this octree_chunk if there is one.
 
         Parameters
         ----------
@@ -86,17 +86,23 @@ class Octree:
         Return
         ------
         Optional[OctreeChunk]
-            The parent of the trunk if there was one.
+            The parent of the chunk if there was one.
         """
         location = octree_chunk.location
 
         if location.level_index == self.num_levels - 1:
             return None  # This is the root so no parent.
 
-        row, col = location.row / 2, location.col / 2
-        parent_level = self.levels[location.level_index + 1]
+        parent_level_index = location.level_index + 1
+        parent_level = self.levels[parent_level_index]
+
+        # Cut row, col in half for the corresponding parent indices.
+        row, col = int(location.row / 2), int(location.col / 2)
+
+        print(f"Looking for parent at ({parent_level_index}, {row}, {col}")
 
         # For now this is None unless there already is an OctreeChunk here.
+        # We do not create OctreeChunks here, although we could.
         return parent_level.get_chunk(row, col)
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
@@ -216,6 +222,8 @@ def _check_downscale_ratio(data) -> None:
     if not isinstance(data, list) or len(data) < 2:
         return  # There aren't even two levels.
 
+    # _dump_levels(data)
+
     ratio = math.sqrt(data[0].size / data[1].size)
 
     # Really should be exact, but it will most likely be off by a ton
@@ -224,3 +232,17 @@ def _check_downscale_ratio(data) -> None:
         raise ValueError(
             f"Multiscale data has downsampling ratio of {ratio}, expected 2."
         )
+
+
+def _dump_levels(data) -> None:
+    """Print the levels and the size of the levels."""
+    last_size = None
+    for level in data:
+        if last_size is not None:
+            downscale = math.sqrt(last_size / level.size)
+            print(
+                f"size={level.size} shape={level.shape} downscale={downscale}"
+            )
+        else:
+            print(f"size={level.size} shape={level.shape} base level")
+        last_size = level.size
