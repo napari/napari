@@ -279,6 +279,7 @@ class TiledImageVisual(ImageVisual):
             self._tiles.remove(tile_index)
             self._texture_atlas.remove_tile(tile_index)
 
+            # Must rebuild to remove this from what we are drawing.
             self._need_vertex_update = True
         except IndexError as exc:
             # Fatal error right now, but maybe in weird situation we should
