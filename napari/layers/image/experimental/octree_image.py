@@ -8,10 +8,9 @@ from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerKey, LayerRef
+from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
 from ..image import Image
-from ._octree_chunk_loader import OctreeChunkLoader
 from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
 from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
@@ -67,8 +66,6 @@ class OctreeImage(Image):
         the portion for OctreeImage which is visible in the OctreeView.
     _display : OctreeDisplayOptions
         Settings for how we draw the octree, such as tile size.
-    _loader : OctreeChunkLoader
-        Uses the napari ChunkLoader to load OctreeChunks.
     """
 
     def __init__(self, *args, **kwargs):
@@ -82,14 +79,15 @@ class OctreeImage(Image):
         super().__init__(*args, **kwargs)
 
         # Call after super().__init__
-        layer_ref = LayerRef.create_from_layer(self)
-        self._loader: OctreeChunkLoader = OctreeChunkLoader(layer_ref)
-
         self.events.add(octree_level=Event, tile_size=Event)
 
         # TODO_OCTREE: this is hack that we assign OctreeDisplayOptions
         # this event after super().__init__(). Will cleanup soon.
         self._display.loaded_event = self.events.loaded
+
+    def _get_layer_ref(self):
+        indices = self._get_slice_indices()
+        return LayerRef.create_from_layer(self, indices)
 
     def _get_value(self):
         """Override Image._get_value()."""
@@ -272,9 +270,8 @@ class OctreeImage(Image):
         if self._slice is None or self._view is None:
             return []  # There is nothing to draw.
 
-        # Start with the visible chunks. These are within the view, but may
-        # or may not be drawable.
-        visible_chunks = self._slice.get_visible_chunks(self._view)
+        # Get the chunks we should draw to depict this view of the octree.
+        drawable_chunks = self._slice.get_drawable_chunks(self._view)
 
         # Calling _slice.visible_chunks() above will select the appropriate
         # octree level for the view. If the level changed, then update our
@@ -282,14 +279,7 @@ class OctreeImage(Image):
         # didn't change.
         self.data_level = self._slice.octree_level
 
-        # Create a LayerKey for the current layer/slice.
-        indices = np.array(self._slice_indices)
-        layer_key = LayerKey.from_layer(self, indices)
-
-        # Calling get_drawable_chunks() will return the chunks that are
-        # ready to be drawn. Also, it might initiate async loads so that
-        # more chunks will be drawable in the near future.
-        return self._loader.get_drawable_chunks(visible_chunks, layer_key)
+        return drawable_chunks
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -390,8 +380,10 @@ class OctreeImage(Image):
         # of each level that we are currently viewing.
         slice_data = [level_data[indices] for level_data in self.data]
 
+        layer_ref = self._get_layer_ref()
+
         self._slice = OctreeMultiscaleSlice(
-            slice_data, slice_config, self._raw_to_displayed,
+            slice_data, layer_ref, slice_config, self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:

@@ -8,9 +8,10 @@ from typing import Callable, List, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest
+from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....types import ArrayLike
 from .._image_view import ImageView
+from ._octree_chunk_loader import OctreeChunkLoader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
@@ -21,17 +22,36 @@ LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeMultiscaleSlice:
-    """View a slice of an multiscale image using an octree."""
+    """View a slice of an multiscale image using an octree.
+
+    Parameters
+    ----------
+    data
+        The multi-scale data.
+    slice_config : SliceConfig
+        The base shape and other info.
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting to displaying data.
+
+    Attributes
+    ----------
+    _loader : OctreeChunkLoader
+        Uses the napari ChunkLoader to load OctreeChunks.
+
+    """
 
     def __init__(
         self,
         data,
+        layer_ref: LayerRef,
         slice_config: SliceConfig,
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
-
+        self._layer_ref = layer_ref
         self._slice_config = slice_config
+
+        self._loader: OctreeChunkLoader = OctreeChunkLoader(layer_ref)
 
         slice_id = id(self)
         self._octree = Octree(slice_id, data, slice_config)
@@ -158,7 +178,30 @@ class OctreeMultiscaleSlice:
         # Choose the right level...
         return min(math.floor(math.log2(ratio)), self._octree.num_levels - 1)
 
-    def get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
+    def get_drawable_chunks(self, view: OctreeView) -> List[OctreeChunk]:
+        """Get the chunks that should be drawn to depict this view.
+
+        Parameters
+        ----------
+        view : OctreeView
+            Get the chunks for this view.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The chunks to draw.
+        """
+        # The visible chunks are every chunk within view, whether or not we
+        # have data to draw it.
+        visible_chunks = self._get_visible_chunks(view)
+        layer_key = self._layer_ref.layer_key
+
+        # Calling get_drawable_chunks() will return the chunks that are
+        # ready to be drawn. Also, it might initiate async loads so that
+        # more chunks will be drawable in the near future.
+        return self._loader.get_drawable_chunks(visible_chunks, layer_key)
+
+    def _get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
         """Get the chunks within this view at the right level of the octree.
 
         The call to get_intersection() will chose the appropriate level

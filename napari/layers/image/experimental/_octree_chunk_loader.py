@@ -223,4 +223,5 @@ class OctreeChunkLoader:
         List[OctreeNode]
             Draw this chunks as a replacement.
         """
+        # parent_chunk = octree_chunk
         return []  # nothing yet
