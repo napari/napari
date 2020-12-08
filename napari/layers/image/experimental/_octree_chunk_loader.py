@@ -182,12 +182,23 @@ class OctreeChunkLoader:
         print(f"_get_substitute: ideal={ideal_chunk.location}")
         # TODO_OCTREE: This is just the very start of the search algorithm
         # as a test. This will be extended soon.
-        parent_chunk = self._octree.get_parent(ideal_chunk)
-        if parent_chunk is None:
-            print("_get_substitute: found none")
-            return []  # No immediate parent
-        print(f"_get_substitute: found {parent_chunk.location}")
-        return [parent_chunk]
+
+        # Get any direct children we have. These make create substitutes
+        # in that they have all the resolution we need. The only drawback
+        # is that it's more chunks to draw, and they take up more
+        # memory than the ideal chunks would.
+        children = self._octree.get_children(ideal_chunk)
+
+        if len(children) < 4:
+            # We don't have all the children, so we need more coverage
+            # to substitute for the ideal chunk. Grab a parent or more
+            # distant ancestor.
+            parent = self._octree.get_parent(ideal_chunk)
+            if parent is not None:
+                return [parent] + children
+
+        # All we have are the children, could be between 0 and 4 of them.
+        return children
 
     def _load_chunk(
         self, octree_chunk: OctreeChunk, layer_key: LayerKey

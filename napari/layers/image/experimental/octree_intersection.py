@@ -158,14 +158,14 @@ class OctreeIntersection:
 
         return _inside(row, self._row_range) and _inside(col, self._col_range)
 
-    def get_chunks(self, create_chunks=False) -> List[OctreeChunk]:
+    def get_chunks(self, create=False) -> List[OctreeChunk]:
         """Return all of the chunks in this intersection.
 
         Parameters
         ----------
-        create_chunks : bool
+        create : bool
             If True, create an OctreeChunk at any location that does
-            not already have a chunk.
+            not already have one.
         """
         chunks = []  # The chunks in the intersection.
 
@@ -182,9 +182,7 @@ class OctreeIntersection:
         # every chunk within the view.
         for row in self._row_range:
             for col in self._col_range:
-                chunk = self.level.get_chunk(
-                    row, col, create_chunks=create_chunks
-                )
+                chunk = self.level.get_chunk(row, col, create=create)
                 if chunk is not None:
                     chunks.append(chunk)
 

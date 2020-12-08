@@ -75,8 +75,14 @@ class Octree:
         # This is now the total number of levels, including the extra ones.
         self.num_levels = len(self.data)
 
-    def get_parent(self, octree_chunk: OctreeChunk) -> Optional[OctreeChunk]:
-        """Return the parent of this octree_chunk if there is one.
+    def get_parent(
+        self, octree_chunk: OctreeChunk, create: bool = False
+    ) -> Optional[OctreeChunk]:
+        """Return the parent of this octree_chunk.
+
+        If the parent doesn't exist this will return None. Except if create
+        is true then we'll create the parent and return it, unless
+        octree_chunk is the root of the whole octree, then we return None.
 
         Parameters
         ----------
@@ -86,24 +92,59 @@ class Octree:
         Return
         ------
         Optional[OctreeChunk]
-            The parent of the chunk if there was one.
+            The parent of the chunk if there was one or we created it.
         """
         location = octree_chunk.location
 
         if location.level_index == self.num_levels - 1:
             return None  # This is the root so no parent.
 
-        parent_level_index = location.level_index + 1
-        parent_level = self.levels[parent_level_index]
+        parent_level_index: int = location.level_index + 1
+        parent_level: OctreeLevel = self.levels[parent_level_index]
 
         # Cut row, col in half for the corresponding parent indices.
         row, col = int(location.row / 2), int(location.col / 2)
+        return parent_level.get_chunk(row, col, create=create)
 
-        print(f"Looking for parent at ({parent_level_index}, {row}, {col}")
+    def get_children(
+        self, octree_chunk: OctreeChunk, create: bool = False
+    ) -> List[OctreeChunk]:
+        """Return the children of this octree_chunk.
 
-        # For now this is None unless there already is an OctreeChunk here.
-        # We do not create OctreeChunks here, although we could.
-        return parent_level.get_chunk(row, col)
+        If create is False then we only return children that exist, so we will
+        return between 0 and 4 children. If create is True then we will create
+        any children that don't exist. If octree_chunk is in level 0 then
+        we will always return 0 children.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the children of this chunk.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The children of the given chunk.
+        """
+        location = octree_chunk.location
+
+        if location.level_index == 0:
+            return []  # This is the base level so no children.
+
+        child_level_index: int = location.level_index - 1
+        child_level: OctreeLevel = self.levels[child_level_index]
+
+        row, col = location.row * 2, location.col * 2
+
+        # Some of these might be None if create is False.
+        children = [
+            child_level.get_chunk(row, col, create=create),
+            child_level.get_chunk(row, col + 1, create=create),
+            child_level.get_chunk(row + 1, col, create=create),
+            child_level.get_chunk(row + 1, col + 1, create=create),
+        ]
+
+        return [child for child in children if child is not None]
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
         """Compute the extra levels and return them.

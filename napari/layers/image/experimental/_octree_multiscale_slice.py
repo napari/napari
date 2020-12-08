@@ -276,8 +276,9 @@ class OctreeMultiscaleSlice:
             self.octree_level = intersection.level.info.level_index
 
         # Return all of the chunks in this intersection, creating chunks if
-        # they don't already exist.
-        return intersection.get_chunks(create_chunks=True)
+        # they don't already exist. We create them because we want to load
+        # the data in these locations.
+        return intersection.get_chunks(create=True)
 
     def _get_octree_chunk(self, location: OctreeLocation) -> OctreeChunk:
         """Return the OctreeChunk at his location.
