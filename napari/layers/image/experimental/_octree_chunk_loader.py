@@ -100,16 +100,16 @@ class OctreeChunkLoader:
         """
         drawable = []  # Create this list of drawable chunks.
 
-        # Get drawables for every ideal chunk. This will be the chunk itself
-        # if it's drawable. Otherwise it might be some number of substitute
-        # chunks from higher or lower levels.
+        # Get drawables for every ideal chunk. This will be only the chunk
+        # itself if it's drawable. Otherwise it might include one or more
+        # alternate chunks from higher or lower levels.
         for octree_chunk in ideal_chunks:
             chunk_drawables = self._get_drawables(
                 drawn_chunk_set, octree_chunk, layer_key
             )
+
             drawable.extend(chunk_drawables)
 
-        print(f"num_drawable = {len(drawable)}")
         return drawable
 
     def _get_drawables(
@@ -117,8 +117,10 @@ class OctreeChunkLoader:
         drawn_chunk_set: Set[OctreeChunkKey],
         ideal_chunk: OctreeChunk,
         layer_key: LayerKey,
-    ) -> bool:
-        """Return True if this chunk is ready to be drawn.
+    ) -> List[OctreeChunk]:
+        """Return the chunks to draw for the given ideal chunk.
+
+        If ideal chunk is already being drawn, we return just it.
 
         Parameters
         ----------
@@ -134,75 +136,56 @@ class OctreeChunkLoader:
         bool
             True if this chunk can be drawn.
         """
-        # If the chunk is fully in memory, then it's drawable.
-        if ideal_chunk.in_memory:
-            # If it's being drawn already, then keep drawing it.
-            if ideal_chunk.key in drawn_chunk_set:
-                return [ideal_chunk]
-
-            # It's in memory but it's NOT being drawn yet. Maybe it has not
-            # been paged into VRAM. Draw both the ideal chunk AND
-            # substitutes until it starts being drawn. We draw both so
-            # the visual keeps trying to add the idea one.
-            return [ideal_chunk] + self._get_substitutes(ideal_chunk)
-
-        # The chunk is not in memory. If it's being loaded, draw
-        # substitutes until the load finishes.
-        if ideal_chunk.loading:
-            return self._get_substitutes(ideal_chunk)
-
-        # The chunk is not in memory and is not being loaded, so try
-        # loading it now. We'd like to draw this chunk!
-        sync_load = self._load_chunk(ideal_chunk, layer_key)
-
-        # If the chunk was loaded synchronously, we can draw it now.
-        if sync_load:
+        # If the ideal chunk is already being drawn, that's all we need.
+        if ideal_chunk.in_memory and ideal_chunk.key in drawn_chunk_set:
             return [ideal_chunk]
 
-        # Otherwise, an async load was initiated, and sometime later
-        # OctreeImage.on_chunk_loaded will be called with the chunk's
-        # loaded data. But we can't draw it now.
-        return self._get_substitutes(ideal_chunk)
+        # If the ideal chunk is not in memory or being loaded, kick off a
+        # load. This might happen sync or async. If sync then we can
+        # draw it now.
+        if ideal_chunk.needs_load:
+            self._load_chunk(ideal_chunk, layer_key)
 
-    def _get_substitutes(self, ideal_chunk: OctreeChunk) -> List[OctreeChunk]:
-        """Return the chunks we should draw in place of the ideal chunk.
+        # Get the alternates for this chunk, from other levels.
+        alternates = self._get_alternates(ideal_chunk, drawn_chunk_set)
+
+        # Get which of these are currently in VRAM being drawn.
+        drawn_alternates = [
+            chunk for chunk in alternates if chunk.key in drawn_chunk_set
+        ]
+
+        # If the idea chunk is in memory we really want the visual to start drawing it,
+        # so only send it and the alternates already in VRAM.
+        if ideal_chunk.in_memory:
+            return [ideal_chunk] + drawn_alternates
+
+        # Keep drawing the alternates until the idea one is drawn.
+        return drawn_alternates
+
+    def _get_alternates(
+        self, ideal_chunk: OctreeChunk, drawn_chunk_set
+    ) -> List[OctreeChunk]:
+        """Return the chunks we could draw in place of the ideal chunk.
 
         Parameters
         ----------
         ideal_chunk : OctreeChunk
-            Get chunks to draw in place of this one.
+            Get chunks we could draw in place of this one.
 
         Return
         ------
         List[OctreeNode]
-            Draw these chunks in place of the ideal one.
+            We could draw these chunks.
         """
-        # Get any direct children. This will look perfect since the
-        # children are higher resolution. It's more to draw and more
-        # memory than the ideal chunks would be, however.
-        #
-        # We don't currently look for more distance descendents. We might
-        # want to, but only if we are confident we can manage drawing lots
-        # of chunks gracefully.
-        children = self._octree.get_children(ideal_chunk)
+        # Get any direct children.
+        alternates = self._octree.get_children(ideal_chunk)
 
-        # Four children fully cover the missing chunk, so we're done.
-        if len(children) == 4:
-            return children
-
-        # We have between 0 and 3 children, so we need to look for an
-        # ancestor to get us full coverage.
-        substitutes = children
+        # Get a parent or a more distance ancestor.
         ancestor = self._octree.get_nearest_ancestor(ideal_chunk)
-
-        # If we found ANY ancestor then it fully covers the missing chunk.
         if ancestor is not None:
-            substitutes.append(ancestor)
+            alternates.append(ancestor)
 
-        # If we return an ancestor AND one or more children, the visual
-        # will draw the ancestor first, so the children appear on top. This
-        # means we will always show the best available data.
-        return substitutes
+        return alternates
 
     def _load_chunk(
         self, octree_chunk: OctreeChunk, layer_key: LayerKey

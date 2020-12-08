@@ -269,7 +269,7 @@ class OctreeImage(Image):
     def get_drawable_chunks(
         self, drawn_chunk_set: Set[OctreeChunkKey]
     ) -> List[OctreeChunk]:
-        """Get the in the current slice which are drawable.
+        """Get the chunks in the current slice which are drawable.
 
         Parameters
         -----------
