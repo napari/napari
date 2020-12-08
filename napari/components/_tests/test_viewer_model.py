@@ -646,38 +646,38 @@ def test_add_remove_layer_no_callbacks(Layer, data, ndim):
         assert len(em.callbacks) == 0
 
 
-# @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
-# def test_add_remove_layer_external_callbacks(Layer, data, ndim):
-#     """Test external callbacks for layer emmitters preserved."""
-#     viewer = ViewerModel()
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_add_remove_layer_external_callbacks(Layer, data, ndim):
+    """Test external callbacks for layer emmitters preserved."""
+    viewer = ViewerModel()
 
-#     layer = Layer(data)
-#     # Check layer has been correctly created
-#     assert layer.ndim == ndim
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
 
-#     # Connect a custom callback
-#     def my_custom_callback(event):
-#         return
+    # Connect a custom callback
+    def my_custom_callback(event):
+        return
 
-#     layer.events.connect(my_custom_callback)
+    layer.events.connect(my_custom_callback)
 
-#     # Check that no internal callbacks have been registered
-#     len(layer.events.callbacks) == 1
-#     for em in layer.events.emitters.values():
-#         assert len(em.callbacks) == 1
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 1
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 1
 
-#     viewer.layers.append(layer)
-#     # Check layer added correctly
-#     assert len(viewer.layers) == 1
+    viewer.layers.append(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 1
 
-#     # check that adding a layer created new callbacks
-#     assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
 
-#     viewer.layers.remove(layer)
-#     # Check layer added correctly
-#     assert len(viewer.layers) == 0
+    viewer.layers.remove(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 0
 
-#     # Check that all internal callbacks have been removed
-#     assert len(layer.events.callbacks) == 1
-#     for em in layer.events.emitters.values():
-#         assert len(em.callbacks) == 1
+    # Check that all internal callbacks have been removed
+    assert len(layer.events.callbacks) == 1
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 1

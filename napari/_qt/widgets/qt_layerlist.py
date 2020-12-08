@@ -69,7 +69,7 @@ class QtLayerList(QScrollArea):
         super().__init__()
 
         self.layers = layers
-        # self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -135,8 +135,7 @@ class QtLayerList(QScrollArea):
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
         disconnect_events(widget.layer.events, self)
-        # widget.close()
-        widget.deleteLater()
+        widget.close()
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
@@ -526,7 +525,7 @@ class QtLayerWidget(QFrame):
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.thumbnail.connect(self._on_thumbnail_change)
 
-        # self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setObjectName('layer')
 
@@ -706,7 +705,7 @@ class QtLayerWidget(QFrame):
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
 
-    # def close(self):
-    #     """Disconnect events when widget is closing."""
-    #     disconnect_events(self.layer.events, self)
-    #     super().close()
+    def close(self):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().close()
