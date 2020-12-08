@@ -102,10 +102,11 @@ class OctreeChunkLoader:
 
         drawable = []  # Create this list of drawable chunks.
 
-        # Iterate through every visible chunk taking actions.
+        # Get drawables for every visible chunks. This might be the chunk itself
+        # or it might be stand-ins from other levels.
         for i, octree_chunk in enumerate(visible):
-            if self._prepare_to_draw(octree_chunk, layer_key):
-                drawable.append(octree_chunk)
+            chunk_drawables = self._get_drawables(octree_chunk, layer_key)
+            drawable.extend(chunk_drawables)
 
         # Update our _last_visible set with what is in view.
         for octree_chunk in drawable:
@@ -161,7 +162,7 @@ class OctreeChunkLoader:
         octree_chunk.data = satisfied_request.chunks.get('data')
         return True
 
-    def _prepare_to_draw(
+    def _get_drawables(
         self, octree_chunk: OctreeChunk, layer_key: LayerKey
     ) -> bool:
         """Return True if this chunk is ready to be drawn.
@@ -188,11 +189,11 @@ class OctreeChunkLoader:
 
         # If the chunk is fully in memory, then it's drawable.
         if octree_chunk.in_memory:
-            return True
+            return [octree_chunk]  # Draw the chunk itself.
 
         # If the chunk is loading, it's not drawable yet.
         if octree_chunk.loading:
-            return False
+            return self._get_replacements(octree_chunk)
 
         # The chunk is not in memory and is not being loaded, but it is
         # in view. So try loading it.
@@ -200,9 +201,26 @@ class OctreeChunkLoader:
 
         # If the chunk was loaded synchronously, we can draw it now.
         if sync_load:
-            return True
+            return [octree_chunk]  # Draw the chunk itself.
 
         # Otherwise, an async load as initiated, and sometime later
         # OctreeImage.on_chunk_loaded will be called with the chunk's
         # loaded data. But we can't draw it now.
-        return False
+        return self._get_replacements(octree_chunk)
+
+    def _get_replacements(
+        self, octree_chunk: OctreeChunk
+    ) -> List[OctreeChunk]:
+        """Return chunks we are draw in place of the given chunk.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Get chunks to draw in place of this one.
+
+        Return
+        ------
+        List[OctreeNode]
+            Draw this chunks as a replacement.
+        """
+        return []  # nothing yet
