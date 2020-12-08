@@ -30,7 +30,6 @@ class ChunkStats:
     start: int = 0
     remaining: int = 0
     low: int = 0
-    created: int = 0
     final: int = 0
 
     @property
