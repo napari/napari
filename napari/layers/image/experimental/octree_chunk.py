@@ -109,10 +109,11 @@ class OctreeChunk:
         self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
     ):
         self._data = data
-        self._orig_data = data  # For now hold on to implement clear()
         self.location = location
         self.geom = geom
-        self.loading = False
+
+        self.loading = False  # Are we currently being loaded.
+        self._orig_data = data  # For clear(), this might go away.
 
     def __str__(self):
         return f"{self.location}"
@@ -121,10 +122,10 @@ class OctreeChunk:
     def data(self) -> ArrayLike:
         """Return the data associated with this chunk.
 
-        Because the chunk has been loaded this might be an ndarray or it
+        Before the chunk has been loaded this might be an ndarray or it
         might be Dask array or other array-like object. After the chunk has
-        been loaded it will always be an ndarray. The bytes will be
-        in memory and ready to be drawn.
+        been loaded it will always be an ndarray. By "loaded" we mean the
+        bytes are in memory and ready to be drawn.
         """
         return self._data
 
@@ -132,17 +133,17 @@ class OctreeChunk:
     def data(self, data: np.ndarray) -> None:
         """Set the new data for this chunk.
 
-        We set the data after a chunk as been loaded..
+        We set the data after a chunk has been loaded.
 
         Parameters
         ----------
         data : np.ndarray
             The new data for the chunk.
         """
-        # An ndarray mean it's actual bytes in memory.
+        # An ndarray means the data is actual bytes in memory.
         assert isinstance(data, np.ndarray)
 
-        # Assign and say this in-progress load is now finished.
+        # Assign and note the loading process has now finished.
         self._data = data
         self.loading = False
 
@@ -175,7 +176,7 @@ class OctreeChunk:
         """Return true if this chunk needs to loaded.
 
         An unloaded chunk's data might be a Dask or similar deferred array.
-        A loaded chunk's data is always ndarray.
+        A loaded chunk's data is always an ndarray.
 
         Return
         ------
@@ -190,8 +191,11 @@ class OctreeChunk:
         the data again. With computation the loaded data might be different
         each time, so we need to do it each time.
 
-        TODO_OCTREE: Depending on how we end up doing caching we might
-        no longer need this method?
+        TODO_OCTREE: Can we get rid of clear() if we always nuke the
+        contents of every chunk as soon as it's no longer in view? If we do
+        that the same chunk will have to be re-created if it comes into
+        view a second time, but in most cases the data itself should be
+        cached so that shouldn't take long.
         """
         self._data = self._orig_data
         self.loading = False
