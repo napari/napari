@@ -16,9 +16,6 @@ def disconnect_events(emitter, listener):
             # will be kept. If *callback* is a callable object then it is
             # not attached to the listener and does not need to be
             # disconnected
-            if (
-                isinstance(callback, tuple)
-                and callback[0] is listener.__weakref__
-            ):
+            if isinstance(callback, tuple) and callback[0] is listener:
                 pass
                 # em.disconnect(callback)
