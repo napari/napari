@@ -46,43 +46,43 @@ def test_layer_multiple_viewers(make_test_viewer):
     assert layer.opacity == 0.6
 
 
-# def test_adding_removing_layer(make_test_viewer):
-#     """Test adding and removing a layer."""
-#     np.random.seed(0)
-#     viewer = make_test_viewer()
+def test_adding_removing_layer(make_test_viewer):
+    """Test adding and removing a layer."""
+    np.random.seed(0)
+    viewer = make_test_viewer()
 
-#     # Create layer
-#     data = np.random.random((2, 6, 30, 40))
-#     layer = Image(data)
+    # Create layer
+    data = np.random.random((2, 6, 30, 40))
+    layer = Image(data)
 
-#     # Check that no internal callbacks have been registered
-#     assert len(layer.events.callbacks) == 0
-#     for em in layer.events.emitters.values():
-#         assert len(em.callbacks) == 0
+    # Check that no internal callbacks have been registered
+    assert len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
 
-#     # Add layer
-#     viewer.layers.append(layer)
-#     assert np.all(viewer.layers[0].data == data)
-#     assert len(viewer.layers) == 1
-#     assert viewer.dims.ndim == 4
-#     # check that adding a layer created new callbacks
-#     assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+    # Add layer
+    viewer.layers.append(layer)
+    assert np.all(viewer.layers[0].data == data)
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
 
-#     # Remove layer, viewer resets
-#     layer = viewer.layers[0]
-#     viewer.layers.remove(layer)
-#     assert len(viewer.layers) == 0
-#     assert viewer.dims.ndim == 2
+    # Remove layer, viewer resets
+    layer = viewer.layers[0]
+    viewer.layers.remove(layer)
+    assert len(viewer.layers) == 0
+    assert viewer.dims.ndim == 2
 
-#     # Check that no other internal callbacks have been registered
-#     assert len(layer.events.callbacks) == 0
-#     for em in layer.events.emitters.values():
-#         assert len(em.callbacks) == 0
+    # Check that no other internal callbacks have been registered
+    assert len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
 
-#     # re-add layer
-#     viewer.layers.append(layer)
-#     assert len(viewer.layers) == 1
-#     assert viewer.dims.ndim == 4
+    # re-add layer
+    viewer.layers.append(layer)
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4
 
 
 # @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
