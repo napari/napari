@@ -106,6 +106,45 @@ class Octree:
         row, col = int(location.row / 2), int(location.col / 2)
         return parent_level.get_chunk(row, col, create=create)
 
+    def get_nearest_ancestor(
+        self, octree_chunk: OctreeChunk
+    ) -> Optional[OctreeChunk]:
+        """Return the nearest ancestor of this octree_chunk.
+
+        This will not create OctreeNodes. It will return None if we don't
+        find any existing ancestors. Either they don't exist, or we are
+        at the root so there are no ancestors.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the nearest ancestor of this chunk.
+
+        Return
+        ------
+        Optional[OctreeChunk]
+            The parent of the chunk if there was one or we created it.
+        """
+        location = octree_chunk.location
+
+        # Start at the current level.
+        level_index = location.level_index
+        row, col = location.row, location.col
+
+        # Search up towards the root.
+        while level_index < self.num_levels - 1:
+
+            # Go up one level.
+            level_index += 1
+            row, col = int(row / 2), int(col / 2)
+            level: OctreeLevel = self.levels[level_index]
+            ancestor = level.get_chunk(row, col)
+
+            if ancestor is not None:
+                return ancestor  # Found one.
+
+        return None  # No ancestor found.
+
     def get_children(
         self, octree_chunk: OctreeChunk, create: bool = False
     ) -> List[OctreeChunk]:

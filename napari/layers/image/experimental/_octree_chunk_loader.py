@@ -138,14 +138,12 @@ class OctreeChunkLoader:
         if ideal_chunk.in_memory:
             # If it's being drawn already, then keep drawing it.
             if ideal_chunk.key in drawn_chunk_set:
-                print(f"in_memory and draw: level {ideal_chunk.location}")
                 return [ideal_chunk]
 
             # It's in memory but it's NOT being drawn yet. Maybe it has not
             # been paged into VRAM. Draw both the ideal chunk AND
             # substitutes until it starts being drawn. We draw both so
             # the visual keeps trying to add the idea one.
-            print(f"in_memory and not drawn: level {ideal_chunk.location}")
             return [ideal_chunk] + self._get_substitutes(ideal_chunk)
 
         # The chunk is not in memory. If it's being loaded, draw
@@ -179,26 +177,32 @@ class OctreeChunkLoader:
         List[OctreeNode]
             Draw these chunks in place of the ideal one.
         """
-        print(f"_get_substitute: ideal={ideal_chunk.location}")
-        # TODO_OCTREE: This is just the very start of the search algorithm
-        # as a test. This will be extended soon.
-
-        # Get any direct children we have. These make create substitutes
-        # in that they have all the resolution we need. The only drawback
-        # is that it's more chunks to draw, and they take up more
-        # memory than the ideal chunks would.
+        # Get any direct children. This will look perfect since the
+        # children are higher resolution. It's more to draw and more
+        # memory than the ideal chunks would be, however.
+        #
+        # We don't currently look for more distance descendents. We might
+        # want to, but only if we are confident we can manage drawing lots
+        # of chunks gracefully.
         children = self._octree.get_children(ideal_chunk)
 
-        if len(children) < 4:
-            # We don't have all the children, so we need more coverage
-            # to substitute for the ideal chunk. Grab a parent or more
-            # distant ancestor.
-            parent = self._octree.get_parent(ideal_chunk)
-            if parent is not None:
-                return [parent] + children
+        # Four children fully cover the missing chunk, so we're done.
+        if len(children) == 4:
+            return children
 
-        # All we have are the children, could be between 0 and 4 of them.
-        return children
+        # We have between 0 and 3 children, so we need to look for an
+        # ancestor to get us full coverage.
+        substitutes = children
+        ancestor = self._octree.get_nearest_ancestor(ideal_chunk)
+
+        # If we found ANY ancestor then it fully covers the missing chunk.
+        if ancestor is not None:
+            substitutes.append(ancestor)
+
+        # If we return an ancestor AND one or more children, the visual
+        # will draw the ancestor first, so the children appear on top. This
+        # means we will always show the best available data.
+        return substitutes
 
     def _load_chunk(
         self, octree_chunk: OctreeChunk, layer_key: LayerKey
