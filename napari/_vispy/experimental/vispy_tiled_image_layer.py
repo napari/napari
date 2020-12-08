@@ -25,11 +25,18 @@ class ChunkStats:
 
     drawable: int = 0
     start: int = 0
-    deleted: int = 0
     remaining: int = 0
     low: int = 0
     created: int = 0
     final: int = 0
+
+    @property
+    def deleted(self) -> int:
+        self.start - self.low
+
+    @property
+    def created(self) -> int:
+        self.final - self.low
 
 
 class VispyTiledImageLayer(VispyImageLayer):
@@ -116,38 +123,36 @@ class VispyTiledImageLayer(VispyImageLayer):
         drawable_chunks: List[OctreeChunk] = self.layer.drawable_chunks
 
         # Record some stats about this update process, where stats.drawable are
-        # the number of drawable chunks.
+        # the number of drawable chunks we are starting with.
         stats = ChunkStats(drawable=len(drawable_chunks))
 
-        # Create the drawable set of chunks using their keys.
-        # TODO_OCTREE: use __hash__ not OctreeChunk.key, using __hash__
+        # Create the drawable set of chunks using their keys, so we can
+        # check membership quickly.
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key? Using __hash__
         # did not immediately work, but we should try again.
         drawable_set = set(
             octree_chunk.key for octree_chunk in drawable_chunks
         )
 
-        # Then number of tiles we have before the update.
+        # The number of tiles we are currently draw before the update.
         stats.start = self.num_tiles
 
-        # Make tiles as stale if their chunk is no longer drawable. However,
-        # stale tiles will still be drawn until replaced by something newer.
+        # Mark tiles as stale if their chunk is no longer in the drawable
+        # set. However, stale tiles will still be drawn until replaced by
+        # something newer. For example if the camera is panning, these
+        # tiles might have been panned out view.
         self.node.prune_tiles(drawable_set)
 
         # The low point, after removing but before adding.
         stats.low = self.num_tiles
 
-        # Which means we deleted this many tiles.
-        stats.deleted = stats.start - stats.low
-
         # Remaining is how many tiles in drawable_chunks still need to be
-        # added. We don't necessarily add them all so that we don't tank
-        # the framerate.
+        # added. We don't necessarily add them all in one frame so that we
+        # don't tank the framerate.
         stats.remaining = self._add_chunks(drawable_chunks)
 
-        # Final number of tiles after adding, which implies how many were
-        # created.
+        # Final number of tiles we are drawing after adding.
         stats.final = self.num_tiles
-        stats.created = stats.final - stats.low
 
         # The grid is only for debugging and demos, yet it's quite useful
         # otherwise you can't really see the borders between the tiles.

@@ -233,7 +233,7 @@ class TiledImageVisual(ImageVisual):
         self._need_vertex_update = True
 
     def prune_tiles(self, drawable_set: Set[OctreeChunk]) -> None:
-        """Remove tiles that are not part of the given drawable set.
+        """Remove tiles that are not part of the drawable set.
 
         drawable_set : Set[OctreeChunk]
             The set of currently drawable chunks.
