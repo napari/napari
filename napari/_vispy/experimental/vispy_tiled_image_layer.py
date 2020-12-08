@@ -15,7 +15,9 @@ from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
 
-# Create the scene graph Node version of this visual.
+# Create the scene graph Node version of this visual. Visuals are kind of mix
+# of the visual itself and a scene graph node that can added to the scene
+# and transformed.
 TiledImageNode = create_visual_node(TiledImageVisual)
 
 
