@@ -1,6 +1,14 @@
 """TiledImageVisual class
 
 A visual that draws tiles using a texture atlas.
+
+Ultimately TiledImageVisual cannot depend on OctreeChunk. And Octree
+code should not depend on TiledImageVisual! So there really can be
+no class or named tuple that gets passed between them.
+
+Instead, we'll probably just have a function signature that takes things
+like the pos, size and depth of each tile as separate arguments. But
+for now both do depend on OctreeChunk.
 """
 from typing import List, Set
 
