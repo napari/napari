@@ -7,7 +7,6 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
-from vispy.visuals.transforms import ChainTransform
 
 from ..components.camera import Camera
 from ..resources import get_stylesheet
@@ -370,8 +369,7 @@ class QtViewer(QSplitter):
         """
         layer = event.value
         vispy_layer = self.layer_to_visual[layer]
-        vispy_layer.node.transforms = ChainTransform()
-        vispy_layer.node.parent = None
+        vispy_layer.close()
         del vispy_layer
         self._reorder_layers(None)
 

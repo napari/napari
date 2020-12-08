@@ -1,6 +1,7 @@
 import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
 
+from ..utils.events import disconnect_events
 from ._text_utils import update_text
 from .vispy_base_layer import VispyBaseLayer
 
@@ -149,3 +150,8 @@ class VispyShapesLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(self.layer.text.blending)
         self.node.update()
+
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.text.events, self)
+        super().close()

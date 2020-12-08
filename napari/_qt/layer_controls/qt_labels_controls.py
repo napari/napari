@@ -19,6 +19,7 @@ from ...layers.labels._labels_constants import (
     LabelColorMode,
     Mode,
 )
+from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -71,10 +72,12 @@ class QtLabelsControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.selected_label.connect(self._on_selection_change)
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
         self.layer.events.brush_size.connect(self._on_brush_size_change)
-        self.layer.events.contiguous.connect(self._on_contig_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dim_change)
+        self.layer.events.contiguous.connect(self._on_contiguous_change)
+        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
@@ -89,7 +92,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setMaximum(2147483647)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
-        self._on_selection_change()
+        self._on_selected_label_change()
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -104,13 +107,13 @@ class QtLabelsControls(QtLayerControls):
         contig_cb.setToolTip('contiguous editing')
         contig_cb.stateChanged.connect(self.change_contig)
         self.contigCheckBox = contig_cb
-        self._on_contig_change()
+        self._on_contiguous_change()
 
         ndim_cb = QCheckBox()
         ndim_cb.setToolTip('edit all dimensions')
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
-        self._on_n_dim_change()
+        self._on_n_dimensional_change()
 
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
@@ -191,7 +194,8 @@ class QtLabelsControls(QtLayerControls):
         self._on_color_mode_change()
 
         color_layout = QHBoxLayout()
-        color_layout.addWidget(QtColorBox(layer))
+        self.colorBox = QtColorBox(layer)
+        color_layout.addWidget(self.colorBox)
         color_layout.addWidget(self.selectionSpinBox)
 
         # grid_layout created in QtLayerControls
@@ -354,7 +358,7 @@ class QtLabelsControls(QtLayerControls):
         """
         self.layer.brush_shape = brush_shape
 
-    def _on_selection_change(self, event=None):
+    def _on_selected_label_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
         Parameters
@@ -379,7 +383,7 @@ class QtLabelsControls(QtLayerControls):
             value = np.clip(int(value), 1, 40)
             self.brushSizeSlider.setValue(value)
 
-    def _on_n_dim_change(self, event=None):
+    def _on_n_dimensional_change(self, event=None):
         """Receive layer model n-dim mode change event and update the checkbox.
 
         Parameters
@@ -390,7 +394,7 @@ class QtLabelsControls(QtLayerControls):
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
-    def _on_contig_change(self, event=None):
+    def _on_contiguous_change(self, event=None):
         """Receive layer model contiguous change event and update the checkbox.
 
         Parameters
@@ -468,15 +472,29 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self.layer = layer
+        self.layer.events.selected_label.connect(
+            self._on_selected_label_change
+        )
+        self.layer.events.opacity.connect(self._on_opacity_change)
+
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self._height = 24
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
 
-        self.layer.events.selected_label.connect(self.update_color)
-        self.layer.events.opacity.connect(self.update_color)
+    def _on_selected_label_change(self, event):
+        """Receive layer model label selection change event & update colorbox.
 
-    def update_color(self, event):
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        self.update()
+
+    def _on_opacity_change(self, event):
         """Receive layer model label selection change event & update colorbox.
 
         Parameters
@@ -513,3 +531,8 @@ class QtColorBox(QWidget):
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
+
+    def close(self):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().close()
