@@ -186,33 +186,34 @@ class TiledImageVisual(ImageVisual):
         int
             The number of chunks that still need to be added.
         """
-        # Get the new chunks, ones we are not currently drawing.
+        # Get only the new chunks, the ones we are not currently drawing.
         new_chunks = [
             octree_chunk
             for octree_chunk in chunks
             if not self._tiles.contains_octree_chunk(octree_chunk)
         ]
 
+        # Add one or more of the new chunks.
         while new_chunks:
-            # Add the first one in the list.
-            self.add_one_chunk(new_chunks.pop(0))
+            self.add_one_chunk(new_chunks.pop(0))  # Add the first one.
 
             # In the future we might add several chunks here. We want
-            # to add as many as we can without harming the framerate
+            # to add as many as we can without tanking the framerate
             # too much.
             #
-            # For now just add ONE chunk per frame. We've timed (256, 256)
-            # pixel chunks taking a whopping 40ms to load into VRAM!
-            # Probably due to CPU-side processing we are doing. So today
-            # there really is only time to add one.
+            # For now, we just add ONE chunk per frame. We've timed (256,
+            # 256) pixel chunks taking a whopping 40ms to load into VRAM!
+            # Probably due to CPU-side processing we are doing? So today
+            # there really is only time to add one chunk.
             #
             # Even if adds were fast, adding just one is not horrible.
             # The frame rate will stay smooth. But adding more if they
-            # fit within the budget is better.
+            # fit within the budget would get the newer/better data
+            # drawn faster.
             break
 
-        # Return how many chunks we did NOT add. So we will get polled and
-        # drawn until all the chunks have been added.
+        # Return how many chunks we did NOT add. The system should continue
+        # to poll and draw until we return 0.
         return len(new_chunks)
 
     def add_one_chunk(self, octree_chunk: OctreeChunk) -> None:
@@ -226,19 +227,21 @@ class TiledImageVisual(ImageVisual):
         Return
         ------
         int
-            The tile's index.
+            The newly added chunk's index.
         """
-
+        # Add to the texture atlas.
         atlas_tile = self._texture_atlas.add_tile(octree_chunk)
 
         if atlas_tile is None:
+            # TODO_OCTREE: What should we do here?
             return  # No slot available in the atlas.
 
+        # Add to our mapping between chunks and tiles.
         self._tiles.add(octree_chunk, atlas_tile)
 
         # Set this flag so we call self._build_vertex_data() the next time
-        # we are drawn. It will update our vertices and texture coordinates
-        # to include this new chunk.
+        # we are drawn. It will create new vertex and texture coordinates
+        # buffers to include this new chunk.
         self._need_vertex_update = True
 
     def prune_tiles(self, drawable_set: Set[OctreeChunk]) -> None:
@@ -253,7 +256,7 @@ class TiledImageVisual(ImageVisual):
                 self._remove_tile(tile_index)
 
     def _remove_tile(self, tile_index: int) -> None:
-        """Remove one tile from the image.
+        """Remove one tile from the tiled image.
 
         Parameters
         ----------
@@ -266,6 +269,8 @@ class TiledImageVisual(ImageVisual):
 
             self._need_vertex_update = True
         except IndexError as exc:
+            # Fatal error right now, but maybe in weird situation we should
+            # ignore this error? Let's see when it happens.
             raise RuntimeError(f"Tile index {tile_index} not found.") from exc
 
     def _build_vertex_data(self) -> None:
@@ -276,13 +281,17 @@ class TiledImageVisual(ImageVisual):
 
         This is the heart of tiled rendering. Instead of drawing one quad
         with one texture, we draw one quad per tile. And for each quad we
-        use its own texture coordinates which will pull from the right slot
-        in the atlas.
+        set its texture coordinates so that it will pull from the right
+        slot in the atlas.
 
-        So as the card draws the tiles, where it's sampling from the
-        texture will hop around in the atlas texture. We just have one
-        atlas texture, but we might have more in teh future. If so, we'll
-        want to sort the quads to minimize the number of texture swaps.
+        As the card draws the tiles, the locations it samples from the
+        texture will hop around in the atlas texture.
+
+        Today we only have one atlas texture, but in the future we might
+        have multiple atlas textures. If so, we'll want to sort the quads
+        to minimize the number of texture swaps. Sample from different
+        tiles in one atlas texture is fast, but switching texture is
+        slower.
         """
         if len(self._tiles) == 0:
             return  # Nothing to draw.
