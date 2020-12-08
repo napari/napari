@@ -4,7 +4,7 @@ For viewing one slice of a multiscale image using an octree.
 """
 import logging
 import math
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Set
 
 import numpy as np
 
@@ -13,7 +13,7 @@ from ....types import ArrayLike
 from .._image_view import ImageView
 from ._octree_chunk_loader import OctreeChunkLoader
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeLocation
+from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import SliceConfig
@@ -53,6 +53,10 @@ class OctreeMultiscaleSlice:
 
         slice_id = id(self)
         self._octree = Octree(slice_id, data, slice_config)
+
+        # Note that self._octree might have more levels than len(data) because
+        # in some cases we add on extra levels. We add on levels until the
+        # root tile consists of only a single tile.
         self._octree_level = self._octree.num_levels - 1
 
         self._loader: OctreeChunkLoader = OctreeChunkLoader(
@@ -84,6 +88,12 @@ class OctreeMultiscaleSlice:
         level : int
             The new level to display.
         """
+        num_levels = self._octree.num_levels
+        if level < 0 or level >= num_levels:
+            raise ValueError(
+                f"Octree level {level} is not in range(0, {num_levels})"
+            )
+
         self._octree_level = level
 
     @property
@@ -108,12 +118,12 @@ class OctreeMultiscaleSlice:
             return None
 
         try:
-            return self._octree.levels[self._octree_level].info
+            return self._octree.levels[self.octree_level].info
         except IndexError as exc:
-            index = self._octree_level
-            count = len(self._octree.levels)
+            index = self.octree_level
+            num_levels = len(self._octree.levels)
             raise IndexError(
-                f"Octree level {index} is not in range(0, {count})"
+                f"Octree level {index} is not in range(0, {num_levels})"
             ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
@@ -148,6 +158,7 @@ class OctreeMultiscaleSlice:
         index = self._get_auto_level_index(view)
         if index < 0 or index >= self._octree.num_levels:
             raise ValueError(f"Invalid octree level {index}")
+
         return self._octree.levels[index]
 
     def _get_auto_level_index(self, view: OctreeView) -> int:
@@ -165,7 +176,7 @@ class OctreeMultiscaleSlice:
         """
         if not view.auto_level:
             # Return current level, do not update it.
-            return self._octree_level
+            return self.octree_level
 
         # Find the right level automatically. Choose a level where the texels
         # in the octree tiles are around the same size as screen pixels.
@@ -178,13 +189,18 @@ class OctreeMultiscaleSlice:
             return 0  # Show the best we've got!
 
         # Choose the right level...
-        return min(math.floor(math.log2(ratio)), self._octree.num_levels - 1)
+        max_level = self._octree.num_levels - 1
+        return min(math.floor(math.log2(ratio)), max_level)
 
-    def get_drawable_chunks(self, view: OctreeView) -> List[OctreeChunk]:
+    def get_drawable_chunks(
+        self, drawn_chunk_set: Set[OctreeChunkKey], view: OctreeView
+    ) -> List[OctreeChunk]:
         """Get the chunks that should be drawn to depict this view.
 
         Parameters
         ----------
+        drawn_chunk_set : Set[OctreeChunkKey]
+            The chunks that are currently being drawn by the visual.
         view : OctreeView
             Get the chunks for this view.
 
@@ -193,22 +209,51 @@ class OctreeMultiscaleSlice:
         List[OctreeChunk]
             The chunks to draw.
         """
-        # The visible chunks are every chunk within view, whether or not we
-        # have data to draw it.
-        visible_chunks = self._get_visible_chunks(view)
+        # Get the ideal chunks, the ones best match the current screen
+        # resolution.
+        ideal_chunks = self._get_ideal_chunks(view)
+
         layer_key = self._layer_ref.layer_key
 
-        # Calling get_drawable_chunks() will return the chunks that are
-        # ready to be drawn. Also, it might initiate async loads so that
-        # more chunks will be drawable in the near future.
-        return self._loader.get_drawable_chunks(visible_chunks, layer_key)
+        # Let the loader decide what chunks should be drawn. It will
+        # only return chunks which are fully loaded and read to be drawn.
+        #
+        # It might return chunks from a higher or lower level than the
+        # ideal level. Also it might initiate async loads so that more
+        # chunks will be drawable in the near future.
+        return self._loader.get_drawable_chunks(
+            drawn_chunk_set, ideal_chunks, layer_key
+        )
 
-    def _get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
-        """Get the chunks within this view at the right level of the octree.
+    def _get_ideal_chunks(self, view: OctreeView) -> List[OctreeChunk]:
+        """Get the ideal chunks we want to draw for this view.
 
-        The call to get_intersection() will chose the appropriate level
-        of the octree to intersect, and then return an intersection at
-        that level.
+        The call to get_intersection() will chose the appropriate level of
+        the octree to intersect, and then return all the chunks within the
+        intersection with that level.
+
+        These are the "ideal" chunks because they are at the level whose
+        resolution best matches the current screen resolution.
+
+        Drawing chunks at a lower level than this will work fine, but it's
+        a waste in that those chunks will just be downsampled by the card.
+        You won't see any "extra" resolution at all. The card can do this
+        super fast, so the issue not such much speed as it is RAM and VRAM.
+
+        For example, suppose we want to draw 40 ideal chunks at level N,
+        and the chunks are (256, 256, 3) with dtype uint8. That's around
+        8MB.
+
+        If instead we draw lower levels than the ideal, the number of
+        chunks and storage goes up quickly:
+
+        Level (N - 1) is 160 chunks = 32M
+        Level (N - 2) is 640 chunks = 126M
+        Level (N - 3) is 2560 chunks = 503M
+
+        In the opposite direction, drawing chunks from a higher, the number
+        of chunks and storage goes down quickly. The only issue there is
+        visual quality, the imagery might look blurry.
 
         Paramaters
         ----------
@@ -228,7 +273,7 @@ class OctreeMultiscaleSlice:
         # If we are choosing the level automatically, then update our level
         # with the level chosen for the intersection.
         if view.auto_level:
-            self._octree_level = intersection.level.info.level_index
+            self.octree_level = intersection.level.info.level_index
 
         # Return all of the chunks in this intersection, creating chunks if
         # they don't already exist.

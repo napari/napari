@@ -82,6 +82,17 @@ class TileSet:
         del self._tiles[tile_index]
 
     @property
+    def chunk_set(self) -> Set[OctreeChunkKey]:
+        """Return the set of chunks we drawing.
+
+        Return
+        ------
+        Set[OctreeChunkKey]
+            The set of chunks we are drawing.
+        """
+        return self._chunks
+
+    @property
     def chunks(self) -> List[OctreeChunk]:
         """Return all the chunks we are tracking.
 

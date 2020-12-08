@@ -14,6 +14,8 @@ from typing import List, Set
 
 import numpy as np
 
+from napari.layers.image.experimental.octree_chunk import OctreeChunkKey
+
 from ...layers.image.experimental import OctreeChunk
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
@@ -233,16 +235,26 @@ class TiledImageVisual(ImageVisual):
         atlas_tile = self._texture_atlas.add_tile(octree_chunk)
 
         if atlas_tile is None:
-            # TODO_OCTREE: What should we do here?
-            return  # No slot available in the atlas.
+            return  # No slot was available in the atlas. That's bad.
 
-        # Add to our mapping between chunks and tiles.
+        # Add our mapping between chunks and atlas tiles.
         self._tiles.add(octree_chunk, atlas_tile)
 
         # Set this flag so we call self._build_vertex_data() the next time
         # we are drawn. It will create new vertex and texture coordinates
         # buffers to include this new chunk.
         self._need_vertex_update = True
+
+    @property
+    def chunk_set(self) -> Set[OctreeChunkKey]:
+        """Return the set of chunks we are drawing.
+
+        Return
+        ------
+        Set[OctreeChunkKey]
+            The set of chunks we are drawing.
+        """
+        return self._tiles.chunk_set
 
     def prune_tiles(self, drawable_set: Set[OctreeChunk]) -> None:
         """Remove tiles that are not part of the drawable set.

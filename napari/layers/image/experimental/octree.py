@@ -72,7 +72,7 @@ class Octree:
         # Now the root should definitely contain only a single tile.
         assert self.levels[-1].info.num_tiles == 1
 
-        # This now the total number of levels.
+        # This is now the total number of levels, including the extra ones.
         self.num_levels = len(self.data)
 
     def get_parent(self, octree_chunk: OctreeChunk) -> Optional[OctreeChunk]:

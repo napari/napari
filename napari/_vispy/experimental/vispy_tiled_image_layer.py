@@ -34,11 +34,13 @@ class ChunkStats:
 
     @property
     def deleted(self) -> int:
-        self.start - self.low
+        """How many chunks were deleted."""
+        return self.start - self.low
 
     @property
     def created(self) -> int:
-        self.final - self.low
+        """How many chunks were created."""
+        return self.final - self.low
 
 
 class VispyTiledImageLayer(VispyImageLayer):
@@ -121,8 +123,19 @@ class VispyTiledImageLayer(VispyImageLayer):
         ChunkStats
             Statistics about the update process.
         """
-        # Get the currently drawable chunks from the layer.
-        drawable_chunks: List[OctreeChunk] = self.layer.drawable_chunks
+        # Get what we are currently drawing.
+        drawn_chunk_set = self.node.chunk_set
+
+        # Get the currently drawable chunks from the layer. We pass it the
+        # drawn_chunk_set because depending on what we are drawing, the layer
+        # might want to pass us substitute chunks.
+        #
+        # For example with quadtree/octree rendering it might send a tile
+        # from a higher level. Once the preferred chunk is drawing, it can
+        # stop sending us that one.
+        drawable_chunks: List[OctreeChunk] = self.layer.get_drawable_chunks(
+            drawn_chunk_set
+        )
 
         # Record some stats about this update process, where stats.drawable are
         # the number of drawable chunks we are starting with.
@@ -139,10 +152,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         # The number of tiles we are currently draw before the update.
         stats.start = self.num_tiles
 
-        # Mark tiles as stale if their chunk is no longer in the drawable
-        # set. However, stale tiles will still be drawn until replaced by
-        # something newer. For example if the camera is panning, these
-        # tiles might have been panned out view.
+        # Remove tiles if their chunk is no longer in the drawable set.
         self.node.prune_tiles(drawable_set)
 
         # The low point, after removing but before adding.
