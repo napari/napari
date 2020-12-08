@@ -51,11 +51,13 @@ class OctreeMultiscaleSlice:
         self._layer_ref = layer_ref
         self._slice_config = slice_config
 
-        self._loader: OctreeChunkLoader = OctreeChunkLoader(layer_ref)
-
         slice_id = id(self)
         self._octree = Octree(slice_id, data, slice_config)
         self._octree_level = self._octree.num_levels - 1
+
+        self._loader: OctreeChunkLoader = OctreeChunkLoader(
+            self._octree, layer_ref
+        )
 
         thumbnail_image = np.zeros(
             (64, 64, 3)

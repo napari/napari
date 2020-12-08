@@ -6,6 +6,7 @@ import logging
 from typing import List, Set
 
 from ....components.experimental.chunk import LayerKey, LayerRef, chunk_loader
+from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 
 LOGGER = logging.getLogger("napari.async.octree")
@@ -26,7 +27,8 @@ class OctreeChunkLoader:
         come into view.
     """
 
-    def __init__(self, layer_ref: LayerRef):
+    def __init__(self, octree: Octree, layer_ref: LayerRef):
+        self._octree = octree
         self._layer_ref = layer_ref
         self._last_visible: Set[OctreeChunkKey] = set()
 
@@ -104,7 +106,7 @@ class OctreeChunkLoader:
 
         # Get drawables for every visible chunks. This might be the chunk itself
         # or it might be stand-ins from other levels.
-        for i, octree_chunk in enumerate(visible):
+        for octree_chunk in visible:
             chunk_drawables = self._get_drawables(octree_chunk, layer_key)
             drawable.extend(chunk_drawables)
 
@@ -203,7 +205,7 @@ class OctreeChunkLoader:
         if sync_load:
             return [octree_chunk]  # Draw the chunk itself.
 
-        # Otherwise, an async load as initiated, and sometime later
+        # Otherwise, an async load was initiated, and sometime later
         # OctreeImage.on_chunk_loaded will be called with the chunk's
         # loaded data. But we can't draw it now.
         return self._get_replacements(octree_chunk)
@@ -223,5 +225,7 @@ class OctreeChunkLoader:
         List[OctreeNode]
             Draw this chunks as a replacement.
         """
-        # parent_chunk = octree_chunk
-        return []  # nothing yet
+        parent_chunk = self._octree.get_parent(octree_chunk)
+        if parent_chunk is None:
+            return []  # No immediate parent
+        return [parent_chunk]

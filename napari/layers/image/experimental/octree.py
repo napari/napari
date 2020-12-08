@@ -1,9 +1,10 @@
 """Octree class.
 """
 import math
-from typing import List
+from typing import List, Optional
 
 from ....utils.perf import block_timer
+from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel, print_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
@@ -36,10 +37,10 @@ class Octree:
     ----------
     slice_id : int:
         The id of the slice this octree is in.
-    base_shape : Tuple[int, int]
-        The shape of the full base image.
-    levels : Levels
-        All the levels of the tree.
+    data
+        The underlying multi-scale data.
+    slice_config : SliceConfig
+        The base shape and other information.
     """
 
     def __init__(self, slice_id: int, data, slice_config: SliceConfig):
@@ -73,6 +74,30 @@ class Octree:
 
         # This now the total number of levels.
         self.num_levels = len(self.data)
+
+    def get_parent(self, octree_chunk: OctreeChunk) -> Optional[OctreeChunk]:
+        """Return the parent of this octree_chunk or None if this is the root.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the parent of this chunk.
+
+        Return
+        ------
+        Optional[OctreeChunk]
+            The parent of the trunk if there was one.
+        """
+        location = octree_chunk.location
+
+        if location.level_index == self.num_levels - 1:
+            return None  # This is the root so no parent.
+
+        row, col = location.row / 2, location.col / 2
+        parent_level = self.levels[location.level_index + 1]
+
+        # For now this is None unless there already is an OctreeChunk here.
+        return parent_level.get_chunk(row, col)
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
         """Compute the extra levels and return them.
