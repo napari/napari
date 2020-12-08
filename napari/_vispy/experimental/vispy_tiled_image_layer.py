@@ -1,7 +1,8 @@
 """VispyTiledImageLayer class.
 
-A tiled image that uses TiledImageVisual and TextureAtlas2D so
-adding/removing tiles is extremely fast.
+A tiled image that uses TiledImageVisual and TextureAtlas2D so that adding
+and removing tiles is faster than if we created a separate ImageVisual for
+each tile.
 """
 from dataclasses import dataclass
 from typing import List
@@ -15,7 +16,9 @@ from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
 
-# Create the scene graph Node version of this visual.
+# Create the scene graph Node version of this visual. Visuals are a mix of
+# the visual itself and a scene graph node. The scene graph node is what
+# can added to the scene and transformed.
 TiledImageNode = create_visual_node(TiledImageVisual)
 
 
@@ -25,11 +28,19 @@ class ChunkStats:
 
     drawable: int = 0
     start: int = 0
-    deleted: int = 0
     remaining: int = 0
     low: int = 0
-    created: int = 0
     final: int = 0
+
+    @property
+    def deleted(self) -> int:
+        """How many chunks were deleted."""
+        return self.start - self.low
+
+    @property
+    def created(self) -> int:
+        """How many chunks were created."""
+        return self.final - self.low
 
 
 class VispyTiledImageLayer(VispyImageLayer):
@@ -112,42 +123,48 @@ class VispyTiledImageLayer(VispyImageLayer):
         ChunkStats
             Statistics about the update process.
         """
-        # Get the currently drawable chunks from the layer.
-        drawable_chunks: List[OctreeChunk] = self.layer.drawable_chunks
+        # Get what we are currently drawing.
+        drawn_chunk_set = self.node.chunk_set
+
+        # Get the currently drawable chunks from the layer. We pass it the
+        # drawn_chunk_set because depending on what we are drawing, the layer
+        # might want to pass us substitute chunks.
+        #
+        # For example with quadtree/octree rendering it might send a tile
+        # from a higher level. Once the preferred chunk is drawing, it can
+        # stop sending us that one.
+        drawable_chunks: List[OctreeChunk] = self.layer.get_drawable_chunks(
+            drawn_chunk_set
+        )
 
         # Record some stats about this update process, where stats.drawable are
-        # the number of drawable chunks.
+        # the number of drawable chunks we are starting with.
         stats = ChunkStats(drawable=len(drawable_chunks))
 
-        # Create the drawable set of chunks using their keys.
-        # TODO_OCTREE: use __hash__ not OctreeChunk.key, using __hash__
+        # Create the drawable set of chunks using their keys, so we can
+        # check membership quickly.
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key? Using __hash__
         # did not immediately work, but we should try again.
         drawable_set = set(
             octree_chunk.key for octree_chunk in drawable_chunks
         )
 
-        # Then number of tiles we have before the update.
+        # The number of tiles we are currently draw before the update.
         stats.start = self.num_tiles
 
-        # Make tiles as stale if their chunk is no longer drawable. However,
-        # stale tiles will still be drawn until replaced by something newer.
+        # Remove tiles if their chunk is no longer in the drawable set.
         self.node.prune_tiles(drawable_set)
 
         # The low point, after removing but before adding.
         stats.low = self.num_tiles
 
-        # Which means we deleted this many tiles.
-        stats.deleted = stats.start - stats.low
-
         # Remaining is how many tiles in drawable_chunks still need to be
-        # added. We don't necessarily add them all so that we don't tank
-        # the framerate.
+        # added. We don't necessarily add them all in one frame so that we
+        # don't tank the framerate.
         stats.remaining = self._add_chunks(drawable_chunks)
 
-        # Final number of tiles after adding, which implies how many were
-        # created.
+        # Final number of tiles we are drawing after adding.
         stats.final = self.num_tiles
-        stats.created = stats.final - stats.low
 
         # The grid is only for debugging and demos, yet it's quite useful
         # otherwise you can't really see the borders between the tiles.

@@ -131,7 +131,7 @@ class ChunkLoader:
         chunks : Dict[str, ArrayLike]
             The arrays we want to load.
         """
-        layer_id = layer_ref.layer_id
+        layer_id = layer_ref.layer_key.layer_id
 
         if layer_id not in self.layer_map:
             self.layer_map[layer_id] = LayerInfo(layer_ref)

@@ -6,26 +6,7 @@ from typing import NamedTuple, Optional
 import dask.array as da
 import numpy as np
 
-
-def get_data_id(data) -> int:
-    """Return the data_id to use for this layer.
-
-    Parameters
-    ----------
-    layer
-        The layer to get the data_id from.
-
-    Notes
-    -----
-    We use data_id rather than just the layer_id, because if someone
-    changes the data out from under a layer, we do not want to use the
-    wrong chunks.
-    """
-    if isinstance(data, list):
-        assert data  # data should not be empty for image layers.
-        return id(data[0])  # Just use the ID from the 0'th layer.
-
-    return id(data)  # Not a list, just use it.
+from .layer_key import LayerKey
 
 
 def _get_type_str(data) -> str:
@@ -70,12 +51,12 @@ class LayerRef(NamedTuple):
         String describing the data type the layer holds.
     """
 
-    layer_id: int
+    layer_key: LayerKey
     weak_ref: weakref.ReferenceType
     data_type: str
 
     @classmethod
-    def create_from_layer(cls, layer):
+    def create_from_layer(cls, layer, indices):
         """Return a LayerRef created from this layer.
 
         Parameters
@@ -83,7 +64,8 @@ class LayerRef(NamedTuple):
         layer
             Create the LayerRef from this layer.
         """
-        return cls(id(layer), weakref.ref(layer), _get_type_str(layer.data))
+        layer_key = LayerKey.from_layer(layer, indices)
+        return cls(layer_key, weakref.ref(layer), _get_type_str(layer.data))
 
 
 class StatWindow:

@@ -22,9 +22,7 @@ class OctreeChunkGeom(NamedTuple):
 class OctreeLocation(NamedTuple):
     """Location of one chunk within the octree.
 
-    This is used as part of the OctreeChunkKey to uniquely identify a
-    chunk. The OctreeChunkKey is used when we load chunk and used
-    related to the cache.
+    Part of the OctreeChunkKey to uniquely identify a chunk.
     """
 
     slice_id: int
@@ -34,8 +32,8 @@ class OctreeLocation(NamedTuple):
 
     def __str__(self):
         return (
-            f"location=({self.level_index}, {self.row}, {self.col}) "
-            f"slice={self.slice_id} id={id(self)}"
+            f"location =({self.level_index}, {self.row}, {self.col}) "
+            # f"slice={self.slice_id} id={id(self)}"
         )
 
     @classmethod
@@ -45,11 +43,10 @@ class OctreeLocation(NamedTuple):
 
 
 class OctreeChunkKey(ChunkKey):
-    """A ChunkKey that adds some octree specific fields.
+    """A ChunkKey plus some octree specific fields.
 
-    The ChunkLoader uses ChunkKey to identify chunks. So that it can cache
-    chunks if they have the same key. And so it can identify after they
-    have been loaded.
+    The ChunkLoader uses ChunkKey to identify chunks, for example for
+    caching or just tracking what has been loaded.
 
     Parameters
     ----------
@@ -68,8 +65,8 @@ class OctreeChunkKey(ChunkKey):
         super().__init__(layer_key)
 
     def _get_hash_values(self):
-        # TODO_OCTREE: can't we just has with parent's hashed key instead
-        # of creating a single big has value? Probably.
+        # TODO_OCTREE: can't we just hash in the parent's hashed key with
+        # our additional values? Probably, but we do it from scratch here.
         parent = super()._get_hash_values()
         return parent + (self.location,)
 
@@ -78,10 +75,11 @@ class OctreeChunk:
     """A geographically meaningful portion of the full 2D or 3D image.
 
     For 2D images a chunk is a "tile". It's a 2D square region of pixels
-    which are part of the full 2D image. If it's in level 0 of the octree,
-    the pixels are 1:1 identical to the portion of the full image. The tile
-    is full resolution. If it's in level 1 or greater the pixels are
-    downsampled from the full resolution image.
+    which are part of the full 2D image.
+
+    If it's in level 0 of the octree, the pixels are 1:1 identical to the
+    full image. If it's in level 1 or greater the pixels are downsampled
+    from the full resolution image.
 
     For 3D, not yet implemented, a chunk is a sub-volume. Again for level 0
     the voxels are at the full resolution of the full image, but for other
@@ -90,16 +88,19 @@ class OctreeChunk:
     The highest level of the tree contains a single chunk which depicts the
     entire image, whether 2D or 3D.
 
-    Attributes
+    Parameters
     ----------
     data : ArrayLike
         The data to draw for this chunk.
-    _orig_data : ArrayLike
-        The original unloaded data that we use to implement OctreeChunk.clear().
     location : OctreeLocation
         The location of this chunk, including the level_index, row, col.
     geom : OctreeChunkGeom
         The x, y coordinates and scale of the chunk.
+
+    Attributes
+    ----------
+    _orig_data : ArrayLike
+        The original unloaded data that we use to implement OctreeChunk.clear().
     loading : bool
         If True the chunk has been queued to be loaded.
     """
@@ -108,10 +109,11 @@ class OctreeChunk:
         self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
     ):
         self._data = data
-        self._orig_data = data  # For now hold on to implement clear()
         self.location = location
         self.geom = geom
-        self.loading = False
+
+        self.loading = False  # Are we currently being loaded.
+        self._orig_data = data  # For clear(), this might go away.
 
     def __str__(self):
         return f"{self.location}"
@@ -120,10 +122,10 @@ class OctreeChunk:
     def data(self) -> ArrayLike:
         """Return the data associated with this chunk.
 
-        Because the chunk has been loaded this might be an ndarray or it
+        Before the chunk has been loaded this might be an ndarray or it
         might be Dask array or other array-like object. After the chunk has
-        been loaded it will always be an ndarray. The bytes will be
-        in memory and ready to be drawn.
+        been loaded it will always be an ndarray. By "loaded" we mean the
+        bytes are in memory and ready to be drawn.
         """
         return self._data
 
@@ -131,17 +133,17 @@ class OctreeChunk:
     def data(self, data: np.ndarray) -> None:
         """Set the new data for this chunk.
 
-        We set the data after a chunk as been loaded..
+        We set the data after a chunk has been loaded.
 
         Parameters
         ----------
         data : np.ndarray
             The new data for the chunk.
         """
-        # An ndarray mean it's actual bytes in memory.
+        # An ndarray means the data is actual bytes in memory.
         assert isinstance(data, np.ndarray)
 
-        # Assign and say this in-progress load is now finished.
+        # Assign and note the loading process has now finished.
         self._data = data
         self.loading = False
 
@@ -174,7 +176,7 @@ class OctreeChunk:
         """Return true if this chunk needs to loaded.
 
         An unloaded chunk's data might be a Dask or similar deferred array.
-        A loaded chunk's data is always ndarray.
+        A loaded chunk's data is always an ndarray.
 
         Return
         ------
@@ -189,8 +191,11 @@ class OctreeChunk:
         the data again. With computation the loaded data might be different
         each time, so we need to do it each time.
 
-        TODO_OCTREE: Depending on how we end up doing caching we might
-        no longer need this method?
+        TODO_OCTREE: Can we get rid of clear() if we always nuke the
+        contents of every chunk as soon as it's no longer in view? If we do
+        that the same chunk will have to be re-created if it comes into
+        view a second time, but in most cases the data itself should be
+        cached so that shouldn't take long.
         """
         self._data = self._orig_data
         self.loading = False

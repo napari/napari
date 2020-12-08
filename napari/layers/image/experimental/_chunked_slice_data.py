@@ -72,12 +72,12 @@ class ChunkedSliceData(ImageSliceData):
         # Always load the image.
         chunks = {'image': self.image}
 
-        # Optionally load the thumbnail_source if it exists.
+        # Optionally load th e thumbnail_source if it exists.
         if self.thumbnail_source is not None:
             chunks['thumbnail_source'] = self.thumbnail_source
 
         # Create the ChunkRequest and load it with the ChunkLoader.
-        layer_ref = LayerRef.create_from_layer(self.layer)
+        layer_ref = LayerRef.create_from_layer(self.layer, self.indices)
         self.request = chunk_loader.create_request(layer_ref, key, chunks)
         satisfied_request = chunk_loader.load_chunk(self.request)
 
