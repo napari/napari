@@ -1,48 +1,49 @@
-# import numpy as np
-# import pytest
+import numpy as np
 
 # from napari._tests.utils import layer_test_data
-# from napari.layers import Image
+from napari.layers import Image
+
+# import pytest
 
 
-# def test_layers_removed_on_close(make_test_viewer):
-#     """Test layers removed on close."""
-#     viewer = make_test_viewer()
+def test_layers_removed_on_close(make_test_viewer):
+    """Test layers removed on close."""
+    viewer = make_test_viewer()
 
-#     # add layers
-#     viewer.add_image(np.random.random((30, 40)))
-#     viewer.add_image(np.random.random((50, 20)))
-#     assert len(viewer.layers) == 2
+    # add layers
+    viewer.add_image(np.random.random((30, 40)))
+    viewer.add_image(np.random.random((50, 20)))
+    assert len(viewer.layers) == 2
 
-#     viewer.close()
-#     # check layers have been removed
-#     assert len(viewer.layers) == 0
+    viewer.close()
+    # check layers have been removed
+    assert len(viewer.layers) == 0
 
 
-# def test_layer_multiple_viewers(make_test_viewer):
-#     """Test layer on multiple viewers."""
-#     # Check that a layer can be added and removed from
-#     # mutliple viewers. See https://github.com/napari/napari/issues/1503
-#     # for more detail.
-#     viewer_a = make_test_viewer()
-#     viewer_b = make_test_viewer()
+def test_layer_multiple_viewers(make_test_viewer):
+    """Test layer on multiple viewers."""
+    # Check that a layer can be added and removed from
+    # mutliple viewers. See https://github.com/napari/napari/issues/1503
+    # for more detail.
+    viewer_a = make_test_viewer()
+    viewer_b = make_test_viewer()
 
-#     # create layer
-#     layer = Image(np.random.random((30, 40)))
-#     # add layer
-#     viewer_a.layers.append(layer)
-#     viewer_b.layers.append(layer)
+    # create layer
+    layer = Image(np.random.random((30, 40)))
+    # add layer
+    viewer_a.layers.append(layer)
+    viewer_b.layers.append(layer)
 
-#     # Change property
-#     layer.opacity = 0.8
-#     assert layer.opacity == 0.8
+    # Change property
+    layer.opacity = 0.8
+    assert layer.opacity == 0.8
 
-#     # Remove layer from one viewer
-#     viewer_b.layers.remove(layer)
+    # Remove layer from one viewer
+    viewer_b.layers.remove(layer)
 
-#     # Change property
-#     layer.opacity = 0.6
-#     assert layer.opacity == 0.6
+    # Change property
+    layer.opacity = 0.6
+    assert layer.opacity == 0.6
 
 
 # def test_adding_removing_layer(make_test_viewer):
