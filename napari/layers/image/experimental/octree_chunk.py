@@ -78,10 +78,11 @@ class OctreeChunk:
     """A geographically meaningful portion of the full 2D or 3D image.
 
     For 2D images a chunk is a "tile". It's a 2D square region of pixels
-    which are part of the full 2D image. If it's in level 0 of the octree,
-    the pixels are 1:1 identical to the portion of the full image. The tile
-    is full resolution. If it's in level 1 or greater the pixels are
-    downsampled from the full resolution image.
+    which are part of the full 2D image.
+
+    If it's in level 0 of the octree, the pixels are 1:1 identical to the
+    full image. If it's in level 1 or greater the pixels are downsampled
+    from the full resolution image.
 
     For 3D, not yet implemented, a chunk is a sub-volume. Again for level 0
     the voxels are at the full resolution of the full image, but for other
