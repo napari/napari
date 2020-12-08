@@ -312,7 +312,7 @@ class TiledImageVisual(ImageVisual):
         verts = np.zeros((0, 2), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
 
-        # TODO_OCTREE: We can probably avoid vstack here? Maybe one one
+        # TODO_OCTREE: We can probably avoid vstack here? Maybe create one
         # vertex buffer sized according to the max number of tiles we
         # expect? But grow it if we exceed our guess?
         for tile_data in self._tiles.tile_data_sorted:
