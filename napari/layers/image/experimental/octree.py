@@ -123,18 +123,17 @@ class Octree:
         Return
         ------
         Optional[OctreeChunk]
-            The parent of the chunk if there was one or we created it.
+            The nearest ancestor of the chunk if we found one.
         """
         location = octree_chunk.location
 
-        # Start at the current level.
+        # Start at the current level and work our way up.
         level_index = location.level_index
         row, col = location.row, location.col
 
-        # Search up towards the root.
+        # Search up one level at a time.
         while level_index < self.num_levels - 1:
 
-            # Go up one level.
             level_index += 1
             row, col = int(row / 2), int(col / 2)
             level: OctreeLevel = self.levels[level_index]
