@@ -1,3 +1,6 @@
+import weakref
+
+
 def disconnect_events(emitter, listener):
     """Disconnect all events between an emitter group and a listener.
 
@@ -16,6 +19,7 @@ def disconnect_events(emitter, listener):
             # will be kept. If *callback* is a callable object then it is
             # not attached to the listener and does not need to be
             # disconnected
-            if isinstance(callback, tuple) and callback[0] is listener:
-                pass
-                # em.disconnect(callback)
+            if isinstance(callback, tuple) and callback[0] is weakref.ref(
+                listener
+            ):
+                em.disconnect(callback)
