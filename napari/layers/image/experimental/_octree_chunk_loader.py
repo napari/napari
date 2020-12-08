@@ -109,6 +109,7 @@ class OctreeChunkLoader:
             )
             drawable.extend(chunk_drawables)
 
+        print(f"num_drawable = {len(drawable)}")
         return drawable
 
     def _get_drawables(
@@ -137,12 +138,14 @@ class OctreeChunkLoader:
         if ideal_chunk.in_memory:
             # If it's being drawn already, then keep drawing it.
             if ideal_chunk.key in drawn_chunk_set:
+                print(f"in_memory and draw: level {ideal_chunk.location}")
                 return [ideal_chunk]
 
             # It's in memory but it's NOT being drawn yet. Maybe it has not
             # been paged into VRAM. Draw substitues until it starts being
             # drawn.
-            return self._get_substitutes(ideal_chunk)
+            print(f"in_memory and not drawn: level {ideal_chunk.location}")
+            return [ideal_chunk] + self._get_substitutes(ideal_chunk)
 
         # The chunk is not in memory. If it's being loaded, draw
         # substitutes until the load finishes.
@@ -175,11 +178,14 @@ class OctreeChunkLoader:
         List[OctreeNode]
             Draw these chunks in place of the ideal one.
         """
+        print(f"_get_substitute: ideal={ideal_chunk.location}")
         # TODO_OCTREE: This is just the very start of the search algorithm
         # as a test. This will be extended soon.
         parent_chunk = self._octree.get_parent(ideal_chunk)
         if parent_chunk is None:
+            print("_get_substitute: found none")
             return []  # No immediate parent
+        print(f"_get_substitute: found {parent_chunk.location}")
         return [parent_chunk]
 
     def _load_chunk(

@@ -32,8 +32,8 @@ class OctreeLocation(NamedTuple):
 
     def __str__(self):
         return (
-            f"location=({self.level_index}, {self.row}, {self.col}) "
-            f"slice={self.slice_id} id={id(self)}"
+            f"location =({self.level_index}, {self.row}, {self.col}) "
+            # f"slice={self.slice_id} id={id(self)}"
         )
 
     @classmethod
