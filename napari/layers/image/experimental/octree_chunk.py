@@ -22,9 +22,7 @@ class OctreeChunkGeom(NamedTuple):
 class OctreeLocation(NamedTuple):
     """Location of one chunk within the octree.
 
-    This is used as part of the OctreeChunkKey to uniquely identify a
-    chunk. The OctreeChunkKey is used when we load chunk and used
-    related to the cache.
+    Part of the OctreeChunkKey to uniquely identify a chunk.
     """
 
     slice_id: int
@@ -45,11 +43,10 @@ class OctreeLocation(NamedTuple):
 
 
 class OctreeChunkKey(ChunkKey):
-    """A ChunkKey that adds some octree specific fields.
+    """A ChunkKey plus some octree specific fields.
 
-    The ChunkLoader uses ChunkKey to identify chunks. So that it can cache
-    chunks if they have the same key. And so it can identify after they
-    have been loaded.
+    The ChunkLoader uses ChunkKey to identify chunks, for example for
+    caching or just tracking what has been loaded.
 
     Parameters
     ----------
@@ -68,8 +65,8 @@ class OctreeChunkKey(ChunkKey):
         super().__init__(layer_key)
 
     def _get_hash_values(self):
-        # TODO_OCTREE: can't we just has with parent's hashed key instead
-        # of creating a single big has value? Probably.
+        # TODO_OCTREE: can't we just hash in the parent's hashed key with
+        # our additional values? Probably, but we do it from scratch here.
         parent = super()._get_hash_values()
         return parent + (self.location,)
 
@@ -91,16 +88,19 @@ class OctreeChunk:
     The highest level of the tree contains a single chunk which depicts the
     entire image, whether 2D or 3D.
 
-    Attributes
+    Parameters
     ----------
     data : ArrayLike
         The data to draw for this chunk.
-    _orig_data : ArrayLike
-        The original unloaded data that we use to implement OctreeChunk.clear().
     location : OctreeLocation
         The location of this chunk, including the level_index, row, col.
     geom : OctreeChunkGeom
         The x, y coordinates and scale of the chunk.
+
+    Attributes
+    ----------
+    _orig_data : ArrayLike
+        The original unloaded data that we use to implement OctreeChunk.clear().
     loading : bool
         If True the chunk has been queued to be loaded.
     """
