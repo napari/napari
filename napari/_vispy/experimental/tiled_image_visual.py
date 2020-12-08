@@ -25,7 +25,7 @@ SHAPE_IN_TILES = (16, 16)
 
 
 class TiledImageVisual(ImageVisual):
-    """An image that is drawn using one or more "tiles".
+    """An image that is drawn using one or more chunks or tiles.
 
     A regular ImageVisual is a single image drawn as a single rectangle
     with a single texture. A tiled TiledImageVisual also has a single
@@ -37,7 +37,7 @@ class TiledImageVisual(ImageVisual):
     texture can hold 256 different (256, 256) tiles.
 
     When the TiledImageVisual draws, it draws a single list of quads. Each
-    quad's texture coordinates refer to a potentially different texture in
+    quad's texture coordinates potentially refers to a different texture in
     the atlas.
 
     The quads can be located anywhere, even in 3D. TiledImageVisual does
@@ -47,23 +47,24 @@ class TiledImageVisual(ImageVisual):
 
     For example, one quad might have a (256, 256) texture, but it's
     physically tiny on the screen. While the next quad is also showing a
-    (256, 256) texture, but it's really big on that same screen. This
-    ability comes in handy for octree rendering, because we will often draw
-    multiple levels of the octree at the same time.
+    (256, 256) texture, it has to be, but that quad is really big on that
+    same screen. This ability to have different size quads comes in handy
+    for octree rendering, where we often draw chunks from multiple levels
+    of the octree at the same time.
 
     Adding or removing tiles from a TiledImageVisual is efficient. Only the
     bytes in the the tile(s) being updated are sent to the card. The Vispy
     method BaseTexture.set_data() has an "offset" argument. When setting
     texture data with an offset under the hood Vispy calls
     glTexSubImage2D(). It will only update the rectangular region within
-    the texture that's being updated. This is critical to making the whole
-    thing work.
+    the texture that's being updated. This is critical to making
+    TiledImageVisual efficient.
 
     In addition, uploading new tiles does not cause the shader to be
     rebuilt. This is another reason TiledImageVisual is faster than
-    creating a stand-alone ImageVisuals to draw each tile. Each new
-    ImageVisual results in a shader build today. Although, that's pretty
-    wasteful, and could probably be optimized in the future.
+    creating a stand-alone ImageVisuals, where each new ImageVisual results
+    in a shader build today. If that were fixed TiledImageVisual would
+    still be faster, but the speed gap would be smaller.
 
     Parameters
     ----------
