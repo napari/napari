@@ -1,7 +1,8 @@
 """VispyTiledImageLayer class.
 
-A tiled image that uses TiledImageVisual and TextureAtlas2D so
-adding/removing tiles is extremely fast.
+A tiled image that uses TiledImageVisual and TextureAtlas2D so that adding
+and removing tiles is faster than if we created a separate ImageVisual for
+each.
 """
 from dataclasses import dataclass
 from typing import List
