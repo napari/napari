@@ -100,19 +100,35 @@ class OctreeChunkLoader:
         """
         drawable = []  # Create this list of drawable chunks.
 
-        # Get drawables for every ideal chunk. This will be only the chunk
-        # itself if it's drawable. Otherwise it might include one or more
-        # alternate chunks from higher or lower levels.
+        # Get the ideal checks or alternates, plus any extra chunks.
         for octree_chunk in ideal_chunks:
-            chunk_drawables = self._get_drawables(
-                drawn_chunk_set, octree_chunk, layer_key
+            drawable.extend(
+                self._get_ideal_chunks(
+                    drawn_chunk_set, octree_chunk, layer_key
+                )
             )
-
-            drawable.extend(chunk_drawables)
+            drawable.extend(self._get_extra_chunks())
 
         return drawable
 
-    def _get_drawables(
+    def _get_extra_chunks(self) -> List[OctreeChunk]:
+        """Get any extra chunks we want to draw.
+
+        Right now it's just the root tile. We draw this so that we always
+        have at least some minimal coverage when the camera moves to a new
+        place.
+
+        Return
+        ------
+        List[OctreeChunk]
+            Any extra chunks we should draw.
+        """
+        # We create it because it's not part of the intersection, it's just
+        # something extra we want to draw.
+        root_tile = self._octree.levels[-1].get_chunk(0, 0, create=True)
+        return [root_tile]
+
+    def _get_ideal_chunks(
         self,
         drawn_chunk_set: Set[OctreeChunkKey],
         ideal_chunk: OctreeChunk,
@@ -140,27 +156,30 @@ class OctreeChunkLoader:
         if ideal_chunk.in_memory and ideal_chunk.key in drawn_chunk_set:
             return [ideal_chunk]
 
-        # If the ideal chunk is not in memory or being loaded, kick off a
-        # load. This might happen sync or async. If sync then we can
-        # draw it now.
+        # If the ideal chunk has not be loaded at all yet, kick off a load.
+        # This might happen sync or async. If sync then we'll see that
+        # it's in memory below.
         if ideal_chunk.needs_load:
             self._load_chunk(ideal_chunk, layer_key)
 
         # Get the alternates for this chunk, from other levels.
         alternates = self._get_alternates(ideal_chunk, drawn_chunk_set)
 
-        # Get which of these are currently in VRAM being drawn.
-        drawn_alternates = [
-            chunk for chunk in alternates if chunk.key in drawn_chunk_set
-        ]
+        # Get which of these are currently in VRAM being drawn. Only these
+        # can be shown instantly. Typically if we are zooming in, the drawn
+        # alternates are the parent ones that were getting too big. While
+        # if we are zooming out they are the children that were getting too
+        # small.
+        drawn = [chunk for chunk in alternates if chunk.key in drawn_chunk_set]
 
-        # If the idea chunk is in memory we really want the visual to start drawing it,
-        # so only send it and the alternates already in VRAM.
+        # If the ideal chunk is in memory, we only want to send drawn
+        # alternates. Because non-drawn alternates would take just as long
+        # to get into VRAM as the ideal chunk.
         if ideal_chunk.in_memory:
-            return [ideal_chunk] + drawn_alternates
+            return [ideal_chunk] + drawn
 
-        # Keep drawing the alternates until the idea one is drawn.
-        return drawn_alternates
+        # Keep drawing these until the ideal chunk has loaded.
+        return drawn
 
     def _get_alternates(
         self, ideal_chunk: OctreeChunk, drawn_chunk_set
