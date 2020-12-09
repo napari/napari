@@ -177,9 +177,6 @@ class ChunkLoaderLayers:
         layer : Layer
             The layer itself.
         """
-        if not chunk_loader:
-            return
-
         layer_type = type(layer).__name__
         num_levels = self._get_num_levels(layer.data)
         shape_str = self._get_shape_str(layer)

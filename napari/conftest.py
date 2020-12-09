@@ -355,10 +355,18 @@ def _is_async_mode() -> bool:
 
 @pytest.fixture(autouse=True)
 def skip_sync_only(request):
-    """Skip tests depending on our sync/async settings."""
-    sync_only_test = request.node.get_closest_marker('sync_only')
-    if _is_async_mode() and sync_only_test:
+    """Skip async_only tests if running async."""
+    sync_only = request.node.get_closest_marker('sync_only')
+    if _is_async_mode() and sync_only:
         pytest.skip("running with --async_only")
+
+
+@pytest.fixture(autouse=True)
+def skip_async_only(request):
+    """Skip async_only tests if running sync."""
+    async_only = request.node.get_closest_marker('async_only')
+    if not _is_async_mode() and async_only:
+        pytest.skip("not running with --async_only")
 
 
 @pytest.fixture(autouse=True)
