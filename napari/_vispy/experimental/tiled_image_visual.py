@@ -264,7 +264,7 @@ class TiledImageVisual(ImageVisual):
         """
         for tile_data in list(self._tiles.tile_data):
             if tile_data.octree_chunk.key not in drawable_set:
-                print(f"REMOVE: {tile_data.octree_chunk}")
+                # print(f"REMOVE: {tile_data.octree_chunk}")
                 tile_index = tile_data.atlas_tile.index
                 self._remove_tile(tile_index)
 
