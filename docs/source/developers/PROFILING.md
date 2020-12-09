@@ -65,30 +65,50 @@ There are few options for check content of `pstat` file.
 
 3.  gprof2dot
 
-    For using this method there is need to have `graphviz` installed in your system.  
+    For using this method there is need to have [`graphviz`](https://graphviz.org/) installed in your system.  
     To install:
     
     * Ubuntu: `sudo apt install graphviz`
     * MacOS with brew: `brew install graphviz`
+    * Windows with choco `choco install graphviz`
 
-Let's have simple code for check speed of adding multiple layers to napari viewer:
+    then use `gprof2dot` (install with `pip install gprof2dot`) to convert `.pstat` to `.dot` file and use graphviz:
+
+    ```bash
+    $ python -m gprof2dot -f pstats  -n 5  result.pstat -o result.dot
+    $ dot -Tpng -o result.png result.dot
+    ```
+    
+    If the shell support piping it could be combined into one command:
+    
+    ```bash
+    $ python -m gprof2dot -f pstats  -n 5  result.pstat -o | dot -Tpng -o result.png
+    ```
+
+cProfile allows also for profile not only whole script, but also part of code. These needs code modification.
+We suggest usage of `cProfile.Profile()` as a context manager:
 
 ```python
-import numpy as np
-import napari
+import cProfile
 
-data = []
-for i in range(50):
-    data.append(np.random.random((1000, 2)))
-
-viewer = napari.components.ViewerModel()
-
-for i, points in enumerate(data):
-    viewer.add_points(points, visible=False)
+with cProfile.Profile() as pr:
+    code_for_profile()
+pr.dump_stats("result.pstat")
 ```
 
-then profile it with command:
+Then It could be visualized using same methods.
 
-```bash
-python -m cProfile -o many_layers.pstat many_layers.py
+To profile code which needs first few steps done in viewer code, then code for profile could be hidden under some button.
+
+For example:
+
+```python
+def testing_fun():
+    with cProfile.Profile() as pr:
+        code_for_profile()
+    pr.dump_stats("camera_layers.pstat")
+
+testing_btn = QPushButton("Profile")
+testing_btn.clicked.connect(testing_fun)
+viewer.window.add_dock_widget(testing_btn)
 ```
