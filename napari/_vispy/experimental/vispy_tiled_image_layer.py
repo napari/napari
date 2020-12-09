@@ -173,9 +173,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         else:
             self.grid.clear()
 
-        if stats.created > 0 or stats.deleted > 0:
-            for chunk in drawable_chunks:
-                print(f"drawn: {chunk}")
+        # if stats.created > 0 or stats.deleted > 0:
+        #     for chunk in drawable_chunks:
+        #       print(f"drawn: {chunk}")
 
         return stats
 
