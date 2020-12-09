@@ -185,9 +185,6 @@ class Window:
         else:
             self._debug_menu = None
 
-        if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
-
         if show:
             self.show()
 

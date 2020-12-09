@@ -5,7 +5,7 @@ from typing import NamedTuple, Tuple
 
 import numpy as np
 
-from ....components.experimental.chunk import async_config
+from ....utils.config import octree_config
 
 
 @dataclass
@@ -54,7 +54,7 @@ class OctreeDisplayOptions:
             self._show_grid = show
             self.loaded_event()  # redraw
 
-    tile_size: int = async_config.octree.tile_size
+    tile_size: int = octree_config['octree']['tile_size']
     freeze_level: bool = False
     track_view: bool = True
 
