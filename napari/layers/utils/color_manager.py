@@ -1,4 +1,5 @@
 from dataclasses import field
+from typing import Union
 
 import numpy as np
 
@@ -8,17 +9,11 @@ from ...utils.colormaps.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_with_defaults,
 )
+from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events.dataclass import Property, evented_dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
 from .layer_utils import guess_continuous
-
-
-def create_color_cycle(color_cycle):
-
-    return CategoricalColormap(
-        color_cycle, use_cycle=True, fallback_color='black'
-    )
 
 
 @evented_dataclass(events=True, properties=True)
@@ -79,6 +74,26 @@ class ColorManager:
                 n_colors, transformed_color
             )
             self.colors = colors
+
+    def add(self, color):
+        if self._color_mode == ColorMode.DIRECT:
+            new_color = transform_color(color)
+        elif self._color_mode == ColorMode.CYCLE:
+            new_color = self.categorical_colormap.map(color)
+
+        self._colors = np.concatenate((self.colors, new_color))
+
+    def remote(self, indices_to_remove: Union[set, list, np.ndarray]):
+        """Remove the indicated color elements
+
+        Parameters
+        ----------
+        indices_to_remove : set, list, np.ndarray
+            The indices of the text elements to remove.
+        """
+        selected_indices = list(indices_to_remove)
+        if len(selected_indices) > 0:
+            self._colors = np.delete(self.colors, selected_indices, axis=0)
 
     def refresh_colors(
         self, properties: dict, update_color_mapping: bool = False
