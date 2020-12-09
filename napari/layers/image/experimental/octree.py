@@ -76,7 +76,10 @@ class Octree:
         self.num_levels = len(self.data)
 
     def get_parent(
-        self, octree_chunk: OctreeChunk, create: bool = False
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
+        in_memory: bool = True,
     ) -> Optional[OctreeChunk]:
         """Return the parent of this octree_chunk.
 
@@ -104,10 +107,16 @@ class Octree:
 
         # Cut row, col in half for the corresponding parent indices.
         row, col = int(location.row / 2), int(location.col / 2)
-        return parent_level.get_chunk(row, col, create=create)
+        octree_chunk = parent_level.get_chunk(row, col, create=create)
+
+        if octree_chunk is None:
+            return None
+
+        use_chunk = not in_memory or octree_chunk.in_memory
+        return octree_chunk if use_chunk else None
 
     def get_nearest_ancestor(
-        self, octree_chunk: OctreeChunk
+        self, octree_chunk: OctreeChunk, in_memory: bool = True
     ) -> Optional[OctreeChunk]:
         """Return the nearest ancestor of this octree_chunk.
 
@@ -139,13 +148,16 @@ class Octree:
             level: OctreeLevel = self.levels[level_index]
             ancestor = level.get_chunk(row, col)
 
-            if ancestor is not None:
+            if ancestor is not None and (not in_memory or ancestor.in_memory):
                 return ancestor  # Found one.
 
         return None  # No ancestor found.
 
     def get_children(
-        self, octree_chunk: OctreeChunk, create: bool = False
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
+        in_memory: bool = True,
     ) -> List[OctreeChunk]:
         """Return the children of this octree_chunk.
 
@@ -174,7 +186,6 @@ class Octree:
 
         row, col = location.row * 2, location.col * 2
 
-        # Some of these might be None if create is False.
         children = [
             child_level.get_chunk(row, col, create=create),
             child_level.get_chunk(row, col + 1, create=create),
@@ -182,7 +193,13 @@ class Octree:
             child_level.get_chunk(row + 1, col + 1, create=create),
         ]
 
-        return [child for child in children if child is not None]
+        def keep_chunk(octree_chunk) -> bool:
+            return octree_chunk is not None and (
+                not in_memory or octree_chunk.in_memory
+            )
+
+        # Keep non-None children, and if requested in-memory ones.
+        return list(filter(keep_chunk, children))
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
         """Compute the extra levels and return them.
