@@ -85,6 +85,8 @@ There are few options for check content of `pstat` file.
     $ python -m gprof2dot -f pstats  -n 5  result.pstat -o | dot -Tpng -o result.png
     ```
 
+4.  PyCharm professional allows to view `.pstat` file using Tools > Open CProfile snapshot.
+
 cProfile allows also for profile not only whole script, but also part of code. These needs code modification.
 We suggest usage of `cProfile.Profile()` as a context manager:
 
@@ -112,3 +114,10 @@ testing_btn = QPushButton("Profile")
 testing_btn.clicked.connect(testing_fun)
 viewer.window.add_dock_widget(testing_btn)
 ```
+
+Alternative profilers available in python are:
+
+*  `yappi` with support for multithreading
+*  `vmprof` 
+
+Both could be installed from using `pip`.
