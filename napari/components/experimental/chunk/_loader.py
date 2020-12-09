@@ -461,5 +461,4 @@ Think of the ChunkLoader as a shared resource like "the filesystem" where
 multiple clients can be access it at the same time, but it is the interface
 to just one physical resource.
 """
-if octree_config:
-    chunk_loader = ChunkLoader()
+chunk_loader = ChunkLoader() if octree_config else None
