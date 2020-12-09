@@ -54,7 +54,9 @@ class OctreeDisplayOptions:
             self._show_grid = show
             self.loaded_event()  # redraw
 
-    tile_size: int = octree_config['octree']['tile_size']
+    tile_size: int = octree_config['octree'][
+        'tile_size'
+    ] if octree_config else 256
     freeze_level: bool = False
     track_view: bool = True
 
