@@ -129,6 +129,6 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        controls.deleteLater()
+        controls.close()
         controls = None
         del self.widgets[layer]

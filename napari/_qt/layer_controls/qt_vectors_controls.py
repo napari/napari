@@ -44,8 +44,8 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.edge_width.connect(self._on_width_change)
-        self.layer.events.length.connect(self._on_len_change)
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.length.connect(self._on_length_change)
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
@@ -223,7 +223,7 @@ class QtVectorsControls(QtLayerControls):
 
         return property_values
 
-    def _on_len_change(self, event=None):
+    def _on_length_change(self, event=None):
         """Change length of vectors.
 
         Parameters
@@ -234,7 +234,7 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
-    def _on_width_change(self, event=None):
+    def _on_edge_width_change(self, event=None):
         """"Receive layer model width change event and update width spinbox.
 
         Parameters

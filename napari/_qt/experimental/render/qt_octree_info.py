@@ -3,10 +3,12 @@
 Shows octree-specific information in the QtRender widget.
 """
 import numpy as np
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QFrame, QVBoxLayout
 
 from ....components.experimental import chunk_loader
-from ....layers.image.experimental.octree_image import NormalNoise, OctreeImage
+from ....layers.image.experimental.octree_image import OctreeImage
+from ....utils.events import disconnect_events
 from .qt_render_widgets import QtLabeledComboBox, QtSimpleTable
 
 
@@ -29,37 +31,11 @@ def _get_table_values(layer: OctreeImage) -> dict:
     num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
 
     return {
-        "Level": f"{layer.octree_level}",
+        "Level": f"{layer.data_level}",
         "Tiles": f"{_shape(shape_in_tiles)} = {num_tiles}",
         "Tile Shape": _shape([layer.tile_size, layer.tile_size]),
         "Layer Shape": _shape(level_info.image_shape),
     }
-
-
-def _create_mean_combo(on_set) -> QtLabeledComboBox:
-    """Return combo box for the mean noise setting.
-
-    Return
-    ------
-    QtLabeledComboBox
-        The new combo box.
-    """
-    options = {str(x): x for x in [0, 10, 20, 50, 100, 200, 500, 1000]}
-    return QtLabeledComboBox("Mean Delay (ms)", options, on_set)
-
-
-def _create_std_dev_combo(on_set) -> QtLabeledComboBox:
-    """Return combo box for the std dev noise setting.
-
-    Return
-    ------
-    QtLabeledComboBox
-        The new combo box.
-    """
-    options = {
-        str(x): x for x in [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-    }
-    return QtLabeledComboBox("Std Dev (ms)", options, on_set)
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
@@ -85,33 +61,32 @@ class QtOctreeInfoLayout(QVBoxLayout):
             chunk_loader.cache.enabled = value != 0
 
         def on_set_grid(value: int) -> None:
-            self.layer.show_grid = value != 0
+            self.layer.display.show_grid = value != 0
 
         def on_set_level(value: int) -> None:
             if value == 0:  # This is AUTO
-                self.layer.freeze_level = False
+                self.layer.display.freeze_level = False
             else:
                 level = value - 1  # Account for AUTO at 0
-                self.layer.freeze_level = True
+                self.layer.display.freeze_level = True
                 self.layer.octree_level = level
 
-        def on_set_delay(_value: int) -> None:
-            mean = self.mean_combo.get_value()
-            std_dev = self.std_dev_combo.get_value()
-            self.layer.delay_ms = NormalNoise(mean, std_dev)
-
         def on_set_track(value: int):
-            self.layer.track_view = value != 0
+            self.layer.display.track_view = value != 0
 
         # Toggle the ChunkCache.
         cache_enabled = chunk_loader.cache.enabled
         self._create_checkbox("Chunk Cache", cache_enabled, on_set_cache)
 
         # Toggle tracking: drawn tiles track view as it moves.
-        self._create_checkbox("Track View", layer.track_view, on_set_track)
+        self._create_checkbox(
+            "Track View", layer.display.track_view, on_set_track
+        )
 
         # Toggle debug grid drawn around tiles.
-        self._create_checkbox("Show Grid", layer.show_grid, on_set_grid)
+        self._create_checkbox(
+            "Show Grid", layer.display.show_grid, on_set_grid
+        )
 
         num_levels = layer.num_octree_levels
 
@@ -125,12 +100,6 @@ class QtOctreeInfoLayout(QVBoxLayout):
             "Octree Level", level_options, on_set_level
         )
         self.addWidget(self.level)
-
-        # Delay for debugging (simulates latency).
-        self.mean_combo = _create_mean_combo(on_set_delay)
-        self.addWidget(self.mean_combo)
-        self.std_dev_combo = _create_std_dev_combo(on_set_delay)
-        self.addWidget(self.std_dev_combo)
 
         # Show some keys and values about the octree.
         self.table = QtSimpleTable()
@@ -153,7 +122,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             Set controls based on this layer.
         """
         self.level.set_value(
-            "AUTO" if not layer.freeze_level else layer.octree_level
+            "AUTO" if not layer.display.freeze_level else layer.octree_level
         )
         self.table.set_values(_get_table_values(layer))
 
@@ -174,10 +143,20 @@ class QtOctreeInfo(QFrame):
 
         # Initial update and connect for future updates.
         self._update()  # initial update
-        layer.events.freeze_level.connect(self._update)
+
+        # removing this event...
+        # layer.events.freeze_level.connect(self._update)
+
         layer.events.octree_level.connect(self._update)
         layer.events.tile_size.connect(self._update)
+
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
     def _update(self, _event=None):
         """Set controls based on the current layer setting."""
         self.layout.set_controls(self.layer)
+
+    def close(self):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().close()

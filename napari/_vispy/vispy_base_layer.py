@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
+from ..utils.events import disconnect_events
 from .utils_gl import get_max_texture_sizes
 
 
@@ -52,7 +53,7 @@ class VispyBaseLayer(ABC):
             self.MAX_TEXTURE_SIZE_3D,
         ) = get_max_texture_sizes()
 
-        self.layer.events.refresh.connect(lambda e: self.node.update())
+        self.layer.events.refresh.connect(self._on_refresh_change)
         self.layer.events.set_data.connect(self._on_data_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
@@ -103,6 +104,9 @@ class VispyBaseLayer(ABC):
     def _on_data_change(self, event=None):
         raise NotImplementedError()
 
+    def _on_refresh_change(self, event=None):
+        self.node.update()
+
     def _on_visible_change(self, event=None):
         self.node.visible = self.layer.visible
 
@@ -115,7 +119,7 @@ class VispyBaseLayer(ABC):
 
     def _on_matrix_change(self, event=None):
         transform = self.layer._transforms.simplified.set_slice(
-            self.layer._dims.displayed
+            self.layer._dims_displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -128,14 +132,14 @@ class VispyBaseLayer(ABC):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        if self._array_like and self.layer._dims.ndisplay == 2:
+        if self._array_like and self.layer._ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = (
                 self.layer._transforms['data2world']
-                .set_slice(self.layer._dims.displayed)
+                .set_slice(self.layer._dims_displayed)
                 .linear_matrix
             )
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
@@ -152,6 +156,17 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
 
-    def _on_camera_move(self, event=None):
-        """Camera was moved."""
+    def _on_poll(self, event=None):
+        """Called when camera moves, before we are drawn.
+
+        Optionally called for some period once the camera stops, so the
+        visual can finish up what it was doing, such as loading data into
+        VRAM or animating itself.
+        """
         pass
+
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.events, self)
+        self.node.transforms = MatrixTransform()
+        self.node.parent = None

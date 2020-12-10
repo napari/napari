@@ -2,7 +2,12 @@
 import numpy as np
 import pytest
 
-from napari.components.experimental.chunk import ChunkKey, chunk_loader
+from napari.components.experimental.chunk import (
+    ChunkKey,
+    LayerKey,
+    LayerRef,
+    chunk_loader,
+)
 from napari.layers.image import Image
 from napari.utils import config
 
@@ -19,33 +24,37 @@ def test_chunk_key():
     layer1 = _create_layer()
     layer2 = _create_layer()
 
+    layer_key1 = LayerKey.from_layer(layer1, (0, 0))
+    layer_key2 = LayerKey.from_layer(layer2, (0, 0))
+
     # key1 and key2 should be identical.
-    key1 = ChunkKey(layer1, (0, 0))
-    key2 = ChunkKey(layer1, (0, 0))
-    assert key1 == key2
-    assert key1.key == key2.key
+    key1 = ChunkKey(layer_key1)
+    key1b = ChunkKey(layer_key1)
+    assert key1 == key1b
+    assert key1.key == key1b.key
 
     # Check key1 attributes.
     assert key1.layer_key.layer_id == id(layer1)
     assert key1.layer_key.data_level == layer1.data_level
 
-    # key3 is for a different layer.
-    key3 = ChunkKey(layer2, (0, 0))
-    assert key1 != key3
-    assert key2 != key3
+    # key2 is for a different layer.
+    key2 = ChunkKey(layer_key2)
+    assert key1 != key2
+    assert key1b != key2
 
     # key4 has different indices.
-    key4 = ChunkKey(layer2, (0, 1))
-    assert key1 != key4
-    assert key2 != key4
-    assert key3 != key4
+    layer_key3 = LayerKey.from_layer(layer2, (0, 1))
+    key3 = ChunkKey(layer_key3)
+    assert key1 != key3
+    assert key1b != key3
+    assert key2 != key3
 
-    # key5 matches key4.
-    key5 = ChunkKey(layer2, (0, 1))
-    assert key1 != key5
-    assert key2 != key5
-    assert key3 != key5
-    assert key4 == key5
+    # key4 matches key3.
+    key4 = ChunkKey(layer_key3)
+    assert key1 != key4
+    assert key1b != key4
+    assert key2 != key4
+    assert key3 == key4
 
 
 def test_loader():
@@ -54,7 +63,8 @@ def test_loader():
         return  # temporary until we add the @async_only pytest mark
 
     layer = _create_layer()
-    key = ChunkKey(layer, (0, 0))
+    layer_key = LayerKey.from_layer(layer, (0, 0))
+    key = ChunkKey(layer_key)
 
     shape = (64, 32)
     transpose_shape = (32, 64)
@@ -67,7 +77,8 @@ def test_loader():
     data2 = data * 2
 
     # Create the ChunkRequest.
-    request = chunk_loader.create_request(layer, key, chunks)
+    layer_ref = LayerRef.create_from_layer(layer, (0, 0))
+    request = chunk_loader.create_request(layer_ref, key, chunks)
 
     # Should be compatible with the layer we made it from!
     # assert request.is_compatible(layer)

@@ -6,6 +6,7 @@ import numpy as np
 
 from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
+from .octree_util import OctreeDisplayOptions
 
 
 class OctreeView(NamedTuple):
@@ -25,8 +26,7 @@ class OctreeView(NamedTuple):
 
     corners: np.ndarray
     canvas: np.ndarray
-    freeze_level: bool
-    track_view: bool
+    display: OctreeDisplayOptions
 
     @property
     def data_width(self) -> int:
@@ -47,7 +47,7 @@ class OctreeView(NamedTuple):
         bool
             True if the octree level should be selected automatically.
         """
-        return not self.freeze_level and self.track_view
+        return not self.display.freeze_level and self.display.track_view
 
 
 class OctreeIntersection:
@@ -57,34 +57,44 @@ class OctreeIntersection:
     ----------
     level : OctreeLevel
         The octree level that we intersected with.
-    corners_2d : np.ndarray
-        The lower left and upper right corners of the view in data coordinates.
+    view : OctreeView
+        The view we are intersecting with the octree.
     """
 
     def __init__(self, level: OctreeLevel, view: OctreeView):
         self.level = level
-        self.corners = view.corners
+        self._corners = view.corners
 
-        info = self.level.info
+        level_info = self.level.info
 
         # TODO_OCTREE: don't split rows/cols so all these pairs of variables
         # are just one variable each? Use numpy more.
         rows, cols = view.corners[:, 0], view.corners[:, 1]
 
-        base = info.slice_config.base_shape
+        base = level_info.slice_config.base_shape
 
         self.normalized_range = np.array(
             [np.clip(rows / base[0], 0, 1), np.clip(cols / base[1], 0, 1)]
         )
 
-        scaled_rows = rows / info.scale
-        scaled_cols = cols / info.scale
+        scaled_rows = rows / level_info.scale
+        scaled_cols = cols / level_info.scale
 
         self._row_range = self.row_range(scaled_rows)
         self._col_range = self.column_range(scaled_cols)
 
-    def tile_range(self, span, num_tiles):
-        """Return tiles indices needed to draw the span."""
+    def tile_range(
+        self, span: Tuple[float, float], num_tiles_total: int
+    ) -> range:
+        """Return tiles indices needed to draw the span.
+
+        Parameters
+        ----------
+        span : Tuple[float, float]
+            The span in image coordinates.
+        num_tiles_total : int
+            The total number of tiles in this direction.
+        """
 
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
@@ -93,8 +103,8 @@ class OctreeIntersection:
 
         span_tiles = [span[0] / tile_size, span[1] / tile_size]
         clamped = [
-            _clamp(span_tiles[0], 0, num_tiles - 1),
-            _clamp(span_tiles[1], 0, num_tiles - 1) + 1,
+            _clamp(span_tiles[0], 0, num_tiles_total - 1),
+            _clamp(span_tiles[1], 0, num_tiles_total - 1) + 1,
         ]
 
         # TODO_OCTREE: BUG, range is not empty when it should be?
@@ -104,12 +114,33 @@ class OctreeIntersection:
         return range(*span_int)
 
     def row_range(self, span: Tuple[float, float]) -> range:
-        """Return row indices which span image coordinates [y0..y1]."""
+        """Return row range of tiles for this span.
+        Parameters
+        ----------
+        span : Tuple[float, float]
+            The span in image coordinates, [y0..y1]
+
+        Return
+        ------
+        range
+            The range of tiles across the columns.
+        """
         tile_rows = self.level.info.shape_in_tiles[0]
         return self.tile_range(span, tile_rows)
 
     def column_range(self, span: Tuple[float, float]) -> range:
-        """Return column indices which span image coordinates [x0..x1]."""
+        """Return column range of tiles for this span.
+
+        Parameters
+        ----------
+        span : Tuple[float, float]
+            The span in image coordinates, [x0..x1]
+
+        Return
+        ------
+        range
+            The range of tiles across the columns.
+        """
         tile_cols = self.level.info.shape_in_tiles[1]
         return self.tile_range(span, tile_cols)
 
@@ -127,16 +158,16 @@ class OctreeIntersection:
 
         return _inside(row, self._row_range) and _inside(col, self._col_range)
 
-    def get_chunks(self, create_chunks=False) -> List[OctreeChunk]:
-        """Return chunks inside this intersection.
+    def get_chunks(self, create=False) -> List[OctreeChunk]:
+        """Return all of the chunks in this intersection.
 
         Parameters
         ----------
-        create_chunks : bool
+        create : bool
             If True, create an OctreeChunk at any location that does
-            not already have a chunk.
+            not already have one.
         """
-        chunks = []
+        chunks = []  # The chunks in the intersection.
 
         # Get every chunk that is within the rectangular region. These are
         # all the chunks we might possibly draw, because they are within
@@ -148,12 +179,10 @@ class OctreeIntersection:
         #
         # OctreeChunks can be loaded or unloaded. Unloaded chunks are not
         # drawn until their data as been loaded in. But here we return
-        # every chunk within the rectangle.
+        # every chunk within the view.
         for row in self._row_range:
             for col in self._col_range:
-                chunk = self.level.get_chunk(
-                    row, col, create_chunks=create_chunks
-                )
+                chunk = self.level.get_chunk(row, col, create=create)
                 if chunk is not None:
                     chunks.append(chunk)
 
@@ -161,7 +190,7 @@ class OctreeIntersection:
 
     @property
     def tile_state(self) -> dict:
-        """Return tile state.
+        """Return tile state, for the monitor.
 
         Return
         ------
@@ -176,13 +205,13 @@ class OctreeIntersection:
                 # A list of (row, col) pairs of visible tiles.
                 "seen": seen,
                 # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
-                "corners": self.corners,
+                "corners": self._corners,
             }
         }
 
     @property
     def tile_config(self) -> dict:
-        """Return tile config
+        """Return tile config, for the monitor.
 
         Return
         ------
