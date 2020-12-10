@@ -1,9 +1,10 @@
 """Octree class.
 """
 import math
-from typing import List
+from typing import List, Optional
 
 from ....utils.perf import block_timer
+from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel, print_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
@@ -36,10 +37,10 @@ class Octree:
     ----------
     slice_id : int:
         The id of the slice this octree is in.
-    base_shape : Tuple[int, int]
-        The shape of the full base image.
-    levels : Levels
-        All the levels of the tree.
+    data
+        The underlying multi-scale data.
+    slice_config : SliceConfig
+        The base shape and other information.
     """
 
     def __init__(self, slice_id: int, data, slice_config: SliceConfig):
@@ -71,8 +72,134 @@ class Octree:
         # Now the root should definitely contain only a single tile.
         assert self.levels[-1].info.num_tiles == 1
 
-        # This now the total number of levels.
+        # This is now the total number of levels, including the extra ones.
         self.num_levels = len(self.data)
+
+    def get_parent(
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
+        in_memory: bool = True,
+    ) -> Optional[OctreeChunk]:
+        """Return the parent of this octree_chunk.
+
+        If the parent doesn't exist this will return None. Except if create
+        is true then we'll create the parent and return it, unless
+        octree_chunk is the root of the whole octree, then we return None.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the parent of this chunk.
+
+        Return
+        ------
+        Optional[OctreeChunk]
+            The parent of the chunk if there was one or we created it.
+        """
+        location = octree_chunk.location
+
+        if location.level_index == self.num_levels - 1:
+            return None  # This is the root so no parent.
+
+        parent_level_index: int = location.level_index + 1
+        parent_level: OctreeLevel = self.levels[parent_level_index]
+
+        # Cut row, col in half for the corresponding parent indices.
+        row, col = int(location.row / 2), int(location.col / 2)
+        octree_chunk = parent_level.get_chunk(row, col, create=create)
+
+        if octree_chunk is None:
+            return None
+
+        use_chunk = not in_memory or octree_chunk.in_memory
+        return octree_chunk if use_chunk else None
+
+    def get_nearest_ancestor(
+        self, octree_chunk: OctreeChunk, in_memory: bool = True
+    ) -> Optional[OctreeChunk]:
+        """Return the nearest ancestor of this octree_chunk.
+
+        This will not create OctreeNodes. It will return None if we don't
+        find any existing ancestors. Either they don't exist, or we are
+        at the root so there are no ancestors.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the nearest ancestor of this chunk.
+
+        Return
+        ------
+        Optional[OctreeChunk]
+            The nearest ancestor of the chunk if we found one.
+        """
+        location = octree_chunk.location
+
+        # Start at the current level and work our way up.
+        level_index = location.level_index
+        row, col = location.row, location.col
+
+        # Search up one level at a time.
+        while level_index < self.num_levels - 1:
+
+            level_index += 1
+            row, col = int(row / 2), int(col / 2)
+            level: OctreeLevel = self.levels[level_index]
+            ancestor = level.get_chunk(row, col)
+
+            if ancestor is not None and (not in_memory or ancestor.in_memory):
+                return ancestor  # Found one.
+
+        return None  # No ancestor found.
+
+    def get_children(
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
+        in_memory: bool = True,
+    ) -> List[OctreeChunk]:
+        """Return the children of this octree_chunk.
+
+        If create is False then we only return children that exist, so we will
+        return between 0 and 4 children. If create is True then we will create
+        any children that don't exist. If octree_chunk is in level 0 then
+        we will always return 0 children.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the children of this chunk.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The children of the given chunk.
+        """
+        location = octree_chunk.location
+
+        if location.level_index == 0:
+            return []  # This is the base level so no children.
+
+        child_level_index: int = location.level_index - 1
+        child_level: OctreeLevel = self.levels[child_level_index]
+
+        row, col = location.row * 2, location.col * 2
+
+        children = [
+            child_level.get_chunk(row, col, create=create),
+            child_level.get_chunk(row, col + 1, create=create),
+            child_level.get_chunk(row + 1, col, create=create),
+            child_level.get_chunk(row + 1, col + 1, create=create),
+        ]
+
+        def keep_chunk(octree_chunk) -> bool:
+            return octree_chunk is not None and (
+                not in_memory or octree_chunk.in_memory
+            )
+
+        # Keep non-None children, and if requested in-memory ones.
+        return list(filter(keep_chunk, children))
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
         """Compute the extra levels and return them.
@@ -191,6 +318,8 @@ def _check_downscale_ratio(data) -> None:
     if not isinstance(data, list) or len(data) < 2:
         return  # There aren't even two levels.
 
+    # _dump_levels(data)
+
     ratio = math.sqrt(data[0].size / data[1].size)
 
     # Really should be exact, but it will most likely be off by a ton
@@ -199,3 +328,17 @@ def _check_downscale_ratio(data) -> None:
         raise ValueError(
             f"Multiscale data has downsampling ratio of {ratio}, expected 2."
         )
+
+
+def _dump_levels(data) -> None:
+    """Print the levels and the size of the levels."""
+    last_size = None
+    for level in data:
+        if last_size is not None:
+            downscale = math.sqrt(last_size / level.size)
+            print(
+                f"size={level.size} shape={level.shape} downscale={downscale}"
+            )
+        else:
+            print(f"size={level.size} shape={level.shape} base level")
+        last_size = level.size

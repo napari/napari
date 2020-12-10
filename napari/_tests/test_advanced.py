@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
 
-from napari.layers import Image
-
 
 def test_4D_5D_images(make_test_viewer):
     """Test adding 4D followed by 5D image layers to the viewer.
@@ -261,40 +259,3 @@ def test_labels_undo_redo(make_test_viewer):
     # cannot undo as limit exceeded
     labels.undo()
     assert np.array_equal(l2, labels.data)
-
-
-def test_adding_removing_layer(make_test_viewer):
-    """Test adding and removing a layer."""
-    np.random.seed(0)
-    viewer = make_test_viewer()
-
-    # Create layer
-    data = np.random.random((2, 6, 30, 40))
-    layer = Image(data)
-
-    # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
-    for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
-
-    # Add layer
-    viewer.layers.append(layer)
-    assert np.all(viewer.layers[0].data == data)
-    assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 4
-
-    # Remove layer, viewer resets
-    layer = viewer.layers[0]
-    viewer.layers.remove(layer)
-    assert len(viewer.layers) == 0
-    assert viewer.dims.ndim == 2
-
-    # Check that no other internal callbacks have been registered
-    assert len(layer.events.callbacks) == 0
-    for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
-
-    # re-add layer
-    viewer.layers.append(layer)
-    assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 4

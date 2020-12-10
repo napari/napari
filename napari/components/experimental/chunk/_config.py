@@ -98,27 +98,37 @@ def _get_config_data() -> dict:
     """
     value = os.getenv("NAPARI_ASYNC")
 
-    if (value in [None, "0"]) and not config.async_octree:
-        # Async is disabled. Note, while async is experimental if
-        # NAPARI_ASYNC and NAPARI_OCTREE are both not set, then actually
-        # this code will not be run. No async related code is even
-        # imported.
-        #
-        # However long term, using DEFAULT_SYNC_CONFIG means the
-        # ChunkLoader is being used, but ChunkLoader.force_synchronous is
-        # set True. Meaning every single load is synchronous.
-        #
-        # Once the feature is not experimental that will probably
-        # be the way to turn async "off". It will still run through
-        # the ChunkLoader, but the loads will be synchronous.
-        return DEFAULT_SYNC_CONFIG
+    # Path to the async config file is one was specified.
+    config_path = value if (value is not None and value != "1") else None
 
-    # Async is enabled with defaults.
-    async_defaults = DEFAULT_ASYNC_CONFIG
-    async_defaults['octree'] = DEFAULT_OCTREE_CONFIG
-    return async_defaults
+    # If NAPARI_ASYNC was set then we are explicilty use async.
+    explicit_async = value not in [None, "0"]
 
-    return _load_config(value)  # Load the user's JSON config file.
+    # If config.async_octree was set, that implies we have to use async.
+    use_async = explicit_async or config.async_octree
+
+    if config_path is not None:
+        return _load_config(config_path)  # Load the user's JSON config file.
+
+    if use_async:
+        # Async is enabled with defaults.
+        async_defaults = DEFAULT_ASYNC_CONFIG
+        async_defaults['octree'] = DEFAULT_OCTREE_CONFIG
+        return async_defaults
+
+    # Async is disabled. Note, while async is experimental if
+    # NAPARI_ASYNC and NAPARI_OCTREE are both not set, then actually
+    # this code will not be run. No async related code is even
+    # imported.
+    #
+    # However long term, using DEFAULT_SYNC_CONFIG means the
+    # ChunkLoader is being used, but ChunkLoader.force_synchronous is
+    # set True. Meaning every single load is synchronous.
+    #
+    # Once the feature is not experimental that will probably
+    # be the way to turn async "off". It will still run through
+    # the ChunkLoader, but the loads will be synchronous.
+    return DEFAULT_SYNC_CONFIG
 
 
 def _create_async_config(data: dict) -> AsyncConfig:
@@ -140,9 +150,9 @@ def _create_async_config(data: dict) -> AsyncConfig:
 
     octree_config = OctreeConfig(tile_size=octree_data.get("tile_size", 64))
 
-    config = AsyncConfig(
+    new_config = AsyncConfig(
         log_path=data.get("log_path"),
-        force_synchronous=data.get("synchronous", True),
+        force_synchronous=data.get("force_synchronous", True),
         num_workers=data.get("num_workers", 6),
         use_processes=data.get("use_processes", False),
         auto_sync_ms=data.get("auto_sync_ms", 30),
@@ -150,11 +160,11 @@ def _create_async_config(data: dict) -> AsyncConfig:
         octree=octree_config,
     )
 
-    _log_to_file(config.log_path)
+    _log_to_file(new_config.log_path)
     LOGGER.info("_create_async_config = ")
-    LOGGER.info(json.dumps(data, indent=4, sort_keys=True))
+    LOGGER.info(json.dumps(new_config, indent=4, sort_keys=True))
 
-    return config
+    return new_config
 
 
 # The global config settings instance.

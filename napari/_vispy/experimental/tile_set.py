@@ -82,6 +82,17 @@ class TileSet:
         del self._tiles[tile_index]
 
     @property
+    def chunk_set(self) -> Set[OctreeChunkKey]:
+        """Return the set of chunks we drawing.
+
+        Return
+        ------
+        Set[OctreeChunkKey]
+            The set of chunks we are drawing.
+        """
+        return self._chunks
+
+    @property
     def chunks(self) -> List[OctreeChunk]:
         """Return all the chunks we are tracking.
 
@@ -94,14 +105,34 @@ class TileSet:
 
     @property
     def tile_data(self) -> List[TileData]:
-        """Return the data for all tiles in the set.
+        """Return the data for all tiles in the set, unsorted.
 
         Return
         ------
         List[TileData]
-            Data for all the tiles in the set.
+            Data for all the tiles in the set sorted back to front.
         """
         return self._tiles.values()
+
+    @property
+    def tile_data_sorted(self) -> List[TileData]:
+        """Return the data for all tiles in the set, sorted back to front.
+
+        We return tiles from higher octree levels first. These are the
+        larger coarser tiles. These are "the background" while smaller
+        higher resolution tiles are drawn in front. So we show the "best
+        available" data in all locations.
+
+        Return
+        ------
+        List[TileData]
+            Data for all the tiles in the set sorted back to front.
+        """
+        return sorted(
+            self._tiles.values(),
+            key=lambda x: x.octree_chunk.location.level_index,
+            reverse=True,
+        )
 
     def contains_octree_chunk(self, octree_chunk: OctreeChunk) -> bool:
         """Return True if the set contains this chunk.

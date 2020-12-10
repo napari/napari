@@ -1,6 +1,5 @@
 import os.path
 import warnings
-from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -8,7 +7,6 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
-from vispy.visuals.transforms import ChainTransform
 
 from ..components.camera import Camera
 from ..resources import get_stylesheet
@@ -371,8 +369,7 @@ class QtViewer(QSplitter):
         """
         layer = event.value
         vispy_layer = self.layer_to_visual[layer]
-        vispy_layer.node.transforms = ChainTransform()
-        vispy_layer.node.parent = None
+        vispy_layer.close()
         del vispy_layer
         self._reorder_layers(None)
 
@@ -582,7 +579,7 @@ class QtViewer(QSplitter):
         mapped_position = transform.map(list(position))[:nd]
         position_world_slice = mapped_position[::-1]
 
-        position_world = copy(self.viewer.dims.point)
+        position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
             position_world[d] = position_world_slice[i]
 

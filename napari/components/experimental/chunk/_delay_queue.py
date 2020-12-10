@@ -177,8 +177,8 @@ class DelayQueue(threading.Thread):
             else:
                 # Oldest entry is not due, return time until it is.
                 return self.entries[0].submit_time - now
-        else:
-            return None  # There are no more entries.
+
+        return None  # There are no more entries.
 
     def flush(self):
         """Submit all entries right now."""

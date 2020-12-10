@@ -183,5 +183,9 @@ def combine_widgets(
         ):
             container.layout.addStretch()
         return container
+    elif isinstance(getattr(widgets, 'native', None), QWidget):
+        # compatibility with magicgui v0.2.0 which no longer uses QWidgets
+        # directly. Like vispy, the backend widget is at widget.native
+        return widgets.native  # type: ignore
     else:
         raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')

@@ -81,11 +81,11 @@ class OctreeLevel:
         self._tiles = {}
 
     def get_chunk(
-        self, row: int, col: int, create_chunks=False
+        self, row: int, col: int, create=False
     ) -> Optional[OctreeChunk]:
         """Return the OctreeChunk at this location if it exists.
 
-        If create_chunks is True, an OctreeChunk will be created if one
+        If create is True, an OctreeChunk will be created if one
         does not exist at this location.
 
         Parameters
@@ -94,19 +94,19 @@ class OctreeLevel:
             The row in the level.
         col : int
             The column in the level.
-        create_chunks : bool
+        create : bool
             If True, create the OctreeChunk if it does not exist.
 
         Return
         ------
         Optional[OctreeChunk]
-            The OctreeChunk if one exists at this location.
+            The OctreeChunk if one existed or we just created it.
         """
         try:
             return self._tiles[(row, col)]
         except KeyError:
-            if not create_chunks:
-                return None
+            if not create:
+                return None  # It didn't exist so we're done.
 
         # Create a chunk at this location and return it.
         octree_chunk = self._create_chunk(row, col)
@@ -162,9 +162,6 @@ class OctreeLevel:
             array_slice += (slice(None),)  # Add the colors.
 
         data = self.data[array_slice]
-
-        # if not delay_ms.is_zero:
-        #    data = _add_delay(data, delay_ms)
 
         return data
 
