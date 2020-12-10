@@ -39,7 +39,6 @@ from collections import ChainMap
 
 from vispy.util import keys
 
-
 SPECIAL_KEYS = [
     keys.SHIFT,
     keys.CONTROL,
@@ -361,7 +360,10 @@ class KeymapHandler:
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
-            maps.append(_bind_keymap(parent.class_keymap, parent))
+            # For parent and superclasses add inherited keybindings
+            for cls in parent.__class__.__mro__:
+                if hasattr(cls, 'class_keymap'):
+                    maps.append(_bind_keymap(cls.class_keymap, parent))
 
         return ChainMap(*maps)
 

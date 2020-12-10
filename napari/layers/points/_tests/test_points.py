@@ -1,10 +1,12 @@
 from copy import copy
 from itertools import cycle, islice
+
 import numpy as np
 import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
@@ -89,7 +91,7 @@ def test_empty_layer_with_face_colorap():
     layer = Points(
         properties=default_properties,
         face_color='point_type',
-        face_colormap='grays',
+        face_colormap='gray',
     )
 
     assert layer.face_color_mode == 'colormap'
@@ -107,7 +109,7 @@ def test_empty_layer_with_edge_colormap():
     layer = Points(
         properties=default_properties,
         edge_color='point_type',
-        edge_colormap='grays',
+        edge_colormap='gray',
     )
 
     assert layer.edge_color_mode == 'colormap'
@@ -216,7 +218,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # test switching to 3D
-    layer.dims.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
@@ -225,7 +227,7 @@ def test_selecting_points():
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when going back to 2D mode
-    layer.dims.ndisplay = 2
+    layer._slice_dims(ndisplay=2)
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when switching between between select and pan_zoom
@@ -722,6 +724,7 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -803,7 +806,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -820,7 +824,20 @@ def test_add_colormap(attribute):
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert 'unnamed colormap' in layer_colormap.name
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_add_point_direct(attribute: str):
+    """Test adding points to layer directly"""
+    layer = Points()
+    assert len(getattr(layer, f'{attribute}_color')) == 0
+    setattr(layer, f'current_{attribute}_color', 'red')
+    coord = [18, 18]
+    layer.add(coord)
+    np.testing.assert_allclose(
+        [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
+    )
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -944,6 +961,24 @@ def test_color_cycle(attribute, color_cycle):
     np.testing.assert_allclose(
         color_cycle_map['new'], np.squeeze(transform_color(color_cycle[0]))
     )
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_color_cycle_dict(attribute):
+    """Test setting edge/face color with a color cycle dict"""
+    data = np.array([[0, 0], [100, 0], [0, 100]])
+    properties = {'my_colors': [2, 6, 3]}
+    points_kwargs = {
+        'properties': properties,
+        f'{attribute}_color': 'my_colors',
+        f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
+    }
+    layer = Points(data, **points_kwargs)
+
+    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
+    np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
+    np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1076,7 +1111,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 def test_size():
@@ -1351,7 +1386,7 @@ def test_thumbnail_with_n_points_greater_than_max():
     # #3D
     bigger_data_3d = np.random.randint(10, 100, (max_points, 3))
     bigger_layer_3d = Points(bigger_data_3d)
-    bigger_layer_3d.dims.ndisplay = 3
+    bigger_layer_3d._slice_dims(ndisplay=3)
     bigger_layer_3d._update_thumbnail()
     assert bigger_layer_3d.thumbnail.shape == bigger_layer_3d._thumbnail_shape
 
@@ -1360,17 +1395,17 @@ def test_view_data():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     layer = Points(coords)
 
-    layer.dims.set_point(0, 0)
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
+        layer._view_data == coords[np.ix_([0, 1], layer._dims_displayed)]
     )
 
-    layer.dims.set_point(0, 1)
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(
-        layer._view_data == coords[np.ix_([2], layer.dims.displayed)]
+        layer._view_data == coords[np.ix_([2], layer._dims_displayed)]
     )
 
-    layer.dims.ndisplay = 3
+    layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
 
 
@@ -1379,20 +1414,22 @@ def test_view_size():
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, n_dimensional=False)
 
-    layer.dims.set_point(0, 0)
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
+        layer._view_size == sizes[np.ix_([0, 1], layer._dims_displayed)]
     )
 
-    layer.dims.set_point(0, 1)
-    assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
+    layer._slice_dims([1, slice(None), slice(None)])
+    assert np.all(
+        layer._view_size == sizes[np.ix_([2], layer._dims_displayed)]
+    )
 
     layer.n_dimensional = True
     assert len(layer._view_size) == 3
 
     # test a slice with no points
     layer.n_dimensional = False
-    layer.dims.set_point(0, 2)
+    layer._slice_dims([2, slice(None), slice(None)])
     assert np.all(layer._view_size == [])
 
 
@@ -1406,18 +1443,16 @@ def test_view_colors():
     )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer.dims.set_point(0, 0)
-    print(layer.face_color)
-    print(layer._view_face_color)
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[0, 1]])
     assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
-    layer.dims.set_point(0, 1)
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[2]])
     assert np.all(layer._view_edge_color == edge_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer.dims.set_point(0, 2)
+    layer._slice_dims([2, slice(None), slice(None)])
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
 
@@ -1438,3 +1473,13 @@ def test_interaction_box():
     expected_box = points_to_squares(data, size)
     box = layer.interaction_box(index)
     np.all([np.isin(p, expected_box) for p in box])
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    min_val = (-2, -5, 0)
+    max_val = (7, 30, 15)
+    layer = Points(data)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

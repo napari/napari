@@ -1,16 +1,17 @@
 import os
-import time
+import platform
 
 import numpy as np
 import pytest
 
-from napari import Viewer
+from napari import Viewer, layers
 from napari._tests.utils import (
     add_layer_by_type,
-    check_viewer_functioning,
     check_view_transform_consistency,
+    check_viewer_functioning,
     layer_test_data,
 )
+from napari.utils._tests.test_naming import eval_with_filename
 
 
 def test_viewer(make_test_viewer):
@@ -39,18 +40,9 @@ def test_viewer(make_test_viewer):
         # skip fullscreen test locally
         if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
             continue
-
-        func(viewer)
-        # the `play` keybinding calls QtDims.play_dim(), which then creates a
-        # new QThread. we must then run the keybinding a second time, which
-        # will call QtDims.stop(), otherwise the thread will be killed at the
-        # end of the test without cleanup, causing a segmentation fault.
-        # (though the tests still pass)
         if func.__name__ == 'play':
-            func(viewer)
-
-    # the test for fullscreen that used to be here has been moved to the
-    # Window.close() method.
+            continue
+        func(viewer)
 
 
 @pytest.mark.run(order=1)  # provided by pytest-ordering
@@ -77,6 +69,19 @@ def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
     # Run all class key bindings
     for func in layer.class_keymap.values():
         func(layer)
+
+
+@pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
+def test_add_layer_magic_name(
+    make_test_viewer, layer_class, a_unique_name, ndim
+):
+    """Test magic_name works when using add_* for layers"""
+    # Tests for issue #1709
+    viewer = make_test_viewer()  # noqa: F841
+    layer = eval_with_filename(
+        "add_layer_by_type(viewer, layer_class, a_unique_name)", "somefile.py",
+    )
+    assert layer.name == "a_unique_name"
 
 
 def test_screenshot(make_test_viewer):
@@ -113,51 +118,22 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
-def test_update(make_test_viewer):
-    data = np.random.random((512, 512))
-    viewer = make_test_viewer()
-    layer = viewer.add_image(data)
-
-    def layer_update(*, update_period, num_updates):
-        # number of times to update
-
-        for k in range(num_updates):
-            time.sleep(update_period)
-
-            dat = np.random.random((512, 512))
-            layer.data = dat
-
-            assert layer.data.all() == dat.all()
-            # if you're looking at this as an example,
-            # it would be best to put a yield statement here...
-            # but we're testing how it handles not having a yield statement
-
-    # NOTE: The closure approach used here has the potential to throw an error:
-    # "RuntimeError: Internal C++ object () already deleted."
-    # if an enclosed object (like the layer here) is deleted in the main thread
-    # and then subsequently called in the other thread.
-    # Previously this error would have been invisible (raised only in the other
-    # thread). But because this can make debugging hard, the new
-    # `create_worker` approach reraises thread errors in the main thread by
-    # default.  To make this test pass, we now need to explicitly use
-    # `_ignore_errors=True`, because the `layer.data = dat` line will throw an
-    # error when called after the main thread is closed.
-    with pytest.warns(DeprecationWarning):
-        viewer.update(
-            layer_update,
-            update_period=0.01,
-            num_updates=100,
-            _ignore_errors=True,
-        )
-
-
 def test_changing_theme(make_test_viewer):
-    """Test instantiating viewer."""
+    """Test changing the theme updates the full window."""
     viewer = make_test_viewer()
+    viewer.add_points(data=None)
     assert viewer.palette['folder'] == 'dark'
+
+    screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.palette['folder'] == 'light'
+
+    screenshot_light = viewer.screenshot(canvas_only=False)
+    equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # more than 99.5% of the pixels have changed
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
@@ -181,6 +157,9 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     for k, val in transf_dict.items():
         setattr(layer, k, val)
 
+    if layer_class in [layers.Image, layers.Labels]:
+        transf_dict['translate'] -= transf_dict['scale'] / 2
+
     # Check consistency:
     check_view_transform_consistency(layer, viewer, transf_dict)
 
@@ -191,3 +170,104 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     # Transpose and check again:
     viewer.dims._transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
+
+
+def test_toggling_axes(make_test_viewer):
+    """Test toggling axes."""
+    viewer = make_test_viewer()
+
+    # Check axes are not visible
+    assert not viewer.axes.visible
+
+    # Make axes visible
+    viewer.axes.visible = True
+    assert viewer.axes.visible
+
+    # Enter 3D rendering and check axes still visible
+    viewer.dims.ndisplay = 3
+    assert viewer.axes.visible
+
+    # Make axes not visible
+    viewer.axes.visible = False
+    assert not viewer.axes.visible
+
+
+def test_toggling_scale_bar(make_test_viewer):
+    """Test toggling scale bar."""
+    viewer = make_test_viewer()
+
+    # Check scale bar is not visible
+    assert not viewer.scale_bar.visible
+
+    # Make scale bar visible
+    viewer.scale_bar.visible = True
+    assert viewer.scale_bar.visible
+
+    # Enter 3D rendering and check scale bar is still visible
+    viewer.dims.ndisplay = 3
+    assert viewer.scale_bar.visible
+
+    # Make scale bar not visible
+    viewer.scale_bar.visible = False
+    assert not viewer.scale_bar.visible
+
+
+@pytest.mark.skipif(platform.system() != "Windows", reason="Windows specific")
+def test_windows_grouping_overwrite(make_test_viewer):
+    import ctypes
+
+    def get_app_id():
+        mem = ctypes.POINTER(ctypes.c_wchar)()
+        ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID(
+            ctypes.byref(mem)
+        )
+        res = ctypes.wstring_at(mem)
+        ctypes.windll.Ole32.CoTaskMemFree(mem)
+        return res
+
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("test_text")
+
+    assert "test_text" == get_app_id()
+
+    class OwnViewer(Viewer):
+        _napari_app_id = "custom_string"
+
+    make_test_viewer(viewer_class=OwnViewer)
+
+    assert OwnViewer._napari_app_id == get_app_id()
+
+    make_test_viewer()
+
+    assert Viewer._napari_app_id == get_app_id()
+
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("test_text")
+
+    class OwnViewer2(Viewer):
+        _napari_app_id = ""
+
+    make_test_viewer(viewer_class=OwnViewer2)
+
+    assert "test_text" == get_app_id()
+
+
+def test_icon_overwrite(make_test_viewer, monkeypatch):
+    from napari._qt.qt_main_window import QApplication
+
+    class OwnViewer(Viewer):
+        _napari_global_logo = False
+
+    called = [0]
+
+    def set_icon_mock(self, _icon):
+        called[0] = 1
+
+    monkeypatch.setattr(QApplication, "setWindowIcon", set_icon_mock)
+
+    make_test_viewer()
+
+    assert called[0] == 1
+    called = [0]
+
+    make_test_viewer(viewer_class=OwnViewer)
+
+    assert called[0] == 0

@@ -1,7 +1,9 @@
-from vispy.scene.visuals import Line, Compound, Mesh, Markers, Text
-from .vispy_base_layer import VispyBaseLayer
-from ._text_utils import update_text
 import numpy as np
+from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
+
+from ..utils.events import disconnect_events
+from ._text_utils import update_text
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyShapesLayer(VispyBaseLayer):
@@ -36,14 +38,14 @@ class VispyShapesLayer(VispyBaseLayer):
         # Note that the indices of the vertices need to be resversed to
         # go from numpy style to xyz
         if vertices is not None:
-            vertices = vertices[:, ::-1] + 0.5
+            vertices = vertices[:, ::-1]
 
         if len(vertices) == 0 or len(faces) == 0:
-            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            vertices = np.zeros((3, self.layer._ndisplay))
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
 
-        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
+        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         self.node._subvisuals[0].set_data(
@@ -51,8 +53,7 @@ class VispyShapesLayer(VispyBaseLayer):
         )
 
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
         self._on_text_change(update_node=False)
         self.node.update()
 
@@ -61,10 +62,8 @@ class VispyShapesLayer(VispyBaseLayer):
         vertices, faces = self.layer._outline_shapes()
 
         if vertices is None or len(vertices) == 0 or len(faces) == 0:
-            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            vertices = np.zeros((3, self.layer._ndisplay))
             faces = np.array([[0, 1, 2]])
-        else:
-            vertices = vertices + 0.5
 
         self.node._subvisuals[1].set_data(
             vertices=vertices, faces=faces, color=self.layer._highlight_color
@@ -81,10 +80,9 @@ class VispyShapesLayer(VispyBaseLayer):
         ) = self.layer._compute_vertices_and_box()
 
         if vertices is None or len(vertices) == 0:
-            vertices = np.zeros((1, self.layer.dims.ndisplay))
+            vertices = np.zeros((1, self.layer._ndisplay))
             size = 0
         else:
-            vertices = vertices + 0.5
             size = self.layer._vertex_size
 
         self.node._subvisuals[3].set_data(
@@ -98,10 +96,8 @@ class VispyShapesLayer(VispyBaseLayer):
         )
 
         if pos is None or len(pos) == 0:
-            pos = np.zeros((1, self.layer.dims.ndisplay))
+            pos = np.zeros((1, self.layer._ndisplay))
             width = 0
-        else:
-            pos = pos + 0.5
 
         self.node._subvisuals[2].set_data(
             pos=pos, color=edge_color, width=width
@@ -115,7 +111,7 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer.dims.ndisplay
+        ndisplay = self.layer._ndisplay
         if (len(self.layer._indices_view) == 0) or (
             self.layer._text.visible is False
         ):
@@ -154,3 +150,8 @@ class VispyShapesLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(self.layer.text.blending)
         self.node.update()
+
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.text.events, self)
+        super().close()

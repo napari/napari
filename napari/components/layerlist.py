@@ -1,46 +1,33 @@
-from typing import Optional, List
+import itertools
+import warnings
+from collections import namedtuple
+from typing import List, Optional
+
+import numpy as np
+
 from ..layers import Layer
+from ..utils.events import EventedList
 from ..utils.naming import inc_name_count
-from ..utils.list import ListModel
+
+Extent = namedtuple('Extent', 'data world step')
 
 
-def _add(event):
-    """When a layer is added, set its name."""
-    layers = event.source
-    layer = event.item
-    layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
-    layers.unselect_all(ignore=layer)
-
-
-class LayerList(ListModel):
+class LayerList(EventedList):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
     ----------
-    iterable : iterable
+    data : iterable
         Iterable of napari.layer.Layer
-
-    Attributes
-    ----------
-    events : vispy.util.event.EmitterGroup
-        Event hooks:
-            * added(item, index): whenever an item is added
-            * removed(item): whenever an item is removed
-            * reordered(): whenever the list is reordered
     """
 
-    def __init__(self, iterable=()):
+    def __init__(self, data=()):
         super().__init__(
-            basetype=Layer,
-            iterable=iterable,
-            lookup={str: lambda q, e: q == e.name},
+            data=data, basetype=Layer, lookup={str: lambda e: e.name},
         )
 
-        self.events.added.connect(_add)
-
-    def __newlike__(self, iterable):
-        return ListModel(self._basetype, iterable, self._lookup)
+    def __newlike__(self, data):
+        return LayerList(data)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
@@ -57,10 +44,10 @@ class LayerList(ListModel):
         new_name : str
             Coerced, unique name.
         """
-        for l in self:
-            if l is layer:
+        for _layer in self:
+            if _layer is layer:
                 continue
-            if l.name == name:
+            if _layer.name == name:
                 name = inc_name_count(name)
 
         return name
@@ -92,23 +79,14 @@ class LayerList(ListModel):
         insert : int
             Index that item(s) will be inserted at
         """
-        total = len(self)
-        indices = list(range(total))
         if not self[index].selected:
             self.unselect_all()
             self[index].selected = True
-        selected = [i for i in range(total) if self[i].selected]
-
-        # remove all indices to be moved
-        for i in selected:
-            indices.remove(i)
-        # adjust offset based on selected indices to move
-        offset = sum([i < insert and i != index for i in selected])
-        # insert indices to be moved at correct start
-        for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
-            indices.insert(insert_idx, elem_idx)
-        # reorder list
-        self[:] = self[tuple(indices)]
+            moving = (index,)
+        else:
+            moving = [i for i, item in enumerate(self) if item.selected]
+        offset = insert >= index
+        self.move_multiple(moving, insert + offset)
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore.
@@ -186,6 +164,108 @@ class LayerList(ListModel):
             if layer.selected:
                 layer.visible = not layer.visible
 
+    @property
+    def _extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        return self._get_extent_world([layer.extent for layer in self])
+
+    def _get_extent_world(self, layer_extent_list):
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        if len(self) == 0:
+            min_v = [np.nan] * self.ndim
+            max_v = [np.nan] * self.ndim
+        else:
+            extrema = [extent.world for extent in layer_extent_list]
+            mins = [e[0][::-1] for e in extrema]
+            maxs = [e[1][::-1] for e in extrema]
+
+            with warnings.catch_warnings():
+                # Taking the nanmin and nanmax of an axis of all nan
+                # raises a warning and returns nan for that axis
+                # as we have do an explict nan_to_num below this
+                # behaviour is acceptable and we can filter the
+                # warning
+                warnings.filterwarnings(
+                    'ignore', message='All-NaN axis encountered'
+                )
+                min_v = np.nanmin(
+                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
+                    axis=1,
+                )
+                max_v = np.nanmax(
+                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
+                    axis=1,
+                )
+
+        min_vals = np.nan_to_num(min_v[::-1])
+        max_vals = np.copy(max_v[::-1])
+        max_vals[np.isnan(max_vals)] = 511
+
+        return np.vstack([min_vals, max_vals])
+
+    @property
+    def _step_size(self) -> np.ndarray:
+        """Ideal step size between planes in world coordinates.
+
+        Computes the best step size that allows all data planes to be
+        sampled if moving through the full range of world coordinates.
+        The current implementation just takes the minimum scale.
+
+        Returns
+        -------
+        step_size : array, shape (D,)
+        """
+        return self._get_step_size([layer.extent for layer in self])
+
+    def _get_step_size(self, layer_extent_list):
+        if len(self) == 0:
+            return np.ones(self.ndim)
+        else:
+            scales = [extent.step[::-1] for extent in layer_extent_list]
+            full_scales = list(
+                np.array(
+                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
+                ).T
+            )
+            min_scales = np.nanmin(full_scales, axis=0)
+            return min_scales[::-1]
+
+    @property
+    def extent(self) -> Extent:
+        """Extent of layers in data and world coordinates."""
+        extent_list = [layer.extent for layer in self]
+        return Extent(
+            data=None,
+            world=self._get_extent_world(extent_list),
+            step=self._get_step_size(extent_list),
+        )
+
+    @property
+    def ndim(self) -> int:
+        """Maximum dimensionality of layers.
+
+        Defaults to 2 if no data is present.
+
+        Returns
+        -------
+        ndim : int
+        """
+        return max((layer.ndim for layer in self), default=2)
+
     def save(
         self,
         path: str,
@@ -250,8 +330,6 @@ class LayerList(ListModel):
         layers = self.selected if selected else list(self)
 
         if not layers:
-            import warnings
-
             warnings.warn(f"No layers {'selected' if selected else 'to save'}")
             return []
 

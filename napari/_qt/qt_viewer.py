@@ -1,38 +1,43 @@
+import os.path
+import warnings
 from pathlib import Path
+from typing import TYPE_CHECKING, Optional
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFileDialog,
-    QSplitter,
-    QMessageBox,
-)
+import numpy as np
+from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from ..utils.io import imsave
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
-from vispy.visuals.transforms import ChainTransform
+from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-from .qt_dims import QtDims
-from .qt_layerlist import QtLayerList
+from ..components.camera import Camera
 from ..resources import get_stylesheet
-from ..utils.theme import template
+from ..utils import config, perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
+    mouse_wheel_callbacks,
 )
+from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils import perf
+from ..utils.theme import template
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .dialogs.screenshot_dialog import ScreenshotDialog
+from .tracing.qt_performance import QtPerformance
+from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
+from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-from .utils import QImg2array, square_pixmap, circle_pixmap
-from .qt_controls import QtControls
-from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_key_bindings import QtAboutKeyBindings
-from .qt_performance import QtPerformance
-from .._vispy import create_vispy_visual
+from .._vispy import (  # isort:skip
+    VispyAxesVisual,
+    VispyCamera,
+    VispyCanvas,
+    VispyScaleBarVisual,
+    VispyWelcomeVisual,
+    create_vispy_visual,
+)
 
 
 class QtViewer(QSplitter):
@@ -42,6 +47,9 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
+    welcome : bool
+        Flag to show a welcome message when no layers are present in the
+        canvas.
 
     Attributes
     ----------
@@ -49,7 +57,7 @@ class QtViewer(QSplitter):
         Canvas for rendering the current view.
     console : QtConsole
         iPython console terminal integrated into the napari GUI.
-    controls : QtControls
+    controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
@@ -77,7 +85,11 @@ class QtViewer(QSplitter):
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, welcome=False):
+
+        # Avoid circular import.
+        from .layer_controls import QtLayerControlsContainer
+
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
 
@@ -87,7 +99,7 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtControls(self.viewer)
+        self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
@@ -133,6 +145,7 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
@@ -141,20 +154,7 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
-        self.canvas.events.ignore_callback_errors = False
-        self.canvas.events.draw.connect(self.dims.enable_play)
-        self.canvas.native.setMinimumSize(QSize(200, 200))
-        self.canvas.context.set_depth_func('lequal')
-
-        self.canvas.connect(self.on_mouse_move)
-        self.canvas.connect(self.on_mouse_press)
-        self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self.on_key_press)
-        self.canvas.connect(self.on_key_release)
-
-        self.view = self.canvas.central_widget.add_view()
-        self._update_camera()
+        self._create_canvas()
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -179,40 +179,112 @@ class QtViewer(QSplitter):
         self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
-        self.viewer.events.cursor.connect(self._on_cursor)
-        self.viewer.events.reset_view.connect(self._on_reset_view)
+        self.viewer.cursor.events.style.connect(self._on_cursor)
+        self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._add_layer)
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.camera.connect(
-            lambda event: self._update_camera()
-        )
+
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
+
+        self.view = self.canvas.central_widget.add_view()
+        self.camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
+        )
+        self.canvas.connect(self.camera.on_draw)
+
+        # Add axes, scale bar and welcome visuals.
+        self._add_visuals(welcome)
+
+        # Optional experimental monitor service.
+        self._qt_monitor = _create_qt_monitor(self, self.viewer.camera)
+
+        # Experimental QtPool for Octree visuals.
+        self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+
+    def _create_canvas(self) -> None:
+        """Create the canvas and hook up events."""
+        self.canvas = VispyCanvas(
+            keys=None,
+            vsync=True,
+            parent=self,
+            size=self.viewer._canvas_size[::-1],
+        )
+        self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
+        self.canvas.native.setMinimumSize(QSize(200, 200))
+        self.canvas.context.set_depth_func('lequal')
+
+        self.canvas.connect(self.on_mouse_move)
+        self.canvas.connect(self.on_mouse_press)
+        self.canvas.connect(self.on_mouse_release)
+        self.canvas.connect(self.on_key_press)
+        self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_mouse_wheel)
+        self.canvas.connect(self.on_draw)
+        self.canvas.connect(self.on_resize)
+
+    def _add_visuals(self, welcome: bool) -> None:
+        """Add visuals for axes, scale bar, and welcome text.
+
+        Parameters
+        ----------
+        welcome : bool
+            Show the welcome visual.
+        """
+
+        self.axes = VispyAxesVisual(
+            self.viewer.axes,
+            self.viewer.camera,
+            self.viewer.dims,
+            parent=self.view.scene,
+            order=1e6,
+        )
+        self.scale_bar = VispyScaleBarVisual(
+            self.viewer.scale_bar,
+            self.viewer.camera,
+            parent=self.view,
+            order=1e6 + 1,
+        )
+        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
+
+        self._show_welcome = welcome and config.allow_welcome_visual
+        if self._show_welcome:
+            self.welcome = VispyWelcomeVisual(
+                self.viewer, parent=self.view, order=-100
+            )
+            self.viewer.events.layers_change.connect(
+                self.welcome._on_visible_change
+            )
+            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
         """
-        if not perf.USE_PERFMON:
-            return None
-
-        return QtViewerDockWidget(
-            self,
-            QtPerformance(),
-            name='performance',
-            area='bottom',
-            shortcut='Ctrl+Shift+P',
-        )
+        if perf.USE_PERFMON:
+            return QtViewerDockWidget(
+                self,
+                QtPerformance(),
+                name='performance',
+                area='bottom',
+                shortcut='Ctrl+Shift+P',
+            )
+        return None
 
     @property
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI.
         """
         if self._console is None:
-            from .qt_console import QtConsole
+            from .widgets.qt_console import QtConsole
 
             self.console = QtConsole({'viewer': self.viewer})
         return self._console
@@ -236,7 +308,7 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _add_layer(self, event):
+    def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
 
         Parameters
@@ -244,12 +316,26 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layers = event.source
-        layer = event.item
+        layer = event.value
+        self._add_layer(layer)
+
+    def _add_layer(self, layer):
+        """When a layer is added, set its parent and order.
+
+        Parameters
+        ----------
+        layer : napari.layers.Layer
+            Layer to be added.
+        """
         vispy_layer = create_vispy_visual(layer)
+
+        if self._qt_poll is not None:
+            # Visuals might need to be polled when the camera moves and during
+            # a short period after the movement stops.
+            self._qt_poll.events.poll.connect(vispy_layer._on_poll)
+
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers) - 1
-        self.canvas.connect(vispy_layer.on_draw)
+        vispy_layer.order = len(self.viewer.layers) - 1
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -260,11 +346,9 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         vispy_layer = self.layer_to_visual[layer]
-        self.canvas.events.draw.disconnect(vispy_layer.on_draw)
-        vispy_layer.node.transforms = ChainTransform()
-        vispy_layer.node.parent = None
+        vispy_layer.close()
         del vispy_layer
         self._reorder_layers(None)
 
@@ -281,29 +365,6 @@ class QtViewer(QSplitter):
             vispy_layer.order = i
         self.canvas._draw_order.clear()
         self.canvas.update()
-
-    def _update_camera(self):
-        """Update the viewer camera."""
-        if self.viewer.dims.ndisplay == 3:
-            # Set a 3D camera
-            if not isinstance(self.view.camera, ArcballCamera):
-                self.view.camera = ArcballCamera(name="ArcballCamera", fov=0)
-                # flip y-axis to have correct alignment
-                # self.view.camera.flip = (0, 1, 0)
-
-                self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
-        else:
-            # Set 2D camera
-            if not isinstance(self.view.camera, PanZoomCamera):
-                self.view.camera = PanZoomCamera(
-                    aspect=1, name="PanZoomCamera"
-                )
-                # flip y-axis to have correct alignment
-                self.view.camera.flip = (0, 1, 0)
-
-                self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
@@ -323,16 +384,24 @@ class QtViewer(QSplitter):
                 '\nor use "Save all layers..."'
             )
         if msg:
-            QMessageBox.warning(self, "Nothing to save", msg, QMessageBox.Ok)
-            return
+            raise IOError("Nothing to save")
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption=f'Save {"selected" if selected else "all"} layers',
             directory=self._last_visited_dir,  # home dir by default
         )
+
         if filename:
-            self.viewer.layers.save(filename, selected=selected)
+            with warnings.catch_warnings(record=True) as wa:
+                saved = self.viewer.layers.save(filename, selected=selected)
+                error_messages = "\n".join(
+                    [str(x.message.args[0]) for x in wa]
+                )
+            if not saved:
+                raise IOError(
+                    f"File {filename} save failed.\n{error_messages}"
+                )
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -348,28 +417,16 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self.canvas.native.grabFramebuffer()
+        img = QImg2array(self.canvas.native.grabFramebuffer())
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self,
-            caption='Save screenshot',
-            directory=self._last_visited_dir,  # home dir by default
-            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
-            # jpg and jpeg not included as they don't support an alpha channel
-        )
-        if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the
-            # filter option does not always add an extension on linux and windows
-            # see https://bugreports.qt.io/browse/QTBUG-27186
-            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
-            if not filename.endswith(image_extensions):
-                filename = filename + '.png'
-            self.screenshot(path=filename)
+        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        if dial.exec_():
+            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
@@ -401,6 +458,14 @@ class QtViewer(QSplitter):
         if folder not in {'', None}:
             self.viewer.open([folder])
 
+    def _toggle_chunk_outlines(self):
+        """Toggle whether we are drawing outlines around the chunks."""
+        from ..layers.image.experimental.octree_image import OctreeImage
+
+        for layer in self.viewer.layers:
+            if isinstance(layer, OctreeImage):
+                layer.display.show_grid = not layer.display.show_grid
+
     def _on_interactive(self, event):
         """Link interactive attributes of view and viewer.
 
@@ -419,9 +484,14 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        cursor = self.viewer.cursor
+        cursor = self.viewer.cursor.style
+        # Scale size by zoom if needed
+        if self.viewer.cursor.scaled:
+            size = self.viewer.cursor.size * self.viewer.camera.zoom
+        else:
+            size = self.viewer.cursor.size
+
         if cursor == 'square':
-            size = self.viewer.cursor_size
             # make sure the square fits within the current canvas
             if size < 8 or size > (
                 min(*self.viewer.window.qt_viewer.canvas.size) - 4
@@ -430,30 +500,11 @@ class QtViewer(QSplitter):
             else:
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
-            size = self.viewer.cursor_size
             q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
+
         self.canvas.native.setCursor(q_cursor)
-
-    def _on_reset_view(self, event):
-        """Reset view of the rendered scene.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if isinstance(self.view.camera, ArcballCamera):
-            quat = self.view.camera._quaternion.create_from_axis_angle(
-                *event.quaternion
-            )
-            self.view.camera._quaternion = quat
-            self.view.camera.center = event.center
-            self.view.camera.scale_factor = event.scale_factor
-        else:
-            # Assumes default camera has the same properties as PanZoomCamera
-            self.view.camera.rect = event.rect
 
     def _update_palette(self, event=None):
         """Update the napari GUI theme."""
@@ -496,6 +547,71 @@ class QtViewer(QSplitter):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
+    def _map_canvas2world(self, position):
+        """Map position from canvas pixels into world coordinates.
+
+        Parameters
+        ----------
+        position : 2-tuple
+            Position in canvas (x, y).
+
+        Returns
+        -------
+        coords : tuple
+            Position in world coordinates, matches the total dimensionality
+            of the viewer.
+        """
+        nd = self.viewer.dims.ndisplay
+        transform = self.view.camera.transform.inverse
+        mapped_position = transform.map(list(position))[:nd]
+        position_world_slice = mapped_position[::-1]
+
+        position_world = list(self.viewer.dims.point)
+        for i, d in enumerate(self.viewer.dims.displayed):
+            position_world[d] = position_world_slice[i]
+
+        return tuple(position_world)
+
+    @property
+    def _canvas_corners_in_world(self):
+        """Location of the corners of canvas in world coordinates.
+
+        Returns
+        -------
+        corners : 2-tuple
+            Coordinates of top left and bottom right canvas pixel in the world.
+        """
+        # Find corners of canvas in world coordinates
+        top_left = self._map_canvas2world([0, 0])
+        bottom_right = self._map_canvas2world(self.canvas.size)
+        return np.array([top_left, bottom_right])
+
+    def on_resize(self, event):
+        """Called whenever canvas is resized.
+
+        event : vispy.util.event.Event
+            The vispy event that triggered this method.
+        """
+        self.viewer._canvas_size = tuple(self.canvas.size[::-1])
+
+    def on_mouse_wheel(self, event):
+        """Called whenever mouse wheel activated in canvas.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+        """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+        mouse_wheel_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            mouse_wheel_callbacks(layer, event)
+
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 
@@ -508,14 +624,11 @@ class QtViewer(QSplitter):
             return
 
         event = ReadOnlyWrapper(event)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -529,14 +642,11 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -550,14 +660,11 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
@@ -597,6 +704,22 @@ class QtViewer(QSplitter):
             return
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
+
+    def on_draw(self, event):
+        """Called whenever the canvas is drawn.
+
+        This is triggered from vispy whenever new data is sent to the canvas or
+        the camera is moved and is connected in the `QtViewer`.
+        """
+        for layer in self.viewer.layers:
+            if layer.ndim <= self.viewer.dims.ndim:
+                layer._update_draw(
+                    scale_factor=1 / self.viewer.camera.zoom,
+                    corner_pixels=self._canvas_corners_in_world[
+                        :, -layer.ndim :
+                    ],
+                    shape_threshold=self.canvas.size,
+                )
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
@@ -662,6 +785,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        self.layers.close()
+
         # if the viewer.QtDims object is playing an axis, we need to terminate
         # the AnimationThread before close, otherwise it will cauyse a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
@@ -674,12 +799,60 @@ class QtViewer(QSplitter):
         event.accept()
 
 
-def viewbox_key_event(event):
-    """ViewBox key event handler.
+if TYPE_CHECKING:
+    from .experimental.qt_monitor import QtMonitor
+    from .experimental.qt_poll import QtPoll
+
+
+def _create_qt_monitor(
+    parent: QObject, camera: Camera
+) -> 'Optional[QtMonitor]':
+    """Create and return a QtMonitor instance.
+
+    A monitor instance is only created if NAPARI_MON is set.
 
     Parameters
     ----------
-    event : napari.utils.event.Event
-        The napari event that triggered this method.
+    parent : QObject
+        Parent for the qtMonitor.
+    camera : VispyCamera
+        Camera that the monitor will tie into.
+
+    Return
+    ------
+    Optional[QtMonitor]
+        The new monitor instance, if any
     """
-    return
+    if config.monitor:
+        from .experimental.qt_monitor import QtMonitor
+
+        # We can probably get rid of QtMonitor and use QtPoll instead,
+        # since it's the same idea but more general.
+        return QtMonitor(parent, camera)
+
+    return None
+
+
+def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+    """Create and return a QtPoll instance, if enabled.
+
+    A QtPoll instance is only created if using octree for now.
+
+    Parameters
+    ----------
+    parent : QObject
+        Parent for the qtMonitor.
+    camera : VispyCamera
+        Camera that the monitor will tie into.
+
+    Return
+    ------
+    Optional[QtMonitor]
+        The new monitor instance, if any
+    """
+    if config.async_octree:
+        from .experimental.qt_poll import QtPoll
+
+        return QtPoll(parent, camera)
+
+    return None

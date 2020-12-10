@@ -1,7 +1,8 @@
 import numpy as np
-from ..utils.layer_utils import segment_normal
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
+
+from ..utils.layer_utils import segment_normal
 
 
 def inside_triangles(triangles):
@@ -994,7 +995,7 @@ def get_shape_ndim(data):
         Dimensionality of the shape/s in data
     """
     # list of all the same shapes
-    if np.array(data).ndim == 3:
+    if np.array(data, dtype=object).ndim == 3:
         ndim = np.array(data).shape[2]
     # just one shape
     elif np.array(data[0]).ndim == 1:
@@ -1003,3 +1004,29 @@ def get_shape_ndim(data):
     else:
         ndim = np.array(data[0]).shape[1]
     return ndim
+
+
+def number_of_shapes(data):
+    """Determine number of shapes in the data.
+
+    Parameters
+    ----------
+    data : list or np.ndarray
+        Can either be no shapes, if empty, a
+        single shape or a list of shapes.
+
+    Returns
+    -------
+    n_shapes : int
+        Number of new shapes
+    """
+    if len(data) == 0:
+        # If no new shapes
+        n_shapes = 0
+    elif np.array(data[0]).ndim == 1:
+        # If a single array for a shape
+        n_shapes = 1
+    else:
+        n_shapes = len(data)
+
+    return n_shapes

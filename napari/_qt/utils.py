@@ -10,9 +10,9 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
 )
 
 from ..utils.misc import is_sequence
@@ -74,6 +74,7 @@ def disable_with_opacity(obj, widget_list, disabled):
 @lru_cache(maxsize=64)
 def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
@@ -86,8 +87,9 @@ def square_pixmap(size):
 
 
 @lru_cache(maxsize=64)
-def circle_pixmap(size):
+def circle_pixmap(size: int):
     """Create a white/black hollow circle pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
@@ -181,5 +183,9 @@ def combine_widgets(
         ):
             container.layout.addStretch()
         return container
+    elif isinstance(getattr(widgets, 'native', None), QWidget):
+        # compatibility with magicgui v0.2.0 which no longer uses QWidgets
+        # directly. Like vispy, the backend widget is at widget.native
+        return widgets.native  # type: ignore
     else:
         raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')

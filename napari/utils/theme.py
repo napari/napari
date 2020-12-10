@@ -48,6 +48,7 @@ palettes = {
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
+opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
 def darken(color: str, percentage=10):
@@ -70,6 +71,13 @@ def lighten(color: str, percentage=10):
     green = min(max(int(green + (255 - green) * ratio), 0), 255)
     blue = min(max(int(blue + (255 - blue) * ratio), 0), 255)
     return f'rgb({red}, {green}, {blue})'
+
+
+def opacity(color: str, value=255):
+    if color.startswith('rgb('):
+        color = literal_eval(color.lstrip('rgb(').rstrip(')'))
+    red, green, blue = color
+    return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
 
 
 def gradient(stops, horizontal=True):
@@ -96,6 +104,10 @@ def template(css, **palette):
         color, percentage = matchobj.groups()
         return lighten(palette[color], percentage)
 
+    def opacity_match(matchobj):
+        color, percentage = matchobj.groups()
+        return opacity(palette[color], percentage)
+
     def gradient_match(matchobj):
         horizontal = matchobj.groups()[1] == 'h'
         stops = [i.strip() for i in matchobj.groups()[1].split('-')]
@@ -105,5 +117,6 @@ def template(css, **palette):
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
+        css = opacity_pattern.sub(opacity_match, css)
         css = css.replace('{{ %s }}' % k, v)
     return css

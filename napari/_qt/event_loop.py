@@ -1,4 +1,3 @@
-import os
 import sys
 from contextlib import contextmanager
 from os.path import dirname, join
@@ -7,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
+from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 
 
@@ -15,29 +15,33 @@ def _create_application(argv) -> QApplication:
 
     Notes
     -----
-    We substitute QApplicationWithTiming when using perfmon.
+    Substitute QApplicationWithTracing when using perfmon.
 
-    Note that in Viewer we call convert_app_for_timing() which will create a
-    QApplicationWithTiming. However that's only for IPython/Jupyter. When using
-    gui_qt we need to create it up front here before any QWidget objects are
-    created, like the splash screen.
+    With IPython/Jupyter we call convert_app_for_tracing() which deletes
+    the QApplication and creates a new one. However here with gui_qt we
+    need to create the correct QApplication up front, or we will crash.
+    We'll crash because we'd be deleting the QApplication after we created
+    QWidgets with it, such as we do for the splash screen.
     """
-    if os.getenv("NAPARI_PERFMON", "0") != "0":
-        from .qt_event_timing import QApplicationWithTiming
+    if perf_config and perf_config.trace_qt_events:
+        from .tracing.qt_event_tracing import QApplicationWithTracing
 
-        return QApplicationWithTiming(argv)
+        return QApplicationWithTracing(argv)
     else:
         return QApplication(argv)
 
 
 @contextmanager
-def gui_qt(*, startup_logo=False):
+def gui_qt(*, startup_logo=False, gui_exceptions=False):
     """Start a Qt event loop in which to run the application.
 
     Parameters
     ----------
-    startup_logo : bool
+    startup_logo : bool, optional
         Show a splash screen with the napari logo during startup.
+    gui_exceptions : bool, optional
+        Whether to show uncaught exceptions in the GUI, by default they will be
+        shown in the console that launched the event loop.
 
     Notes
     -----
@@ -68,10 +72,14 @@ def gui_qt(*, startup_logo=False):
         app._existed = True
 
     # instantiate the exception handler
-    exception_handler = ExceptionHandler()
+    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
     sys.excepthook = exception_handler.handle
 
-    yield app
+    try:
+        yield app
+    except Exception:
+        exception_handler.handle(*sys.exc_info())
+
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
     # ``app.exec_``, we avoid blocking.

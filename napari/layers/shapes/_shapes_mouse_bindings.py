@@ -1,7 +1,9 @@
-import numpy as np
 from copy import copy
+
+import numpy as np
+
 from ._shapes_constants import Mode
-from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
 
@@ -25,24 +27,27 @@ def select(layer, event):
         if shift and shape_under_cursor is not None:
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
             else:
                 layer.selected_data.add(shape_under_cursor)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
         elif shape_under_cursor is not None:
             if shape_under_cursor not in layer.selected_data:
                 layer.selected_data = {shape_under_cursor}
         else:
             layer.selected_data = set()
     layer._set_highlight()
+
+    # we don't update the thumbnail unless a shape has been moved
+    update_thumbnail = False
     yield
 
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
         layer._move(layer.displayed_coordinates)
+
+        # if a shape is being moved, update the thumbnail
+        if layer._is_moving:
+            update_thumbnail = True
         yield
 
     # on release
@@ -56,13 +61,16 @@ def select(layer, event):
         layer.selected_data = layer._data_view.shapes_in_box(layer._drag_box)
         layer._is_selecting = False
         layer._set_highlight()
+
     layer._is_moving = False
     layer._drag_start = None
     layer._drag_box = None
     layer._fixed_vertex = None
     layer._moving_value = (None, None)
     layer._set_highlight()
-    layer._update_thumbnail()
+
+    if update_thumbnail:
+        layer._update_thumbnail()
 
 
 def add_line(layer, event):

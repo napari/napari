@@ -17,4 +17,4 @@ with napari.gui_qt():
     viewer.add_image(data.moon(), name='moon')
     viewer.add_image(np.random.random((512, 512)), name='random')
     viewer.add_image(data.binary_blobs(length=512, volume_fraction=0.2, n_dim=2), name='blobs')
-    viewer.grid_view()
+    viewer.grid.enabled = True

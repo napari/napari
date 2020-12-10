@@ -1,7 +1,9 @@
 import re
 import sys
 from typing import Callable, Dict, Generator
+
 from napari_plugin_engine import PluginError, standard_metadata
+
 from ..types import ExcInfo
 
 if sys.version_info >= (3, 8):
@@ -140,7 +142,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
                 # remove superfluous whitespace
                 html = html.replace('<br>\n', '\n')
                 # but retain it around the <small> bits
-                html = re.sub(r'(<tr><td><small.*</tr>)', f'<br>\\1<br>', html)
+                html = re.sub(r'(<tr><td><small.*</tr>)', '<br>\\1<br>', html)
                 # weird 2-part syntax is a workaround for hard-to-grep text.
                 html = html.replace(
                     "<p>A problem occurred in a Python script.  "

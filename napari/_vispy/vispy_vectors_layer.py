@@ -1,6 +1,7 @@
-from vispy.scene.visuals import Mesh
-from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from vispy.scene.visuals import Mesh
+
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyVectorsLayer(VispyBaseLayer):
@@ -17,15 +18,15 @@ class VispyVectorsLayer(VispyBaseLayer):
             len(self.layer._view_vertices) == 0
             or len(self.layer._view_faces) == 0
         ):
-            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            vertices = np.zeros((3, self.layer._ndisplay))
             faces = np.array([[0, 1, 2]])
             face_color = np.array([[0, 0, 0, 0]])
         else:
-            vertices = self.layer._view_vertices[:, ::-1] + 0.5
+            vertices = self.layer._view_vertices[:, ::-1]
             faces = self.layer._view_faces
             face_color = self.layer._view_face_color
 
-        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
+        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         # self.node.set_data(
@@ -37,5 +38,4 @@ class VispyVectorsLayer(VispyBaseLayer):
 
         self.node.update()
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()

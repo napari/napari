@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
-from vispy.color import Colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
+from napari.utils import Colormap
 
 
 def test_random_labels():
@@ -13,8 +14,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -26,7 +26,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -38,12 +38,12 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
-    layer.dims.ndisplay = 3
-    assert layer.dims.ndisplay == 3
+    layer._slice_dims(ndisplay=3)
+    assert layer._ndisplay == 3
     assert layer.editable is False
     assert layer.mode == 'pan_zoom'
 
@@ -59,8 +59,7 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
-    assert layer.dims.range == [(0, m, 1) for m in shape_b]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -76,8 +75,7 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
-    assert layer.dims.range == [(0, m, 1) for m in shape_b]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -278,26 +276,28 @@ def test_colormap():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert type(layer.colormap) == tuple
-    assert layer.colormap[0] == 'random'
-    assert type(layer.colormap[1]) == Colormap
+    assert isinstance(layer.colormap, Colormap)
+    assert layer.colormap.name == 'label_colormap'
 
     layer.new_colormap()
-    assert type(layer.colormap) == tuple
-    assert layer.colormap[0] == 'random'
-    assert type(layer.colormap[1]) == Colormap
+    assert isinstance(layer.colormap, Colormap)
+    assert layer.colormap.name == 'label_colormap'
 
 
 def test_custom_color_dict():
     """Test custom color dict."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data, color={1: 'white'})
+    layer = Labels(
+        data, color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'}
+    )
 
     # test with custom color dict
     assert type(layer.get_color(2)) == np.ndarray
     assert type(layer.get_color(1)) == np.ndarray
-    assert (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+    assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+    assert (layer.get_color(4) == layer.get_color(16)).all()
+    assert (layer.get_color(8) == layer.get_color(32)).all()
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
@@ -372,6 +372,33 @@ def test_label_color():
 
     col = layer.get_color(1)
     assert len(col) == 4
+
+
+def test_show_selected_label():
+    """Test color of labels when filtering to selected labels"""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    original_color = layer.get_color(1)
+
+    layer.show_selected_label = True
+    original_background_color = layer.get_color(layer._background_label)
+    none_color = layer.get_color(None)
+    layer.selected_label = 1
+
+    # color of selected label has not changed
+    assert np.allclose(layer.get_color(layer.selected_label), original_color)
+
+    current_background_color = layer.get_color(layer._background_label)
+    # color of background is background color
+    assert current_background_color == original_background_color
+
+    # color of all others is none color
+    other_labels = np.unique(layer.data)[2:]
+    other_colors = np.array(
+        list(map(lambda x: layer.get_color(x), other_labels))
+    )
+    assert np.allclose(other_colors, none_color)
 
 
 def test_paint():
@@ -519,3 +546,13 @@ def test_thumbnail():
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.randint(20, size=(shape))
+    layer = Labels(data)
+    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

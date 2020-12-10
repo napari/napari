@@ -1,18 +1,59 @@
 """Miscellaneous utility functions.
 """
+import builtins
 import collections.abc
 import inspect
 import itertools
 import re
-import builtins
-
+import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar
+from urllib.parse import urlparse
 
 import numpy as np
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
+
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata  # noqa
+
+
+def running_as_bundled_app() -> bool:
+    """Infer whether we are running as a briefcase bundle"""
+    # https://github.com/beeware/briefcase/issues/412
+    # https://github.com/beeware/briefcase/pull/425
+    app_module = sys.modules['__main__'].__package__
+    try:
+        metadata = importlib_metadata.metadata(app_module)
+    except importlib_metadata.PackageNotFoundError:
+        return False
+
+    return 'Briefcase-Version' in metadata
+
+
+def in_jupyter() -> bool:
+    """Return true if we're running in jupyter notebook/lab or qtconsole."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
+def in_ipython() -> bool:
+    """Return true if we're running in an IPython interactive shell."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+    except Exception:
+        pass
+    return False
 
 
 def str_to_rgb(arg):
@@ -222,7 +263,8 @@ def abspath_or_url(relpath: T) -> T:
 
     if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
-        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+        urlp = urlparse(relpath)
+        if urlp.scheme and urlp.netloc:
             return relpath
         return path.abspath(path.expanduser(relpath))
 
@@ -294,3 +336,23 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def ensure_n_tuple(val, n, fill=0):
+    """Ensure input is a length n tuple.
+
+    Parameters
+    ----------
+    val : iterable
+        Iterable to be forced into length n-tuple.
+    n : int
+        Length of tuple.
+
+    Returns
+    -------
+    tuple
+        Coerced tuple.
+    """
+    assert n > 0, 'n must be greater than 0'
+    tuple_value = tuple(val)
+    return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]

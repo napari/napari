@@ -1,56 +1,56 @@
+import warnings
+from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import Dict, Optional, Tuple, Union
-import warnings
 
 import numpy as np
-from vispy.color.colormap import Colormap
+from vispy.color import get_color_names
 
-from ...types import ValidColormapArg
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_with_defaults,
-)
-from ...utils.colormaps import ensure_colormap_tuple
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.standardize_color import (
-    transform_color,
     hex_to_name,
     rgb_to_hex,
+    transform_color,
 )
-from ..utils.color_transformations import transform_color_cycle, ColorType
-from ...utils.event import Event
+from ...utils.events import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
+from ..base import Layer
+from ..utils.color_transformations import (
+    ColorType,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
 from ..utils.text import TextManager
-from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
-from ..base import Layer
-from vispy.color import get_color_names
-from ._shapes_constants import (
-    Mode,
-    Box,
-    BACKSPACE,
-    shape_classes,
-    ShapeType,
-    ColorMode,
-)
 from ._shape_list import ShapeList
-from ._shapes_utils import create_box, get_shape_ndim
-from ._shapes_models import Rectangle, Ellipse, Polygon
+from ._shapes_constants import (
+    BACKSPACE,
+    Box,
+    ColorMode,
+    Mode,
+    ShapeType,
+    shape_classes,
+)
+from ._shapes_models import Ellipse, Polygon, Rectangle
 from ._shapes_mouse_bindings import (
-    highlight,
-    select,
-    add_line,
     add_ellipse,
-    add_rectangle,
+    add_line,
     add_path_polygon,
     add_path_polygon_creating,
+    add_rectangle,
+    highlight,
+    select,
     vertex_insert,
     vertex_remove,
 )
+from ._shapes_utils import create_box, get_shape_ndim, number_of_shapes
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -97,9 +97,8 @@ class Shapes(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -114,9 +113,8 @@ class Shapes(Layer):
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
         categorical attribute is used color the vectors.
-    face_colormap : str, vispy.color.colormap.Colormap
+    face_colormap : str, napari.utils.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -136,6 +134,21 @@ class Shapes(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -252,18 +265,24 @@ class Shapes(Layer):
         shapes when they are changed. Blocking this prevents circular loops
         when shapes are selected and the properties are changed based on that
         selection
+    _allow_thumnail_update : bool
+        Flag set to true to allow the thumbnail to be updated. Blocking the thumbnail
+        can be advantageous where responsiveness is critical.
     _clipboard : dict
         Dict of shape objects that are to be used during a copy and paste.
     _colors : list
         List of supported vispy color names.
     _vertex_size : float
-        Size of the vertices of the shapes and boudning box in Canvas
+        Size of the vertices of the shapes and bounding box in Canvas
         coordinates.
     _rotation_handle_length : float
         Length of the rotation handle of the boudning box in Canvas
         coordinates.
     _input_ndim : int
         Dimensions of shape data.
+    _thumbnail_update_thresh : int
+        If there are more than this number of shapes, the thumnail
+        won't update during interactive events
     """
 
     _colors = get_color_names()
@@ -271,6 +290,10 @@ class Shapes(Layer):
     _rotation_handle_length = 20
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
+
+    # If more shapes are present then they are randomly subsampled
+    # in the thumbnail
+    _max_shapes_thumbnail = 100
 
     def __init__(
         self,
@@ -294,6 +317,9 @@ class Shapes(Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -315,6 +341,9 @@ class Shapes(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -325,15 +354,18 @@ class Shapes(Layer):
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
+            properties=Event,
             current_edge_color=Event,
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
         )
 
+        # Flag set to false to block thumbnail refresh
+        self._allow_thumbnail_update = True
+
         self._display_order_stored = []
-        self._ndisplay_stored = self.dims.ndisplay
-        self.dims.clip = False
+        self._ndisplay_stored = self._ndisplay
 
         # Save the properties
         if properties is None:
@@ -374,9 +406,9 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
-        self._data_view.slice_key = np.array(self.dims.indices)[
-            list(self.dims.not_displayed)
+        self._data_view = ShapeList(ndisplay=self._ndisplay)
+        self._data_view.slice_key = np.array(self._slice_indices)[
+            list(self._dims_not_displayed)
         ]
 
         self._value = (None, None)
@@ -403,10 +435,6 @@ class Shapes(Layer):
         self._mode_history = self._mode
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
-
-        self.events.deselect.connect(self._finish_drawing)
-        self.events.face_color.connect(self._update_thumbnail)
-        self.events.edge_color.connect(self._update_thumbnail)
 
         self._init_shapes(
             data,
@@ -495,7 +523,7 @@ class Shapes(Layer):
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
                 prop=prop_value,
-                colormap=colormap[1],
+                colormap=colormap,
                 contrast_limits=contrast_limits,
             )
         setattr(self, f'_current_{attribute}_color', curr_color)
@@ -511,14 +539,29 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
 
-        adding = len(data)
-        # handle case where data is just a single shape
-        if np.asarray(data[0]).ndim == 1:
-            adding = 1
-        self.text.add(self.current_properties, adding)
+        n_new_shapes = number_of_shapes(data)
+        self.text.add(self.current_properties, n_new_shapes)
 
         self._update_dims()
         self.events.data()
+        self._set_editable()
+
+    @property
+    def selected(self):
+        """bool: Whether this layer is selected or not."""
+        return self._selected
+
+    @selected.setter
+    def selected(self, selected):
+        if selected == self.selected:
+            return
+        self._selected = selected
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
+            self._finish_drawing()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -548,6 +591,7 @@ class Shapes(Layer):
 
         if self.text.values is not None:
             self.refresh_text()
+        self.events.properties()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -557,16 +601,21 @@ class Shapes(Layer):
             ndim = self.data[0].shape[1]
         return ndim
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
-        if self.nshapes == 0:
-            maxs = [1] * self.ndim
-            mins = [0] * self.ndim
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        if len(self.data) == 0:
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
             mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
-
-        return tuple((min, max) for min, max in zip(mins, maxs))
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def nshapes(self):
@@ -599,7 +648,8 @@ class Shapes(Layer):
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, self._current_edge_color)
-        self.events.edge_color()
+            self.events.edge_color()
+            self._update_thumbnail()
         self.events.current_edge_color()
 
     @property
@@ -614,7 +664,8 @@ class Shapes(Layer):
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_face_color(i, self._current_face_color)
-        self.events.face_color()
+            self.events.face_color()
+            self._update_thumbnail()
         self.events.current_face_color()
 
     @property
@@ -653,6 +704,7 @@ class Shapes(Layer):
     def edge_color(self, edge_color):
         self._set_color(edge_color, 'edge')
         self.events.edge_color()
+        self._update_thumbnail()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -668,22 +720,18 @@ class Shapes(Layer):
 
     @property
     def edge_colormap(self) -> Tuple[str, Colormap]:
-        """Return the colormap to map a property to an edge color.
+        """Return the colormap to be applied to a property to get the edge color.
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._edge_colormap_name, self._edge_colormap
+        return self._edge_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._edge_colormap_name = name
-        self._edge_colormap = cmap
+        self._edge_colormap = ensure_colormap(colormap)
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
@@ -723,6 +771,7 @@ class Shapes(Layer):
     def face_color(self, face_color):
         self._set_color(face_color, 'face')
         self.events.face_color()
+        self._update_thumbnail()
 
     @property
     def face_color_cycle(self) -> np.ndarray:
@@ -737,22 +786,18 @@ class Shapes(Layer):
 
     @property
     def face_colormap(self) -> Tuple[str, Colormap]:
-        """Return the colormap to be applied to a property to get the edge color.
+        """Return the colormap to be applied to a property to get the face color.
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._face_colormap_name, self._face_colormap
+        return self._face_colormap
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._face_colormap_name = name
-        self._face_colormap = cmap
+        self._face_colormap = ensure_colormap(colormap)
 
     @property
     def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
@@ -1114,7 +1159,7 @@ class Shapes(Layer):
                 if update_color_mapping or contrast_limits is None:
 
                     colors, contrast_limits = map_property(
-                        prop=color_properties, colormap=colormap[1]
+                        prop=color_properties, colormap=colormap
                     )
                     setattr(
                         self, f'{attribute}_contrast_limits', contrast_limits,
@@ -1123,7 +1168,7 @@ class Shapes(Layer):
 
                     colors, _ = map_property(
                         prop=color_properties,
-                        colormap=colormap[1],
+                        colormap=colormap,
                         contrast_limits=contrast_limits,
                     )
             else:
@@ -1179,7 +1224,7 @@ class Shapes(Layer):
 
             fc, _ = map_property(
                 prop=color_property_value,
-                colormap=colormap[1],
+                colormap=colormap,
                 contrast_limits=contrast_limits,
             )
             new_colors = np.tile(fc, (adding, 1))
@@ -1220,11 +1265,11 @@ class Shapes(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap[0],
+                'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[0],
+                'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
             }
@@ -1256,7 +1301,7 @@ class Shapes(Layer):
             Array of coordindates for the N text elements in view
         """
         return self.text.compute_text_coords(
-            self._data_view.data, self.dims.ndisplay
+            self._data_view.data, self._ndisplay
         )
 
     @property
@@ -1363,14 +1408,19 @@ class Shapes(Layer):
         ]
 
         self.events.mode(mode=mode)
-        if not (mode in draw_modes and old_mode in draw_modes):
-            self._finish_drawing()
-        self.refresh()
+
+        # don't update thumbnail on mode changes
+        with self.block_thumbnail_update():
+            if not (mode in draw_modes and old_mode in draw_modes):
+                # Shapes._finish_drawing() calls Shapes.refresh()
+                self._finish_drawing()
+            else:
+                self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.dims.ndisplay == 3:
+            if self._ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -1429,11 +1479,7 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
 
-        if np.array(data[0]).ndim == 1:
-            # If a single array for a shape
-            n_new_shapes = 1
-        else:
-            n_new_shapes = len(data)
+        n_new_shapes = number_of_shapes(data)
 
         if edge_color is None:
             edge_color = self._get_new_shape_color(
@@ -1522,7 +1568,7 @@ class Shapes(Layer):
             shapes.
         """
 
-        n_shapes = len(data)
+        n_shapes = number_of_shapes(data)
         with self.block_update_properties():
             self._edge_color_property = ''
             self.edge_color_cycle_map = {}
@@ -1546,16 +1592,18 @@ class Shapes(Layer):
                 face_color, attribute='face', n_shapes=n_shapes
             )
 
-        self._add_shapes(
-            data,
-            shape_type=shape_type,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            z_index=z_index,
-        )
-
-        self.refresh_colors()
+        with self.block_thumbnail_update():
+            self._add_shapes(
+                data,
+                shape_type=shape_type,
+                edge_width=edge_width,
+                edge_color=edge_color,
+                face_color=face_color,
+                z_index=z_index,
+                z_refresh=False,
+            )
+            self._data_view._update_z_order()
+            self.refresh_colors()
 
     def _add_shapes(
         self,
@@ -1566,6 +1614,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
+        z_refresh=True,
     ):
         """Add shapes to the data view.
 
@@ -1604,6 +1653,12 @@ class Shapes(Layer):
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
+        z_refresh : bool
+            If set to true, the mesh elements are reindexed with the new z order.
+            When shape_index is provided, z_refresh will be overwritten to false,
+            as the z indices will not change.
+            When adding a batch of shapes, set to false  and then call
+            ShapesList._update_z_order() once at the end.
         """
         if edge_width is None:
             edge_width = self.current_edge_width
@@ -1660,15 +1715,17 @@ class Shapes(Layer):
                     d,
                     edge_width=ew,
                     z_index=z,
-                    dims_order=self.dims.order,
-                    ndisplay=self.dims.ndisplay,
+                    dims_order=self._dims_order,
+                    ndisplay=self._ndisplay,
                 )
 
                 # Add shape
-                self._data_view.add(shape, edge_color=ec, face_color=fc)
+                self._data_view.add(
+                    shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
+                )
 
-        self._display_order_stored = copy(self.dims.order)
-        self._ndisplay_stored = copy(self.dims.ndisplay)
+        self._display_order_stored = copy(self._dims_order)
+        self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
 
     def _validate_properties(
@@ -1708,20 +1765,22 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self.dims.ndisplay == self._ndisplay_stored:
+        if not self._ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(self.dims.ndim, self.dims.ndisplay)
-            self._ndisplay_stored = copy(self.dims.ndisplay)
+            self._data_view.ndisplay = min(self.ndim, self._ndisplay)
+            self._ndisplay_stored = copy(self._ndisplay)
             self._clipboard = {}
 
-        if not self.dims.order == self._display_order_stored:
+        if not self._dims_order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self.dims.order)
-            self._display_order_stored = copy(self.dims.order)
+            self._data_view.update_dims_order(self._dims_order)
+            self._display_order_stored = copy(self._dims_order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
-        slice_key = np.array(self.dims.indices)[list(self.dims.not_displayed)]
+        slice_key = np.array(self._slice_indices)[
+            list(self._dims_not_displayed)
+        ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
         self._data_view.slice_key = slice_key
@@ -1958,33 +2017,41 @@ class Shapes(Layer):
         self._is_creating = False
         self._update_dims()
 
+    @contextmanager
+    def block_thumbnail_update(self):
+        """Use this context manager to block thumbnail updates"""
+        self._allow_thumbnail_update = False
+        yield
+        self._allow_thumbnail_update = True
+
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""
-        # calculate min vals for the vertices and pad with 0.5
-        # the offset is needed to ensure that the top left corner of the shapes
-        # corresponds to the top left corner of the thumbnail
-        offset = (
-            np.array([self.dims.range[d][0] for d in self.dims.displayed])
-            + 0.5
-        )
-        # calculate range of values for the vertices and pad with 1
-        # padding ensures the entire shape can be represented in the thumbnail
-        # without getting clipped
-        shape = np.ceil(
-            [
-                self.dims.range[d][1] - self.dims.range[d][0] + 1
-                for d in self.dims.displayed
-            ]
-        ).astype(int)
-        zoom_factor = np.divide(self._thumbnail_shape[:2], shape[-2:]).min()
 
-        colormapped = self._data_view.to_colors(
-            colors_shape=self._thumbnail_shape[:2],
-            zoom_factor=zoom_factor,
-            offset=offset[-2:],
-        )
+        # don't update the thumbnail if dragging a shape
+        if self._is_moving is False and self._allow_thumbnail_update is True:
+            # calculate min vals for the vertices and pad with 0.5
+            # the offset is needed to ensure that the top left corner of the shapes
+            # corresponds to the top left corner of the thumbnail
+            de = self._extent_data
+            offset = np.array([de[0, d] for d in self._dims_displayed]) + 0.5
+            # calculate range of values for the vertices and pad with 1
+            # padding ensures the entire shape can be represented in the thumbnail
+            # without getting clipped
+            shape = np.ceil(
+                [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
+            ).astype(int)
+            zoom_factor = np.divide(
+                self._thumbnail_shape[:2], shape[-2:]
+            ).min()
 
-        self.thumbnail = colormapped
+            colormapped = self._data_view.to_colors(
+                colors_shape=self._thumbnail_shape[:2],
+                zoom_factor=zoom_factor,
+                offset=offset[-2:],
+                max_shapes=self._max_shapes_thumbnail,
+            )
+
+            self.thumbnail = colormapped
 
     def remove_selected(self):
         """Remove any selected shapes."""
@@ -2079,14 +2146,14 @@ class Shapes(Layer):
             Full D dimensional data array of the shape.
         """
         if self.ndim == 2:
-            data_full = data[:, self.dims.displayed_order]
+            data_full = data[:, self._dims_displayed_order]
         else:
             data_full = np.zeros((len(data), self.ndim), dtype=float)
-            indices = np.array(self.dims.indices)
-            data_full[:, self.dims.not_displayed] = indices[
-                self.dims.not_displayed
+            indices = np.array(self._slice_indices)
+            data_full[:, self._dims_not_displayed] = indices[
+                self._dims_not_displayed
             ]
-            data_full[:, self.dims.displayed] = data
+            data_full[:, self._dims_displayed] = data
 
         return data_full
 
@@ -2104,7 +2171,7 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self.dims.ndisplay == 3:
+        if self._ndisplay == 3:
             return (None, None)
 
         if self._is_moving:
@@ -2189,7 +2256,7 @@ class Shapes(Layer):
                 'properties': {
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
-                'indices': self.dims.indices,
+                'indices': self._slice_indices,
             }
             if self.text.values is None:
                 self._clipboard['text'] = None
@@ -2204,8 +2271,8 @@ class Shapes(Layer):
         if len(self._clipboard.keys()) > 0:
             # Calculate offset based on dimension shifts
             offset = [
-                self.dims.indices[i] - self._clipboard['indices'][i]
-                for i in self.dims.not_displayed
+                self._slice_indices[i] - self._clipboard['indices'][i]
+                for i in self._dims_not_displayed
             ]
 
             for k in self.properties:
@@ -2218,8 +2285,8 @@ class Shapes(Layer):
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self.dims.not_displayed] = data[
-                    :, self.dims.not_displayed
+                data[:, self._dims_not_displayed] = data[
+                    :, self._dims_not_displayed
                 ] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]
@@ -2435,7 +2502,7 @@ class Shapes(Layer):
             Array where there is one binary mask for each shape
         """
         if mask_shape is None:
-            mask_shape = self.shape
+            mask_shape = self._extent_data[1] - self._extent_data[0]
 
         mask_shape = np.ceil(mask_shape).astype('int')
         masks = self._data_view.to_masks(mask_shape=mask_shape)
@@ -2459,7 +2526,7 @@ class Shapes(Layer):
             For overlapping shapes z-ordering will be respected.
         """
         if labels_shape is None:
-            labels_shape = self.shape
+            labels_shape = self._extent_data[1] - self._extent_data[0]
 
         labels_shape = np.ceil(labels_shape).astype('int')
         labels = self._data_view.to_labels(labels_shape=labels_shape)

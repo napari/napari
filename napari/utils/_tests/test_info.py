@@ -1,4 +1,4 @@
-from ..info import sys_info, citation_text
+from ..info import citation_text, sys_info
 
 
 def test_sys_info():
