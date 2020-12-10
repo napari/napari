@@ -86,3 +86,11 @@ jobs:
           asset_name: napari-${{ runner.os }}.zip
           asset_content_type: application/zip
           max_releases: 1
+      - name: Update latest tag
+        uses: EndBug/latest-tag@latest
+        if: ${{ github.event_name == 'schedule' }}
+        with:
+          description: latest code released from nightly build
+          tag-name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
