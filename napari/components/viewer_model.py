@@ -1062,7 +1062,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
 def _get_image_class() -> layers.Image:
     """Return Image or OctreeImage based config settings."""
-    if config.create_octree_image():
+    if config.async_octree:
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage

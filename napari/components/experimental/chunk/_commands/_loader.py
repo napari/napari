@@ -5,7 +5,7 @@ from typing import List
 from ....._vendor.experimental.humanize.src.humanize import naturalsize
 from .....layers.base import Layer
 from .....layers.image import Image
-from .._config import async_config
+from .....utils.config import octree_config
 from .._info import LayerInfo, LoadType
 from .._loader import chunk_loader
 from ._tables import RowTable, print_property_table
@@ -260,14 +260,14 @@ class LoaderCommands:
     @property
     def config(self):
         """Print the current list of layers."""
-        src = async_config
+        config = octree_config['loader']
         config = [
-            ('log_path', src.log_path),
-            ('synchronous', src.synchronous),
-            ('num_workers', src.num_workers),
-            ('use_processes', src.use_processes),
-            ('auto_sync_ms', src.auto_sync_ms),
-            ('delay_queue_ms', src.delay_queue_ms),
+            ('log_path', config['log_path']),
+            ('synchronous', config['synchronous']),
+            ('num_workers', config['num_workers']),
+            ('use_processes', config['use_processes']),
+            ('auto_sync_ms', config['auto_sync_ms']),
+            ('delay_queue_ms', config['delay_queue_ms']),
         ]
         print_property_table(config)
 
