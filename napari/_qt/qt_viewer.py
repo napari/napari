@@ -458,6 +458,14 @@ class QtViewer(QSplitter):
         if folder not in {'', None}:
             self.viewer.open([folder])
 
+    def _toggle_chunk_outlines(self):
+        """Toggle whether we are drawing outlines around the chunks."""
+        from ..layers.image.experimental.octree_image import OctreeImage
+
+        for layer in self.viewer.layers:
+            if isinstance(layer, OctreeImage):
+                layer.display.show_grid = not layer.display.show_grid
+
     def _on_interactive(self, event):
         """Link interactive attributes of view and viewer.
 
