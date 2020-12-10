@@ -277,7 +277,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.active_layer property is deprecated and will be removed after version 0.4.4."
+                "The viewer.active_layer property is deprecated and will be removed after version 0.4.5."
                 " Instead you should use the viewer.layers.active property"
             ),
             category=DeprecationWarning,
@@ -289,7 +289,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def active_layer(self, active_layer):
         warnings.warn(
             (
-                "The viewer.active_layer property is deprecated and will be removed after version 0.4.4."
+                "The viewer.active_layer property is deprecated and will be removed after version 0.4.5."
                 " Instead you should use the viewer.layers.active property"
             ),
             category=DeprecationWarning,
