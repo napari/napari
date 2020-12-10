@@ -84,15 +84,15 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     theme: str = DEFAULT_THEME
     palette: Dict[str, str] = None
 
-    axes: Axes = Axes()
-    dims: Dims = None
-    camera: Camera = Camera()
-    cursor: Cursor = Cursor()
-    grid: GridCanvas = GridCanvas()
-    scale_bar: ScaleBar = ScaleBar()
+    axes: ClassVar[Axes] = None
+    dims: ClassVar[Dims] = None
+    camera: ClassVar[Camera] = None
+    cursor: ClassVar[Cursor] = None
+    grid: ClassVar[GridCanvas] = None
+    scale_bar: ClassVar[ScaleBar] = None
 
     layers: LayerList = field(
-        default_factory=LayerList, metadata={'events': False}
+        default_factory=LayerList, metadata={'events': False}, hash=False
     )
 
     # ClassVar is one of many ways to excempt variables from the dataclass
@@ -112,6 +112,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.dims = Dims(
             ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
+
+        self.axes = Axes()
+        self.camera = Camera()
+        self.cursor = Cursor()
+        self.grid = GridCanvas()
+        self.scale_bar = ScaleBar()
 
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
