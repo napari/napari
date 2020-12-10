@@ -651,11 +651,11 @@ class Window:
             magic_kwargs = {}
 
         # Get widget from magicgui
-        widget = magicgui(**magic_kwargs)(function).Gui()
+        widget = magicgui(**magic_kwargs)(function)
 
         # Keep the dropdown menus in the widget in sync with the layer model
-        self.qt_viewer.viewer.layers.events.changed.connect(
-            lambda x: widget.refresh_choices()
+        self.qt_viewer.viewer.layers.events.connect(
+            lambda x: widget.reset_choices()
         )
 
         return self.add_dock_widget(

@@ -7,7 +7,6 @@ It demonstrates:
 import napari
 import skimage.data
 import skimage.filters
-from magicgui._qt.widgets import QDoubleSlider
 
 
 # Define our gaussian blur function.
@@ -18,13 +17,9 @@ def gaussian_blur(layer: napari.layers.Image, sigma: float = 1.0, mode="nearest"
 
 
 # Define our magic
-# - `auto_call` tells magicgui to call the function whenever a parameter changes
-# - we use `widget_type` to override the default "float" widget on sigma
-# - we provide some Qt-specific parameters
-# - we contstrain the possible choices for `mode`
 magic = {
     'auto_call' : True,
-    'sigma' : {"widget_type": QDoubleSlider, "maximum": 6, "fixedWidth": 400},
+    'sigma' : {"widget_type": "FloatSlider", "maximum": 6},
     'mode' : {"choices": ["reflect", "constant", "nearest", "mirror", "wrap"]},
 }
 
