@@ -148,9 +148,6 @@ class QtViewer(QSplitter):
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
 
-        # Only created if using async rendering.
-        self.dockRender = self._create_render_dock_widget()
-
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
         self.viewerButtons.consoleButton.clicked.connect(
@@ -279,24 +276,6 @@ class QtViewer(QSplitter):
                 name='performance',
                 area='bottom',
                 shortcut='Ctrl+Shift+P',
-            )
-        return None
-
-    def _create_render_dock_widget(self):
-        """Create the dock widget that shows debug render controls.
-        """
-        # We only show the render controls for octree right now.
-        if config.async_octree:
-            from .experimental.render.qt_render_container import (
-                QtRenderContainer,
-            )
-
-            return QtViewerDockWidget(
-                self,
-                QtRenderContainer(self.viewer),
-                name='render',
-                area='right',
-                shortcut='Ctrl+Shift+R',
             )
         return None
 
@@ -478,6 +457,14 @@ class QtViewer(QSplitter):
         )
         if folder not in {'', None}:
             self.viewer.open([folder])
+
+    def _toggle_chunk_outlines(self):
+        """Toggle whether we are drawing outlines around the chunks."""
+        from ..layers.image.experimental.octree_image import OctreeImage
+
+        for layer in self.viewer.layers:
+            if isinstance(layer, OctreeImage):
+                layer.display.show_grid = not layer.display.show_grid
 
     def _on_interactive(self, event):
         """Link interactive attributes of view and viewer.

@@ -12,9 +12,9 @@ from contextlib import contextmanager
 from typing import Dict, List, Optional, Union
 
 from ....types import ArrayLike
+from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
-from ._config import async_config
 from ._delay_queue import DelayQueue
 from ._info import LayerInfo, LayerRef, LoadType
 from ._request import ChunkKey, ChunkRequest
@@ -91,9 +91,10 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        self.force_synchronous: bool = async_config.force_synchronous
-        self.num_workers: int = async_config.num_workers
-        self.use_processes: bool = async_config.use_processes
+        config = octree_config['loader']
+        self.force_synchronous: bool = bool(config['force_synchronous'])
+        self.num_workers: int = int(config['num_workers'])
+        self.use_processes: bool = bool(config['use_processes'])
 
         self.executor: PoolExecutor = _create_executor(
             self.use_processes, self.num_workers
@@ -106,7 +107,7 @@ class ChunkLoader:
         # The DelayeQueue prevents us from spamming the worker pool when
         # the user is rapidly scrolling through slices.
         self.delay_queue = DelayQueue(
-            async_config.delay_queue_ms, self._submit_async
+            config['delay_queue_ms'], self._submit_async
         )
 
         self.events = EmitterGroup(
@@ -460,4 +461,4 @@ Think of the ChunkLoader as a shared resource like "the filesystem" where
 multiple clients can be access it at the same time, but it is the interface
 to just one physical resource.
 """
-chunk_loader = ChunkLoader()
+chunk_loader = ChunkLoader() if octree_config else None
