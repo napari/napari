@@ -124,9 +124,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
 
-        # Only created if NAPARI_MON is enabled.
-        self._remote_commands = _create_remote_commands(self.layers)
-
     def __str__(self):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
@@ -1061,21 +1058,6 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
-
-
-def _create_remote_commands(layers: LayerList) -> None:
-    """Start the monitor service if configured to use it."""
-    if not config.monitor:
-        return None
-
-    from ..components.experimental.monitor import monitor
-    from ..components.experimental.remote_commands import RemoteCommands
-
-    monitor.start()  # Start if not already started.
-
-    # Create a RemoteCommands object which will run commands
-    # from remote clients that come through the monitor.
-    return RemoteCommands(layers, monitor.run_command_event)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
