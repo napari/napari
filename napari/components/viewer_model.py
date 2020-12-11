@@ -258,34 +258,28 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
-        """
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
         warnings.warn(
             (
                 "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
-                " Instead interactivity is determined automatically from the active layer, accessible at"
-                " viewer.active_layer.interactive"
+                " Instead you should use viewer.camera.interactive"
             ),
             category=DeprecationWarning,
             stacklevel=2,
         )
-        if self.active_layer is None:
-            return True
-        else:
-            self.active_layer.interactive
+        return self.camera.interactive
 
     @interactive.setter
     def interactive(self, interactive):
         warnings.warn(
             (
                 "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
-                " Instead interactivity is determined automatically from the active layer, accessible at"
-                " viewer.active_layer.interactive and is no longer independently settable"
+                " Instead you should use viewer.camera.interactive"
             ),
             category=DeprecationWarning,
             stacklevel=2,
         )
-        return
+        self.camera.interactive = interactive
 
     @property
     def active_layer(self):
@@ -419,14 +413,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
-            self.interactive = True
+            self.camera.interactive = True
             self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
-            self.interactive = active_layer.interactive
+            self.camera.interactive = active_layer.interactive
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
@@ -446,7 +440,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+        self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""

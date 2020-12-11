@@ -178,7 +178,7 @@ class QtViewer(QSplitter):
 
         self._update_palette()
 
-        self.viewer.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
@@ -474,7 +474,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self.view.interactive = self.viewer.interactive
+        self.view.interactive = self.viewer.camera.interactive
 
     def _on_cursor(self, event):
         """Set the appearance of the mouse cursor.
