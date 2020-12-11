@@ -28,7 +28,7 @@ def _make_cycled_properties(values, length):
 
 def test_color_manager_empty():
     cm = ColorManager()
-    np.testing.assert_allclose(cm.colors, np.empty((0, 4)))
+    np.testing.assert_allclose(cm.values, np.empty((0, 4)))
 
 
 color_str = 'red'
@@ -38,17 +38,15 @@ color_arr = np.asarray(color_list)
 
 @pytest.mark.parametrize('color', [color_str, color_list, color_arr])
 def test_set_color_direct(color):
-    cm = ColorManager()
-    cm.set_color(color=color, n_colors=3, properties={})
+    cm = ColorManager(colors=color, n_colors=3, properties={})
 
     expected_colors = np.array([[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]])
-    np.testing.assert_allclose(cm.colors, expected_colors)
+    np.testing.assert_allclose(cm.values, expected_colors)
 
 
 def test_invalid_color():
-    cm = ColorManager()
-    with pytest.raises(ValueError):
-        cm.set_color(color=42, n_colors=3, properties={})
+    with pytest.raises(TypeError):
+        ColorManager(colors=42, n_colors=3, properties={})
 
 
 color_cycle_str = ['red', 'blue']
@@ -64,12 +62,16 @@ def test_color_cycle(color_cycle):
     # create Points using list color cycle
     n_colors = 10
     properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
-    cm = ColorManager(color_cycle=color_cycle)
-    cm.set_color(color='point_type', n_colors=3, properties=properties)
+    cm = ColorManager(
+        colors='point_type',
+        n_colors=3,
+        properties=properties,
+        color_cycle=color_cycle,
+    )
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, n_colors))
     )
-    np.testing.assert_allclose(cm.colors, color_array)
+    np.testing.assert_allclose(cm.values, color_array)
 
     # # Add new point and test its color
     # coord = [18, 18]
