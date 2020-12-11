@@ -46,7 +46,7 @@ class Style:
 
     def _on_pallet_set(self, palette):
         """Set the theme to be custom."""
-        # If pallet is set directly then theme is set to be custom
+        # If pallete is set directly then theme is set to be custom
         for existing_theme, existing_palette in self.available_themes.items():
             if existing_palette == palette:
                 self._theme = existing_theme
