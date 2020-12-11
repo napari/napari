@@ -69,7 +69,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             status=Event,
             help=Event,
             title=Event,
-            interactive=Event,
             reset_view=Event,
             active_layer=Event,
             palette=Event,
@@ -90,7 +89,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._help = ''
         self._title = title
 
-        self._interactive = True
         self._active_layer = None
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
@@ -262,14 +260,32 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def interactive(self):
         """bool: Determines if canvas pan/zoom interactivity is enabled or not.
         """
-        return self._interactive
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead interactivity is determined automatically from the active layer, accessible at"
+                " viewer.active_layer.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        if self.active_layer is None:
+            return True
+        else:
+            self.active_layer.interactive
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self._interactive = interactive
-        self.events.interactive()
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead interactivity is determined automatically from the active layer, accessible at"
+                " viewer.active_layer.interactive and is no longer independently settable"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return
 
     @property
     def active_layer(self):
