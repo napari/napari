@@ -1,6 +1,5 @@
 """MonitorApi class.
 """
-import json
 import logging
 from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
@@ -8,6 +7,7 @@ from threading import Event
 from typing import NamedTuple
 
 from ....utils.events import EmitterGroup
+from ._utils import numpy_dumps
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -143,7 +143,7 @@ class MonitorApi:
             self._manager.napari_data(),
             self._manager.napari_messages(),
             self._manager.napari_shutdown(),
-            self._manager.data(),
+            self._manager.client_data(),
             self._manager.client_messages(),
         )
 
@@ -181,9 +181,10 @@ class MonitorApi:
     def _process_client_messages(self) -> None:
         """Process every new message in the queue."""
 
+        client_messages = self._remote.client_messages
         while True:
             try:
-                message = self._remote.commands.get_nowait()
+                message = client_messages.get_nowait()
 
                 if not isinstance(message, dict):
                     LOGGER.warning(
@@ -191,9 +192,8 @@ class MonitorApi:
                     )
                     continue
 
-                # Right now assume every message is a command that napari
-                # should execute. But we might have other types of messages
-                # later.
+                # Assume every message is a command that napari should
+                # execute. We might have other types of messages later.
                 self.events.run_command(command=message)
             except Empty:
                 return  # No commands to process.
@@ -216,5 +216,5 @@ class MonitorApi:
         message : dict
             Message to send to clients.
         """
-        LOGGER.info("Send napari message: %s", json.dumps(message))
-        self._remote.client_messages.put(message)
+        LOGGER.info("Send napari message: %s", numpy_dumps(message))
+        self._remote.napari_messages.put(message)
