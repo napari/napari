@@ -66,3 +66,9 @@ class Style:
         else:
             new_theme_index = 0
         self.theme = themes[new_theme_index]
+
+    def __hash__(self):
+        # Need to add an unsafe hash for event system due to mutable Dict,
+        # see https://docs.python.org/3/library/dataclasses.html#module-level-decorators-classes-and-functions
+        # for more information.
+        return id(self)
