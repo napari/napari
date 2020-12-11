@@ -176,7 +176,7 @@ class Window:
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+        self.qt_viewer.viewer.style.events.connect(self._update_palette)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -320,7 +320,9 @@ class Window:
         toggle_theme = QAction('Toggle Theme', self._qt_window)
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
-        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
+        toggle_theme.triggered.connect(
+            self.qt_viewer.viewer.style._advance_theme
+        )
         toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
         toggle_fullscreen.setShortcut('Ctrl+F')
         toggle_fullscreen.setStatusTip('Toggle full screen')
@@ -653,7 +655,7 @@ class Window:
         """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = self.qt_viewer.viewer.palette
+        palette = self.qt_viewer.viewer.style.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '

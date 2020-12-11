@@ -181,7 +181,7 @@ class QtViewer(QSplitter):
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.events.palette.connect(self._update_palette)
+        self.viewer.style.events.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -263,7 +263,7 @@ class QtViewer(QSplitter):
             self.viewer.events.layers_change.connect(
                 self.welcome._on_visible_change
             )
-            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.viewer.style.events.connect(self.welcome._on_palette_change)
             self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
@@ -510,14 +510,14 @@ class QtViewer(QSplitter):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
         themed_stylesheet = template(
-            self.raw_stylesheet, **self.viewer.palette
+            self.raw_stylesheet, **self.viewer.style.palette
         )
         if self._console is not None:
             self.console._update_palette(
-                self.viewer.palette, themed_stylesheet
+                self.viewer.style.palette, themed_stylesheet
             )
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.canvas.bgcolor = self.viewer.style.palette['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.

@@ -63,7 +63,7 @@ class QtAboutKeyBindings(QDialog):
         # Can switch to a normal dict when our minimum Python is 3.7
         self.key_bindings_strs = OrderedDict()
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
-        col = self.viewer.palette['secondary']
+        col = self.viewer.style.palette['secondary']
         layers = [
             napari.layers.Image,
             napari.layers.Labels,
@@ -94,7 +94,7 @@ class QtAboutKeyBindings(QDialog):
         self.layout.addWidget(self.textEditBox, 1)
 
         self.viewer.events.active_layer.connect(self.update_active_layer)
-        self.viewer.events.palette.connect(self.update_active_layer)
+        self.viewer.style.events.connect(self.update_active_layer)
         self.update_active_layer()
 
     def change_layer_type(self, text):
@@ -123,7 +123,7 @@ class QtAboutKeyBindings(QDialog):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method, by default None.
         """
-        col = self.viewer.palette['secondary']
+        col = self.viewer.style.palette['secondary']
         # Add class and instance viewer key bindings
         text = get_key_bindings_summary(self.viewer.active_keymap, col=col)
 

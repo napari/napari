@@ -45,7 +45,8 @@ class VispyWelcomeVisual:
             '   - call a viewer.add_* method'
         )
         self.text_node.color = np.divide(
-            str_to_rgb(darken(self._viewer.palette['foreground'], 30)), 255
+            str_to_rgb(darken(self._viewer.style.palette['foreground'], 30)),
+            255,
         )
 
         self._on_palette_change(None)
@@ -55,20 +56,25 @@ class VispyWelcomeVisual:
     def _on_palette_change(self, event):
         """Change colors of the logo and text."""
         if (
-            np.mean(str_to_rgb(self._viewer.palette['background'])[:3])
+            np.mean(str_to_rgb(self._viewer.style.palette['background'])[:3])
             < 255 / 2
         ):
             background_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
+                str_to_rgb(
+                    darken(self._viewer.style.palette['background'], 70)
+                ),
+                255,
             )
         else:
             background_color = np.divide(
-                str_to_rgb(lighten(self._viewer.palette['background'], 70)),
+                str_to_rgb(
+                    lighten(self._viewer.style.palette['background'], 70)
+                ),
                 255,
             )
 
         foreground_color = np.divide(
-            str_to_rgb(self._viewer.palette['primary']), 255,
+            str_to_rgb(self._viewer.style.palette['primary']), 255,
         )
         text_color = list(foreground_color) + [1]
 

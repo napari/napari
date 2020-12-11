@@ -18,7 +18,6 @@ from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.misc import is_sequence
-from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -27,6 +26,7 @@ from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
+from .style import Style
 
 
 class ViewerModel(KeymapHandler, KeymapProvider):
@@ -54,11 +54,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    themes : dict of str: dict of str: str
-        Preset color palettes.
     """
-
-    themes = palettes
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
@@ -72,7 +68,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             interactive=Event,
             reset_view=Event,
             active_layer=Event,
-            palette=Event,
             layers_change=Event,
         )
 
@@ -85,6 +80,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
+        self.style = Style()
 
         self._status = 'Ready'
         self._help = ''
@@ -95,11 +91,10 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
-        self._palette = None
-        self.theme = 'dark'
 
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
+        self.style.events.connect(self._on_style_change)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
@@ -135,38 +130,63 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def palette(self):
         """dict of str: str : Color palette with which to style the viewer.
         """
-        return self._palette
+        warnings.warn(
+            (
+                "The viewer.palette parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.style.palette"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.style.palette
 
     @palette.setter
     def palette(self, palette):
-        if palette == self.palette:
-            return
+        warnings.warn(
+            (
+                "The viewer.palette parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.style.palette"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.style.palette = palette
 
-        self._palette = palette
-        self.axes.background_color = self.palette['canvas']
-        self.scale_bar.background_color = self.palette['canvas']
-        self.events.palette()
+    @property
+    def themes(self):
+        warnings.warn(
+            (
+                "The viewer.themes parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.style.available_themes"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.style.available_themes
 
     @property
     def theme(self):
-        """string or None : Preset color palette.
-        """
-        for theme, palette in self.themes.items():
-            if palette == self.palette:
-                return theme
+        warnings.warn(
+            (
+                "The viewer.theme parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.style.theme"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.style.theme
 
     @theme.setter
     def theme(self, theme):
-        if theme == self.theme:
-            return
-
-        try:
-            self.palette = self.themes[theme]
-        except KeyError:
-            raise ValueError(
-                f"Theme '{theme}' not found; "
-                f"options are {list(self.themes)}."
-            )
+        warnings.warn(
+            (
+                "The viewer.theme parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.style.theme"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.style.theme = theme
 
     @property
     def grid_size(self):
@@ -292,6 +312,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
         self.events.active_layer(item=self._active_layer)
 
+    def _on_style_change(self, event):
+        """Update background colors when style changes."""
+        # Note now that the `style` dataclass exists we should probably
+        # pass it directly to the `Axes` and `Scale Bar` visuals to
+        # avoid duplicating this internal event connection.
+        self.axes.background_color = self.style.palette['canvas']
+        self.scale_bar.background_color = self.style.palette['canvas']
+
     @property
     def _sliced_extent_world(self) -> np.ndarray:
         """Extent of layers in world coordinates after slicing.
@@ -370,13 +398,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             layer._slice_dims(
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
-
-    def _toggle_theme(self):
-        """Switch to next theme in list of themes
-        """
-        theme_names = list(self.themes.keys())
-        cur_theme = theme_names.index(self.theme)
-        self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and

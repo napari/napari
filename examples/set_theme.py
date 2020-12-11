@@ -13,4 +13,4 @@ with napari.gui_qt():
     )
 
     # set the theme to 'light'
-    viewer.theme = 'light'
+    viewer.style.theme = 'light'
