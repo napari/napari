@@ -72,6 +72,7 @@ class OctreeImage(Image):
 
         self._view: OctreeView = None
         self._slice: OctreeMultiscaleSlice = None
+        self._intersection: OctreeIntersection = None
         self._display = OctreeDisplayOptions()
 
         # super().__init__ will call our _set_view_slice() which is kind
@@ -84,10 +85,6 @@ class OctreeImage(Image):
         # TODO_OCTREE: this is hack that we assign OctreeDisplayOptions
         # this event after super().__init__(). Will cleanup soon.
         self._display.loaded_event = self.events.loaded
-
-    def _get_layer_ref(self):
-        indices = self._get_slice_indices()
-        return LayerRef.create_from_layer(self, indices)
 
     def _get_value(self):
         """Override Image._get_value()."""
@@ -271,6 +268,8 @@ class OctreeImage(Image):
     ) -> List[OctreeChunk]:
         """Get the chunks in the current slice which are drawable.
 
+        The visual calls this and then draws what we send it.
+
         Parameters
         -----------
         drawn_chunk_set : Set[OctreeChunkKey]
@@ -284,18 +283,32 @@ class OctreeImage(Image):
         if self._slice is None or self._view is None:
             return []  # There is nothing to draw.
 
-        # Get drawable chunks from the slice.
-        drawable_chunks = self._slice.get_drawable_chunks(
-            drawn_chunk_set, self._view
+        # Get the current intersection and save it off.
+        self._intersection = self._slice.get_intersection(self._view)
+
+        if self._intersection is None:
+            return []  # No chunks to draw.
+
+        # Get the ideal chunks. These are the chunks at the preferred
+        # resolution. The ones we ideally want to draw once they are in RAM
+        # and in VRAM. When all loading is done, we will draw all the ideal
+        # chunks.
+        ideal_chunks = self._intersection.get_chunks(create=True)
+
+        # If we are seting the data level level automatically, then update
+        # our level to match what was chosen for the intersection.
+        if self._view.auto_level:
+            self._data_level = self._intersection.level.info.level_index
+
+        # The loader will initiate loads on any ideal chunks which are not
+        # yet in memory. And it will return the chunks we should draw. The
+        # chunks might be ideal chunks, if they are in memory, but they
+        # might be chunks from higher or lower levels in the octree. In
+        # general we try to draw cover the view with the "best available"
+        # data.
+        return self._slice.loader.get_drawable_chunks(
+            drawn_chunk_set, ideal_chunks
         )
-
-        # Calling _slice.visible_chunks() above will select the appropriate
-        # octree level for the view. If the level changed, then update our
-        # data_level to match. This assignment will do nothing if the level
-        # didn't change.
-        self.data_level = self._slice.octree_level
-
-        return drawable_chunks
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -396,8 +409,11 @@ class OctreeImage(Image):
         # of each level that we are currently viewing.
         slice_data = [level_data[indices] for level_data in self.data]
 
-        layer_ref = self._get_layer_ref()
+        # Create _layer_ref that matches the current indices and slice.
+        indices = self._get_slice_indices()
+        layer_ref = LayerRef.create_from_layer(self, indices)
 
+        # Create the slice, it will create the actual Octree.
         self._slice = OctreeMultiscaleSlice(
             slice_data, layer_ref, slice_config, self._raw_to_displayed,
         )
@@ -425,3 +441,14 @@ class OctreeImage(Image):
         # the OctreeChunk at the right location.
         if self._slice.on_chunk_loaded(request):
             self.events.loaded()  # Redraw with teh new chunk.
+
+    @property
+    def remote_messages(self) -> dict:
+        """Messages we should send to remote clients."""
+        if self._intersection is None:
+            return {}
+
+        return {
+            "tile_state": self._intersection.tile_state,
+            "tile_config": self._intersection.tile_config,
+        }

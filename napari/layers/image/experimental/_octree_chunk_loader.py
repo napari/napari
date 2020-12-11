@@ -5,7 +5,7 @@ Uses ChunkLoader to load data into OctreeChunks in the octree.
 import logging
 from typing import List, Set
 
-from ....components.experimental.chunk import LayerKey, LayerRef, chunk_loader
+from ....components.experimental.chunk import LayerRef, chunk_loader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 
@@ -29,7 +29,6 @@ class OctreeChunkLoader:
         self,
         drawn_chunk_set: Set[OctreeChunkKey],
         ideal_chunks: List[OctreeChunk],
-        layer_key: LayerKey,
     ) -> List[OctreeChunk]:
         """Return the chunks that should be drawn.
 
@@ -90,8 +89,6 @@ class OctreeChunkLoader:
             The chunks which the visual is currently drawing.
         ideal_chunks : List[OctreeChunk]
             The chunks which are visible to the current view.
-        layer_key : LayerKey
-            The layer we loading chunks into.
 
         Return
         ------
@@ -103,9 +100,7 @@ class OctreeChunkLoader:
         # Get the ideal checks or alternates, plus any extra chunks.
         for octree_chunk in ideal_chunks:
             drawable.extend(
-                self._get_ideal_chunks(
-                    drawn_chunk_set, octree_chunk, layer_key
-                )
+                self._get_ideal_chunks(drawn_chunk_set, octree_chunk)
             )
             drawable.extend(self._get_extra_chunks())
 
@@ -129,10 +124,7 @@ class OctreeChunkLoader:
         return [root_tile]
 
     def _get_ideal_chunks(
-        self,
-        drawn_chunk_set: Set[OctreeChunkKey],
-        ideal_chunk: OctreeChunk,
-        layer_key: LayerKey,
+        self, drawn_chunk_set: Set[OctreeChunkKey], ideal_chunk: OctreeChunk,
     ) -> List[OctreeChunk]:
         """Return the chunks to draw for the given ideal chunk.
 
@@ -144,8 +136,6 @@ class OctreeChunkLoader:
             The chunks which the visual is currently drawing.
         ideal_chunk : OctreeChunk
             The ideal chunk we'd like to draw.
-        layer_key : LayerKey
-            The layer we loading chunks into.
 
         Return
         ------
@@ -160,10 +150,10 @@ class OctreeChunkLoader:
         # This might happen sync or async. If sync then we'll see that
         # it's in memory below.
         if ideal_chunk.needs_load:
-            self._load_chunk(ideal_chunk, layer_key)
+            self._load_chunk(ideal_chunk)
 
         # Get the alternates for this chunk, from other levels.
-        alternates = self._get_alternates(ideal_chunk, drawn_chunk_set)
+        alternates = self._get_alternates(ideal_chunk)
 
         # Get which of these are currently in VRAM being drawn. Only these
         # can be shown instantly. Typically if we are zooming in, the drawn
@@ -181,9 +171,7 @@ class OctreeChunkLoader:
         # Keep drawing these until the ideal chunk has loaded.
         return drawn
 
-    def _get_alternates(
-        self, ideal_chunk: OctreeChunk, drawn_chunk_set
-    ) -> List[OctreeChunk]:
+    def _get_alternates(self, ideal_chunk: OctreeChunk) -> List[OctreeChunk]:
         """Return the chunks we could draw in place of the ideal chunk.
 
         Parameters
@@ -206,9 +194,7 @@ class OctreeChunkLoader:
 
         return alternates
 
-    def _load_chunk(
-        self, octree_chunk: OctreeChunk, layer_key: LayerKey
-    ) -> None:
+    def _load_chunk(self, octree_chunk: OctreeChunk) -> None:
         """Load the data for one OctreeChunk.
 
         Parameters
@@ -218,6 +204,8 @@ class OctreeChunkLoader:
         layer_key : LayerKey
             The key for layer we are loading the data for.
         """
+        layer_key = self._layer_ref.layer_key
+
         # Get a key that points to this specific location in the octree.
         key = OctreeChunkKey(layer_key, octree_chunk.location)
 
