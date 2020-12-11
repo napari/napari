@@ -270,6 +270,33 @@ class OctreeImage(Image):
 
         The visual calls this and then draws what we send it.
 
+        The call to get_intersection() will chose the appropriate level of
+        the octree to intersect, and then return all the chunks within the
+        intersection with that level.
+
+        These are the "ideal" chunks because they are at the level whose
+        resolution best matches the current screen resolution.
+
+        Drawing chunks at a lower level than this will work fine, but it's
+        a waste in that those chunks will just be downsampled by the card.
+        You won't see any "extra" resolution at all. The card can do this
+        super fast, so the issue not such much speed as it is RAM and VRAM.
+
+        For example, suppose we want to draw 40 ideal chunks at level N,
+        and the chunks are (256, 256, 3) with dtype uint8. That's around
+        8MB.
+
+        If instead we draw lower levels than the ideal, the number of
+        chunks and storage goes up quickly:
+
+        Level (N - 1) is 160 chunks = 32M
+        Level (N - 2) is 640 chunks = 126M
+        Level (N - 3) is 2560 chunks = 503M
+
+        In the opposite direction, drawing chunks from a higher, the number
+        of chunks and storage goes down quickly. The only issue there is
+        visual quality, the imagery might look blurry.
+
         Parameters
         -----------
         drawn_chunk_set : Set[OctreeChunkKey]
