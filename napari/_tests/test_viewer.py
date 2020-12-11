@@ -19,7 +19,7 @@ def test_viewer(make_test_viewer):
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer
 
-    assert viewer.title == 'napari'
+    assert viewer.info.title == 'napari'
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0

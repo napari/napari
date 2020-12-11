@@ -18,7 +18,7 @@ def test_qt_viewer(make_test_viewer):
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer
 
-    assert viewer.title == 'napari'
+    assert viewer.info.title == 'napari'
     assert view.viewer == viewer
     # Check no console is present before it is requested
     assert view._console is None

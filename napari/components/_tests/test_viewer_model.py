@@ -9,13 +9,13 @@ from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 def test_viewer_model():
     """Test instantiating viewer model."""
     viewer = ViewerModel()
-    assert viewer.title == 'napari'
+    assert viewer.info.title == 'napari'
     assert len(viewer.layers) == 0
     assert viewer.dims.ndim == 2
 
     # Create viewer model with custom title
     viewer = ViewerModel(title='testing')
-    assert viewer.title == 'testing'
+    assert viewer.info.title == 'testing'
 
 
 def test_add_image():
@@ -531,7 +531,7 @@ def test_active_layer_status_update():
     assert viewer.active_layer == viewer.layers[1]
 
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.active_layer.status
+    assert viewer.info.status == viewer.active_layer.status
 
 
 def test_active_layer_cursor_size():

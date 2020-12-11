@@ -146,7 +146,7 @@ class Window:
         self._qt_center = QWidget(self._qt_window)
 
         self._qt_window.setCentralWidget(self._qt_center)
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
+        self._qt_window.setWindowTitle(self.qt_viewer.viewer.info.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
@@ -173,9 +173,9 @@ class Window:
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
-        self.qt_viewer.viewer.events.status.connect(self._status_changed)
-        self.qt_viewer.viewer.events.help.connect(self._help_changed)
-        self.qt_viewer.viewer.events.title.connect(self._title_changed)
+        self.qt_viewer.viewer.info.events.status.connect(self._status_changed)
+        self.qt_viewer.viewer.info.events.help.connect(self._help_changed)
+        self.qt_viewer.viewer.info.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if perf.USE_PERFMON:
@@ -674,7 +674,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.text)
+        self._status_bar.showMessage(self.qt_viewer.viewer.info.status)
 
     def _title_changed(self, event):
         """Update window title.
@@ -684,7 +684,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.text)
+        self._qt_window.setWindowTitle(self.qt_viewer.viewer.info.title)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -694,7 +694,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._help.setText(event.text)
+        self._help.setText(self.qt_viewer.viewer.info.help)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""

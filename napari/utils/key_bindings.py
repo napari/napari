@@ -22,12 +22,12 @@ into two statements with the yield keyword::
     @viewer.bind_key('h')
     def hello_world(viewer):
         # on key press
-        viewer.status = 'hello world!'
+        viewer.info.status = 'hello world!'
 
         yield
 
         # on key release
-        viewer.status = 'goodbye world :('
+        viewer.info.status = 'goodbye world :('
 
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
@@ -233,12 +233,12 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
         @viewer.bind_key('h')
         def hello_world(viewer):
             # on key press
-            viewer.status = 'hello world!'
+            viewer.info.status = 'hello world!'
 
             yield
 
             # on key release
-            viewer.status = 'goodbye world :('
+            viewer.info.status = 'goodbye world :('
 
     To create a keymap that will block others, ``bind_key(..., ...)```.
     """

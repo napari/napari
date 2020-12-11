@@ -16,14 +16,14 @@ with napari.gui_qt():
     @viewer.bind_key('a')
     def accept_image(viewer):
         msg = 'this is a good image'
-        viewer.status = msg
+        viewer.info.status = msg
         print(msg)
         next(viewer)
 
     @viewer.bind_key('r')
     def reject_image(viewer):
         msg = 'this is a bad image'
-        viewer.status = msg
+        viewer.info.status = msg
         print(msg)
         next(viewer)
 
@@ -36,12 +36,12 @@ with napari.gui_qt():
     @napari.Viewer.bind_key('w')
     def hello(viewer):
         # on press
-        viewer.status = 'hello world!'
+        viewer.info.status = 'hello world!'
 
         yield
 
         # on release
-        viewer.status = 'goodbye world :('
+        viewer.info.status = 'goodbye world :('
 
     # change viewer title
-    viewer.title = 'quality control images'
+    viewer.info.title = 'quality control images'

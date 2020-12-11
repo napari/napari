@@ -25,6 +25,7 @@ from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
 from .grid import GridCanvas
+from .info import ViewerInfo
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
@@ -66,9 +67,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
-            status=Event,
-            help=Event,
-            title=Event,
             interactive=Event,
             reset_view=Event,
             active_layer=Event,
@@ -85,10 +83,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
-
-        self._status = 'Ready'
-        self._help = ''
-        self._title = title
+        self.info = ViewerInfo(title=title)
 
         self._interactive = True
         self._active_layer = None
@@ -129,7 +124,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def __str__(self):
         """Simple string representation"""
-        return f'napari.Viewer: {self.title}'
+        return f'napari.Viewer: {self.info.title}'
 
     @property
     def palette(self):
@@ -222,41 +217,80 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def status(self):
         """string: Status string
         """
-        return self._status
+        warnings.warn(
+            (
+                "The viewer.status parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.info.status"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.info.status
 
     @status.setter
     def status(self, status):
-        if status == self.status:
-            return
-        self._status = status
-        self.events.status(text=self._status)
+        warnings.warn(
+            (
+                "The viewer.status parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.info.status"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.info.status = status
 
     @property
     def help(self):
         """string: String that can be displayed to the
         user in the status bar with helpful usage tips.
         """
-        return self._help
+        warnings.warn(
+            (
+                "The viewer.help parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.info.help"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.info.help
 
     @help.setter
     def help(self, help):
-        if help == self.help:
-            return
-        self._help = help
-        self.events.help(text=self._help)
+        warnings.warn(
+            (
+                "The viewer.help parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.info.help"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.info.help = help
 
     @property
     def title(self):
         """string: String that is displayed in window title.
         """
-        return self._title
+        warnings.warn(
+            (
+                "The viewer.title parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.info.title"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.info.title
 
     @title.setter
     def title(self, title):
-        if title == self.title:
-            return
-        self._title = title
-        self.events.title(text=self._title)
+        warnings.warn(
+            (
+                "The viewer.title parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.info.title"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.info.title = title
 
     @property
     def interactive(self):
@@ -400,14 +434,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
                 break
 
         if active_layer is None:
-            self.status = 'Ready'
-            self.help = ''
+            self.info.status = 'Ready'
+            self.info.help = ''
             self.cursor.style = 'standard'
             self.interactive = True
             self.active_layer = None
         else:
-            self.status = active_layer.status
-            self.help = active_layer.help
+            self.info.status = active_layer.status
+            self.info.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.interactive = active_layer.interactive
@@ -447,8 +481,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
-            self.status = self.active_layer.status
-            self.help = self.active_layer.help
+            self.info.status = self.active_layer.status
+            self.info.help = self.active_layer.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
