@@ -14,6 +14,7 @@ texture_dtypes = [
     np.dtype(np.int16),
     np.dtype(np.uint16),
     np.dtype(np.float32),
+    np.dtype(np.float64),
 ]
 
 
