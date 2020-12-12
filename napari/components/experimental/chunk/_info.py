@@ -1,6 +1,7 @@
 """LoadType, LoadStats and LayerInfo.
 """
 import logging
+import time
 from enum import Enum
 
 from ....components.experimental.monitor import monitor
@@ -124,7 +125,13 @@ class LoadStats:
         if monitor:
             # Send stats about this one load.
             monitor.send_message(
-                {"load": {"num_bytes": num_bytes, "load_ms": load_ms}}
+                {
+                    "load": {
+                        "time": time.time(),
+                        "num_bytes": num_bytes,
+                        "load_ms": load_ms,
+                    }
+                }
             )
 
     @property
