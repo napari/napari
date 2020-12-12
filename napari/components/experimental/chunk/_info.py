@@ -123,7 +123,7 @@ class LoadStats:
 
         if monitor:
             # Send stats about this one load.
-            monitor.send(
+            monitor.send_message(
                 {"load": {"num_bytes": num_bytes, "load_ms": load_ms}}
             )
 
