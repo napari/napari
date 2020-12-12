@@ -19,7 +19,7 @@ from ..utils.interactions import (
     mouse_wheel_callbacks,
 )
 from ..utils.io import imsave
-from ..utils.key_bindings import components_to_key_combo
+from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
@@ -103,6 +103,9 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
+        self._key_map_handler = KeymapHandler()
+        self._key_map_handler.keymap_providers = [self.viewer]
+        self._active_layer = None
         self._console = None
 
         layerList = QWidget()
@@ -179,12 +182,14 @@ class QtViewer(QSplitter):
         self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
+        self.viewer.layers.events.active.connect(self._on_active_layer_change)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self._on_active_layer_change(None)
 
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
@@ -225,8 +230,8 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
         self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self.on_key_press)
-        self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self._key_map_handler.on_key_press)
+        self.canvas.connect(self._key_map_handler.on_key_release)
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
@@ -307,6 +312,27 @@ class QtViewer(QSplitter):
             self.controls.setMaximumWidth(700)
         else:
             self.controls.setMaximumWidth(220)
+
+    def _on_active_layer_change(self, event):
+        """When active layer changes change keymap handler.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        if event is None:
+            active_layer = self.viewer.layers.active
+        else:
+            active_layer = event.active
+
+        if self._active_layer in self._key_map_handler.keymap_providers:
+            self._key_map_handler.keymap_providers.remove(self._active_layer)
+
+        if active_layer is not None:
+            self._key_map_handler.keymap_providers.insert(0, active_layer)
+
+        self._active_layer = active_layer
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -608,9 +634,8 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_wheel_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_wheel_callbacks(layer, event)
+        if self._active_layer is not None:
+            mouse_wheel_callbacks(self._active_layer, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -627,9 +652,8 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_press_callbacks(layer, event)
+        if self._active_layer is not None:
+            mouse_press_callbacks(self._active_layer, event)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -645,9 +669,8 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_move_callbacks(layer, event)
+        if self._active_layer is not None:
+            mouse_move_callbacks(self._active_layer, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -663,47 +686,8 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_release_callbacks(layer, event)
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if (
-            event.native is not None
-            and event.native.isAutoRepeat()
-            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
-        ) or event.key is None:
-            # pass if no key is present or if key is held down, unless the
-            # key being held down is one of the navigation keys
-            # this helps for scrolling, etc.
-            return
-
-        combo = components_to_key_combo(event.key.name, event.modifiers)
-        self.viewer.press_key(combo)
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if event.key is None or (
-            # on linux press down is treated as multiple press and release
-            event.native is not None
-            and event.native.isAutoRepeat()
-        ):
-            return
-        combo = components_to_key_combo(event.key.name, event.modifiers)
-        self.viewer.release_key(combo)
+        if self._active_layer is not None:
+            mouse_release_callbacks(self._active_layer, event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.

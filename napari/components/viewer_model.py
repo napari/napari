@@ -16,7 +16,7 @@ from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
-from ..utils.key_bindings import KeymapHandler, KeymapProvider
+from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
@@ -29,7 +29,7 @@ from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
 
-class ViewerModel(KeymapHandler, KeymapProvider):
+class ViewerModel(KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -71,7 +71,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             title=Event,
             interactive=Event,
             reset_view=Event,
-            active_layer=Event,
             palette=Event,
             layers_change=Event,
         )
@@ -91,7 +90,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._title = title
 
         self._interactive = True
-        self._active_layer = None
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
@@ -110,8 +108,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
-
-        self.keymap_providers = [self]
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -396,8 +392,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             No Event parameters are used
         """
         active_layer = self.layers.active
-        if self._active_layer == active_layer:
-            return
 
         if active_layer is None:
             self.status = 'Ready'
@@ -410,15 +404,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.interactive = active_layer.interactive
-
-        if self._active_layer in self.keymap_providers:
-            self.keymap_providers.remove(self._active_layer)
-
-        if active_layer is not None:
-            self.keymap_providers.insert(0, active_layer)
-
-        self._active_layer = active_layer
-        self.events.active_layer(item=active_layer)
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:

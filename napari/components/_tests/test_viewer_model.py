@@ -496,29 +496,29 @@ def test_active_layer():
     viewer = ViewerModel()
     np.random.seed(0)
     # Check no active layer present
-    assert viewer.active_layer is None
+    assert viewer.layers.active is None
 
     # Check added layer is active
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     assert len(viewer.layers) == 1
-    assert viewer.active_layer == viewer.layers[0]
+    assert viewer.layers.active == viewer.layers[0]
 
     # Check newly added layer is active
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.active == viewer.layers[1]
 
     # Check no active layer after unselecting all
     viewer.layers.unselect_all()
-    assert viewer.active_layer is None
+    assert viewer.layers.active is None
 
     # Check selected layer is active
     viewer.layers[0].selected = True
-    assert viewer.active_layer == viewer.layers[0]
+    assert viewer.layers.active == viewer.layers[0]
 
     # Check no layer is active if both layers are selected
     viewer.layers[1].selected = True
-    assert viewer.active_layer is None
+    assert viewer.layers.active is None
 
 
 def test_active_layer_status_update():
@@ -528,10 +528,10 @@ def test_active_layer_status_update():
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.active == viewer.layers[1]
 
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.active_layer.status
+    assert viewer.status == viewer.layers.active.status
 
 
 def test_active_layer_cursor_size():
@@ -544,7 +544,7 @@ def test_active_layer_cursor_size():
 
     viewer.add_labels(np.random.random((10, 10)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.active == viewer.layers[1]
 
     viewer.layers[1].mode = 'paint'
     # Labels layer has a default cursor size of 10

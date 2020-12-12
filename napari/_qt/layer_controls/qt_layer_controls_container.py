@@ -84,7 +84,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        self.viewer.events.active_layer.connect(self._display)
+        self.viewer.layers.events.active.connect(self._display)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -97,7 +97,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if event is None:
             layer = None
         else:
-            layer = event.item
+            layer = event.active
 
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
