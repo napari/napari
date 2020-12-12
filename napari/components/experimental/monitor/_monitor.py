@@ -196,25 +196,33 @@ class Monitor:
 
         self._running = False
 
-    def poll(self) -> None:
-        """Poll the monitor service if it was started."""
+    def on_poll(self, event=None) -> None:
+        """The QtPoll object polls us.
+
+        Probably we could get rid of polling by creating a thread that
+        blocks waiting for client messages. Then it posts those messages as
+        Qt Events. So the GUI doesn't block, but gracefully handles
+        incoming messages as Qt events.
+        """
         if self._running:
             self._api.poll()
 
-    def add(self, data) -> None:
+        # Handle the event to say "keep polling us".
+        event.handled = True
+
+    def add_data(self, data) -> None:
         """Add data to the monitor service.
 
         Caller should use this pattern:
             if monitor:
                 monitor.add(...)
 
-        So they do not waste time putting creating their dict if the
-        monitor is not even running.
+        So no time wasted assembling the dict unless the monitor is running.
         """
         if self._running:
-            self._api.add(data)
+            self._api.add_napari_data(data)
 
-    def send(self, message: dict) -> None:
+    def send_message(self, message: dict) -> None:
         """Send a message to shared memory clients.
 
         Parameters
@@ -223,7 +231,7 @@ class Monitor:
             Post this message to clients.
         """
         if self._running:
-            self._api.send(message)
+            self._api.send_napari_message(message)
 
 
 monitor = Monitor()

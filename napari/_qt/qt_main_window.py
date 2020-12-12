@@ -748,7 +748,7 @@ class Window:
 
 
 def _stop_monitor() -> None:
-    """Stop the monitor service if configured to use it."""
+    """Stop the monitor service if we were using it."""
     if config.monitor:
         from ..components.experimental.monitor import monitor
 

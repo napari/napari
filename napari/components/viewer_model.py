@@ -77,12 +77,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     title: str = 'napari'
     status: str = 'Ready'
     help: str = ''
-    cursor: str = 'standard'
-    cursor_size: Optional[int] = None
-    interactive: bool = True
-    active_layer: Optional[int] = None
     theme: str = DEFAULT_THEME
     palette: Dict[str, str] = None
+
+    # I'd still like to remove this!
+    active_layer: Optional[int] = None
 
     axes: ClassVar[Axes] = None
     dims: ClassVar[Dims] = None
@@ -145,12 +144,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
 
-        # Only created if NAPARI_MON is enabled.
-        self._remote_commands = _create_remote_commands(self.layers)
-
     def __str__(self):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
+
+    def __hash__(self):
+        return id(self)
 
     def _on_theme_set(self, theme):
         # FIXME: in dataclass, need to fallback if an exception is raised in _on_name_set
@@ -221,6 +220,31 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             stacklevel=2,
         )
         self.grid.stride = grid_stride
+
+    @property
+    def interactive(self):
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.camera.interactive
+
+    @interactive.setter
+    def interactive(self, interactive):
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.camera.interactive = interactive
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
@@ -333,14 +357,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
-            self.interactive = True
+            self.camera.interactive = True
             self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
-            self.interactive = active_layer.interactive
+            self.camera.interactive = active_layer.interactive
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
@@ -360,7 +384,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+        self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -991,21 +1015,6 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
-
-
-def _create_remote_commands(layers: LayerList) -> None:
-    """Start the monitor service if configured to use it."""
-    if not config.monitor:
-        return None
-
-    from ..components.experimental.monitor import monitor
-    from ..components.experimental.remote_commands import RemoteCommands
-
-    monitor.start()  # Start if not already started.
-
-    # Create a RemoteCommands object which will run commands
-    # from remote clients that come through the monitor.
-    return RemoteCommands(layers, monitor.run_command_event)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

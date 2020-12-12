@@ -201,12 +201,10 @@ class OctreeIntersection:
         seen = np.vstack((x.ravel(), y.ravel())).T
 
         return {
-            "tile_state": {
-                # A list of (row, col) pairs of visible tiles.
-                "seen": seen,
-                # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
-                "corners": self._corners,
-            }
+            # A list of (row, col) pairs of visible tiles.
+            "seen": seen,
+            # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
+            "corners": self._corners,
         }
 
     @property
@@ -229,11 +227,9 @@ class OctreeIntersection:
         tile_size = slice_config.tile_size
 
         return {
-            "tile_config": {
-                "base_shape": base_shape,
-                "image_shape": image_shape,
-                "shape_in_tiles": shape_in_tiles,
-                "tile_size": tile_size,
-                "level_index": level.info.level_index,
-            }
+            "base_shape": base_shape,
+            "image_shape": image_shape,
+            "shape_in_tiles": shape_in_tiles,
+            "tile_size": tile_size,
+            "level_index": level.info.level_index,
         }
