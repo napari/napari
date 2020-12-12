@@ -3,11 +3,12 @@
 Sends messages to remote clients.
 """
 import logging
+import time
 from typing import Dict
 
 from ....layers.image.experimental.octree_image import OctreeImage
 from ...layerlist import LayerList
-from ..monitor import monitor, numpy_dumps
+from ..monitor import monitor
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -24,6 +25,7 @@ class RemoteMessages:
     def __init__(self, layers: LayerList):
         self.layers = layers
         self._frame_number = 0
+        self._last_time = None
 
     def on_poll(self) -> None:
         """Send messages to clients.
@@ -53,6 +55,15 @@ class RemoteMessages:
             if isinstance(layer, OctreeImage):
                 layers[id(layer)] = layer.remote_messages
 
-        LOGGER.info("RemoteMessages: %d", self._frame_number)
-        LOGGER.info("RemoteMessages: %s", numpy_dumps(layers))
         monitor.add_data({"poll": {"layers": layers}})
+        self._send_frame_time()
+
+    def _send_frame_time(self) -> None:
+        """Send the frame time since last poll."""
+        now = time.time()
+        last = self._last_time
+        delta = now - last if last is not None else 0
+        delta_ms = delta * 1000
+
+        monitor.send_message({'frame_time_ms': delta_ms})
+        self._last_time = now
