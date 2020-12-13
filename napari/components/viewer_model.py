@@ -54,10 +54,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
-    order : tuple of int
-        Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3.
     axis_labels = list of str
         Dimension names.
 
@@ -73,14 +69,16 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         Preset color palettes.
     """
 
-    # order matters!
+    # Decide on these three (see #2007)
     title: str = 'napari'
     status: str = 'Ready'
     help: str = ''
+
+    # Clean up palette and theme (see #2006)
     theme: str = DEFAULT_THEME
     palette: Dict[str, str] = None
 
-    # I'd still like to remove this!
+    # I'd still like to remove this (see #1952)
     active_layer: Optional[int] = None
 
     axes: Axes = field(
@@ -88,7 +86,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         init=False,
         metadata={'events': False, 'frozen': True},
     )
-    dims: ClassVar[Dims] = None
+    dims: Dims = field(
+        default_factory=Dims,
+        init=False,
+        metadata={'events': False, 'frozen': True},
+    )
     camera: Camera = field(
         default_factory=Camera,
         init=False,
@@ -104,32 +106,39 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         init=False,
         metadata={'events': False, 'frozen': True},
     )
-    layers: ClassVar[LayerList] = None
+    layers: LayerList = field(
+        default_factory=LayerList,
+        init=False,
+        repr=False,
+        metadata={'events': False, 'frozen': True},
+    )
     scale_bar: ScaleBar = field(
         default_factory=ScaleBar,
         init=False,
         metadata={'events': False, 'frozen': True},
     )
 
-    # ClassVar is one of many ways to excempt variables from the dataclass
-    # but it might not be strictly semantically accurate.
+    # Might remove this, see #2003
     keymap_providers: ClassVar
+
     # 2-tuple indicating height and width
     _canvas_size: ClassVar[Tuple[int, int]] = (600, 800)
 
     ndisplay: InitVar[int] = 2  # type: ignore
-    order: InitVar[Optional[Tuple[int, ...]]] = None  # type: ignore
     axis_labels: InitVar[Optional[Sequence[str]]] = None  # type: ignore
 
-    def __post_init__(self, ndisplay, order, axis_labels):
+    def __post_init__(self, ndisplay, axis_labels):
         self.palette = palettes[self.theme]
         super().__init__()
         self.events.add(reset_view=None, layers_change=None)
-        self.dims = Dims(
-            ndisplay=ndisplay, order=order, axis_labels=axis_labels
-        )
-        self.layers = LayerList()
 
+        # Initialize dims model
+        if len(axis_labels) > 0:
+            self.dims.ndim = len(axis_labels)
+            self.dims.axis_labels = axis_labels
+        self.dims.ndisplay = ndisplay
+
+        # Connect events
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)

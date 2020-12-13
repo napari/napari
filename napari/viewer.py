@@ -13,10 +13,6 @@ class Viewer(ViewerModel):
         The title of the viewer window. by default 'napari'.
     ndisplay : {2, 3}, optional
         Number of displayed dimensions. by default 2.
-    order : tuple of int, optional
-        Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3. by default None
     axis_labels : list of str, optional
         Dimension names. by default they are labeled with sequential numbers
     show : bool, optional
@@ -31,19 +27,10 @@ class Viewer(ViewerModel):
     _napari_global_logo = True
 
     def __init__(
-        self,
-        *,
-        title='napari',
-        ndisplay=2,
-        order=(),
-        axis_labels=(),
-        show=True,
+        self, *, title='napari', ndisplay=2, axis_labels=(), show=True,
     ):
         super().__init__(
-            title=title,
-            ndisplay=ndisplay,
-            order=order,
-            axis_labels=axis_labels,
+            title=title, ndisplay=ndisplay, axis_labels=axis_labels,
         )
         self.window = Window(self, show=show)
 
