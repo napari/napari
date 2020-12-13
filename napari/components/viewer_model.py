@@ -128,13 +128,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.dims = Dims(
             ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
-
-        self.axes = Axes()
-        self.camera = Camera()
-        self.cursor = Cursor()
-        self.grid = GridCanvas()
         self.layers = LayerList()
-        self.scale_bar = ScaleBar()
 
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
