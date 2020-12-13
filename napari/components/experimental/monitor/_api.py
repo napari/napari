@@ -7,7 +7,6 @@ from threading import Event
 from typing import NamedTuple
 
 from ....utils.events import EmitterGroup
-from ._utils import numpy_dumps
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -216,5 +215,4 @@ class MonitorApi:
         message : dict
             Message to send to clients.
         """
-        LOGGER.info("Send napari message: %s", numpy_dumps(message))
         self._remote.napari_messages.put(message)
