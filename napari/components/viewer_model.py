@@ -83,15 +83,32 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     # I'd still like to remove this!
     active_layer: Optional[int] = None
 
-    axes: ClassVar[Axes] = None
+    axes: Axes = field(
+        default_factory=Axes,
+        init=False,
+        metadata={'events': False, 'frozen': True},
+    )
     dims: ClassVar[Dims] = None
-    camera: ClassVar[Camera] = None
-    cursor: ClassVar[Cursor] = None
-    grid: ClassVar[GridCanvas] = None
-    scale_bar: ClassVar[ScaleBar] = None
-
-    layers: LayerList = field(
-        default_factory=LayerList, metadata={'events': False}, hash=False
+    camera: Camera = field(
+        default_factory=Camera,
+        init=False,
+        metadata={'events': False, 'frozen': True},
+    )
+    cursor: Cursor = field(
+        default_factory=Cursor,
+        init=False,
+        metadata={'events': False, 'frozen': True},
+    )
+    grid: GridCanvas = field(
+        default_factory=GridCanvas,
+        init=False,
+        metadata={'events': False, 'frozen': True},
+    )
+    layers: ClassVar[LayerList] = None
+    scale_bar: ScaleBar = field(
+        default_factory=ScaleBar,
+        init=False,
+        metadata={'events': False, 'frozen': True},
     )
 
     # ClassVar is one of many ways to excempt variables from the dataclass
@@ -116,6 +133,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.camera = Camera()
         self.cursor = Cursor()
         self.grid = GridCanvas()
+        self.layers = LayerList()
         self.scale_bar = ScaleBar()
 
         self.grid.events.connect(self.reset_view)

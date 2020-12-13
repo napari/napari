@@ -162,6 +162,9 @@ def set_with_events(self: C, name: str, value: Any) -> None:
     fields : set of str
         Only emit events for field names in this set.
     """
+    if name in getattr(self, '_frozen', {}) and self._post_init:
+        raise ValueError('Cannot set a frozen attribute')
+
     if name not in getattr(self, 'events', {}):
         # fallback to default behavior
         object.__setattr__(self, name, value)
@@ -266,6 +269,12 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         for fld in _fields
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
+    cls._frozen = {
+        fld.name: None
+        for fld in _fields
+        if fld._field_type is _dc._FIELD and fld.metadata.get("frozen", False)
+    }
+    cls._post_init = False
 
     # create dict with compare functions for fields which cannot be compared
     # using standard equal operator, like numpy arrays.
@@ -297,6 +306,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
+        cls._post_init = True
 
     # modify __setattr__ with version that emits an event when setting
     setattr(cls, '__setattr__', set_with_events)
