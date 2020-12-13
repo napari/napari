@@ -3,12 +3,25 @@
 Poll visuals or other objects so they can do things even when the
 mouse/camera are not moving. Usually for just a short period of time.
 """
+import logging
+import time
+from typing import Optional
+
 from qtpy.QtCore import QEvent, QObject, QTimer
 
 from ...components.camera import Camera
 from ...utils.events import EmitterGroup
 
+# When running a timer we use this interval.
 POLL_INTERVAL_MS = 16.666  # About 60HZ
+
+# If called more often than this we ignore it. Our _on_camera() method can
+# be called multiple times in on frame. It can get called because the
+# "center" changed and then the "zoom" changed even if it was really from
+# the same camera movement.
+IGNORE_INTERVAL_MS = 10
+
+LOGGER = logging.getLogger("napari.monitor")
 
 
 class QtPoll(QObject):
@@ -46,9 +59,13 @@ class QtPoll(QObject):
         self.timer = QTimer()
         self.timer.setInterval(POLL_INTERVAL_MS)
         self.timer.timeout.connect(self._on_timer)
+        self._interval = IntervalTimer()
 
     def _on_camera(self, _event) -> None:
         """Called when camera view changes at all."""
+        if self._interval.elapsed_ms < IGNORE_INTERVAL_MS:
+            return  # Double called during one frame?
+
         # Poll right away. If the timer is running, it's generally starved
         # out by the mouse button being down. Why? If we end up "double
         # polling" it *should* be harmless. But if we don't poll then
@@ -93,3 +110,18 @@ class QtPoll(QObject):
         """
         self.timer.stop()
         self.deleteLater()
+
+
+class IntervalTimer:
+    """Time the interval between subsequent calls to our elapsed property."""
+
+    def __init__(self):
+        self._last: Optional[float] = None
+
+    @property
+    def elapsed_ms(self) -> float:
+        """The elapsed time since the last call to this property."""
+        now = time.time()
+        elapsed_seconds = 0 if self._last is None else now - self._last
+        self._last = now
+        return elapsed_seconds * 1000
