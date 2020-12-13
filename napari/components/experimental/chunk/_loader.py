@@ -222,8 +222,11 @@ class ChunkLoader:
 
         # If it's been loading "fast" then load synchronously. There's no
         # point is loading async if it loads really fast.
-        if info.loads_fast:
-            return True
+
+        # TODO_OCTREE: disable this in a nice way for octree. It made sense
+        # for single-scale time series, but not for octree.
+        # if info.loads_fast:
+        #    return True
 
         # Finally, load synchronously if it's an ndarray (in memory) otherwise
         # it's Dask or something else and we load async.

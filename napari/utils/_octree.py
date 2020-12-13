@@ -15,7 +15,7 @@ DEFAULT_OCTREE_CONFIG = {
     "log_path": None,
     "loader": {
         "force_synchronous": False,
-        "num_workers": 6,
+        "num_workers": 1,
         "use_processes": False,
         "auto_sync_ms": 30,
         "delay_queue_ms": 100,
