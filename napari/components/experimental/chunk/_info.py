@@ -126,7 +126,7 @@ class LoadStats:
             # Send stats about this one load.
             monitor.send_message(
                 {
-                    "load": {
+                    "load_chunk": {
                         "time": time.time(),
                         "num_bytes": num_bytes,
                         "load_ms": load_ms,
