@@ -2,6 +2,7 @@
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import re
 from ast import literal_eval
+from typing import NamedTuple
 
 try:
     from qtpy import QT_VERSION
@@ -12,37 +13,55 @@ except Exception:
     use_gradients = False
 
 
+class Palette(NamedTuple):
+    """Palette for sytling the viewer."""
+
+    folder: str
+    background: str
+    foreground: str
+    primary: str
+    secondary: str
+    highlight: str
+    text: str
+    icon: str
+    warning: str
+    current: str
+    syntax_style: str
+    console: str
+    canvas: str
+
+
 palettes = {
-    'dark': {
-        'folder': 'dark',
-        'background': 'rgb(38, 41, 48)',
-        'foreground': 'rgb(65, 72, 81)',
-        'primary': 'rgb(90, 98, 108)',
-        'secondary': 'rgb(134, 142, 147)',
-        'highlight': 'rgb(106, 115, 128)',
-        'text': 'rgb(240, 241, 242)',
-        'icon': 'rgb(209, 210, 212)',
-        'warning': 'rgb(153, 18, 31)',
-        'current': 'rgb(0, 122, 204)',
-        'syntax_style': 'native',
-        'console': 'rgb(0, 0, 0)',
-        'canvas': 'black',
-    },
-    'light': {
-        'folder': 'light',
-        'background': 'rgb(239, 235, 233)',
-        'foreground': 'rgb(214, 208, 206)',
-        'primary': 'rgb(188, 184, 181)',
-        'secondary': 'rgb(150, 146, 144)',
-        'highlight': 'rgb(163, 158, 156)',
-        'text': 'rgb(59, 58, 57)',
-        'icon': 'rgb(107, 105, 103)',
-        'warning': 'rgb(255, 18, 31)',
-        'current': 'rgb(253, 240, 148)',
-        'syntax_style': 'default',
-        'console': 'rgb(255, 255, 255)',
-        'canvas': 'white',
-    },
+    'dark': Palette(
+        folder='dark',
+        background='rgb(38, 41, 48)',
+        foreground='rgb(65, 72, 81)',
+        primary='rgb(90, 98, 108)',
+        secondary='rgb(134, 142, 147)',
+        highlight='rgb(106, 115, 128)',
+        text='rgb(240, 241, 242)',
+        icon='rgb(209, 210, 212)',
+        warning='rgb(153, 18, 31)',
+        current='rgb(0, 122, 204)',
+        syntax_style='native',
+        console='rgb(0, 0, 0)',
+        canvas='black',
+    ),
+    'light': Palette(
+        folder='light',
+        background='rgb(239, 235, 233)',
+        foreground='rgb(214, 208, 206)',
+        primary='rgb(188, 184, 181)',
+        secondary='rgb(150, 146, 144)',
+        highlight='rgb(163, 158, 156)',
+        text='rgb(59, 58, 57)',
+        icon='rgb(107, 105, 103)',
+        warning='rgb(255, 18, 31)',
+        current='rgb(253, 240, 148)',
+        syntax_style='default',
+        console='rgb(255, 255, 255)',
+        canvas='white',
+    ),
 }
 
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')

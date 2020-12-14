@@ -138,8 +138,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             return
 
         self._palette = palette
-        self.axes.background_color = self.palette['canvas']
-        self.scale_bar.background_color = self.palette['canvas']
+        self.axes.background_color = self.palette.canvas
+        self.scale_bar.background_color = self.palette.canvas
         self.events.palette()
 
     @property

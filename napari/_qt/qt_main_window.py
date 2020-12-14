@@ -653,7 +653,7 @@ class Window:
         """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = self.qt_viewer.viewer.palette
+        palette = dict(self.qt_viewer.viewer.palette._asdict())
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '

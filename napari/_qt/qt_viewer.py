@@ -513,15 +513,12 @@ class QtViewer(QSplitter):
     def _update_palette(self, event=None):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
-        themed_stylesheet = template(
-            self.raw_stylesheet, **self.viewer.palette
-        )
+        palette = dict(self.viewer.palette._asdict())
+        themed_stylesheet = template(self.raw_stylesheet, **palette)
         if self._console is not None:
-            self.console._update_palette(
-                self.viewer.palette, themed_stylesheet
-            )
+            self.console._update_palette(palette, themed_stylesheet)
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.canvas.bgcolor = self.viewer.palette.canvas
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
