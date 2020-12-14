@@ -208,9 +208,8 @@ class LayerInfo:
         """
         layer = self.layer_ref.weak_ref()
         if layer is None:
-            LOGGER.debug(
-                "LayerInfo.get_layer: layer %d was deleted", self.layer_id
-            )
+            layer_id = self.layer_ref.layer_key.layer_id
+            LOGGER.debug("LayerInfo.get_layer: layer %d was deleted", layer_id)
         return layer
 
     @property
