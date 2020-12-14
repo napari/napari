@@ -86,16 +86,16 @@ QtDeleteButton {
 
 A theme is a set of colors used throughout napari.  See, for example, the
 builtin themes in `napari/utils/theme.py`.  To make a new theme, create a new
-`dict` in `palettes` with the same keys as one of the existing themes, and
-replace the values with your new colors.  To test out the theme, use the
+`napari.utils.theme.Palette` and add it to the `available_themes` with the
+a key that will be the theme name.  To test out the theme, use the
 `theme_sample.py` file from the command line as follows:
 
 ```sh
-python -m napari._qt.theme_sample
+python -m napari._qt.widgets.qt_theme_sample
 ```
 *note*: you may specify a theme with one additional argument on the command line:
 ```sh
-python -m napari._qt.theme_sample dark
+python -m napari._qt.widgets.qt_theme_sample dark
 ```
 (providing no arguments will show all themes in `theme.py`)
 

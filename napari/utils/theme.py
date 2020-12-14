@@ -31,7 +31,7 @@ class Palette(NamedTuple):
     canvas: str
 
 
-palettes = {
+available_themes = {
     'dark': Palette(
         folder='dark',
         background='rgb(38, 41, 48)',

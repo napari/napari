@@ -10,7 +10,7 @@ import sys
 from subprocess import SubprocessError, check_call
 from typing import Dict, List, Tuple
 
-from ..utils.theme import palettes as _palettes
+from ..utils.theme import available_themes as _available_themes
 
 RESOURCES_DIR = os.path.abspath(os.path.dirname(__file__))
 SVGPATH = os.path.join(RESOURCES_DIR, 'icons')
@@ -21,7 +21,7 @@ svg_tag_open = re.compile(r'(<svg[^>]*>)')
 def themify_icons(
     dest_dir: str,
     svg_path: str = SVGPATH,
-    palettes: Dict[str, Dict[str, str]] = _palettes,
+    available_themes: Dict[str, Dict[str, str]] = _available_themes,
     color_lookup: Dict[str, str] = None,
 ) -> List[str]:
     """Create a new "themed" SVG file, for every SVG file in ``svg_path``.
@@ -34,10 +34,10 @@ def themify_icons(
     svg_path : str, optional
         The folder to look in for SVG files, by default will search in a folder
         named ``icons`` in the same directory as this file.
-    palettes : dict, optional
+    available_themes : dict, optional
         A mapping of ``theme_name: theme_dict``, where ``theme_dict`` is a
-        mapping of color classes to rgb strings. By default will uses palettes
-        from :const:`napari.resources.utils.theme.palettes`.
+        mapping of color classes to rgb strings. By default will uses available_themes
+        from :const:`napari.resources.utils.theme.available_themes`.
     color_lookup : dict, optional
         A mapping of icon name to color class.  If the icon name is not in the
         color_lookup, it's color class will be ``"icon"``.
@@ -73,14 +73,16 @@ def themify_icons(
     </style>"""
 
     files = []
-    for theme_name, palette in palettes.items():
+    for theme_name, palette in available_themes.items():
         palette_dir = os.path.join(dest_dir, theme_name)
         os.makedirs(palette_dir, exist_ok=True)
         for icon_name in icon_names:
             svg_name = icon_name + '.svg'
             new_file = os.path.join(palette_dir, svg_name)
             color = color_lookup.get(icon_name, 'icon')
-            css = svg_style_insert.replace('{{ color }}', palette[color])
+            css = svg_style_insert.replace(
+                '{{ color }}', getattr(palette, color, '')
+            )
             with open(os.path.join(SVGPATH, svg_name), 'r') as fr:
                 contents = fr.read()
             with open(new_file, 'w') as fw:

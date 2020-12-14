@@ -28,7 +28,7 @@ from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.perf import perf_config
-from ..utils.theme import template
+from ..utils.theme import available_themes, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -176,7 +176,7 @@ class Window:
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+        self.qt_viewer.viewer.events.theme.connect(self._update_palette)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -653,18 +653,23 @@ class Window:
         """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = dict(self.qt_viewer.viewer.palette._asdict())
+        palette = available_themes[self.qt_viewer.viewer.theme]
+        palette_dict = dict(palette._asdict())
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
                 'color: {{ text }}; }',
-                **palette,
+                **palette_dict,
             )
         )
         self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **palette)
+            template(
+                'QWidget { background: {{ background }}; }', **palette_dict
+            )
         )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
+        self._qt_window.setStyleSheet(
+            template(self.raw_stylesheet, **palette_dict)
+        )
 
     def _status_changed(self, event):
         """Update status bar.
