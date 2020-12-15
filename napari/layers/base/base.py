@@ -594,8 +594,7 @@ class Layer(KeymapProvider, ABC):
             step=abs(self.scale),
         )
 
-    @property
-    def _slice_indices(self):
+    def _compute_slice_indices(self, rounding=True):
         """(D, ) array: Slice indices in data coordinates."""
         inv_transform = self._transforms['data2world'].inverse
 
@@ -625,14 +624,19 @@ class Layer(KeymapProvider, ABC):
 
         world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         data_pts = slice_inv_transform(world_pts)
-        # A round is taken to convert these values to slicing integers
-        data_pts = np.round(data_pts).astype(int)
+        if rounding:
+            # A round is taken to convert these values to slicing integers
+            data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self._dims_not_displayed):
             indices[ax] = data_pts[i]
 
         return tuple(indices)
+
+    @property
+    def _slice_indices(self):
+        return self._compute_slice_indices()
 
     @abstractmethod
     def _get_ndim(self):
