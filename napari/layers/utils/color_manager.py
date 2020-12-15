@@ -36,7 +36,7 @@ class ColorManager:
 
     """
 
-    colors: InitVar[Union[str, np.ndarray, list]]
+    colors: InitVar[Optional[Union[str, np.ndarray, list]]] = None
     n_colors: InitVar[int] = 0
     properties: InitVar[Optional[dict]] = None
 
@@ -49,7 +49,8 @@ class ColorManager:
     color_cycle_map: dict = field(default_factory=dict)
 
     def __post_init__(self, colors, n_colors, properties):
-
+        if colors is None:
+            colors = np.empty((0, 4))
         self.set_color(color=colors, n_colors=n_colors, properties=properties)
 
     def set_color(self, color: ColorType, n_colors: int, properties: dict):
