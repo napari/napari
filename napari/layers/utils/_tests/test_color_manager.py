@@ -64,49 +64,28 @@ def test_color_cycle(color_cycle):
     properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
     cm = ColorManager(
         colors='point_type',
-        n_colors=3,
+        n_colors=n_colors,
         properties=properties,
-        color_cycle=color_cycle,
+        categorical_colormap=color_cycle,
     )
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, n_colors))
     )
     np.testing.assert_allclose(cm.values, color_array)
 
-    # # Add new point and test its color
-    # coord = [18, 18]
-    # layer.selected_data = {0}
-    # layer.add(coord)
-    # layer_color = getattr(layer, f'{attribute}_color')
-    # assert len(layer_color) == shape[0] + 1
-    # np.testing.assert_allclose(
-    #     layer_color, np.vstack((color_array, transform_color('red'))),
-    # )
-    #
-    # # Check removing data adjusts colors correctly
-    # layer.selected_data = {0, 2}
-    # layer.remove_selected()
-    # assert len(layer.data) == shape[0] - 1
-    #
-    # layer_color = getattr(layer, f'{attribute}_color')
-    # assert len(layer_color) == shape[0] - 1
-    # np.testing.assert_allclose(
-    #     layer_color,
-    #     np.vstack((color_array[1], color_array[3:], transform_color('red'))),
-    # )
-    #
-    # # refresh colors
-    # layer.refresh_colors(update_color_mapping=True)
-    #
-    # # test adding a point with a new property value
-    # layer.selected_data = {}
-    # current_properties = layer.current_properties
-    # current_properties['point_type'] = np.array(['new'])
-    # layer.current_properties = current_properties
-    # layer.add([10, 10])
-    # color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
-    #
-    # assert 'new' in color_cycle_map
-    # np.testing.assert_allclose(
-    #     color_cycle_map['new'], np.squeeze(transform_color(color_cycle[0]))
-    # )
+    # Add new color element and test its color
+    cm.add(['A'], n_colors=1)
+    cm_colors = cm.values
+    assert len(cm_colors) == n_colors + 1
+    np.testing.assert_allclose(
+        cm_colors, np.vstack((color_array, transform_color('red'))),
+    )
+
+    # Check removing data adjusts colors correctly
+    cm.remove(set([0, 2]))
+    cm_colors_2 = cm.values
+    assert len(cm_colors_2) == (n_colors - 1)
+    np.testing.assert_allclose(
+        cm_colors_2,
+        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
+    )

@@ -9,7 +9,6 @@ from ...utils.colormaps.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_with_defaults,
 )
-from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events.dataclass import Property, evented_dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
@@ -43,7 +42,7 @@ class ColorManager:
     values: Optional[np.ndarray] = None
     mode: Property[ColorMode, str, None] = ColorMode.DIRECT
     color_property: str = ''
-    color_cycle: Property[
+    categorical_colormap: Property[
         CategoricalColormap, None, CategoricalColormap
     ] = np.array([[0, 0, 0, 1]])
     color_cycle_map: dict = field(default_factory=dict)
@@ -87,15 +86,24 @@ class ColorManager:
                 )
                 self.values = colors
 
-    def add(self, color):
+    def add(self, color, n_colors: int = 1):
         if self._color_mode == ColorMode.DIRECT:
-            new_color = transform_color(color)
+            new_color = color
         elif self._color_mode == ColorMode.CYCLE:
             new_color = self.categorical_colormap.map(color)
 
-        self._values = np.concatenate((self.values, new_color))
+        transformed_color = transform_color_with_defaults(
+            num_entries=n_colors,
+            colors=new_color,
+            elem_name="color",
+            default="white",
+        )
+        broadcasted_colors = normalize_and_broadcast_colors(
+            n_colors, transformed_color
+        )
+        self._values = np.concatenate((self.values, broadcasted_colors))
 
-    def remote(self, indices_to_remove: Union[set, list, np.ndarray]):
+    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Remove the indicated color elements
 
         Parameters
@@ -129,7 +137,7 @@ class ColorManager:
         if self._color_mode == ColorMode.CYCLE:
             color_properties = properties[self.color_property]
 
-            colors = self.color_cycle.map(color_properties)
+            colors = self.categorical_colormap.map(color_properties)
             if len(colors) == 0:
                 colors = np.empty((0, 4))
             self.values = colors
