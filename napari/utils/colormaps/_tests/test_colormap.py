@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari.utils.colormaps import CategoricalColormap, Colormap
 
@@ -99,3 +100,8 @@ def test_categorical_colormap_cycle():
     # map a third color and verify the colors wrap around
     third_color = cmap.map(['bonjour'])
     np.testing.assert_almost_equal(np.squeeze(third_color), color_cycle[0])
+
+
+def test_categorical_with_invalid_colormap():
+    with pytest.raises(TypeError):
+        CategoricalColormap('viridis')
