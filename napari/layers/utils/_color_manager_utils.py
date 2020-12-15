@@ -29,6 +29,6 @@ def is_color_mapped(color, properties):
     elif isinstance(color, (list, np.ndarray)):
         return False
     else:
-        raise ValueError(
+        raise TypeError(
             'color should be the name of a color, an array of colors, or the name of an property'
         )
