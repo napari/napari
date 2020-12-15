@@ -73,16 +73,19 @@ def test_color_cycle(color_cycle):
     )
     np.testing.assert_allclose(cm.values, color_array)
 
-    # Add new color element and test its color
-    cm.add(['A'], n_colors=1)
+    # Add 2 color elements and test their color
+    cm.add(['A'], n_colors=2)
     cm_colors = cm.values
-    assert len(cm_colors) == n_colors + 1
+    assert len(cm_colors) == n_colors + 2
     np.testing.assert_allclose(
-        cm_colors, np.vstack((color_array, transform_color('red'))),
+        cm_colors,
+        np.vstack(
+            (color_array, transform_color('red'), transform_color('red'))
+        ),
     )
 
     # Check removing data adjusts colors correctly
-    cm.remove(set([0, 2]))
+    cm.remove(set([0, 2, 11]))
     cm_colors_2 = cm.values
     assert len(cm_colors_2) == (n_colors - 1)
     np.testing.assert_allclose(

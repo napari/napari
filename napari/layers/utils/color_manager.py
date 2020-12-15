@@ -1,4 +1,4 @@
-from dataclasses import InitVar, field
+from dataclasses import InitVar
 from typing import Optional, Union
 
 import numpy as np
@@ -30,8 +30,6 @@ class ColorManager:
         CYCLE allows the color to be set via a color cycle over an attribute
 
         COLORMAP allows color to be set via a color map over an attribute
-    color_cycle_map : dict
-        Mapping of categorical property values to colors
 
     """
 
@@ -45,7 +43,6 @@ class ColorManager:
     categorical_colormap: Property[
         CategoricalColormap, None, CategoricalColormap
     ] = np.array([[0, 0, 0, 1]])
-    color_cycle_map: dict = field(default_factory=dict)
 
     def __post_init__(self, colors, n_colors, properties):
         if colors is None:
