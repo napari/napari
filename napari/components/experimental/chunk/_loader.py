@@ -123,6 +123,12 @@ class ChunkLoader:
     ) -> ChunkRequest:
         """Create a ChunkRequest for submission to load_chunk.
 
+        TODO_OCTREE: We have this method mainly so we can create an
+        entry in self.layer_map. But it seems like it would be simpler
+        if users of ChunkLoader could just create a ChunkRequest on
+        their own. And we create the layer_map entry on submission?
+        These seems kind of historical?
+
         Parameters
         ----------
         layer_ref : LayerRef
