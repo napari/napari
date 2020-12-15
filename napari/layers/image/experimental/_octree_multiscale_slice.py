@@ -4,13 +4,14 @@ For viewing one slice of a multiscale image using an octree.
 """
 import logging
 import math
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest
+from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....types import ArrayLike
 from .._image_view import ImageView
+from ._octree_chunk_loader import OctreeChunkLoader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
@@ -21,48 +22,45 @@ LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeMultiscaleSlice:
-    """View a slice of an multiscale image using an octree."""
+    """View a slice of an multiscale image using an octree.
+
+    Parameters
+    ----------
+    data
+        The multi-scale data.
+    slice_config : SliceConfig
+        The base shape and other info.
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting to displaying data.
+
+    Attributes
+    ----------
+    loader : OctreeChunkLoader
+        Uses the napari ChunkLoader to load OctreeChunks.
+
+    """
 
     def __init__(
         self,
         data,
+        layer_ref: LayerRef,
         slice_config: SliceConfig,
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
-
         self._slice_config = slice_config
 
         slice_id = id(self)
         self._octree = Octree(slice_id, data, slice_config)
-        self._octree_level = self._octree.num_levels - 1
+
+        self.loader: OctreeChunkLoader = OctreeChunkLoader(
+            self._octree, layer_ref
+        )
 
         thumbnail_image = np.zeros(
             (64, 64, 3)
         )  # blank until we have a real one
         self.thumbnail: ImageView = ImageView(thumbnail_image, image_converter)
-
-    @property
-    def octree_level(self) -> int:
-        """The current octree level.
-
-        Return
-        ------
-        int
-            The current octree level.
-        """
-        return self._octree_level
-
-    @octree_level.setter
-    def octree_level(self, level: int) -> None:
-        """Set the octree level we are viewing.
-
-        Parameters
-        ----------
-        level : int
-            The new level to display.
-        """
-        self._octree_level = level
 
     @property
     def loaded(self) -> bool:
@@ -84,14 +82,15 @@ class OctreeMultiscaleSlice:
         """
         if self._octree is None:
             return None
+
         try:
-            return self._octree.levels[self._octree_level].info
-        except IndexError:
-            index = self._octree_level
-            count = len(self._octree.levels)
+            return self._octree.levels[self.octree_level].info
+        except IndexError as exc:
+            index = self.octree_level
+            num_levels = len(self._octree.levels)
             raise IndexError(
-                f"Octree level {index} is not in range(0, {count})"
-            )
+                f"Octree level {index} is not in range(0, {num_levels})"
+            ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
         """Return this view's intersection with the octree.
@@ -125,6 +124,7 @@ class OctreeMultiscaleSlice:
         index = self._get_auto_level_index(view)
         if index < 0 or index >= self._octree.num_levels:
             raise ValueError(f"Invalid octree level {index}")
+
         return self._octree.levels[index]
 
     def _get_auto_level_index(self, view: OctreeView) -> int:
@@ -142,7 +142,7 @@ class OctreeMultiscaleSlice:
         """
         if not view.auto_level:
             # Return current level, do not update it.
-            return self._octree_level
+            return self.octree_level
 
         # Find the right level automatically. Choose a level where the texels
         # in the octree tiles are around the same size as screen pixels.
@@ -155,28 +155,8 @@ class OctreeMultiscaleSlice:
             return 0  # Show the best we've got!
 
         # Choose the right level...
-        return min(math.floor(math.log2(ratio)), self._octree.num_levels - 1)
-
-    def get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
-        """Return the chunks currently in view.
-
-        Return
-        ------
-        List[OctreeChunk]
-            The chunks which are visible in the given view.
-        """
-        intersection = self.get_intersection(view)
-
-        if intersection is None:
-            return []
-
-        if view.auto_level:
-            # Update our self._octree_level based on what level was automatically
-            # selected by the intersection.
-            self._octree_level = intersection.level.info.level_index
-
-        # Return the chunks in this intersection.
-        return intersection.get_chunks(id(self))
+        max_level = self._octree.num_levels - 1
+        return min(math.floor(math.log2(ratio)), max_level)
 
     def _get_octree_chunk(self, location: OctreeLocation) -> OctreeChunk:
         """Return the OctreeChunk at his location.

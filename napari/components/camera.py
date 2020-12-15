@@ -21,8 +21,11 @@ class Camera:
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
+    interactive : bool
+        If the camera interactivity is enabled or not.
     """
 
     center: Property[Len_3_Tuple, None, ensure_3_tuple] = (0, 0, 0)
     zoom: float = 1
     angles: Property[Len_3_Tuple, None, ensure_3_tuple] = (0, 0, 90)
+    interactive: bool = True

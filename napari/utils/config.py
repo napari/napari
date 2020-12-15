@@ -2,6 +2,8 @@
 """
 import os
 
+from ._octree import get_octree_config
+
 
 def _set(env_var: str) -> bool:
     """Return True if the env variable is set and non-zero.
@@ -14,16 +16,8 @@ def _set(env_var: str) -> bool:
     return os.getenv(env_var) not in [None, "0"]
 
 
-# Added this temporarily for octree debugging. The welcome visual causes
-# breakpoints to hit in image visual code. It's easier if we don't show it.
-allow_welcome_visual = True
-
-
 """
-Experimental Image Configuration.
-
-Async loading and octree image rendering are two separate but related
-experimental features.
+Experimental Features
 
 Async Loading
 -------------
@@ -35,19 +29,19 @@ GUI thread.
 
 Set NAPARI_ASYNC=1 to turn on async loading with default settings.
 
-Set NAPARI_ASYNC=/tmp/async.json to enable async loading with
-a configuration file. See config settings here:
-    napari.components.experimental.chunk._config.py
-
 Octree Rendering
 ----------------
 Image layers use an octree for rendering. The octree organizes the image
 into chunks/tiles. Only a subset of those chunks/tiles are loaded and
-drawn at a time. Octree rendering is very WIP and not ready yet.
+drawn at a time. Octree rendering is a work in progress.
 
-Set NAPARI_OCTREE=1 to enable experimental octree visuals. This
-will also turn on async loading, however to configure async
-loading you can set NAPARI_ASYNC to a config file path as above.
+Enabled one of two ways:
+
+1) Set NAPARI_OCTREE=1 to enabled octree rendering with defaults.
+
+2) Set NAPARI_OCTREE=/tmp/config.json use a config file.
+
+See napari/utils/config_octree.py for the config file format.
 
 Shared Memory Server
 --------------------
@@ -55,47 +49,22 @@ Experimentally, only enable if NAPARI_MON is set to the path of a config
 file. See this PR for more info: https://github.com/napari/napari/pull/1909.
 """
 
-# Async loading with a quadtree/octree.
-async_octree = _set("NAPARI_OCTREE")
+# Config for async/octree. If None then neither is enabled.
+# If octree_config['octree']['enabled'] is False only async is enabled.
+octree_config = get_octree_config()
 
-# Async loading with regular non-tiled Image class.
-async_loading = _set("NAPARI_ASYNC") or async_octree
+# Shorthand for async loading with or without an octree.
+async_loading = octree_config is not None
+
+# Shorthand for async with an octree.
+async_octree = octree_config and octree_config['octree']['enabled']
 
 # Shared Memory Server
 monitor = _set("NAPARI_MON")
 
 """
-Image Layer Creation
-
-With octree enabled the QtTestImage widget allows creating 3 types of image
-layers/visuals. This lets us compare each implemention.
+Other Config Options
 """
-
-# Image layer, the original one.
-CREATE_IMAGE_NORMAL = 1
-
-# OctreeImage layer with the VispyCompoundImageLayer visual.
-# This visual uses a separate ImageVisual for each tile.
-CREATE_IMAGE_COMPOUND = 2
-
-# OctreeImage layer with the VispyTiledImageLayer visual.
-# This is a single visual that can draw many tiles.
-CREATE_IMAGE_TILED = 3
-
-# The default type of image the QtTestImage widget will create. If the user
-# selects another type of image, the widget will change this config value.
-create_image_type = CREATE_IMAGE_TILED
-
-
-def create_octree_image() -> bool:
-    """Return True if we should create an OctreeImage layer.
-
-    Only create an OctreeImage layer if octree is enabled AND we are
-    creating an octree-based image type.
-
-    Return
-    ------
-    bool
-        True if we should create an OctreeImage layer.
-    """
-    return async_octree and (create_image_type != CREATE_IMAGE_NORMAL)
+# Added this temporarily for octree debugging. The welcome visual causes
+# breakpoints to hit in image visual code. It's easier if we don't show it.
+allow_welcome_visual = True

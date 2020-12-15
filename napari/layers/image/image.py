@@ -2,7 +2,6 @@
 """
 import types
 import warnings
-from copy import copy
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -483,31 +482,6 @@ class Image(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
-
-    @property
-    def shape(self):
-        """Size of layer in world coordinates (compatibility).
-
-        Returns
-        -------
-        shape : tuple
-        """
-        warnings.warn(
-            (
-                "The shape attribute is deprecated and will be removed in version 0.4.3."
-                " Instead you should use the extent.data and extent.world attributes"
-                " to get the extent of the data in data or world coordinates."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        extent = copy(self._extent_data)
-        extent[1] = extent[1] + 1
-        extent = self._transforms['data2world'](extent)
-
-        # Rounding is for backwards compatibility reasons.
-        return tuple(np.round(extent[1] - extent[0]).astype(int))
 
     def _get_state(self):
         """Get dictionary of layer state.

@@ -15,7 +15,7 @@ from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.theme import palettes
@@ -60,9 +60,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     themes = palettes
 
-    def __init__(
-        self, title='napari', ndisplay=2, order=None, axis_labels=None
-    ):
+    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -71,7 +69,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             status=Event,
             help=Event,
             title=Event,
-            interactive=Event,
             reset_view=Event,
             active_layer=Event,
             palette=Event,
@@ -79,7 +76,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
 
         self.dims = Dims(
-            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+            ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
 
         self.layers = LayerList()
@@ -92,7 +89,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._help = ''
         self._title = title
 
-        self._interactive = True
         self._active_layer = None
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
@@ -125,9 +121,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
-
-        # Only created if NAPARI_MON is enabled.
-        self._remote_commands = _create_remote_commands(self.layers)
 
     def __str__(self):
         """Simple string representation"""
@@ -262,16 +255,28 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
-        """
-        return self._interactive
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.camera.interactive
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self._interactive = interactive
-        self.events.interactive()
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.camera.interactive = interactive
 
     @property
     def active_layer(self):
@@ -405,14 +410,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
-            self.interactive = True
+            self.camera.interactive = True
             self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
-            self.interactive = active_layer.interactive
+            self.camera.interactive = active_layer.interactive
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
@@ -432,7 +437,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+        self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -547,6 +552,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         layer = event.value
 
+        # Coerce name into being unique and connect event to ensure uniqueness
+        layer.name = self.layers._coerce_name(layer.name, layer)
+
         # Connect individual layer events to viewer events
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)
@@ -559,9 +567,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer.events.rotate.connect(self._on_layers_change)
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
-
-        # Coerce name into being unique and connect event to ensure uniqueness
-        layer.name = self.layers._coerce_name(layer.name, layer)
         layer.events.name.connect(self.layers._update_name)
 
         # For the labels layer we need to reset the undo/ redo
@@ -601,10 +606,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         layer = event.value
 
-        # Disconnect all events from layer
-        layer.events.disconnect()
-        for em in layer.events.emitters.values():
-            em.disconnect()
+        # Disconnect all connections from layer
+        disconnect_events(layer.events, self)
+        disconnect_events(layer.events, self.layers)
 
         # For the labels layer disconnect history resets
         if hasattr(layer, '_reset_history'):
@@ -1058,27 +1062,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
 def _get_image_class() -> layers.Image:
     """Return Image or OctreeImage based config settings."""
-    if config.create_octree_image():
+    if config.async_octree:
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage
 
     return layers.Image
-
-
-def _create_remote_commands(layers: LayerList) -> None:
-    """Start the monitor service if configured to use it."""
-    if not config.monitor:
-        return None
-
-    from ..components.experimental.monitor import monitor
-    from ..components.experimental.remote_commands import RemoteCommands
-
-    monitor.start()  # Start if not already started.
-
-    # Create a RemoteCommands object which will run commands
-    # from remote clients that come through the monitor.
-    return RemoteCommands(layers, monitor.run_command_event)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

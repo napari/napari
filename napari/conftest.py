@@ -9,7 +9,6 @@ from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.components import LayerList
-from napari.experimental import chunk_loader, synchronous_loading
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
@@ -18,6 +17,7 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
+from napari.utils.config import async_loading
 
 try:
     from skimage.data import image_fetcher
@@ -327,19 +327,46 @@ def configure_loading(request):
     """Configure async/async loading."""
     async_mode = request.config.getoption("--async_only")
     if async_mode:
+        # Late import so we don't import experimental code unless using it.
+        from napari.components.experimental.chunk import synchronous_loading
+
         with synchronous_loading(False):
             yield
     else:
         yield  # Sync so do nothing.
 
 
+def _is_async_mode() -> bool:
+    """Return True if we are currently loading chunks asynchronously
+
+    Return
+    ------
+    bool
+        True if we are currently loading chunks asynchronously.
+    """
+    if not async_loading:
+        return False  # Not enabled at all.
+    else:
+        # Late import so we don't import experimental code unless using it.
+        from napari.components.experimental.chunk import chunk_loader
+
+        return not chunk_loader.force_synchronous
+
+
 @pytest.fixture(autouse=True)
 def skip_sync_only(request):
-    """Skip tests depending on our sync/async settings."""
-    async_mode = not chunk_loader.force_synchronous
-    sync_only_test = request.node.get_closest_marker('sync_only')
-    if async_mode and sync_only_test:
+    """Skip async_only tests if running async."""
+    sync_only = request.node.get_closest_marker('sync_only')
+    if _is_async_mode() and sync_only:
         pytest.skip("running with --async_only")
+
+
+@pytest.fixture(autouse=True)
+def skip_async_only(request):
+    """Skip async_only tests if running sync."""
+    async_only = request.node.get_closest_marker('async_only')
+    if not _is_async_mode() and async_only:
+        pytest.skip("not running with --async_only")
 
 
 @pytest.fixture(autouse=True)

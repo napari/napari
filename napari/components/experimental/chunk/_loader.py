@@ -12,11 +12,11 @@ from contextlib import contextmanager
 from typing import Dict, List, Optional, Union
 
 from ....types import ArrayLike
+from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
-from ._config import async_config
 from ._delay_queue import DelayQueue
-from ._info import LayerInfo, LoadType
+from ._info import LayerInfo, LayerRef, LoadType
 from ._request import ChunkKey, ChunkRequest
 
 LOGGER = logging.getLogger("napari.async")
@@ -91,9 +91,10 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        self.force_synchronous: bool = async_config.force_synchronous
-        self.num_workers: int = async_config.num_workers
-        self.use_processes: bool = async_config.use_processes
+        config = octree_config['loader']
+        self.force_synchronous: bool = bool(config['force_synchronous'])
+        self.num_workers: int = int(config['num_workers'])
+        self.use_processes: bool = bool(config['use_processes'])
 
         self.executor: PoolExecutor = _create_executor(
             self.use_processes, self.num_workers
@@ -106,7 +107,7 @@ class ChunkLoader:
         # The DelayeQueue prevents us from spamming the worker pool when
         # the user is rapidly scrolling through slices.
         self.delay_queue = DelayQueue(
-            async_config.delay_queue_ms, self._submit_async
+            config['delay_queue_ms'], self._submit_async
         )
 
         self.events = EmitterGroup(
@@ -118,24 +119,23 @@ class ChunkLoader:
         return self.layer_map.get(layer_id)
 
     def create_request(
-        self, layer, key: ChunkKey, chunks: Dict[str, ArrayLike]
+        self, layer_ref: LayerRef, key: ChunkKey, chunks: Dict[str, ArrayLike]
     ) -> ChunkRequest:
         """Create a ChunkRequest for submission to load_chunk.
 
         Parameters
         ----------
-        layer : Layer
-            The layer that's requesting the data.
+        layer_ref : LayerRef
+            Reference to the layer that's requesting the data.
         key : ChunkKey
             The key for the request.
         chunks : Dict[str, ArrayLike]
             The arrays we want to load.
         """
-        layer_id = key.layer_key.layer_id
+        layer_id = layer_ref.layer_key.layer_id
 
-        # Add a LayerInfo if we don't already have one.
         if layer_id not in self.layer_map:
-            self.layer_map[layer_id] = LayerInfo(layer)
+            self.layer_map[layer_id] = LayerInfo(layer_ref)
 
         # Return the new request.
         return ChunkRequest(key, chunks)
@@ -397,7 +397,7 @@ class ChunkLoader:
 
         for future_list in self.futures.values():
             # Result blocks until the future is done or cancelled
-            [future.result() for future in future_list]
+            map(lambda x: x.result(), future_list)
 
     def wait_for_data_id(self, data_id: int) -> None:
         """Wait for the given data to be loaded.
@@ -421,8 +421,9 @@ class ChunkLoader:
             data_id,
         )
 
-        # Call result() will block until the future has finished or was cancelled.
-        [future.result() for future in future_list]
+        # Calling result() will block until the future has finished or was
+        # cancelled.
+        map(lambda x: x.result(), future_list)
         del self.futures[data_id]
 
 
@@ -460,4 +461,4 @@ Think of the ChunkLoader as a shared resource like "the filesystem" where
 multiple clients can be access it at the same time, but it is the interface
 to just one physical resource.
 """
-chunk_loader = ChunkLoader()
+chunk_loader = ChunkLoader() if octree_config else None

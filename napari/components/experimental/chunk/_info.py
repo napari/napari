@@ -1,51 +1,24 @@
 """LoadType, LoadStats and LayerInfo.
 """
 import logging
-import weakref
 from enum import Enum
-
-import dask.array as da
 
 from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
-from ._config import async_config
+from ....utils.config import octree_config
 from ._request import ChunkRequest
-from ._utils import StatWindow
+from ._utils import LayerRef, StatWindow
 
 LOGGER = logging.getLogger("napari.async")
 
 
 class LoadCounts:
+    """Count statistics about loaded chunks."""
+
     def __init__(self):
         self.loads: int = 0
         self.chunks: int = 0
         self.bytes: int = 0
-
-
-def _get_type_str(data) -> str:
-    """Get human readable name for the data's type.
-
-    Returns
-    -------
-    str
-        A string like "ndarray" or "dask".
-    """
-    data_type = type(data)
-
-    if data_type == list:
-        if len(data) == 0:
-            return "EMPTY"
-        else:
-            # Recursively get the type string of the zeroth level.
-            return _get_type_str(data[0])
-
-    if data_type == da.Array:
-        # Special case this because otherwise data_type.__name__
-        # below would just return "Array".
-        return "dask"
-
-    # For class numpy.ndarray this returns "ndarray"
-    return data_type.__name__
 
 
 def _mbits(num_bytes, duration_ms) -> float:
@@ -150,7 +123,7 @@ class LoadStats:
 
         if monitor:
             # Send stats about this one load.
-            monitor.send(
+            monitor.send_message(
                 {"load": {"num_bytes": num_bytes, "load_ms": load_ms}}
             )
 
@@ -211,12 +184,10 @@ class LayerInfo:
     note deleted during the load process.
     """
 
-    def __init__(self, layer):
-        self.layer_id: int = id(layer)
-        self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
-        self.data_type: str = _get_type_str(layer.data)
+    def __init__(self, layer_ref: LayerRef):
+        self.layer_ref = layer_ref
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = async_config.auto_sync_ms
+        self.auto_sync_ms = octree_config['loader']['auto_sync_ms']
 
         self.stats = LoadStats()
 
@@ -228,7 +199,7 @@ class LayerInfo:
         layer : Layer
             The layer for this ChunkRequest.
         """
-        layer = self.layer_ref()
+        layer = self.layer_ref.weak_ref()
         if layer is None:
             LOGGER.debug(
                 "LayerInfo.get_layer: layer %d was deleted", self.layer_id

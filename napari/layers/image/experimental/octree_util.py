@@ -1,8 +1,73 @@
 """Octree utility classes.
 """
+from dataclasses import dataclass
 from typing import NamedTuple, Tuple
 
 import numpy as np
+
+from ....utils.config import octree_config
+
+
+def _get_tile_size() -> int:
+    """Return the default tile size.
+
+    Return
+    ------
+    int
+        The default tile size.
+    """
+    return octree_config['octree']['tile_size'] if octree_config else 256
+
+
+@dataclass
+class OctreeDisplayOptions:
+    """Options for how to display the octree.
+
+    Attributes
+    -----------
+    tile_size : int
+        The size of the display tiles, for example 256.
+    freeze_level : bool
+        If True we do not automatically pick the right data level.
+    track_view : bool
+        If True the displayed tiles track the view, the normal mode.
+    show_grid : bool
+        If True draw a grid around the tiles for debugging or demos.
+    """
+
+    def __init__(self):
+        self._show_grid = True
+
+        # TODO_OCTREE we set this after __init__ which is messy.
+        self.loaded_event = None
+
+    @property
+    def show_grid(self) -> bool:
+        """True if we are drawing a grid on top of the tiles.
+
+        Return
+        ------
+        bool
+            True if we are drawing a grid on top of the tiles.
+        """
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, show: bool) -> None:
+        """Set whether we should draw a grid on top of the tiles.
+
+        Parameters
+        ----------
+        show : bool
+            True if we should draw a grid on top of the tiles.
+        """
+        if self._show_grid != show:
+            self._show_grid = show
+            self.loaded_event()  # redraw
+
+    tile_size: int = _get_tile_size()
+    freeze_level: bool = False
+    track_view: bool = True
 
 
 class TestImageSettings(NamedTuple):
@@ -77,7 +142,6 @@ class SliceConfig(NamedTuple):
     base_shape: np.ndarray
     num_levels: int
     tile_size: int
-    delay_ms: NormalNoise = NormalNoise()
 
     @property
     def aspect_ratio(self):
