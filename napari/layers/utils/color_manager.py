@@ -1,9 +1,9 @@
 from dataclasses import InitVar
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import CategoricalColormap
+from ...utils.colormaps import CategoricalColormap, Colormap, ensure_colormap
 from ...utils.colormaps.color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
@@ -12,7 +12,7 @@ from ...utils.colormaps.color_transformations import (
 from ...utils.events.dataclass import Property, evented_dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
-from .layer_utils import guess_continuous
+from .layer_utils import guess_continuous, map_property
 
 
 @evented_dataclass(events=True, properties=True)
@@ -40,6 +40,8 @@ class ColorManager:
     values: Optional[np.ndarray] = None
     mode: Property[ColorMode, str, None] = ColorMode.DIRECT
     color_property: str = ''
+    continuous_colormap: Property[Colormap, None, ensure_colormap] = 'viridis'
+    continuous_contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: Property[
         CategoricalColormap, None, CategoricalColormap
     ] = np.array([[0, 0, 0, 1]])
@@ -66,10 +68,10 @@ class ColorManager:
         else:
             if is_color_mapped(color, properties):
                 if guess_continuous(properties[color]):
-                    self._color_mode = ColorMode.COLORMAP
+                    self._mode = ColorMode.COLORMAP
                 else:
-                    self._color_mode = ColorMode.CYCLE
-                    self._color_property = color
+                    self._mode = ColorMode.CYCLE
+                self._color_property = color
                 self.refresh_colors(properties=properties)
             else:
                 transformed_color = transform_color_with_defaults(
@@ -82,13 +84,17 @@ class ColorManager:
                     n_colors, transformed_color
                 )
                 self.values = colors
+                self._color_mode = ColorMode.DIRECT
 
     def add(self, color, n_colors: int = 1):
-        if self._color_mode == ColorMode.DIRECT:
+        if self._mode == ColorMode.DIRECT:
             new_color = color
-        elif self._color_mode == ColorMode.CYCLE:
+        elif self._mode == ColorMode.CYCLE:
+            if isinstance(color, str):
+                color = [color]
             new_color = self.categorical_colormap.map(color)
-
+        elif self._mode == ColorMode.COLORMAP:
+            new_color = self.continuous_colormap.map(color)
         transformed_color = transform_color_with_defaults(
             num_entries=n_colors,
             colors=new_color,
@@ -131,37 +137,34 @@ class ColorManager:
             Default value is False.
         """
 
-        if self._color_mode == ColorMode.CYCLE:
+        if self._mode == ColorMode.CYCLE:
             color_properties = properties[self.color_property]
 
             colors = self.categorical_colormap.map(color_properties)
-            if len(colors) == 0:
+
+        elif self._mode == ColorMode.COLORMAP:
+
+            color_properties = properties[self.color_property]
+            if len(color_properties) > 0:
+                if (
+                    update_color_mapping
+                    or self.continuous_contrast_limits is None
+                ):
+
+                    colors, contrast_limits = map_property(
+                        prop=color_properties,
+                        colormap=self.continuous_colormap,
+                    )
+                    self.continuous_contrast_limits = contrast_limits
+                else:
+                    colors, _ = map_property(
+                        prop=color_properties,
+                        colormap=self.continuous_colormap,
+                        contrast_limits=self.continuous_contrast_limits,
+                    )
+            else:
                 colors = np.empty((0, 4))
-            self.values = colors
-
-        # elif self._color_mode == ColorMode.COLORMAP:
-        #     color_property = getattr(self, f'_{attribute}_color_property')
-        #     color_properties = self.properties[color_property]
-        #     if len(color_properties) > 0:
-        #         contrast_limits = getattr(self, f'{attribute}_contrast_limits')
-        #         colormap = getattr(self, f'{attribute}_colormap')
-        #         if update_color_mapping or contrast_limits is None:
-        #
-        #             colors, contrast_limits = map_property(
-        #                 prop=color_properties, colormap=colormap
-        #             )
-        #             setattr(
-        #                 self, f'{attribute}_contrast_limits', contrast_limits,
-        #             )
-        #         else:
-        #
-        #             colors, _ = map_property(
-        #                 prop=color_properties,
-        #                 colormap=colormap,
-        #                 contrast_limits=contrast_limits,
-        #             )
-        #     else:
-        #         colors = np.empty((0, 4))
-        #     setattr(self, f'_{attribute}_color', colors)
-
+        if len(colors) == 0:
+            colors = np.empty((0, 4))
+        self.values = colors
         self.events.values()
