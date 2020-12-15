@@ -114,7 +114,10 @@ class CategoricalColormap:
             # reset the color mapping
             self._colormap = {}
         elif isinstance(colormap, dict):
-            self._colormap = colormap
+            transformed_colormap = {
+                k: transform_color(v)[0] for k, v in colormap.items()
+            }
+            self._colormap = transformed_colormap
         else:
             raise TypeError('colormap should be an array or dict')
 
@@ -133,18 +136,19 @@ class CategoricalColormap:
         self._fallback_color_values = transformed_colors
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
-        color_properties = np.asarray(color_properties)
+        if isinstance(color_properties, (list, np.ndarray)):
+            color_properties = np.asarray(color_properties)
+        else:
+            color_properties = np.asarray([color_properties])
 
         # add properties if they are not in the colormap
         color_cycle_keys = [*self.colormap]
         props_in_map = np.in1d(color_properties, color_cycle_keys)
         if not np.all(props_in_map):
-            indices_to_add = np.unique(
-                color_properties[np.logical_not(props_in_map)],
-                return_index=True,
-            )[1]
+            new_prop_values = color_properties[np.logical_not(props_in_map)]
+            indices_to_add = np.unique(new_prop_values, return_index=True)[1]
             props_to_add = [
-                color_properties[index] for index in sorted(indices_to_add)
+                new_prop_values[index] for index in sorted(indices_to_add)
             ]
             for prop in props_to_add:
                 new_color = next(self._fallback_color)

@@ -140,35 +140,34 @@ class ColorManager:
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
+        if self._mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+            if self._mode == ColorMode.CYCLE:
+                color_properties = properties[self.color_property]
+                colors = self.categorical_colormap.map(color_properties)
 
-        if self._mode == ColorMode.CYCLE:
-            color_properties = properties[self.color_property]
+            elif self._mode == ColorMode.COLORMAP:
 
-            colors = self.categorical_colormap.map(color_properties)
+                color_properties = properties[self.color_property]
+                if len(color_properties) > 0:
+                    if (
+                        update_color_mapping
+                        or self.continuous_contrast_limits is None
+                    ):
 
-        elif self._mode == ColorMode.COLORMAP:
-
-            color_properties = properties[self.color_property]
-            if len(color_properties) > 0:
-                if (
-                    update_color_mapping
-                    or self.continuous_contrast_limits is None
-                ):
-
-                    colors, contrast_limits = map_property(
-                        prop=color_properties,
-                        colormap=self.continuous_colormap,
-                    )
-                    self.continuous_contrast_limits = contrast_limits
+                        colors, contrast_limits = map_property(
+                            prop=color_properties,
+                            colormap=self.continuous_colormap,
+                        )
+                        self.continuous_contrast_limits = contrast_limits
+                    else:
+                        colors, _ = map_property(
+                            prop=color_properties,
+                            colormap=self.continuous_colormap,
+                            contrast_limits=self.continuous_contrast_limits,
+                        )
                 else:
-                    colors, _ = map_property(
-                        prop=color_properties,
-                        colormap=self.continuous_colormap,
-                        contrast_limits=self.continuous_contrast_limits,
-                    )
-            else:
+                    colors = np.empty((0, 4))
+            if len(colors) == 0:
                 colors = np.empty((0, 4))
-        if len(colors) == 0:
-            colors = np.empty((0, 4))
-        self.values = colors
-        self.events.values()
+            self.values = colors
+            self.events.values()

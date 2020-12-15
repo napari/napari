@@ -490,8 +490,13 @@ class Points(Layer):
             # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
-                self._edge_color = self.edge_color[: len(data)]
-                self._face_color = self.face_color[: len(data)]
+                # curr_n_colors = len(self.edge_color)
+                # indices_to_remove = np.arange(len(data), curr_n_colors)
+                # if len(indices_to_remove) > 0:
+                #     self._edge_color.remove(indices_to_remove)
+                #     self._face_color.remove(indices_to_remove)
+                self._edge_color._values = self.edge_color[: len(data)]
+                self._face_color._values = self.face_color[: len(data)]
                 self._size = self._size[: len(data)]
 
                 for k in self.properties:
@@ -521,10 +526,8 @@ class Points(Layer):
                         (self.properties[k], new_property), axis=0
                     )
 
-                # add new edge colors
+                # add new edge/face colors
                 self._add_point_color(adding, 'edge')
-
-                # add new face colors
                 self._add_point_color(adding, 'face')
 
                 self.size = np.concatenate((self._size, size), axis=0)
@@ -586,18 +589,18 @@ class Points(Layer):
         if not isinstance(properties, dict):
             properties, _ = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
-        if self._face_color_property and (
-            self._face_color_property not in self._properties
+        if self._face_color.color_property and (
+            self._face_color.color_property not in self._properties
         ):
-            self._face_color_property = ''
+            self._face_color.color_property = ''
             warnings.warn(
                 'property used for face_color dropped', RuntimeWarning
             )
 
-        if self._edge_color_property and (
-            self._edge_color_property not in self._properties
+        if self._edge_color.color_property and (
+            self._edge_color.color_property not in self._properties
         ):
-            self._edge_color_property = ''
+            self._edge_color.color_property = ''
             warnings.warn(
                 'property used for edge_color dropped', RuntimeWarning
             )
@@ -772,7 +775,7 @@ class Points(Layer):
         """Union[list, np.ndarray] :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color.categorical_colormap
+        return self._edge_color.categorical_colormap.colormap
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
@@ -856,7 +859,7 @@ class Points(Layer):
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._face_color.categorical_colormap
+        return self._face_color.categorical_colormap.colormap
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
@@ -1525,8 +1528,8 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
-            self._edge_color = np.delete(self.edge_color, index, axis=0)
-            self._face_color = np.delete(self.face_color, index, axis=0)
+            self._edge_color.remove(index)
+            self._face_color.remove(index)
             for k in self.properties:
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
@@ -1577,13 +1580,13 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge_color = np.vstack(
+            self._edge_color._values = np.vstack(
                 (
                     self.edge_color,
                     transform_color(deepcopy(self._clipboard['edge_color'])),
                 )
             )
-            self._face_color = np.vstack(
+            self._face_color._values = np.vstack(
                 (
                     self.face_color,
                     transform_color(deepcopy(self._clipboard['face_color'])),

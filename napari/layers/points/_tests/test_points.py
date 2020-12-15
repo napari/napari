@@ -503,9 +503,11 @@ def test_adding_properties(attribute):
     assert isinstance(layer.properties['point_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
-    setattr(layer, f'_{attribute}_color_property', 'vector_type')
+    # setattr(layer, f'_{attribute}_color.color_property', 'point_type')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager.color_property = 'point_type'
     properties_2 = {
-        'not_vector_type': _make_cycled_properties(['A', 'B'], shape[0])
+        'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
@@ -665,27 +667,6 @@ def test_points_errors():
         Points(data, properties=copy(annotations))
 
 
-def test_is_color_mapped():
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=annotations)
-
-    # giving the name of an annotation should return True
-    assert layer._is_color_mapped('point_type')
-
-    # giving a list should return false (i.e., could be an RGBA color)
-    assert not layer._is_color_mapped([1, 1, 1, 1])
-
-    # giving an ndarray should return false (i.e., could be an RGBA color)
-    assert not layer._is_color_mapped(np.array([1, 1, 1, 1]))
-
-    # give an invalid color argument
-    with pytest.raises(ValueError):
-        layer._is_color_mapped((123, 323))
-
-
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 2)
@@ -761,7 +742,8 @@ def test_switch_color_mode(attribute):
     )
 
     # there should not be an edge_color_property
-    color_property = getattr(layer, f'_{attribute}_color_property')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    color_property = color_manager.color_property
     assert color_property == ''
 
     # transitioning to colormap should raise a warning
@@ -769,7 +751,7 @@ def test_switch_color_mode(attribute):
     # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
-    color_property = getattr(layer, f'_{attribute}_color_property')
+    color_property = color_manager.color_property
     assert color_property == next(iter(properties))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
@@ -958,7 +940,8 @@ def test_color_cycle(attribute, color_cycle):
     current_properties['point_type'] = np.array(['new'])
     layer.current_properties = current_properties
     layer.add([10, 10])
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    color_cycle_map = color_manager.categorical_colormap.colormap
 
     assert 'new' in color_cycle_map
     np.testing.assert_allclose(
@@ -978,10 +961,14 @@ def test_color_cycle_dict(attribute):
     }
     layer = Points(data, **points_kwargs)
 
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    color_cycle_map = color_manager.categorical_colormap.colormap
     np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
     np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
-    np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
+
+    # 6 wasn't in the supplied colormap, so it is the fallback_color
+    # (black by default)
+    np.testing.assert_allclose(color_cycle_map[6], [0, 0, 0, 1])  # 6 is white
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1050,7 +1037,8 @@ def test_adding_value_color_cycle(attribute):
     layer.properties['point_type'] = point_types
     layer.refresh_colors(update_color_mapping=False)
 
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    color_cycle_map = color_manager.categorical_colormap.colormap
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
 
