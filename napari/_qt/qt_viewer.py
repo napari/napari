@@ -862,7 +862,10 @@ def _create_remote_manager(
 
     # Start the monitor so we can access its events. The monitor has no
     # dependencies to napari except to utils.Event.
-    monitor.start()
+    started = monitor.start()
+
+    if not started:
+        return None  # Probably not >= Python 3.9, so no manager is needed.
 
     # Create the remote manager and have monitor call its process_command()
     # method to execute commands from clients.
