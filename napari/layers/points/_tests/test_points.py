@@ -83,7 +83,7 @@ def test_empty_points_with_properties_list():
     np.testing.assert_equal(pts.properties, props)
 
 
-def test_empty_layer_with_face_colorap():
+def test_empty_layer_with_face_colormap():
     """ Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
@@ -101,22 +101,25 @@ def test_empty_layer_with_face_colorap():
     assert np.all(layer._current_face_color == face_color)
 
 
-def test_empty_layer_with_edge_colormap():
-    """ Test creating an empty layer where the face color is a colormap
+@pytest.mark.parametrize('attribute', ['face', 'edge'])
+def test_empty_layer_with_colormap(attribute):
+    """ Test creating an empty layer where the face/edge color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
     default_properties = {'point_type': np.array([1.5], dtype=np.float)}
-    layer = Points(
-        properties=default_properties,
-        edge_color='point_type',
-        edge_colormap='gray',
-    )
-
-    assert layer.edge_color_mode == 'colormap'
+    points_kwargs = {
+        'properties': default_properties,
+        f'{attribute}_color': 'point_type',
+        f'{attribute}_colormap': 'gray',
+    }
+    layer = Points(**points_kwargs)
+    color_mode = getattr(layer, f'{attribute}_color_mode')
+    assert color_mode == 'colormap'
 
     # verify the current_face_color is correct
-    edge_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_edge_color == edge_color)
+    expected_curr_color = np.array([1, 1, 1, 1])
+    curr_color = getattr(layer, f'_current_{attribute}_color')
+    assert np.all(curr_color == expected_curr_color)
 
 
 def test_random_points():

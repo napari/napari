@@ -63,16 +63,20 @@ class ColorManager:
         n_colors:
             The total number of colors that should be created.
         """
-        if (n_colors == 0) or (len(color) == 0):
-            self.values = np.empty((0, 4))
-        else:
-            if is_color_mapped(color, properties):
-                if guess_continuous(properties[color]):
-                    self._mode = ColorMode.COLORMAP
-                else:
-                    self._mode = ColorMode.CYCLE
-                self._color_property = color
+
+        if is_color_mapped(color, properties):
+            if guess_continuous(properties[color]):
+                self._mode = ColorMode.COLORMAP
+            else:
+                self._mode = ColorMode.CYCLE
+            self._color_property = color
+            if n_colors == 0:
+                self.values = np.empty((0, 4))
+            else:
                 self.refresh_colors(properties=properties)
+        else:
+            if n_colors == 0:
+                self.values = np.empty((0, 4))
             else:
                 transformed_color = transform_color_with_defaults(
                     num_entries=n_colors,
@@ -84,7 +88,7 @@ class ColorManager:
                     n_colors, transformed_color
                 )
                 self.values = colors
-                self._color_mode = ColorMode.DIRECT
+            self._color_mode = ColorMode.DIRECT
 
     def add(self, color, n_colors: int = 1):
         if self._mode == ColorMode.DIRECT:

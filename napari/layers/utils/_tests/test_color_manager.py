@@ -29,6 +29,7 @@ def _make_cycled_properties(values, length):
 def test_color_manager_empty():
     cm = ColorManager()
     np.testing.assert_allclose(cm.values, np.empty((0, 4)))
+    assert cm.mode == 'direct'
 
 
 color_str = 'red'
