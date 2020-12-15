@@ -9,13 +9,13 @@ from qtpy.QtWidgets import QApplication, QSplashScreen
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 
-NAPARI_APP_NAME = 'napari'
+APPLICATION_NAME = 'napari'
 try:
     from magicgui.application import APPLICATION_NAME as MGUI_APP_NAME
 except (ImportError, AttributeError):
     MGUI_APP_NAME = 'magicgui'
 
-COMPATIBLE_APPLICATIONS = (NAPARI_APP_NAME, MGUI_APP_NAME)
+COMPATIBLE_APPLICATIONS = (APPLICATION_NAME, MGUI_APP_NAME)
 
 
 def _create_application(argv) -> QApplication:
@@ -67,7 +67,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
         app = _create_application(sys.argv)
-        app.setApplicationName(NAPARI_APP_NAME)
+        app.setApplicationName(APPLICATION_NAME)
         if startup_logo:
             logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
             pm = QPixmap(logopath).scaled(
