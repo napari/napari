@@ -206,7 +206,7 @@ class OctreeMultiscaleSlice:
 
         if octree_chunk is None:
             # This location in the octree does not contain an OctreeChunk.
-            # That's unexpected, becauase locations are turned into
+            # That's unexpected, because locations are turned into
             # OctreeChunk's when a load is initiated. So this is an error,
             # but log it and keep going, maybe some transient weirdness.
             LOGGER.error(
@@ -232,5 +232,8 @@ class OctreeMultiscaleSlice:
         octree_chunk.data = incoming_data
         assert octree_chunk.in_memory
         assert not octree_chunk.needs_load
+
+        # Tell loader so it can delete future which is no longer relevant.
+        self.loader.on_chunk_loaded(octree_chunk)
 
         return True  # Chunk was added.
