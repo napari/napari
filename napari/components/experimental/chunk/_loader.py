@@ -481,12 +481,15 @@ def _log_to_file(path: str) -> None:
     path : str
         Log to this file path.
     """
+    # This file uses "napari.async.loader" but we want to load all of
+    # "napari.async" by default.
+    logger = logging.getLogger("napari.async")
     if path:
         fh = logging.FileHandler(path)
         formatter = logging.Formatter(LOG_FORMAT)
         fh.setFormatter(formatter)
-        LOGGER.addHandler(fh)
-        LOGGER.setLevel(logging.DEBUG)
+        logger.addHandler(fh)
+        logger.setLevel(logging.DEBUG)
 
 
 """
