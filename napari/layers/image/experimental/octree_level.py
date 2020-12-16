@@ -169,16 +169,17 @@ class OctreeLevel:
         return data
 
 
-def log_levels(label: str, levels: List[OctreeLevel], start: int = 0) -> None:
+def log_levels(levels: List[OctreeLevel], start_level: int = 0) -> None:
     """Log the dimensions of each level nicely.
+
+    We take start_level so we can log the "extra" levels we created but
+    with their correct level numbers.
 
     Parameters
     ----------
-    label : str
-        Prepend this to the header line.
     levels : List[OctreeLevel]
         Print information about these levels.
-    start : int
+    start_level : int
         Start the indexing at this number, shift the indexes up.
     """
     from ...._vendor.experimental.humanize.src.humanize import intword
@@ -186,9 +187,8 @@ def log_levels(label: str, levels: List[OctreeLevel], start: int = 0) -> None:
     def _dim_str(dim: tuple) -> None:
         return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
 
-    LOGGER.info(f"{label} {len(levels)} levels:")
     for index, level in enumerate(levels):
-        level_index = start + index
+        level_index = start_level + index
         image_str = _dim_str(level.info.image_shape)
         tiles_str = _dim_str(level.info.shape_in_tiles)
         LOGGER.info(
