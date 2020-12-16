@@ -97,9 +97,9 @@ class ChunkCache:
             Add the data in this request to the cache.
         """
         if not self.enabled:
-            LOGGER.info("ChunkCache.add_chunk: disabled")
+            LOGGER.debug("ChunkCache.add_chunk: cache is disabled")
             return
-        LOGGER.info("ChunkCache.add_chunk: %s", request.key)
+        LOGGER.debug("ChunkCache.add_chunk: %s", request.key.location)
         self.chunks[request.key.key] = request.chunks
 
     def get_chunks(self, request: ChunkRequest) -> Optional[ChunkArrays]:
