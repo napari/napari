@@ -159,7 +159,7 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
 
 
 def create_downsampled_levels(
-    image: np.ndarray, tile_size: int
+    image: np.ndarray, next_level_index: int, tile_size: int
 ) -> List[np.ndarray]:
     """Return a list of levels coarser then this own.
 
@@ -187,6 +187,7 @@ def create_downsampled_levels(
 
     levels = []
     previous = image
+    level_index = next_level_index
 
     if max(previous.shape) > tile_size:
         LOGGER.info(
@@ -200,12 +201,17 @@ def create_downsampled_levels(
             next_level = ndi.zoom(
                 previous, zoom, mode='nearest', prefilter=True, order=1
             )
+
         LOGGER.info(
-            "Downsampled %s level in %.3fms", previous.shape, timer.duration_ms
+            "Level %d downsampled %s in %.3fms",
+            level_index,
+            previous.shape,
+            timer.duration_ms,
         )
 
         levels.append(next_level)
         previous = levels[-1]
+        level_index += 1
 
     return levels
 

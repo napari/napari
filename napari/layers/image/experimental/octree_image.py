@@ -307,13 +307,17 @@ class OctreeImage(Image):
         List[OctreeChunk]
             The drawable chunks.
         """
+        LOGGER.debug("get_drawable_chunks")
+
         if self._slice is None or self._view is None:
+            LOGGER.debug("get_drawable_chunks: No slice or view")
             return []  # There is nothing to draw.
 
         # Get the current intersection and save it off.
         self._intersection = self._slice.get_intersection(self._view)
 
         if self._intersection is None:
+            LOGGER.debug("get_drawable_chunks: Intersection is empty")
             return []  # No chunks to draw.
 
         # Get the ideal chunks. These are the chunks at the preferred
@@ -321,18 +325,25 @@ class OctreeImage(Image):
         # and in VRAM. When all loading is done, we will draw all the ideal
         # chunks.
         ideal_chunks = self._intersection.get_chunks(create=True)
+        level_index = self._intersection.level.info.level_index
+
+        LOGGER.debug(
+            "get_drawable_chunks: Found %d ideal chunks on level %d",
+            len(ideal_chunks),
+            level_index,
+        )
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
         if self._view.auto_level:
-            self._data_level = self._intersection.level.info.level_index
+            self._data_level = level_index
 
         # The loader will initiate loads on any ideal chunks which are not
         # yet in memory. And it will return the chunks we should draw. The
-        # chunks might be ideal chunks, if they are in memory, but they
-        # might be chunks from higher or lower levels in the octree. In
-        # general we try to draw cover the view with the "best available"
-        # data.
+        # chunks we should draw might be ideal chunks, if they are in
+        # memory, but they also might be chunks from higher or lower levels
+        # in the octree. In general we try to draw "cover the view" with
+        # the "best available" data.
         return self._slice.loader.get_drawable_chunks(
             drawn_chunk_set, ideal_chunks
         )

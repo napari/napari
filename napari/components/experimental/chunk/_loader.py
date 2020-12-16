@@ -179,7 +179,7 @@ class ChunkLoader:
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
-            LOGGER.debug("load_chunk: cache hit %s", request.key)
+            LOGGER.debug("load_chunk: cache hit %s", request.key.location)
             request.chunks = chunks
             return request, None
 

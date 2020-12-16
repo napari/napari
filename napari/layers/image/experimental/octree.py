@@ -64,8 +64,7 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
-        LOGGER.info("Multiscale data has %d levels: ", len(self.levels))
-        log_levels(self.levels)
+        LOGGER.info("Multiscale data has %d levels.", len(self.levels))
 
         # If root level contains more than one tile, add extra levels
         # until the root does consist of a single tile. We have to do this
@@ -73,7 +72,8 @@ class Octree:
         if self.levels[-1].info.num_tiles > 1:
             self.levels.extend(self._get_extra_levels())
 
-        LOGGER.info(f"Tree now has {len(self.levels)} total levels.")
+        LOGGER.info(f"Octree now has {len(self.levels)} total levels:")
+        log_levels(self.levels)
 
         # Now the root should definitely contain only a single tile.
         assert self.levels[-1].info.num_tiles == 1
@@ -229,7 +229,6 @@ class Octree:
             len(extra_levels),
             timer.duration_ms,
         )
-        log_levels(extra_levels, start_level=len(self.levels))
 
         return extra_levels
 
@@ -295,7 +294,9 @@ class Octree:
         # consists of only a single tile, using our standard/only
         # tile size.
         tile_size = self.slice_config.tile_size
-        new_levels = create_downsampled_levels(self.data[-1], tile_size)
+        new_levels = create_downsampled_levels(
+            self.data[-1], len(self.data), tile_size
+        )
 
         # Add the data.
         self.data.extend(new_levels)
