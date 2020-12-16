@@ -1,4 +1,8 @@
 """ChunkLoader class.
+
+Loads chunks synchronously or asynchronously using worker threads or
+processes. A chunk could be an OctreeChunk or it could be a whole screen of
+data with the pre-Octree Image code.
 """
 import logging
 import os
@@ -91,6 +95,7 @@ class ChunkLoader:
     """
 
     def __init__(self):
+        _log_to_file(octree_config['log_path'])
         config = octree_config['loader']
         self.force_synchronous: bool = bool(config['force_synchronous'])
         self.num_workers: int = int(config['num_workers'])
@@ -167,7 +172,7 @@ class ChunkLoader:
         on_chunk_loaded() will be called from the GUI thread.
         """
         if self._load_synchronously(request):
-            return request
+            return request, None
 
         # Check the cache first.
         chunks = self.cache.get_chunks(request)
@@ -175,9 +180,11 @@ class ChunkLoader:
         if chunks is not None:
             LOGGER.info("ChunkLoader._load_async: cache hit %s", request.key)
             request.chunks = chunks
-            return request
+            return request, None
 
-        LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
+        LOGGER.info(
+            "ChunkLoader.load_chunk: cache miss %s", request.key.location
+        )
 
         # Clear any pending requests for this specific data_id.
         # TODO_OCTREE: turn this off because all our request come from the
@@ -188,8 +195,8 @@ class ChunkLoader:
         # Add to the delay queue, the delay queue will call our
         # _submit_async() method later on if the delay expires without the
         # request getting cancelled.
-        self.delay_queue.add(request)
-        return None
+        # self.delay_queue.add(request)
+        return None, self._submit_async(request)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request synchronously."""
@@ -253,7 +260,11 @@ class ChunkLoader:
         # case the log will almost always be disabled unless debugging.
         # https://docs.python.org/3/howto/logging.html#optimization
         # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
-        LOGGER.debug("ChunkLoader._submit_async: %s", request.key)
+        LOGGER.debug(
+            "ChunkLoader._submit_async: %.3f %s",
+            request.elapsed_ms,
+            request.key.location,
+        )
 
         # Submit the future, have it call ChunkLoader._done when done.
         future = self.executor.submit(_chunk_loader_worker, request)
@@ -261,6 +272,8 @@ class ChunkLoader:
 
         # Store the future in case we need to cancel it.
         self.futures.setdefault(request.data_id, []).append(future)
+
+        return future
 
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
@@ -318,10 +331,10 @@ class ChunkLoader:
         try:
             # Our future has already finished since this is being
             # called from Chunk_Request._done(), so result() will
-            # never block.
+            # never block. But we can see if it finished or was
+            # cancelled. Although we don't care right now.
             return future.result()
         except CancelledError:
-            LOGGER.debug("ChunkLoader._done: cancelled")
             return None
 
     def _done(self, future: Future) -> None:
@@ -347,7 +360,11 @@ class ChunkLoader:
         if request is None:
             return  # Future was cancelled, nothing to do.
 
-        LOGGER.debug("ChunkLoader._done: %s", request.key)
+        LOGGER.debug(
+            "ChunkLoader._done: elapsed=%.3f location=%s",
+            request.elapsed_ms,
+            request.key.location,
+        )
 
         # Add chunks to the cache in the worker thread. For now it's safe
         # to do this in the worker. Later we might need to arrange for this
@@ -453,6 +470,25 @@ def synchronous_loading(enabled):
 def wait_for_async():
     """Wait for all asynchronous loads to finish."""
     chunk_loader.wait_for_all()
+
+
+LOG_FORMAT = "%(levelname)s - %(name)s - %(message)s"
+
+
+def _log_to_file(path: str) -> None:
+    """Log "napari.async" messages to the given file.
+
+    Parameters
+    ----------
+    path : str
+        Log to this file path.
+    """
+    if path:
+        fh = logging.FileHandler(path)
+        formatter = logging.Formatter(LOG_FORMAT)
+        fh.setFormatter(formatter)
+        LOGGER.addHandler(fh)
+        LOGGER.setLevel(logging.DEBUG)
 
 
 """
