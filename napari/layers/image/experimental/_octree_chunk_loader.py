@@ -3,11 +3,12 @@
 Uses ChunkLoader to load data into OctreeChunks in the octree.
 """
 import logging
-from typing import List, Set
+from concurrent.futures import Future
+from typing import Dict, List, Set
 
 from ....components.experimental.chunk import LayerRef, chunk_loader
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeChunkKey
+from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 
 LOGGER = logging.getLogger("napari.async.octree")
 
@@ -15,49 +16,78 @@ LOGGER = logging.getLogger("napari.async.octree")
 class OctreeChunkLoader:
     """Load data into OctreeChunks in the octree.
 
+    The loader is given draw_set, the chunks we are currently drawing, and
+    ideal_chunks, the chunks which are in view at the desired level of the
+    octree.
+
+    The ideal level was chosen because its image pixels best match the
+    screen pixels. Using higher resolution than that is okay, but it's
+    wasting memory. Using lower resolution is better than nothing, but it's
+    going to be blurrier than the ideal level.
+
+    Our get_drawable_chunks() method iterates through the ideal_chunks
+    choosing what chunks to load, in what order, and producing the set of
+    chunks the visual should draw.
+
+    Choosing what chunks to load and draw is the heart of octree rendering.
+    We use the tree structure to find child or parent chunks, or chunks
+    futher up the tree: ancestor chunks.
+
+    The goal is to pretty quickly load all the ideal chunks, since that's
+    what we really want to draw. But in the meantime we load and display
+    chunks at lower or high resolutions. In some cases because they already
+    loaded and even already being drawn. In other cases though we load
+    chunk from high level because they provide "coverage" quickly.
+
+    As you go up to higher levels from the ideal level, the chunks on those
+    levels cover more and more chunks on the ideal level. As you go up
+    levels they cover this number of ideal chunks: 4, 9, 16, 25.
+
+    The data from higher levels is blurry compared to the ideal level, but
+    getting something "reasonable" on the screen quickly often leads to the
+    best user experience. For example, even "blurry" data is often good
+    enough for them to keep navigating, to keep panning and zooming looking
+    for whatever they are looking for.
+
     Parameters
     ----------
+    octree : Octree
+        The octree we are loading chunks for, and that we are drawing.
     layer_ref : LayerRef
         A weak reference to the layer we are loading chunks for.
+
+    Attributes
+    ----------
+    _futures : Future
+        Futures for chunks which are loading or queued for loading.
+    _last_drawable : Set[OctreeLocation]
+        What did draw last frame. Only for logging, so we don't spam the log.
     """
 
     def __init__(self, octree: Octree, layer_ref: LayerRef):
         self._octree = octree
         self._layer_ref = layer_ref
 
+        self._futures: Dict[OctreeLocation, Future] = {}
+        self._last_drawable: Set[OctreeLocation] = set()
+
     def get_drawable_chunks(
-        self,
-        drawn_chunk_set: Set[OctreeChunkKey],
-        ideal_chunks: List[OctreeChunk],
+        self, drawn_set: Set[OctreeChunkKey], ideal_chunks: List[OctreeChunk],
     ) -> List[OctreeChunk]:
         """Return the chunks that should be drawn.
 
         The ideal chunks are within the bounds of the OctreeView, but those
-        chunks may or may not be drawable. Drawable chunks are typically
-        ones that were fully in memory to start, or have been
-        asynchronously loaded so their data is now in memory.
+        chunks may or may not be in memory. We only return chunks which
+        are in memory.
 
-        This routine might return drawable chunks for levels other than the
-        ideal level. This is called multi-level rendering and it's core
-        feature of quadtree/octree rendering.
+        Generally we want to draw the "best available" data. Howevever that
+        data might not be at the ideal level. Sometimes we even load chunks
+        at a higher level before loading the ideal chunks. To get
+        "coverage" quickly.
 
-        Background
-        -----------
-        Generally we want to draw the "best available" data. The ideal
-        level was chosen because its image pixels best match the screen
-        pixels. So if loaded, we prefer drawing the ideal chunks.
-
-        However, we strongly want to avoid drawing nothing. So if an ideal
-        chunk is not available, we search for a suitable substitute. There
-        are just two directions to search:
-
-        1) Up, look for a drawable chunk at a higher (coarser) level.
-        2) Down, look for a drawable chunk at a lower (finer) level.
-
-        A parent chunk, at a higher level, will cover more than just the
-        missing ideal chunk. While a child chunk, at a lower level, will
-        only cover a fraction of the missing ideal chunk. And so on
-        recursively through multiple levels.
+        So we look in two directions:
+        1) Up, to find a chunk at a higher (coarser) level.
+        2) Down, to look for a drawable chunk at a lower (finer) level.
 
         The TiledImageVisual can draw overlapping tiles/chunks. For example
         suppose below B and C are ideal chunks, but B is drawable while C
@@ -69,19 +99,9 @@ class OctreeChunkLoader:
         |  B | C |
         |---------
 
-        We return B and A as drawable chunks. TiledImageVisual will render
-        A first and then B. So looking at the region covered by A, the 1/4
-        occupied by B will be at the ideal resolution, while the remaining
-        3/4 will be at a lower resoution.
-
-        In many cases drawing one level lower resolution than the target will
-        be barely noticeable by the user. And once the chunk is loaded it
-        will update to full resolution.
-
-        Drawing one level too high should not be noticeable at all by the
-        user, it just means the card is doing the downsampling. The only
-        downside there is drawing lots of tiles might be slow and it will
-        hold more data in memory than is necessary.
+        TiledImageVisual will render A first, because it's at a higher
+        level, and then B. So the visual will render B and A with B on top.
+        The region defined by C is showing A, until C is ready to draw.
 
         Parameters
         ----------
@@ -95,19 +115,119 @@ class OctreeChunkLoader:
         List[OctreeChunk]
             The chunks that should be drawn.
         """
-        drawable = []  # Create this list of drawable chunks.
+        drawable = []
+        locations = set()
 
-        # Get the ideal checks or alternates, plus any extra chunks.
-        for octree_chunk in ideal_chunks:
-            drawable.extend(
-                self._get_ideal_chunks(drawn_chunk_set, octree_chunk)
+        # For every chunk we'd ideally like to draw.
+        for ideal_chunk in ideal_chunks:
+
+            # Get any chunks we always want to draw no matter where the
+            # view is. For now this is just the root tile, so that we have
+            # some minimal coverage. On a big enough dataset we might be
+            # "inside" a single pixel of the root tile! So it's just
+            # providing a background color.
+            drawable.extend(self._get_permanent_chunks())
+
+            # Get the drawnable chunks which will hopefully "cover" that
+            # ideal chunks. This could be just the ideal chunks itself, or
+            # it could include chunk from other levels.
+            for draw_chunk in self._get_coverage(ideal_chunk, drawn_set):
+
+                # Check the locations set so that we don't include
+                # duplicates, we only need to return each chunk at most one
+                # time.
+                if draw_chunk.location not in locations:
+                    drawable.append(draw_chunk)
+                    locations.add(draw_chunk.location)
+
+        # Only log if the set of chunks we are drawing has changed.
+        # Otherwise we'd spam the log every frame even if nothing changed.
+        # TODO_OCTREE: We can remove this check entirely if not logging,
+        # or perhaps if not logging at the "debug" level.
+        if self._drawables_changed(drawable):
+            self._log_drawables(drawable)
+            LOGGER.debug(
+                "locations=%d futures=%d", len(locations), len(self._futures),
             )
-            drawable.extend(self._get_extra_chunks())
 
+        # Cancel all futures (in progress loads) that are no longer
+        # drawable chunks. When panning or zooming quickly we create and
+        # cancel a *lot* of futures. Which is fine, it's pretty fast, and
+        # we very much want to avoid loading chunks that we no long need.
+        self._cancel_futures(locations)
+
+        # Note the ones we drew, only for loggin.
+        self._last_drawable = locations
         return drawable
 
-    def _get_extra_chunks(self) -> List[OctreeChunk]:
-        """Get any extra chunks we want to draw.
+    def _drawables_changed(self, drawable: List[OctreeChunk]) -> bool:
+        """Return True if the locations we are drawing changed.
+
+        Parameters
+        ----------
+        drawable : List[OctreeChunk]
+            The chunks we are going to draw.
+
+        Return
+        ------
+        bool
+            True if the locations we are drawing changed.
+        """
+        # If different sizes there was definitively a change!
+        if len(drawable) != len(self._last_drawable):
+            return True
+
+        # Otherwise see if chunks were not drawn last time.
+        for octree_chunk in drawable:
+            if octree_chunk.location not in self._last_drawable:
+                return True  # There are new chunks.
+
+        # No change in what we are drawing.
+        return False
+
+    def _log_drawables(self, drawable: List[OctreeChunk]) -> None:
+        """Log the drawable locations.
+
+        Parameters
+        ----------
+        drawable : List[OctreeChunk]
+            The chunks we are going to draw.
+        """
+        for octree_chunk in drawable:
+            LOGGER.debug("Drawable: %s", octree_chunk.location)
+
+    def _cancel_futures(self, drawable_set: Set[OctreeLocation]) -> None:
+        """Cancel futures not in the drawable_set.
+
+        Parameters
+        ----------
+        drawable_set : Set[OctreeLocations]
+            The set of locations we are asking the visual to draw.
+        """
+        before = len(self._futures)
+
+        # Iterate through every future.
+        for location, future in list(self._futures.items()):
+            # If it's not in the drawable set then cancel it.
+            if location not in drawable_set:
+                # Future.cancel() will return False if a worker has already
+                # starated on the load. If so that load will finish, but
+                # then we'll ignore it. We can't help that. Usually there a
+                # lot of loads queued that we can cancel.
+                LOGGER.debug("Cancelling: %s", location)
+                future.cancel()
+                del self._futures[location]
+            else:
+                LOGGER.debug("Keeping: %s", location)
+
+        kept = len(self._futures)
+        cancelled = before - kept
+        LOGGER.debug(
+            "Futures: before=%d cancelled=%d kept=%d", before, cancelled, kept
+        )
+
+    def _get_permanent_chunks(self) -> List[OctreeChunk]:
+        """Get any permanent chunks we want to always draw.
 
         Right now it's just the root tile. We draw this so that we always
         have at least some minimal coverage when the camera moves to a new
@@ -118,58 +238,76 @@ class OctreeChunkLoader:
         List[OctreeChunk]
             Any extra chunks we should draw.
         """
-        # We create it because it's not part of the intersection, it's just
-        # something extra we want to draw.
+        # We say create=True because the root is not part of the current
+        # intersection. However since it's permanent once created and
+        # loaded it should always be available. As long as we don't garbage
+        # collect it!
         root_tile = self._octree.levels[-1].get_chunk(0, 0, create=True)
         return [root_tile]
 
-    def _get_ideal_chunks(
-        self, drawn_chunk_set: Set[OctreeChunkKey], ideal_chunk: OctreeChunk,
+    def _get_coverage(
+        self, ideal_chunk: OctreeChunk, drawn_set: Set[OctreeChunkKey]
     ) -> List[OctreeChunk]:
-        """Return the chunks to draw for the given ideal chunk.
+        """Return the chunks to draw for this one ideal chunk.
 
-        If ideal chunk is already being drawn, we return just it.
+        If the ideal chunk is already being drawn, we just return it.
+        Nothing else needs to be drawn. Otherwise we look up down the tree
+        to find what chunks we can to draw to "cover" this chunk.
+
+        Note that drawn_chunk_set might be smaller than what
+        get_drawable_chunks has been returning, because it only contains
+        chunks that actually got drawn to the screen.
+
+        We return drawable chunks to the visual, but the visual might take
+        some number of frames to get them all on the screen. This is
+        because it takes time to move a chunk's data into VRAM, so the
+        visual tends to only draw so many new chunks per frame. Right
+        now in fact it only draws one new chunk per frame.
+
+        So if we return the same 40 in-memory chunks from our
+        get_drawable_chunks() every frame, it might be 40 frames until they
+        are all actually drawn on the screen.
+
+        For this reason we return multiple chunks for an ideal chunk even
+        if the ideal chunk itself is in memory. Once the ideal chunk is in
+        the draw_set though, can return just the ideal chunk alone.
 
         Parameters
         ----------
-        drawn_chunk_set : Set[OctreeChunkKey]
-            The chunks which the visual is currently drawing.
         ideal_chunk : OctreeChunk
             The ideal chunk we'd like to draw.
+        drawn_chunk_set : Set[OctreeChunkKey]
+            The chunks which the visual is currently drawing.
 
         Return
         ------
-        bool
-            True if this chunk can be drawn.
+        List[OctreeChunk]
+            The chunks that should be drawn to cover this one ideal chunk.
         """
         # If the ideal chunk is already being drawn, that's all we need.
-        if ideal_chunk.in_memory and ideal_chunk.key in drawn_chunk_set:
+        if ideal_chunk.in_memory and ideal_chunk.key in drawn_set:
             return [ideal_chunk]
 
         # If the ideal chunk has not be loaded at all yet, kick off a load.
-        # This might happen sync or async. If sync then we'll see that
-        # it's in memory below.
+        # The load might be sync or async. If it was sync we can return it
+        # this frame. Otherwise we have to wait until
+        # OctreeImage.on_chunk_loaded() is called some time in the future.
         if ideal_chunk.needs_load:
             self._load_chunk(ideal_chunk)
 
         # Get the alternates for this chunk, from other levels.
         alternates = self._get_alternates(ideal_chunk)
 
-        # Get which of these are currently in VRAM being drawn. Only these
-        # can be shown instantly. Typically if we are zooming in, the drawn
-        # alternates are the parent ones that were getting too big. While
-        # if we are zooming out they are the children that were getting too
-        # small.
-        drawn = [chunk for chunk in alternates if chunk.key in drawn_chunk_set]
+        # Only draw an alternate if it's in the draw_set. This might change,
+        # but right now are saying there's no point in returning a chunk
+        # that's not already in VRAM unless it's the ideal chunk.
+        drawn = [chunk for chunk in alternates if chunk.key in drawn_set]
 
-        # If the ideal chunk is in memory, we only want to send drawn
-        # alternates. Because non-drawn alternates would take just as long
-        # to get into VRAM as the ideal chunk.
-        if ideal_chunk.in_memory:
-            return [ideal_chunk] + drawn
+        # Start with the ideal chunk if it's memory.
+        ideal = [ideal_chunk] if ideal_chunk.in_memory else []
 
-        # Keep drawing these until the ideal chunk has loaded.
-        return drawn
+        # Add on any drawn alternates.
+        return ideal + drawn
 
     def _get_alternates(self, ideal_chunk: OctreeChunk) -> List[OctreeChunk]:
         """Return the chunks we could draw in place of the ideal chunk.
@@ -184,10 +322,13 @@ class OctreeChunkLoader:
         List[OctreeNode]
             We could draw these chunks.
         """
-        # Get any direct children.
-        alternates = self._octree.get_children(ideal_chunk)
+        # Get any direct children which are in memory. Do not create an
+        # OctreeChunk if there is not one at this location.
+        alternates = self._octree.get_children(
+            ideal_chunk, create=False, in_memory=True
+        )
 
-        # Get a parent or a more distance ancestor.
+        # Get the parent or a more distance ancestor.
         ancestor = self._octree.get_nearest_ancestor(ideal_chunk)
         if ancestor is not None:
             alternates.append(ancestor)
@@ -201,43 +342,59 @@ class OctreeChunkLoader:
         ----------
         octree_chunk : OctreeChunk
             Load the data for this chunk.
-        layer_key : LayerKey
-            The key for layer we are loading the data for.
         """
-        layer_key = self._layer_ref.layer_key
+        # We only want to load a chunk if it's not already in memory, if a
+        # load was not started on it.
+        assert not octree_chunk.in_memory
+        assert not octree_chunk.loading
 
-        # Get a key that points to this specific location in the octree.
+        # Create a key that points to this specific location in the octree.
+        layer_key = self._layer_ref.layer_key
         key = OctreeChunkKey(layer_key, octree_chunk.location)
 
         # The ChunkLoader takes a dict of chunks that should be loaded at
-        # the same time. We only ever ask for one chunk right now, so just
-        # call it 'data'.
+        # the same time. Today we only ever ask it to a load a single chunk
+        # at a time. In the future we might want to load multiple layers at
+        # once, so they are in sync, or load multiple locations to bundle
+        # things up for efficiency.
         chunks = {'data': octree_chunk.data}
 
-        # Mark that a load is in progress for this OctreeChunk. We don't
-        # want to initiate a second load for the same chunk.
+        # Mark that this chunk is being loaded.
         octree_chunk.loading = True
 
         # Create the ChunkRequest and load it with the ChunkLoader.
         request = chunk_loader.create_request(self._layer_ref, key, chunks)
-        satisfied_request = chunk_loader.load_chunk(request)
+        satisfied_request, future = chunk_loader.load_chunk(request)
 
-        if satisfied_request is None:
-            # An async load as initiated. The load will probably happen
-            # in a worker thread. When the load completes QtChunkReceiver
-            # will call OctreeImage.on_chunk_loaded() with the data.
-            return False
+        if satisfied_request is not None:
+            # The load was synchronous. Some situations were the
+            # ChunkLoader loads synchronously:
+            #
+            # 1) The force_synchronous config option is set.
+            # 2) The data already was an ndarray, there's nothing to "load".
+            # 3) The data is Dask or similar, but based on past loads it's
+            #    loading so quickly that we decided to load it synchronously.
+            # 4) The data is Dask or similar, but we already loaded this
+            #    exact chunk before, so it was in the cache.
+            #
 
-        # The load was sync so it's already done, some situations were
-        # the ChunkLoader loads synchronously:
-        #
-        # 1) The force_synchronous config option is set.
-        # 2) The data already was an ndarray, there's nothing to "load".
-        # 3) The data is Dask or similar, but based on past loads it's
-        #    loading so quickly that we decided to load it synchronously.
-        # 4) The data is Dask or similar, but we already loaded this
-        # exact chunk before, so it was in the cache.
-        #
-        # Whatever the reason, the data is now ready to draw.
-        octree_chunk.data = satisfied_request.chunks.get('data')
-        return True
+            # Whatever the reason, the data is now ready to draw.
+            octree_chunk.data = satisfied_request.chunks.get('data')
+            assert octree_chunk.in_memory
+
+            # The chunk as been loaded. It can be a drawable chunk that we
+            # return to the visual.
+            return True
+
+        # An async load was initiated. The load will probably happen in a
+        # worker thread. When the load completes QtChunkReceiver will call
+        # OctreeImage.on_chunk_loaded() with the data.
+
+        # We save the future in case we need to cancel it if the camera
+        # move such that the chunk is no longer needed. We can only cancel
+        # the future if the worker thread as not started loading it.
+        assert future
+        LOGGER.debug("Saving Future: %s", octree_chunk.location)
+        self._futures[octree_chunk.location] = future
+
+        return False
