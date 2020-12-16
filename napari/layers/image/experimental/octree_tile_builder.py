@@ -18,6 +18,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
+from ....utils.perf import block_timer
 from .octree_util import NormalNoise
 
 TileArray = List[List[ArrayLike]]
@@ -187,13 +188,22 @@ def create_downsampled_levels(
     levels = []
     previous = image
 
+    if max(previous.shape) > tile_size:
+        LOGGER.info(
+            "Downsampling extra levels until we have a single tile level..."
+        )
+
     # Repeat until we have level that will fit in a single tile, that will
     # be come the root/highest level.
     while max(previous.shape) > tile_size:
-        LOGGER.info("Downsampling %s level", previous.shape)
-        next_level = ndi.zoom(
-            previous, zoom, mode='nearest', prefilter=True, order=1
+        with block_timer("downsampling") as timer:
+            next_level = ndi.zoom(
+                previous, zoom, mode='nearest', prefilter=True, order=1
+            )
+        LOGGER.info(
+            "Downsampled %s level in %.3fms", previous.shape, timer.duration_ms
         )
+
         levels.append(next_level)
         previous = levels[-1]
 
