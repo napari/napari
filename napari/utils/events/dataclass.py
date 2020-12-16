@@ -64,6 +64,9 @@ class Property:
     ...     x: Property[int, str, int]
     """
 
+    def __init__(self):
+        self.colormap = None
+
     def __new__(cls, *args, **kwargs):
         raise TypeError("Type Property cannot be instantiated")
 

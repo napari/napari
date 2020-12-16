@@ -490,11 +490,6 @@ class Points(Layer):
             # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
-                # curr_n_colors = len(self.edge_color)
-                # indices_to_remove = np.arange(len(data), curr_n_colors)
-                # if len(indices_to_remove) > 0:
-                #     self._edge_color.remove(indices_to_remove)
-                #     self._face_color.remove(indices_to_remove)
                 self._edge_color._values = self.edge_color[: len(data)]
                 self._face_color._values = self.face_color[: len(data)]
                 self._size = self._size[: len(data)]
@@ -768,7 +763,12 @@ class Points(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        self._set_color(edge_color, 'edge')
+        self._edge_color.set_color(
+            color=edge_color,
+            n_colors=len(self.data),
+            properties=self.properties,
+        )
+        self.events.edge_color()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -779,7 +779,9 @@ class Points(Layer):
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
-        self._set_color_cycle(edge_color_cycle, 'edge')
+        self._edge_color.categorical_colormap = edge_color_cycle
+        if self._edge_color._mode == ColorMode.CYCLE:
+            self._refresh_color(attribute='edge', update_color_mapping=True)
 
     @property
     def edge_colormap(self) -> Tuple[str, Colormap]:
@@ -852,7 +854,12 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        self._set_color(face_color, 'face')
+        self._face_color.set_color(
+            color=face_color,
+            n_colors=len(self.data),
+            properties=self.properties,
+        )
+        self.events.face_color()
 
     @property
     def face_color_cycle(self) -> np.ndarray:
@@ -863,7 +870,9 @@ class Points(Layer):
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
-        self._set_color_cycle(face_color_cycle, 'face')
+        self._face_color.categorical_colormap = face_color_cycle
+        if self._face_color._mode == ColorMode.CYCLE:
+            self._refresh_color(attribute='face', update_color_mapping=True)
 
     @property
     def face_colormap(self) -> Tuple[str, Colormap]:
@@ -976,40 +985,6 @@ class Points(Layer):
             self._refresh_color(
                 attribute=attribute, update_color_mapping=False
             )
-
-    def _set_color(self, color: ColorType, attribute: str):
-        """ Set the face_color or edge_color property
-
-        Parameters
-        ----------
-        color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        """
-        color_manager = getattr(self, f'_{attribute}_color')
-        color_manager.set_color(
-            color=color, n_colors=len(self.data), properties=self.properties
-        )
-        color_event = getattr(self.events, f'{attribute}_color')
-        color_event()
-
-    def _set_color_cycle(self, color_cycle: np.ndarray, attribute: str):
-        """ Set the face_color_cycle or edge_color_cycle property
-
-        Parameters
-        ----------
-        color_cycle : (N, 4) or (N, 1) array
-            The value for setting edge or face_color_cycle
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        """
-        color_manager = getattr(self, f'_{attribute}_color')
-        color_manager.categorical_colormap = color_cycle
-        if color_manager._mode == ColorMode.CYCLE:
-            self._refresh_color(attribute=attribute, update_color_mapping=True)
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
