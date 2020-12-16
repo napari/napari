@@ -464,6 +464,11 @@ class OctreeImage(Image):
         request : ChunkRequest
             This request was loaded.
         """
+        LOGGER.info(
+            "OctreeImage.on_chunk_loaded: elapsed = %.3f location = %s",
+            request.elapsed_ms,
+            request.key.location,
+        )
         # Pass it to the slice, it will insert the newly loaded data into
         # the OctreeChunk at the right location.
         if self._slice.on_chunk_loaded(request):
