@@ -103,20 +103,26 @@ class ChunkCache:
         self.chunks[request.key.key] = request.chunks
 
     def get_chunks(self, request: ChunkRequest) -> Optional[ChunkArrays]:
-        """Return the cached data for this request or None.
+        """Return the cached data for this request if it was cached.
 
         Parameters
         ----------
         request : ChunkRequest
-            We should lookup cached data for this request.
+            Look for cached data for this request.
 
         Returns
         -------
-        ChunkArrays, optional
+        Optional[ChunkArrays]
             The cached data or None of it was not found in the cache.
         """
         if not self.enabled:
             LOGGER.info("ChunkCache.get_chunk: disabled")
             return None
-        LOGGER.info("get_chunk: %s", request.key.location)
-        return self.chunks.get(request.key.key)
+
+        data = self.chunks.get(request.key.key)
+        LOGGER.info(
+            "get_chunk: %s -> ",
+            request.key.location,
+            "found" if data is not None else "not found",
+        )
+        return
