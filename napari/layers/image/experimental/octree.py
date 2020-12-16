@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from ....utils.perf import block_timer
 from .octree_chunk import OctreeChunk
-from .octree_level import OctreeLevel, print_levels
+from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
 
@@ -61,7 +61,7 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
-        print_levels("Octree input data has", self.levels)
+        log_levels("Octree input data has", self.levels)
 
         # If root level contains more than one tile, add extra levels
         # until the root does consist of a single tile. We have to do this
@@ -136,18 +136,24 @@ class Octree:
         """
         location = octree_chunk.location
 
-        # Start at the current level and work our way up.
+        # We are looking for a ancestor of this level.
         level_index = location.level_index
         row, col = location.row, location.col
 
         # Search up one level at a time.
         while level_index < self.num_levels - 1:
 
+            # Get the next level up. Coords are halved each level.
             level_index += 1
             row, col = int(row / 2), int(col / 2)
             level: OctreeLevel = self.levels[level_index]
-            ancestor = level.get_chunk(row, col)
 
+            # Get chunk at this location. Do not create chunks, we are
+            # looking for existing ones not creating them.
+            ancestor = level.get_chunk(row, col, create=False)
+
+            # Use the ancestor if it's in memory, or if we don't care
+            # whether the chunk is in memory.
             if ancestor is not None and (not in_memory or ancestor.in_memory):
                 return ancestor  # Found one.
 
@@ -215,7 +221,7 @@ class Octree:
             extra_levels = self._create_extra_levels(self.slice_id)
 
         label = f"In {timer.duration_ms:.3f}ms created"
-        print_levels(label, extra_levels, num_levels)
+        log_levels(label, extra_levels, num_levels)
 
         print(f"Tree now has {len(self.levels)} total levels.")
 
