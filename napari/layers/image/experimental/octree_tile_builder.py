@@ -8,6 +8,7 @@ Long term we might possible make tiles in the background at some point. So
 as you browse a large image that doesn't have tiles, they are created in
 the background. But that's pretty speculative and far out.
 """
+import logging
 import time
 from typing import List
 
@@ -20,6 +21,8 @@ from ....types import ArrayLike
 from .octree_util import NormalNoise
 
 TileArray = List[List[ArrayLike]]
+
+LOGGER = logging.getLogger("napari.async.octree")
 
 
 def _get_tile(tiles: TileArray, row, col):
@@ -187,6 +190,7 @@ def create_downsampled_levels(
     # Repeat until we have level that will fit in a single tile, that will
     # be come the root/highest level.
     while max(previous.shape) > tile_size:
+        LOGGER.info("Downsampling %s level", previous.shape)
         next_level = ndi.zoom(
             previous, zoom, mode='nearest', prefilter=True, order=1
         )
