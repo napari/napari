@@ -91,7 +91,7 @@ class TextManager:
         self._rotation = rotation
         self._anchor = Anchor(anchor)
         self._translation = translation
-        self._color = transform_color(color)[0]
+        self._color = transform_color(color)
         self._size = size
         self._blending = self._check_blending_mode(blending)
         self._visible = visible
