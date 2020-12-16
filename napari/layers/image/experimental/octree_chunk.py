@@ -119,6 +119,9 @@ class OctreeChunk:
     def __str__(self):
         return f"{self.location}"
 
+    def __hash__(self):
+        return hash(self.location)
+
     @property
     def data(self) -> ArrayLike:
         """Return the data associated with this chunk.
