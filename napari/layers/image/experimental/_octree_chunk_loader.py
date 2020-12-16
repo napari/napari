@@ -122,7 +122,7 @@ class OctreeChunkLoader:
             The chunks that should be drawn.
         """
         LOGGER.debug(
-            "get_drawable_chunks: draw_set=%d ideal_chunks=%d",
+            "get_drawable_chunks: Starting with draw_set=%d ideal_chunks=%d",
             len(drawn_set),
             len(ideal_chunks),
         )
@@ -135,13 +135,14 @@ class OctreeChunkLoader:
         # the view is. For now this is just the root tile. These get loaded
         # first which is what we want.
         permanent = self._get_permanent_chunks()
-        self._load_and_add(drawable, permanent)
+        self._load_and_add("permanent", drawable, permanent)
 
         # Now get coverage for every ideal chunk. This might include
         # the ideal chunk itself and/or chunks from other levels.
         for ideal_chunk in ideal_chunks:
             coverage = self._get_coverage(ideal_chunk, drawn_set)
-            self._load_and_add(drawable, coverage)
+            label = f"coverage for {ideal_chunk.location}"
+            self._load_and_add(label, drawable, coverage)
 
         # Log all drawables.
         self._log_drawables(drawable)
@@ -165,20 +166,27 @@ class OctreeChunkLoader:
                 if self._load_chunk(ideal_chunk):
                     drawable.append(ideal_chunk)
 
+        self._log_futures()  # Temporary.
+
         # Return them all.
         return list(drawable)
 
     def _load_and_add(
-        self, drawable: Dict[OctreeChunk, int], chunks: List[OctreeChunk]
+        self,
+        label: str,
+        drawable: Dict[OctreeChunk, int],
+        chunks: List[OctreeChunk],
     ):
         """Load chunks if needed and add in-memory chunks to the drawable dict.
 
         Parameters
         ----------
+        label : str
+            For logging, this is the type of chunks we are adding.
         drawable : Dict[OctdreeChunk, int]
             The chunks we are planning to draw.
         chunks : List[OctreeChunks]
-            The chunks to and add to the drawable dict.
+            The chunks to load and maybe add to the drawable dict.
 
         Return
         ------
@@ -188,7 +196,7 @@ class OctreeChunkLoader:
         memory = self._load_if_needed(chunks)
         for chunk in memory:
             drawable[chunk] = 1
-        LOGGER.debug("Added %d chunks", len(memory))
+        LOGGER.debug("Added %d %s chunks", len(memory), label)
 
     def _load_if_needed(self, chunks: List[OctreeChunk]) -> List[OctreeChunk]:
         """Load every chunk that needs it, and return the ones in memory.
@@ -451,6 +459,11 @@ class OctreeChunkLoader:
         self._futures[octree_chunk.location] = future
 
         return False
+
+    def _log_futures(self) -> None:
+        LOGGER.debug("%d futures:", len(self._futures))
+        for i, location in enumerate(self._futures.keys()):
+            LOGGER.debug("Future %d: %s", i, location)
 
     def _cancel_futures(self, drawable: Set[OctreeLocation]) -> None:
         """Cancel futures not in the drawable_set.
