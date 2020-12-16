@@ -4,6 +4,7 @@ A tiled image that uses TiledImageVisual and TextureAtlas2D so that adding
 and removing tiles is faster than if we created a separate ImageVisual for
 each tile.
 """
+import logging
 from dataclasses import dataclass
 from typing import List
 
@@ -20,6 +21,8 @@ from .tiled_image_visual import TiledImageVisual
 # the visual itself and a scene graph node. The scene graph node is what
 # can added to the scene and transformed.
 TiledImageNode = create_visual_node(TiledImageVisual)
+
+LOGGER = logging.getLogger("napari.async.octree.visual")
 
 
 @dataclass
@@ -173,10 +176,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         else:
             self.grid.clear()
 
-        # if stats.created > 0 or stats.deleted > 0:
-        #     for chunk in drawable_chunks:
-        #       print(f"drawn: {chunk}")
-
         return stats
 
     def _add_chunks(self, drawable_chunks: List[OctreeChunk]) -> int:
@@ -258,10 +257,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         with block_timer("_update_drawn_chunks") as elapsed:
             stats = self._update_drawn_chunks()
 
-        # Print for now, but switch log file soon. Should be no prints
-        # in production code.
         if stats.created > 0 or stats.deleted > 0:
-            print(
+            LOGGER.debug(
                 f"tiles: {stats.start} -> {stats.final} "
                 f"create: {stats.created} delete: {stats.deleted} "
                 f"time: {elapsed.duration_ms:.3f}ms"
