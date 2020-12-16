@@ -1,5 +1,6 @@
 """Octree class.
 """
+import logging
 import math
 from typing import List, Optional
 
@@ -8,6 +9,8 @@ from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
+
+LOGGER = logging.getLogger("napari.async.octree")
 
 
 class Octree:
@@ -61,7 +64,8 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
-        log_levels("Octree input data has", self.levels)
+        LOGGER.info("Octree input data has %d levels: ", len(self.levels))
+        log_levels(self.levels)
 
         # If root level contains more than one tile, add extra levels
         # until the root does consist of a single tile. We have to do this
@@ -220,8 +224,12 @@ class Octree:
         with block_timer("_create_extra_levels") as timer:
             extra_levels = self._create_extra_levels(self.slice_id)
 
-        label = f"In {timer.duration_ms:.3f}ms created"
-        log_levels(label, extra_levels, num_levels)
+        LOGGER.info(
+            "Created %d additional levels in %.3f",
+            len(self.levels),
+            timer.duration_ms,
+        )
+        log_levels(extra_levels, start_level=num_levels)
 
         print(f"Tree now has {len(self.levels)} total levels.")
 
