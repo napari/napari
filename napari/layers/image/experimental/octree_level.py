@@ -1,5 +1,6 @@
 """OctreeLevel and OctreeLevelInfo classes.
 """
+import logging
 import math
 from typing import List, Optional
 
@@ -8,6 +9,8 @@ import numpy as np
 from ....types import ArrayLike
 from .octree_chunk import OctreeChunk, OctreeChunkGeom, OctreeLocation
 from .octree_util import SliceConfig
+
+LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeLevelInfo:
@@ -166,10 +169,8 @@ class OctreeLevel:
         return data
 
 
-def print_levels(
-    label: str, levels: List[OctreeLevel], start: int = 0
-) -> None:
-    """Print the dimensions of each level nicely.
+def log_levels(label: str, levels: List[OctreeLevel], start: int = 0) -> None:
+    """Log the dimensions of each level nicely.
 
     Parameters
     ----------
@@ -185,11 +186,11 @@ def print_levels(
     def _dim_str(dim: tuple) -> None:
         return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
 
-    print(f"{label} {len(levels)} levels:")
+    LOGGER.info(f"{label} {len(levels)} levels:")
     for index, level in enumerate(levels):
         level_index = start + index
         image_str = _dim_str(level.info.image_shape)
         tiles_str = _dim_str(level.info.shape_in_tiles)
-        print(
-            f"    Level {level_index}: {image_str} pixels -> {tiles_str} tiles"
+        LOGGER.info(
+            f"Level {level_index}: {image_str} pixels -> {tiles_str} tiles"
         )
