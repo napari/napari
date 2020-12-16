@@ -195,15 +195,21 @@ class Octree:
         level_index = location.level_index
         row, col = location.row, location.col
 
-        max_level = min(self.num_levels - 1, level_index + num_levels)
+        stop_level = min(self.num_levels - 1, level_index + num_levels)
 
         # Search up one level at a time.
-        while level_index <= max_level:
+        while level_index < stop_level:
 
             # Get the next level up. Coords are halved each level.
             level_index += 1
             row, col = int(row / 2), int(col / 2)
-            level: OctreeLevel = self.levels[level_index]
+
+            try:
+                level: OctreeLevel = self.levels[level_index]
+            except IndexError as exc:
+                raise IndexError(
+                    f"Level {level_index} is not in range(0, {len(self.levels)})"
+                ) from exc
 
             # Get chunk at this location.
             ancestor = level.get_chunk(row, col, create=True)
@@ -211,7 +217,7 @@ class Octree:
             ancestors.append(ancestor)
 
         # Reverse to provide the most distant ancestor first.
-        return reversed(ancestors)
+        return list(reversed(ancestors))
 
     def get_children(
         self,
