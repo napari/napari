@@ -11,6 +11,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..resources import get_stylesheet
 from ..utils import config, perf
+from ..utils.events import disconnect_events
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -182,7 +183,6 @@ class QtViewer(QSplitter):
         self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
-        self.viewer.layers.events.active.connect(self._on_active_layer_change)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
@@ -321,10 +321,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        if event is None:
-            active_layer = self.viewer.layers.active
-        else:
-            active_layer = event.active
+        active_layer = self.viewer.layers.active
 
         if self._active_layer in self._key_map_handler.keymap_providers:
             self._key_map_handler.keymap_providers.remove(self._active_layer)
@@ -353,6 +350,8 @@ class QtViewer(QSplitter):
         layer : napari.layers.Layer
             Layer to be added.
         """
+        layer.events.select.connect(self._on_active_layer_change)
+        layer.events.deselect.connect(self._on_active_layer_change)
         vispy_layer = create_vispy_visual(layer)
 
         if self._qt_poll is not None:
@@ -373,6 +372,7 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         layer = event.value
+        disconnect_events(layer.events, self)
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.close()
         del vispy_layer

@@ -2,6 +2,7 @@ from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
 from ...utils import config
+from ...utils.events import disconnect_events
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
 from .qt_points_controls import QtPointsControls
@@ -84,7 +85,6 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        self.viewer.layers.events.active.connect(self._display)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.
@@ -94,15 +94,12 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        if event is None:
-            layer = None
-        else:
-            layer = event.active
+        active_layer = self.viewer.layers.active
 
-        if layer is None:
+        if active_layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            controls = self.widgets[layer]
+            controls = self.widgets[active_layer]
             self.setCurrentWidget(controls)
 
     def _add(self, event):
@@ -117,6 +114,8 @@ class QtLayerControlsContainer(QStackedWidget):
         controls = create_qt_layer_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
+        layer.events.select.connect(self._display)
+        layer.events.deselect.connect(self._display)
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -127,6 +126,7 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
+        disconnect_events(layer.events, self)
         controls = self.widgets[layer]
         self.removeWidget(controls)
         controls.close()
