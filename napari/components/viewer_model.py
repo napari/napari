@@ -287,7 +287,7 @@ class ViewerModel(KeymapProvider):
             category=DeprecationWarning,
             stacklevel=2,
         )
-        return self.layers.active
+        return self._active_layer
 
     @active_layer.setter
     def active_layer(self, active_layer):
