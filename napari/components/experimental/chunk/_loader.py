@@ -179,11 +179,11 @@ class ChunkLoader:
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
-            LOGGER.info("load_chunk: cache hit %s", request.key)
+            LOGGER.debug("load_chunk: cache hit %s", request.key)
             request.chunks = chunks
             return request, None
 
-        LOGGER.info("load_chunk: cache miss %s", request.key.location)
+        LOGGER.debug("load_chunk: cache miss %s", request.key.location)
 
         # Clear any pending requests for this specific data_id.
         # TODO_OCTREE: turn this off because all our request come from the
