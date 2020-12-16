@@ -118,15 +118,16 @@ class OctreeChunkLoader:
         drawable = []
         locations = set()
 
+        # Get any chunks we always want to draw no matter where the
+        # view is. For now this is just the root tile, so that we have
+        # some minimal coverage. On a big enough dataset we might be
+        # "inside" a single pixel of the root tile! So it's just
+        # providing a background color.
+        drawable.extend(self._get_permanent_chunks())
+        locations.update([chunk.location for chunk in drawable])
+
         # For every chunk we'd ideally like to draw.
         for ideal_chunk in ideal_chunks:
-
-            # Get any chunks we always want to draw no matter where the
-            # view is. For now this is just the root tile, so that we have
-            # some minimal coverage. On a big enough dataset we might be
-            # "inside" a single pixel of the root tile! So it's just
-            # providing a background color.
-            drawable.extend(self._get_permanent_chunks())
 
             # Get the drawnable chunks which will hopefully "cover" that
             # ideal chunks. This could be just the ideal chunks itself, or
