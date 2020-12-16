@@ -225,7 +225,7 @@ class Octree:
             extra_levels = self._create_extra_levels(self.slice_id)
 
         LOGGER.info(
-            "Created %d additional levels in %.3f",
+            "Created %d additional levels in %.3fms",
             len(self.levels),
             timer.duration_ms,
         )
