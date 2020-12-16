@@ -10,7 +10,7 @@ from ....types import ArrayLike
 from .octree_chunk import OctreeChunk, OctreeChunkGeom, OctreeLocation
 from .octree_util import SliceConfig
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeLevelInfo:

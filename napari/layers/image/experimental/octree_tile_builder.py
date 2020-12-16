@@ -23,7 +23,7 @@ from .octree_util import NormalNoise
 
 TileArray = List[List[ArrayLike]]
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.octree")
 
 
 def _get_tile(tiles: TileArray, row, col):

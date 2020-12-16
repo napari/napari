@@ -95,7 +95,8 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        _log_to_file(octree_config['log_path'])
+        _setup_logging(octree_config['log_path'])
+
         config = octree_config['loader']
         self.force_synchronous: bool = bool(config['force_synchronous'])
         self.num_workers: int = int(config['num_workers'])
@@ -470,26 +471,38 @@ def wait_for_async():
     chunk_loader.wait_for_all()
 
 
-LOG_FORMAT = "%(levelname)s - %(name)s - %(message)s"
+def _setup_logging(path: str) -> None:
+    """Setup logging.
+
+    We log napari.async and napari.octree to the same file right now, but
+    we keep async and octree separate so we can do something fancier in the
+    future.
+
+    Parameters
+    ----------
+    path : str
+        Log to a file with this path.
+    """
+    if path:
+        _log_to_file("napari.async", path)
+        _log_to_file("napari.octree", path)
 
 
-def _log_to_file(path: str) -> None:
-    """Log "napari.async" messages to the given file.
+def _log_to_file(name: str, path: str) -> None:
+    """Log "name" messages to the given file path.
 
     Parameters
     ----------
     path : str
         Log to this file path.
     """
-    # This file uses "napari.async.loader" but we want to load all of
-    # "napari.async" by default.
-    logger = logging.getLogger("napari.async")
-    if path:
-        fh = logging.FileHandler(path)
-        formatter = logging.Formatter(LOG_FORMAT)
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
-        logger.setLevel(logging.DEBUG)
+    format = "%(levelname)s - %(name)s - %(message)s"
+    logger = logging.getLogger(name)
+    fh = logging.FileHandler(path)
+    formatter = logging.Formatter(format)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.setLevel(logging.DEBUG)
 
 
 """

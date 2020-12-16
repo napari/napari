@@ -10,7 +10,7 @@ from ....components.experimental.chunk import LayerRef, chunk_loader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.octree.loader")
 
 
 class OctreeChunkLoader:

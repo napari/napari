@@ -10,7 +10,7 @@ from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.octree")
 
 
 class Octree:
@@ -64,7 +64,7 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
-        LOGGER.info("Octree input data has %d levels: ", len(self.levels))
+        LOGGER.info("Multiscale data has %d levels: ", len(self.levels))
         log_levels(self.levels)
 
         # If root level contains more than one tile, add extra levels
@@ -72,6 +72,8 @@ class Octree:
         # because we cannot draw tiles larger than the standard size right now.
         if self.levels[-1].info.num_tiles > 1:
             self.levels.extend(self._get_extra_levels())
+
+        LOGGER.info(f"Tree now has {len(self.levels)} total levels.")
 
         # Now the root should definitely contain only a single tile.
         assert self.levels[-1].info.num_tiles == 1
@@ -219,19 +221,15 @@ class Octree:
         List[OctreeLevel]
             The extra levels.
         """
-        num_levels = len(self.levels)
-
         with block_timer("_create_extra_levels") as timer:
             extra_levels = self._create_extra_levels(self.slice_id)
 
         LOGGER.info(
             "Created %d additional levels in %.3fms",
-            len(self.levels),
+            len(extra_levels),
             timer.duration_ms,
         )
-        log_levels(extra_levels, start_level=num_levels)
-
-        print(f"Tree now has {len(self.levels)} total levels.")
+        log_levels(extra_levels, start_level=len(self.levels))
 
         return extra_levels
 

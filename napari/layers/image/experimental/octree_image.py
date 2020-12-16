@@ -17,7 +17,7 @@ from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, SliceConfig
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeImage(Image):

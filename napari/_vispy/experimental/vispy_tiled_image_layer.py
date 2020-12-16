@@ -22,7 +22,7 @@ from .tiled_image_visual import TiledImageVisual
 # can added to the scene and transformed.
 TiledImageNode = create_visual_node(TiledImageVisual)
 
-LOGGER = logging.getLogger("napari.async.octree.visual")
+LOGGER = logging.getLogger("napari.octree.visual")
 
 
 @dataclass

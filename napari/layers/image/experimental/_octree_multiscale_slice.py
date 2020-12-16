@@ -18,7 +18,7 @@ from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import SliceConfig
 
-LOGGER = logging.getLogger("napari.async.octree.slice")
+LOGGER = logging.getLogger("napari.octree.slice")
 
 
 class OctreeMultiscaleSlice:
