@@ -257,7 +257,7 @@ class ChunkLoader:
         # https://docs.python.org/3/howto/logging.html#optimization
         # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
         LOGGER.debug(
-            "_submit_async: elapsed=%.3f %s",
+            "_submit_async: elapsed=%.3fms %s",
             request.elapsed_ms,
             request.key.location,
         )
@@ -357,7 +357,7 @@ class ChunkLoader:
             return  # Future was cancelled, nothing to do.
 
         LOGGER.debug(
-            "_done: elapsed=%.3f location=%s",
+            "_done: elapsed=%.3fms location=%s",
             request.elapsed_ms,
             request.key.location,
         )
