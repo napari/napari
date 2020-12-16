@@ -12,6 +12,12 @@ from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 
 LOGGER = logging.getLogger("napari.octree.loader")
 
+# TODO_OCTREE make this a config. This is how many levels "up" we look
+# for tiles to draw at levels above the ideal how. These tiles give
+# us lots of coverage quickly, so we load and draw then even before
+# the ideal level
+NUM_ANCESTORS_LEVELS = 3
+
 
 class OctreeChunkLoader:
     """Load data into OctreeChunks in the octree.
@@ -339,7 +345,7 @@ class OctreeChunkLoader:
         keep = [chunk for chunk in family if keep_chunk(chunk)]
 
         LOGGER.debug(
-            "_get_coverage: Keeping %d of %d for ",
+            "_get_coverage: Keeping %d of %d for %s",
             len(keep),
             len(family),
             ideal_chunk.location,
@@ -374,7 +380,9 @@ class OctreeChunkLoader:
         # all four children, we still consider loading and drawing these
         # because they will provide more coverage. They will cover the
         # ideal chunk plus more.
-        ancestors = self._octree.get_ancestors(ideal_chunk)
+        ancestors = self._octree.get_ancestors(
+            ideal_chunk, NUM_ANCESTORS_LEVELS
+        )
 
         return children + ancestors
 
