@@ -425,7 +425,6 @@ class ViewerModel(KeymapProvider):
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.events.layers_change()
-        self._update_active_layer(event)
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -576,6 +575,7 @@ class ViewerModel(KeymapProvider):
 
         # Update dims and grid model
         self._on_layers_change(None)
+        self._update_active_layer(None)
         self._on_grid_change(None)
         # Slice current layer based on dims
         self._update_layers(layers=[layer])
@@ -608,6 +608,7 @@ class ViewerModel(KeymapProvider):
             self.dims.events.order.disconnect(layer._reset_history)
             self.dims.events.current_step.disconnect(layer._reset_history)
         self._on_layers_change(None)
+        self._update_active_layer(None)
         self._on_grid_change(None)
 
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
