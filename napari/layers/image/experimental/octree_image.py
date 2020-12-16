@@ -469,10 +469,14 @@ class OctreeImage(Image):
             request.elapsed_ms,
             request.key.location,
         )
+
         # Pass it to the slice, it will insert the newly loaded data into
         # the OctreeChunk at the right location.
         if self._slice.on_chunk_loaded(request):
-            self.events.loaded()  # Redraw with teh new chunk.
+            # Redraw with the new chunk.
+            # TODO_OCTREE: Call this at most once per frame? It's a bad
+            # idea to call it for every chunk?
+            self.events.loaded()
 
     @property
     def remote_messages(self) -> dict:
