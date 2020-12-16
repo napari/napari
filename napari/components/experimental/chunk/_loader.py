@@ -175,15 +175,12 @@ class ChunkLoader:
         if self._load_synchronously(request):
             return request, None
 
-        # Check the cache first.
+        # Check the cache first. This logs for us.
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
-            LOGGER.debug("load_chunk: cache hit %s", request.key.location)
             request.chunks = chunks
             return request, None
-
-        LOGGER.debug("load_chunk: cache miss %s", request.key.location)
 
         # Clear any pending requests for this specific data_id.
         # TODO_OCTREE: turn this off because all our request come from the
