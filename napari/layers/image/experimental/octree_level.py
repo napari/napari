@@ -185,7 +185,7 @@ def log_levels(levels: List[OctreeLevel], start_level: int = 0) -> None:
     from ...._vendor.experimental.humanize.src.humanize import intword
 
     def _dim_str(dim: tuple) -> None:
-        return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
+        return f"({dim[0]}, {dim[1]}) = {intword(dim[0] * dim[1])}"
 
     for index, level in enumerate(levels):
         level_index = start_level + index
