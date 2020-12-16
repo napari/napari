@@ -2,6 +2,7 @@
 """
 import contextlib
 import logging
+import time
 from typing import Optional, Tuple
 
 import numpy as np
@@ -51,23 +52,31 @@ class ChunkKey:
     def __eq__(self, other):
         return self.key == other.key
 
+    @property
+    def location(self):
+        # Derived OctreeChunkKey has a location, we don't, but we could maybe
+        # print the indices or something here?
+        return "none"
+
 
 class ChunkRequest:
-    """A request asking the ChunkLoader to load one or more arrays.
+    """A request asking the ChunkLoader to load data.
 
     Parameters
     ----------
     key : ChunkKey
         The key of the request.
     chunks : Dict[str, ArrayLike]
-        The chunk arrays we need to load.
+        One or more arrays that we need to load.
 
     Attributes
     ----------
     key : ChunkKey
         The key of the request.
     chunks : Dict[str, ArrayLike]
-        The chunk arrays we need to load.
+        One or more arrays that we need to load.
+    create_time : float
+        The time the request was created.
     timers : Dict[str, PerfEvent]
         Timing information about chunk load time.
     """
@@ -81,7 +90,13 @@ class ChunkRequest:
         self.key = key
         self.chunks = chunks
 
+        # TODO_OCTREE: Use time.time() or perf_counter_ns here?
+        self.create_time = time.time()
         self.timers: Dict[str, PerfEvent] = {}
+
+    @property
+    def elapsed_ms(self) -> float:
+        return (time.time() - self.create_time) * 1000
 
     @property
     def data_id(self) -> int:
