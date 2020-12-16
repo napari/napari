@@ -165,6 +165,54 @@ class Octree:
 
         return None  # No ancestor found.
 
+    def get_ancestors(
+        self, octree_chunk: OctreeChunk, num_levels: int
+    ) -> List[OctreeChunk]:
+        """Return the num_levels nearest ancestors.
+
+        If it finds an in-memory ancestor, it stops there. Otherwise
+        it will create OctreeNodes for up to num_levels of
+        ancestors.
+
+        The idea is we want to load and draw these ancestors, but if one
+        is in memory we don't want to load or draw the coarser ones.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the nearest ancestors of this chunk.
+
+        Return
+        ------
+        List[OctreeChunk]
+            Up to num_level nearest ancestors of the given chunk. Sorted so the
+            most-distant ancestor comes first.
+        """
+        ancestors = []
+        location = octree_chunk.location
+
+        # Starting point, we look up from here.
+        level_index = location.level_index
+        row, col = location.row, location.col
+
+        max_level = min(self.num_levels - 1, level_index + num_levels)
+
+        # Search up one level at a time.
+        while level_index <= max_level:
+
+            # Get the next level up. Coords are halved each level.
+            level_index += 1
+            row, col = int(row / 2), int(col / 2)
+            level: OctreeLevel = self.levels[level_index]
+
+            # Get chunk at this location.
+            ancestor = level.get_chunk(row, col, create=True)
+            assert ancestor  # Since create=True
+            ancestors.append(ancestor)
+
+        # Reverse to provide the most distant ancestor first.
+        return reversed(ancestors)
+
     def get_children(
         self,
         octree_chunk: OctreeChunk,
