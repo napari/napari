@@ -197,36 +197,6 @@ class OctreeChunkLoader:
         for octree_chunk in drawable:
             LOGGER.debug("Drawable: %s", octree_chunk.location)
 
-    def _cancel_futures(self, drawable_set: Set[OctreeLocation]) -> None:
-        """Cancel futures not in the drawable_set.
-
-        Parameters
-        ----------
-        drawable_set : Set[OctreeLocations]
-            The set of locations we are asking the visual to draw.
-        """
-        before = len(self._futures)
-
-        # Iterate through every future.
-        for location, future in list(self._futures.items()):
-            # If it's not in the drawable set then cancel it.
-            if location not in drawable_set:
-                # Future.cancel() will return False if a worker has already
-                # starated on the load. If so that load will finish, but
-                # then we'll ignore it. We can't help that. Usually there a
-                # lot of loads queued that we can cancel.
-                LOGGER.debug("Cancelling: %s", location)
-                future.cancel()
-                del self._futures[location]
-            else:
-                LOGGER.debug("Keeping: %s", location)
-
-        kept = len(self._futures)
-        cancelled = before - kept
-        LOGGER.debug(
-            "Futures: before=%d cancelled=%d kept=%d", before, cancelled, kept
-        )
-
     def _get_permanent_chunks(self) -> List[OctreeChunk]:
         """Get any permanent chunks we want to always draw.
 
@@ -399,3 +369,68 @@ class OctreeChunkLoader:
         self._futures[octree_chunk.location] = future
 
         return False
+
+    def _cancel_futures(self, drawable_set: Set[OctreeLocation]) -> None:
+        """Cancel futures not in the drawable_set.
+
+        Any futures not in the drawable set are stale. There is no point in
+        loading them. So we cancel them if we can. If a worker has already
+        started on the load we can't cancel it. But that chunk will be
+        ignored when it does load.
+
+        Parameters
+        ----------
+        drawable_set : Set[OctreeLocations]
+            The set of locations we are asking the visual to draw.
+        """
+        before = len(self._futures)
+
+        # Iterate through every future.
+        for location, future in list(self._futures.items()):
+            # If it's not in the drawable set then cancel it.
+            if location not in drawable_set:
+                # Future.cancel() will return False if a worker has already
+                # starated on the load.
+                LOGGER.debug("Cancelling: %s", location)
+                future.cancel()
+
+                try:
+                    del self._futures[location]
+                except KeyError:
+                    # Our self.on_chunk_loaded might have been called even
+                    # while we were iterating! In which case the future
+                    # might no longer exist. Log for now, but not an error.
+                    LOGGER.debug(
+                        "_cancel_futures: Missing Future %s", location
+                    )
+            else:
+                LOGGER.debug("Keeping: %s", location)
+
+        kept = len(self._futures)
+        cancelled = before - kept
+        if before > 0 or kept > 0:
+            LOGGER.debug(
+                "Futures: before=%d cancelled=%d kept=%d",
+                before,
+                cancelled,
+                kept,
+            )
+
+    def on_chunk_loaded(self, octree_chunk: OctreeChunk) -> None:
+        """The given OctreeChunk was loaded.
+
+        We just clear out our future which is no longer relevant.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            The octree chunk that was loaded.
+        """
+        location = octree_chunk.location
+        try:
+            del self._futures[location]
+        except KeyError:
+            # This can happen if the location went out of view and the
+            # future was deleted in self._cancel_futures. Log for now
+            # but it's really not an error at all.
+            LOGGER.debug("on_chunk_loaded: Missing Future %s", location)
