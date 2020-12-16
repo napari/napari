@@ -18,7 +18,7 @@ from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import SliceConfig
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.async.octree.slice")
 
 
 class OctreeMultiscaleSlice:
@@ -189,7 +189,10 @@ class OctreeMultiscaleSlice:
             # There was probably a load in progress when the slice was changed.
             # The original load finished, but we are now showing a new slice.
             # Don't consider it error, just ignore the chunk.
-            LOGGER.debug("on_chunk_loaded: wrong slice_id: %s", location)
+            LOGGER.debug(
+                "OctreeMultiscaleSlice.on_chunk_loaded: wrong slice_id: %s",
+                location,
+            )
             return False  # Do not load.
 
         octree_chunk = self._get_octree_chunk(location)
@@ -199,12 +202,15 @@ class OctreeMultiscaleSlice:
             # OctreeChunk's when a load is initiated. So this is an error,
             # but log it and keep going, maybe some transient weirdness.
             LOGGER.error(
-                "on_chunk_loaded: missing OctreeChunk: %s", octree_chunk
+                "OctreeMultiscaleSlice.on_chunk_loaded: missing OctreeChunk: %s",
+                octree_chunk,
             )
             return False  # Do not load.
 
         # Looks good, we are loading this chunk.
-        LOGGER.debug("on_chunk_loaded: loading %s", octree_chunk)
+        LOGGER.debug(
+            "OctreeMultiscaleSlice.on_chunk_loaded: loading %s", octree_chunk
+        )
 
         # Get the data from the request.
         incoming_data = request.chunks.get('data')
