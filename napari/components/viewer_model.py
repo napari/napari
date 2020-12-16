@@ -69,7 +69,6 @@ class ViewerModel(KeymapProvider):
             status=Event,
             help=Event,
             title=Event,
-            interactive=Event,
             reset_view=Event,
             palette=Event,
             layers_change=Event,
@@ -89,7 +88,6 @@ class ViewerModel(KeymapProvider):
         self._help = ''
         self._title = title
 
-        self._interactive = True
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
@@ -119,9 +117,6 @@ class ViewerModel(KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
-
-        # Only created if NAPARI_MON is enabled.
-        self._remote_commands = _create_remote_commands(self.layers)
 
     def __str__(self):
         """Simple string representation"""
@@ -256,16 +251,28 @@ class ViewerModel(KeymapProvider):
 
     @property
     def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
-        """
-        return self._interactive
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.camera.interactive
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self._interactive = interactive
-        self.events.interactive()
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.camera.interactive = interactive
 
     @property
     def active_layer(self):
@@ -397,13 +404,13 @@ class ViewerModel(KeymapProvider):
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
-            self.interactive = True
+            self.camera.interactive = True
         else:
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
-            self.interactive = active_layer.interactive
+            self.camera.interactive = active_layer.interactive
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -422,7 +429,7 @@ class ViewerModel(KeymapProvider):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+        self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -1053,21 +1060,6 @@ def _get_image_class() -> layers.Image:
         return OctreeImage
 
     return layers.Image
-
-
-def _create_remote_commands(layers: LayerList) -> None:
-    """Start the monitor service if configured to use it."""
-    if not config.monitor:
-        return None
-
-    from ..components.experimental.monitor import monitor
-    from ..components.experimental.remote_commands import RemoteCommands
-
-    monitor.start()  # Start if not already started.
-
-    # Create a RemoteCommands object which will run commands
-    # from remote clients that come through the monitor.
-    return RemoteCommands(layers, monitor.run_command_event)
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

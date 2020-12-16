@@ -9,6 +9,7 @@ from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from ..components.camera import Camera
+from ..components.layerlist import LayerList
 from ..resources import get_stylesheet
 from ..utils import config, perf
 from ..utils.events import disconnect_events
@@ -182,7 +183,7 @@ class QtViewer(QSplitter):
 
         self._update_palette()
 
-        self.viewer.events.interactive.connect(self._on_interactive)
+        self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
@@ -208,11 +209,13 @@ class QtViewer(QSplitter):
         # Add axes, scale bar and welcome visuals.
         self._add_visuals(welcome)
 
-        # Optional experimental monitor service.
-        self._qt_monitor = _create_qt_monitor(self, self.viewer.camera)
-
-        # Experimental QtPool for Octree visuals.
+        # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
+
+        # Create the experimental RemoteManager for the monitor.
+        self._remote_manager = _create_remote_manager(
+            self.viewer.layers, self._qt_poll
+        )
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
@@ -354,9 +357,10 @@ class QtViewer(QSplitter):
         layer.events.deselect.connect(self._on_active_layer_change)
         vispy_layer = create_vispy_visual(layer)
 
+        # If a QtPoll exists, connect the new layer visual to its poll
+        # event. So QtPoll will call VipyBaseImage._on_poll() when the
+        # camera moves or on a timer if needed.
         if self._qt_poll is not None:
-            # Visuals might need to be polled when the camera moves and during
-            # a short period after the movement stops.
             self._qt_poll.events.poll.connect(vispy_layer._on_poll)
 
         vispy_layer.node.parent = self.view.scene
@@ -500,7 +504,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self.view.interactive = self.viewer.interactive
+        self.view.interactive = self.viewer.camera.interactive
 
     def _on_cursor(self, event):
         """Set the appearance of the mouse cursor.
@@ -784,59 +788,75 @@ class QtViewer(QSplitter):
 
 
 if TYPE_CHECKING:
-    from .experimental.qt_monitor import QtMonitor
+    from ..components.experimental.remote import RemoteManager
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_monitor(
-    parent: QObject, camera: Camera
-) -> 'Optional[QtMonitor]':
-    """Create and return a QtMonitor instance.
-
-    A monitor instance is only created if NAPARI_MON is set.
-
-    Parameters
-    ----------
-    parent : QObject
-        Parent for the qtMonitor.
-    camera : VispyCamera
-        Camera that the monitor will tie into.
-
-    Return
-    ------
-    Optional[QtMonitor]
-        The new monitor instance, if any
-    """
-    if config.monitor:
-        from .experimental.qt_monitor import QtMonitor
-
-        # We can probably get rid of QtMonitor and use QtPoll instead,
-        # since it's the same idea but more general.
-        return QtMonitor(parent, camera)
-
-    return None
-
-
 def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
-    """Create and return a QtPoll instance, if enabled.
+    """Create and return a QtPoll instance, if needed.
 
-    A QtPoll instance is only created if using octree for now.
+    Create a QtPoll instance for octree or monitor.
+
+    Octree needs QtPoll so VispyTiledImageLayer can finish in-progress
+    loads even if the camera is not moving. Once loading is finish it
+    will tell QtPoll it no longer need to be polled.
+
+    Monitor need QtPoll to poll for incoming messages. We can probably get
+    rid of this need to be polled by using a thread that's blocked waiting
+    for new messages, and that posts those messages as Qt Events. That
+    might be something to do in the future.
 
     Parameters
     ----------
     parent : QObject
-        Parent for the qtMonitor.
-    camera : VispyCamera
-        Camera that the monitor will tie into.
+        Parent Qt object.
+    camera : Camera
+        Camera that the QtPoll object will listen to.
 
     Return
     ------
-    Optional[QtMonitor]
-        The new monitor instance, if any
+    Optional[QtPoll]
+        The new QtPoll instance, if we need one.
     """
-    if config.async_octree:
-        from .experimental.qt_poll import QtPoll
+    if not config.async_octree and not config.monitor:
+        return None
 
-        return QtPoll(parent, camera)
+    from .experimental.qt_poll import QtPoll
 
-    return None
+    return QtPoll(parent, camera)
+
+
+def _create_remote_manager(
+    layers: LayerList, qt_poll
+) -> 'Optional[RemoteManager]':
+    """Create and return a RemoteManager instance, if we need one.
+
+    Parameters
+    ----------
+    layers : LayersList
+        The viewer's layers.
+    qt_poll : QtPoll
+        The viewer's QtPoll instance.
+    """
+    if not config.monitor:
+        return None  # Not using the monitor at all
+
+    from ..components.experimental.monitor import monitor
+    from ..components.experimental.remote import RemoteManager
+
+    # Start the monitor so we can access its events. The monitor has no
+    # dependencies to napari except to utils.Event.
+    monitor.start()
+
+    # Create the remote manager and have monitor call its process_command()
+    # method to execute commands from clients.
+    manager = RemoteManager(layers)
+
+    # RemoteManager will process incoming command from the monitor.
+    monitor.run_command_event.connect(manager.process_command)
+
+    # QtPoll should pool the RemoteManager and the Monitor.
+    qt_poll.events.poll.connect(manager.on_poll)
+    qt_poll.events.poll.connect(monitor.on_poll)
+
+    return manager
