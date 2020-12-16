@@ -87,7 +87,6 @@ def test_layer_mouse_bindings(make_test_viewer):
 
     if os.getenv("CI"):
         viewer.show()
-
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
 

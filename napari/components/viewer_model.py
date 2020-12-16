@@ -87,6 +87,7 @@ class ViewerModel(KeymapProvider):
         self._status = 'Ready'
         self._help = ''
         self._title = title
+        self._active_layer = None
 
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
@@ -298,7 +299,7 @@ class ViewerModel(KeymapProvider):
             category=DeprecationWarning,
             stacklevel=2,
         )
-        if active_layer == self.active_layer:
+        if active_layer == self.layers.active:
             return
         self.layers.active = active_layer
 
@@ -398,19 +399,19 @@ class ViewerModel(KeymapProvider):
         event : Event
             No Event parameters are used
         """
-        active_layer = self.layers.active
+        self._active_layer = self.layers.active
 
-        if active_layer is None:
+        if self._active_layer is None:
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
         else:
-            self.status = active_layer.status
-            self.help = active_layer.help
-            self.cursor.style = active_layer.cursor
-            self.cursor.size = active_layer.cursor_size
-            self.camera.interactive = active_layer.interactive
+            self.status = self._active_layer.status
+            self.help = self._active_layer.help
+            self.cursor.style = self._active_layer.cursor
+            self.cursor.size = self._active_layer.cursor_size
+            self.camera.interactive = self._active_layer.interactive
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -444,9 +445,9 @@ class ViewerModel(KeymapProvider):
             layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
-        if self.active_layer is not None:
-            self.status = self.active_layer.status
-            self.help = self.active_layer.help
+        if self._active_layer is not None:
+            self.status = self._active_layer.status
+            self.help = self._active_layer.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""

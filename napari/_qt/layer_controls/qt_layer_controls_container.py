@@ -116,6 +116,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.widgets[layer] = controls
         layer.events.select.connect(self._display)
         layer.events.deselect.connect(self._display)
+        self._display(None)
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
