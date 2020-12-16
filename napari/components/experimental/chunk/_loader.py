@@ -23,7 +23,7 @@ from ._delay_queue import DelayQueue
 from ._info import LayerInfo, LayerRef, LoadType
 from ._request import ChunkKey, ChunkRequest
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.async.loader")
 
 # Executor for either a thread pool or a process pool.
 PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
@@ -60,10 +60,10 @@ def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
         The number of worker threads or processes.
     """
     if use_processes:
-        LOGGER.debug("ChunkLoader process pool num_workers=%d", num_workers)
+        LOGGER.debug("Process pool num_workers=%d", num_workers)
         return ProcessPoolExecutor(max_workers=num_workers)
 
-    LOGGER.debug("ChunkLoader thread pool num_workers=%d", num_workers)
+    LOGGER.debug("Thread pool num_workers=%d", num_workers)
     return ThreadPoolExecutor(max_workers=num_workers)
 
 
@@ -178,13 +178,11 @@ class ChunkLoader:
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
-            LOGGER.info("ChunkLoader._load_async: cache hit %s", request.key)
+            LOGGER.info("load_chunk: cache hit %s", request.key)
             request.chunks = chunks
             return request, None
 
-        LOGGER.info(
-            "ChunkLoader.load_chunk: cache miss %s", request.key.location
-        )
+        LOGGER.info("load_chunk: cache miss %s", request.key.location)
 
         # Clear any pending requests for this specific data_id.
         # TODO_OCTREE: turn this off because all our request come from the
@@ -261,7 +259,7 @@ class ChunkLoader:
         # https://docs.python.org/3/howto/logging.html#optimization
         # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
         LOGGER.debug(
-            "ChunkLoader._submit_async: %.3f %s",
+            "_submit_async: elapsed=%.3f %s",
             request.elapsed_ms,
             request.key.location,
         )
@@ -283,7 +281,7 @@ class ChunkLoader:
         data_id : int
             Clear all requests associated with this data_id.
         """
-        LOGGER.debug("ChunkLoader._clear_pending %d", data_id)
+        LOGGER.debug("_clear_pending %d", data_id)
 
         # Clear delay queue first. These requests are trivial to clear
         # because they have not even been submitted to the worker pool.
@@ -305,10 +303,10 @@ class ChunkLoader:
 
         # Log what we did.
         if num_before == 0:
-            LOGGER.debug("ChunkLoader.clear_pending: empty")
+            LOGGER.debug("_clear_pending: empty")
         else:
             LOGGER.debug(
-                "ChunkLoader.clear_pending: %d of %d cleared -> %d remain",
+                "_clear_pending: %d of %d cleared -> %d remain",
                 num_cleared,
                 num_before,
                 num_after,
@@ -361,7 +359,7 @@ class ChunkLoader:
             return  # Future was cancelled, nothing to do.
 
         LOGGER.debug(
-            "ChunkLoader._done: elapsed=%.3f location=%s",
+            "_done: elapsed=%.3f location=%s",
             request.elapsed_ms,
             request.key.location,
         )
@@ -437,12 +435,12 @@ class ChunkLoader:
             future_list = self.futures[data_id]
         except KeyError:
             LOGGER.warning(
-                "ChunkLoader.wait: no futures for data_id %d", data_id
+                "wait_for_data_id: no futures for data_id=%d", data_id
             )
             return
 
         LOGGER.info(
-            "ChunkLoader.wait: waiting on %d futures for %d",
+            "wait_for_data_id: waiting on %d futures for data_id=%d",
             len(future_list),
             data_id,
         )

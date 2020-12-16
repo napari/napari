@@ -7,7 +7,7 @@ from ...._vendor.experimental.cachetools import LRUCache
 from ....types import ArrayLike
 from ._request import ChunkRequest
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.async.cache")
 
 # ChunkCache size as a fraction of total RAM. Keep it small for now until
 # we figure out how ChunkCache will work with the Dask cache, and do
@@ -99,7 +99,7 @@ class ChunkCache:
         if not self.enabled:
             LOGGER.debug("ChunkCache.add_chunk: cache is disabled")
             return
-        LOGGER.debug("ChunkCache.add_chunk: %s", request.key.location)
+        LOGGER.debug("add_chunk: %s", request.key.location)
         self.chunks[request.key.key] = request.chunks
 
     def get_chunks(self, request: ChunkRequest) -> Optional[ChunkArrays]:
@@ -118,5 +118,5 @@ class ChunkCache:
         if not self.enabled:
             LOGGER.info("ChunkCache.get_chunk: disabled")
             return None
-        LOGGER.info("ChunkCache.get_chunk: %s", request.key)
+        LOGGER.info("get_chunk: %s", request.key.location)
         return self.chunks.get(request.key.key)
