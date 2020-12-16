@@ -307,7 +307,6 @@ class OctreeImage(Image):
         List[OctreeChunk]
             The drawable chunks.
         """
-        LOGGER.debug("get_drawable_chunks")
 
         if self._slice is None or self._view is None:
             LOGGER.debug("get_drawable_chunks: No slice or view")
@@ -332,6 +331,10 @@ class OctreeImage(Image):
             len(ideal_chunks),
             level_index,
         )
+
+        # Log the ideal chunks (for now).
+        for i, chunk in enumerate(ideal_chunks):
+            LOGGER.debug("Chunk {i}: %s", i, chunk.location)
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
