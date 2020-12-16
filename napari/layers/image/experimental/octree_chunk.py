@@ -31,10 +31,7 @@ class OctreeLocation(NamedTuple):
     col: int
 
     def __str__(self):
-        return (
-            f"location =({self.level_index}, {self.row}, {self.col}) "
-            # f"slice={self.slice_id} id={id(self)}"
-        )
+        return f"location=({self.level_index}, {self.row}, {self.col}) "
 
     @classmethod
     def create_null(cls):
@@ -61,8 +58,12 @@ class OctreeChunkKey(ChunkKey):
     def __init__(
         self, layer_key: LayerKey, location: OctreeLocation,
     ):
-        self.location = location
+        self._location = location
         super().__init__(layer_key)
+
+    @property
+    def location(self):
+        return self._location
 
     def _get_hash_values(self):
         # TODO_OCTREE: can't we just hash in the parent's hashed key with
