@@ -11,7 +11,7 @@ from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 
 LOGGER = logging.getLogger("napari.octree.loader")
-ASYNC_LOGGER = logging.getLogger("napari.loader.futures")
+LOADER = logging.getLogger("napari.loader.futures")
 
 # TODO_OCTREE make this a config. This is how many levels "up" we look
 # for tiles to draw at levels above the ideal how. These tiles give
@@ -415,10 +415,15 @@ class OctreeChunkLoader:
 
         # We save the future in case we need to cancel it if the camera
         # move such that the chunk is no longer needed. We can only cancel
-        # the future if the worker thread as not started loading it.
+        # the future if the worker thread has not started loading it.
         assert future
-        LOGGER.debug("Saving future %s", octree_chunk.location)
         self._futures[octree_chunk.location] = future
+
+        LOGGER.debug(
+            "Adding future %s num_futures=%d",
+            octree_chunk.location,
+            len(self._futures),
+        )
 
         return False
 
@@ -442,13 +447,18 @@ class OctreeChunkLoader:
         """
         before = len(self._futures)
 
-        ASYNC_LOGGER.debug("Cancelling futures where seen=%d", len(seen))
+        if before == 0:
+            return
+
+        LOADER.debug(
+            "Cancelling num_futures=%d seen=%d", len(self._futures), len(seen),
+        )
 
         # Iterate through every future.
         for location, future in list(self._futures.items()):
             # If it's not in the seen set then cancel it.
             if not seen.has_location(location):
-                ASYNC_LOGGER.debug("Cancel future %s", location)
+                LOADER.debug("Cancel future %s", location)
 
                 # Returns False if a worker has already starated loading.
                 cancelled = future.cancel()
@@ -475,7 +485,7 @@ class OctreeChunkLoader:
         cancelled = before - kept
 
         if before > 0 or kept > 0:
-            LOGGER.debug(
+            LOADER.debug(
                 "Futures: before=%d cancelled=%d kept=%d",
                 before,
                 cancelled,
@@ -485,7 +495,7 @@ class OctreeChunkLoader:
     def on_chunk_loaded(self, octree_chunk: OctreeChunk) -> None:
         """The given OctreeChunk was loaded.
 
-        We just clear out our future which is no longer relevant.
+        Clear out this chunks future since it's been satisfied.
 
         Parameters
         ----------
@@ -496,6 +506,11 @@ class OctreeChunkLoader:
 
         try:
             del self._futures[location]
+            LOADER.debug(
+                "on_chunk_loaded %s num_features=%d",
+                location,
+                len(self._futures),
+            )
         except KeyError:
             # This can happen if the location went out of view and the
             # future was deleted in self._cancel_futures. Log for now
