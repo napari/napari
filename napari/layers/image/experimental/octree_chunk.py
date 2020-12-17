@@ -1,11 +1,14 @@
 """OctreeChunk class
 """
-from typing import NamedTuple
+import logging
+from typing import List, NamedTuple
 
 import numpy as np
 
 from ....components.experimental.chunk import ChunkKey, LayerKey
 from ....types import ArrayLike
+
+LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeChunkGeom(NamedTuple):
@@ -214,3 +217,31 @@ class OctreeChunk:
         """
         self._data = self._orig_data
         self.loading = False
+
+
+def log_chunks(
+    label: str, chunks: List[OctreeChunk], location: OctreeLocation = None,
+) -> None:
+    """Log the given chunks with an intro header message.
+
+    Parameters
+    ----------
+    label : str
+        Prefix the log message with this label.
+    chunk : List[OctreeChunk]
+        The chunks to log.
+    location : Optional[OctreeLocation]
+        Append the log message with this location.
+    """
+    if location is None:
+        LOGGER.debug("%s has %d chunks:", label, len(chunks))
+    else:
+        LOGGER.debug("%s has %d chunks at %s", label, len(chunks), location)
+    for i, chunk in enumerate(chunks):
+        LOGGER.debug(
+            "Chunk %d %s in_memory=%d loading=%d",
+            i,
+            chunk.location,
+            chunk.in_memory,
+            chunk.loading,
+        )

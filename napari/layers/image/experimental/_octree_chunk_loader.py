@@ -166,24 +166,11 @@ class OctreeChunkLoader:
             elif chunk.needs_load and self._load_chunk(chunk):
                 drawable.append(chunk)  # It was a sync load, ready to draw.
 
-        self._log_chunks("drawable", None, drawable)  # Log for now.
-        self._log_futures()  # Log for now.
-        return drawable
+        # Useful for debugging but spammy.
+        # log_chunks("drawable", drawable)
+        # self._log_futures()
 
-    def _log_chunks(
-        self, label: str, location: OctreeLocation, chunks: List[OctreeChunk]
-    ) -> None:
-        LOGGER.debug(
-            "%s has %d chunks %s", label, len(chunks), location,
-        )
-        for i, chunk in enumerate(chunks):
-            LOGGER.debug(
-                "Chunk %d %s in_memory=%d loading=%d",
-                i,
-                chunk.location,
-                chunk.in_memory,
-                chunk.loading,
-            )
+        return drawable
 
     def _seen_changed(self, drawable: Set[OctreeChunk]) -> bool:
         """Return True if the locations we are drawing changed.
@@ -269,14 +256,10 @@ class OctreeChunkLoader:
         # If the ideal chunk is already being drawn, that's all we need,
         # there is no point in returning more than that.
         if ideal_chunk.in_memory and ideal_chunk.key in drawn_set:
-            LOGGER.debug("_get_coverage: Ideal Only %s", ideal_chunk.location)
             return [ideal_chunk]
 
         # Get alternates for this chunk, from other levels.
         family = self._get_family(ideal_chunk)
-
-        for chunk in family:
-            LOGGER.debug("Family %s", chunk.location)
 
         ideal_level_index = ideal_chunk.location.level_index
 
@@ -299,9 +282,6 @@ class OctreeChunkLoader:
             return True  # Keep all higher level chunks.
 
         keep = [chunk for chunk in family if keep_chunk(chunk)]
-
-        for chunk in keep:
-            LOGGER.debug("Keeping %s", chunk.location)
 
         return keep
 
@@ -406,6 +386,7 @@ class OctreeChunkLoader:
         return False
 
     def _log_futures(self) -> None:
+        """Log the futures we are currently tracking."""
         LOGGER.debug("%d futures:", len(self._futures))
         for i, location in enumerate(self._futures.keys()):
             LOGGER.debug("Future %d: %s", i, location)
