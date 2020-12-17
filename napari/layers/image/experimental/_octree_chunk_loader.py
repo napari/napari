@@ -24,7 +24,7 @@ NUM_ANCESTORS_LEVELS = 3
 class OctreeChunkLoader:
     """Load data into OctreeChunks in the octree.
 
-    The loader is given draw_set, the chunks we are currently drawing, and
+    The loader is given drawn_set, the chunks we are currently drawing, and
     ideal_chunks, the chunks which are in view at the desired level of the
     octree.
 
@@ -218,33 +218,25 @@ class OctreeChunkLoader:
     ) -> List[OctreeChunk]:
         """Return the chunks to draw for this one ideal chunk.
 
-        If the ideal chunk is already being drawn, we just return it.
-        Nothing else needs to be drawn. Otherwise we look up down the tree
-        to find what chunks we can to draw to "cover" this chunk.
+        If the ideal chunk is already being drawn, we return it alone. It's
+        all we need to draw to cover the chunk. If it's not being draw we
+        look up down the tree to find what chunks we can to draw to "cover"
+        this chunk.
 
-        Note that drawn_chunk_set might be smaller than what
-        get_drawable_chunks has been returning, because it only contains
-        chunks that actually got drawn to the screen.
+        Note that drawn_set might be smaller than what get_drawable_chunks
+        has been returning, because it only contains chunks that are
+        actually got drawn to the screen. That are in VRAM.
 
-        We return drawable chunks to the visual, but the visual might take
-        some number of frames to get them all on the screen. This is
-        because it takes time to move a chunk's data into VRAM, so the
-        visual tends to only draw so many new chunks per frame. Right
-        now in fact it only draws one new chunk per frame.
-
-        So if we return the same 40 in-memory chunks from our
-        get_drawable_chunks() every frame, it might be 40 frames until they
-        are all actually drawn on the screen.
-
-        For this reason we return multiple chunks for an ideal chunk even
-        if the ideal chunk itself is in memory. Once the ideal chunk is in
-        the draw_set though, can return just the ideal chunk alone.
+        The visual might take time to load chunks into VRAM. So we might
+        return the same chunks from get_drawable_chunks() many times
+        in a row before it gets drawn. It might only one chunk per
+        frame into VRAM, for example.
 
         Parameters
         ----------
         ideal_chunk : OctreeChunk
             The ideal chunk we'd like to draw.
-        drawn_chunk_set : Set[OctreeChunkKey]
+        drawn_set : Set[OctreeChunkKey]
             The chunks which the visual is currently drawing.
 
         Return
@@ -299,7 +291,8 @@ class OctreeChunkLoader:
             Parents and children we should load and/or draw.
         """
         # Get any direct children which are in memory. Do not create
-        # OctreeChunks or use children that are not already in memory.
+        # OctreeChunks or use children that are not already in memory
+        # because it's better to create and load higher levels.
         children = self._octree.get_children(
             ideal_chunk, create=False, in_memory=True
         )
