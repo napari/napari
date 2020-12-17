@@ -9,6 +9,7 @@ from ...utils.colormaps.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_with_defaults,
 )
+from ...utils.colormaps.standardize_color import transform_single_color
 from ...utils.events.dataclass import Property, evented_dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
@@ -33,11 +34,12 @@ class ColorManager:
 
     """
 
-    colors: InitVar[Optional[Union[str, np.ndarray, list]]] = None
+    colors: InitVar[ColorType] = 'black'
     n_colors: InitVar[int] = 0
     properties: InitVar[Optional[dict]] = None
 
     values: Optional[np.ndarray] = None
+    current_color: Optional[np.ndarray] = None
     mode: Property[ColorMode, str, None] = ColorMode.DIRECT
     color_property: str = ''
     continuous_colormap: Property[Colormap, None, ensure_colormap] = 'viridis'
@@ -51,6 +53,43 @@ class ColorManager:
             colors = np.empty((0, 4))
         self.set_color(color=colors, n_colors=n_colors, properties=properties)
 
+        if self._current_color is None:
+            self._initialize_current_color(colors, n_colors, properties)
+
+    def _initialize_current_color(
+        self, colors: ColorType, n_colors: int, properties: dict
+    ):
+        """Set the current color based on the number of colors and mode
+
+        Parameters
+        ----------
+        colors : ColorType
+            The colors that the ColorManager was initialized with
+        n_colors : int
+            The number of colors in the ColorManager
+        properties : dict
+            The layer properties that were used to initialize the ColorManager
+        """
+        if n_colors > 0:
+            self._current_color = self.values[-1]
+        elif n_colors == 0 and properties:
+            if self._mode == ColorMode.DIRECT:
+                curr_color = transform_color_with_defaults(
+                    num_entries=1,
+                    colors=colors,
+                    elem_name='color',
+                    default="white",
+                )
+            elif self._mode == ColorMode.CYCLE:
+                prop_value = properties[self.color_property][0]
+                curr_color = self.categorical_colormap.map(prop_value)
+            elif self._mode == ColorMode.COLORMAP:
+                prop_value = properties[self.color_property][0]
+                curr_color = self.continuous_colormap.map(prop_value)
+            self._current_color = curr_color
+        else:
+            self._current_color = transform_single_color(colors)
+
     def set_color(self, color: ColorType, n_colors: int, properties: dict):
         """ Set the face_color or edge_color property
 
@@ -63,7 +102,6 @@ class ColorManager:
         n_colors:
             The total number of colors that should be created.
         """
-
         if is_color_mapped(color, properties):
             if guess_continuous(properties[color]):
                 self._mode = ColorMode.COLORMAP

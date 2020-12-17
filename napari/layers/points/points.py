@@ -5,10 +5,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
-from napari.utils.colormaps.color_transformations import (
-    ColorType,
-    transform_color_with_defaults,
-)
+from napari.utils.colormaps.color_transformations import ColorType
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
@@ -390,7 +387,7 @@ class Points(Layer):
                     'continuous_colormap': edge_colormap,
                     'continuous_contrast_limits': edge_contrast_limits,
                 }
-            edge_color_kwargs['properties'] = self.properties
+            edge_color_kwargs['properties'] = properties
             edge_color_kwargs['n_colors'] = n_colors
             self._edge_color = ColorManager(**edge_color_kwargs)
 
@@ -405,15 +402,14 @@ class Points(Layer):
                     'continuous_colormap': face_colormap,
                     'continuous_contrast_limits': face_contrast_limits,
                 }
-            face_color_kwargs['properties'] = self.properties
+            face_color_kwargs['properties'] = properties
             face_color_kwargs['n_colors'] = n_colors
             self._face_color = ColorManager(**face_color_kwargs)
 
         self.size = size
-        # set the current_* properties
+
+        # set the current_properties
         if len(data) > 0:
-            self._current_edge_color = self.edge_color[-1]
-            self._current_face_color = self.face_color[-1]
             self.current_properties = {
                 k: np.asarray([v[-1]]) for k, v in self.properties.items()
             }
@@ -422,58 +418,11 @@ class Points(Layer):
                 k: np.asarray([v[0]])
                 for k, v in self._property_choices.items()
             }
-            self._initialize_current_color_for_empty_layer(edge_color, 'edge')
-            self._initialize_current_color_for_empty_layer(face_color, 'face')
         else:
-            self._current_edge_color = transform_color_with_defaults(
-                num_entries=1,
-                colors=edge_color,
-                elem_name='edge_color',
-                default="black",
-            )[0]
-            self._current_face_color = transform_color_with_defaults(
-                num_entries=1,
-                colors=face_color,
-                elem_name='face_color',
-                default="white",
-            )[0]
             self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-
-    def _initialize_current_color_for_empty_layer(
-        self, color: ColorType, attribute: str
-    ):
-        """Initialize current_{edge,face}_color when starting with empty layer.
-
-        Parameters
-        ----------
-        color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        """
-        color_manager = getattr(self, f'_{attribute}_color')
-        color_mode = color_manager._mode
-        if color_mode == ColorMode.DIRECT:
-            curr_color = transform_color_with_defaults(
-                num_entries=1,
-                colors=color,
-                elem_name=f'{attribute}_color',
-                default="white",
-            )
-        elif color_mode == ColorMode.CYCLE:
-            color_property = color_manager.color_property
-            prop_value = self._property_choices[color_property][0]
-            curr_color = color_manager.categorical_colormap.map(prop_value)
-
-        elif color_mode == ColorMode.COLORMAP:
-            color_property = color_manager.color_property
-            prop_value = self._property_choices[color_property][0]
-            curr_color = color_manager.continuous_colormap.map(prop_value)
-        setattr(self, f'_current_{attribute}_color', curr_color)
 
     @property
     def data(self) -> np.ndarray:
@@ -566,7 +515,7 @@ class Points(Layer):
         color_manager = getattr(self, f'_{attribute}_color')
         color_mode = color_manager._mode
         if color_mode == ColorMode.DIRECT:
-            current_face_color = getattr(self, f'_current_{attribute}_color')
+            current_face_color = color_manager.current_color
             current_color = np.tile(current_face_color, (adding, 1))
         elif color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
             property_name = color_manager.color_property
@@ -814,12 +763,12 @@ class Points(Layer):
     @property
     def current_edge_color(self) -> str:
         """str: Edge color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._current_edge_color)[0]
+        hex_ = rgb_to_hex(self._edge_color.current_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
     def current_edge_color(self, edge_color: ColorType) -> None:
-        self._current_edge_color = transform_color(edge_color)
+        self._edge_color.current_color = transform_color(edge_color)
         if (
             self._update_properties
             and len(self.selected_data) > 0
@@ -827,7 +776,7 @@ class Points(Layer):
         ):
             cur_colors: np.ndarray = self.edge_color
             index = list(self.selected_data)
-            cur_colors[index] = self._current_edge_color
+            cur_colors[index] = self._edge_color.current_color
             self.edge_color = cur_colors
         self.events.current_edge_color()
 
@@ -905,12 +854,12 @@ class Points(Layer):
     @property
     def current_face_color(self) -> str:
         """Face color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._current_face_color)[0]
+        hex_ = rgb_to_hex(self._face_color.current_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
-        self._current_face_color = transform_color(face_color)
+        self._face_color.current_color = transform_color(face_color)
         if (
             self._update_properties
             and len(self.selected_data) > 0
@@ -918,9 +867,8 @@ class Points(Layer):
         ):
             cur_colors: np.ndarray = self.face_color
             index = list(self.selected_data)
-            cur_colors[index] = self._current_face_color
+            cur_colors[index] = self._face_color.current_color
             self.face_color = cur_colors
-
         self.events.current_face_color()
 
     @property

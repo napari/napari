@@ -19,11 +19,13 @@ def is_color_mapped(color, properties):
         when the color value is itself a color.
 
     """
-    if isinstance(color, str):
+    if isinstance(color, str) and properties is not None:
         if color in properties:
             return True
         else:
             return False
+    elif isinstance(color, str) and properties is None:
+        return False
     elif isinstance(color, dict):
         return True
     elif isinstance(color, (list, np.ndarray)):

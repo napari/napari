@@ -98,7 +98,7 @@ def test_empty_layer_with_face_colormap():
 
     # verify the current_face_color is correct
     face_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_face_color == face_color)
+    assert np.all(layer._face_color.current_color == face_color)
 
 
 @pytest.mark.parametrize('attribute', ['face', 'edge'])
@@ -116,9 +116,10 @@ def test_empty_layer_with_colormap(attribute):
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
 
-    # verify the current_face_color is correct
+    # verify the current_{face. edge}_color is correct
     expected_curr_color = np.array([1, 1, 1, 1])
-    curr_color = getattr(layer, f'_current_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    curr_color = color_manager.current_color
     assert np.all(curr_color == expected_curr_color)
 
 
@@ -988,7 +989,8 @@ def test_add_color_cycle_to_empty_layer(attribute):
 
     # verify the current_edge_color is correct
     expected_color = transform_color(color_cycle[0])
-    current_color = getattr(layer, f'_current_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}_color')
+    current_color = color_manager.current_color
     np.testing.assert_allclose(current_color, expected_color)
 
     # add a point
