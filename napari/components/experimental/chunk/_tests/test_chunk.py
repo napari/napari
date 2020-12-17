@@ -78,13 +78,13 @@ def test_loader():
 
     # Create the ChunkRequest.
     layer_ref = LayerRef.create_from_layer(layer, (0, 0))
-    request = chunk_loader.create_request(layer_ref, key, chunks)
+    request, _future = chunk_loader.create_request(layer_ref, key, chunks)
 
     # Should be compatible with the layer we made it from!
     # assert request.is_compatible(layer)
 
     # Load the ChunkRequest.
-    request = chunk_loader.load_chunk(request)
+    request, _future = chunk_loader.load_chunk(request)
 
     # Data should only match data not data2.
     assert np.all(data == request.image.data)
