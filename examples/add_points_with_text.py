@@ -21,14 +21,27 @@ with napari.gui_qt():
         'good_point': np.array([True, False, False]),
     }
 
-    # define the color cycle for the face_color annotation
-    face_color_cycle = ['blue', 'green']
-
+    # set up the text options
     text = {
         'text': 'Confidence is {confidence:.2f}',
         'size': 20,
         'color': 'green',
         'translation': np.array([-30, 0]),
+    }
+
+    # set up the marker edge color options:
+    # (mapped to the 'confidence' property with a gray colormap)
+    edge_color = {
+        'colors': 'confidence',
+        'continuous_colormap': 'gray',
+        'mode': 'colormap'
+    }
+
+    # set up the marker face color options:
+    # (cycled between blue and green based on the 'good_point' property)
+    face_color = {
+        'colors': 'good_point',
+        'categorical_colormap': ['blue', 'green']
     }
 
     # create a points layer where the face_color is set by the good_point property
@@ -39,11 +52,7 @@ with napari.gui_qt():
         text=text,
         size=20,
         edge_width=7,
-        edge_color='confidence',
-        edge_colormap='gray',
-        face_color='good_point',
-        face_color_cycle=face_color_cycle,
-    )
+        edge_color=edge_color,
+        face_color=face_color,
 
-    # set the edge_color mode to colormap
-    points_layer.edge_color_mode = 'colormap'
+    )
