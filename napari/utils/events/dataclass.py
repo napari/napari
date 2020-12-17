@@ -566,3 +566,10 @@ def evented_dataclass(
     setattr(cls, 'asdict', _dc.asdict)
     setattr(cls, 'update', update_from_dict)
     return cls
+
+
+def restore_asdict(cls):
+    method = getattr(cls, '_asdict', None)
+    if method is not None:
+        setattr(cls, 'asdict', method)
+    return cls

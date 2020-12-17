@@ -1,18 +1,20 @@
 import itertools
 import warnings
 from collections import namedtuple
-from dataclasses import InitVar
+from dataclasses import InitVar, asdict
 from typing import List, Optional, Tuple
 
 import numpy as np
 
 from ..layers import Layer
 from ..utils.events import EventedList, evented_dataclass
+from ..utils.events.dataclass import restore_asdict
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
 
 
+@restore_asdict
 @evented_dataclass
 class LayerList(EventedList):
     """List-like layer collection with built-in reordering and callback hooks.
@@ -49,6 +51,15 @@ class LayerList(EventedList):
         """Insert ``value`` before index."""
         print('Custom code when layer gets removed')
         super().__delitem__(key)
+
+    def _asdict(self):
+        # Needs to be used with `restore_asdict` decorator
+        layers_dict = asdict(self)
+        # Once layer is an evented dataclass
+        # layers_dict['list'] = [layer.asdict() for layer in self]
+        # Temporary place holder
+        layers_dict['list'] = [layer._get_state() for layer in self]
+        return layers_dict
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
