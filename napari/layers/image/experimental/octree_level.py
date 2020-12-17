@@ -41,12 +41,11 @@ class OctreeLevelInfo:
         tile_size = self.slice_config.tile_size
         scaled_size = tile_size * self.scale
 
-        self.shape_in_tiles = [
-            math.ceil(base[0] / scaled_size),
-            math.ceil(base[1] / scaled_size),
-        ]
+        self.rows = math.ceil(base[0] / scaled_size)
+        self.cols = math.ceil(base[1] / scaled_size)
 
-        self.num_tiles = self.shape_in_tiles[0] * self.shape_in_tiles[1]
+        self.shape_in_tiles = [self.rows, self.cols]
+        self.num_tiles = self.rows * self.cols
 
 
 class OctreeLevel:
@@ -105,6 +104,12 @@ class OctreeLevel:
         Optional[OctreeChunk]
             The OctreeChunk if one existed or we just created it.
         """
+        rows, cols = self.info.shape_in_tiles
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            # Chunk coordinates not in the level.
+            level_str = f" {self.info.level_index} ({rows}, {cols})"
+            raise KeyError(f"Chunk ({row}, {col}) not in level {level_str}")
+
         try:
             return self._tiles[(row, col)]
         except KeyError:
