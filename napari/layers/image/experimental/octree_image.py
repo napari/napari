@@ -268,10 +268,9 @@ class OctreeImage(Image):
     ) -> List[OctreeChunk]:
         """Get the chunks in the current slice which are drawable.
 
-        The visual calls this and then draws what we send it.
-
-        The call to get_intersection() will chose the appropriate level of
-        the octree to intersect, and then return all the chunks within the
+        The visual calls this and then draws what we send it. The call to
+        get_intersection() will chose the appropriate level of the octree
+        to intersect, and then return all the chunks within the
         intersection with that level.
 
         These are the "ideal" chunks because they are at the level whose
@@ -311,8 +310,13 @@ class OctreeImage(Image):
             LOGGER.debug("get_drawable_chunks: No slice or view")
             return []  # There is nothing to draw.
 
+        # TODO_OCTREE: Make this a config option, maybe different
+        # expansion_factor each level above the ideal level?
+        expansion_factor = 1.1
+        view = self._view.expand(expansion_factor)
+
         # Get the current intersection and save it off.
-        self._intersection = self._slice.get_intersection(self._view)
+        self._intersection = self._slice.get_intersection(view)
 
         if self._intersection is None:
             LOGGER.debug("get_drawable_chunks: Intersection is empty")
