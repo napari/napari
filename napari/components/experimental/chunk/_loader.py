@@ -106,7 +106,7 @@ class ChunkLoader:
             self.use_processes, self.num_workers
         )
 
-        self.futures: Dict[int, List[Future]] = {}
+        self._futures: Dict[int, List[Future]] = {}
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
 
@@ -195,7 +195,20 @@ class ChunkLoader:
         return None, self._submit_async(request)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
-        """Return True if we loaded the request synchronously."""
+        """Return True if we loaded the request.
+
+        Attempt to load the request synchronously.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request to load.
+
+        Return
+        ------
+        bool
+            True if we loaded it.
+        """
         info = self._get_layer_info(request)
 
         if self._should_load_sync(request, info):
@@ -249,13 +262,6 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the arrays to load.
         """
-        # Note about string formatting with logging: it's recommended to
-        # use the oldest style of string formatting with logging. With
-        # f-strings you'd pay the price of formatting the string even if
-        # the log statement is disabled due to the log level, etc. In our
-        # case the log will almost always be disabled unless debugging.
-        # https://docs.python.org/3/howto/logging.html#optimization
-        # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
         LOGGER.debug(
             "_submit_async: elapsed=%.3fms %s",
             request.elapsed_ms,
@@ -267,7 +273,9 @@ class ChunkLoader:
         future.add_done_callback(self._done)
 
         # Store the future in case we need to cancel it.
-        self.futures.setdefault(request.data_id, []).append(future)
+        self._futures.setdefault(request.data_id, []).append(future)
+
+        LOGGER.debug("_submit_async: num_futures=%d", len(self._futures))
 
         return future
 
@@ -286,7 +294,7 @@ class ChunkLoader:
         self.delay_queue.clear(data_id)
 
         # Get list of futures we submitted to the pool.
-        future_list = self.futures.setdefault(data_id, [])
+        future_list = self._futures.setdefault(data_id, [])
 
         # Try to cancel all futures in the list, but cancel() will return
         # False if the task already started running.
@@ -297,7 +305,7 @@ class ChunkLoader:
 
         # Delete the list entirely if empty
         if num_after == 0:
-            del self.futures[data_id]
+            del self._futures[data_id]
 
         # Log what we did.
         if num_before == 0:
@@ -343,7 +351,7 @@ class ChunkLoader:
 
         Notes
         -----
-        This method may be called in a worker thread. The
+        This method MAY be called in a worker thread. The
         concurrent.futures documentation very intentionally does not
         specify which thread the future's done callback will be called in,
         only that it will be called in some thread in the current process.
@@ -351,7 +359,7 @@ class ChunkLoader:
         try:
             request = self._get_request(future)
         except ValueError:
-            return  # Pool not running, app exit in progress.
+            return  # Pool not running? App exit in progress?
 
         if request is None:
             return  # Future was cancelled, nothing to do.
@@ -417,7 +425,7 @@ class ChunkLoader:
         """Wait for all in-progress requests to finish."""
         self.delay_queue.flush()
 
-        for future_list in self.futures.values():
+        for future_list in self._futures.values():
             # Result blocks until the future is done or cancelled
             map(lambda x: x.result(), future_list)
 
@@ -430,7 +438,7 @@ class ChunkLoader:
             Wait on chunks for this data_id.
         """
         try:
-            future_list = self.futures[data_id]
+            future_list = self._futures[data_id]
         except KeyError:
             LOGGER.warning(
                 "wait_for_data_id: no futures for data_id=%d", data_id
@@ -446,7 +454,7 @@ class ChunkLoader:
         # Calling result() will block until the future has finished or was
         # cancelled.
         map(lambda x: x.result(), future_list)
-        del self.futures[data_id]
+        del self._futures[data_id]
 
 
 @contextmanager
@@ -470,6 +478,15 @@ def wait_for_async():
 
 def _setup_logging(octree_config: dict) -> None:
     """Setup logging.
+
+    String Formatting
+    -----------------
+    It's recommended to use the oldest style of string formatting with
+    logging. With f-strings you'd pay the price of formatting the string
+    even if the log statement is disabled due to the log level, etc. In our
+    case the log will almost always be disabled unless debugging.
+    https://docs.python.org/3/howto/logging.html#optimization
+    https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
 
     Parameters
     ----------
