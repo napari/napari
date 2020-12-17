@@ -264,7 +264,7 @@ class OctreeImage(Image):
         """
 
     def get_drawable_chunks(
-        self, drawn_chunk_set: Set[OctreeChunkKey]
+        self, drawn_set: Set[OctreeChunkKey]
     ) -> List[OctreeChunk]:
         """Get the chunks in the current slice which are drawable.
 
@@ -307,7 +307,6 @@ class OctreeImage(Image):
         List[OctreeChunk]
             The drawable chunks.
         """
-
         if self._slice is None or self._view is None:
             LOGGER.debug("get_drawable_chunks: No slice or view")
             return []  # There is nothing to draw.
@@ -339,9 +338,7 @@ class OctreeImage(Image):
         # memory, but they also might be chunks from higher or lower levels
         # in the octree. In general we try to draw "cover the view" with
         # the "best available" data.
-        return self._slice.loader.get_drawable_chunks(
-            drawn_chunk_set, ideal_chunks
-        )
+        return self._slice.loader.get_drawable_chunks(drawn_set, ideal_chunks)
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -483,7 +480,7 @@ class OctreeImage(Image):
             # Redraw with the new chunk.
             # TODO_OCTREE: Call this at most once per frame? It's a bad
             # idea to call it for every chunk?
-            LOGGER.debug("Calling event loaded()")
+            LOGGER.debug("on_chunk_loaded calling loaded()")
             self.events.loaded()
 
     @property
