@@ -24,6 +24,8 @@ class ColorManager:
     ----------
     values : np.ndarray
         The RGBA color for each data entry
+    current_color : np.ndarray
+        The value of the next color to be added
     mode : ColorMode
         Color setting mode. Should be one of the following:
         DIRECT (default mode) allows each point to be set arbitrarily
@@ -31,7 +33,20 @@ class ColorManager:
         CYCLE allows the color to be set via a color cycle over an attribute
 
         COLORMAP allows color to be set via a color map over an attribute
-
+    color_property : str
+        The name of the property to be used to set colors. This is not used when mode is ColorMode.DIRECT.
+    continuous_colormap : Colormap
+        The colormap to be used to map continuous property values to conlors.
+        This is used when mode is ColorMode.COLORMAP. The default value is 'viridis'
+    continuous_contrast_limits : Optional[Tuple[float, float]]
+        The contrast limits used when scaling the property values for use with the continuous_colormap.
+        This is used when mode is ColorMode.COLORMAP. When set to None, the limits are set to the
+        min and max property values. The default value is None.
+    categorical_colormap : CategoricalColormap
+        This is the colormap used to map categorical property values to colors. The colormap can be
+        provided as an array, which will be used as a color cycle or a dictionary where the keys
+        are the property values and the values are the colors the property values should be mapped to.
+        This is used when mode is ColorMode.CYCLE. The default value maps all property values to black.
     """
 
     colors: InitVar[ColorType] = 'black'
@@ -129,6 +144,16 @@ class ColorManager:
             self._color_mode = ColorMode.DIRECT
 
     def add(self, color: Optional[ColorType] = None, n_colors: int = 1):
+        """Add colors
+
+        Parameters
+        ----------
+        color : Optional[ColorType]
+            The color to add. If set to None, the value of self.current_color will be used.
+            The default value is None.
+        n_colors : int
+            The number of colors to add. The default value is 1.
+        """
         if color is None:
             new_color = self.current_color
         else:
@@ -212,6 +237,14 @@ class ColorManager:
             self.events.values()
 
     def on_current_properties_update(self, current_properties):
+        """Updates the current_color value when the current_properties attribute is
+        updated on the layer.
+
+        Parameters:
+        ----------
+        current_properties : dict
+            The new value of current_properties.
+        """
         if self._mode == ColorMode.CYCLE:
             new_prop_values = current_properties[self.color_property]
             new_color = self.categorical_colormap.map(new_prop_values)
