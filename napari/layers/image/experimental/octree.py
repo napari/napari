@@ -5,7 +5,7 @@ import math
 from typing import List, Optional
 
 from ....utils.perf import block_timer
-from .octree_chunk import OctreeChunk
+from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
@@ -81,17 +81,53 @@ class Octree:
         # This is now the total number of levels, including the extra ones.
         self.num_levels = len(self.data)
 
+    def get_level(self, level_index: int) -> OctreeLevel:
+        try:
+            return self.levels[level_index]
+        except IndexError as exc:
+            raise IndexError(
+                f"Level {level_index} is not in range(0, {len(self.levels)})"
+            ) from exc
+
+    def get_chunk_at_location(
+        self, location: OctreeLocation, create: bool = False
+    ) -> None:
+        """Get chunk get this location, create if needed if create=True.
+
+        Parameters
+        ----------
+        location : OctreeLocation
+            Get chunk at this location.
+        create : bool
+            If True create the chunk if it doesn't exist.
+        """
+        return self.get_chunk(location.level_index, location.row, location.col)
+
+    def get_chunk(
+        self, level_index: int, row: int, col: int, create=False
+    ) -> Optional[OctreeChunk]:
+        """Get chunk at this location, create if needed if create=True
+
+        Parameters
+        ----------
+        level_index : int
+            Get chunk from this level.
+        row : int
+            Get chunk at this row.
+        col : int
+            Get chunk at this col.
+        """
+        level: OctreeLevel = self.get_level(level_index)
+        return level.get_chunk(row, col, create=create)
+
     def get_parent(
-        self,
-        octree_chunk: OctreeChunk,
-        create: bool = False,
-        in_memory: bool = True,
+        self, octree_chunk: OctreeChunk, create: bool = False,
     ) -> Optional[OctreeChunk]:
         """Return the parent of this octree_chunk.
 
-        If the parent doesn't exist this will return None. Except if create
-        is true then we'll create the parent and return it, unless
-        octree_chunk is the root of the whole octree, then we return None.
+        If the chunk at the root level, then this always return None.
+        Otherwise it returns the parent if it exists, or if create=True
+        it creates the parent and returns it.
 
         Parameters
         ----------
@@ -103,79 +139,15 @@ class Octree:
         Optional[OctreeChunk]
             The parent of the chunk if there was one or we created it.
         """
-        location = octree_chunk.location
-
-        if location.level_index == self.num_levels - 1:
-            return None  # This is the root so no parent.
-
-        parent_level_index: int = location.level_index + 1
-        parent_level: OctreeLevel = self.levels[parent_level_index]
-
-        # Cut row, col in half for the corresponding parent indices.
-        row, col = int(location.row / 2), int(location.col / 2)
-        octree_chunk = parent_level.get_chunk(row, col, create=create)
-
-        if octree_chunk is None:
-            return None
-
-        use_chunk = not in_memory or octree_chunk.in_memory
-        return octree_chunk if use_chunk else None
-
-    def get_nearest_ancestor(
-        self, octree_chunk: OctreeChunk, in_memory: bool = True
-    ) -> Optional[OctreeChunk]:
-        """Return the nearest ancestor of this octree_chunk.
-
-        This will not create OctreeNodes. It will return None if we don't
-        find any existing ancestors. Either they don't exist, or we are
-        at the root so there are no ancestors.
-
-        Parameters
-        ----------
-        octree_chunk : OctreeChunk
-            Return the nearest ancestor of this chunk.
-
-        Return
-        ------
-        Optional[OctreeChunk]
-            The nearest ancestor of the chunk if we found one.
-        """
-        location = octree_chunk.location
-
-        # We are looking for a ancestor of this level.
-        level_index = location.level_index
-        row, col = location.row, location.col
-
-        # Search up one level at a time.
-        while level_index < self.num_levels - 1:
-
-            # Get the next level up. Coords are halved each level.
-            level_index += 1
-            row, col = int(row / 2), int(col / 2)
-            level: OctreeLevel = self.levels[level_index]
-
-            # Get chunk at this location. Do not create chunks, we are
-            # looking for existing ones not creating them.
-            ancestor = level.get_chunk(row, col, create=False)
-
-            # Use the ancestor if it's in memory, or if we don't care
-            # whether the chunk is in memory.
-            if ancestor is not None and (not in_memory or ancestor.in_memory):
-                return ancestor  # Found one.
-
-        return None  # No ancestor found.
+        return self.get_ancestors(octree_chunk, 1, create=create)
 
     def get_ancestors(
-        self, octree_chunk: OctreeChunk, num_levels: int
+        self, octree_chunk: OctreeChunk, num_levels: int, create=False
     ) -> List[OctreeChunk]:
         """Return the num_levels nearest ancestors.
 
-        If it finds an in-memory ancestor, it stops there. Otherwise
-        it will create OctreeNodes for up to num_levels of
-        ancestors.
-
-        The idea is we want to load and draw these ancestors, but if one
-        is in memory we don't want to load or draw the coarser ones.
+        If create=False only returns the ancestors if they exist. If
+        create=True it will create the ancestors as needed.
 
         Parameters
         ----------
@@ -204,15 +176,8 @@ class Octree:
             level_index += 1
             row, col = int(row / 2), int(col / 2)
 
-            try:
-                level: OctreeLevel = self.levels[level_index]
-            except IndexError as exc:
-                raise IndexError(
-                    f"Level {level_index} is not in range(0, {len(self.levels)})"
-                ) from exc
-
             # Get chunk at this location.
-            ancestor = level.get_chunk(row, col, create=True)
+            ancestor = self.get_chunk(level_index, row, col, create=create)
             assert ancestor  # Since create=True
             ancestors.append(ancestor)
 
