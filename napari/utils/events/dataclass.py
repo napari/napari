@@ -220,7 +220,7 @@ def is_equal(v1, v2):
     except Exception as e:
         warnings.warn(
             "Comparison method failed. Returned False. "
-            f"There may be need to define custom _on_<name>_set method. Exception {e}"
+            f"There may be need to define custom compare methods in __equality_checks__ dictionary. Exception {e}"
         )
         return False
 
