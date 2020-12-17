@@ -16,7 +16,7 @@ from ._color_manager_utils import is_color_mapped
 from .layer_utils import guess_continuous, map_property
 
 
-@evented_dataclass(events=True, properties=True)
+@evented_dataclass
 class ColorManager:
     """Colors for a display property
 
