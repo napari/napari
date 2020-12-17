@@ -365,8 +365,9 @@ class ChunkLoader:
             return  # Future was cancelled, nothing to do.
 
         LOGGER.debug(
-            "_done: elapsed=%.3fms location=%s",
+            "_done: elapsed=%.3fms load=%.3fms location=%s",
             request.elapsed_ms,
+            request.load_ms,
             request.key.location,
         )
 
