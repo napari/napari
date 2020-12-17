@@ -224,12 +224,12 @@ class Octree:
             child_level.get_chunk(row + 1, col + 1, create=create),
         ]
 
+        # Keep non-None children, and if requested in-memory ones.
         def keep_chunk(octree_chunk) -> bool:
             return octree_chunk is not None and (
                 not in_memory or octree_chunk.in_memory
             )
 
-        # Keep non-None children, and if requested in-memory ones.
         return list(filter(keep_chunk, children))
 
     def _get_extra_levels(self) -> List[OctreeLevel]:
