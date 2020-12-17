@@ -12,6 +12,7 @@ from vispy.scene.visuals import create_visual_node
 
 from ...layers.image.experimental import OctreeChunk
 from ...layers.image.experimental.octree_image import OctreeImage
+from ...utils.events import EmitterGroup
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
@@ -74,12 +75,19 @@ class VispyTiledImageLayer(VispyImageLayer):
     """
 
     def __init__(self, layer: OctreeImage):
+
         # All tiles are stored in a single TileImageVisual.
         visual = TiledImageNode(tile_shape=layer.tile_shape)
 
         # Pass our TiledImageVisual to the base class, it will become our
         # self.node which VispyBaseImage holds.
         super().__init__(layer, visual)
+
+        # Create events after the base class. We have a loaded event that
+        # QtPoll listens to. Because a chunk might be loaded when QtPoll is
+        # totally quiet, no mouse movement, no in-progress loading. We need
+        # to get the polling going so we can load the chunks over time.
+        self.events = EmitterGroup(source=self, auto_connect=True, loaded=None)
 
         # An optional grid that shows tile borders.
         self.grid = TileGrid(self.node)
@@ -288,5 +296,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         event.handled = need_polling
 
     def _on_loaded(self, _event) -> None:
-        """The layer loaded new data, so update or view."""
+        """The layer loaded new data, so update our view."""
         self._update_view()
+        self.events.loaded()

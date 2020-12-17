@@ -332,11 +332,18 @@ class QtViewer(QSplitter):
         """
         vispy_layer = create_vispy_visual(layer)
 
-        # If a QtPoll exists, connect the new layer visual to its poll
-        # event. So QtPoll will call VipyBaseImage._on_poll() when the
-        # camera moves or on a timer if needed.
+        # QtPoll is experimental.
         if self._qt_poll is not None:
+            # If a QtPoll exists, connect the new layer visual to QtPoll's
+            # poll event. So QtPoll will call VipyBaseImage._on_poll() when
+            # the camera moves or the timer goes off.
             self._qt_poll.events.poll.connect(vispy_layer._on_poll)
+
+            # In the other direction, some visuals need to tell
+            # QtPoll to start polling. When they receive new data
+            # and need to be polled to load it over time.
+            if vispy_layer.events is not None:
+                vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(self.viewer.layers) - 1
@@ -839,7 +846,9 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
 
     from .experimental.qt_poll import QtPoll
 
-    return QtPoll(parent, camera)
+    qt_poll = QtPoll(parent)
+    camera.events.connect(qt_poll.on_camera)
+    return qt_poll
 
 
 def _create_remote_manager(

@@ -9,7 +9,6 @@ from typing import Optional
 
 from qtpy.QtCore import QEvent, QObject, QTimer
 
-from ...components.camera import Camera
 from ...utils.events import EmitterGroup
 
 # When running a timer we use this interval.
@@ -50,19 +49,22 @@ class QtPoll(QObject):
         The viewer's main camera.
     """
 
-    def __init__(self, parent: QObject, camera: Camera):
+    def __init__(self, parent: QObject):
         super().__init__(parent)
 
         self.events = EmitterGroup(source=self, auto_connect=True, poll=None)
-        camera.events.connect(self._on_camera)
 
         self.timer = QTimer()
         self.timer.setInterval(POLL_INTERVAL_MS)
         self.timer.timeout.connect(self._on_timer)
         self._interval = IntervalTimer()
 
-    def _on_camera(self, _event) -> None:
+    def on_camera(self, _event) -> None:
         """Called when camera view changes at all."""
+        self.wake_up()
+
+    def wake_up(self, _event=None) -> None:
+        """Wake up QtPoll so it starts polling."""
         if self._interval.elapsed_ms < IGNORE_INTERVAL_MS:
             return  # Double called during one frame?
 
