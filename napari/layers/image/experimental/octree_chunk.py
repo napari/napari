@@ -33,6 +33,14 @@ class OctreeLocation(NamedTuple):
     def __str__(self):
         return f"location=({self.level_index}, {self.row}, {self.col}) "
 
+    def __eq__(self, other) -> bool:
+        return (
+            self.slice_id == other.slice_id
+            and self.level_index == other.level_index
+            and self.row == other.row
+            and self.col == other.col
+        )
+
     @classmethod
     def create_null(cls):
         """Create null location that points to nothing."""
