@@ -224,11 +224,11 @@ class EventedList(TypedMutableSequence[_T]):
         dest_index -= len([i for i in to_move if i < dest_index])
 
         self.events.moving(index=to_move, new_index=dest_index)
-        with self.events.blocker_all():
-            items = [self[i] for i in to_move]
-            for i, src_index in enumerate(sorted(to_move, reverse=True)):
-                # Note this is not quite correct, needs to be fixed, off by one sometimes!!!!
-                self.move(src_index, dest_index + i)
+        items = [self[i] for i in to_move]
+        for i in sorted(to_move, reverse=True):
+            self._list.pop(i)
+        for item in items[::-1]:
+            self._list.insert(dest_index, item)
         self.events.moved(index=to_move, new_index=dest_index, value=items)
         self.events.reordered(value=self)
         return len(to_move)
