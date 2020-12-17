@@ -326,12 +326,7 @@ class OctreeImage(Image):
         ideal_chunks = self._intersection.get_chunks(create=True)
         level_index = self._intersection.level.info.level_index
 
-        LOGGER.debug(
-            "get_drawable_chunks: Found %d ideal chunks on level %d",
-            len(ideal_chunks),
-            level_index,
-        )
-        # log_chunks("ideas_chunks", ideal_chunks)
+        # log_chunks("ideal_chunks", ideal_chunks)
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.

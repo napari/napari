@@ -327,8 +327,6 @@ class OctreeChunkLoader:
         assert not octree_chunk.in_memory
         assert not octree_chunk.loading
 
-        LOGGER.debug("_load_chunk: %s", octree_chunk.location)
-
         # Create a key that points to this specific location in the octree.
         layer_key = self._layer_ref.layer_key
         key = OctreeChunkKey(layer_key, octree_chunk.location)
@@ -377,12 +375,6 @@ class OctreeChunkLoader:
         assert future
         self._futures[octree_chunk.location] = future
 
-        LOGGER.debug(
-            "Adding future %s num_futures=%d",
-            octree_chunk.location,
-            len(self._futures),
-        )
-
         return False
 
     def _log_futures(self) -> None:
@@ -409,24 +401,13 @@ class OctreeChunkLoader:
         if before == 0:
             return
 
-        LOADER.debug(
-            "Cancelling num_futures=%d seen=%d", len(self._futures), len(seen),
-        )
-
         # Iterate through every future.
         for location, future in list(self._futures.items()):
             # If it's not in the seen set then cancel it.
             if not seen.has_location(location):
-                LOADER.debug("Cancel future %s", location)
 
                 # Returns False if a worker has already starated loading.
                 cancelled = future.cancel()
-
-                LOGGER.debug(
-                    "Cancel future %sfor %s",
-                    "" if cancelled else "failed ",
-                    location,
-                )
 
                 try:
                     del self._futures[location]
@@ -434,11 +415,7 @@ class OctreeChunkLoader:
                     # Our self.on_chunk_loaded might have been called even
                     # while we were iterating! In which case the future
                     # might no longer exist. Log for now, but not an error.
-                    LOGGER.debug(
-                        "_cancel_futures: Missing Future %s", location
-                    )
-            else:
-                LOGGER.debug("Keeping future %s", location)
+                    LOGGER.warn("_cancel_futures: Missing Future %s", location)
 
         kept = len(self._futures)
         cancelled = before - kept
