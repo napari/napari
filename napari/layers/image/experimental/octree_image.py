@@ -17,7 +17,7 @@ from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, SliceConfig
 
-LOGGER = logging.getLogger("napari.octree")
+LOGGER = logging.getLogger("napari.octree.image")
 
 
 class OctreeImage(Image):
@@ -476,7 +476,8 @@ class OctreeImage(Image):
             This request was loaded.
         """
         LOGGER.info(
-            "OctreeImage.on_chunk_loaded: elapsed = %.3f location = %s",
+            "on_chunk_loaded: load=%.3fms elapsed=%.3fms location = %s",
+            request.load_ms,
             request.elapsed_ms,
             request.key.location,
         )
@@ -487,6 +488,7 @@ class OctreeImage(Image):
             # Redraw with the new chunk.
             # TODO_OCTREE: Call this at most once per frame? It's a bad
             # idea to call it for every chunk?
+            LOGGER.debug("Calling event loaded()")
             self.events.loaded()
 
     @property
