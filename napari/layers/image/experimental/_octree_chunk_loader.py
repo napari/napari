@@ -404,17 +404,6 @@ class OctreeChunkLoader:
                 if future.cancel():
                     self._cancel_load(location)
 
-        kept = len(self._futures)
-        cancelled = before - kept
-
-        if before > 0 or kept > 0:
-            LOADER.debug(
-                "Futures: before=%d cancelled=%d kept=%d",
-                before,
-                cancelled,
-                kept,
-            )
-
     def _cancel_load(self, location: OctreeLocation) -> None:
         """Set that this chunk is no longer loading.
 
