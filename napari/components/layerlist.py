@@ -28,8 +28,9 @@ class LayerList(EventedList):
         Name of the active layer.
     """
 
+    # order matters
+    data: InitVar[Tuple] = ()
     active: Optional[str] = None
-    data: InitVar[Tuple] = ()  # type: ignore
 
     def __post_init__(self, data):
         super().__init__(
