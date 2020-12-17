@@ -309,7 +309,7 @@ class OctreeChunkLoader:
         # because they will provide more coverage. They will cover the
         # ideal chunk plus more.
         ancestors = self._octree.get_ancestors(
-            ideal_chunk, NUM_ANCESTORS_LEVELS
+            ideal_chunk, NUM_ANCESTORS_LEVELS, create=True
         )
 
         return children + ancestors
@@ -403,19 +403,13 @@ class OctreeChunkLoader:
 
         # Iterate through every future.
         for location, future in list(self._futures.items()):
-            # If it's not in the seen set then cancel it.
+            # If the location was not seen by the current view.
             if not seen.has_location(location):
-
-                # Returns False if a worker has already starated loading.
-                cancelled = future.cancel()
-
-                try:
-                    del self._futures[location]
-                except KeyError:
-                    # Our self.on_chunk_loaded might have been called even
-                    # while we were iterating! In which case the future
-                    # might no longer exist. Log for now, but not an error.
-                    LOGGER.warn("_cancel_futures: Missing Future %s", location)
+                # Cancel the load. If Future.cancel() returns False, a
+                # worker has alreadying started loading it and we can't
+                # cancel it.
+                if future.cancel():
+                    self._cancel_load(location)
 
         kept = len(self._futures)
         cancelled = before - kept
@@ -427,6 +421,33 @@ class OctreeChunkLoader:
                 cancelled,
                 kept,
             )
+
+    def _cancel_load(self, location: OctreeLocation) -> None:
+        """Set that this chunk is no longer loading.
+
+        Parameters
+        ----------
+        chunk : OctreeChunk
+            Set that this chunk is no longer loading.
+        """
+        try:
+            del self._futures[location]
+        except KeyError:
+            # Our self.on_chunk_loaded might have been called even
+            # while we were iterating! In which case the future
+            # might no longer exist. Log for now, but not an error.
+            LOGGER.warn("_cancel_load: Missing future %s", location)
+
+        # Don't create the chunk, but it ought to be there since there was
+        # a load in progress.
+        chunk: OctreeChunk = self._octree.get_chunk_at_location(
+            location, create=False
+        )
+
+        if chunk is None:
+            LOADER.error("_cancel_load: Chunk did not exist %s", location)
+        else:
+            chunk.loading = False
 
     def on_chunk_loaded(self, octree_chunk: OctreeChunk) -> None:
         """The given OctreeChunk was loaded.
@@ -447,6 +468,7 @@ class OctreeChunkLoader:
                 location,
                 len(self._futures),
             )
+
         except KeyError:
             # This can happen if the location went out of view and the
             # future was deleted in self._cancel_futures. Log for now
