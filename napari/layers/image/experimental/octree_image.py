@@ -334,7 +334,13 @@ class OctreeImage(Image):
 
         # Log the ideal chunks (for now).
         for i, chunk in enumerate(ideal_chunks):
-            LOGGER.debug("Chunk %d %s", i, chunk.location)
+            LOGGER.debug(
+                "Chunk %d %s in_memory=%d loading=%d",
+                i,
+                chunk.location,
+                chunk.in_memory,
+                chunk.loading,
+            )
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
