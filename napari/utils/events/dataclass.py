@@ -232,6 +232,16 @@ def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
         type_ = type_.__origin__
     if isinstance(type_, _dc.InitVar):
         type_ = type_.type
+    if (
+        hasattr(type_, "__origin__")
+        and hasattr(type_.__origin__, "_name")
+        and type_.__origin__._name == "Union"
+        and hasattr(type_, "__args__")
+        and isinstance(type_.__args__, tuple)
+        and len(type_.__args__) == 2
+        and isinstance(None, type_.__args__[1])
+    ):
+        type_ = type_.__args__[0]
     if not inspect.isclass(type_):
         if not getattr(type_, "__module__", None) == "typing":
             warnings.warn(f"Bug in type recognition {type_}")
