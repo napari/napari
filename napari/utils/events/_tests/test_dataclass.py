@@ -1,6 +1,6 @@
 import inspect
 import operator
-from dataclasses import asdict, field
+from dataclasses import InitVar, asdict, field
 from functools import partial
 from typing import ClassVar, List
 from unittest.mock import Mock
@@ -384,3 +384,13 @@ def test_values_updated_array():
     with pytest.warns(UserWarning, match="Comparison method failed*"):
         obj1.b = np.array([2, 2])
     assert count["b"] == 1
+
+
+def test_init_var_warning():
+    with pytest.warns(None) as record:
+
+        @evented_dataclass
+        class T:
+            colors: InitVar[str] = 'black'
+
+    assert len(record) == 0

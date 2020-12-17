@@ -230,6 +230,8 @@ def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
 
     if isinstance(type_, _AnnotatedAlias):
         type_ = type_.__origin__
+    if isinstance(type_, _dc.InitVar):
+        type_ = type_.type
     if not inspect.isclass(type_):
         if not getattr(type_, "__module__", None) == "typing":
             warnings.warn(f"Bug in type recognition {type_}")
