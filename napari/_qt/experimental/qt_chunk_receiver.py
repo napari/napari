@@ -7,7 +7,7 @@ from qtpy.QtCore import QObject, Signal
 from ...components.experimental.chunk import chunk_loader
 from ...utils.events import EmitterGroup, Event, EventEmitter
 
-LOGGER = logging.getLogger('napari.async')
+LOGGER = logging.getLogger('napari.loader')
 
 
 class QtGuiEvent(QObject):

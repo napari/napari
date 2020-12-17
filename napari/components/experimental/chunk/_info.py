@@ -10,7 +10,7 @@ from ....utils.config import octree_config
 from ._request import ChunkRequest
 from ._utils import LayerRef, StatWindow
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class LoadCounts:

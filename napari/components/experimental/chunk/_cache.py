@@ -7,7 +7,7 @@ from ...._vendor.experimental.cachetools import LRUCache
 from ....types import ArrayLike
 from ._request import ChunkRequest
 
-LOGGER = logging.getLogger("napari.async.cache")
+LOGGER = logging.getLogger("napari.loader.cache")
 
 # ChunkCache size as a fraction of total RAM. Keep it small for now until
 # we figure out how ChunkCache will work with the Dask cache, and do

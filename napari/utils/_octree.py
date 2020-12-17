@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 DEFAULT_OCTREE_CONFIG = {
     "log_path": None,

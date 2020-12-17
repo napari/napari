@@ -11,7 +11,7 @@ from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
 from .layer_key import LayerKey
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]

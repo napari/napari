@@ -13,7 +13,7 @@ from ....types import ArrayLike
 from ...base import Layer
 from .._image_slice_data import ImageSliceData
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class ChunkedSliceData(ImageSliceData):

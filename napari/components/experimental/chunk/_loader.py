@@ -23,7 +23,7 @@ from ._delay_queue import DelayQueue
 from ._info import LayerInfo, LayerRef, LoadType
 from ._request import ChunkKey, ChunkRequest
 
-LOGGER = logging.getLogger("napari.async.loader")
+LOGGER = logging.getLogger("napari.loader")
 
 # Executor for either a thread pool or a process pool.
 PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
@@ -95,7 +95,7 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        _setup_logging(octree_config['log_path'])
+        _setup_logging(octree_config)
 
         config = octree_config['loader']
         self.force_synchronous: bool = bool(config['force_synchronous'])
@@ -468,21 +468,23 @@ def wait_for_async():
     chunk_loader.wait_for_all()
 
 
-def _setup_logging(path: str) -> None:
+def _setup_logging(octree_config: dict) -> None:
     """Setup logging.
-
-    We log napari.async and napari.octree to the same file right now, but
-    we keep async and octree separate so we can do something fancier in the
-    future.
 
     Parameters
     ----------
-    path : str
-        Log to a file with this path.
+    octree_config : dict
+        The configuration data.
     """
-    if path:
-        _log_to_file("napari.async", path)
-        _log_to_file("napari.octree", path)
+    try:
+        _log_to_file("napari.loader", octree_config['loader']['log_path'])
+    except KeyError:
+        pass
+
+    try:
+        _log_to_file("napari.octree", octree_config['octree']['log_path'])
+    except KeyError:
+        pass
 
 
 def _log_to_file(name: str, path: str) -> None:

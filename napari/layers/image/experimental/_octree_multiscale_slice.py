@@ -197,10 +197,9 @@ class OctreeMultiscaleSlice:
             # The original load finished, but we are now showing a new slice.
             # Don't consider it error, just ignore the chunk.
             LOGGER.debug(
-                "OctreeMultiscaleSlice.on_chunk_loaded: wrong slice_id: %s",
-                location,
+                "on_chunk_loaded: wrong slice_id: %s", location,
             )
-            return False  # Do not load.
+            return False  # Do not add the chunk.
 
         octree_chunk = self._get_octree_chunk(location)
 
@@ -210,15 +209,11 @@ class OctreeMultiscaleSlice:
             # OctreeChunk's when a load is initiated. So this is an error,
             # but log it and keep going, maybe some transient weirdness.
             LOGGER.error(
-                "OctreeMultiscaleSlice.on_chunk_loaded: missing OctreeChunk: %s",
-                octree_chunk,
+                "on_chunk_loaded: missing OctreeChunk: %s", octree_chunk,
             )
-            return False  # Did not add the chun.
+            return False  # Did not add the chunk.
 
-        # Looks good, we are adding this chunk.
-        LOGGER.debug(
-            "OctreeMultiscaleSlice.on_chunk_loaded: adding %s", octree_chunk
-        )
+        LOGGER.debug("on_chunk_loaded: adding %s", octree_chunk)
 
         # Get the data from the request.
         incoming_data = request.chunks.get('data')
@@ -230,10 +225,12 @@ class OctreeMultiscaleSlice:
         # octree_chunk.in_memory is True and we can pass the chunk as a
         # drawable chunk to the visual.
         octree_chunk.data = incoming_data
+
+        # Check the obvious (for now).
         assert octree_chunk.in_memory
         assert not octree_chunk.needs_load
 
-        # Tell loader so it can delete future which is no longer relevant.
+        # Tell the loader. It will delete the future.
         self.loader.on_chunk_loaded(octree_chunk)
 
         return True  # Chunk was added.
