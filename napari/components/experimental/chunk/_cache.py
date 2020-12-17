@@ -121,7 +121,7 @@ class ChunkCache:
 
         data = self.chunks.get(request.key.key)
         LOGGER.info(
-            "get_chunk: %s -> %s",
+            "get_chunk: %s %s",
             request.key.location,
             "found" if data is not None else "not found",
         )
