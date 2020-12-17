@@ -65,20 +65,11 @@ class QtPoll(QObject):
 
     def wake_up(self, _event=None) -> None:
         """Wake up QtPoll so it starts polling."""
-        if self._interval.elapsed_ms < IGNORE_INTERVAL_MS:
-            return  # Double called during one frame?
-
-        # Poll right away. If the timer is running, it's generally starved
-        # out by the mouse button being down. Why? If we end up "double
-        # polling" it *should* be harmless. But if we don't poll then
-        # everything is frozen. So better to poll.
-        self._poll()
-
-        # Start the timer so that we will keep polling even if the camera
-        # doesn't move again. Although the mouse movement is starving out
-        # the timer right now, we need the timer going so we keep polling
-        # even if the mouse stops.
-        self.timer.start()
+        # Start the timer so that we start polling. We used to poll once
+        # right away here, but led to crashes. Because we polled during
+        # a paintGL event?
+        if not self.timer.isActive():
+            self.timer.start()
 
     def _on_timer(self) -> None:
         """Called when the timer is running."""
@@ -88,7 +79,8 @@ class QtPoll(QObject):
 
     def _poll(self) -> None:
         """Called on camera move or with the timer."""
-        # Poll everyone listening to our even.
+        # Poll everyone listening to our event, which might include
+        # visuals and the monitor.
         event = self.events.poll()
 
         # Listeners will "handle" the event if they need more polling. If
