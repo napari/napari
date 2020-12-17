@@ -1,6 +1,7 @@
+from dataclasses import field
 from enum import auto
 from itertools import cycle
-from typing import Any, Dict, Union
+from typing import Union
 
 import numpy as np
 
@@ -86,6 +87,7 @@ class Colormap:
         return make_colorbar(self)
 
 
+@evented_dataclass
 class CategoricalColormap:
     """Colormap that relates categorical values to colors.
 
@@ -100,39 +102,25 @@ class CategoricalColormap:
 
     """
 
-    def __init__(
-        self, colormap: Union[dict, list, cycle], fallback_color='black'
-    ):
-        self.fallback_color = fallback_color
-        self.colormap = colormap
+    colormap: dict = field(default_factory=dict)
+    fallback_color: cycle = 'black'
 
-    @property
-    def colormap(self) -> Dict[Any, np.ndarray]:
-        return self._colormap
+    def __post_init__(self):
+        if not isinstance(self._fallback_color, cycle):
+            self._on_fallback_color_set(self._fallback_color)
 
-    @colormap.setter
-    def colormap(self, colormap):
-        if isinstance(colormap, list) or isinstance(colormap, np.ndarray):
-            self.fallback_color = colormap
+    def _on_colormap_set(self, colormap: dict):
+        transformed_colormap = {
+            k: transform_color(v)[0] for k, v in colormap.items()
+        }
+        self._colormap = transformed_colormap
 
-            # reset the color mapping
-            self._colormap = {}
-        elif isinstance(colormap, dict):
-            transformed_colormap = {
-                k: transform_color(v)[0] for k, v in colormap.items()
-            }
-            self._colormap = transformed_colormap
-        else:
-            raise TypeError('colormap should be an array or dict')
-
-    @property
-    def fallback_color(self) -> np.ndarray:
+    def _on_fallback_color_get(self, value) -> np.ndarray:
         return self._fallback_color_values
 
-    @fallback_color.setter
-    def fallback_color(self, fallback_color):
+    def _on_fallback_color_set(self, value):
         (transformed_color_cycle, transformed_colors,) = transform_color_cycle(
-            color_cycle=fallback_color,
+            color_cycle=self._fallback_color,
             elem_name='color_cycle',
             default="white",
         )

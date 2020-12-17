@@ -16,6 +16,39 @@ from ._color_manager_utils import is_color_mapped
 from .layer_utils import guess_continuous, map_property
 
 
+def coerce_categorical_colormap(colormap) -> CategoricalColormap:
+    if isinstance(colormap, list) or isinstance(colormap, np.ndarray):
+        fallback_color = colormap
+
+        # reset the color mapping
+        colormap = {}
+    elif isinstance(colormap, dict):
+        if ('colormap' in colormap) or ('fallback_color' in colormap):
+            if 'colormap' in colormap:
+                transformed_colormap = {
+                    k: transform_single_color(v)
+                    for k, v in colormap['colormap'].items()
+                }
+            else:
+                transformed_colormap = {}
+            if 'fallback_color' in colormap:
+                fallback_color = colormap['fallback_color']
+            else:
+                fallback_color = 'black'
+        else:
+            transformed_colormap = {
+                k: transform_single_color(v) for k, v in colormap.items()
+            }
+            colormap = transformed_colormap
+            fallback_color = 'black'
+    else:
+        raise TypeError('colormap should be an array or dict')
+
+    return CategoricalColormap(
+        colormap=colormap, fallback_color=fallback_color
+    )
+
+
 @evented_dataclass
 class ColorManager:
     """Colors for a display property
@@ -60,7 +93,7 @@ class ColorManager:
     continuous_colormap: Property[Colormap, None, ensure_colormap] = 'viridis'
     continuous_contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: Property[
-        CategoricalColormap, None, CategoricalColormap
+        CategoricalColormap, None, coerce_categorical_colormap
     ] = np.array([[0, 0, 0, 1]])
 
     def __post_init__(self, colors, n_colors, properties):
