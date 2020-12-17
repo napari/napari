@@ -11,12 +11,36 @@ from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 
 LOGGER = logging.getLogger("napari.octree.loader")
+ASYNC_LOGGER = logging.getLogger("napari.loader.futures")
 
 # TODO_OCTREE make this a config. This is how many levels "up" we look
 # for tiles to draw at levels above the ideal how. These tiles give
 # us lots of coverage quickly, so we load and draw then even before
 # the ideal level
 NUM_ANCESTORS_LEVELS = 3
+
+
+class ChunkSet:
+    def __init__(self):
+        self._dict = {}
+        self._locations = set()
+
+    def __len__(self) -> int:
+        return len(self._dict)
+
+    def __contains__(self, chunk: OctreeChunk) -> bool:
+        return chunk in self._dict
+
+    def add(self, chunks: List[OctreeChunk]) -> None:
+        for chunk in chunks:
+            self._dict[chunk] = 1
+            self._locations.add(chunk.location)
+
+    def chunks(self) -> List[OctreeChunk]:
+        return self._dict.keys()
+
+    def has_location(self, location: OctreeLocation) -> bool:
+        return location in self._locations
 
 
 class OctreeChunkLoader:
@@ -66,8 +90,8 @@ class OctreeChunkLoader:
     ----------
     _futures : Future
         Futures for chunks which are loading or queued for loading.
-    _last_drawable : Set[OctreeLocation]
-        What did draw last frame. Only for logging, so we don't spam the log.
+    _last_seen : Set[OctreeLocation]
+        What did we see last frame. Only for logging.
     """
 
     def __init__(self, octree: Octree, layer_ref: LayerRef):
@@ -75,7 +99,7 @@ class OctreeChunkLoader:
         self._layer_ref = layer_ref
 
         self._futures: Dict[OctreeLocation, Future] = {}
-        self._last_drawable: Set[OctreeLocation] = set()
+        self._last_seen: ChunkSet = ChunkSet()
 
     def get_drawable_chunks(
         self, drawn_set: Set[OctreeChunkKey], ideal_chunks: List[OctreeChunk],
@@ -127,118 +151,63 @@ class OctreeChunkLoader:
             len(ideal_chunks),
         )
 
-        # Build up the chunks we want to draw. Used a dict instead of a
-        # set so it's ordered. The values are just 1.
-        drawable = {}
+        # This is an ordered set. It's a set because many ideal chunks will
+        # have the same ancestors, but we only want them in here once.
+        seen = ChunkSet()
 
         # Permanent chunks are ones we always want to draw no matter where
         # the view is. For now this is just the root tile. These get loaded
         # first which is what we want.
-        permanent = self._get_permanent_chunks()
-        self._load_and_add("permanent", drawable, permanent)
+        seen.add(self._get_permanent_chunks())
 
         # Now get coverage for every ideal chunk. This might include
         # the ideal chunk itself and/or chunks from other levels.
         for ideal_chunk in ideal_chunks:
-            coverage = self._get_coverage(ideal_chunk, drawn_set)
-            label = f"coverage for {ideal_chunk.location}"
-            self._load_and_add(label, drawable, coverage)
+            seen.add(self._get_coverage(ideal_chunk, drawn_set))
 
-        # Log all drawables.
-        self._log_drawables(drawable)
+        # Add the ideal chunks AFTER all the coverage ones, we want to load
+        # these after, because the coverage ones cover a much bigger area,
+        # better to see them first, even though they are lower resolution.
+        seen.add(ideal_chunks)
 
-        # Cancel all futures (in progress loads) that are no longer
-        # drawable chunks. When panning or zooming quickly we create and
-        # cancel a *lot* of futures. Which is fine, it's pretty fast, and
-        # we very much want to avoid loading chunks that we no long need.
-        self._cancel_futures(drawable)
+        # Cancel all futures (in progress loads) that are no longer seen
+        # chunks. When panning or zooming quickly we create and cancel a
+        # *lot* of futures. Which is fine, it's pretty fast, and we very
+        # much want to avoid loading chunks that we no long need.
+        self._cancel_futures(seen)
 
-        # Note the ones we drew, only for logging purposes.
-        self._last_drawable = drawable
+        # Save off these for next time, only for logging purposes.
+        self._last_seen = seen
 
-        # Kick off loads for every ideal chunk last.
-        for ideal_chunk in ideal_chunks:
+        drawable = []
 
-            # Load might be sync or async. If it was sync we can use the
-            # chunk this frame. Otherwise we have to wait until
-            # OctreeImage.on_chunk_loaded() is called some time later.
-            if ideal_chunk.needs_load:
-                if self._load_chunk(ideal_chunk):
-                    drawable.append(ideal_chunk)
-
-        self._log_futures()  # Temporary.
-
-        # Return them all.
-        return list(drawable)
-
-    def _load_and_add(
-        self,
-        label: str,
-        drawable: Dict[OctreeChunk, int],
-        chunks: List[OctreeChunk],
-    ):
-        """Load chunks if needed and add in-memory chunks to the drawable dict.
-
-        Parameters
-        ----------
-        label : str
-            For logging, this is the type of chunks we are adding.
-        drawable : Dict[OctdreeChunk, int]
-            The chunks we are planning to draw.
-        chunks : List[OctreeChunks]
-            The chunks to load and maybe add to the drawable dict.
-
-        Return
-        ------
-        List[OctreeChunks]
-            Chunks that in memory and can be drawn.
-        """
-        memory = self._load_if_needed(chunks)
-        for chunk in memory:
-            drawable[chunk] = 1
-        LOGGER.debug("Added %d %s chunks", len(memory), label)
-
-    def _load_if_needed(self, chunks: List[OctreeChunk]) -> List[OctreeChunk]:
-        """Load every chunk that needs it, and return the ones in memory.
-
-        Parameters
-        ----------
-        chunks : List[OctreeChunk]
-            The chunks to load and return if in memory.
-
-        Returns
-        -------
-        List[OctreeChunks]
-            The chunk that are in memory.
-        """
-        memory = []
-        for chunk in chunks:
+        # Load everything in seen if needed.
+        for chunk in seen.chunks():
             if chunk.in_memory:
-                memory.append(chunk)  # Already in memory.
-            if chunk.needs_load:
-                if self._load_chunk(chunk):  # Initiate a load.
-                    memory.append(chunk)  # It was loaded synchronously
-        return memory
+                drawable.append(chunk)
+            elif chunk.needs_load and self._load_chunk(chunk):
+                drawable.append(chunk)  # It was a sync load, ready to draw.
 
-    def _log_drawables(self, drawable: Set[OctreeChunk]) -> None:
-        """Log the locations in the drawable set.
+        self._log_chunks("drawable", None, drawable)  # Log for now.
+        self._log_futures()  # Log for now.
+        return drawable
 
-        Parameters
-        ----------
-        drawable : Set[OctreeChunk]
-            The chunks we are going to draw.
-        """
-        if not self._drawables_changed(drawable):
-            return  # Don't spam the log with the same thing over and over.
-
+    def _log_chunks(
+        self, label: str, location: OctreeLocation, chunks: List[OctreeChunk]
+    ) -> None:
         LOGGER.debug(
-            "Found drawable=%d futures=%d", len(drawable), len(self._futures),
+            "%s has %d chunks %s", label, len(chunks), location,
         )
+        for i, chunk in enumerate(chunks):
+            LOGGER.debug(
+                "Chunk %d %s in_memory=%d loading=%d",
+                i,
+                chunk.location,
+                chunk.in_memory,
+                chunk.loading,
+            )
 
-        for octree_chunk in drawable:
-            LOGGER.debug("Drawable at %s", octree_chunk.location)
-
-    def _drawables_changed(self, drawable: Set[OctreeChunk]) -> bool:
+    def _seen_changed(self, drawable: Set[OctreeChunk]) -> bool:
         """Return True if the locations we are drawing changed.
 
         Parameters
@@ -252,7 +221,7 @@ class OctreeChunkLoader:
             True if the locations we are drawing changed.
         """
         # If different sizes there was definitively a change!
-        if len(drawable) != len(self._last_drawable):
+        if len(drawable) != len(self._last_seen):
             return True
 
         # Return True only if there was a change in the set.
@@ -322,13 +291,14 @@ class OctreeChunkLoader:
         # If the ideal chunk is already being drawn, that's all we need,
         # there is no point in returning more than that.
         if ideal_chunk.in_memory and ideal_chunk.key in drawn_set:
-            LOGGER.debug(
-                "_get_coverage: Return only ideal %s", ideal_chunk.location
-            )
+            LOGGER.debug("_get_coverage: Ideal Only %s", ideal_chunk.location)
             return [ideal_chunk]
 
         # Get alternates for this chunk, from other levels.
         family = self._get_family(ideal_chunk)
+
+        for chunk in family:
+            LOGGER.debug("Family %s", chunk.location)
 
         ideal_level_index = ideal_chunk.location.level_index
 
@@ -348,20 +318,12 @@ class OctreeChunkLoader:
             if lower:
                 return chunk.key in drawn_set
 
-            return True
+            return True  # Keep all higher level chunks.
 
         keep = [chunk for chunk in family if keep_chunk(chunk)]
 
-        LOGGER.debug(
-            "_get_coverage: Keeping %d of %d for %s",
-            len(keep),
-            len(family),
-            ideal_chunk.location,
-        )
-
-        # Put ideal one at the end so it loads last.
-        if ideal_chunk.in_memory:
-            keep.append(ideal_chunk)
+        for chunk in keep:
+            LOGGER.debug("Keeping %s", chunk.location)
 
         return keep
 
@@ -465,32 +427,35 @@ class OctreeChunkLoader:
         for i, location in enumerate(self._futures.keys()):
             LOGGER.debug("Future %d: %s", i, location)
 
-    def _cancel_futures(self, drawable: Set[OctreeLocation]) -> None:
-        """Cancel futures not in the drawable_set.
+    def _cancel_futures(self, seen: ChunkSet) -> None:
+        """Cancel futures not in the seen set.
 
-        Any futures not in the drawable set are stale. There is no point in
-        loading them. So we cancel them if we can. If a worker has already
-        started on the load we can't cancel it. But that chunk will be
-        ignored when it does load.
+        Any futures no longer seen are stale. There is no point in loading
+        them. So we cancel them. If a worker has already started on the
+        load we can't cancel it, but that chunk will be ignored when it
+        does load.
 
         Parameters
         ----------
-        drawable : Set[OctreeLocations]
-            The set of locations we are asking the visual to draw.
+        seen : ChunkSet
+            The set of chunks the loader can see.
         """
         before = len(self._futures)
 
+        ASYNC_LOGGER.debug("Cancelling futures where seen=%d", len(seen))
+
         # Iterate through every future.
         for location, future in list(self._futures.items()):
-            # If it's not in the drawable set then cancel it.
-            if location not in drawable:
-                # Future.cancel() will return False if a worker has already
-                # starated on the load.
-                success = future.cancel()
+            # If it's not in the seen set then cancel it.
+            if not seen.has_location(location):
+                ASYNC_LOGGER.debug("Cancel future %s", location)
+
+                # Returns False if a worker has already starated loading.
+                cancelled = future.cancel()
 
                 LOGGER.debug(
                     "Cancel future %sfor %s",
-                    "" if success else "failed ",
+                    "" if cancelled else "failed ",
                     location,
                 )
 
@@ -504,10 +469,11 @@ class OctreeChunkLoader:
                         "_cancel_futures: Missing Future %s", location
                     )
             else:
-                LOGGER.debug("Keeping: %s", location)
+                LOGGER.debug("Keeping future %s", location)
 
         kept = len(self._futures)
         cancelled = before - kept
+
         if before > 0 or kept > 0:
             LOGGER.debug(
                 "Futures: before=%d cancelled=%d kept=%d",
@@ -527,6 +493,7 @@ class OctreeChunkLoader:
             The octree chunk that was loaded.
         """
         location = octree_chunk.location
+
         try:
             del self._futures[location]
         except KeyError:
