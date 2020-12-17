@@ -2,7 +2,7 @@
 
 Loads chunks synchronously or asynchronously using worker threads or
 processes. A chunk could be an OctreeChunk or it could be a whole screen of
-data with the pre-Octree Image code.
+data with the pre-Octree Image class.
 """
 import logging
 import os
@@ -13,7 +13,7 @@ from concurrent.futures import (
     ThreadPoolExecutor,
 )
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from ....types import ArrayLike
 from ....utils.config import octree_config
@@ -152,30 +152,32 @@ class ChunkLoader:
         # Return the new request.
         return ChunkRequest(key, chunks)
 
-    def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
+    def load_chunk(
+        self, request: ChunkRequest
+    ) -> Tuple[Optional[ChunkRequest], Optional[Future]]:
         """Load the given request sync or async.
 
         Parameters
         ----------
         request : ChunkRequest
-            Contains the array or arrays to load.
+            Contains one or more arrays to load.
 
         Returns
         -------
-        Optional[ChunkRequest]
-            The ChunkRequest if it was satisfied otherwise None.
+        Tuple[Optional[ChunkRequest], Optional[Future]]
+            The ChunkRequest if loaded sync or the Future if loaded async.
 
         Notes
         -----
-        We return a ChunkRequest if we performed the load synchronously,
-        otherwise we return None is indicating that an asynchronous load
-        was intitiated. When the async load finishes the layer's
+        We return a ChunkRequest if the load was performed synchronously,
+        otherwise we return a Future meaning an asynchronous load was
+        intitiated. When the async load finishes the layer's
         on_chunk_loaded() will be called from the GUI thread.
         """
         if self._load_synchronously(request):
             return request, None
 
-        # Check the cache first. This logs for us.
+        # Check the cache first.
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
