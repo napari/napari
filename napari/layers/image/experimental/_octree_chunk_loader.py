@@ -7,6 +7,7 @@ from concurrent.futures import Future
 from typing import Dict, List, Set
 
 from ....components.experimental.chunk import LayerRef, chunk_loader
+from ._chunk_set import ChunkSet
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
 
@@ -18,29 +19,6 @@ LOADER = logging.getLogger("napari.loader.futures")
 # us lots of coverage quickly, so we load and draw then even before
 # the ideal level
 NUM_ANCESTORS_LEVELS = 3
-
-
-class ChunkSet:
-    def __init__(self):
-        self._dict = {}
-        self._locations = set()
-
-    def __len__(self) -> int:
-        return len(self._dict)
-
-    def __contains__(self, chunk: OctreeChunk) -> bool:
-        return chunk in self._dict
-
-    def add(self, chunks: List[OctreeChunk]) -> None:
-        for chunk in chunks:
-            self._dict[chunk] = 1
-            self._locations.add(chunk.location)
-
-    def chunks(self) -> List[OctreeChunk]:
-        return self._dict.keys()
-
-    def has_location(self, location: OctreeLocation) -> bool:
-        return location in self._locations
 
 
 class OctreeChunkLoader:
