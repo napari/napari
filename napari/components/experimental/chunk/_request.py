@@ -77,7 +77,7 @@ class ChunkRequest:
         One or more arrays that we need to load.
     create_time : float
         The time the request was created.
-    timers : Dict[str, PerfEvent]
+    _timers : Dict[str, PerfEvent]
         Timing information about chunk load time.
     """
 
@@ -92,11 +92,31 @@ class ChunkRequest:
 
         # TODO_OCTREE: Use time.time() or perf_counter_ns here?
         self.create_time = time.time()
-        self.timers: Dict[str, PerfEvent] = {}
+        self._timers: Dict[str, PerfEvent] = {}
 
     @property
     def elapsed_ms(self) -> float:
+        """The total time elapsed since the request was created.
+
+        Return
+        ------
+        float
+            The total time elapsed since the chunk was created.
+        """
         return (time.time() - self.create_time) * 1000
+
+    @property
+    def load_ms(self) -> float:
+        """The total time it took to load all chunks.
+
+        Return
+        ------
+        float
+            The total time it took to return all chunks.
+        """
+        return sum(
+            perf_timer.duration_ms for perf_timer in self._timers.values()
+        )
 
     @property
     def data_id(self) -> int:
@@ -143,8 +163,8 @@ class ChunkRequest:
         return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
     @contextlib.contextmanager
-    def chunk_timer(self, name):
-        """Time a block of code and save the PerfEvent in self.timers.
+    def _chunk_timer(self, name):
+        """Time a block of code and save the PerfEvent in self._timers.
 
         We want to time our loads whether perfmon is enabled or not, since
         the auto-async feature needs to work in all cases.
@@ -161,7 +181,7 @@ class ChunkRequest:
         """
         with block_timer(name) as event:
             yield event
-        self.timers[name] = event
+        self._timers[name] = event
 
     def load_chunks(self):
         """Load all of our chunks now in this thread.
@@ -169,11 +189,10 @@ class ChunkRequest:
         We time the overall load with the special name "load_chunks" and then
         we time each chunk as it loads, using it's array name as the key.
         """
-        with self.chunk_timer("ChunkRequest.load_chunks"):
-            for key, array in self.chunks.items():
-                with self.chunk_timer(key):
-                    loaded_array = np.asarray(array)
-                    self.chunks[key] = loaded_array
+        for key, array in self.chunks.items():
+            with self._chunk_timer(key):
+                loaded_array = np.asarray(array)
+                self.chunks[key] = loaded_array
 
     def transpose_chunks(self, order: tuple) -> None:
         """Transpose all our chunks.
