@@ -331,16 +331,7 @@ class OctreeImage(Image):
             len(ideal_chunks),
             level_index,
         )
-
-        # Log the ideal chunks (for now).
-        for i, chunk in enumerate(ideal_chunks):
-            LOGGER.debug(
-                "Chunk %d %s in_memory=%d loading=%d",
-                i,
-                chunk.location,
-                chunk.in_memory,
-                chunk.loading,
-            )
+        # self._log_chunks(ideal_chunks)
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
@@ -356,6 +347,23 @@ class OctreeImage(Image):
         return self._slice.loader.get_drawable_chunks(
             drawn_chunk_set, ideal_chunks
         )
+
+    def _log_chunks(chunks: List[OctreeChunk]) -> None:
+        """Log these chunks.
+
+        Parameters
+        ----------
+        chunks : List[OctreeChunks]
+            The chunks to log.
+        """
+        for i, chunk in enumerate(chunks):
+            LOGGER.debug(
+                "Chunk %d %s in_memory=%d loading=%d",
+                i,
+                chunk.location,
+                chunk.in_memory,
+                chunk.loading,
+            )
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
