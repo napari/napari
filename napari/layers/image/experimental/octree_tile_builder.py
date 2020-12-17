@@ -190,9 +190,7 @@ def create_downsampled_levels(
     level_index = next_level_index
 
     if max(previous.shape) > tile_size:
-        LOGGER.info(
-            "Downsampling extra levels until we have a single tile level..."
-        )
+        LOGGER.info("Downsampling levels to a single tile...")
 
     # Repeat until we have level that will fit in a single tile, that will
     # be come the root/highest level.
