@@ -9,13 +9,13 @@ import os
 from pathlib import Path
 from typing import Optional
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 DEFAULT_OCTREE_CONFIG = {
     "log_path": None,
     "loader": {
         "force_synchronous": False,
-        "num_workers": 6,
+        "num_workers": 10,
         "use_processes": False,
         "auto_sync_ms": 30,
         "delay_queue_ms": 100,
@@ -26,20 +26,6 @@ DEFAULT_OCTREE_CONFIG = {
         "preload": {"level": 2, "level+1": 3, "level+2": 4},
     },
 }
-
-
-def _log_to_file(path: str) -> None:
-    """Log "napari.async" messages to the given file.
-
-    Parameters
-    ----------
-    path : str
-        Log to this file path.
-    """
-    if path:
-        fh = logging.FileHandler(path)
-        LOGGER.addHandler(fh)
-        LOGGER.setLevel(logging.DEBUG)
 
 
 def _get_async_config() -> Optional[dict]:

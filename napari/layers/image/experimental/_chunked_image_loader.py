@@ -7,7 +7,7 @@ from ....components.experimental.chunk import ChunkKey, LayerKey
 from .._image_loader import ImageLoader
 from ._chunked_slice_data import ChunkedSliceData
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class ChunkedImageLoader(ImageLoader):

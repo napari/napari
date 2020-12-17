@@ -18,10 +18,8 @@ class OctreeView(NamedTuple):
         The two (row, col) corners in data coordinates, base image pixels.
     canvas : np.ndarray
         The shape of the canvas, the window we are drawing into.
-    freeze_level : bool
-        If True the octree level will not be automatically chosen.
-    track_view : bool
-        If True which chunks are being rendered should update as the view is moved.
+    display : OctreeDisplayOptions
+        How to display the view.
     """
 
     corners: np.ndarray
@@ -48,6 +46,26 @@ class OctreeView(NamedTuple):
             True if the octree level should be selected automatically.
         """
         return not self.display.freeze_level and self.display.track_view
+
+    def expand(self, expansion_factor: float) -> 'OctreeView':
+        """Return expanded view.
+
+        We expand the view so that load some tiles around the edge, so if
+        you pan they are more likely to be already loaded.
+
+        Parameters
+        ----------
+        expansion_factor : float
+            Expand the view by this much. Contract if less than 1.
+        """
+        assert expansion_factor > 0
+
+        extents = self.corners[1] - self.corners[0]
+        padding = ((extents * expansion_factor) - extents) / 2
+        new_corners = np.array(
+            (self.corners[0] - padding, self.corners[1] + padding)
+        )
+        return OctreeView(new_corners, self.canvas, self.display)
 
 
 class OctreeIntersection:
