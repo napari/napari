@@ -91,7 +91,7 @@ class ColorManager:
             self._current_color = transform_single_color(colors)
 
     def set_color(self, color: ColorType, n_colors: int, properties: dict):
-        """ Set the face_color or edge_color property
+        """ Set the color values
 
         Parameters
         ----------
@@ -128,15 +128,18 @@ class ColorManager:
                 self.values = colors
             self._color_mode = ColorMode.DIRECT
 
-    def add(self, color, n_colors: int = 1):
-        if self._mode == ColorMode.DIRECT:
-            new_color = color
-        elif self._mode == ColorMode.CYCLE:
-            if isinstance(color, str):
-                color = [color]
-            new_color = self.categorical_colormap.map(color)
-        elif self._mode == ColorMode.COLORMAP:
-            new_color = self.continuous_colormap.map(color)
+    def add(self, color: Optional[ColorType] = None, n_colors: int = 1):
+        if color is None:
+            new_color = self.current_color
+        else:
+            if self._mode == ColorMode.DIRECT:
+                new_color = color
+            elif self._mode == ColorMode.CYCLE:
+                if isinstance(color, str):
+                    color = [color]
+                new_color = self.categorical_colormap.map(color)
+            elif self._mode == ColorMode.COLORMAP:
+                new_color = self.continuous_colormap.map(color)
         transformed_color = transform_color_with_defaults(
             num_entries=n_colors,
             colors=new_color,
@@ -184,14 +187,12 @@ class ColorManager:
                 colors = self.categorical_colormap.map(color_properties)
 
             elif self._mode == ColorMode.COLORMAP:
-
                 color_properties = properties[self.color_property]
                 if len(color_properties) > 0:
                     if (
                         update_color_mapping
                         or self.continuous_contrast_limits is None
                     ):
-
                         colors, contrast_limits = map_property(
                             prop=color_properties,
                             colormap=self.continuous_colormap,
@@ -209,3 +210,13 @@ class ColorManager:
                 colors = np.empty((0, 4))
             self.values = colors
             self.events.values()
+
+    def on_current_properties_update(self, current_properties):
+        if self._mode == ColorMode.CYCLE:
+            new_prop_values = current_properties[self.color_property]
+            new_color = self.categorical_colormap.map(new_prop_values)
+            self.current_color = new_color
+        if self._mode == ColorMode.COLORMAP:
+            new_prop_values = current_properties[self.color_property]
+            new_color = self.continuous_colormap.map(new_prop_values)
+            self.current_color = new_color

@@ -471,8 +471,8 @@ class Points(Layer):
                     )
 
                 # add new edge/face colors
-                self._add_point_color(adding, 'edge')
-                self._add_point_color(adding, 'face')
+                self._edge_color.add(n_colors=adding)
+                self._face_color.add(n_colors=adding)
 
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
@@ -499,29 +499,6 @@ class Points(Layer):
         else:
             self.events.deselect()
         self._set_highlight()
-
-    def _add_point_color(self, adding: int, attribute: str):
-        """Add the edge or face colors for new points.
-
-        Parameters
-        ----------
-        adding : int
-            the number of points that were added
-            (and thus the number of color entries to add)
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
-        """
-        color_manager = getattr(self, f'_{attribute}_color')
-        color_mode = color_manager._mode
-        if color_mode == ColorMode.DIRECT:
-            current_face_color = color_manager.current_color
-            current_color = np.tile(current_face_color, (adding, 1))
-        elif color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
-            property_name = color_manager.color_property
-            current_color = self.current_properties[property_name][0]
-
-        color_manager.add(color=current_color, n_colors=adding)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -561,6 +538,8 @@ class Points(Layer):
     @current_properties.setter
     def current_properties(self, current_properties):
         self._current_properties = current_properties
+        self._face_color.on_current_properties_update(current_properties)
+        self._edge_color.on_current_properties_update(current_properties)
 
         if (
             self._update_properties
@@ -571,7 +550,6 @@ class Points(Layer):
             for k in props:
                 props[k][list(self.selected_data)] = current_properties[k]
             self.properties = props
-
             self.refresh_colors()
         self.events.current_properties()
 
