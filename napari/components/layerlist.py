@@ -1,17 +1,19 @@
 import itertools
 import warnings
 from collections import namedtuple
-from typing import List, Optional
+from dataclasses import InitVar
+from typing import List, Optional, Tuple
 
 import numpy as np
 
 from ..layers import Layer
-from ..utils.events import EventedList
+from ..utils.events import EventedList, evented_dataclass
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
 
 
+@evented_dataclass
 class LayerList(EventedList):
     """List-like layer collection with built-in reordering and callback hooks.
 
@@ -19,15 +21,33 @@ class LayerList(EventedList):
     ----------
     data : iterable
         Iterable of napari.layer.Layer
+
+    Attributes
+    ----------
+    active : str
+        Name of the active layer.
     """
 
-    def __init__(self, data=()):
+    active: Optional[str] = None
+    data: InitVar[Tuple] = ()  # type: ignore
+
+    def __post_init__(self, data):
         super().__init__(
             data=data, basetype=Layer, lookup={str: lambda e: e.name},
         )
 
     def __newlike__(self, data):
         return LayerList(data)
+
+    def insert(self, index: int, value: Layer):
+        """Insert ``value`` before index."""
+        print('Custom code when layer gets added')
+        super().insert(index, value)
+
+    def __delitem__(self, key: int):
+        """Insert ``value`` before index."""
+        print('Custom code when layer gets removed')
+        super().__delitem__(key)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.

@@ -70,8 +70,6 @@ class EventedList(TypedMutableSequence[_T]):
         emitted when the list is reordered (eg. moved/reversed).
     """
 
-    events: EmitterGroup
-
     def __init__(
         self,
         data: Iterable[_T] = (),
@@ -170,9 +168,8 @@ class EventedList(TypedMutableSequence[_T]):
             dest_index -= 1
 
         self.events.moving(index=src_index, dest_index=dest_index)
-        with self.events.blocker_all():
-            item = self.pop(src_index)
-            self.insert(dest_index, item)
+        item = self._list.pop(src_index)
+        self._list.insert(dest_index, item)
         self.events.moved(index=src_index, dest_index=dest_index, value=item)
         self.events.reordered(value=self)
         return True
@@ -229,9 +226,9 @@ class EventedList(TypedMutableSequence[_T]):
         self.events.moving(index=to_move, new_index=dest_index)
         with self.events.blocker_all():
             items = [self[i] for i in to_move]
-            for i in sorted(to_move, reverse=True):
-                del self[i]
-            self[dest_index:dest_index] = items
+            for i, src_index in enumerate(sorted(to_move, reverse=True)):
+                # Note this is not quite correct, needs to be fixed, off by one sometimes!!!!
+                self.move(src_index, dest_index + i)
         self.events.moved(index=to_move, new_index=dest_index, value=items)
         self.events.reordered(value=self)
         return len(to_move)
