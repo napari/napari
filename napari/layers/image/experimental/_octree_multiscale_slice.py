@@ -221,12 +221,10 @@ class OctreeMultiscaleSlice:
         # Loaded data should always be an ndarray.
         assert isinstance(incoming_data, np.ndarray)
 
-        # Add that data to the octree's OctreeChunk. Now
-        # octree_chunk.in_memory is True and we can pass the chunk as a
-        # drawable chunk to the visual.
+        # Add that data to the octree's OctreeChunk. Now the chunk can be draw.
         octree_chunk.data = incoming_data
 
-        # Check the obvious (for now).
+        # Setting data should mean:
         assert octree_chunk.in_memory
         assert not octree_chunk.needs_load
 
