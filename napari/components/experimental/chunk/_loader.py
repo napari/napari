@@ -262,20 +262,20 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the arrays to load.
         """
-        LOGGER.debug(
-            "_submit_async: elapsed=%.3fms %s",
-            request.elapsed_ms,
-            request.key.location,
-        )
-
-        # Submit the future, have it call ChunkLoader._done when done.
+        # Submit the future. It will call ChunkLoader._done when done.
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self._done)
 
         # Store the future in case we need to cancel it.
-        self._futures.setdefault(request.data_id, []).append(future)
+        future_list = self._futures.setdefault(request.data_id, [])
+        future_list.append(future)
 
-        LOGGER.debug("_submit_async: num_futures=%d", len(self._futures))
+        LOGGER.debug(
+            "_submit_async: %s elapsed=%.3fms num_futures=%d",
+            request.key.location,
+            request.elapsed_ms,
+            len(future_list),
+        )
 
         return future
 
