@@ -41,6 +41,9 @@ class OctreeLocation(NamedTuple):
             and self.col == other.col
         )
 
+    def __hash__(self) -> int:
+        return hash((self.slice_id, self.level_index, self.row, self.col))
+
     @classmethod
     def create_null(cls):
         """Create null location that points to nothing."""
