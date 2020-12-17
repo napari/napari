@@ -3,7 +3,6 @@
 Poll visuals or other objects so they can do things even when the
 mouse/camera are not moving. Usually for just a short period of time.
 """
-import logging
 import time
 from typing import Optional
 
@@ -19,8 +18,6 @@ POLL_INTERVAL_MS = 16.666  # About 60HZ
 # "center" changed and then the "zoom" changed even if it was really from
 # the same camera movement.
 IGNORE_INTERVAL_MS = 10
-
-LOGGER = logging.getLogger("napari.monitor")
 
 
 class QtPoll(QObject):
@@ -66,21 +63,22 @@ class QtPoll(QObject):
     def wake_up(self, _event=None) -> None:
         """Wake up QtPoll so it starts polling."""
         # Start the timer so that we start polling. We used to poll once
-        # right away here, but led to crashes. Because we polled during
+        # right away here, but it led to crashes. Because we polled during
         # a paintGL event?
         if not self.timer.isActive():
             self.timer.start()
 
     def _on_timer(self) -> None:
-        """Called when the timer is running."""
-        # The timer is running which means someone we are polling still has
-        # work to do.
+        """Called when the timer is running.
+
+        The timer is running which means someone we are polling still has
+        work to do.
+        """
         self._poll()
 
     def _poll(self) -> None:
         """Called on camera move or with the timer."""
-        # Poll everyone listening to our event, which might include
-        # visuals and the monitor.
+        # Listeners might include visuals and the monitor.
         event = self.events.poll()
 
         # Listeners will "handle" the event if they need more polling. If
