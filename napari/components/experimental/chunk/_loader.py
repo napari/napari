@@ -377,7 +377,7 @@ class ChunkLoader:
         # complicated.
         self.cache.add_chunks(request)
 
-        # Lookup this Request's LayerInfo.
+        # Lookup this request's LayerInfo.
         info = self._get_layer_info(request)
 
         # Resolve the weakref.
@@ -388,8 +388,8 @@ class ChunkLoader:
 
         info.stats.on_load_finished(request, sync=False)
 
-        # Fire event to tell QtChunkReceiver to forward this chunk to its
-        # layer in the GUI thread.
+        # Fire chunk_loaded event  to tell QtChunkReceiver to forward this
+        # chunk to its layer in the GUI thread.
         self.events.chunk_loaded(layer=layer, request=request)
 
     def _get_layer_info(self, request: ChunkRequest) -> LayerInfo:
