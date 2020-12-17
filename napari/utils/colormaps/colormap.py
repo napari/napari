@@ -91,8 +91,12 @@ class CategoricalColormap:
 
     Parameters
     ----------
-    colormap : array, shape (N, 4)
-        Data used in the colormap.
+    colormap : dict
+        The mapping between categorical property values and color.
+    fallback_color : cycle
+        The color to be used in the case that a value is mapped that is not
+        in colormap. This can be given as any ColorType and it will be converted
+        to a cycle. The default value is a cycle of all black.
 
     """
 
@@ -136,6 +140,18 @@ class CategoricalColormap:
         self._fallback_color_values = transformed_colors
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
+        """Map an array of values to an array of colors
+
+        Parameters
+        ----------
+        color_properties : Union[list, np.ndarray]
+            The property values to be converted to colors.
+
+        Returns
+        -------
+        colors : np.ndarray
+            An Nx4 color array where N is the number of property values provided.
+        """
         if isinstance(color_properties, (list, np.ndarray)):
             color_properties = np.asarray(color_properties)
         else:
