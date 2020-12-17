@@ -104,17 +104,18 @@ class OctreeLevel:
         Optional[OctreeChunk]
             The OctreeChunk if one existed or we just created it.
         """
-        rows, cols = self.info.shape_in_tiles
-        if row < 0 or row >= rows or col < 0 or col >= cols:
-            # Chunk coordinates not in the level.
-            level_str = f" {self.info.level_index} ({rows}, {cols})"
-            raise KeyError(f"Chunk ({row}, {col}) not in level {level_str}")
-
         try:
             return self._tiles[(row, col)]
         except KeyError:
             if not create:
                 return None  # It didn't exist so we're done.
+
+        rows, cols = self.info.shape_in_tiles
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            # Chunk coordinates not in the level. Not an exception because
+            # callers might be trying to get children just out of bounds,
+            # for non-power-of-two base images.
+            return None
 
         # Create a chunk at this location and return it.
         octree_chunk = self._create_chunk(row, col)
