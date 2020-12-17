@@ -78,7 +78,7 @@ def test_loader():
 
     # Create the ChunkRequest.
     layer_ref = LayerRef.create_from_layer(layer, (0, 0))
-    request, _future = chunk_loader.create_request(layer_ref, key, chunks)
+    request = chunk_loader.create_request(layer_ref, key, chunks)
 
     # Should be compatible with the layer we made it from!
     # assert request.is_compatible(layer)
