@@ -52,7 +52,13 @@ def split_channels(
     kwargs['blending'] = kwargs.get('blending') or 'additive'
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
-    iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+    iterable_kwargs = {
+        'scale',
+        'translate',
+        'affine',
+        'contrast_limits',
+        'metadata',
+    }
 
     # turn the kwargs dict into a mapping of {key: iterator}
     # so that we can use {k: next(v) for k, v in kwargs.items()} below
