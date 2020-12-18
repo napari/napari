@@ -563,13 +563,9 @@ def evented_dataclass(
     if properties:
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
-    setattr(cls, 'asdict', _dc.asdict)
-    setattr(cls, 'update', update_from_dict)
-    return cls
 
-
-def restore_asdict(cls):
-    method = getattr(cls, '_asdict', None)
-    if method is not None:
-        setattr(cls, 'asdict', method)
+    if not hasattr(cls, 'asdict'):
+        setattr(cls, 'asdict', _dc.asdict)
+    if not hasattr(cls, 'update'):
+        setattr(cls, 'update', update_from_dict)
     return cls
