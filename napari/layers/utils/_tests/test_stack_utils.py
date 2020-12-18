@@ -249,3 +249,23 @@ def test_split_channels_affine_napari(kwargs):
     for d, meta, _ in result_list:
         assert d.shape == (128, 128)
         assert np.array_equal(meta['affine'].affine_matrix, np.eye(3))
+
+
+def test_split_channels_multi_affine_napari(kwargs):
+    kwargs['affine'] = [
+        Affine(scale=[1, 1]),
+        Affine(scale=[2, 2]),
+        Affine(scale=[3, 3]),
+    ]
+
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for idx, result_data in enumerate(result_list):
+        d, meta, _ = result_data
+        assert d.shape == (128, 128)
+        assert np.array_equal(
+            meta['affine'].affine_matrix,
+            Affine(scale=[idx + 1, idx + 1]).affine_matrix,
+        )
