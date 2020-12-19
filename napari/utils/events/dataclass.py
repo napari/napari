@@ -564,8 +564,10 @@ def evented_dataclass(
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
 
-    if not hasattr(cls, 'asdict'):
-        setattr(cls, 'asdict', _dc.asdict)
-    if not hasattr(cls, 'update'):
-        setattr(cls, 'update', update_from_dict)
+    def asdict(cls):
+        # If class has an `__asdict__` method use that, otherwise use dict.
+        return _dc.asdict(cls, dict_factory=getattr(cls, '__asdict__', dict))
+
+    setattr(cls, 'asdict', asdict)
+    setattr(cls, 'update', update_from_dict)
     return cls

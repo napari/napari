@@ -1,7 +1,7 @@
 import itertools
 import warnings
 from collections import namedtuple
-from dataclasses import InitVar, asdict
+from dataclasses import InitVar
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -50,14 +50,14 @@ class LayerList(EventedList):
         print('Custom code when layer gets removed')
         super().__delitem__(key)
 
-    def asdict(self):
-        # Needs to be used with `restore_asdict` decorator
-        layers_dict = asdict(self)
-        # Once layer is an evented dataclass
+    def __asdict__(self, result):
+        # Custom as dict method that appends the layer list
+        dict_result = dict(result)
+        # Once layer is an evented dataclass too
         # layers_dict['list'] = [layer.asdict() for layer in self]
         # Temporary place holder
-        layers_dict['list'] = [layer._get_state() for layer in self]
-        return layers_dict
+        dict_result['list'] = [layer._get_state() for layer in self]
+        return dict_result
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
