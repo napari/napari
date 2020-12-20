@@ -1,7 +1,7 @@
 import dataclasses as _dc
 import weakref
 
-from .dataclass import _type_to_compare, is_equal
+from .dataclass import _type_to_compare, is_equal, update_from_dict
 from .event import EmitterGroup
 
 
@@ -73,6 +73,9 @@ def evented(cls):
 
     setattr(cls, '__setattr__', new_setattr)
     setattr(cls, '__equality_checks__', compare_dict)
+
+    setattr(cls, 'asdict', _dc.asdict)
+    setattr(cls, 'update', update_from_dict)
     return cls
 
 
