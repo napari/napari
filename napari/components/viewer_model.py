@@ -28,6 +28,8 @@ from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
+DEFAULT_THEME = 'dark'
+
 
 class ViewerModel(KeymapHandler, KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -54,11 +56,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    themes : dict of str: dict of str: str
-        Preset color palettes.
     """
-
-    themes = palettes
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
@@ -71,7 +69,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             title=Event,
             reset_view=Event,
             active_layer=Event,
-            palette=Event,
+            theme=Event,
             layers_change=Event,
         )
 
@@ -88,13 +86,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._status = 'Ready'
         self._help = ''
         self._title = title
+        self._theme = DEFAULT_THEME
 
         self._active_layer = None
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
-        self._palette = None
-        self.theme = 'dark'
 
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
@@ -128,40 +125,60 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def palette(self):
-        """dict of str: str : Color palette with which to style the viewer.
+        """napari.utils.theme.Palette: Color palette for styling the viewer.
         """
-        return self._palette
+        warnings.warn(
+            (
+                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
+                " To access the palette you can call into napari.utils.theme.palettes dictionary"
+                " using the viewer.theme as the key."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return palettes[self.theme]
 
     @palette.setter
     def palette(self, palette):
-        if palette == self.palette:
-            return
-
-        self._palette = palette
-        self.axes.background_color = self.palette['canvas']
-        self.scale_bar.background_color = self.palette['canvas']
-        self.events.palette()
+        warnings.warn(
+            (
+                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
+                " To add a new palette you should add it to napari.utils.theme.palettes dictionary"
+                " and then set the viewer.theme attribute."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        for existing_theme, existing_palette in palettes.items():
+            if existing_palette == palette:
+                self.theme = existing_theme
+                return
+        raise ValueError(
+            f"Palette not found among existing themes; "
+            f"options are {list(palettes)}."
+        )
 
     @property
     def theme(self):
         """string or None : Preset color palette.
         """
-        for theme, palette in self.themes.items():
-            if palette == self.palette:
-                return theme
+        return self._theme
 
     @theme.setter
     def theme(self, theme):
         if theme == self.theme:
             return
 
-        try:
-            self.palette = self.themes[theme]
-        except KeyError:
+        if theme in palettes:
+            self._theme = theme
+        else:
             raise ValueError(
-                f"Theme '{theme}' not found; "
-                f"options are {list(self.themes)}."
+                f"Theme '{theme}' not found; " f"options are {list(palettes)}."
             )
+        palette = palettes[self.theme]
+        self.axes.background_color = palette['canvas']
+        self.scale_bar.background_color = palette['canvas']
+        self.events.theme()
 
     @property
     def grid_size(self):
@@ -381,7 +398,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def _toggle_theme(self):
         """Switch to next theme in list of themes
         """
-        theme_names = list(self.themes.keys())
+        theme_names = list(palettes)
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
