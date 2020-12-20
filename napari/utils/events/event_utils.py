@@ -66,12 +66,17 @@ def evented(cls):
     compare_dict.update(compare_dict_base)
 
     # modify __setattr__ with version that emits an event when setting
-    setattr(cls, '__setattr__', set_with_events)
+    original_setattr = getattr(cls, '__setattr__')
+
+    def new_setattr(self, name, value):
+        set_with_events(self, name, value, original_setattr)
+
+    setattr(cls, '__setattr__', new_setattr)
     setattr(cls, '__equality_checks__', compare_dict)
     return cls
 
 
-def set_with_events(self, name, value):
+def set_with_events(self, name, value, original_setattr):
     """Modified __setattr__ method that emits an event when set.
 
     Events will *only* be emitted if the ``name`` of the attribute being set
@@ -107,17 +112,17 @@ def set_with_events(self, name, value):
     """
     if name not in getattr(self, 'events', {}):
         # fallback to default behavior
-        object.__setattr__(self, name, value)
+        original_setattr(self, name, value)
         return
 
     # grab current value
     before = getattr(self, name, object())
-    object.__setattr__(self, name, value)
+
+    # set value using original setter
+    original_setattr(self, name, value)
 
     # if different we emit the event with new value
     after = getattr(self, name)
-    print('callleeedd?????', name, before, after)
     if not self.__equality_checks__.get(name, is_equal)(after, before):
         # use gettattr again in case `_on_name_set` has modified it
-        print('emmmiiisss?????')
         getattr(self.events, name)(value=after)  # type: ignore
