@@ -84,7 +84,7 @@ def test_loader():
     # assert request.is_compatible(layer)
 
     # Load the ChunkRequest.
-    request = chunk_loader.load_chunk(request)
+    request, _future = chunk_loader.load_chunk(request)
 
     # Data should only match data not data2.
     assert np.all(data == request.image.data)
