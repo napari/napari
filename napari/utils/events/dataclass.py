@@ -286,6 +286,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
     def evented_post_init(self: T, *initvars) -> None:
 
         # create an EmitterGroup with an EventEmitter for each field
+        # in the dataclass, skip those with metadata={'events' = False}
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             for em in self.events.emitters:
                 e_fields.pop(em, None)
@@ -295,7 +296,6 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
                 source=self, auto_connect=False, **e_fields,
             )
 
-        # in the dataclass, skip those with metadata={'events' = False}
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
@@ -489,7 +489,6 @@ def evented_dataclass(
     frozen: bool = False,
     events: bool = True,
     properties: bool = True,
-    typed: bool = False,
 ) -> Type[C]:
     """Enhanced dataclass decorator with events and property descriptors.
 
