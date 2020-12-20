@@ -284,7 +284,6 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
     compare_dict.update(compare_dict_base)
 
     def evented_post_init(self: T, *initvars) -> None:
-
         # create an EmitterGroup with an EventEmitter for each field
         # in the dataclass, skip those with metadata={'events' = False}
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
@@ -295,7 +294,6 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             self.events = EmitterGroup(
                 source=self, auto_connect=False, **e_fields,
             )
-
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
