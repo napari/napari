@@ -31,6 +31,22 @@ class VispyCanvas(SceneCanvas):
         # get_max_texture_sizes() will return the same results because it's
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
+        self.events.touch.connect(self._process_touch_event)
+
+    def _process_touch_event(self, event):
+        #        #import traceback
+        #        #traceback.print_stack()
+        if event.type == 'pinch':
+            print(f"{event.type=}")
+            print(f"{event.pos=}")
+            print(f"{event.last_pos=}")
+            print(f"{event.scale=}")
+            print(f"{event.last_scale=}")
+            print(f"{event.rotation=}")
+        elif event.type == 'begin':
+            pass
+        elif event.type == 'end':
+            pass
 
     def _process_mouse_event(self, event):
         """Ignore mouse wheel events which have modifiers."""

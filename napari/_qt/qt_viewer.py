@@ -239,6 +239,18 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
+        self.canvas.connect(self.on_touch)
+
+    def on_touch(self, evt):
+        if evt.type == 'pinch':
+            print(
+                'QT pinch',
+                evt.total_rotation_angle,
+                evt.total_scale_factor,
+                evt.rotation,
+                evt.scale,
+                evt.pos,
+            )
 
     def _add_visuals(self, welcome: bool) -> None:
         """Add visuals for axes, scale bar, and welcome text.
