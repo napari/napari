@@ -1,10 +1,14 @@
+from functools import partial
 from typing import Tuple
 
+from pydantic import validator
 from pydantic.dataclasses import dataclass
 
 from ..utils.events.event_utils import evented
+from ..utils.misc import ensure_n_tuple
 
 Float_3_Tuple = Tuple[float, float, float]
+ensure_3_tuple = partial(ensure_n_tuple, n=3)
 
 
 # Pydandic config so that assigments are validated
@@ -34,3 +38,7 @@ class Camera:
     zoom: float = 1.0
     angles: Float_3_Tuple = (0.0, 0.0, 90.0)
     interactive: bool = True
+
+    @validator('center', 'angles', pre=True)
+    def ensure_3_tuple(cls, v):
+        return ensure_3_tuple(v)
