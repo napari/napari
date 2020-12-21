@@ -129,3 +129,8 @@ def set_with_events(self, name, value, original_setattr):
     if not self.__equality_checks__.get(name, is_equal)(after, before):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
+
+
+# Pydandic config so that assigments are validated
+class PydanticConfig:
+    validate_assignment = True

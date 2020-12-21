@@ -4,20 +4,15 @@ from typing import Tuple
 from pydantic import validator
 from pydantic.dataclasses import dataclass
 
-from ..utils.events.event_utils import evented
+from ..utils.events.event_utils import PydanticConfig, evented
 from ..utils.misc import ensure_n_tuple
 
 Float_3_Tuple = Tuple[float, float, float]
 ensure_3_tuple = partial(ensure_n_tuple, n=3)
 
 
-# Pydandic config so that assigments are validated
-class Config:
-    validate_assignment = True
-
-
 @evented
-@dataclass(config=Config)
+@dataclass(config=PydanticConfig)
 class Camera:
     """Camera object modeling position and view of the camera.
 
