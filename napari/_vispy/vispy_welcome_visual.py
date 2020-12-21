@@ -7,7 +7,7 @@ from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
 from ..utils.misc import str_to_rgb
-from ..utils.theme import darken, lighten, palettes
+from ..utils.theme import darken, get_theme, lighten
 from .image import Image as ImageNode
 
 
@@ -51,17 +51,17 @@ class VispyWelcomeVisual:
 
     def _on_theme_change(self, event):
         """Change colors of the logo and text."""
-        palette = palettes[self._viewer.theme]
-        if np.mean(str_to_rgb(palette['background'])[:3]) < 255 / 2:
+        theme = get_theme(self._viewer.theme)
+        if np.mean(str_to_rgb(theme['background'])[:3]) < 255 / 2:
             background_color = np.divide(
-                str_to_rgb(darken(palette['background'], 70)), 255
+                str_to_rgb(darken(theme['background'], 70)), 255
             )
         else:
             background_color = np.divide(
-                str_to_rgb(lighten(palette['background'], 70)), 255,
+                str_to_rgb(lighten(theme['background'], 70)), 255,
             )
 
-        foreground_color = np.divide(str_to_rgb(palette['primary']), 255,)
+        foreground_color = np.divide(str_to_rgb(theme['primary']), 255,)
         text_color = list(foreground_color) + [1]
 
         new_logo = np.zeros(self._logo_raw.shape)

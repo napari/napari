@@ -21,7 +21,7 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils.theme import palettes, template
+from ..utils.theme import get_theme, template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .tracing.qt_performance import QtPerformance
@@ -513,14 +513,12 @@ class QtViewer(QSplitter):
     def _update_theme(self, event=None):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
-        palette = palettes[self.viewer.theme]
-        themed_stylesheet = template(self.raw_stylesheet, **palette)
+        theme = get_theme(self.viewer.theme)
+        themed_stylesheet = template(self.raw_stylesheet, **theme)
         if self._console is not None:
-            self.console._update_palette(
-                self.viewer.palette, themed_stylesheet
-            )
+            self.console._update_theme(theme, themed_stylesheet)
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = palette['canvas']
+        self.canvas.bgcolor = theme['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.

@@ -4,7 +4,7 @@ Displays an image and sets the theme to new custom theme.
 
 from skimage import data
 import napari
-from napari.utils.theme import palettes
+from napari.utils.theme import available_themes, get_theme, register_theme
 
 with napari.gui_qt():
     # create the viewer with an image
@@ -12,16 +12,21 @@ with napari.gui_qt():
         data.astronaut(), rgb=True, name='astronaut'
     )
 
-    # Create a new palette. Note we must use either the `light` or
-    # `dark` folder to avoid needing to build new icons
-    blue_palette = palettes['dark'].copy()
-    blue_palette['background'] = 'rgb(28, 31, 48)'
-    blue_palette['foreground'] = 'rgb(45, 52, 71)'
-    blue_palette['primary'] = 'rgb(80, 88, 108)'
-    blue_palette['current'] = 'rgb(184, 112, 0)'
+    # List themes
+    print('Originally themes', available_themes())
 
-    # Add new theme to dictionary of available_themes
-    palettes['blues'] = blue_palette
+    blue_theme = get_theme('dark')
+    blue_theme.update(
+        background='rgb(28, 31, 48)',
+        foreground='rgb(45, 52, 71)',
+        primary='rgb(80, 88, 108)',
+        current='rgb(184, 112, 0)',
+    )
+
+    register_theme('blue', blue_theme)
+
+    # List themes
+    print('New themes', available_themes())
 
     # Set theme
-    viewer.theme = 'blues'
+    viewer.theme = 'blue'

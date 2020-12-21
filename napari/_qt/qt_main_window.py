@@ -28,7 +28,7 @@ from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.perf import perf_config
-from ..utils.theme import palettes, template
+from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -650,21 +650,21 @@ class Window:
         self._qt_window.activateWindow()  # for Windows
 
     def _update_theme(self, event=None):
-        """Update widget color palette."""
+        """Update widget color theme."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = palettes[self.qt_viewer.viewer.theme]
+        theme = get_theme(self.qt_viewer.viewer.theme)
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
                 'color: {{ text }}; }',
-                **palette,
+                **theme,
             )
         )
         self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **palette)
+            template('QWidget { background: {{ background }}; }', **theme)
         )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
+        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
     def _status_changed(self, event):
         """Update status bar.

@@ -18,7 +18,9 @@ from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.misc import is_sequence
-from ..utils.theme import palettes
+
+# Private _themes import needed until viewer.palette is dropped
+from ..utils.theme import _themes, available_themes, get_theme
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -125,42 +127,42 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def palette(self):
-        """napari.utils.theme.Palette: Color palette for styling the viewer.
+        """Dict[str, str]: Color palette for styling the viewer.
         """
         warnings.warn(
             (
                 "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
-                " To access the palette you can call into napari.utils.theme.palettes dictionary"
+                " To access the palette you can call it using napari.utils.theme.register_theme"
                 " using the viewer.theme as the key."
             ),
             category=DeprecationWarning,
             stacklevel=2,
         )
-        return palettes[self.theme]
+        return get_theme(self.theme)
 
     @palette.setter
     def palette(self, palette):
         warnings.warn(
             (
                 "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
-                " To add a new palette you should add it to napari.utils.theme.palettes dictionary"
+                " To add a new palette you should add it using napari.utils.theme.register_theme"
                 " and then set the viewer.theme attribute."
             ),
             category=DeprecationWarning,
             stacklevel=2,
         )
-        for existing_theme, existing_palette in palettes.items():
-            if existing_palette == palette:
-                self.theme = existing_theme
+        for existing_theme_name, existing_theme in _themes.items():
+            if existing_theme == palette:
+                self.theme = existing_theme_name
                 return
         raise ValueError(
             f"Palette not found among existing themes; "
-            f"options are {list(palettes)}."
+            f"options are {available_themes()}."
         )
 
     @property
     def theme(self):
-        """string or None : Preset color palette.
+        """string or None : Color theme.
         """
         return self._theme
 
@@ -169,15 +171,16 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if theme == self.theme:
             return
 
-        if theme in palettes:
+        if theme in available_themes():
             self._theme = theme
         else:
             raise ValueError(
-                f"Theme '{theme}' not found; " f"options are {list(palettes)}."
+                f"Theme '{theme}' not found; "
+                f"options are {available_themes()}."
             )
-        palette = palettes[self.theme]
-        self.axes.background_color = palette['canvas']
-        self.scale_bar.background_color = palette['canvas']
+        theme = get_theme(self.theme)
+        self.axes.background_color = theme['canvas']
+        self.scale_bar.background_color = theme['canvas']
         self.events.theme()
 
     @property
@@ -398,7 +401,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def _toggle_theme(self):
         """Switch to next theme in list of themes
         """
-        theme_names = list(palettes)
+        theme_names = available_themes()
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
