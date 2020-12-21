@@ -43,7 +43,7 @@ from qtpy.QtWidgets import (
 
 from ...resources import get_stylesheet
 from ...utils.io import imsave
-from ...utils.theme import palettes, template
+from ...utils.theme import available_themes, get_theme, template
 from ..utils import QImg2array
 from .qt_range_slider import QHRangeSlider
 
@@ -95,7 +95,7 @@ class SampleWidget(QWidget):
     def __init__(self, theme='dark', emphasized=False):
         super().__init__(None)
         self.setProperty('emphasized', emphasized)
-        self.setStyleSheet(template(raw_stylesheet, **palettes[theme]))
+        self.setStyleSheet(template(raw_stylesheet, **get_theme(theme)))
         lay = QVBoxLayout()
         self.setLayout(lay)
         lay.addWidget(QPushButton('push button'))
@@ -160,7 +160,7 @@ class SampleWidget(QWidget):
 if __name__ == "__main__":
     import sys
 
-    themes = [sys.argv[1]] if len(sys.argv) > 1 else palettes.keys()
+    themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
     app = QApplication([])
     widgets = []
     for n, theme in enumerate(themes):
