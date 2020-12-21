@@ -1,3 +1,5 @@
+from dataclasses import field
+
 import numpy as np
 
 # from pydantic import validator
@@ -38,8 +40,12 @@ class Array(np.ndarray, metaclass=_ArrayMeta):
         return result
 
 
+def make_default_color_array():
+    return np.array([1, 1, 1, 1])
+
+
 @evented
-@dataclass(config=PydanticConfig, eq=False)
+@dataclass(config=PydanticConfig)
 class Axes:
     """Axes indicating world coordinate origin and orientation.
 
@@ -71,10 +77,9 @@ class Axes:
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
-    background_color: Array[float, (-1, 4)] = np.array([1, 1, 1, 1])
-
-    def __eq__(self, other):
-        return True
+    background_color: Array[float, (-1, 4)] = field(
+        default_factory=make_default_color_array
+    )
 
     # @validator('background_color', pre=True)
     # def _ensure_color(cls, v):
