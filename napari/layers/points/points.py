@@ -379,6 +379,7 @@ class Points(Layer):
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
+        self._round_index = False
 
         with self.block_update_properties():
             self._edge_color_property = ''
@@ -1557,9 +1558,7 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
-        indices, scale = self._slice_data(
-            self._compute_slice_indices(rounding=False)
-        )
+        indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
         self._indices_view = indices
         # get the selected points that are in view
