@@ -181,7 +181,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         theme = get_theme(self.theme)
         self.axes.background_color = theme['canvas']
         self.scale_bar.background_color = theme['canvas']
-        self.events.theme()
+        self.events.theme(vale=self.theme)
 
     @property
     def grid_size(self):
