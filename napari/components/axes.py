@@ -1,10 +1,45 @@
 import numpy as np
 
-from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.dataclass import Property, evented_dataclass
+# from pydantic import validator
+from pydantic.dataclasses import dataclass
+
+# from ..utils.colormaps.standardize_color import transform_single_color
+from ..utils.events.event_utils import PydanticConfig, evented
 
 
-@evented_dataclass
+class _ArrayMeta(type):
+    def __getitem__(self, t):
+        return type('Array', (Array,), {'__dtype__': t})
+
+
+class Array(np.ndarray, metaclass=_ArrayMeta):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_type
+
+    @classmethod
+    def validate_type(cls, val):
+        dtype = getattr(cls, '__dtype__', None)
+        if isinstance(dtype, tuple):
+            dtype, shape = dtype
+        else:
+            shape = tuple()
+
+        result = np.array(val, dtype=dtype, copy=False, ndmin=len(shape))
+        assert not shape or len(shape) == len(
+            result.shape
+        )  # ndmin guarantees this
+
+        if any(
+            (shape[i] != -1 and shape[i] != result.shape[i])
+            for i in range(len(shape))
+        ):
+            result = result.reshape(shape)
+        return result
+
+
+@evented
+@dataclass(config=PydanticConfig, eq=False)
 class Axes:
     """Axes indicating world coordinate origin and orientation.
 
@@ -36,6 +71,11 @@ class Axes:
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
-    background_color: Property[
-        np.ndarray, None, transform_single_color
-    ] = np.array([1, 1, 1, 1])
+    background_color: Array[float, (-1, 4)] = np.array([1, 1, 1, 1])
+
+    def __eq__(self, other):
+        return True
+
+    # @validator('background_color', pre=True)
+    # def _ensure_color(cls, v):
+    #     return transform_single_color(v)

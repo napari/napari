@@ -35,5 +35,5 @@ class Camera:
     interactive: bool = True
 
     @validator('center', 'angles', pre=True)
-    def ensure_3_tuple(cls, v):
+    def _ensure_3_tuple(cls, v):
         return ensure_3_tuple(v)
