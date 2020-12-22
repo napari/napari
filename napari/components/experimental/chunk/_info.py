@@ -179,7 +179,7 @@ class LayerInfo:
     We store a weak reference because we do not want an in-progress request
     to prevent a layer from being deleted. Meanwhile, once a request has
     finished, we can de-reference the weakref to make sure the layer was
-    note deleted during the load process.
+    not deleted during the load process.
     """
 
     def __init__(self, layer_ref: LayerRef, auto_sync_ms):
