@@ -79,10 +79,10 @@ class OctreeChunkKey(ChunkKey):
     def location(self):
         return self._location
 
-    def _get_hash_values(self):
+    def get_hash_values(self):
         # TODO_OCTREE: can't we just hash in the parent's hashed key with
         # our additional values? Probably, but we do it from scratch here.
-        parent = super()._get_hash_values()
+        parent = super().get_hash_values()
         return parent + (self.location,)
 
 
