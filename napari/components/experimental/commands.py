@@ -24,6 +24,7 @@ class CommandProcessor:
 
     @property
     def loader(self):
+        """The loader related commands."""
         from .chunk._commands import LoaderCommands
 
         return LoaderCommands(self.layers)
@@ -48,6 +49,7 @@ class ExperimentalNamespace:
 
     @property
     def cmds(self):
+        """All experimental commands."""
         return CommandProcessor(self.layers)
 
     def __repr__(self):
