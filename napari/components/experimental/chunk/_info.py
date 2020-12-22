@@ -6,7 +6,6 @@ from enum import Enum
 
 from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
-from ....utils.config import octree_config
 from ._request import ChunkRequest
 from ._utils import LayerRef, StatWindow
 
@@ -183,10 +182,10 @@ class LayerInfo:
     note deleted during the load process.
     """
 
-    def __init__(self, layer_ref: LayerRef):
+    def __init__(self, layer_ref: LayerRef, auto_sync_ms):
         self.layer_ref = layer_ref
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = octree_config['loader']['auto_sync_ms']
+        self.auto_sync_ms = auto_sync_ms
 
         self.stats = LoadStats()
 
