@@ -84,6 +84,7 @@ class VispyCamera:
         if self.center == tuple(center):
             return
         self._view.camera.center = center[::-1]
+        self._view.camera.view_changed()
 
     @property
     def zoom(self):
@@ -137,7 +138,7 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
-        with self._camera.events.center.blocker(self._on_angles_change):
+        with self._camera.events.angles.blocker(self._on_angles_change):
             self._camera.angles = self.angles
         with self._camera.events.center.blocker(self._on_center_change):
             self._camera.center = self.center

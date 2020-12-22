@@ -21,7 +21,7 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils.theme import template
+from ..utils.theme import get_theme, template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .tracing.qt_performance import QtPerformance
@@ -177,12 +177,12 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_palette()
+        self._update_theme()
 
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.events.palette.connect(self._update_palette)
+        self.viewer.events.theme.connect(self._update_theme)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -266,7 +266,7 @@ class QtViewer(QSplitter):
             self.viewer.events.layers_change.connect(
                 self.welcome._on_visible_change
             )
-            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.viewer.events.theme.connect(self.welcome._on_theme_change)
             self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
@@ -296,7 +296,7 @@ class QtViewer(QSplitter):
     def console(self, console):
         self._console = console
         self.dockConsole.widget = console
-        self._update_palette()
+        self._update_theme()
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -517,18 +517,15 @@ class QtViewer(QSplitter):
 
         self.canvas.native.setCursor(q_cursor)
 
-    def _update_palette(self, event=None):
+    def _update_theme(self, event=None):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
-        themed_stylesheet = template(
-            self.raw_stylesheet, **self.viewer.palette
-        )
+        theme = get_theme(self.viewer.theme)
+        themed_stylesheet = template(self.raw_stylesheet, **theme)
         if self._console is not None:
-            self.console._update_palette(
-                self.viewer.palette, themed_stylesheet
-            )
+            self.console._update_theme(theme, themed_stylesheet)
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.canvas.bgcolor = theme['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.

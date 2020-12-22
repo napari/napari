@@ -144,7 +144,8 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
     """
-    if obj and is_sequence(obj) and is_iterable(obj[0]):
+
+    if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
             raise ValueError(f"length of {obj} must equal {length}")
         return obj
