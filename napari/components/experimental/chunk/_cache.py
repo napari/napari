@@ -125,4 +125,4 @@ class ChunkCache:
             request.key.location,
             "found" if data is not None else "not found",
         )
-        return
+        return data
