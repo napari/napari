@@ -418,7 +418,7 @@ class OctreeChunkLoader:
             # Our self.on_chunk_loaded might have been called even
             # while we were iterating! In which case the future
             # might no longer exist. Log for now, but not an error.
-            LOGGER.warn("_cancel_load: Missing future %s", location)
+            LOGGER.warning("_cancel_load: Missing future %s", location)
 
         # Don't create the chunk, but it ought to be there since there was
         # a load in progress.
