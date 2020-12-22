@@ -53,7 +53,7 @@ class LayerKey(NamedTuple):
     data_level: int
     indices: Tuple[Optional[slice], ...]
 
-    def _get_hash_values(self):
+    def get_hash_values(self):
         return (
             self.layer_id,
             self.data_id,

@@ -37,10 +37,10 @@ class ChunkKey:
 
     def __init__(self, layer_key: LayerKey):
         self.layer_key = layer_key
-        self.key = hash(self._get_hash_values())
+        self.key = hash(self.get_hash_values())
 
-    def _get_hash_values(self):
-        return self.layer_key._get_hash_values()
+    def get_hash_values(self):
+        return self.layer_key.get_hash_values()
 
     def __str__(self):
         layer_key = self.layer_key
