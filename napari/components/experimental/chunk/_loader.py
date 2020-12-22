@@ -1,95 +1,37 @@
 """ChunkLoader class.
 
 Loads chunks synchronously or asynchronously using worker threads or
-processes. A chunk could be an OctreeChunk or it could be a whole screen of
-data with the pre-Octree Image class.
+processes. A chunk could be an OctreeChunk or it could be a pre-Octree
+array from a single or multi-scale image.
 """
 import logging
-import os
-from concurrent.futures import (
-    CancelledError,
-    Future,
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-)
+from concurrent.futures import CancelledError, Future
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 from ....types import ArrayLike
 from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
-from ._delay_queue import DelayQueue
 from ._info import LayerInfo, LayerRef, LoadType
+from ._pool import LoaderPool
 from ._request import ChunkKey, ChunkRequest
 
 LOGGER = logging.getLogger("napari.loader")
 
-# Executor for either a thread pool or a process pool.
-PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
-
-
-def _is_enabled(env_var) -> bool:
-    """Return True if env_var is defined and not zero."""
-    return os.getenv(env_var, "0") != "0"
-
-
-def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
-    """This is the worker thread or process that loads the array.
-
-    We call np.asarray() in a worker because it might lead to IO or
-    computation which would block the GUI thread.
-
-    Parameters
-    ----------
-    request : ChunkRequest
-        The request to load.
-    """
-    request.load_chunks()  # loads all chunks in the request
-    return request
-
-
-def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
-    """Return the thread or process pool executor.
-
-    Parameters
-    ----------
-    use_processes : bool
-        If True use processes, otherwise threads.
-    num_workers : int
-        The number of worker threads or processes.
-    """
-    if use_processes:
-        LOGGER.debug("Process pool num_workers=%d", num_workers)
-        return ProcessPoolExecutor(max_workers=num_workers)
-
-    LOGGER.debug("Thread pool num_workers=%d", num_workers)
-    return ThreadPoolExecutor(max_workers=num_workers)
-
 
 class ChunkLoader:
-    """Loads chunks synchronously or asynchronously in worker thread or processes.
+    """Loads chunks in worker threads or processes.
 
-    We cannot call np.asarray() in the GUI thread because it might block on
-    IO or a computation. So the ChunkLoader calls np.asarray() in a worker
-    if doing async loading.
+    A ChunkLoader contains one or more LoaderPools. Each LoaderPool has
+    a thread or process pool.
 
     Attributes
     ----------
-    synchronous : bool
-        If True all requests are loaded synchronously.
-    num_workers : int
-        The number of workers.
-    executor : PoolExecutor
-        The thread or process pool executor.
-    futures : Dict[int, List[Future]]
-        In progress futures for each layer (data_id).
     layer_map : Dict[int, LayerInfo]
         Stores a LayerInfo about each layer we are tracking.
     cache : ChunkCache
         Cache of previously loaded chunks.
-    delay_queue : DelayQueue
-        Requests sit in here for a bit before submission.
     events : EmitterGroup
         We only signal one event: chunk_loaded.
     """
@@ -97,28 +39,20 @@ class ChunkLoader:
     def __init__(self):
         _setup_logging(octree_config)
 
-        config = octree_config['loader']
-        self.force_synchronous: bool = bool(config['force_synchronous'])
-        self.num_workers: int = int(config['num_workers'])
-        self.use_processes: bool = bool(config['use_processes'])
+        loader_config = octree_config['loader']
 
-        self.executor: PoolExecutor = _create_executor(
-            self.use_processes, self.num_workers
-        )
+        self.force_synchronous: bool = bool(loader_config['force_synchronous'])
+        self.auto_sync_ms = loader_config['auto_sync_ms']
+        self.octree_enabled = octree_config['octree']['enabled']
 
-        self._futures: Dict[int, List[Future]] = {}
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
-
-        # The DelayeQueue prevents us from spamming the worker pool when
-        # the user is rapidly scrolling through slices.
-        self.delay_queue = DelayQueue(
-            config['delay_queue_ms'], self._submit_async
-        )
 
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
+
+        self._loader = LoaderPool(loader_config, self._done)
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
         """Get LayerInfo for this layer or None."""
@@ -147,7 +81,7 @@ class ChunkLoader:
         layer_id = layer_ref.layer_key.layer_id
 
         if layer_id not in self.layer_map:
-            self.layer_map[layer_id] = LayerInfo(layer_ref)
+            self.layer_map[layer_id] = LayerInfo(layer_ref, self.auto_sync_ms)
 
         # Return the new request.
         return ChunkRequest(key, chunks)
@@ -175,26 +109,22 @@ class ChunkLoader:
         on_chunk_loaded() will be called from the GUI thread.
         """
         if self._load_synchronously(request):
-            return request, None
+            return request
 
         # Check the cache first.
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
             request.chunks = chunks
-            return request, None
+            return request
 
-        # Clear any pending requests for this specific data_id.
-        # TODO_OCTREE: turn this off because all our request come from the
-        # same data_id. But maybe we can clear pending on something more
-        # specific?
-        # self._clear_pending(request.key.data_id)
+        if not self.octree_enabled:
+            # Pre-octree we can clear pendint requests from any other data_id,
+            # generally from other slices besides this one.
+            self._loader.clear_pending(request.data_id)
 
-        # Add to the delay queue, the delay queue will call our
-        # _submit_async() method later on if the delay expires without the
-        # request getting cancelled.
-        # self.delay_queue.add(request)
-        return None, self._submit_async(request)
+        self._loader.load_async(request)
+        return None  # None means load was async.
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request.
@@ -255,70 +185,6 @@ class ChunkLoader:
         # Finally, load synchronously if it's an ndarray (in memory) otherwise
         # it's Dask or something else and we load async.
         return request.in_memory
-
-    def _submit_async(self, request: ChunkRequest) -> None:
-        """Initiate an asynchronous load of the given request.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Contains the arrays to load.
-        """
-        # Submit the future. It will call ChunkLoader._done when done.
-        future = self.executor.submit(_chunk_loader_worker, request)
-        future.add_done_callback(self._done)
-
-        # Store the future in case we need to cancel it.
-        future_list = self._futures.setdefault(request.data_id, [])
-        future_list.append(future)
-
-        LOGGER.debug(
-            "_submit_async: %s elapsed=%.3fms num_futures=%d",
-            request.key.location,
-            request.elapsed_ms,
-            len(future_list),
-        )
-
-        return future
-
-    def _clear_pending(self, data_id: int) -> None:
-        """Clear any pending requests for this data_id.
-
-        Parameters
-        ----------
-        data_id : int
-            Clear all requests associated with this data_id.
-        """
-        LOGGER.debug("_clear_pending %d", data_id)
-
-        # Clear delay queue first. These requests are trivial to clear
-        # because they have not even been submitted to the worker pool.
-        self.delay_queue.clear(data_id)
-
-        # Get list of futures we submitted to the pool.
-        future_list = self._futures.setdefault(data_id, [])
-
-        # Try to cancel all futures in the list, but cancel() will return
-        # False if the task already started running.
-        num_before = len(future_list)
-        future_list[:] = [x for x in future_list if x.cancel()]
-        num_after = len(future_list)
-        num_cleared = num_before - num_after
-
-        # Delete the list entirely if empty
-        if num_after == 0:
-            del self._futures[data_id]
-
-        # Log what we did.
-        if num_before == 0:
-            LOGGER.debug("_clear_pending: empty")
-        else:
-            LOGGER.debug(
-                "_clear_pending: %d of %d cleared -> %d remain",
-                num_cleared,
-                num_before,
-                num_after,
-            )
 
     @staticmethod
     def _get_request(future: Future) -> Optional[ChunkRequest]:
@@ -479,7 +345,7 @@ def wait_for_async():
     chunk_loader.wait_for_all()
 
 
-def _setup_logging(octree_config: dict) -> None:
+def _setup_logging(config: dict) -> None:
     """Setup logging.
 
     String Formatting
@@ -497,12 +363,16 @@ def _setup_logging(octree_config: dict) -> None:
         The configuration data.
     """
     try:
-        _log_to_file("napari.loader", octree_config['loader']['log_path'])
+        log_path = config['loader']['log_path']
+        if log_path is not None:
+            _log_to_file("napari.loader", log_path)
     except KeyError:
         pass
 
     try:
-        _log_to_file("napari.octree", octree_config['octree']['log_path'])
+        log_path = config['loader']['log_path']
+        if log_path is not None:
+            _log_to_file("napari.octree", log_path)
     except KeyError:
         pass
 
@@ -515,10 +385,10 @@ def _log_to_file(name: str, path: str) -> None:
     path : str
         Log to this file path.
     """
-    format = "%(levelname)s - %(name)s - %(message)s"
+    log_format = "%(levelname)s - %(name)s - %(message)s"
     logger = logging.getLogger(name)
     fh = logging.FileHandler(path)
-    formatter = logging.Formatter(format)
+    formatter = logging.Formatter(log_format)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     logger.setLevel(logging.DEBUG)
