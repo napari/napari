@@ -80,8 +80,7 @@ class ChunkedSliceData(ImageSliceData):
         layer_ref = LayerRef.create_from_layer(self.layer, self.indices)
         self.request = chunk_loader.create_request(layer_ref, key, chunks)
 
-        LOGGER.debug("ChunkedSliceData calling chunk_loader.load_chunk")
-        satisfied_request, _future = chunk_loader.load_chunk(self.request)
+        satisfied_request = chunk_loader.load_chunk(self.request)
 
         if satisfied_request is None:
             return False  # Load was async.
