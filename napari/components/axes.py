@@ -1,12 +1,8 @@
-from dataclasses import field
-
 import numpy as np
+from pydantic import BaseModel, Field, validator
 
-# from pydantic import validator
-from pydantic.dataclasses import dataclass
-
-# from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.event_utils import PydanticConfig, evented
+from ..utils.colormaps.standardize_color import transform_single_color
+from ..utils.events.event_utils import evented
 
 
 class _ArrayMeta(type):
@@ -41,12 +37,11 @@ class Array(np.ndarray, metaclass=_ArrayMeta):
 
 
 def make_default_color_array():
-    return np.array([1, 1, 1, 1])
+    return np.ones(4)
 
 
 @evented
-@dataclass(config=PydanticConfig)
-class Axes:
+class Axes(BaseModel):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes
@@ -77,10 +72,13 @@ class Axes:
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
-    background_color: Array[float, (-1, 4)] = field(
+    background_color: Array[float, (4,)] = Field(
         default_factory=make_default_color_array
     )
 
-    # @validator('background_color', pre=True)
-    # def _ensure_color(cls, v):
-    #     return transform_single_color(v)
+    class Config:
+        validate_assignment = True
+
+    @validator('background_color', pre=True)
+    def _ensure_color(cls, v):
+        return transform_single_color(v)

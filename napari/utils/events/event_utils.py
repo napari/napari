@@ -1,7 +1,6 @@
-import dataclasses as _dc
 import weakref
 
-from .dataclass import _type_to_compare, is_equal, update_from_dict
+from .dataclass import _type_to_compare, is_equal
 from .event import EmitterGroup
 
 
@@ -31,15 +30,18 @@ def disconnect_events(emitter, listener):
 
 def evented(cls):
     # get field which should be evented
-    _fields = [
-        _dc._get_field(cls, name, type_)
-        for name, type_ in cls.__dict__.get('__annotations__', {}).items()
-    ]
-    e_fields = {
-        fld.name: None
-        for fld in _fields
-        if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
-    }
+    # _fields = [
+    #     _dc._get_field(cls, name, type_)
+    #     for name, type_ in cls.__dict__.get('__annotations__', {}).items()
+    # ]
+    # e_fields = {
+    #     fld.name: None
+    #     for fld in _fields
+    #     if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
+    # }
+
+    _fields = list(cls.__fields__)
+    e_fields = {fld: None for fld in _fields}
 
     # create an EmitterGroup with an EventEmitter for each field
     if hasattr(cls, 'events') and isinstance(cls.events, EmitterGroup):
@@ -74,8 +76,8 @@ def evented(cls):
     setattr(cls, '__setattr__', new_setattr)
     setattr(cls, '__equality_checks__', compare_dict)
 
-    setattr(cls, 'asdict', _dc.asdict)
-    setattr(cls, 'update', update_from_dict)
+    # setattr(cls, 'asdict', _dc.asdict)
+    # setattr(cls, 'update', update_from_dict)
     return cls
 
 
@@ -134,3 +136,4 @@ def set_with_events(self, name, value, original_setattr):
 # Pydandic config so that assigments are validated
 class PydanticConfig:
     validate_assignment = True
+    arbitrary_types_allowed = True
