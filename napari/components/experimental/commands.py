@@ -9,6 +9,16 @@ experimental.cmds.loader
 
 
 class CommandProcessor:
+    """Container for the LoaderCommand.
+
+    Implements the console command "viewer.experimental.cmds.loader".
+
+    Parameters
+    ----------
+    layers
+        The viewer's layers.
+    """
+
     def __init__(self, layers):
         self.layers = layers
 
@@ -23,6 +33,16 @@ class CommandProcessor:
 
 
 class ExperimentalNamespace:
+    """Container for the CommandProcessor.
+
+    Implements the console command "viewer.experimental.cmds".
+
+    Parameters
+    ----------
+    layers
+        The viewer's layers.
+    """
+
     def __init__(self, layers):
         self.layers = layers
 
