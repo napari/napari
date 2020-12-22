@@ -104,7 +104,7 @@ class DelayQueue(threading.Thread):
 
         with self.lock:
             self.entries[:] = [
-                x for x in self.entries if x.request.key.data_id != data_id
+                x for x in self.entries if x.request.data_id != data_id
             ]
 
     def submit(self, entry: QueueEntry, now: float) -> bool:
