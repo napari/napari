@@ -1,8 +1,10 @@
-from typing import ClassVar, Sequence, Tuple, Union
+from typing import Sequence, Tuple, Union
 
 import numpy as np
+from pydantic import BaseModel, root_validator
+from typing_extensions import Literal
 
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.events.event_utils import evented
 
 
 def only_2D_3D(ndisplay):
@@ -59,8 +61,8 @@ def assert_axis_in_bounds(axis: int, ndim: int) -> int:
     return axis % ndim
 
 
-@evented_dataclass
-class Dims:
+@evented
+class Dims(BaseModel):
     """Dimensions object modeling slicing and displaying.
 
     Parameters
@@ -117,89 +119,82 @@ class Dims:
     """
 
     ndim: int = 2
-    ndisplay: Property[int, None, only_2D_3D] = 2
+    ndisplay: Literal[2, 3] = 2
     last_used: int = 0
 
-    range: Property[Tuple, None, tuple] = ()
-    current_step: Property[Tuple, None, tuple] = ()
-    order: Property[Tuple, None, tuple] = ()
-    axis_labels: Property[Tuple, None, tuple] = ()
+    range: Tuple[Tuple[float, float, float], ...] = (())
+    current_step: Tuple[int, ...] = ()
+    order: Tuple[int, ...] = ()
+    axis_labels: Tuple[str, ...] = ()
 
-    _scroll_progress: ClassVar[int] = 0
+    _scroll_progress: int = 0
 
-    def __post_init__(self):
-        max_ndim = max(
-            self.ndim,
-            self.ndisplay,
-            len(self.axis_labels),
-            len(self.order),
-            len(self.range),
-            len(self.current_step),
+    class Config:
+        validate_assignment = True
+        underscore_attrs_are_private = True
+
+    @root_validator
+    def _check_dims(cls, values):
+        ndim = max(
+            values['ndim'],
+            values['ndisplay'],
+            len(values['axis_labels']),
+            len(values['order']),
+            len(values['range']),
+            len(values['current_step']),
         )
-        self._on_ndim_set(max_ndim)
 
-    def _on_ndim_set(self, ndim):
-        """Adjust lengths of other attributes based on number of dimensions.
-        """
-        # Gets called after the ndim attribute is set.
-        if len(self.range) < ndim:
-            # Range value is (min, max, step) for the entire slider
-            self._range = ((0, 2, 1),) * (ndim - len(self.range)) + self.range
-        elif len(self.range) > ndim:
-            self._range = self.range[-ndim:]
+        if len(values['range']) < ndim:
+            values['range'] = ((0, 2, 1),) * (
+                ndim - len(values['range'])
+            ) + values['range']
+        elif len(values['range']) > ndim:
+            values['range'] = values['range'][-ndim:]
 
-        if len(self.current_step) < ndim:
-            self._current_step = (0,) * (
-                ndim - len(self.current_step)
-            ) + self.current_step
-        elif len(self.current_step) > ndim:
-            self._current_step = self.current_step[-ndim:]
+        if len(values['current_step']) < ndim:
+            values['current_step'] = (0,) * (
+                ndim - len(values['current_step'])
+            ) + values['current_step']
+        elif len(values['current_step']) > ndim:
+            values['current_step'] = values['current_step'][-ndim:]
 
-        if len(self.order) < ndim:
-            self._order = tuple(range(ndim - len(self.order))) + tuple(
-                o + ndim - len(self.order) for o in self.order
+        if len(values['current_step']) < ndim:
+            values['current_step'] = (0,) * (
+                ndim - len(values['current_step'])
+            ) + values['current_step']
+        elif len(values['current_step']) > ndim:
+            values['current_step'] = values['current_step'][-ndim:]
+
+        if len(values['order']) < ndim:
+            values['order'] = tuple(
+                range(ndim - len(values['order']))
+            ) + tuple(o + ndim - len(values['order']) for o in values['order'])
+        elif len(values['order']) > ndim:
+            values['order'] = reorder_after_dim_reduction(
+                values['order'][-ndim:]
             )
-        elif len(self.order) > ndim:
-            self._order = reorder_after_dim_reduction(self.order[-ndim:])
 
-        if len(self.axis_labels) < ndim:
+        if not set(values['order']) == set(range(ndim)):
+            raise ValueError(
+                f"Invalid ordering {values['order']} for {ndim} dimensions"
+            )
+
+        if len(values['axis_labels']) < ndim:
             # Append new "default" labels to existing ones
-            if self.axis_labels == tuple(
-                map(str, range(len(self.axis_labels)))
+            if values['axis_labels'] == tuple(
+                map(str, range(len(values['axis_labels'])))
             ):
-                self._axis_labels = tuple(map(str, range(ndim)))
+                values['axis_labels'] = tuple(map(str, range(ndim)))
             else:
-                self._axis_labels = (
-                    tuple(map(str, range(ndim - len(self.axis_labels))))
-                    + self.axis_labels
+                values['axis_labels'] = (
+                    tuple(map(str, range(ndim - len(values['axis_labels']))))
+                    + values['axis_labels']
                 )
-        elif len(self.axis_labels) > ndim:
-            self._axis_labels = self.axis_labels[-ndim:]
+        elif len(values['axis_labels']) > ndim:
+            values['axis_labels'] = values['axis_labels'][-ndim:]
 
-        # Normally we wouldn't need to set the `ndim` here too
-        # but this lets us use the method in the post-init too
-        self._ndim = ndim
-
-    def _on_order_set(self, order):
-        """Check the values of the order attribute."""
-        if not set(order) == set(range(self.ndim)):
-            raise ValueError(
-                f"Invalid ordering {order} for {self.ndim} dimensions"
-            )
-
-    def _on_axis_labels_set(self, axis_labels):
-        """Check the length of the axis_labels attribute."""
-        if not len(axis_labels) == self.ndim:
-            raise ValueError(
-                f"Invalid number of axis labels {len(axis_labels)} for {self.ndim} dimensions"
-            )
-
-    def _on_range_set(self, range_var):
-        """Check the length of the range attribute."""
-        if not len(range_var) == self.ndim:
-            raise ValueError(
-                f"Invalid length range {len(range_var)} for {self.ndim} dimensions"
-            )
+        values['ndim'] = ndim
+        return values
 
     @property
     def nsteps(self):
@@ -270,7 +265,7 @@ class Dims:
             Value of the point.
         """
         axis = assert_axis_in_bounds(axis, self.ndim)
-        (min_val, max_val, step_size) = self._range[axis]
+        (min_val, max_val, step_size) = self.range[axis]
         raw_step = (value - min_val) / step_size
         self.set_current_step(axis, raw_step)
 
@@ -290,7 +285,7 @@ class Dims:
         axis = assert_axis_in_bounds(axis, self.ndim)
         step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
 
-        if self._current_step[axis] != step:
+        if self.current_step[axis] != step:
             full_current_step = list(self.current_step)
             full_current_step[axis] = step
             self.current_step = full_current_step
