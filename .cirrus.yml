@@ -125,18 +125,18 @@ mac_task:
       matrix:
         env:
           PY_VER: "3.7"
-          PIP_FLAGS: ""
         env:
           PY_VER: "3.8"
-          PIP_FLAGS: ""
         env:
           # Early warning signal if upcoming dependency releases will break napari
           PY_VER: "3.8"
           PIP_FLAGS: "--pre"
+        env:
+          PY_VER: "3.9"
     # is a pull request, only run python 3.8
     - only_if: $CIRRUS_PR != ""
       env:
-        PY_VER: "3.8"
+        PY_VER: "3.9"
 
   name: macos ${PY_VER}
   osx_instance:
@@ -182,19 +182,19 @@ win_task:
       matrix:
         env:
           PY_VER: "3.7"
-          PIP_FLAGS: ""
         env:
           PY_VER: "3.8"
-          PIP_FLAGS: ""
+        env:
+          PY_VER: "3.9"
         env:
           # Early warning signal if upcoming dependency releases will break napari
           PY_VER: "3.8"
           PIP_FLAGS: "--pre"
+          
     # is a pull request, only run python 3.8
     - only_if: $CIRRUS_PR != ""
       env:
-        PY_VER: "3.8"
-        PIP_FLAGS: ""
+        PY_VER: "3.9"
 
   name: windows ${PY_VER}
   windows_container:
