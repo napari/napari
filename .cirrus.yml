@@ -90,10 +90,12 @@ linux_task:
       - cat requirements/test.txt
     populate_script:
       - python -m pip install --retries 3 --upgrade pip
+      - conda install -c conda-forge numcodecs
       - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
+    - conda install -c conda-forge numcodecs
     - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
     - python -m pip install --retries 3 pytest-cov codecov
     - python tools/minreq.py  # no-op if MIN_REQ is not set
