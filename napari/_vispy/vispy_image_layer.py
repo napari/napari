@@ -14,6 +14,7 @@ texture_dtypes = [
     np.dtype(np.int16),
     np.dtype(np.uint16),
     np.dtype(np.float32),
+    np.dtype(np.float64),
 ]
 
 
@@ -64,10 +65,10 @@ class VispyImageLayer(VispyBaseLayer):
         parent = self.node.parent
         self.node.parent = None
 
-        self.node = self._layer_node.get_node(self.layer._dims.ndisplay)
+        self.node = self._layer_node.get_node(self.layer._ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._dims.ndisplay)
+            data = np.zeros((1,) * self.layer._ndisplay)
 
         if self.layer._empty:
             self.node.visible = False
@@ -109,27 +110,21 @@ class VispyImageLayer(VispyBaseLayer):
                 )
             data = self._data_astype(data, dtype)
 
-        if self.layer._dims.ndisplay == 3 and self.layer._dims.ndim == 2:
+        if self.layer._ndisplay == 3 and self.layer.ndim == 2:
             data = np.expand_dims(data, axis=0)
 
         # Check if data exceeds MAX_TEXTURE_SIZE and downsample
-        if (
-            self.MAX_TEXTURE_SIZE_2D is not None
-            and self.layer._dims.ndisplay == 2
-        ):
+        if self.MAX_TEXTURE_SIZE_2D is not None and self.layer._ndisplay == 2:
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_2D)
         elif (
-            self.MAX_TEXTURE_SIZE_3D is not None
-            and self.layer._dims.ndisplay == 3
+            self.MAX_TEXTURE_SIZE_3D is not None and self.layer._ndisplay == 3
         ):
             data = self.downsample_texture(data, self.MAX_TEXTURE_SIZE_3D)
 
         # Check if ndisplay has changed current node type needs updating
         if (
-            self.layer._dims.ndisplay == 3 and not isinstance(node, VolumeNode)
-        ) or (
-            self.layer._dims.ndisplay == 2 and not isinstance(node, ImageNode)
-        ):
+            self.layer._ndisplay == 3 and not isinstance(node, VolumeNode)
+        ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
             self._on_display_change(data)
         else:
             node.set_data(data)
@@ -199,19 +194,19 @@ class VispyImageLayer(VispyBaseLayer):
                     f"Shape of individual tiles in multiscale {data.shape} "
                     f"cannot exceed GL_MAX_TEXTURE_SIZE "
                     f"{MAX_TEXTURE_SIZE}. Rendering is currently in "
-                    f"{self.layer._dims.ndisplay}D mode."
+                    f"{self.layer._ndisplay}D mode."
                 )
             warnings.warn(
                 f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE "
                 f"{MAX_TEXTURE_SIZE} in at least one axis and "
                 f"will be downsampled. Rendering is currently in "
-                f"{self.layer._dims.ndisplay}D mode."
+                f"{self.layer._ndisplay}D mode."
             )
             downsample = np.ceil(
                 np.divide(data.shape, MAX_TEXTURE_SIZE)
             ).astype(int)
             scale = np.ones(self.layer.ndim)
-            for i, d in enumerate(self.layer._dims.displayed):
+            for i, d in enumerate(self.layer._dims_displayed):
                 scale[d] = downsample[i]
             self.layer._transforms['tile2data'].scale = scale
             self._on_matrix_change()

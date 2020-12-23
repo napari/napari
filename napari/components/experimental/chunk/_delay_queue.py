@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from ....utils.perf import add_counter_event
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 # Each queue entry contains the request we are going to submit, and the
 # time in seconds when it should be submitted.
@@ -177,8 +177,8 @@ class DelayQueue(threading.Thread):
             else:
                 # Oldest entry is not due, return time until it is.
                 return self.entries[0].submit_time - now
-        else:
-            return None  # There are no more entries.
+
+        return None  # There are no more entries.
 
     def flush(self):
         """Submit all entries right now."""

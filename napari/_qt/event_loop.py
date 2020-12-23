@@ -83,7 +83,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
     # ``app.exec_``, we avoid blocking.
-    if app.applicationName() == 'napari':
+    # see also https://github.com/napari/napari/pull/2016
+    # we add 'magicgui' so that anyone using @magicgui *before* calling gui_qt
+    # will also have the application executed. (a bandaid for now?...)
+    if app.applicationName() in ('napari', 'magicgui'):
         if splash_widget and startup_logo:
             splash_widget.close()
         app.exec_()

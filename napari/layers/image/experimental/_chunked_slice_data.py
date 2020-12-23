@@ -6,13 +6,14 @@ from typing import Optional
 from ....components.experimental.chunk import (
     ChunkKey,
     ChunkRequest,
+    LayerRef,
     chunk_loader,
 )
 from ....types import ArrayLike
 from ...base import Layer
 from .._image_slice_data import ImageSliceData
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class ChunkedSliceData(ImageSliceData):
@@ -71,13 +72,16 @@ class ChunkedSliceData(ImageSliceData):
         # Always load the image.
         chunks = {'image': self.image}
 
-        # Optionally load the thumbnail_source if it exists.
+        # Optionally load th e thumbnail_source if it exists.
         if self.thumbnail_source is not None:
             chunks['thumbnail_source'] = self.thumbnail_source
 
         # Create the ChunkRequest and load it with the ChunkLoader.
-        self.request = chunk_loader.create_request(self.layer, key, chunks)
-        satisfied_request = chunk_loader.load_chunk(self.request)
+        layer_ref = LayerRef.create_from_layer(self.layer, self.indices)
+        self.request = chunk_loader.create_request(layer_ref, key, chunks)
+
+        LOGGER.debug("ChunkedSliceData calling chunk_loader.load_chunk")
+        satisfied_request, _future = chunk_loader.load_chunk(self.request)
 
         if satisfied_request is None:
             return False  # Load was async.

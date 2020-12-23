@@ -2,12 +2,10 @@
 """
 from typing import List
 
-import dask.array as da
-
 from ....._vendor.experimental.humanize.src.humanize import naturalsize
 from .....layers.base import Layer
 from .....layers.image import Image
-from .._config import async_config
+from .....utils.config import octree_config
 from .._info import LayerInfo, LoadType
 from .._loader import chunk_loader
 from ._tables import RowTable, print_property_table
@@ -60,7 +58,7 @@ class InfoDisplayer:
         stats = info.stats
         counts = stats.counts
 
-        self.data_type = info.data_type
+        self.data_type = info.layer_ref.data_type
         self.num_loads = counts.loads
         self.num_chunks = counts.chunks
         self.sync = LOAD_TYPE_STR[self.info.load_type]
@@ -75,30 +73,6 @@ class NoInfoDisplayer:
 
     def __getattr__(self, name):
         return "--"
-
-
-def _get_type_str(data) -> str:
-    """Get human readable name for the data's type.
-
-    Returns
-    -------
-    str
-        A string like "ndarray" or "dask".
-    """
-    if isinstance(data, list):
-        if len(data) == 0:
-            return "EMPTY"
-        else:
-            # Recursively get the type string of the zeroth level.
-            return _get_type_str(data[0])
-
-    if type(data) == da.Array:
-        # Special case this because otherwise data_type.__name__
-        # below would just return "Array".
-        return "dask"
-
-    # For class numpy.ndarray this returns "ndarray"
-    return type(data).__name__
 
 
 def _get_size_str(data) -> str:
@@ -286,14 +260,14 @@ class LoaderCommands:
     @property
     def config(self):
         """Print the current list of layers."""
-        src = async_config
+        config = octree_config['loader']
         config = [
-            ('log_path', src.log_path),
-            ('synchronous', src.synchronous),
-            ('num_workers', src.num_workers),
-            ('use_processes', src.use_processes),
-            ('auto_sync_ms', src.auto_sync_ms),
-            ('delay_queue_ms', src.delay_queue_ms),
+            ('log_path', config['log_path']),
+            ('synchronous', config['synchronous']),
+            ('num_workers', config['num_workers']),
+            ('use_processes', config['use_processes']),
+            ('auto_sync_ms', config['auto_sync_ms']),
+            ('delay_queue_ms', config['delay_queue_ms']),
         ]
         print_property_table(config)
 
