@@ -20,20 +20,7 @@ DEFAULT_OCTREE_CONFIG = {
         "auto_sync_ms": 30,
         "delay_queue_ms": 100,
     },
-    "octree": {
-        "enabled": True,
-        "tile_size": 256,
-        "log_path": None,
-        "loaders": {
-            0: {
-                "force_synchronous": False,
-                "num_workers": 10,
-                "use_processes": False,
-                "auto_sync_ms": 30,
-                "delay_queue_ms": 100,
-            }
-        },
-    },
+    "octree": {"enabled": True, "tile_size": 256, "log_path": None},
 }
 
 
