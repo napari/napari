@@ -11,7 +11,7 @@ import numpy as np
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....types import ArrayLike
 from .._image_view import ImageView
-from ._octree_chunk_loader import OctreeChunkLoader
+from ._octree_loader import OctreeLoader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
@@ -35,7 +35,7 @@ class OctreeMultiscaleSlice:
 
     Attributes
     ----------
-    loader : OctreeChunkLoader
+    loader : OctreeLoader
         Uses the napari ChunkLoader to load OctreeChunks.
 
     """
@@ -53,9 +53,7 @@ class OctreeMultiscaleSlice:
         slice_id = id(self)
         self._octree = Octree(slice_id, data, meta)
 
-        self.loader: OctreeChunkLoader = OctreeChunkLoader(
-            self._octree, layer_ref
-        )
+        self.loader: OctreeLoader = OctreeLoader(self._octree, layer_ref)
 
         thumbnail_image = np.zeros(
             (64, 64, 3)

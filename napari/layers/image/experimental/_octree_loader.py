@@ -1,4 +1,4 @@
-"""OctreeChunkLoader class.
+"""OctreeLoader class.
 
 Uses ChunkLoader to load data into OctreeChunks in the octree.
 """
@@ -24,7 +24,7 @@ LOADER = logging.getLogger("napari.loader.futures")
 NUM_ANCESTORS_LEVELS = 3
 
 
-class OctreeChunkLoader:
+class OctreeLoader:
     """Load data into OctreeChunks in the octree.
 
     The loader is given drawn_set, the chunks we are currently drawing, and
