@@ -588,7 +588,6 @@ class Window:
         dock_widget : QtViewerDockWidget
             `dock_widget` will be added to the main window.
         """
-        dock_widget.setParent(self._qt_window)
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
@@ -629,6 +628,12 @@ class Window:
         if _dw.widget():
             _dw.widget().setParent(None)
         self._qt_window.removeDockWidget(_dw)
+        self.window_menu.removeAction(_dw.toggleViewAction())
+        # Deleting the dock widget means any references to it will no longer
+        # work but it's not really useful anyway, since the inner widget has
+        # been removed. and anyway: people should be using add_dock_widget
+        # rather than directly using _add_viewer_dock_widget
+        _dw.deleteLater()
 
     def resize(self, width, height):
         """Resize the window.

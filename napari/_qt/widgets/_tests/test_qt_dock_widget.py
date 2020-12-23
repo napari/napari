@@ -71,7 +71,9 @@ def test_remove_dock_widget_orphans_widget(make_test_viewer):
     assert not widg.parent()
     dw = viewer.window.add_dock_widget(widg, name='test')
     assert widg.parent() is dw
+    assert dw.toggleViewAction() in viewer.window.window_menu.actions()
     viewer.window.remove_dock_widget(dw)
+    assert dw.toggleViewAction() not in viewer.window.window_menu.actions()
     del dw
     # if dw didn't release widg, we'd get an exception when next accessing widg
     assert not widg.parent()
