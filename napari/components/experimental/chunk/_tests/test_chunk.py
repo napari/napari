@@ -1,12 +1,11 @@
 """Tests for components.experimental.chunk."""
-import weakref
-
 import numpy as np
 import pytest
 
 from napari.components.experimental.chunk import (
     ChunkLocation,
     ChunkRequest,
+    LayerRef,
     chunk_loader,
 )
 from napari.layers.image import Image
@@ -24,24 +23,16 @@ def test_base_location():
     The base ChunkLocation is not really used, only the derived
     ImageLocation and OctreeLocation are, but test it anyway.
     """
-    layer1 = _create_layer()
-    layer2 = _create_layer()
+    layer_ref1 = LayerRef.from_layer(_create_layer())
+    layer_ref2 = LayerRef.from_layer(_create_layer())
 
-    location1a = ChunkLocation(layer1)
-    location1b = ChunkLocation(layer1)
-    location2 = ChunkLocation(layer2)
+    location1a = ChunkLocation(layer_ref1)
+    location1b = ChunkLocation(layer_ref1)
+    location2 = ChunkLocation(layer_ref2)
 
     assert location1a == location1b
     assert location1a != location2
     assert location1b != location2
-
-    # Check attributes.
-    assert location1a.layer_id == id(layer1)
-    assert location1a.layer_ref == weakref.ref(layer1)
-    assert location1b.layer_id == id(layer1)
-    assert location1b.layer_ref == weakref.ref(layer1)
-    assert location2.layer_id == id(layer2)
-    assert location2.layer_ref == weakref.ref(layer2)
 
 
 @pytest.mark.async_only

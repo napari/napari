@@ -3,8 +3,13 @@
 ChunkLoader has one or more of these. They load data in worker pools.
 """
 import logging
-from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor
-from typing import Callable, Dict, List, Union
+from concurrent.futures import (
+    CancelledError,
+    Future,
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+)
+from typing import Callable, Dict, List, Optional, Union
 
 from ._delay_queue import DelayQueue
 from ._request import ChunkRequest
@@ -26,7 +31,7 @@ class LoaderPool:
     ----------
     config : dict
         Our configuration, see napari.utils._octree.py for format.
-    done_callback : Callable[[Future], None]
+    on_done_loader : Callable[[Future], None]
         Called when a future finishes.
 
     Attributes
@@ -39,15 +44,15 @@ class LoaderPool:
         Use processess as workers, otherwise use threads.
     _executor : PoolExecutor
         The thread or process pool executor.
-    _futures : Dict[int, List[Future]]
+    _futures : Dict[ChunkRequest, Future]
         In progress futures for each layer (data_id).
     _delay_queue : DelayQueue
         Requests sit in here for a bit before submission.
     """
 
-    def __init__(self, config: dict, done_callback: Callable[[Future], None]):
+    def __init__(self, config: dict, on_done_loader: Callable[[Future], None]):
         self.config = config
-        self._done = done_callback
+        self._on_done_loader = on_done_loader
 
         self.num_workers: int = int(config['num_workers'])
         self.use_processes: bool = bool(config['use_processes'])
@@ -55,7 +60,7 @@ class LoaderPool:
         self._executor: PoolExecutor = _create_executor(
             self.use_processes, self.num_workers
         )
-        self._futures: Dict[int, List[Future]] = {}
+        self._futures: Dict[ChunkRequest, Future] = {}
         self._delay_queue = DelayQueue(config['delay_queue_ms'], self._submit)
 
     def load_async(self, request: ChunkRequest) -> None:
@@ -70,6 +75,51 @@ class LoaderPool:
         # right away, if zero delay, or after the configured delay.
         self._delay_queue.add(request)
 
+    def cancel_requests(
+        self, should_cancel: Callable[[ChunkRequest], bool]
+    ) -> List[ChunkRequest]:
+        """Cancel pending requests based on the given filter.
+
+        Parameters
+        ----------
+        should_cancel : Callable[[ChunkRequest], bool]
+            Cancel the request if this returns True.
+
+        Return
+        ------
+        List[ChunkRequests]
+            The requests that were cancelled, if any.
+        """
+        # Cancelling requests in the delay queue is fast and easy.
+        cancelled = self._delay_queue.cancel_requests(should_cancel)
+
+        for request in cancelled:
+            assert isinstance(request, ChunkRequest)
+
+        num_before = len(self._futures)
+
+        # Cancelling the futures is a little more work. If Future.cancel()
+        # returns False it means the a worker is already loading the request
+        # so it cannot be cancelled. This load will likely be pointless and
+        # we will throw it away.
+        for request in list(self._futures.keys()):
+            if self._futures[request].cancel():
+                del self._futures[request]
+                assert isinstance(request, ChunkRequest)
+                cancelled.append(request)
+
+        num_after = len(self._futures)
+        num_cancelled = num_before - num_after
+
+        LOGGER.debug(
+            "cance_requests: %d -> %d futures (cancelled %d)",
+            num_before,
+            num_after,
+            num_cancelled,
+        )
+
+        return cancelled
+
     def _submit(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
 
@@ -80,59 +130,57 @@ class LoaderPool:
         """
         # Submit the future. Have it call self._done when finished.
         future = self._executor.submit(_chunk_loader_worker, request)
-        future.add_done_callback(self._done)
-
-        # Store the future in case we need to cancel it.
-        future_list = self._futures.setdefault(request.data_id, [])
-        future_list.append(future)
+        future.add_done_callback(self._on_done)
+        self._futures[request] = future
 
         LOGGER.debug(
             "_submit_async: %s elapsed=%.3fms num_futures=%d",
-            request.key.location,
+            request.location,
             request.elapsed_ms,
-            len(future_list),
+            len(self._futures),
         )
 
         return future
 
-    def clear_pending(self, data_id: int) -> None:
-        """Clear any pending requests for this data_id.
+    def _on_done(self, future: Future) -> None:
+        """Called when a future finishes.
+
+        future : Future
+            This is the future that finished.
+        """
+        try:
+            request = self._get_request(future)
+        except ValueError:
+            return  # Pool not running? App exit in progress?
+
+        if request is None:
+            return  # Future was cancelled, nothing to do.
+
+        # Tell the loader this request finished.
+        self._on_done_loader(request)
+
+    @staticmethod
+    def _get_request(future: Future) -> Optional[ChunkRequest]:
+        """Return the ChunkRequest for this future.
 
         Parameters
         ----------
-        data_id : int
-            Clear all requests associated with this data_id.
+        future : Future
+            Get the request from this future.
+
+        Returns
+        -------
+        Optional[ChunkRequest]
+            The ChunkRequest or None if the future was cancelled.
         """
-        LOGGER.debug("_clear_pending %d", data_id)
-
-        # Clear delay queue first. These requests are trivial to clear
-        # because they have not even been submitted to the worker pool.
-        self._delay_queue.clear(data_id)
-
-        # Get list of futures we submitted to the pool.
-        future_list = self._futures.setdefault(data_id, [])
-
-        # Try to cancel all futures in the list, but cancel() will return
-        # False if the task already started running.
-        num_before = len(future_list)
-        future_list[:] = [x for x in future_list if x.cancel()]
-        num_after = len(future_list)
-        num_cleared = num_before - num_after
-
-        # Delete the list entirely if empty
-        if num_after == 0:
-            del self._futures[data_id]
-
-        # Log what we did.
-        if num_before == 0:
-            LOGGER.debug("_clear_pending: empty")
-        else:
-            LOGGER.debug(
-                "_clear_pending: %d of %d cleared -> %d remain",
-                num_cleared,
-                num_before,
-                num_after,
-            )
+        try:
+            # Our future has already finished since this is being
+            # called from Chunk_Request._done(), so result() will
+            # never block. But we can see if it finished or was
+            # cancelled. Although we don't care right now.
+            return future.result()
+        except CancelledError:
+            return None
 
 
 def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:

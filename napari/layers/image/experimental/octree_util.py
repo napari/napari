@@ -5,6 +5,7 @@ from typing import NamedTuple, Tuple
 
 import numpy as np
 
+from ....components.experimental.chunk import LayerRef
 from ....utils.config import octree_config
 
 
@@ -106,7 +107,7 @@ class NormalNoise(NamedTuple):
         return np.random.normal(self.mean, self.std_dev)
 
 
-class SliceConfig(NamedTuple):
+class OctreeMetadata(NamedTuple):
     """Configuration for a tiled image.
 
     Attributes
@@ -121,7 +122,7 @@ class SliceConfig(NamedTuple):
 
     Notes
     -----
-    This SliceConfig.tile_size will be used by the OctreeLevels in the tree
+    This OctreeMetadata.tile_size will be used by the OctreeLevels in the tree
     in general. But the highest level OctreeLevel might use a larger size
     so that it can consist of a single chunk.
 
@@ -139,6 +140,7 @@ class SliceConfig(NamedTuple):
     own tile size.
     """
 
+    layer_ref: LayerRef
     base_shape: np.ndarray
     num_levels: int
     tile_size: int

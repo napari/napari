@@ -1,15 +1,15 @@
-"""ChunkKey and ChunkRequest classes.
+"""ChunkLocation and ChunkRequest classes.
 """
 import contextlib
 import logging
 import time
-from typing import Optional, Tuple
+import weakref
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
 from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
-from .layer_key import LayerKey
 
 LOGGER = logging.getLogger("napari.loader")
 
@@ -17,46 +17,43 @@ LOGGER = logging.getLogger("napari.loader")
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
-class ChunkKey:
-    """The key for one single ChunkRequest.
+class LayerRef(NamedTuple):
+    layer_id: int
+    layer_ref: weakref.ReferenceType
+
+    @property
+    def layer(self):
+        return self.layer_ref()
+
+    @classmethod
+    def from_layer(cls, layer):
+        return cls(id(layer), weakref.ref(layer))
+
+
+class ChunkLocation:
+    """Location of the chunk.
+
+    ChunkLocation is the base class for two classes:
+        ImageLocation - pre-octree async loading
+        OctreeLocation - octree async loading
 
     Parameters
     ----------
-    layer : Layer
-        The layer which is loading the chunk.
-    indices : Indices
-        The indices of the layer we are loading.
-
-    Attributes
-    ----------
-    layer_key : LayerKey
-        The layer specific parts of the key.
-    key : Tuple
-        The combined key, everything hashed together.
+    layer_id : int
+        The id of the layer containing the chunks.
+    layer_ref : weakref.ReferenceType
+        Weak reference to the layer.
     """
 
-    def __init__(self, layer_key: LayerKey):
-        self.layer_key = layer_key
-        self.key = hash(self.get_hash_values())
-
-    def get_hash_values(self):
-        return self.layer_key.get_hash_values()
-
-    def __str__(self):
-        layer_key = self.layer_key
-        return (
-            f"layer_id={layer_key.layer_id} data_id={layer_key.data_id} "
-            f"data_level={layer_key.data_level} indices={layer_key.indices}"
-        )
-
-    def __eq__(self, other):
-        return self.key == other.key
+    def __init__(self, layer_ref: LayerRef):
+        self.layer_ref = layer_ref
 
     @property
-    def location(self):
-        # Derived OctreeChunkKey has a location, we don't, but we could maybe
-        # print the indices or something here?
-        return "none"
+    def layer_id(self) -> int:
+        return self.layer_ref.layer_id
+
+    def __eq__(self, other) -> bool:
+        return self.layer_ref.layer_id == other.layer_ref.layer_id
 
 
 class ChunkRequest:
@@ -64,15 +61,16 @@ class ChunkRequest:
 
     Parameters
     ----------
-    key : ChunkKey
-        The key of the request.
+    location : ChunkLocation
+        The location of this chunk. Probably a class derived from ChunkLocation
+        such as ImageLocation or OctreeLocation.
     chunks : Dict[str, ArrayLike]
         One or more arrays that we need to load.
 
     Attributes
     ----------
-    key : ChunkKey
-        The key of the request.
+    location : ChunkLocation
+        The location of the chunks.
     chunks : Dict[str, ArrayLike]
         One or more arrays that we need to load.
     create_time : float
@@ -81,16 +79,15 @@ class ChunkRequest:
         Timing information about chunk load time.
     """
 
-    def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
-        # Make sure chunks dict is what we expect.
+    def __init__(self, location: ChunkLocation, chunks: Dict[str, ArrayLike]):
+        # Make sure chunks dict is valid.
         for chunk_key, array in chunks.items():
             assert isinstance(chunk_key, str)
             assert array is not None
 
-        self.key = key
+        self.location = location
         self.chunks = chunks
 
-        # TODO_OCTREE: Use time.time() or perf_counter_ns here?
         self.create_time = time.time()
         self._timers: Dict[str, PerfEvent] = {}
 
@@ -117,17 +114,6 @@ class ChunkRequest:
         return sum(
             perf_timer.duration_ms for perf_timer in self._timers.values()
         )
-
-    @property
-    def data_id(self) -> int:
-        """Return the data_id for this request.
-
-        Return
-        ------
-        int
-            The data_id for this request.
-        """
-        return self.key.layer_key.data_id
 
     @property
     def num_chunks(self) -> int:

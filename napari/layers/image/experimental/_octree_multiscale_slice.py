@@ -16,7 +16,7 @@ from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
-from .octree_util import SliceConfig
+from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree.slice")
 
@@ -28,7 +28,7 @@ class OctreeMultiscaleSlice:
     ----------
     data
         The multi-scale data.
-    slice_config : SliceConfig
+    meta : OctreeMetadata
         The base shape and other info.
     image_converter : Callable[[ArrayLike], ArrayLike]
         For converting to displaying data.
@@ -44,14 +44,14 @@ class OctreeMultiscaleSlice:
         self,
         data,
         layer_ref: LayerRef,
-        slice_config: SliceConfig,
+        meta: OctreeMetadata,
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
-        self._slice_config = slice_config
+        self._meta = meta
 
         slice_id = id(self)
-        self._octree = Octree(slice_id, data, slice_config)
+        self._octree = Octree(slice_id, data, meta)
 
         self.loader: OctreeChunkLoader = OctreeChunkLoader(
             self._octree, layer_ref
@@ -191,7 +191,8 @@ class OctreeMultiscaleSlice:
         bool
             This chunk's data was added to the octree.
         """
-        location = request.key.location
+        location = request.location
+
         if location.slice_id != id(self):
             # There was probably a load in progress when the slice was changed.
             # The original load finished, but we are now showing a new slice.
@@ -227,8 +228,5 @@ class OctreeMultiscaleSlice:
         # Setting data should mean:
         assert octree_chunk.in_memory
         assert not octree_chunk.needs_load
-
-        # Tell the loader. It will delete the future.
-        self.loader.on_chunk_loaded(octree_chunk)
 
         return True  # Chunk was added.

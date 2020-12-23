@@ -1,14 +1,10 @@
-"""LayerKey class.
+"""ImageLocation class.
 
-We put this in its own file because (eventually) this should be the only
-ChunkLoader file that imports layer.
-
-Ideally ChunkLoader does not depend on layers at all. We may or may not
-actually do that, but at the very least we want to keep track of where
-we do depend on layer.
+ImageLocation is the pre-octree Image class's ChunkLocation. When we request
+that the ChunkLoader load a chunk, we use this ChunkLocation to identify
+the chunk we are requesting and once it's loaded.
 """
-from typing import NamedTuple, Optional, Tuple
-
+from ....components.experimental.chunk import ChunkLocation, LayerRef
 from ....layers import Layer
 
 
@@ -33,7 +29,7 @@ def get_data_id(data) -> int:
     return id(data)  # Not a list, just use it.
 
 
-class LayerKey(NamedTuple):
+class ImageLocation(ChunkLocation):
     """The key for a layer and its important properties.
 
     Attributes
@@ -48,32 +44,28 @@ class LayerKey(NamedTuple):
         The indices of the slice.
     """
 
-    layer_id: int
-    data_id: int
-    data_level: int
-    indices: Tuple[Optional[slice], ...]
+    def __init__(self, layer: Layer, indices):
+        super().__init__(LayerRef.from_layer(layer))
+        self.data_id: int = get_data_id(layer.data)
+        self.data_level: int = layer._data_level
+        self.indices = indices
 
-    def get_hash_values(self):
+    def __eq__(self, other) -> bool:
         return (
-            self.layer_id,
-            self.data_id,
-            self.data_level,
-            _flatten(self.indices),
+            super().__eq__(other)
+            and self.data_id == other.data_id
+            and self.data_level == other.data_level
+            and self.indices == other.indices
         )
 
-    @classmethod
-    def from_layer(cls, layer: Layer, indices):
-        """Return LayerKey based on this layer and its indices.
-
-        Parameters
-        ----------
-        layer : Layer
-            Create a LayerKey for this layer.
-        indices : ???
-            The indices we are viewing.
-        """
-        return cls(
-            id(layer), get_data_id(layer.data), layer._data_level, indices
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.layer_ref.layer_id,
+                self.data_id,
+                self.data_level,
+                _flatten(self.indices),
+            )
         )
 
 

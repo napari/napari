@@ -6,8 +6,8 @@ from enum import Enum
 
 from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
-from ._request import ChunkRequest
-from ._utils import LayerRef, StatWindow
+from ._request import ChunkRequest, LayerRef
+from ._utils import StatWindow
 
 LOGGER = logging.getLogger("napari.loader")
 
@@ -197,9 +197,9 @@ class LayerInfo:
         layer : Layer
             The layer for this ChunkRequest.
         """
-        layer = self.layer_ref.weak_ref()
+        layer = self.layer_ref.layer
         if layer is None:
-            layer_id = self.layer_ref.layer_key.layer_id
+            layer_id = self.layer_ref.layer_id
             LOGGER.debug("LayerInfo.get_layer: layer %d was deleted", layer_id)
         return layer
 

@@ -1,12 +1,9 @@
 """ChunkLoader utilities.
 """
-import weakref
-from typing import NamedTuple, Optional
+from typing import Optional
 
 import dask.array as da
 import numpy as np
-
-from .layer_key import LayerKey
 
 
 def _get_type_str(data) -> str:
@@ -32,40 +29,6 @@ def _get_type_str(data) -> str:
 
     # For class numpy.ndarray this returns "ndarray"
     return data_type.__name__
-
-
-class LayerRef(NamedTuple):
-    """Weak reference to a layer.
-
-    We do not want to hold a reference in case the later is deleted while
-    a load is in progress. We want to let the layer get deleted, and
-    when the load finishes we'll just throw it away. Since its layer is done.
-
-    Attributes
-    ----------
-    layer_id : int
-        The id of the layer.
-    reference : weakref.ReferenceType
-        A weak reference to the layer
-    data_type : str
-        String describing the data type the layer holds.
-    """
-
-    layer_key: LayerKey
-    weak_ref: weakref.ReferenceType
-    data_type: str
-
-    @classmethod
-    def create_from_layer(cls, layer, indices):
-        """Return a LayerRef created from this layer.
-
-        Parameters
-        ----------
-        layer
-            Create the LayerRef from this layer.
-        """
-        layer_key = LayerKey.from_layer(layer, indices)
-        return cls(layer_key, weakref.ref(layer), _get_type_str(layer.data))
 
 
 class StatWindow:

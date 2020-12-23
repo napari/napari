@@ -5,17 +5,16 @@ processes. A chunk could be an OctreeChunk or it could be a pre-Octree
 array from a single or multi-scale image.
 """
 import logging
-from concurrent.futures import CancelledError, Future
+from concurrent.futures import Future
 from contextlib import contextmanager
-from typing import Dict, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
-from ....types import ArrayLike
 from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
-from ._info import LayerInfo, LayerRef, LoadType
+from ._info import LayerInfo, LoadType
 from ._pool import LoaderPool
-from ._request import ChunkKey, ChunkRequest
+from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.loader")
 
@@ -52,41 +51,24 @@ class ChunkLoader:
             source=self, auto_connect=True, chunk_loaded=None
         )
 
-        self._loader = LoaderPool(loader_config, self._done)
+        self._loader = LoaderPool(loader_config, self._on_done)
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
-        """Get LayerInfo for this layer or None."""
-        return self.layer_map.get(layer_id)
-
-    def create_request(
-        self, layer_ref: LayerRef, key: ChunkKey, chunks: Dict[str, ArrayLike]
-    ) -> ChunkRequest:
-        """Create a ChunkRequest for submission to load_chunk.
-
-        TODO_OCTREE: We have this method mainly so we can create an
-        entry in self.layer_map. But it seems like it would be simpler
-        if users of ChunkLoader could just create a ChunkRequest on
-        their own. And we create the layer_map entry on submission?
-        These seems kind of historical?
+        """Get LayerInfo for this layer or None.
 
         Parameters
         ----------
-        layer_ref : LayerRef
-            Reference to the layer that's requesting the data.
-        key : ChunkKey
-            The key for the request.
-        chunks : Dict[str, ArrayLike]
-            The arrays we want to load.
+        layer_id : int
+            The the LayerInfo for this layer.
+
+        Return
+        ------
+        Optional[LayerInfo]
+            The LayerInfo if the layer has one.
         """
-        layer_id = layer_ref.layer_key.layer_id
+        return self.layer_map.get(layer_id)
 
-        if layer_id not in self.layer_map:
-            self.layer_map[layer_id] = LayerInfo(layer_ref, self.auto_sync_ms)
-
-        # Return the new request.
-        return ChunkRequest(key, chunks)
-
-    def load_chunk(
+    def load_request(
         self, request: ChunkRequest
     ) -> Tuple[Optional[ChunkRequest], Optional[Future]]:
         """Load the given request sync or async.
@@ -108,6 +90,8 @@ class ChunkLoader:
         intitiated. When the async load finishes the layer's
         on_chunk_loaded() will be called from the GUI thread.
         """
+        self._add_layer_info(request)
+
         if self._load_synchronously(request):
             return request
 
@@ -118,13 +102,39 @@ class ChunkLoader:
             request.chunks = chunks
             return request
 
-        if not self.octree_enabled:
-            # Pre-octree we can clear pendint requests from any other data_id,
-            # generally from other slices besides this one.
-            self._loader.clear_pending(request.data_id)
-
         self._loader.load_async(request)
         return None  # None means load was async.
+
+    def _add_layer_info(self, request: ChunkRequest) -> None:
+        """Add a new LayerInfo entry in our layer map.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            Add a LayerInfo for this request.
+        """
+        layer_id = request.location.layer_id
+        if layer_id not in self.layer_map:
+            self.layer_map[layer_id] = LayerInfo(
+                request.location.layer_ref, self.auto_sync_ms
+            )
+
+    def cancel_requests(
+        self, should_cancel: Callable[[ChunkRequest], bool]
+    ) -> List[ChunkRequest]:
+        """Cancel pending requests based on the given filter.
+
+        Parameters
+        ----------
+        should_cancel : Callable[[ChunkRequest], bool]
+            Cancel the request if this returns True.
+
+        Return
+        ------
+        List[ChunkRequests]
+            The requests that were cancelled, if any.
+        """
+        return self._loader.cancel_requests(should_cancel)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request.
@@ -186,30 +196,7 @@ class ChunkLoader:
         # it's Dask or something else and we load async.
         return request.in_memory
 
-    @staticmethod
-    def _get_request(future: Future) -> Optional[ChunkRequest]:
-        """Return the ChunkRequest for this future.
-
-        Parameters
-        ----------
-        future : Future
-            Get the request from this future.
-
-        Returns
-        -------
-        Optional[ChunkRequest]
-            The ChunkRequest or None if the future was cancelled.
-        """
-        try:
-            # Our future has already finished since this is being
-            # called from Chunk_Request._done(), so result() will
-            # never block. But we can see if it finished or was
-            # cancelled. Although we don't care right now.
-            return future.result()
-        except CancelledError:
-            return None
-
-    def _done(self, future: Future) -> None:
+    def _on_done(self, request: ChunkRequest) -> None:
         """Called when a future finishes with success or was cancelled.
 
         Parameters
@@ -224,19 +211,12 @@ class ChunkLoader:
         specify which thread the future's done callback will be called in,
         only that it will be called in some thread in the current process.
         """
-        try:
-            request = self._get_request(future)
-        except ValueError:
-            return  # Pool not running? App exit in progress?
-
-        if request is None:
-            return  # Future was cancelled, nothing to do.
 
         LOGGER.debug(
-            "_done: load=%.3fms elapsed=%.3fms location=%s",
+            "_done: load=%.3fms elapsed=%.3fms %s",
             request.load_ms,
             request.elapsed_ms,
-            request.key.location,
+            request.location,
         )
 
         # Add chunks to the cache in the worker thread. For now it's safe
@@ -273,7 +253,7 @@ class ChunkLoader:
         KeyError
             If the layer is not found.
         """
-        layer_id = request.key.layer_key.layer_id
+        layer_id = request.location.layer_id
 
         # Raises KeyError if not found. This should never happen because we
         # add the layer to the layer_map in ChunkLoader.create_request().
