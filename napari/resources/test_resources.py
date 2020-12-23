@@ -3,6 +3,7 @@ import platform
 import shutil
 import sys
 
+import pytest
 import qtpy
 
 from napari.resources import build_pyqt_resources, import_resources
@@ -14,6 +15,9 @@ def test_resources():
     os.remove(out)
 
 
+@pytest.mark.skipif(
+    sys.platform.startswith('win'), reason='Test not supported on windows'
+)
 def test_path_pollution(tmp_path, monkeypatch, capfd):
     """
     This test add fake binaries in path to check if second one is chosen.
