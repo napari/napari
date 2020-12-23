@@ -1,4 +1,4 @@
-"""OctreeMultiscaleSlice class.
+"""OctreeSlice class.
 
 For viewing one slice of a multiscale image using an octree.
 """
@@ -21,7 +21,7 @@ from .octree_util import OctreeMetadata
 LOGGER = logging.getLogger("napari.octree.slice")
 
 
-class OctreeMultiscaleSlice:
+class OctreeSlice:
     """View a slice of an multiscale image using an octree.
 
     Parameters

@@ -28,7 +28,7 @@ class OctreeLocation(ChunkLocation):
     Parameters
     ----------
     slice_id : int
-        The id of the OctreeMultiscaleSlice we are in.
+        The id of the OctreeSlice we are in.
     level_index : int
         The octree level index.
     row : int

@@ -58,7 +58,7 @@ class OctreeLevel:
     Parameters
     ----------
     slice_id : int
-        The id of the OctreeMultiscaleSlice we are in.
+        The id of the OctreeSlice we are in.
     data : ArrayLike
         The data for this level.
     meta : OctreeMetadata
