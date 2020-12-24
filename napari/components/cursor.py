@@ -2,11 +2,11 @@ from typing import Tuple
 
 from pydantic import BaseModel
 
-from ..utils.events.event_utils import evented
+from ..utils.pydantic import PydanticConfig, evented_model
 from ._viewer_constants import CursorStyle
 
 
-@evented
+@evented_model
 class Cursor(BaseModel):
     """Cursor object with position and properties of the cursor.
 
@@ -32,10 +32,11 @@ class Cursor(BaseModel):
             * standard: The standard cursor
     """
 
+    # fields
     position: Tuple[float, ...] = ()
     scaled: bool = True
     size: int = 1
     style: CursorStyle = CursorStyle.STANDARD
 
-    class Config:
-        validate_assignment = True
+    # Config
+    Config = PydanticConfig

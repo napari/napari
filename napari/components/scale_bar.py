@@ -1,12 +1,13 @@
-import numpy as np
+from pydantic import BaseModel, Field, validator
 
+from ..utils.colormaps.colormap_utils import make_default_color_array
 from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.pydantic import Array, PydanticConfig, evented_model
 from ._viewer_constants import Position
 
 
-@evented_dataclass
-class ScaleBar:
+@evented_model
+class ScaleBar(BaseModel):
     """Scale bar indicating size in world coordinates.
 
     Attributes
@@ -32,7 +33,15 @@ class ScaleBar:
     visible: bool = False
     colored: bool = False
     ticks: bool = True
-    position: Property[Position, str, Position] = Position.BOTTOM_RIGHT
-    background_color: Property[
-        np.ndarray, None, transform_single_color
-    ] = np.array([1, 1, 1, 1])
+    position: Position = Position.BOTTOM_RIGHT
+    background_color: Array[float, (4,)] = Field(
+        default_factory=make_default_color_array
+    )
+
+    # Config
+    Config = PydanticConfig
+
+    # validators
+    _ensure_single_color = validator(
+        'background_color', pre=True, allow_reuse=True
+    )(transform_single_color)

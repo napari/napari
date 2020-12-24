@@ -1,12 +1,13 @@
 from typing import Tuple
 
 import numpy as np
+from pydantic import BaseModel
 
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.pydantic import PydanticConfig, evented_model
 
 
-@evented_dataclass
-class GridCanvas:
+@evented_model
+class GridCanvas(BaseModel):
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
@@ -29,9 +30,13 @@ class GridCanvas:
         all the layers at the appropriate stride.
     """
 
+    # fields
     enabled: bool = False
     stride: int = 1
-    shape: Property[Tuple, None, tuple] = (-1, -1)
+    shape: Tuple[int, int] = (-1, -1)
+
+    # Config
+    Config = PydanticConfig
 
     def actual_shape(self, nlayers=1):
         """Return the actual shape of the grid.

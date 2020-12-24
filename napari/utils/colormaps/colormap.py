@@ -1,14 +1,14 @@
-from enum import auto
+from enum import Enum
 
 import numpy as np
+from pydantic import BaseModel, root_validator, validator
 
-from ..events.dataclass import Property, evented_dataclass
-from ..misc import StringEnum
+from ..pydantic import Array, PydanticConfig, evented_model
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 
 
-class ColormapInterpolationMode(StringEnum):
+class ColormapInterpolationMode(str, Enum):
     """INTERPOLATION: Interpolation mode for colormaps.
 
     Selects an interpolation mode for the colormap.
@@ -18,12 +18,12 @@ class ColormapInterpolationMode(StringEnum):
               bin between by neighboring controls points.
     """
 
-    LINEAR = auto()
-    ZERO = auto()
+    LINEAR = 'linear'
+    ZERO = 'zero'
 
 
-@evented_dataclass
-class Colormap:
+@evented_model
+class Colormap(BaseModel):
     """Colormap that relates intensity values to colors.
 
     Attributes
@@ -41,33 +41,42 @@ class Colormap:
         = ncolors+1 (one color per bin).
     """
 
-    colors: Property[np.ndarray, None, transform_color]
+    # fields
+    colors: Array[float, (-1, 4)]
     name: str = 'custom'
-    controls: Property[np.ndarray, None, np.asarray] = np.zeros((0, 4))
-    interpolation: Property[
-        ColormapInterpolationMode, str, ColormapInterpolationMode
-    ] = ColormapInterpolationMode.LINEAR
+    controls: Array[float, (-1,)] = ()
+    interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
 
-    def __post_init__(self):
-        if len(self.controls) == 0:
-            n_controls = len(self.colors) + int(
-                self._interpolation == ColormapInterpolationMode.ZERO
+    # Config
+    Config = PydanticConfig
+
+    # validators
+    _ensure_color_array = validator('colors', pre=True, allow_reuse=True)(
+        transform_color
+    )
+
+    @root_validator
+    def _check_controls(cls, values):
+        if len(values['controls']) == 0:
+            n_controls = len(values['colors']) + int(
+                values['interpolation'] == ColormapInterpolationMode.ZERO
             )
-            self.controls = np.linspace(0, 1, n_controls)
+            values['controls'] = np.linspace(0, 1, n_controls)
+        return values
 
     def __iter__(self):
         yield from (self.colors, self.controls, self.interpolation)
 
     def map(self, values):
         values = np.atleast_1d(values)
-        if self._interpolation == ColormapInterpolationMode.LINEAR:
+        if self.interpolation == ColormapInterpolationMode.LINEAR:
             # One color per control point
             cols = [
                 np.interp(values, self.controls, self.colors[:, i])
                 for i in range(4)
             ]
             cols = np.stack(cols, axis=1)
-        elif self._interpolation == ColormapInterpolationMode.ZERO:
+        elif self.interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             indices = np.clip(
                 np.searchsorted(self.controls, values) - 1, 0, len(self.colors)

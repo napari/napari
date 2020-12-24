@@ -2,66 +2,12 @@ from typing import Sequence, Tuple, Union
 
 import numpy as np
 from pydantic import BaseModel, root_validator
-from typing_extensions import Literal
+from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils.events.event_utils import evented
-
-
-def only_2D_3D(ndisplay):
-    if ndisplay not in (2, 3):
-        raise ValueError(
-            f"Invalid number of dimensions to be displayed {ndisplay}"
-            f" must be either 2 or 3."
-        )
-    else:
-        return ndisplay
+from ..utils.pydantic import PydanticConfig, evented_model
 
 
-def reorder_after_dim_reduction(order):
-    """Ensure current dimension order is preserved after dims are dropped.
-
-    Parameters
-    ----------
-    order : tuple
-        The data to reorder.
-
-    Returns
-    -------
-    arr : tuple
-        The original array with the unneeded dimension
-        thrown away.
-    """
-    arr = np.array(order)
-    arr[np.argsort(arr)] = range(len(arr))
-    return tuple(arr.tolist())
-
-
-def assert_axis_in_bounds(axis: int, ndim: int) -> int:
-    """Assert a given value is inside the existing axes of the image.
-
-    Returns
-    -------
-    axis : int
-        The axis which was checked for validity.
-    ndim : int
-        The dimensionality of the layer.
-
-    Raises
-    ------
-    ValueError
-        The given axis index is out of bounds.
-    """
-    if axis not in range(-ndim, ndim):
-        msg = (
-            f'Axis {axis} not defined for dimensionality {ndim}. '
-            f'Must be in [{-ndim}, {ndim}).'
-        )
-        raise ValueError(msg)
-
-    return axis % ndim
-
-
-@evented
+@evented_model
 class Dims(BaseModel):
     """Dimensions object modeling slicing and displaying.
 
@@ -118,21 +64,22 @@ class Dims(BaseModel):
         ``displayed`` dimensions.
     """
 
+    # fields
     ndim: int = 2
     ndisplay: Literal[2, 3] = 2
     last_used: int = 0
-
     range: Tuple[Tuple[float, float, float], ...] = (())
     current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
 
+    # private vars
     _scroll_progress: int = 0
 
-    class Config:
-        validate_assignment = True
-        underscore_attrs_are_private = True
+    # Config
+    Config = PydanticConfig
 
+    # validators
     @root_validator
     def _check_dims(cls, values):
         ndim = max(
@@ -369,3 +316,47 @@ class Dims(BaseModel):
         order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
+
+
+def reorder_after_dim_reduction(order):
+    """Ensure current dimension order is preserved after dims are dropped.
+
+    Parameters
+    ----------
+    order : tuple
+        The data to reorder.
+
+    Returns
+    -------
+    arr : tuple
+        The original array with the unneeded dimension
+        thrown away.
+    """
+    arr = np.array(order)
+    arr[np.argsort(arr)] = range(len(arr))
+    return tuple(arr.tolist())
+
+
+def assert_axis_in_bounds(axis: int, ndim: int) -> int:
+    """Assert a given value is inside the existing axes of the image.
+
+    Returns
+    -------
+    axis : int
+        The axis which was checked for validity.
+    ndim : int
+        The dimensionality of the layer.
+
+    Raises
+    ------
+    ValueError
+        The given axis index is out of bounds.
+    """
+    if axis not in range(-ndim, ndim):
+        msg = (
+            f'Axis {axis} not defined for dimensionality {ndim}. '
+            f'Must be in [{-ndim}, {ndim}).'
+        )
+        raise ValueError(msg)
+
+    return axis % ndim

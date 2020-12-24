@@ -41,7 +41,7 @@ SIMPLE_COLORMAPS = {
 }
 
 # dictionay for bop colormap objects
-BOP_COLORMAPS = {k: Colormap(v, name=k) for k, v in bopd.items()}
+BOP_COLORMAPS = {k: Colormap(colors=v, name=k) for k, v in bopd.items()}
 
 
 def _all_rgb():
@@ -497,3 +497,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
         )
 
     return AVAILABLE_COLORMAPS[name]
+
+
+def make_default_color_array():
+    return np.zeros(4)
