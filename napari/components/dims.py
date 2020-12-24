@@ -82,14 +82,7 @@ class Dims(BaseModel):
     # validators
     @root_validator
     def _check_dims(cls, values):
-        ndim = max(
-            values['ndim'],
-            values['ndisplay'],
-            len(values['axis_labels']),
-            len(values['order']),
-            len(values['range']),
-            len(values['current_step']),
-        )
+        ndim = values['ndim']
 
         if len(values['range']) < ndim:
             values['range'] = ((0, 2, 1),) * (
@@ -140,7 +133,6 @@ class Dims(BaseModel):
         elif len(values['axis_labels']) > ndim:
             values['axis_labels'] = values['axis_labels'][-ndim:]
 
-        values['ndim'] = ndim
         return values
 
     @property
@@ -309,7 +301,7 @@ class Dims(BaseModel):
         order = np.array(self.order)
         nsteps = np.array(self.nsteps)
         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
-        self.order = order
+        self.order = order.tolist()
 
     def _transpose(self):
         """Transpose displayed dimensions."""

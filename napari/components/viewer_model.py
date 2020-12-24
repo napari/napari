@@ -452,6 +452,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.dims.ndim = ndim
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
+        self.cursor.position = (0,) * self.dims.ndim
         self.events.layers_change()
         self._update_active_layer(event)
 

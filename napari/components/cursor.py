@@ -33,7 +33,7 @@ class Cursor(BaseModel):
     """
 
     # fields
-    position: Tuple[float, ...] = ()
+    position: Tuple[float, ...] = (1, 1)
     scaled: bool = True
     size: int = 1
     style: CursorStyle = CursorStyle.STANDARD
