@@ -147,7 +147,6 @@ class Monitor:
     @property
     def run_command_event(self):
         """The MonitorAPI fires this event for commands from clients."""
-        assert self._running
         return self._api.events.run_command
 
     def start(self) -> bool:

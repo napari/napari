@@ -17,7 +17,7 @@ from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, SliceConfig
 
-LOGGER = logging.getLogger("napari.async.octree")
+LOGGER = logging.getLogger("napari.octree.image")
 
 
 class OctreeImage(Image):
@@ -264,14 +264,13 @@ class OctreeImage(Image):
         """
 
     def get_drawable_chunks(
-        self, drawn_chunk_set: Set[OctreeChunkKey]
+        self, drawn_set: Set[OctreeChunkKey]
     ) -> List[OctreeChunk]:
         """Get the chunks in the current slice which are drawable.
 
-        The visual calls this and then draws what we send it.
-
-        The call to get_intersection() will chose the appropriate level of
-        the octree to intersect, and then return all the chunks within the
+        The visual calls this and then draws what we send it. The call to
+        get_intersection() will chose the appropriate level of the octree
+        to intersect, and then return all the chunks within the
         intersection with that level.
 
         These are the "ideal" chunks because they are at the level whose
@@ -308,12 +307,19 @@ class OctreeImage(Image):
             The drawable chunks.
         """
         if self._slice is None or self._view is None:
+            LOGGER.debug("get_drawable_chunks: No slice or view")
             return []  # There is nothing to draw.
 
+        # TODO_OCTREE: Make this a config option, maybe different
+        # expansion_factor each level above the ideal level?
+        expansion_factor = 1.1
+        view = self._view.expand(expansion_factor)
+
         # Get the current intersection and save it off.
-        self._intersection = self._slice.get_intersection(self._view)
+        self._intersection = self._slice.get_intersection(view)
 
         if self._intersection is None:
+            LOGGER.debug("get_drawable_chunks: Intersection is empty")
             return []  # No chunks to draw.
 
         # Get the ideal chunks. These are the chunks at the preferred
@@ -321,21 +327,22 @@ class OctreeImage(Image):
         # and in VRAM. When all loading is done, we will draw all the ideal
         # chunks.
         ideal_chunks = self._intersection.get_chunks(create=True)
+        level_index = self._intersection.level.info.level_index
+
+        # log_chunks("ideal_chunks", ideal_chunks)
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
         if self._view.auto_level:
-            self._data_level = self._intersection.level.info.level_index
+            self._data_level = level_index
 
         # The loader will initiate loads on any ideal chunks which are not
         # yet in memory. And it will return the chunks we should draw. The
-        # chunks might be ideal chunks, if they are in memory, but they
-        # might be chunks from higher or lower levels in the octree. In
-        # general we try to draw cover the view with the "best available"
-        # data.
-        return self._slice.loader.get_drawable_chunks(
-            drawn_chunk_set, ideal_chunks
-        )
+        # chunks we should draw might be ideal chunks, if they are in
+        # memory, but they also might be chunks from higher or lower levels
+        # in the octree. In general we try to draw "cover the view" with
+        # the "best available" data.
+        return self._slice.loader.get_drawable_chunks(drawn_set, ideal_chunks)
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -464,10 +471,21 @@ class OctreeImage(Image):
         request : ChunkRequest
             This request was loaded.
         """
+        LOGGER.info(
+            "on_chunk_loaded: load=%.3fms elapsed=%.3fms location = %s",
+            request.load_ms,
+            request.elapsed_ms,
+            request.key.location,
+        )
+
         # Pass it to the slice, it will insert the newly loaded data into
         # the OctreeChunk at the right location.
         if self._slice.on_chunk_loaded(request):
-            self.events.loaded()  # Redraw with teh new chunk.
+            # Redraw with the new chunk.
+            # TODO_OCTREE: Call this at most once per frame? It's a bad
+            # idea to call it for every chunk?
+            LOGGER.debug("on_chunk_loaded calling loaded()")
+            self.events.loaded()
 
     @property
     def remote_messages(self) -> dict:

@@ -11,7 +11,7 @@ from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 def _create_loader_class() -> ImageLoader:
