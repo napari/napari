@@ -48,12 +48,16 @@ class ChunkLocation:
     def __init__(self, layer_ref: LayerRef):
         self.layer_ref = layer_ref
 
+    def __eq__(self, other) -> bool:
+        return self.layer_ref.layer_id == other.layer_ref.layer_id
+
     @property
     def layer_id(self) -> int:
         return self.layer_ref.layer_id
 
-    def __eq__(self, other) -> bool:
-        return self.layer_ref.layer_id == other.layer_ref.layer_id
+    @classmethod
+    def from_layer(cls, layer):
+        return cls(LayerRef.from_layer(layer))
 
 
 class ChunkRequest:
