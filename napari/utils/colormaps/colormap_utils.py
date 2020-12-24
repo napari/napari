@@ -86,7 +86,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
     if hasattr(colormap, '_controls'):
         controls = colormap._controls
     else:
-        controls = np.zeros((0, 4))
+        controls = np.zeros((0,))
 
     # Not all vispy colormaps have an `interpolation`
     # but if they do, we want to use it

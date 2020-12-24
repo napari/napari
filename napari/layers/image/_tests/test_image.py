@@ -332,12 +332,12 @@ def test_colormaps():
     assert layer.colormap.name == 'magma'
     assert isinstance(layer.colormap, Colormap)
 
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
+    cmap = Colormap(colors=[[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer.colormap = 'custom', cmap
     assert layer.colormap.name == 'custom'
     assert layer.colormap == cmap
 
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
+    cmap = Colormap(colors=[[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer.colormap = {'new': cmap}
     assert layer.colormap.name == 'new'
     assert layer.colormap == cmap
@@ -346,12 +346,12 @@ def test_colormaps():
     assert layer.colormap.name == 'magma'
     assert isinstance(layer.colormap, Colormap)
 
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
+    cmap = Colormap(colors=[[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer = Image(data, colormap=('custom', cmap))
     assert layer.colormap.name == 'custom'
     assert layer.colormap == cmap
 
-    cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
+    cmap = Colormap(colors=[[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer = Image(data, colormap={'new': cmap})
     assert layer.colormap.name == 'new'
     assert layer.colormap == cmap

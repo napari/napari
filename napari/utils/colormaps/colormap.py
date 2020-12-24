@@ -1,7 +1,8 @@
 from enum import Enum
+from functools import partial
 
 import numpy as np
-from pydantic import BaseModel, root_validator, validator
+from pydantic import BaseModel, Field, root_validator, validator
 
 from ..pydantic import Array, PydanticConfig, evented_model
 from .colorbars import make_colorbar
@@ -44,7 +45,9 @@ class Colormap(BaseModel):
     # fields
     colors: Array[float, (-1, 4)]
     name: str = 'custom'
-    controls: Array[float, (-1,)] = ()
+    controls: Array[float, (-1,)] = Field(
+        default_factory=partial(np.zeros, (0,))
+    )
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
 
     # Config

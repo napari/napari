@@ -1,9 +1,7 @@
-from enum import Enum, auto
-
-from ..utils.misc import StringEnum
+from enum import Enum
 
 
-class Position(StringEnum):
+class Position(str, Enum):
     """Position: Position on an object in the canvas.
 
     Sets the position of an object (e.g. scale bar) in the canvas
@@ -13,10 +11,10 @@ class Position(StringEnum):
             * bottom_left: Bottom left of the canvas
     """
 
-    TOP_LEFT = auto()
-    TOP_RIGHT = auto()
-    BOTTOM_RIGHT = auto()
-    BOTTOM_LEFT = auto()
+    TOP_LEFT = 'top_left'
+    TOP_RIGHT = 'top_right'
+    BOTTOM_RIGHT = 'bottom_right'
+    BOTTOM_LEFT = 'bottom_left'
 
 
 class CursorStyle(str, Enum):

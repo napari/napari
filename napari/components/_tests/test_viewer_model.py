@@ -41,11 +41,11 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='cubehelix')
 
     # as tuple
-    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+    cmap_tuple = ("my_colormap", Colormap(colors=['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
+    cmap_dict = {"your_colormap": Colormap(colors=['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance

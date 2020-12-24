@@ -150,4 +150,6 @@ JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
 class PydanticConfig:
     validate_assignment = True
     underscore_attrs_are_private = True
+    use_enum_values = True
+    validate_all = True
     json_encoders = JSON_ENCODERS
