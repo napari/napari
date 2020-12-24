@@ -4,6 +4,8 @@ ImageLocation is the pre-octree Image class's ChunkLocation. When we request
 that the ChunkLoader load a chunk, we use this ChunkLocation to identify
 the chunk we are requesting and once it's loaded.
 """
+import numpy as np
+
 from ....components.experimental.chunk import ChunkLocation, LayerRef
 from ....layers import Layer
 
@@ -50,13 +52,23 @@ class ImageLocation(ChunkLocation):
         self.data_level: int = layer._data_level
         self.indices = indices
 
+    def __str__(self):
+        return f"location=({self.data_id}, {self.data_level}, {self.indices}) "
+
     def __eq__(self, other) -> bool:
         return (
             super().__eq__(other)
             and self.data_id == other.data_id
             and self.data_level == other.data_level
-            and self.indices == other.indices
+            and self._same_indices(other)
         )
+
+    def _same_indices(self, other):
+        # TODO_OCTREE: Why is this sometimes ndarray and sometimes not?
+        # We should normalize when the ImageLocation is constructed?
+        if isinstance(self.indices, np.ndarray):
+            return (self.indices == other.indices).all()
+        return self.indices == other.indices
 
     def __hash__(self) -> int:
         return hash(
