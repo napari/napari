@@ -8,7 +8,7 @@ from ....utils.perf import block_timer
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
-from .octree_util import SliceConfig
+from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree")
 
@@ -42,20 +42,19 @@ class Octree:
         The id of the slice this octree is in.
     data
         The underlying multi-scale data.
-    slice_config : SliceConfig
+    meta : OctreeMetadata
         The base shape and other information.
     """
 
-    def __init__(self, slice_id: int, data, slice_config: SliceConfig):
+    def __init__(self, slice_id: int, data, meta: OctreeMetadata):
         self.slice_id = slice_id
         self.data = data
-        self.slice_config = slice_config
+        self.meta = meta
 
         _check_downscale_ratio(self.data)  # We expect a ratio of 2.
 
         self.levels = [
-            OctreeLevel(slice_id, data[i], slice_config, i)
-            for i in range(len(data))
+            OctreeLevel(slice_id, data[i], meta, i) for i in range(len(data))
         ]
 
         if not self.levels:
@@ -72,7 +71,7 @@ class Octree:
         if self.levels[-1].info.num_tiles > 1:
             self.levels.extend(self._get_extra_levels())
 
-        LOGGER.info(f"Octree now has {len(self.levels)} total levels:")
+        LOGGER.info("Octree now has %d total levels:", len(self.levels))
         log_levels(self.levels)
 
         # Now the root should definitely contain only a single tile.
@@ -82,6 +81,18 @@ class Octree:
         self.num_levels = len(self.data)
 
     def get_level(self, level_index: int) -> OctreeLevel:
+        """Get the given OctreeLevel.
+
+        Parameters
+        ----------
+        level_index : int
+            Get the OctreeLevel with this index.
+
+        Return
+        ------
+        OctreeLevel
+            The requested level.
+        """
         try:
             return self.levels[level_index]
         except IndexError as exc:
@@ -101,7 +112,9 @@ class Octree:
         create : bool
             If True create the chunk if it doesn't exist.
         """
-        return self.get_chunk(location.level_index, location.row, location.col)
+        return self.get_chunk(
+            location.level_index, location.row, location.col, create=create
+        )
 
     def get_chunk(
         self, level_index: int, row: int, col: int, create=False
@@ -312,7 +325,7 @@ class Octree:
         # Create additional data levels so that the root level
         # consists of only a single tile, using our standard/only
         # tile size.
-        tile_size = self.slice_config.tile_size
+        tile_size = self.meta.tile_size
         new_levels = create_downsampled_levels(
             self.data[-1], len(self.data), tile_size
         )
@@ -323,9 +336,7 @@ class Octree:
         # Return an OctreeLevel for each new data level.
         num_current = len(self.levels)
         return [
-            OctreeLevel(
-                slice_id, new_data, self.slice_config, num_current + index,
-            )
+            OctreeLevel(slice_id, new_data, self.meta, num_current + index,)
             for index, new_data in enumerate(new_levels)
         ]
 

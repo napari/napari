@@ -41,16 +41,17 @@ Enabled one of two ways:
 
 2) Set NAPARI_OCTREE=/tmp/config.json use a config file.
 
-See napari/utils/config_octree.py for the config file format.
+See napari/utils/_octree.py for the config file format.
 
 Shared Memory Server
 --------------------
-Experimentally, only enable if NAPARI_MON is set to the path of a config
-file. See this PR for more info: https://github.com/napari/napari/pull/1909.
+Experimental shared memory service. Only enabled if NAPARI_MON is set to
+the path of a config file. See this PR for more info:
+https://github.com/napari/napari/pull/1909.
 """
 
-# Config for async/octree. If None then neither is enabled.
-# If octree_config['octree']['enabled'] is False only async is enabled.
+# Config for async/octree. If octree_config['octree']['enabled'] is False
+# only async is enabled, not the octree.
 octree_config = get_octree_config()
 
 # Shorthand for async loading with or without an octree.

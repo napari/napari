@@ -186,9 +186,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         if stats.created > 0 or stats.deleted > 0:
             LOGGER.debug(
-                f"tiles: {stats.start} -> {stats.final} "
-                f"create: {stats.created} delete: {stats.deleted} "
-                f"time: {elapsed.duration_ms:.3f}ms"
+                "tiles: %d -> %d create: %d delete: %d time: %.3fms",
+                stats.start,
+                stats.final,
+                stats.created,
+                stats.deleted,
+                elapsed.duration_ms,
             )
 
         return stats.remaining
