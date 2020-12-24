@@ -58,7 +58,7 @@ class InfoDisplayer:
         stats = info.stats
         counts = stats.counts
 
-        self.data_type = info.layer_ref.data_type
+        self.data_type = "???"  # We need to add this back...
         self.num_loads = counts.loads
         self.num_chunks = counts.chunks
         self.sync = LOAD_TYPE_STR[self.info.load_type]
