@@ -14,7 +14,7 @@ def make_worker(
     qtbot, nframes=8, fps=20, frame_range=None, loop_mode=LoopMode.LOOP
 ):
     # sets up an AnimationWorker ready for testing, and breaks down when done
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     qtdims = QtDims(dims)
     qtbot.addWidget(qtdims)
     nz = 8
