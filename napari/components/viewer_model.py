@@ -330,7 +330,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
-        center = [0] * (3 - len(center)) + list(center)
+        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
