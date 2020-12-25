@@ -5,7 +5,6 @@ from typing import List
 
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.components import LayerList
@@ -82,6 +81,8 @@ def pytest_addoption(parser):
 @pytest.fixture
 def qtbot(qtbot):
     """A modified qtbot fixture that makes sure no widgets have been leaked."""
+    from qtpy.QtWidgets import QApplication
+
     initial = QApplication.topLevelWidgets()
     yield qtbot
     QApplication.processEvents()
@@ -95,7 +96,7 @@ def qtbot(qtbot):
 
 
 @pytest.fixture(scope="function")
-def make_test_viewer(qtbot, request):
+def make_test_viewer(request):
     viewers: List[Viewer] = []
 
     def actual_factory(*model_args, viewer_class=Viewer, **model_kwargs):

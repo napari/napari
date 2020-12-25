@@ -23,7 +23,6 @@ from qtpy.QtWidgets import (
 )
 
 from .. import __version__
-from ..resources import get_stylesheet
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -35,6 +34,7 @@ from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .qt_viewer import QtViewer
 from .qthreading import wait_for_workers_to_quit
+from .resources import get_stylesheet
 from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter

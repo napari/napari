@@ -1,5 +1,4 @@
 from . import __version__
-from ._qt import Window
 from .components import ViewerModel
 from .utils import config
 
@@ -45,7 +44,22 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
-        self.window = Window(self, show=show)
+        try:
+            from ._qt import Window
+
+            self.window = Window(self, show=show)
+        except ImportError:
+
+            class Window:
+                def close(self):
+                    pass
+
+                def show(self):
+                    raise ImportError(
+                        "could not import qtpy.  Cannot show napari window."
+                    )
+
+            self.window = Window()
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
