@@ -1,5 +1,6 @@
 """OctreeLevel and OctreeLevelInfo classes.
 """
+import logging
 import math
 from typing import List, Optional
 
@@ -8,6 +9,8 @@ import numpy as np
 from ....types import ArrayLike
 from .octree_chunk import OctreeChunk, OctreeChunkGeom, OctreeLocation
 from .octree_util import SliceConfig
+
+LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeLevelInfo:
@@ -38,12 +41,11 @@ class OctreeLevelInfo:
         tile_size = self.slice_config.tile_size
         scaled_size = tile_size * self.scale
 
-        self.shape_in_tiles = [
-            math.ceil(base[0] / scaled_size),
-            math.ceil(base[1] / scaled_size),
-        ]
+        self.rows = math.ceil(base[0] / scaled_size)
+        self.cols = math.ceil(base[1] / scaled_size)
 
-        self.num_tiles = self.shape_in_tiles[0] * self.shape_in_tiles[1]
+        self.shape_in_tiles = [self.rows, self.cols]
+        self.num_tiles = self.rows * self.cols
 
 
 class OctreeLevel:
@@ -108,6 +110,13 @@ class OctreeLevel:
             if not create:
                 return None  # It didn't exist so we're done.
 
+        rows, cols = self.info.shape_in_tiles
+        if row < 0 or row >= rows or col < 0 or col >= cols:
+            # Chunk coordinates not in the level. Not an exception because
+            # callers might be trying to get children just out of bounds,
+            # for non-power-of-two base images.
+            return None
+
         # Create a chunk at this location and return it.
         octree_chunk = self._create_chunk(row, col)
         self._tiles[(row, col)] = octree_chunk
@@ -166,30 +175,28 @@ class OctreeLevel:
         return data
 
 
-def print_levels(
-    label: str, levels: List[OctreeLevel], start: int = 0
-) -> None:
-    """Print the dimensions of each level nicely.
+def log_levels(levels: List[OctreeLevel], start_level: int = 0) -> None:
+    """Log the dimensions of each level nicely.
+
+    We take start_level so we can log the "extra" levels we created but
+    with their correct level numbers.
 
     Parameters
     ----------
-    label : str
-        Prepend this to the header line.
     levels : List[OctreeLevel]
         Print information about these levels.
-    start : int
+    start_level : int
         Start the indexing at this number, shift the indexes up.
     """
     from ...._vendor.experimental.humanize.src.humanize import intword
 
     def _dim_str(dim: tuple) -> None:
-        return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
+        return f"({dim[0]}, {dim[1]}) = {intword(dim[0] * dim[1])}"
 
-    print(f"{label} {len(levels)} levels:")
     for index, level in enumerate(levels):
-        level_index = start + index
+        level_index = start_level + index
         image_str = _dim_str(level.info.image_shape)
         tiles_str = _dim_str(level.info.shape_in_tiles)
-        print(
-            f"    Level {level_index}: {image_str} pixels -> {tiles_str} tiles"
+        LOGGER.info(
+            f"Level {level_index}: {image_str} pixels -> {tiles_str} tiles"
         )

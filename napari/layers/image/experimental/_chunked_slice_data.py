@@ -13,7 +13,7 @@ from ....types import ArrayLike
 from ...base import Layer
 from .._image_slice_data import ImageSliceData
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class ChunkedSliceData(ImageSliceData):
@@ -79,7 +79,9 @@ class ChunkedSliceData(ImageSliceData):
         # Create the ChunkRequest and load it with the ChunkLoader.
         layer_ref = LayerRef.create_from_layer(self.layer, self.indices)
         self.request = chunk_loader.create_request(layer_ref, key, chunks)
-        satisfied_request = chunk_loader.load_chunk(self.request)
+
+        LOGGER.debug("ChunkedSliceData calling chunk_loader.load_chunk")
+        satisfied_request, _future = chunk_loader.load_chunk(self.request)
 
         if satisfied_request is None:
             return False  # Load was async.

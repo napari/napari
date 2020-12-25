@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from ....utils.perf import add_counter_event
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 # Each queue entry contains the request we are going to submit, and the
 # time in seconds when it should be submitted.

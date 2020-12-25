@@ -18,10 +18,8 @@ class OctreeView(NamedTuple):
         The two (row, col) corners in data coordinates, base image pixels.
     canvas : np.ndarray
         The shape of the canvas, the window we are drawing into.
-    freeze_level : bool
-        If True the octree level will not be automatically chosen.
-    track_view : bool
-        If True which chunks are being rendered should update as the view is moved.
+    display : OctreeDisplayOptions
+        How to display the view.
     """
 
     corners: np.ndarray
@@ -48,6 +46,26 @@ class OctreeView(NamedTuple):
             True if the octree level should be selected automatically.
         """
         return not self.display.freeze_level and self.display.track_view
+
+    def expand(self, expansion_factor: float) -> 'OctreeView':
+        """Return expanded view.
+
+        We expand the view so that load some tiles around the edge, so if
+        you pan they are more likely to be already loaded.
+
+        Parameters
+        ----------
+        expansion_factor : float
+            Expand the view by this much. Contract if less than 1.
+        """
+        assert expansion_factor > 0
+
+        extents = self.corners[1] - self.corners[0]
+        padding = ((extents * expansion_factor) - extents) / 2
+        new_corners = np.array(
+            (self.corners[0] - padding, self.corners[1] + padding)
+        )
+        return OctreeView(new_corners, self.canvas, self.display)
 
 
 class OctreeIntersection:
@@ -201,12 +219,10 @@ class OctreeIntersection:
         seen = np.vstack((x.ravel(), y.ravel())).T
 
         return {
-            "tile_state": {
-                # A list of (row, col) pairs of visible tiles.
-                "seen": seen,
-                # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
-                "corners": self._corners,
-            }
+            # A list of (row, col) pairs of visible tiles.
+            "seen": seen,
+            # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
+            "corners": self._corners,
         }
 
     @property
@@ -229,11 +245,9 @@ class OctreeIntersection:
         tile_size = slice_config.tile_size
 
         return {
-            "tile_config": {
-                "base_shape": base_shape,
-                "image_shape": image_shape,
-                "shape_in_tiles": shape_in_tiles,
-                "tile_size": tile_size,
-                "level_index": level.info.level_index,
-            }
+            "base_shape": base_shape,
+            "image_shape": image_shape,
+            "shape_in_tiles": shape_in_tiles,
+            "tile_size": tile_size,
+            "level_index": level.info.level_index,
         }

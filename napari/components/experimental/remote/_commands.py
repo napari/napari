@@ -3,9 +3,8 @@
 import json
 import logging
 
-from ...layers.image.experimental.octree_image import OctreeImage
-from ...utils.events import Event
-from ..layerlist import LayerList
+from ....layers.image.experimental.octree_image import OctreeImage
+from ...layerlist import LayerList
 
 LOGGER = logging.getLogger("napari.monitor")
 
@@ -28,8 +27,6 @@ class RemoteCommands:
     ----------
     layers : LayerList
         The viewer's layers, so we can call into them.
-    run_command_event : Event
-        This event fires when the remote client sends napari a command.
 
     Notes
     -----
@@ -39,9 +36,8 @@ class RemoteCommands:
     commands, command implementations should be spread out all over the system.
     """
 
-    def __init__(self, layers: LayerList, run_command_event: Event):
+    def __init__(self, layers: LayerList):
         self.layers = layers
-        run_command_event.connect(self._process_command)
 
     def show_grid(self, show: bool) -> None:
         """Set whether the octree tile grid is visible.
@@ -55,7 +51,7 @@ class RemoteCommands:
             if isinstance(layer, OctreeImage):
                 layer.display.show_grid = show
 
-    def _process_command(self, event):
+    def process_command(self, event) -> None:
         """Process this one command from the remote client.
 
         Parameters

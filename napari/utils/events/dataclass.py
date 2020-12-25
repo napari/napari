@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
@@ -220,16 +221,42 @@ def is_equal(v1, v2):
     except Exception as e:
         warnings.warn(
             "Comparison method failed. Returned False. "
-            f"There may be need to define custom _on_<name>_set method. Exception {e}"
+            f"There may be need to define custom compare methods in __equality_checks__ dictionary. Exception {e}"
         )
         return False
 
 
 def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
+    """
+    Try to determine compare function for types which cannot be compared with `operator.eq`.
+    Currently support `numpy.ndarray` and `dask.core.Array`.
+    Unpack `typing.Optional` and `dataclasses.InitVar` box.
+
+    Parameters
+    ----------
+    type_: type
+    type to examine
+
+    Returns
+    -------
+    Optional[Callable[[Any, Any], bool]]
+        Compare function
+    """
     import inspect
 
     if isinstance(type_, _AnnotatedAlias):
         type_ = type_.__origin__
+    if isinstance(type_, _dc.InitVar):
+        type_ = type_.type
+
+    # get main type from Optional[type]
+    _args = get_args(type_)
+    if (
+        get_origin(type_) is Union
+        and len(_args) == 2
+        and isinstance(None, _args[1])
+    ):
+        type_ = _args[0]
     if not inspect.isclass(type_):
         if not getattr(type_, "__module__", None) == "typing":
             warnings.warn(f"Bug in type recognition {type_}")
@@ -238,6 +265,7 @@ def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
         return np.array_equal
     if issubclass(type_, da.core.Array):
         return operator.is_
+    return None
 
 
 def add_events_to_class(cls: Type[C]) -> Type[C]:

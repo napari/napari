@@ -1,11 +1,14 @@
 """OctreeChunk class
 """
-from typing import NamedTuple
+import logging
+from typing import List, NamedTuple
 
 import numpy as np
 
 from ....components.experimental.chunk import ChunkKey, LayerKey
 from ....types import ArrayLike
+
+LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeChunkGeom(NamedTuple):
@@ -31,10 +34,18 @@ class OctreeLocation(NamedTuple):
     col: int
 
     def __str__(self):
+        return f"location=({self.level_index}, {self.row}, {self.col}) "
+
+    def __eq__(self, other) -> bool:
         return (
-            f"location =({self.level_index}, {self.row}, {self.col}) "
-            # f"slice={self.slice_id} id={id(self)}"
+            self.slice_id == other.slice_id
+            and self.level_index == other.level_index
+            and self.row == other.row
+            and self.col == other.col
         )
+
+    def __hash__(self) -> int:
+        return hash((self.slice_id, self.level_index, self.row, self.col))
 
     @classmethod
     def create_null(cls):
@@ -61,8 +72,12 @@ class OctreeChunkKey(ChunkKey):
     def __init__(
         self, layer_key: LayerKey, location: OctreeLocation,
     ):
-        self.location = location
+        self._location = location
         super().__init__(layer_key)
+
+    @property
+    def location(self):
+        return self._location
 
     def _get_hash_values(self):
         # TODO_OCTREE: can't we just hash in the parent's hashed key with
@@ -117,6 +132,9 @@ class OctreeChunk:
 
     def __str__(self):
         return f"{self.location}"
+
+    def __hash__(self):
+        return hash(self.location)
 
     @property
     def data(self) -> ArrayLike:
@@ -199,3 +217,31 @@ class OctreeChunk:
         """
         self._data = self._orig_data
         self.loading = False
+
+
+def log_chunks(
+    label: str, chunks: List[OctreeChunk], location: OctreeLocation = None,
+) -> None:
+    """Log the given chunks with an intro header message.
+
+    Parameters
+    ----------
+    label : str
+        Prefix the log message with this label.
+    chunk : List[OctreeChunk]
+        The chunks to log.
+    location : Optional[OctreeLocation]
+        Append the log message with this location.
+    """
+    if location is None:
+        LOGGER.debug("%s has %d chunks:", label, len(chunks))
+    else:
+        LOGGER.debug("%s has %d chunks at %s", label, len(chunks), location)
+    for i, chunk in enumerate(chunks):
+        LOGGER.debug(
+            "Chunk %d %s in_memory=%d loading=%d",
+            i,
+            chunk.location,
+            chunk.in_memory,
+            chunk.loading,
+        )
