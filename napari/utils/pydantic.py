@@ -1,4 +1,5 @@
 import numpy as np
+from pydantic import BaseModel
 
 from .events.dataclass import _type_to_compare, is_equal
 from .events.event import EmitterGroup
@@ -146,10 +147,12 @@ def set_with_events(self, name, value, original_setattr):
 JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
 
 
-# Pydandic config so that assigments are validated
-class PydanticConfig:
-    validate_assignment = True
-    underscore_attrs_are_private = True
-    use_enum_values = True
-    validate_all = True
-    json_encoders = JSON_ENCODERS
+class ConfiguredModel(BaseModel):
+    # Pydandic config so that assigments are validated
+    class Config:
+        arbitrary_types_allowed = True
+        validate_assignment = True
+        underscore_attrs_are_private = True
+        use_enum_values = True
+        validate_all = True
+        json_encoders = JSON_ENCODERS

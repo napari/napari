@@ -46,16 +46,16 @@ def test_labels_with_init():
     assert dims.axis_labels == ('x', 'y', 'z')
 
 
-def test_wrong_order():
+def test_bad_order():
     dims = Dims(ndim=3)
     with pytest.raises(ValueError):
-        dims.order = (0, 1)
+        dims.order = (0, 0, 1)
 
 
-def test_wrong_labels():
+def test_pad_bad_labels():
     dims = Dims(ndim=3)
-    with pytest.raises(ValueError):
-        dims.axis_labels = ('a', 'b')
+    dims.axis_labels = ('a', 'b')
+    assert dims.axis_labels == ('0', 'a', 'b')
 
 
 def test_keyword_only_dims():

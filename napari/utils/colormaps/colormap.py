@@ -2,9 +2,9 @@ from enum import Enum
 from functools import partial
 
 import numpy as np
-from pydantic import BaseModel, Field, root_validator, validator
+from pydantic import Field, root_validator, validator
 
-from ..pydantic import Array, PydanticConfig, evented_model
+from ..pydantic import Array, ConfiguredModel, evented_model
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 
@@ -24,7 +24,7 @@ class ColormapInterpolationMode(str, Enum):
 
 
 @evented_model
-class Colormap(BaseModel):
+class Colormap(ConfiguredModel):
     """Colormap that relates intensity values to colors.
 
     Attributes
@@ -49,9 +49,6 @@ class Colormap(BaseModel):
         default_factory=partial(np.zeros, (0,))
     )
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-
-    # Config
-    Config = PydanticConfig
 
     # validators
     _ensure_color_array = validator('colors', pre=True, allow_reuse=True)(

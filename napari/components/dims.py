@@ -1,14 +1,14 @@
 from typing import Sequence, Tuple, Union
 
 import numpy as np
-from pydantic import BaseModel, root_validator
+from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils.pydantic import PydanticConfig, evented_model
+from ..utils.pydantic import ConfiguredModel, evented_model
 
 
 @evented_model
-class Dims(BaseModel):
+class Dims(ConfiguredModel):
     """Dimensions object modeling slicing and displaying.
 
     Parameters
@@ -76,10 +76,13 @@ class Dims(BaseModel):
     # private vars
     _scroll_progress: int = 0
 
-    # Config
-    Config = PydanticConfig
-
     # validators
+    @validator('axis_labels', pre=True)
+    def _string_to_list(v):
+        if isinstance(v, str):
+            return list(v)
+        return v
+
     @root_validator
     def _check_dims(cls, values):
         ndim = values['ndim']
@@ -136,7 +139,7 @@ class Dims(BaseModel):
         return values
 
     @property
-    def nsteps(self):
+    def nsteps(self) -> Tuple[int, ...]:
         """Tuple of int: Number of slider steps for each dimension.
         """
         return tuple(
@@ -145,7 +148,7 @@ class Dims(BaseModel):
         )
 
     @property
-    def point(self):
+    def point(self) -> Tuple[int, ...]:
         """Tuple of float: Value of each dimension."""
         # The point value is computed from the range and current_step
         point = tuple(
@@ -157,17 +160,17 @@ class Dims(BaseModel):
         return point
 
     @property
-    def displayed(self):
+    def displayed(self) -> Tuple[int, ...]:
         """Tuple: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @property
-    def not_displayed(self):
+    def not_displayed(self) -> Tuple[int, ...]:
         """Tuple: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
-    def displayed_order(self):
+    def displayed_order(self) -> Tuple[int, ...]:
         """Tuple: Order of only displayed dimensions."""
         order = np.array(self.displayed)
         order[np.argsort(order)] = list(range(len(order)))

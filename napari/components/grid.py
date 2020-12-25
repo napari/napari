@@ -1,13 +1,12 @@
 from typing import Tuple
 
 import numpy as np
-from pydantic import BaseModel
 
-from ..utils.pydantic import PydanticConfig, evented_model
+from ..utils.pydantic import ConfiguredModel, evented_model
 
 
 @evented_model
-class GridCanvas(BaseModel):
+class GridCanvas(ConfiguredModel):
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
@@ -35,10 +34,7 @@ class GridCanvas(BaseModel):
     stride: int = 1
     shape: Tuple[int, int] = (-1, -1)
 
-    # Config
-    Config = PydanticConfig
-
-    def actual_shape(self, nlayers=1):
+    def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -77,7 +73,7 @@ class GridCanvas(BaseModel):
         else:
             return (1, 1)
 
-    def position(self, index, nlayers):
+    def position(self, index: int, nlayers: int) -> Tuple[int, int]:
         """Return the position of a given linear index in grid.
 
         If the grid is not enabled, this will return (0, 0).

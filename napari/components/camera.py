@@ -1,16 +1,16 @@
 from functools import partial
 from typing import Tuple
 
-from pydantic import BaseModel, validator
+from pydantic import validator
 
 from ..utils.misc import ensure_n_tuple
-from ..utils.pydantic import PydanticConfig, evented_model
+from ..utils.pydantic import ConfiguredModel, evented_model
 
 ensure_3_tuple = partial(ensure_n_tuple, n=3)
 
 
 @evented_model
-class Camera(BaseModel):
+class Camera(ConfiguredModel):
     """Camera object modeling position and view of the camera.
 
     Attributes
@@ -31,9 +31,6 @@ class Camera(BaseModel):
     zoom: float = 1.0
     angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
     interactive: bool = True
-
-    # Config
-    Config = PydanticConfig
 
     # validators
     @validator('center', 'angles', pre=True)

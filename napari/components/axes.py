@@ -1,12 +1,12 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, validator
 
 from ..utils.colormaps.colormap_utils import make_default_color_array
 from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.pydantic import Array, PydanticConfig, evented_model
+from ..utils.pydantic import Array, ConfiguredModel, evented_model
 
 
 @evented_model
-class Axes(BaseModel):
+class Axes(ConfiguredModel):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes
@@ -41,9 +41,6 @@ class Axes(BaseModel):
     background_color: Array[float, (4,)] = Field(
         default_factory=make_default_color_array
     )
-
-    # Config
-    Config = PydanticConfig
 
     # validators
     _ensure_single_color = validator(
