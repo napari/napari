@@ -244,17 +244,10 @@ class QtViewer(QSplitter):
         """
 
         self.axes = VispyAxesVisual(
-            self.viewer.axes,
-            self.viewer.camera,
-            self.viewer.dims,
-            parent=self.view.scene,
-            order=1e6,
+            self.viewer, parent=self.view.scene, order=1e6,
         )
         self.scale_bar = VispyScaleBarVisual(
-            self.viewer.scale_bar,
-            self.viewer.camera,
-            parent=self.view,
-            order=1e6 + 1,
+            self.viewer, parent=self.view, order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 

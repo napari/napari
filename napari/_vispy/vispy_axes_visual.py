@@ -3,6 +3,8 @@ from vispy.scene.visuals import Compound, Line, Mesh, Text
 from vispy.visuals.transforms import STTransform
 
 from ..layers.shapes._shapes_utils import triangulate_ellipse
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.theme import get_theme
 
 
 def make_dashed_line(num_dashes, axis):
@@ -109,10 +111,8 @@ class VispyAxesVisual:
 
     _NUM_SEGMENTS_ARROWHEAD = 100
 
-    def __init__(self, axes, camera, dims, parent=None, order=0):
-        self._axes = axes
-        self._dims = dims
-        self._camera = camera
+    def __init__(self, viewer, parent=None, order=0):
+        self._viewer = viewer
         self._scale = 1
 
         # Target axes length in canvas pixels
@@ -182,75 +182,80 @@ class VispyAxesVisual:
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
 
-        self._axes.events.visible.connect(self._on_visible_change)
-        self._axes.events.colored.connect(self._on_data_change)
-        self._axes.events.dashed.connect(self._on_data_change)
-        self._axes.events.background_color.connect(self._on_data_change)
-        self._axes.events.labels.connect(self._on_data_change)
-        self._axes.events.arrows.connect(self._on_data_change)
-        self._dims.events.order.connect(self._on_data_change)
-        self._dims.events.ndisplay.connect(self._on_data_change)
-        self._dims.events.axis_labels.connect(self._on_data_change)
-        self._axes.events.labels.connect(self._on_data_change)
-        self._camera.events.zoom.connect(self._on_zoom_change)
+        self._viewer.events.theme.connect(self._on_data_change)
+        self._viewer.axes.events.visible.connect(self._on_visible_change)
+        self._viewer.axes.events.colored.connect(self._on_data_change)
+        self._viewer.axes.events.dashed.connect(self._on_data_change)
+        self._viewer.axes.events.labels.connect(self._on_data_change)
+        self._viewer.axes.events.arrows.connect(self._on_data_change)
+        self._viewer.dims.events.order.connect(self._on_data_change)
+        self._viewer.dims.events.ndisplay.connect(self._on_data_change)
+        self._viewer.dims.events.axis_labels.connect(self._on_data_change)
+        self._viewer.camera.events.zoom.connect(self._on_zoom_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
-        self.node.visible = self._axes.visible
+        self.node.visible = self._viewer.axes.visible
         self._on_zoom_change(event)
         self._on_data_change(event)
 
     def _on_data_change(self, event):
         """Change style of axes."""
-        if not self._axes.visible:
+        if not self._viewer.axes.visible:
             return
 
         # Determine which axes are displayed
-        axes = self._dims.displayed
+        axes = self._viewer.dims.displayed
         # Determine the labels of those axes
-        axes_labels = [self._dims.axis_labels[a] for a in axes[::-1]]
+        axes_labels = [self._viewer.dims.axis_labels[a] for a in axes[::-1]]
         # Counting backwards from total number of dimensions
         # determine axes positions. This is done as by default
         # the last NumPy axis corresponds to the first Vispy axis
-        reversed_axes = [self._dims.ndim - 1 - a for a in axes[::-1]]
+        reversed_axes = [self._viewer.dims.ndim - 1 - a for a in axes[::-1]]
 
         # Determine colors of axes based on reverse position
-        if self._axes.colored:
+        if self._viewer.axes.colored:
             axes_colors = [
                 self._default_color[ra % len(self._default_color)]
                 for ra in reversed_axes
             ]
         else:
-            color = np.subtract(1, self._axes.background_color)
-            color[-1] = self._axes.background_color[-1]
-            axes_colors = [color] * self._dims.ndisplay
+            background_color = get_theme(self._viewer.theme)['canvas']
+            background_color = transform_color(background_color)[0]
+            color = np.subtract(1, background_color)
+            color[-1] = background_color[-1]
+            axes_colors = [color] * self._viewer.dims.ndisplay
 
         # Make sure have enough colors and labels for displayed dimensions
-        if len(axes_colors) < self._dims.ndisplay:
-            color = np.subtract(1, self._axes.background_color)
-            color[-1] = self._axes.background_color[-1]
-            axes_colors += [color] * (self._dims.ndisplay - len(axes_colors))
-        if len(axes_labels) < self._dims.ndisplay:
-            axes_labels += [''] * (self._dims.ndisplay - len(axes_labels))
+        if len(axes_colors) < self._viewer.dims.ndisplay:
+            color = np.subtract(1, self._viewer.axes.background_color)
+            color[-1] = self._viewer.axes.background_color[-1]
+            axes_colors += [color] * (
+                self._viewer.dims.ndisplay - len(axes_colors)
+            )
+        if len(axes_labels) < self._viewer.dims.ndisplay:
+            axes_labels += [''] * (
+                self._viewer.dims.ndisplay - len(axes_labels)
+            )
 
         # Determine data based on number of displayed dimensions and
         # axes visualization parameters
-        if self._axes.dashed and self._dims.ndisplay == 2:
+        if self._viewer.axes.dashed and self._viewer.dims.ndisplay == 2:
             data = self._dashed_line_data2D
             color = color_dashed_lines(axes_colors)
             text_data = self._line_data2D[1::2]
-        elif self._axes.dashed and self._dims.ndisplay == 3:
+        elif self._viewer.axes.dashed and self._viewer.dims.ndisplay == 3:
             data = self._dashed_line_data3D
             color = color_dashed_lines(axes_colors)
             text_data = self._line_data3D[1::2]
-        elif not self._axes.dashed and self._dims.ndisplay == 2:
+        elif not self._viewer.axes.dashed and self._viewer.dims.ndisplay == 2:
             data = self._line_data2D
             color = color_lines(axes_colors)
             text_data = self._line_data2D[1::2]
-        elif not self._axes.dashed and self._dims.ndisplay == 3:
+        elif not self._viewer.axes.dashed and self._viewer.dims.ndisplay == 3:
             data = self._line_data3D
             color = color_lines(axes_colors)
             text_data = self._line_data3D[1::2]
@@ -259,13 +264,13 @@ class VispyAxesVisual:
                 'Axes dash status and ndisplay combination not supported'
             )
 
-        if self._axes.arrows and self._dims.ndisplay == 2:
+        if self._viewer.axes.arrows and self._viewer.dims.ndisplay == 2:
             arrow_vertices = self._default_arrow_vertices2D
             arrow_faces = self._default_arrow_faces2D
             arrow_color = color_arrowheads(
                 axes_colors, self._NUM_SEGMENTS_ARROWHEAD
             )
-        elif self._axes.arrows and self._dims.ndisplay == 3:
+        elif self._viewer.axes.arrows and self._viewer.dims.ndisplay == 3:
             arrow_vertices = self._default_arrow_vertices3D
             arrow_faces = self._default_arrow_faces3D
             arrow_color = color_arrowheads(
@@ -284,7 +289,9 @@ class VispyAxesVisual:
         )
 
         # Set visibility status of text
-        self.text_node.visible = self._axes.visible and self._axes.labels
+        self.text_node.visible = (
+            self._viewer.axes.visible and self._viewer.axes.labels
+        )
         self.text_node.text = axes_labels
         self.text_node.color = axes_colors
         self.text_node.pos = text_data + self._text_offsets
@@ -292,10 +299,10 @@ class VispyAxesVisual:
     def _on_zoom_change(self, event):
         """Update axes length based on zoom scale.
         """
-        if not self._axes.visible:
+        if not self._viewer.axes.visible:
             return
 
-        scale = 1 / self._camera.zoom
+        scale = 1 / self._viewer.camera.zoom
 
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
