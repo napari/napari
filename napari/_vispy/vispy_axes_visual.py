@@ -209,6 +209,10 @@ class VispyAxesVisual:
 
         # Determine which axes are displayed
         axes = self._viewer.dims.displayed
+
+        # Actual number of displayed dims
+        ndisplay = len(self._viewer.dims.displayed)
+
         # Determine the labels of those axes
         axes_labels = [self._viewer.dims.axis_labels[a] for a in axes[::-1]]
         # Counting backwards from total number of dimensions
@@ -227,35 +231,23 @@ class VispyAxesVisual:
             background_color = transform_color(background_color)[0]
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
-            axes_colors = [color] * self._viewer.dims.ndisplay
-
-        # Make sure have enough colors and labels for displayed dimensions
-        if len(axes_colors) < self._viewer.dims.ndisplay:
-            color = np.subtract(1, self._viewer.axes.background_color)
-            color[-1] = self._viewer.axes.background_color[-1]
-            axes_colors += [color] * (
-                self._viewer.dims.ndisplay - len(axes_colors)
-            )
-        if len(axes_labels) < self._viewer.dims.ndisplay:
-            axes_labels += [''] * (
-                self._viewer.dims.ndisplay - len(axes_labels)
-            )
+            axes_colors = [color] * ndisplay
 
         # Determine data based on number of displayed dimensions and
         # axes visualization parameters
-        if self._viewer.axes.dashed and self._viewer.dims.ndisplay == 2:
+        if self._viewer.axes.dashed and ndisplay == 2:
             data = self._dashed_line_data2D
             color = color_dashed_lines(axes_colors)
             text_data = self._line_data2D[1::2]
-        elif self._viewer.axes.dashed and self._viewer.dims.ndisplay == 3:
+        elif self._viewer.axes.dashed and ndisplay == 3:
             data = self._dashed_line_data3D
             color = color_dashed_lines(axes_colors)
             text_data = self._line_data3D[1::2]
-        elif not self._viewer.axes.dashed and self._viewer.dims.ndisplay == 2:
+        elif not self._viewer.axes.dashed and ndisplay == 2:
             data = self._line_data2D
             color = color_lines(axes_colors)
             text_data = self._line_data2D[1::2]
-        elif not self._viewer.axes.dashed and self._viewer.dims.ndisplay == 3:
+        elif not self._viewer.axes.dashed and ndisplay == 3:
             data = self._line_data3D
             color = color_lines(axes_colors)
             text_data = self._line_data3D[1::2]
@@ -264,13 +256,13 @@ class VispyAxesVisual:
                 'Axes dash status and ndisplay combination not supported'
             )
 
-        if self._viewer.axes.arrows and self._viewer.dims.ndisplay == 2:
+        if self._viewer.axes.arrows and ndisplay == 2:
             arrow_vertices = self._default_arrow_vertices2D
             arrow_faces = self._default_arrow_faces2D
             arrow_color = color_arrowheads(
                 axes_colors, self._NUM_SEGMENTS_ARROWHEAD
             )
-        elif self._viewer.axes.arrows and self._viewer.dims.ndisplay == 3:
+        elif self._viewer.axes.arrows and ndisplay == 3:
             arrow_vertices = self._default_arrow_vertices3D
             arrow_faces = self._default_arrow_faces3D
             arrow_color = color_arrowheads(
