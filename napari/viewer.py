@@ -44,24 +44,9 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        from .components.window import Window
 
-        # TODO: discuss.  This is THE entrypoint for Qt stuff here.
-        try:
-            from ._qt import Window
-
-            self.window = Window(self, show=show)
-        except ImportError:
-
-            class Window:
-                def close(self):
-                    pass
-
-                def __getattr__(self, name):
-                    raise ImportError(
-                        "could not import qtpy.  Cannot show napari window."
-                    )
-
-            self.window = Window()
+        self.window = Window(self, show=show)
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
