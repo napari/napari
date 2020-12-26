@@ -1,3 +1,7 @@
+from .viewer_model import ViewerModel
+
+
+@ViewerModel.mouse_wheel_callbacks.append
 def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
     if 'Control' not in event.modifiers:

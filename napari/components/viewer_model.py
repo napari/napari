@@ -21,7 +21,6 @@ from ..utils.misc import is_sequence
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
-from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
@@ -59,6 +58,17 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
     """
+
+    # Hold callbacks for when mouse moves with nothing pressed
+    mouse_move_callbacks = []
+    # Hold callbacks for when mouse is pressed, dragged, and released
+    mouse_drag_callbacks = []
+    # Hold callbacks for when mouse wheel is scrolled
+    mouse_wheel_callbacks = []
+
+    _persisted_mouse_event = {}
+    _mouse_drag_gen = {}
+    _mouse_wheel_gen = {}
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
@@ -109,17 +119,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
-
-        # Hold callbacks for when mouse moves with nothing pressed
-        self.mouse_move_callbacks = []
-        # Hold callbacks for when mouse is pressed, dragged, and released
-        self.mouse_drag_callbacks = []
-        # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks = [dims_scroll]
-
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
-        self._mouse_wheel_gen = {}
 
     def __str__(self):
         """Simple string representation"""
