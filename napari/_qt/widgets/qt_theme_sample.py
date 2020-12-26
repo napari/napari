@@ -43,7 +43,7 @@ from qtpy.QtWidgets import (
 
 from ...utils.io import imsave
 from ...utils.theme import available_themes, get_theme, template
-from ..resources import get_stylesheet
+from ..qt_resources import get_stylesheet
 from ..utils import QImg2array
 from .qt_range_slider import QHRangeSlider
 

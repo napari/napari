@@ -23,7 +23,7 @@ from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import get_theme, template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
-from .resources import get_stylesheet
+from .qt_resources import get_stylesheet
 from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims

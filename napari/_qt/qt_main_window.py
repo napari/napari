@@ -32,9 +32,9 @@ from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
+from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .qthreading import wait_for_workers_to_quit
-from .resources import get_stylesheet
 from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
