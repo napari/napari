@@ -96,7 +96,7 @@ def qtbot(qtbot):
 
 
 @pytest.fixture(scope="function")
-def make_test_viewer(request):
+def make_test_viewer(qtbot, request):
     viewers: List[Viewer] = []
 
     def actual_factory(*model_args, viewer_class=Viewer, **model_kwargs):

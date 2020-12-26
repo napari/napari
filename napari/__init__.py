@@ -13,9 +13,11 @@ from .viewer import Viewer  # isort:skip
 # see: https://github.com/napari/napari/issues/1347
 from scipy import stats  # noqa: F401
 
-# from ._qt import gui_qt
+from ._qt import gui_qt
 from .plugins.io import save_layers
-from .utils import sys_info
+
+# register napari object types with magicgui if it is installed
+from .utils import _magicgui, sys_info
 from .view_layers import (  # type: ignore
     view_image,
     view_labels,
@@ -27,10 +29,8 @@ from .view_layers import (  # type: ignore
     view_vectors,
 )
 
-# register napari object types with magicgui if it is installed
-# from .utils import _magicgui
-# _magicgui.register_types_with_magicgui()
-# del _magicgui
+_magicgui.register_types_with_magicgui()
+del _magicgui
 
 
 del stats
@@ -47,4 +47,5 @@ __all__ = [
     'view_surface',
     'view_tracks',
     'view_vectors',
+    'gui_qt',
 ]

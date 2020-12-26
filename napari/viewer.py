@@ -44,6 +44,8 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+
+        # TODO: discuss.  This is THE entrypoint for Qt stuff here.
         try:
             from ._qt import Window
 
@@ -54,7 +56,7 @@ class Viewer(ViewerModel):
                 def close(self):
                     pass
 
-                def show(self):
+                def __getattr__(self, name):
                     raise ImportError(
                         "could not import qtpy.  Cannot show napari window."
                     )
