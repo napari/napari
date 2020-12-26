@@ -1,98 +1,123 @@
-"""ChunkKey and ChunkRequest classes.
+"""ChunkLocation and ChunkRequest classes.
 """
 import contextlib
 import logging
-from typing import Optional, Tuple
+import time
+import weakref
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
 from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
-from .layer_key import LayerKey
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
-class ChunkKey:
-    """The key for one single ChunkRequest.
+class LayerRef(NamedTuple):
+    layer_id: int
+    layer_ref: weakref.ReferenceType
+
+    @property
+    def layer(self):
+        return self.layer_ref()
+
+    @classmethod
+    def from_layer(cls, layer):
+        return cls(id(layer), weakref.ref(layer))
+
+
+class ChunkLocation:
+    """Location of the chunk.
+
+    ChunkLocation is the base class for two classes:
+        ImageLocation - pre-octree async loading
+        OctreeLocation - octree async loading
 
     Parameters
     ----------
-    layer : Layer
-        The layer which is loading the chunk.
-    indices : Indices
-        The indices of the layer we are loading.
-
-    Attributes
-    ----------
-    layer_key : LayerKey
-        The layer specific parts of the key.
-    key : Tuple
-        The combined key, everything hashed together.
+    layer_id : int
+        The id of the layer containing the chunks.
+    layer_ref : weakref.ReferenceType
+        Weak reference to the layer.
     """
 
-    def __init__(self, layer_key: LayerKey):
-        self.layer_key = layer_key
-        self.key = hash(self._get_hash_values())
+    def __init__(self, layer_ref: LayerRef):
+        self.layer_ref = layer_ref
 
-    def _get_hash_values(self):
-        return self.layer_key._get_hash_values()
+    def __eq__(self, other) -> bool:
+        return self.layer_ref.layer_id == other.layer_ref.layer_id
 
-    def __str__(self):
-        layer_key = self.layer_key
-        return (
-            f"layer_id={layer_key.layer_id} data_id={layer_key.data_id} "
-            f"data_level={layer_key.data_level} indices={layer_key.indices}"
-        )
+    @property
+    def layer_id(self) -> int:
+        return self.layer_ref.layer_id
 
-    def __eq__(self, other):
-        return self.key == other.key
+    @classmethod
+    def from_layer(cls, layer):
+        return cls(LayerRef.from_layer(layer))
 
 
 class ChunkRequest:
-    """A request asking the ChunkLoader to load one or more arrays.
+    """A request asking the ChunkLoader to load data.
 
     Parameters
     ----------
-    key : ChunkKey
-        The key of the request.
+    location : ChunkLocation
+        The location of this chunk. Probably a class derived from ChunkLocation
+        such as ImageLocation or OctreeLocation.
     chunks : Dict[str, ArrayLike]
-        The chunk arrays we need to load.
+        One or more arrays that we need to load.
 
     Attributes
     ----------
-    key : ChunkKey
-        The key of the request.
+    location : ChunkLocation
+        The location of the chunks.
     chunks : Dict[str, ArrayLike]
-        The chunk arrays we need to load.
-    timers : Dict[str, PerfEvent]
+        One or more arrays that we need to load.
+    create_time : float
+        The time the request was created.
+    _timers : Dict[str, PerfEvent]
         Timing information about chunk load time.
     """
 
-    def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
-        # Make sure chunks dict is what we expect.
+    def __init__(self, location: ChunkLocation, chunks: Dict[str, ArrayLike]):
+        # Make sure chunks dict is valid.
         for chunk_key, array in chunks.items():
             assert isinstance(chunk_key, str)
             assert array is not None
 
-        self.key = key
+        self.location = location
         self.chunks = chunks
 
-        self.timers: Dict[str, PerfEvent] = {}
+        self.create_time = time.time()
+        self._timers: Dict[str, PerfEvent] = {}
 
     @property
-    def data_id(self) -> int:
-        """Return the data_id for this request.
+    def elapsed_ms(self) -> float:
+        """The total time elapsed since the request was created.
 
         Return
         ------
-        int
-            The data_id for this request.
+        float
+            The total time elapsed since the chunk was created.
         """
-        return self.key.layer_key.data_id
+        return (time.time() - self.create_time) * 1000
+
+    @property
+    def load_ms(self) -> float:
+        """The total time it took to load all chunks.
+
+        Return
+        ------
+        float
+            The total time it took to return all chunks.
+        """
+        return sum(
+            perf_timer.duration_ms for perf_timer in self._timers.values()
+        )
 
     @property
     def num_chunks(self) -> int:
@@ -128,8 +153,8 @@ class ChunkRequest:
         return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
     @contextlib.contextmanager
-    def chunk_timer(self, name):
-        """Time a block of code and save the PerfEvent in self.timers.
+    def _chunk_timer(self, name):
+        """Time a block of code and save the PerfEvent in self._timers.
 
         We want to time our loads whether perfmon is enabled or not, since
         the auto-async feature needs to work in all cases.
@@ -146,7 +171,7 @@ class ChunkRequest:
         """
         with block_timer(name) as event:
             yield event
-        self.timers[name] = event
+        self._timers[name] = event
 
     def load_chunks(self):
         """Load all of our chunks now in this thread.
@@ -154,11 +179,10 @@ class ChunkRequest:
         We time the overall load with the special name "load_chunks" and then
         we time each chunk as it loads, using it's array name as the key.
         """
-        with self.chunk_timer("ChunkRequest.load_chunks"):
-            for key, array in self.chunks.items():
-                with self.chunk_timer(key):
-                    loaded_array = np.asarray(array)
-                    self.chunks[key] = loaded_array
+        for key, array in self.chunks.items():
+            with self._chunk_timer(key):
+                loaded_array = np.asarray(array)
+                self.chunks[key] = loaded_array
 
     def transpose_chunks(self, order: tuple) -> None:
         """Transpose all our chunks.

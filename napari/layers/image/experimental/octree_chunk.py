@@ -1,74 +1,69 @@
-"""OctreeChunk class
+"""OctreeLocation and OctreeChunk classes.
 """
-from typing import NamedTuple
+import logging
+from typing import List, NamedTuple
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkKey, LayerKey
+from ....components.experimental.chunk import ChunkLocation, LayerRef
 from ....types import ArrayLike
+
+LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeChunkGeom(NamedTuple):
     """Position and scale of the chunk, for rendering.
 
     Stored in the OctreeChunk so that we calculate them just once
-    at OctreeChunk creation time.
+    at OctreeChunk creation time. So the visual does not have to.
     """
 
     pos: np.ndarray
     scale: np.ndarray
 
 
-class OctreeLocation(NamedTuple):
+class OctreeLocation(ChunkLocation):
     """Location of one chunk within the octree.
-
-    Part of the OctreeChunkKey to uniquely identify a chunk.
-    """
-
-    slice_id: int
-    level_index: int
-    row: int
-    col: int
-
-    def __str__(self):
-        return (
-            f"location =({self.level_index}, {self.row}, {self.col}) "
-            # f"slice={self.slice_id} id={id(self)}"
-        )
-
-    @classmethod
-    def create_null(cls):
-        """Create null location that points to nothing."""
-        return cls(0, 0, 0, 0, np.zeros(0), np.zeros(0))
-
-
-class OctreeChunkKey(ChunkKey):
-    """A ChunkKey plus some octree specific fields.
-
-    The ChunkLoader uses ChunkKey to identify chunks, for example for
-    caching or just tracking what has been loaded.
 
     Parameters
     ----------
-    layer : Layer
-        The OctreeImage layer.
-    indices : Tuple[Optional[slice], ...]
-        The indices of the image we are viewing.
-    location : OctreeLocation
-        The location of the chunk within the octree.
+    slice_id : int
+        The id of the OctreeSlice we are in.
+    level_index : int
+        The octree level index.
+    row : int
+        The chunk row.
+    col : int
+        The chunk col.
     """
 
     def __init__(
-        self, layer_key: LayerKey, location: OctreeLocation,
+        self,
+        layer_ref: LayerRef,
+        slice_id: int,
+        level_index: int,
+        row: int,
+        col: int,
     ):
-        self.location = location
-        super().__init__(layer_key)
+        super().__init__(layer_ref)
+        self.slice_id: int = slice_id
+        self.level_index: int = level_index
+        self.row: int = row
+        self.col: int = col
 
-    def _get_hash_values(self):
-        # TODO_OCTREE: can't we just hash in the parent's hashed key with
-        # our additional values? Probably, but we do it from scratch here.
-        parent = super()._get_hash_values()
-        return parent + (self.location,)
+    def __str__(self):
+        return f"location=({self.level_index}, {self.row}, {self.col}) "
+
+    def __eq__(self, other) -> bool:
+        return (
+            self.slice_id == other.slice_id
+            and self.level_index == other.level_index
+            and self.row == other.row
+            and self.col == other.col
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.slice_id, self.level_index, self.row, self.col))
 
 
 class OctreeChunk:
@@ -77,9 +72,9 @@ class OctreeChunk:
     For 2D images a chunk is a "tile". It's a 2D square region of pixels
     which are part of the full 2D image.
 
-    If it's in level 0 of the octree, the pixels are 1:1 identical to the
-    full image. If it's in level 1 or greater the pixels are downsampled
-    from the full resolution image.
+    For level 0 of the octree, the pixels are 1:1 identical to the full
+    image. For level 1 or greater the pixels are downsampled from the full
+    resolution image.
 
     For 3D, not yet implemented, a chunk is a sub-volume. Again for level 0
     the voxels are at the full resolution of the full image, but for other
@@ -118,6 +113,9 @@ class OctreeChunk:
     def __str__(self):
         return f"{self.location}"
 
+    def __hash__(self):
+        return hash(self.location)
+
     @property
     def data(self) -> ArrayLike:
         """Return the data associated with this chunk.
@@ -146,19 +144,6 @@ class OctreeChunk:
         # Assign and note the loading process has now finished.
         self._data = data
         self.loading = False
-
-    @property
-    def key(self) -> OctreeChunkKey:
-        """The unique key for this chunk.
-
-        TODO_OCTREE: Switch to __hash__? Tried __hash__ a while ago and ran
-        into problems, but maybe try again.
-        """
-        return (
-            self.geom.pos[0],
-            self.geom.pos[1],
-            self.location.level_index,
-        )
 
     @property
     def in_memory(self) -> bool:
@@ -199,3 +184,31 @@ class OctreeChunk:
         """
         self._data = self._orig_data
         self.loading = False
+
+
+def log_chunks(
+    label: str, chunks: List[OctreeChunk], location: OctreeLocation = None,
+) -> None:
+    """Log the given chunks with an intro header message.
+
+    Parameters
+    ----------
+    label : str
+        Prefix the log message with this label.
+    chunk : List[OctreeChunk]
+        The chunks to log.
+    location : Optional[OctreeLocation]
+        Append the log message with this location.
+    """
+    if location is None:
+        LOGGER.debug("%s has %d chunks:", label, len(chunks))
+    else:
+        LOGGER.debug("%s has %d chunks at %s", label, len(chunks), location)
+    for i, chunk in enumerate(chunks):
+        LOGGER.debug(
+            "Chunk %d %s in_memory=%d loading=%d",
+            i,
+            chunk.location,
+            chunk.in_memory,
+            chunk.loading,
+        )

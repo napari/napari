@@ -1,14 +1,11 @@
 """ImageSliceData class.
 """
-import logging
 from typing import Optional, Tuple
 
 import numpy as np
 
 from ...types import ArrayLike
 from ..base import Layer
-
-LOGGER = logging.getLogger("napari.async")
 
 
 class ImageSliceData:

@@ -28,7 +28,7 @@ from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.perf import perf_config
-from ..utils.theme import template
+from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -167,7 +167,7 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette()
+        self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
@@ -176,7 +176,7 @@ class Window:
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+        self.qt_viewer.viewer.events.theme.connect(self._update_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -184,9 +184,6 @@ class Window:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
-
-        if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:
             self.show()
@@ -339,6 +336,16 @@ class Window:
         self.view_menu.addAction(toggle_theme)
         self.view_menu.addAction(toggle_play)
         self.view_menu.addSeparator()
+
+        # Add octree actions.
+        if config.async_octree:
+            toggle_outline = QAction('Toggle Chunk Outlines', self._qt_window)
+            toggle_outline.triggered.connect(
+                self.qt_viewer._toggle_chunk_outlines
+            )
+            toggle_outline.setShortcut('Ctrl+Alt+O')
+            toggle_outline.setStatusTip('Toggle Chunk Outlines')
+            self.view_menu.addAction(toggle_outline)
 
         # Add axes menu
         axes_menu = QMenu('Axes', parent=self._qt_window)
@@ -581,7 +588,6 @@ class Window:
         dock_widget : QtViewerDockWidget
             `dock_widget` will be added to the main window.
         """
-        dock_widget.setParent(self._qt_window)
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
@@ -590,8 +596,12 @@ class Window:
             action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
 
-    def remove_dock_widget(self, widget):
+    def remove_dock_widget(self, widget: QWidget):
         """Removes specified dock widget.
+
+        If a QDockWidget is not provided, the existing QDockWidgets will be
+        searched for one whose inner widget (``.widget()``) is the provided
+        ``widget``.
 
         Parameters
         ----------
@@ -601,8 +611,29 @@ class Window:
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
                 self._qt_window.removeDockWidget(dw)
+            return
+
+        if not isinstance(widget, QDockWidget):
+            for dw in self._qt_window.findChildren(QDockWidget):
+                if dw.widget() is widget:
+                    _dw: QDockWidget = dw
+                    break
+            else:
+                raise LookupError(
+                    f"Could not find a dock widget containing: {widget}"
+                )
         else:
-            self._qt_window.removeDockWidget(widget)
+            _dw = widget
+
+        if _dw.widget():
+            _dw.widget().setParent(None)
+        self._qt_window.removeDockWidget(_dw)
+        self.window_menu.removeAction(_dw.toggleViewAction())
+        # Deleting the dock widget means any references to it will no longer
+        # work but it's not really useful anyway, since the inner widget has
+        # been removed. and anyway: people should be using add_dock_widget
+        # rather than directly using _add_viewer_dock_widget
+        _dw.deleteLater()
 
     def add_function_widget(
         self,
@@ -704,22 +735,22 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, event=None):
-        """Update widget color palette."""
+    def _update_theme(self, event=None):
+        """Update widget color theme."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = self.qt_viewer.viewer.palette
+        theme = get_theme(self.qt_viewer.viewer.theme)
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
                 'color: {{ text }}; }',
-                **palette,
+                **theme,
             )
         )
         self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **palette)
+            template('QWidget { background: {{ background }}; }', **theme)
         )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
+        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -729,7 +760,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.text)
+        self._status_bar.showMessage(event.value)
 
     def _title_changed(self, event):
         """Update window title.
@@ -739,7 +770,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.text)
+        self._qt_window.setWindowTitle(event.value)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -749,7 +780,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._help.setText(event.text)
+        self._help.setText(event.value)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
@@ -803,7 +834,7 @@ class Window:
 
 
 def _stop_monitor() -> None:
-    """Stop the monitor service if configured to use it."""
+    """Stop the monitor service if we were using it."""
     if config.monitor:
         from ..components.experimental.monitor import monitor
 

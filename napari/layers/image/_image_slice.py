@@ -11,7 +11,7 @@ from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 def _create_loader_class() -> ImageLoader:
@@ -94,7 +94,13 @@ class ImageSlice:
             image = np.clip(image, 0, 1)
             thumbnail_source = np.clip(thumbnail_source, 0, 1)
         self.image.raw = image
-        self.thumbnail.raw = thumbnail_source
+
+        # save a computation of view image if thumbnail and image is equal
+        if thumbnail_source is image:
+            self.thumbnail._raw = self.image._raw
+            self.thumbnail._view = self.image._view
+        else:
+            self.thumbnail.raw = thumbnail_source
 
     def load(self, data: ImageSliceData) -> bool:
         """Load this data into the slice.

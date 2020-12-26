@@ -131,20 +131,20 @@ class QtConsole(RichJupyterWidget):
         # TODO: Try to get console from jupyter to run without a shift click
         # self.execute_on_complete_input = True
 
-    def _update_palette(self, palette, themed_stylesheet):
+    def _update_theme(self, theme, themed_stylesheet):
         """Update the napari GUI theme.
 
         Parameters
         ----------
-        palette : dict of str: str
-            Color palette with which to style the viewer.
+        theme : dict of str: str
+            Color theme with which to style the viewer.
             Property of napari.components.viewer_model.ViewerModel.
         themed_stylesheet : str
-            Stylesheet that has already been themed with the current palette.
+            Stylesheet that has already been themed with the current theme.
         """
         self.style_sheet = themed_stylesheet
-        self.syntax_style = palette['syntax_style']
-        bracket_color = QColor(*str_to_rgb(palette['highlight']))
+        self.syntax_style = theme['syntax_style']
+        bracket_color = QColor(*str_to_rgb(theme['highlight']))
         self._bracket_matcher.format.setBackground(bracket_color)
 
     def closeEvent(self, event):

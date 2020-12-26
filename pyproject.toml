@@ -78,6 +78,7 @@ filterwarnings = [
 ]
 markers = [
     "perfmon: marks tests that require perfmon to be enabled",
-    "sync_only: Test should only be run synchronously"
+    "sync_only: Test should only be run synchronously",
+    "async_only: Test should only be run asynchronously"
 ]
 

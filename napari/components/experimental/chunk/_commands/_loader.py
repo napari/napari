@@ -5,7 +5,7 @@ from typing import List
 from ....._vendor.experimental.humanize.src.humanize import naturalsize
 from .....layers.base import Layer
 from .....layers.image import Image
-from .._config import async_config
+from .....utils.config import octree_config
 from .._info import LayerInfo, LoadType
 from .._loader import chunk_loader
 from ._tables import RowTable, print_property_table
@@ -58,7 +58,7 @@ class InfoDisplayer:
         stats = info.stats
         counts = stats.counts
 
-        self.data_type = info.layer_ref.data_type
+        self.data_type = "???"  # We need to add this back...
         self.num_loads = counts.loads
         self.num_chunks = counts.chunks
         self.sync = LOAD_TYPE_STR[self.info.load_type]
@@ -75,24 +75,23 @@ class NoInfoDisplayer:
         return "--"
 
 
-def _get_size_str(data) -> str:
-    """Return human readable size.
+def _get_shape_str(layer):
+    """Get shape string for the data.
 
-    Parameters
-    ----------
-    data
-        Layer's data.
-
-    Returns
-    -------
-    str
-        A string size like "24.2G".
+    Either "NONE" or a tuple like "(10, 100, 100)".
     """
+    # We only care about Image/Labels layers for now.
+    if not isinstance(layer, Image):
+        return "--"
+
+    data = layer.data
     if isinstance(data, list):
-        nbytes = sum(level.nbytes for level in data)
-    else:
-        nbytes = data.nbytes
-    return naturalsize(nbytes, gnu=True)
+        if len(data) == 0:
+            return "NONE"  # Shape layer is empty list?
+        return f"{data[0].shape}"  # Multi-scale
+
+    # Not a list.
+    return str(data.shape)
 
 
 class ChunkLoaderLayers:
@@ -131,24 +130,6 @@ class ChunkLoaderLayers:
         for i, layer in enumerate(self.layers):
             self._add_row(i, layer)
 
-    def _get_shape_str(self, layer):
-        """Get shape string for the data.
-
-        Either "NONE" or a tuple like "(10, 100, 100)".
-        """
-        # We only care about Image/Labels layers for now.
-        if not isinstance(layer, Image):
-            return "--"
-
-        data = layer.data
-        if isinstance(data, list):
-            if len(data) == 0:
-                return "NONE"  # Shape layer is empty list?
-            else:
-                return f"{data[0].shape}"  # Multi-scale
-        else:
-            return str(data.shape)
-
     @staticmethod
     def _get_num_levels(data) -> int:
         """Get the number of levels of the data.
@@ -179,7 +160,7 @@ class ChunkLoaderLayers:
         """
         layer_type = type(layer).__name__
         num_levels = self._get_num_levels(layer.data)
-        shape_str = self._get_shape_str(layer)
+        shape_str = _get_shape_str(layer)
 
         # Use InfoDisplayer to display LayerInfo
         info = chunk_loader.get_info(id(layer))
@@ -255,24 +236,26 @@ class LoaderCommands:
 
     @property
     def help(self):
+        """The help message."""
         print(HELP_STR)
 
     @property
     def config(self):
         """Print the current list of layers."""
-        src = async_config
+        config = octree_config['loader']
         config = [
-            ('log_path', src.log_path),
-            ('synchronous', src.synchronous),
-            ('num_workers', src.num_workers),
-            ('use_processes', src.use_processes),
-            ('auto_sync_ms', src.auto_sync_ms),
-            ('delay_queue_ms', src.delay_queue_ms),
+            ('log_path', config['log_path']),
+            ('synchronous', config['synchronous']),
+            ('num_workers', config['num_workers']),
+            ('use_processes', config['use_processes']),
+            ('auto_sync_ms', config['auto_sync_ms']),
+            ('delay_queue_ms', config['delay_queue_ms']),
         ]
         print_property_table(config)
 
     @property
     def cache(self):
+        """The cache status."""
         chunk_cache = chunk_loader.cache
         cur_str = format_bytes(chunk_cache.chunks.currsize)
         max_str = format_bytes(chunk_cache.chunks.maxsize)
@@ -300,7 +283,7 @@ class LoaderCommands:
         layer = self._get_layer(layer_index)
 
         if layer is None:
-            return
+            return None
 
         layer_id = id(layer)
         info = chunk_loader.get_info(layer_id)

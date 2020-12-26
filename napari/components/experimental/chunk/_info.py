@@ -1,15 +1,15 @@
 """LoadType, LoadStats and LayerInfo.
 """
 import logging
+import time
 from enum import Enum
 
 from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
-from ._config import async_config
-from ._request import ChunkRequest
-from ._utils import LayerRef, StatWindow
+from ._request import ChunkRequest, LayerRef
+from ._utils import StatWindow
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class LoadCounts:
@@ -91,15 +91,7 @@ class LoadStats:
         sync : bool
             True if the load was synchronous.
         """
-        try:
-            # Use the special "ChunkRequest.load_chunks" timer to time
-            # the loading of all the chunks in this request combine.
-            load_ms = request.timers['ChunkRequest.load_chunks'].duration_ms
-
-            # Update our StatWindow.
-            self.window_ms.add(load_ms)
-        except KeyError:
-            pass  # there was no 'load_chunks" timer...
+        self.window_ms.add(request.load_ms)  # Update our StatWindow.
 
         # Record the number of loads and chunks.
         self.counts.loads += 1
@@ -110,7 +102,7 @@ class LoadStats:
         self.counts.bytes += num_bytes
 
         # Time to load all chunks.
-        load_ms = request.timers['ChunkRequest.load_chunks'].duration_ms
+        load_ms = request.load_ms
 
         # Update our StatWindows.
         self.window_bytes.add(num_bytes)
@@ -123,8 +115,14 @@ class LoadStats:
 
         if monitor:
             # Send stats about this one load.
-            monitor.send(
-                {"load": {"num_bytes": num_bytes, "load_ms": load_ms}}
+            monitor.send_message(
+                {
+                    "load_chunk": {
+                        "time": time.time(),
+                        "num_bytes": num_bytes,
+                        "load_ms": load_ms,
+                    }
+                }
             )
 
     @property
@@ -181,13 +179,13 @@ class LayerInfo:
     We store a weak reference because we do not want an in-progress request
     to prevent a layer from being deleted. Meanwhile, once a request has
     finished, we can de-reference the weakref to make sure the layer was
-    note deleted during the load process.
+    not deleted during the load process.
     """
 
-    def __init__(self, layer_ref: LayerRef):
+    def __init__(self, layer_ref: LayerRef, auto_sync_ms):
         self.layer_ref = layer_ref
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = async_config.auto_sync_ms
+        self.auto_sync_ms = auto_sync_ms
 
         self.stats = LoadStats()
 
@@ -199,11 +197,10 @@ class LayerInfo:
         layer : Layer
             The layer for this ChunkRequest.
         """
-        layer = self.layer_ref.weak_ref()
+        layer = self.layer_ref.layer
         if layer is None:
-            LOGGER.debug(
-                "LayerInfo.get_layer: layer %d was deleted", self.layer_id
-            )
+            layer_id = self.layer_ref.layer_id
+            LOGGER.debug("LayerInfo.get_layer: layer %d was deleted", layer_id)
         return layer
 
     @property

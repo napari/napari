@@ -14,15 +14,20 @@ from typing import List, Set
 
 import numpy as np
 
-from napari.layers.image.experimental.octree_chunk import OctreeChunkKey
-
 from ...layers.image.experimental import OctreeChunk
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
 from .tile_set import TileSet
 
-# Shape of she whole texture in tiles. Hardcode for now.
+# Shape of she whole texture in tiles. Hardcode for now. TODO_OCTREE: We
+# need to calculate this based on the tile size. Long term we want to
+# support huge tiles. So big images/layers will get small tiles, but if the
+# layer can fit within the max texture size, as big as (16384, 16384) then
+# it might be more efficient to put that in a single tiles.
+#
+# This might require that we can support multiple TexturAtlas2D objects
+# per TiledImageVisual.
 SHAPE_IN_TILES = (16, 16)
 
 
@@ -201,17 +206,12 @@ class TiledImageVisual(ImageVisual):
 
             # In the future we might add several chunks here. We want
             # to add as many as we can without tanking the framerate
-            # too much.
+            # too much. But for now we just add one, because we
+            # were seeing adding taking 40ms for one (256, 256) tile!
             #
-            # For now, we just add ONE chunk per frame. We've timed (256,
-            # 256) pixel chunks taking a whopping 40ms to load into VRAM!
-            # Probably due to CPU-side processing we are doing? So today
-            # there really is only time to add one chunk.
-            #
-            # Even if adds were fast, adding just one is not horrible.
-            # The frame rate will stay smooth. But adding more if they
-            # fit within the budget would get the newer/better data
-            # drawn faster.
+            # But if that improves, we might want to multiple tiles here,
+            # up to some budget limit. Although not the cost of adding
+            # most happens later when glFlush() is called.
             break
 
         # Return how many chunks we did NOT add. The system should continue
@@ -235,23 +235,24 @@ class TiledImageVisual(ImageVisual):
         atlas_tile = self._texture_atlas.add_tile(octree_chunk)
 
         if atlas_tile is None:
-            return  # No slot was available in the atlas. That's bad.
+            # TODO_OCTREE: No slot was available in the atlas. That's bad,
+            # but not sure what we should do in this case.
+            return
 
         # Add our mapping between chunks and atlas tiles.
         self._tiles.add(octree_chunk, atlas_tile)
 
-        # Set this flag so we call self._build_vertex_data() the next time
-        # we are drawn. It will create new vertex and texture coordinates
-        # buffers to include this new chunk.
+        # Call self._build_vertex_data() the next time we are drawn, so
+        # can update things to draw this new chunk.
         self._need_vertex_update = True
 
     @property
-    def chunk_set(self) -> Set[OctreeChunkKey]:
+    def chunk_set(self) -> Set[OctreeChunk]:
         """Return the set of chunks we are drawing.
 
         Return
         ------
-        Set[OctreeChunkKey]
+        Set[OctreeChunk]
             The set of chunks we are drawing.
         """
         return self._tiles.chunk_set
@@ -263,7 +264,7 @@ class TiledImageVisual(ImageVisual):
             The set of currently drawable chunks.
         """
         for tile_data in list(self._tiles.tile_data):
-            if tile_data.octree_chunk.key not in drawable_set:
+            if tile_data.octree_chunk not in drawable_set:
                 # print(f"REMOVE: {tile_data.octree_chunk}")
                 tile_index = tile_data.atlas_tile.index
                 self._remove_tile(tile_index)
