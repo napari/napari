@@ -42,4 +42,5 @@ from .qt_main_window import Window
 from .resources import import_resources
 from .widgets.qt_range_slider import QHRangeSlider, QVRangeSlider
 
-import_resources()
+path, loader = import_resources()
+loader()

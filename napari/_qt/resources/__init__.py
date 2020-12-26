@@ -6,7 +6,7 @@ from os import environ, fspath
 from os.path import abspath, dirname, expanduser, join
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Optional
+from typing import Callable, List, Optional, Tuple
 
 from qtpy import API, QT_VERSION
 
@@ -47,7 +47,9 @@ def _try_touch_file(target) -> Optional[Path]:
     return target
 
 
-def import_resources(version: str = '', overwrite: bool = False) -> str:
+def import_resources(
+    version: str = '', overwrite: bool = False
+) -> Tuple[str, Callable]:
     """Build and import our icons as Qt resources.
 
     This function attempts to write that file to one of three locations
@@ -125,8 +127,9 @@ def import_resources(version: str = '', overwrite: bool = False) -> str:
     module = module_from_spec(spec)
     # important to add to sys.modules! otherwise segfault when function ends.
     sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return respath
+    # for some reason, executing this immediately is causing segfault in tests
+    load = lambda: spec.loader.exec_module(module)
+    return respath, load
 
 
 @lru_cache(maxsize=4)

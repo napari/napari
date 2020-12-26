@@ -6,13 +6,14 @@ import sys
 import pytest
 import qtpy
 
-from . import build_pyqt_resources, import_resources
+from .. import build_pyqt_resources, import_resources
 
 
 def test_resources():
     """Test that we can build icons and resources."""
-    out = import_resources(version='test')
-    os.remove(out)
+    path, loader = import_resources(version='test')
+    loader()
+    os.remove(path)
 
 
 @pytest.mark.skipif(
