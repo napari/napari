@@ -88,7 +88,8 @@ def qtbot(qtbot):
 
     yield qtbot
 
-    # only if an exception wasn't raised should we look for leaked widgets.
+    # if an exception was raised during the test, we should just quit now and
+    # skip looking for leaked widgets.
     if getattr(sys, 'last_value', None) is not prior_exception:
         return
 
