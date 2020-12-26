@@ -9,4 +9,4 @@ fsspec
 zarr
 scikit-image
 pooch
-magicgui
+magicgui>=0.2.0
