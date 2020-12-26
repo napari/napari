@@ -1,7 +1,7 @@
 from typing import Sequence, Tuple, Union
 
 import numpy as np
-from pydantic import root_validator, validator
+from pydantic import validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
 from ..utils.pydantic import ConfiguredModel, evented_model
@@ -83,60 +83,49 @@ class Dims(ConfiguredModel):
             return list(v)
         return v
 
-    @root_validator
-    def _check_dims(cls, values):
+    @validator('range')
+    def _check_range_length(cls, v, values):
         ndim = values['ndim']
+        if len(v) < ndim:
+            return ((0, 2, 1),) * (ndim - len(v)) + v
+        elif len(v) > ndim:
+            return v[-ndim:]
+        return v
 
-        if len(values['range']) < ndim:
-            values['range'] = ((0, 2, 1),) * (
-                ndim - len(values['range'])
-            ) + values['range']
-        elif len(values['range']) > ndim:
-            values['range'] = values['range'][-ndim:]
+    @validator('range')
+    def _check_current_step_length(cls, v, values):
+        ndim = values['ndim']
+        if len(v) < ndim:
+            return (0,) * (ndim - len(v)) + v
+        elif len(v) > ndim:
+            return v[-ndim:]
+        return v
 
-        if len(values['current_step']) < ndim:
-            values['current_step'] = (0,) * (
-                ndim - len(values['current_step'])
-            ) + values['current_step']
-        elif len(values['current_step']) > ndim:
-            values['current_step'] = values['current_step'][-ndim:]
-
-        if len(values['current_step']) < ndim:
-            values['current_step'] = (0,) * (
-                ndim - len(values['current_step'])
-            ) + values['current_step']
-        elif len(values['current_step']) > ndim:
-            values['current_step'] = values['current_step'][-ndim:]
-
-        if len(values['order']) < ndim:
-            values['order'] = tuple(
-                range(ndim - len(values['order']))
-            ) + tuple(o + ndim - len(values['order']) for o in values['order'])
-        elif len(values['order']) > ndim:
-            values['order'] = reorder_after_dim_reduction(
-                values['order'][-ndim:]
+    @validator('order')
+    def _check_order(cls, v, values):
+        ndim = values['ndim']
+        if len(v) < ndim:
+            v = tuple(range(ndim - len(v))) + tuple(
+                o + ndim - len(v) for o in v
             )
+        elif len(v) > ndim:
+            v = reorder_after_dim_reduction(v[-ndim:])
+        if not set(v) == set(range(ndim)):
+            raise ValueError(f"Invalid ordering {v} for {ndim} dimensions")
+        return v
 
-        if not set(values['order']) == set(range(ndim)):
-            raise ValueError(
-                f"Invalid ordering {values['order']} for {ndim} dimensions"
-            )
-
-        if len(values['axis_labels']) < ndim:
+    @validator('axis_labels', always=True)
+    def _check_axis_labels_length(cls, v, values):
+        ndim = values['ndim']
+        if len(v) < ndim:
             # Append new "default" labels to existing ones
-            if values['axis_labels'] == tuple(
-                map(str, range(len(values['axis_labels'])))
-            ):
-                values['axis_labels'] = tuple(map(str, range(ndim)))
+            if v == tuple(map(str, range(len(v)))):
+                return tuple(map(str, range(ndim)))
             else:
-                values['axis_labels'] = (
-                    tuple(map(str, range(ndim - len(values['axis_labels']))))
-                    + values['axis_labels']
-                )
-        elif len(values['axis_labels']) > ndim:
-            values['axis_labels'] = values['axis_labels'][-ndim:]
-
-        return values
+                return tuple(map(str, range(ndim - len(v)))) + v
+        elif len(v) > ndim:
+            return v[-ndim:]
+        return v
 
     @property
     def nsteps(self) -> Tuple[int, ...]:

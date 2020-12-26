@@ -59,7 +59,7 @@ class Colormap(ConfiguredModel):
             n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
-            v = np.linspace(0, 1, n_controls)
+            return np.linspace(0, 1, n_controls)
         return v
 
     def __iter__(self):
