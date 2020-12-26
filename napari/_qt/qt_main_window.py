@@ -674,7 +674,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.text)
+        self._status_bar.showMessage(event.value)
 
     def _title_changed(self, event):
         """Update window title.
@@ -684,7 +684,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.text)
+        self._qt_window.setWindowTitle(event.value)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -694,7 +694,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._help.setText(event.text)
+        self._help.setText(event.value)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
