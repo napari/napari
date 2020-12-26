@@ -1,5 +1,5 @@
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Extra
 
 from .events.dataclass import _type_to_compare, is_equal
 from .events.event import EmitterGroup
@@ -155,4 +155,6 @@ class ConfiguredModel(BaseModel):
         underscore_attrs_are_private = True
         use_enum_values = True
         validate_all = True
+        extra = Extra.allow
+        allow_extra = True
         json_encoders = JSON_ENCODERS

@@ -30,6 +30,9 @@ class Viewer(ViewerModel):
     # set _napari_global_logo to control if napari logo should be set as application logo
     _napari_global_logo = True
 
+    # Create private variable for window
+    _window = None
+
     def __init__(
         self,
         *,
@@ -38,14 +41,20 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        **data,
     ):
         super().__init__(
             title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
+            **data,
         )
-        self.window = Window(self, show=show)
+        self._window = Window(self, show=show)
+
+    @property
+    def window(self):
+        return self._window
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.

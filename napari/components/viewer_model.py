@@ -6,8 +6,10 @@ from functools import lru_cache
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 import numpy as np
+from pydantic import Field, validator
 
 from .. import layers
+from ..layers import Image, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
@@ -15,14 +17,16 @@ from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import disconnect_events
+from ..utils.events import Event, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
+from ..utils.mouse_bindings import MousemapProvider
 from ..utils.pydantic import ConfiguredModel, evented_model
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
-from ._viewer_mouse_bindings import dims_scroll
+
+# from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
@@ -35,7 +39,7 @@ DEFAULT_THEME = 'dark'
 
 
 @evented_model
-class ViewerModel(ConfiguredModel, KeymapProvider):
+class ViewerModel(ConfiguredModel, KeymapProvider, MousemapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -62,50 +66,67 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         Contains axes, indices, dimensions and sliders.
     """
 
-    axes = Axes()
-    camera = Camera()
-    cursor = Cursor()
-    dims = Dims()
-    grid = GridCanvas()
-    layers = LayerList()
-    scale_bar = ScaleBar()
+    axes: Axes = Axes()
+    camera: Camera = Camera()
+    cursor: Cursor = Cursor()
+    dims: Dims = Dims()
+    grid: GridCanvas = GridCanvas()
+    layers: LayerList = Field(default_factory=LayerList)
+    scale_bar: ScaleBar = ScaleBar()
 
-    active_layer = None
-    help = ''
-    status = 'Ready'
-    title = 'napari'
-    theme = DEFAULT_THEME
+    help: str = ''
+    status: str = 'Ready'
+    title: str = 'napari'
+    theme: str = DEFAULT_THEME
+    active_layer: Optional[Layer] = None
 
     # 2-tuple indicating height and width
     _canvas_size = (600, 800)
 
-    # self.grid.events.connect(self.reset_view)
-    # self.grid.events.connect(self._on_grid_change)
-    # self.dims.events.ndisplay.connect(self._update_layers)
-    # self.dims.events.ndisplay.connect(self.reset_view)
-    # self.dims.events.order.connect(self._update_layers)
-    # self.dims.events.order.connect(self.reset_view)
-    # self.dims.events.current_step.connect(self._update_layers)
-    # self.cursor.events.position.connect(self._on_cursor_position_change)
-    # self.layers.events.inserted.connect(self._on_add_layer)
-    # self.layers.events.removed.connect(self._on_remove_layer)
-    # self.layers.events.reordered.connect(self._on_grid_change)
-    # self.layers.events.reordered.connect(self._on_layers_change)
+    def __init__(
+        self, title='napari', ndisplay=2, order=(), axis_labels=(), **data
+    ):
+        super().__init__(**data)
 
-    # Hold callbacks for when mouse moves with nothing pressed
-    mouse_move_callbacks = []
-    # Hold callbacks for when mouse is pressed, dragged, and released
-    mouse_drag_callbacks = []
-    # Hold callbacks for when mouse wheel is scrolled
-    mouse_wheel_callbacks = [dims_scroll]
+        # Set initial values
+        if len(axis_labels) > 0:
+            self.dims.axis_labels = axis_labels
+        if len(order) > 0:
+            self.dims.order = order
+        self.dims.ndisplay = ndisplay
+        self.title = title
 
-    _persisted_mouse_event = {}
-    _mouse_drag_gen = {}
-    _mouse_wheel_gen = {}
+        # Add extra events - ideally these will be removed too!
+        self.events.add(layers_change=Event, reset_view=Event)
 
-    def __str__(self):
-        """Simple string representation"""
-        return f'napari.Viewer: {self.title}'
+        # Connect events
+        self.grid.events.connect(self.reset_view)
+        self.grid.events.connect(self._on_grid_change)
+        self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.order.connect(self._update_layers)
+        self.dims.events.order.connect(self.reset_view)
+        self.dims.events.current_step.connect(self._update_layers)
+        self.cursor.events.position.connect(self._on_cursor_position_change)
+        self.layers.events.inserted.connect(self._on_add_layer)
+        self.layers.events.removed.connect(self._on_remove_layer)
+        self.layers.events.reordered.connect(self._on_grid_change)
+        self.layers.events.reordered.connect(self._on_layers_change)
+
+        # Add mouse callback
+        # self.mouse_wheel_callbacks.append(dims_scroll)
+
+    def __hash__(self):
+        return id(self)
+
+    @validator('theme')
+    def _valid_theme(v):
+        themes = available_themes()
+        if v not in available_themes():
+            raise ValueError(
+                f"Theme '{v}' not found; " f"options are {themes}."
+            )
+        return v
 
     @property
     def palette(self):
@@ -141,26 +162,6 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
             f"Palette not found among existing themes; "
             f"options are {available_themes()}."
         )
-
-    @property
-    def theme(self):
-        """string or None : Color theme.
-        """
-        return self._theme
-
-    @theme.setter
-    def theme(self, theme):
-        if theme == self.theme:
-            return
-
-        if theme in available_themes():
-            self._theme = theme
-        else:
-            raise ValueError(
-                f"Theme '{theme}' not found; "
-                f"options are {available_themes()}."
-            )
-        self.events.theme(value=self.theme)
 
     @property
     def grid_size(self):
@@ -213,46 +214,6 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         self.grid.stride = grid_stride
 
     @property
-    def status(self):
-        """string: Status string
-        """
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        if status == self.status:
-            return
-        self._status = status
-        self.events.status(value=self._status)
-
-    @property
-    def help(self):
-        """string: String that can be displayed to the
-        user in the status bar with helpful usage tips.
-        """
-        return self._help
-
-    @help.setter
-    def help(self, help):
-        if help == self.help:
-            return
-        self._help = help
-        self.events.help(value=self._help)
-
-    @property
-    def title(self):
-        """string: String that is displayed in window title.
-        """
-        return self._title
-
-    @title.setter
-    def title(self, title):
-        if title == self.title:
-            return
-        self._title = title
-        self.events.title(value=self._title)
-
-    @property
     def interactive(self):
         """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
         warnings.warn(
@@ -276,20 +237,6 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
             stacklevel=2,
         )
         self.camera.interactive = interactive
-
-    @property
-    def active_layer(self):
-        """int: index of active_layer
-        """
-        return self._active_layer
-
-    @active_layer.setter
-    def active_layer(self, active_layer):
-        if active_layer == self.active_layer:
-            return
-
-        self._active_layer = active_layer
-        self.events.active_layer(value=self._active_layer)
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
@@ -361,7 +308,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
         Parameters
         ----------
-        layers : list of napari.layers.Layer, optional
+        layers : list of napari.Layer, optional
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
@@ -512,7 +459,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
         Parameters
         ----------
-        layer : napari.layers.Layer
+        layer : napari.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
@@ -540,7 +487,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
         Parameters
         ----------
-        event : :class:`napari.layers.Layer`
+        event : :class:`napari.Layer`
             Layer to add.
         """
         layer = event.value
@@ -589,12 +536,12 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
         Parameters
         ----------
-        layer : :class:`napari.layers.Layer`
+        layer : :class:`napari.Layer`
             Layer to add.
 
         Returns
         -------
-        layer : :class:`napari.layers.Layer` or list
+        layer : :class:`napari.Layer` or list
             The layer that was added (same as input).
         """
         layer = event.value
@@ -611,17 +558,17 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         self._on_layers_change(None)
         self._on_grid_change(None)
 
-    def add_layer(self, layer: layers.Layer) -> layers.Layer:
+    def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
 
         Parameters
         ----------
-        layer : :class:`napari.layers.Layer`
+        layer : :class:`napari.Layer`
             Layer to add.
 
         Returns
         -------
-        layer : :class:`napari.layers.Layer` or list
+        layer : :class:`napari.Layer` or list
             The layer that was added (same as input).
         """
         # Adding additional functionality inside `add_layer`
@@ -655,7 +602,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         blending=None,
         visible=True,
         multiscale=None,
-    ) -> Union[layers.Image, List[layers.Image]]:
+    ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
         Parameters
@@ -763,7 +710,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
         Returns
         -------
-        layer : :class:`napari.layers.Image` or list
+        layer : :class:`napari.Image` or list
             The newly-created image layer or list of image layers.
         """
 
@@ -848,7 +795,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
         **kwargs,
-    ) -> List[layers.Layer]:
+    ) -> List[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
@@ -896,7 +843,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
                 paths, kwargs, plugin=plugin, layer_type=layer_type
             )
 
-        added: List[layers.Layer] = []  # for layers that get added
+        added: List[Layer] = []  # for layers that get added
         for _path in paths:
             added.extend(
                 self._add_layers_with_plugins(
@@ -912,7 +859,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         kwargs: Optional[dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
-    ) -> List[layers.Layer]:
+    ) -> List[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
         This function is mostly called from self.open_path, where the ``stack``
@@ -940,7 +887,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
         Returns
         -------
-        List[layers.Layer]
+        List[Layer]
             A list of any layers that were added to the viewer.
         """
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
@@ -960,7 +907,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
                 filenames = itertools.repeat(path_or_paths[0])
 
         # add each layer to the viewer
-        added: List[layers.Layer] = []  # for layers that get added
+        added: List[Layer] = []  # for layers that get added
         for data, filename in zip(layer_data, filenames):
             basename, ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
@@ -975,7 +922,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
 
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> Union[layers.Layer, List[layers.Layer]]:
+    ) -> Union[Layer, List[Layer]]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -1053,14 +1000,14 @@ class ViewerModel(ConfiguredModel, KeymapProvider):
         return layer
 
 
-def _get_image_class() -> layers.Image:
+def _get_image_class() -> Image:
     """Return Image or OctreeImage based config settings."""
     if config.async_octree:
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage
 
-    return layers.Image
+    return Image
 
 
 def _normalize_layer_data(data: LayerData) -> FullLayerData:

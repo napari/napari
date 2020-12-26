@@ -10,6 +10,7 @@ from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
+from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ...utils.transforms import Affine, TransformChain
@@ -22,7 +23,7 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
-class Layer(KeymapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 
     Parameters
@@ -280,12 +281,6 @@ class Layer(KeymapProvider, ABC):
             _ndisplay=Event,
         )
         self.name = name
-
-        self.mouse_move_callbacks = []
-        self.mouse_drag_callbacks = []
-        self.mouse_wheel_callbacks = []
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
 
     def __str__(self):
         """Return self.name."""
