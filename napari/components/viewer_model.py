@@ -120,7 +120,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider, MousemapProvider):
         return id(self)
 
     @validator('theme')
-    def _valid_theme(v):
+    def _valid_theme(cls, v):
         themes = available_themes()
         if v not in available_themes():
             raise ValueError(

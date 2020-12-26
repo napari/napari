@@ -155,6 +155,5 @@ class ConfiguredModel(BaseModel):
         underscore_attrs_are_private = True
         use_enum_values = True
         validate_all = True
-        extra = Extra.allow
-        allow_extra = True
+        extra = Extra.forbid
         json_encoders = JSON_ENCODERS
