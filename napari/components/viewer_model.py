@@ -15,9 +15,10 @@ from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import EmitterGroup, Event, disconnect_events
+from ..utils.events import disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
+from ..utils.pydantic import ConfiguredModel, evented_model
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
@@ -33,7 +34,8 @@ from .scale_bar import ScaleBar
 DEFAULT_THEME = 'dark'
 
 
-class ViewerModel(KeymapProvider):
+@evented_model
+class ViewerModel(ConfiguredModel, KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -60,64 +62,46 @@ class ViewerModel(KeymapProvider):
         Contains axes, indices, dimensions and sliders.
     """
 
-    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
-        super().__init__()
+    axes = Axes()
+    camera = Camera()
+    cursor = Cursor()
+    dims = Dims()
+    grid = GridCanvas()
+    layers = LayerList()
+    scale_bar = ScaleBar()
 
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            status=Event,
-            help=Event,
-            title=Event,
-            reset_view=Event,
-            active_layer=Event,
-            theme=Event,
-            layers_change=Event,
-        )
+    active_layer = None
+    help = ''
+    status = 'Ready'
+    title = 'napari'
+    theme = DEFAULT_THEME
 
-        self.dims = Dims(
-            ndisplay=ndisplay, order=order, axis_labels=axis_labels
-        )
+    # 2-tuple indicating height and width
+    _canvas_size = (600, 800)
 
-        self.layers = LayerList()
-        self.camera = Camera()
-        self.cursor = Cursor()
-        self.axes = Axes()
-        self.scale_bar = ScaleBar()
+    # self.grid.events.connect(self.reset_view)
+    # self.grid.events.connect(self._on_grid_change)
+    # self.dims.events.ndisplay.connect(self._update_layers)
+    # self.dims.events.ndisplay.connect(self.reset_view)
+    # self.dims.events.order.connect(self._update_layers)
+    # self.dims.events.order.connect(self.reset_view)
+    # self.dims.events.current_step.connect(self._update_layers)
+    # self.cursor.events.position.connect(self._on_cursor_position_change)
+    # self.layers.events.inserted.connect(self._on_add_layer)
+    # self.layers.events.removed.connect(self._on_remove_layer)
+    # self.layers.events.reordered.connect(self._on_grid_change)
+    # self.layers.events.reordered.connect(self._on_layers_change)
 
-        self._status = 'Ready'
-        self._help = ''
-        self._title = title
-        self._theme = DEFAULT_THEME
+    # Hold callbacks for when mouse moves with nothing pressed
+    mouse_move_callbacks = []
+    # Hold callbacks for when mouse is pressed, dragged, and released
+    mouse_drag_callbacks = []
+    # Hold callbacks for when mouse wheel is scrolled
+    mouse_wheel_callbacks = [dims_scroll]
 
-        self._active_layer = None
-        self.grid = GridCanvas()
-        # 2-tuple indicating height and width
-        self._canvas_size = (600, 800)
-
-        self.grid.events.connect(self.reset_view)
-        self.grid.events.connect(self._on_grid_change)
-        self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.reset_view)
-        self.dims.events.order.connect(self._update_layers)
-        self.dims.events.order.connect(self.reset_view)
-        self.dims.events.current_step.connect(self._update_layers)
-        self.cursor.events.position.connect(self._on_cursor_position_change)
-        self.layers.events.inserted.connect(self._on_add_layer)
-        self.layers.events.removed.connect(self._on_remove_layer)
-        self.layers.events.reordered.connect(self._on_grid_change)
-        self.layers.events.reordered.connect(self._on_layers_change)
-
-        # Hold callbacks for when mouse moves with nothing pressed
-        self.mouse_move_callbacks = []
-        # Hold callbacks for when mouse is pressed, dragged, and released
-        self.mouse_drag_callbacks = []
-        # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks = [dims_scroll]
-
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
-        self._mouse_wheel_gen = {}
+    _persisted_mouse_event = {}
+    _mouse_drag_gen = {}
+    _mouse_wheel_gen = {}
 
     def __str__(self):
         """Simple string representation"""
