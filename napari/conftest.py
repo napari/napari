@@ -89,17 +89,17 @@ def qtbot(qtbot):
     yield qtbot
 
     # only if an exception wasn't raised should we look for leaked widgets.
-    if getattr(sys, 'last_value', None) is prior_exception:
-        QApplication.processEvents()
-        leaks = set(QApplication.topLevelWidgets()).difference(initial)
-        # still not sure how to clean up some of the remaining vispy
-        # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-        if any(
-            [n.__class__.__name__ != 'CanvasBackendDesktop' for n in leaks]
-        ):
-            raise AssertionError(f'Widgets leaked!: {leaks}')
-        if leaks:
-            warnings.warn(f'Widgets leaked!: {leaks}')
+    if getattr(sys, 'last_value', None) is not prior_exception:
+        return
+
+    QApplication.processEvents()
+    leaks = set(QApplication.topLevelWidgets()).difference(initial)
+    # still not sure how to clean up some of the remaining vispy
+    # vispy.app.backends._qt.CanvasBackendDesktop widgets...
+    if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leaks]):
+        raise AssertionError(f'Widgets leaked!: {leaks}')
+    if leaks:
+        warnings.warn(f'Widgets leaked!: {leaks}')
 
 
 @pytest.fixture(scope="function")
