@@ -18,9 +18,11 @@ from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.misc import is_sequence
+from ..utils.mouse_bindings import MousemapProvider
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
+from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
@@ -32,7 +34,7 @@ from .scale_bar import ScaleBar
 DEFAULT_THEME = 'dark'
 
 
-class ViewerModel(KeymapHandler, KeymapProvider):
+class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -58,17 +60,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
     """
-
-    # Hold callbacks for when mouse moves with nothing pressed
-    mouse_move_callbacks = []
-    # Hold callbacks for when mouse is pressed, dragged, and released
-    mouse_drag_callbacks = []
-    # Hold callbacks for when mouse wheel is scrolled
-    mouse_wheel_callbacks = []
-
-    _persisted_mouse_event = {}
-    _mouse_drag_gen = {}
-    _mouse_wheel_gen = {}
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
@@ -119,6 +110,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
+        self.mouse_wheel_callbacks.append(dims_scroll)
 
     def __str__(self):
         """Simple string representation"""

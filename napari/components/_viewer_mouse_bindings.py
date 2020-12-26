@@ -1,15 +1,11 @@
-from .viewer_model import ViewerModel
-
-
-@ViewerModel.mouse_wheel_callbacks.append
 def dims_scroll(viewer, event):
     """Scroll the dimensions slider."""
     if 'Control' not in event.modifiers:
         return
     if event.native.inverted():
-        viewer.dims._scroll_progress += event.delta[1]
+        viewer.dims._scroll_progress += event.delta[0]
     else:
-        viewer.dims._scroll_progress -= event.delta[1]
+        viewer.dims._scroll_progress -= event.delta[0]
     while abs(viewer.dims._scroll_progress) >= 1:
         if viewer.dims._scroll_progress < 0:
             viewer.dims._increment_dims_left()
