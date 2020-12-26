@@ -16,10 +16,11 @@ def gaussian_blur(layer: napari.layers.Image, sigma: float = 1.0, mode="nearest"
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
 
 
-# Define our magic
+# Define our magic. The function will be automatically called when the input values
+# are changed
 magic = {
     'auto_call' : True,
-    'sigma' : {"widget_type": "FloatSlider", "maximum": 6},
+    'sigma' : {"widget_type": "FloatSlider", "max": 6},
     'mode' : {"choices": ["reflect", "constant", "nearest", "mirror", "wrap"]},
 }
 
