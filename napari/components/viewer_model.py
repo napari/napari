@@ -16,7 +16,7 @@ from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
-from ..utils.key_bindings import KeymapHandler, KeymapProvider
+from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 
 # Private _themes import needed until viewer.palette is dropped
@@ -33,7 +33,7 @@ from .scale_bar import ScaleBar
 DEFAULT_THEME = 'dark'
 
 
-class ViewerModel(KeymapHandler, KeymapProvider):
+class ViewerModel(KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -107,8 +107,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
-
-        self.keymap_providers = [self]
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -306,14 +304,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if active_layer == self.active_layer:
             return
 
-        if self._active_layer is not None:
-            self.keymap_providers.remove(self._active_layer)
-
         self._active_layer = active_layer
-
-        if active_layer is not None:
-            self.keymap_providers.insert(0, active_layer)
-
         self.events.active_layer(item=self._active_layer)
 
     @property
