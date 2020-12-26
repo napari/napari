@@ -18,12 +18,10 @@ from .camera import Camera
 from .dims import Dims
 from .layerlist import LayerList
 
-# Note that importing _viewer_key_bindings and _viewer_mouse_bindings are needed
-# as the Viewer gets decorated with keybindings and mouse bindings during that
-# process, but they are not directly needed by our users and so are deleted below
+# Note that importing _viewer_key_bindings is needed as the Viewer gets
+# decorated with keybindings during that process, but it is not directly needed
+# by our users and so is deleted below
 from . import _viewer_key_bindings  # isort:skip
-from . import _viewer_mouse_bindings  # isort:skip
 from .viewer_model import ViewerModel  # isort:skip
 
 del _viewer_key_bindings
-del _viewer_mouse_bindings
