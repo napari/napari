@@ -1,8 +1,7 @@
 from enum import Enum
-from functools import partial
 
 import numpy as np
-from pydantic import Field, validator
+from pydantic import validator
 
 from ..pydantic import Array, ConfiguredModel, evented_model
 from .colorbars import make_colorbar
@@ -46,18 +45,17 @@ class Colormap(ConfiguredModel):
     colors: Array[float, (-1, 4)]
     name: str = 'custom'
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
-    controls: Array[float, (-1,)] = Field(
-        default_factory=partial(np.zeros, (0,))
-    )
+    controls: Array[float, (-1,)] = None
 
     # validators
     @validator('colors', pre=True)
     def _ensure_color_array(cls, v):
         return transform_color(v)
 
-    @validator('controls', pre=True)
+    # controls validator must be called even if None for correct initialization
+    @validator('controls', pre=True, always=True)
     def _check_controls(cls, v, values):
-        if len(v) == 0:
+        if v is None or len(v) == 0:
             n_controls = len(values['colors']) + int(
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
