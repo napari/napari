@@ -6,7 +6,7 @@ import sys
 import pytest
 import qtpy
 
-from .. import build_pyqt_resources, import_resources
+from napari._qt.resources import build_pyqt_resources, import_resources
 
 
 def test_resources():
