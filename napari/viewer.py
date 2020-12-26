@@ -44,7 +44,9 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
-        from .components.window import Window
+        # having this import here makes all of Qt imported lazily, upon
+        # instantiating the first Viewer.
+        from .window import Window
 
         self.window = Window(self, show=show)
 

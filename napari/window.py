@@ -8,7 +8,7 @@ to server as a graphical user interface for napari.
 
 
 try:
-    from .._qt import Window
+    from ._qt import Window
 
 except ImportError:
 
