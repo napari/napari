@@ -101,13 +101,6 @@ class Dims(ConfiguredModel):
         elif len(values['current_step']) > ndim:
             values['current_step'] = values['current_step'][-ndim:]
 
-        if len(values['current_step']) < ndim:
-            values['current_step'] = (0,) * (
-                ndim - len(values['current_step'])
-            ) + values['current_step']
-        elif len(values['current_step']) > ndim:
-            values['current_step'] = values['current_step'][-ndim:]
-
         if len(values['order']) < ndim:
             values['order'] = tuple(
                 range(ndim - len(values['order']))
