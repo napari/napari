@@ -55,7 +55,7 @@ class Colormap(ConfiguredModel):
     def _ensure_color_array(cls, v):
         return transform_color(v)
 
-    @validator('controls')
+    @validator('controls', pre=True)
     def _check_controls(cls, v, values):
         if len(v) == 0:
             n_controls = len(values['colors']) + int(
