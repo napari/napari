@@ -1240,7 +1240,7 @@ class Points(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
-                'text': self.text._get_state(),
+                'text': self.text.asdict(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'ndim': self.ndim,
