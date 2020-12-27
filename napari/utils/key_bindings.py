@@ -36,7 +36,9 @@ import inspect
 import re
 import types
 from collections import ChainMap
+from typing import Any, ClassVar, Set
 
+from pydantic import BaseModel, Field
 from vispy.util import keys
 
 SPECIAL_KEYS = [
@@ -315,6 +317,38 @@ class KeymapProvider:
             cls.class_keymap = {}
 
     bind_key = KeybindingDescriptor(bind_key)
+
+
+def make_bind_key():
+    return KeybindingDescriptor(bind_key)
+
+
+class KeymapProviderModel(BaseModel):
+    """Mix-in to add mouse binding functionality.
+
+    Attributes
+    ----------
+    mouse_move_callbacks : list
+        Callbacks from when mouse moves with nothing pressed.
+    mouse_drag_callbacks : list
+        Callbacks from when mouse is pressed, dragged, and released.
+    mouse_wheel_callbacks : list
+        Callbacks from when mouse wheel is scrolled.
+    """
+
+    keymap: ClassVar[Set] = Field(default_factory=set)
+    class_keymap: ClassVar[Set] = Field(default_factory=set)
+    bind_key: ClassVar[Any] = Field(default_factory=make_bind_key)
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if 'class_keymap' not in cls.__dict__:
+            # if in __dict__, was defined in class and not inherited
+            cls.class_keymap = {}
+
+    class Config:
+        arbitrary_types_allowed = True
 
 
 def _bind_keymap(keymap, instance):
