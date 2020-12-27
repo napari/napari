@@ -652,7 +652,7 @@ class Window:
         function : callable
             Function that you want to add.
         magic_kwargs : dict, optional
-            Keyword arguments to the magicgui function that
+            Keyword arguments to :func:`magicgui.magicgui` that
             can be used to specify widget.
         name : str, optional
             Name of dock widget to appear in window menu.
@@ -673,25 +673,9 @@ class Window:
         """
         from magicgui import magicgui
 
-        if name == '':
-            function_name = function.__name__.replace('_', ' ')
-        else:
-            function_name = name
-
-        if magic_kwargs is None:
-            magic_kwargs = {}
-
-        # Get widget from magicgui
-        widget = magicgui(**magic_kwargs)(function)
-
-        # Keep the dropdown menus in the widget in sync with the layer model
-        self.qt_viewer.viewer.layers.events.connect(
-            lambda x: widget.reset_choices()
-        )
-
         return self.add_dock_widget(
-            widget,
-            name=function_name,
+            magicgui(**magic_kwargs or {})(function),
+            name=name or function.__name__.replace('_', ' '),
             area=area,
             allowed_areas=allowed_areas,
             shortcut=shortcut,
