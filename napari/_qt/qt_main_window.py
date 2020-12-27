@@ -578,6 +578,15 @@ class Window:
             shortcut=shortcut,
         )
         self._add_viewer_dock_widget(dock_widget)
+
+        if hasattr(widget, 'reset_choices'):
+            # Keep the dropdown menus in the widget in sync with the layer model
+            # if widget has a `reset_choices`, which is true for all magicgui
+            # widgets
+            self.qt_viewer.viewer.layers.events.connect(
+                lambda x: widget.reset_choices()
+            )
+
         return dock_widget
 
     def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
