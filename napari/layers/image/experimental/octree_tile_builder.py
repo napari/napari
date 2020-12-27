@@ -212,19 +212,3 @@ def create_downsampled_levels(
         level_index += 1
 
     return levels
-
-
-def create_multi_scale(image: np.ndarray, tile_size: int) -> List[np.ndarray]:
-    """Turn an image into a multi-scale image with levels.
-
-    Parameters
-    ----------
-    image : np.darray
-        The full image to create levels from.
-
-    Return
-    ------
-    List[np.ndarray]
-        A list of levels where levels[0] is the input image.
-    """
-    return [image] + create_downsampled_levels(image, tile_size)

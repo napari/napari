@@ -1,6 +1,6 @@
 """ChunkSet class.
 
-Used by the OctreeChunkLoader.
+Used by the OctreeLoader.
 """
 from typing import Dict, List, Set
 
@@ -11,7 +11,7 @@ class ChunkSet:
     """A set of chunks with fast location membership test.
 
     We use a dict as an ordered set, and then a set with just the locations
-    so OctreeChunkLoader._cancel_futures() can quickly test if a location is
+    so OctreeLoader._cancel_futures() can quickly test if a location is
     in the set.
     """
 

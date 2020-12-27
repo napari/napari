@@ -235,7 +235,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         if status == self.status:
             return
         self._status = status
-        self.events.status(text=self._status)
+        self.events.status(value=self._status)
 
     @property
     def help(self):
@@ -249,7 +249,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         if help == self.help:
             return
         self._help = help
-        self.events.help(text=self._help)
+        self.events.help(value=self._help)
 
     @property
     def title(self):
@@ -262,7 +262,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         if title == self.title:
             return
         self._title = title
-        self.events.title(text=self._title)
+        self.events.title(value=self._title)
 
     @property
     def interactive(self):
@@ -308,7 +308,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         if active_layer is not None:
             self.keymap_providers.insert(0, active_layer)
 
-        self.events.active_layer(item=self._active_layer)
+        self.events.active_layer(value=self._active_layer)
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:

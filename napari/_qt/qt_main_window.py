@@ -588,7 +588,6 @@ class Window:
         dock_widget : QtViewerDockWidget
             `dock_widget` will be added to the main window.
         """
-        dock_widget.setParent(self._qt_window)
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
@@ -597,8 +596,12 @@ class Window:
             action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
 
-    def remove_dock_widget(self, widget):
+    def remove_dock_widget(self, widget: QWidget):
         """Removes specified dock widget.
+
+        If a QDockWidget is not provided, the existing QDockWidgets will be
+        searched for one whose inner widget (``.widget()``) is the provided
+        ``widget``.
 
         Parameters
         ----------
@@ -608,8 +611,29 @@ class Window:
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
                 self._qt_window.removeDockWidget(dw)
+            return
+
+        if not isinstance(widget, QDockWidget):
+            for dw in self._qt_window.findChildren(QDockWidget):
+                if dw.widget() is widget:
+                    _dw: QDockWidget = dw
+                    break
+            else:
+                raise LookupError(
+                    f"Could not find a dock widget containing: {widget}"
+                )
         else:
-            self._qt_window.removeDockWidget(widget)
+            _dw = widget
+
+        if _dw.widget():
+            _dw.widget().setParent(None)
+        self._qt_window.removeDockWidget(_dw)
+        self.window_menu.removeAction(_dw.toggleViewAction())
+        # Deleting the dock widget means any references to it will no longer
+        # work but it's not really useful anyway, since the inner widget has
+        # been removed. and anyway: people should be using add_dock_widget
+        # rather than directly using _add_viewer_dock_widget
+        _dw.deleteLater()
 
     def resize(self, width, height):
         """Resize the window.
@@ -674,7 +698,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.text)
+        self._status_bar.showMessage(event.value)
 
     def _title_changed(self, event):
         """Update window title.
@@ -684,7 +708,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.text)
+        self._qt_window.setWindowTitle(event.value)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -694,7 +718,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._help.setText(event.text)
+        self._help.setText(event.value)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
