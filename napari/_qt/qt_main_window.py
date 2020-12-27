@@ -582,7 +582,7 @@ class Window:
         if hasattr(widget, 'reset_choices'):
             # Keep the dropdown menus in the widget in sync with the layer model
             # if widget has a `reset_choices`, which is true for all magicgui
-            # widgets
+            # `CategoricalWidget`s
             self.qt_viewer.viewer.layers.events.connect(widget.reset_choices)
 
         return dock_widget
