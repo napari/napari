@@ -681,7 +681,7 @@ class Window:
         from magicgui import magicgui
 
         return self.add_dock_widget(
-            magicgui(**magic_kwargs or {})(function),
+            magicgui(function, **magic_kwargs or {}),
             name=name or function.__name__.replace('_', ' '),
             area=area,
             allowed_areas=allowed_areas,
