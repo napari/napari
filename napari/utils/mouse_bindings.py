@@ -12,6 +12,7 @@ class MousemapProvider:
     """
 
     def __init__(self):
+        super().__init__()
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
