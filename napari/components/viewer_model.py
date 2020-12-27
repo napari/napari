@@ -25,8 +25,7 @@ from ..utils.pydantic import ConfiguredModel, evented_model
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
-
-# from ._viewer_mouse_bindings import dims_scroll
+from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
@@ -39,7 +38,7 @@ DEFAULT_THEME = 'dark'
 
 
 @evented_model
-class ViewerModel(ConfiguredModel, KeymapProvider, MousemapProvider):
+class ViewerModel(MousemapProvider, KeymapProvider, ConfiguredModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -83,10 +82,8 @@ class ViewerModel(ConfiguredModel, KeymapProvider, MousemapProvider):
     # 2-tuple indicating height and width
     _canvas_size = (600, 800)
 
-    def __init__(
-        self, title='napari', ndisplay=2, order=(), axis_labels=(), **data
-    ):
-        super().__init__(**data)
+    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+        super().__init__()
 
         # Set initial values
         if len(axis_labels) > 0:
@@ -114,7 +111,7 @@ class ViewerModel(ConfiguredModel, KeymapProvider, MousemapProvider):
         self.layers.events.reordered.connect(self._on_layers_change)
 
         # Add mouse callback
-        # self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_wheel_callbacks.append(dims_scroll)
 
     def __hash__(self):
         return id(self)

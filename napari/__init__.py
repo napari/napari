@@ -58,17 +58,16 @@ from .viewer import Viewer  # isort:skip
 from ._qt import gui_qt
 from .plugins.io import save_layers
 from .utils import _magicgui, sys_info
-
-# from .view_layers import (
-#     view_image,
-#     view_labels,
-#     view_path,
-#     view_points,
-#     view_shapes,
-#     view_surface,
-#     view_tracks,
-#     view_vectors,
-# )
+from .view_layers import (
+    view_image,
+    view_labels,
+    view_path,
+    view_points,
+    view_shapes,
+    view_surface,
+    view_tracks,
+    view_vectors,
+)
 
 # register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()

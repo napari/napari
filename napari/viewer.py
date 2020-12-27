@@ -41,14 +41,12 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-        **data,
     ):
         super().__init__(
             title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
-            **data,
         )
         self._window = Window(self, show=show)
 

@@ -1,5 +1,5 @@
 import numpy as np
-from pydantic import BaseModel, Extra
+from pydantic import BaseModel
 
 from .events.dataclass import _type_to_compare, is_equal
 from .events.event import EmitterGroup
@@ -92,7 +92,7 @@ def evented_model(cls):
     return cls
 
 
-def set_with_events(self, name, value, original_setattr):
+def set_with_events(cls, name, value, original_setattr):
     """Modified __setattr__ method that emits an event when set.
 
     Events will *only* be emitted if the ``name`` of the attribute being set
@@ -126,22 +126,22 @@ def set_with_events(self, name, value, original_setattr):
     fields : set of str
         Only emit events for field names in this set.
     """
-    if name not in getattr(self, 'events', {}):
+    if name not in getattr(cls, 'events', {}):
         # fallback to default behavior
-        original_setattr(self, name, value)
+        original_setattr(cls, name, value)
         return
 
     # grab current value
-    before = getattr(self, name, object())
+    before = getattr(cls, name, object())
 
     # set value using original setter
-    original_setattr(self, name, value)
+    original_setattr(cls, name, value)
 
     # if different we emit the event with new value
-    after = getattr(self, name)
-    if not self.__equality_checks__.get(name, is_equal)(after, before):
+    after = getattr(cls, name)
+    if not cls.__equality_checks__.get(name, is_equal)(after, before):
         # use gettattr again in case `_on_name_set` has modified it
-        getattr(self.events, name)(value=after)  # type: ignore
+        getattr(cls.events, name)(value=after)  # type: ignore
 
 
 JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
@@ -155,5 +155,5 @@ class ConfiguredModel(BaseModel):
         underscore_attrs_are_private = True
         use_enum_values = True
         validate_all = True
-        extra = Extra.forbid
+        extra = 'allow'
         json_encoders = JSON_ENCODERS
