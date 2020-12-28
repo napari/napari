@@ -13,7 +13,7 @@ from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
 from ._info import LayerInfo, LoadType
-from ._pool import LoaderPool
+from ._pool_group import LoaderPoolGroup
 from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.loader")
@@ -38,7 +38,7 @@ class ChunkLoader:
     def __init__(self):
         _setup_logging(octree_config)
 
-        loader_config = octree_config['loader']
+        loader_config = octree_config['loader_defaults']
 
         self.force_synchronous: bool = bool(loader_config['force_synchronous'])
         self.auto_sync_ms = loader_config['auto_sync_ms']
@@ -51,7 +51,7 @@ class ChunkLoader:
             source=self, auto_connect=True, chunk_loaded=None
         )
 
-        self._loader = LoaderPool(loader_config, self._on_done)
+        self._loaders = LoaderPoolGroup(octree_config, self._on_done)
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
         """Get LayerInfo for this layer or None.
@@ -102,7 +102,7 @@ class ChunkLoader:
             request.chunks = chunks
             return request
 
-        self._loader.load_async(request)
+        self._loaders.load_async(request)
         return None  # None means load was async.
 
     def _add_layer_info(self, request: ChunkRequest) -> None:
@@ -134,7 +134,7 @@ class ChunkLoader:
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """
-        return self._loader.cancel_requests(should_cancel)
+        return self._loaders.cancel_requests(should_cancel)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request.

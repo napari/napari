@@ -19,6 +19,8 @@ PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
 
 LOGGER = logging.getLogger("napari.loader")
 
+DoneCallback = Optional[Callable[[Future], None]]
+
 
 class LoaderPool:
     """Loads chunks asynchronously in worker threads or processes.
@@ -50,12 +52,12 @@ class LoaderPool:
         Requests sit in here for a bit before submission.
     """
 
-    def __init__(self, config: dict, on_done_loader: Callable[[Future], None]):
+    def __init__(self, config: dict, on_done_loader: DoneCallback = None):
         self.config = config
         self._on_done_loader = on_done_loader
 
         self.num_workers: int = int(config['num_workers'])
-        self.use_processes: bool = bool(config['use_processes'])
+        self.use_processes: bool = bool(config.get('use_processes', False))
 
         self._executor: PoolExecutor = _create_executor(
             self.use_processes, self.num_workers
@@ -157,7 +159,8 @@ class LoaderPool:
             return  # Future was cancelled, nothing to do.
 
         # Tell the loader this request finished.
-        self._on_done_loader(request)
+        if self._on_done_loader is not None:
+            self._on_done_loader(request)
 
     @staticmethod
     def _get_request(future: Future) -> Optional[ChunkRequest]:
