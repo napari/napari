@@ -14,7 +14,7 @@ jobs:
   bundle:
     name: Bundle ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
-    # if: github.repository == 'napari/napari'
+    if: github.repository == 'napari/napari'
     env:
       GITHUB_TOKEN: ${{ github.token }}
       DISPLAY: ":99.0"
@@ -83,6 +83,14 @@ jobs:
           upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label} # nightly build release from https://api.github.com/repos/napari/napari/releases
           release_id: 34273071
           asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
-          asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_name: napari-${{ runner.os }}.zip
           asset_content_type: application/zip
           max_releases: 1
+      - name: Update latest tag
+        uses: EndBug/latest-tag@latest
+        if: ${{ github.event_name == 'schedule' }}
+        with:
+          description: latest code released from nightly build
+          tag-name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

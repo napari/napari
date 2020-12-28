@@ -8,6 +8,7 @@ Long term we might possible make tiles in the background at some point. So
 as you browse a large image that doesn't have tiles, they are created in
 the background. But that's pretty speculative and far out.
 """
+import logging
 import time
 from typing import List
 
@@ -17,9 +18,12 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
+from ....utils.perf import block_timer
 from .octree_util import NormalNoise
 
 TileArray = List[List[ArrayLike]]
+
+LOGGER = logging.getLogger("napari.octree")
 
 
 def _get_tile(tiles: TileArray, row, col):
@@ -35,6 +39,8 @@ def _none(items):
 
 def _add_delay(array, delay_ms: NormalNoise):
     """Add a random delay when this array is first accessed.
+
+    TODO_OCTREE: unused not but might use again...
 
     Parameters
     ----------
@@ -153,7 +159,7 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
 
 
 def create_downsampled_levels(
-    image: np.ndarray, tile_size: int
+    image: np.ndarray, next_level_index: int, tile_size: int
 ) -> List[np.ndarray]:
     """Return a list of levels coarser then this own.
 
@@ -174,41 +180,35 @@ def create_downsampled_levels(
     List[np.ndarray]
         A list of levels where levels[0] is the first downsampled level.
     """
-    if image.ndim == 2:
-        zoom = [0.5, 0.5]
-    else:
-        assert image.ndim == 3
-        zoom = [0.5, 0.5, 1]
+    zoom = [0.5, 0.5]
 
-    previous = image
+    if image.ndim == 3:
+        zoom.append(1)  # don't downsample the colors!
+
     levels = []
+    previous = image
+    level_index = next_level_index
+
+    if max(previous.shape) > tile_size:
+        LOGGER.info("Downsampling levels to a single tile...")
 
     # Repeat until we have level that will fit in a single tile, that will
     # be come the root/highest level.
     while max(previous.shape) > tile_size:
-        next_level = ndi.zoom(
-            previous, zoom, mode='nearest', prefilter=True, order=1
+        with block_timer("downsampling") as timer:
+            next_level = ndi.zoom(
+                previous, zoom, mode='nearest', prefilter=True, order=1
+            )
+
+        LOGGER.info(
+            "Level %d downsampled %s in %.3fms",
+            level_index,
+            previous.shape,
+            timer.duration_ms,
         )
+
         levels.append(next_level)
         previous = levels[-1]
+        level_index += 1
 
-    return levels
-
-
-def create_multi_scale_from_image(
-    image: np.ndarray, tile_size: int
-) -> List[np.ndarray]:
-    """Turn an image into a multi-scale image with levels.
-
-    Parameters
-    ----------
-    image : np.darray
-        The full image to create levels from.
-
-    Return
-    ------
-    List[np.ndarray]
-        A list of levels where levels[0] is the input image.
-    """
-    levels = [image] + create_downsampled_levels(image)
     return levels

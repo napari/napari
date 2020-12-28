@@ -164,10 +164,9 @@ class QtDimSliderWidget(QWidget):
 
     def _pull_label(self, event):
         """Updates the label LineEdit from the dims model."""
-        if event.axis == self.axis:
-            label = self.dims.axis_labels[self.axis]
-            self.axis_label.setText(label)
-            self.axis_label_changed.emit(self.axis, label)
+        label = self.dims.axis_labels[self.axis]
+        self.axis_label.setText(label)
+        self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
         """Update dimension slider label."""
@@ -690,5 +689,4 @@ class AnimationWorker(QObject):
     def _on_axis_changed(self, event):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
-        if event.axis == self.axis and hasattr(event, 'value'):
-            self.current = event.value
+        self.current = self.dims.current_step[self.axis]

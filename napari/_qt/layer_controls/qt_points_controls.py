@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.points._points_constants import Mode, Symbol
+from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -65,20 +66,18 @@ class QtPointsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.mode.connect(self.set_mode)
-        self.layer.events.n_dimensional.connect(self._on_n_dim_change)
-        self.layer._text.events.visible.connect(
-            self._on_text_visibility_change
-        )
+        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
         self.layer.events.current_edge_color.connect(
-            self._on_edge_color_change
+            self._on_current_edge_color_change
         )
         self.layer.events.current_face_color.connect(
-            self._on_face_color_change
+            self._on_current_face_color_change
         )
         self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -134,7 +133,7 @@ class QtPointsControls(QtLayerControls):
 
         text_disp_cb = QCheckBox()
         text_disp_cb.setToolTip('toggle text visibility')
-        text_disp_cb.setChecked(self.layer._text.visible)
+        text_disp_cb.setChecked(self.layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
 
@@ -187,7 +186,7 @@ class QtPointsControls(QtLayerControls):
         """
         self.layer.status = self.layer.mode
 
-    def set_mode(self, event):
+    def _on_mode_change(self, event):
         """"Update ticks in checkbox widgets when points layer mode is changed.
 
         Available modes for points layer are:
@@ -257,9 +256,9 @@ class QtPointsControls(QtLayerControls):
             Checkbox indicating if text is visible.
         """
         if state == Qt.Checked:
-            self.layer._text.visible = True
+            self.layer.text.visible = True
         else:
-            self.layer._text.visible = False
+            self.layer.text.visible = False
 
     def _on_text_visibility_change(self, event):
         """Receive layer model text visibiltiy change change event and update checkbox.
@@ -269,10 +268,10 @@ class QtPointsControls(QtLayerControls):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.layer._text.events.visible.blocker():
-            self.textDispCheckBox.setChecked(self.layer._text.visible)
+        with self.layer.text.events.visible.blocker():
+            self.textDispCheckBox.setChecked(self.layer.text.visible)
 
-    def _on_n_dim_change(self, event):
+    def _on_n_dimensional_change(self, event):
         """Receive layer model n-dimensional change event and update checkbox.
 
         Parameters
@@ -321,12 +320,12 @@ class QtPointsControls(QtLayerControls):
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
-    def _on_face_color_change(self, event=None):
+    def _on_current_face_color_change(self, event=None):
         """Receive layer.current_face_color() change event and update view."""
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_edge_color_change(self, event=None):
+    def _on_current_edge_color_change(self, event=None):
         """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
@@ -344,3 +343,8 @@ class QtPointsControls(QtLayerControls):
             ['select_button', 'addition_button', 'delete_button'],
             self.layer.editable,
         )
+
+    def close(self):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.text.events, self)
+        super().close()

@@ -1,16 +1,15 @@
 import numpy as np
 
-from ..utils.colormaps.standardize_color import transform_color
-from ..utils.events import EmitterGroup
+from ..utils.colormaps.standardize_color import transform_single_color
+from ..utils.events.dataclass import Property, evented_dataclass
 
 
+@evented_dataclass
 class Axes:
     """Axes indicating world coordinate origin and orientation.
 
     Attributes
     ----------
-    events : EmitterGroup
-        Event emitter group
     visible : bool
         If axes are visible or not.
     labels : bool
@@ -25,88 +24,18 @@ class Axes:
         If axes are dashed or not. If not dashed then
         all the axes are solid. If dashed then x=solid,
         y=dashed, z=dotted.
+    arrows : bool
+        If axes have arrowheads or not.
     background_color : np.ndarray
         Background color of canvas. If axes are not colored
         then they have the color opposite of this color.
-    arrows : bool
-        If axes have arrowheads or not.
     """
 
-    def __init__(self):
-
-        # Events:
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            visible=None,
-            colored=None,
-            dashed=None,
-            arrows=None,
-            labels=None,
-        )
-        self._visible = False
-        self._labels = True
-        self._colored = True
-        self._background_color = np.array([1, 1, 1])
-        self._dashed = False
-        self._arrows = True
-
-    @property
-    def visible(self):
-        """bool: If axes are visible or not."""
-        return self._visible
-
-    @visible.setter
-    def visible(self, visible):
-        self._visible = visible
-        self.events.visible()
-
-    @property
-    def labels(self):
-        """bool: If axes labels are visible or not."""
-        return self._labels
-
-    @labels.setter
-    def labels(self, labels):
-        self._labels = labels
-        self.events.labels()
-
-    @property
-    def colored(self):
-        """bool: If axes are colored or not."""
-        return self._colored
-
-    @colored.setter
-    def colored(self, colored):
-        self._colored = colored
-        self.events.colored()
-
-    @property
-    def background_color(self):
-        """np.ndarray: RGBA color."""
-        return self._background_color
-
-    @background_color.setter
-    def background_color(self, background_color):
-        self._background_color = transform_color(background_color)[0]
-        self.events.colored()
-
-    @property
-    def dashed(self):
-        """bool: If axes are dashed or not."""
-        return self._dashed
-
-    @dashed.setter
-    def dashed(self, dashed):
-        self._dashed = dashed
-        self.events.dashed()
-
-    @property
-    def arrows(self):
-        """bool: If axes have arrowheads or not."""
-        return self._arrows
-
-    @arrows.setter
-    def arrows(self, arrows):
-        self._arrows = arrows
-        self.events.arrows()
+    visible: bool = False
+    labels: bool = True
+    colored: bool = True
+    dashed: bool = False
+    arrows: bool = True
+    background_color: Property[
+        np.ndarray, None, transform_single_color
+    ] = np.array([1, 1, 1, 1])

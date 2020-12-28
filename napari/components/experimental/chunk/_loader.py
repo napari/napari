@@ -1,165 +1,97 @@
 """ChunkLoader class.
+
+Loads chunks synchronously or asynchronously using worker threads or
+processes. A chunk could be an OctreeChunk or it could be a pre-Octree
+array from a single or multi-scale image.
 """
 import logging
-import os
-from concurrent.futures import (
-    CancelledError,
-    Future,
-    ProcessPoolExecutor,
-    ThreadPoolExecutor,
-)
+from concurrent.futures import Future
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple
 
-from ....types import ArrayLike
+from ....utils.config import octree_config
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
-from ._config import async_config
-from ._delay_queue import DelayQueue
 from ._info import LayerInfo, LoadType
-from ._request import ChunkKey, ChunkRequest
+from ._pool import LoaderPool
+from ._request import ChunkRequest
 
-LOGGER = logging.getLogger("napari.async")
-
-# Executor for either a thread pool or a process pool.
-PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
-
-
-def _is_enabled(env_var) -> bool:
-    """Return True if env_var is defined and not zero."""
-    return os.getenv(env_var, "0") != "0"
-
-
-def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
-    """This is the worker thread or process that loads the array.
-
-    We call np.asarray() in a worker because it might lead to IO or
-    computation which would block the GUI thread.
-
-    Parameters
-    ----------
-    request : ChunkRequest
-        The request to load.
-    """
-    request.load_chunks()  # loads all chunks in the request
-    return request
-
-
-def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
-    """Return the thread or process pool executor.
-
-    Parameters
-    ----------
-    use_processes : bool
-        If True use processes, otherwise threads.
-    num_workers : int
-        The number of worker threads or processes.
-    """
-    if use_processes:
-        LOGGER.debug("ChunkLoader process pool num_workers=%d", num_workers)
-        return ProcessPoolExecutor(max_workers=num_workers)
-
-    LOGGER.debug("ChunkLoader thread pool num_workers=%d", num_workers)
-    return ThreadPoolExecutor(max_workers=num_workers)
+LOGGER = logging.getLogger("napari.loader")
 
 
 class ChunkLoader:
-    """Loads chunks synchronously or asynchronously in worker thread or processes.
+    """Loads chunks in worker threads or processes.
 
-    We cannot call np.asarray() in the GUI thread because it might block on
-    IO or a computation. So the ChunkLoader calls np.asarray() in a worker
-    if doing async loading.
+    A ChunkLoader contains one or more LoaderPools. Each LoaderPool has
+    a thread or process pool.
 
     Attributes
     ----------
-    synchronous : bool
-        If True all requests are loaded synchronously.
-    num_workers : int
-        The number of workers.
-    executor : PoolExecutor
-        The thread or process pool executor.
-    futures : Dict[int, List[Future]]
-        In progress futures for each layer (data_id).
     layer_map : Dict[int, LayerInfo]
         Stores a LayerInfo about each layer we are tracking.
     cache : ChunkCache
         Cache of previously loaded chunks.
-    delay_queue : DelayQueue
-        Requests sit in here for a bit before submission.
     events : EmitterGroup
         We only signal one event: chunk_loaded.
     """
 
     def __init__(self):
-        self.synchronous: bool = async_config.synchronous
-        self.num_workers: int = async_config.num_workers
-        self.use_processes: bool = async_config.use_processes
+        _setup_logging(octree_config)
 
-        self.executor: PoolExecutor = _create_executor(
-            self.use_processes, self.num_workers
-        )
+        loader_config = octree_config['loader']
 
-        self.futures: Dict[int, List[Future]] = {}
+        self.force_synchronous: bool = bool(loader_config['force_synchronous'])
+        self.auto_sync_ms = loader_config['auto_sync_ms']
+        self.octree_enabled = octree_config['octree']['enabled']
+
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
-
-        # The DelayeQueue prevents us from spamming the worker pool when
-        # the user is rapidly scrolling through slices.
-        self.delay_queue = DelayQueue(
-            async_config.delay_queue_ms, self._submit_async
-        )
 
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
 
-    def get_info(self, layer_id: int) -> Optional[LayerInfo]:
-        """Get LayerInfo for this layer or None."""
-        return self.layer_map.get(layer_id)
+        self._loader = LoaderPool(loader_config, self._on_done)
 
-    def create_request(
-        self, layer, key: ChunkKey, chunks: Dict[str, ArrayLike]
-    ) -> ChunkRequest:
-        """Create a ChunkRequest for submission to load_chunk.
+    def get_info(self, layer_id: int) -> Optional[LayerInfo]:
+        """Get LayerInfo for this layer or None.
 
         Parameters
         ----------
-        layer : Layer
-            The layer that's requesting the data.
-        key : ChunkKey
-            The key for the request.
-        chunks : Dict[str, ArrayLike]
-            The arrays we want to load.
+        layer_id : int
+            The the LayerInfo for this layer.
+
+        Return
+        ------
+        Optional[LayerInfo]
+            The LayerInfo if the layer has one.
         """
-        layer_id = key.layer_key.layer_id
+        return self.layer_map.get(layer_id)
 
-        # Add a LayerInfo if we don't already have one.
-        if layer_id not in self.layer_map:
-            self.layer_map[layer_id] = LayerInfo(layer)
-
-        # Return the new request.
-        return ChunkRequest(key, chunks)
-
-    def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
+    def load_request(
+        self, request: ChunkRequest
+    ) -> Tuple[Optional[ChunkRequest], Optional[Future]]:
         """Load the given request sync or async.
 
         Parameters
         ----------
         request : ChunkRequest
-            Contains the array or arrays to load.
+            Contains one or more arrays to load.
 
         Returns
         -------
-        Optional[ChunkRequest]
-            The ChunkRequest if it was satisfied otherwise None.
+        Tuple[Optional[ChunkRequest], Optional[Future]]
+            The ChunkRequest if loaded sync or the Future if loaded async.
 
         Notes
         -----
-        We return a ChunkRequest if we performed the load synchronously,
-        otherwise we return None is indicating that an asynchronous load
-        was intitiated. When the async load finishes the layer's
+        We return a ChunkRequest if the load was performed synchronously,
+        otherwise we return a Future meaning an asynchronous load was
+        intitiated. When the async load finishes the layer's
         on_chunk_loaded() will be called from the GUI thread.
         """
+        self._add_layer_info(request)
+
         if self._load_synchronously(request):
             return request
 
@@ -167,26 +99,58 @@ class ChunkLoader:
         chunks = self.cache.get_chunks(request)
 
         if chunks is not None:
-            LOGGER.info("ChunkLoader._load_async: cache hit %s", request.key)
             request.chunks = chunks
             return request
 
-        LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
+        self._loader.load_async(request)
+        return None  # None means load was async.
 
-        # Clear any pending requests for this specific data_id.
-        # TODO_OCTREE: turn this off because all our request come from the
-        # same data_id. But maybe we can clear pending on something more
-        # specific?
-        # self._clear_pending(request.key.data_id)
+    def _add_layer_info(self, request: ChunkRequest) -> None:
+        """Add a new LayerInfo entry in our layer map.
 
-        # Add to the delay queue, the delay queue will call our
-        # _submit_async() method later on if the delay expires without the
-        # request getting cancelled.
-        self.delay_queue.add(request)
-        return None
+        Parameters
+        ----------
+        request : ChunkRequest
+            Add a LayerInfo for this request.
+        """
+        layer_id = request.location.layer_id
+        if layer_id not in self.layer_map:
+            self.layer_map[layer_id] = LayerInfo(
+                request.location.layer_ref, self.auto_sync_ms
+            )
+
+    def cancel_requests(
+        self, should_cancel: Callable[[ChunkRequest], bool]
+    ) -> List[ChunkRequest]:
+        """Cancel pending requests based on the given filter.
+
+        Parameters
+        ----------
+        should_cancel : Callable[[ChunkRequest], bool]
+            Cancel the request if this returns True.
+
+        Return
+        ------
+        List[ChunkRequests]
+            The requests that were cancelled, if any.
+        """
+        return self._loader.cancel_requests(should_cancel)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
-        """Return True if we loaded the request synchronously."""
+        """Return True if we loaded the request.
+
+        Attempt to load the request synchronously.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request to load.
+
+        Return
+        ------
+        bool
+            True if we loaded it.
+        """
         info = self._get_layer_info(request)
 
         if self._should_load_sync(request, info):
@@ -216,106 +180,23 @@ class ChunkLoader:
 
         assert info.load_type == LoadType.AUTO  # AUTO is the only other type.
 
-        # If ChunkLoader is synchronous then AUTO always means synchronous.
-        if self.synchronous:
+        # If forcing synchronous then AUTO always means synchronous.
+        if self.force_synchronous:
             return True
 
         # If it's been loading "fast" then load synchronously. There's no
         # point is loading async if it loads really fast.
-        if info.loads_fast:
-            return True
+
+        # TODO_OCTREE: disable this in a nice way for octree. It made sense
+        # for single-scale time series, but not for octree.
+        # if info.loads_fast:
+        #    return True
 
         # Finally, load synchronously if it's an ndarray (in memory) otherwise
         # it's Dask or something else and we load async.
         return request.in_memory
 
-    def _submit_async(self, request: ChunkRequest) -> None:
-        """Initiate an asynchronous load of the given request.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Contains the arrays to load.
-        """
-        # Note about string formatting with logging: it's recommended to
-        # use the oldest style of string formatting with logging. With
-        # f-strings you'd pay the price of formatting the string even if
-        # the log statement is disabled due to the log level, etc. In our
-        # case the log will almost always be disabled unless debugging.
-        # https://docs.python.org/3/howto/logging.html#optimization
-        # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
-        LOGGER.debug("ChunkLoader._submit_async: %s", request.key)
-
-        # Submit the future, have it call ChunkLoader._done when done.
-        future = self.executor.submit(_chunk_loader_worker, request)
-        future.add_done_callback(self._done)
-
-        # Store the future in case we need to cancel it.
-        self.futures.setdefault(request.data_id, []).append(future)
-
-    def _clear_pending(self, data_id: int) -> None:
-        """Clear any pending requests for this data_id.
-
-        Parameters
-        ----------
-        data_id : int
-            Clear all requests associated with this data_id.
-        """
-        LOGGER.debug("ChunkLoader._clear_pending %d", data_id)
-
-        # Clear delay queue first. These requests are trivial to clear
-        # because they have not even been submitted to the worker pool.
-        self.delay_queue.clear(data_id)
-
-        # Get list of futures we submitted to the pool.
-        future_list = self.futures.setdefault(data_id, [])
-
-        # Try to cancel all futures in the list, but cancel() will return
-        # False if the task already started running.
-        num_before = len(future_list)
-        future_list[:] = [x for x in future_list if x.cancel()]
-        num_after = len(future_list)
-        num_cleared = num_before - num_after
-
-        # Delete the list entirely if empty
-        if num_after == 0:
-            del self.futures[data_id]
-
-        # Log what we did.
-        if num_before == 0:
-            LOGGER.debug("ChunkLoader.clear_pending: empty")
-        else:
-            LOGGER.debug(
-                "ChunkLoader.clear_pending: %d of %d cleared -> %d remain",
-                num_cleared,
-                num_before,
-                num_after,
-            )
-
-    @staticmethod
-    def _get_request(future: Future) -> Optional[ChunkRequest]:
-        """Return the ChunkRequest for this future.
-
-        Parameters
-        ----------
-        future : Future
-            Get the request from this future.
-
-        Returns
-        -------
-        Optional[ChunkRequest]
-            The ChunkRequest or None if the future was cancelled.
-        """
-        try:
-            # Our future has already finished since this is being
-            # called from Chunk_Request._done(), so result() will
-            # never block.
-            return future.result()
-        except CancelledError:
-            LOGGER.debug("ChunkLoader._done: cancelled")
-            return None
-
-    def _done(self, future: Future) -> None:
+    def _on_done(self, request: ChunkRequest) -> None:
         """Called when a future finishes with success or was cancelled.
 
         Parameters
@@ -325,20 +206,18 @@ class ChunkLoader:
 
         Notes
         -----
-        This method may be called in a worker thread. The
+        This method MAY be called in a worker thread. The
         concurrent.futures documentation very intentionally does not
         specify which thread the future's done callback will be called in,
         only that it will be called in some thread in the current process.
         """
-        try:
-            request = self._get_request(future)
-        except ValueError:
-            return  # Pool not running, app exit in progress.
 
-        if request is None:
-            return  # Future was cancelled, nothing to do.
-
-        LOGGER.debug("ChunkLoader._done: %s", request.key)
+        LOGGER.debug(
+            "_done: load=%.3fms elapsed=%.3fms %s",
+            request.load_ms,
+            request.elapsed_ms,
+            request.location,
+        )
 
         # Add chunks to the cache in the worker thread. For now it's safe
         # to do this in the worker. Later we might need to arrange for this
@@ -346,7 +225,7 @@ class ChunkLoader:
         # complicated.
         self.cache.add_chunks(request)
 
-        # Lookup this Request's LayerInfo.
+        # Lookup this request's LayerInfo.
         info = self._get_layer_info(request)
 
         # Resolve the weakref.
@@ -357,8 +236,8 @@ class ChunkLoader:
 
         info.stats.on_load_finished(request, sync=False)
 
-        # Fire event to tell QtChunkReceiver to forward this chunk to its
-        # layer in the GUI thread.
+        # Fire chunk_loaded event  to tell QtChunkReceiver to forward this
+        # chunk to its layer in the GUI thread.
         self.events.chunk_loaded(layer=layer, request=request)
 
     def _get_layer_info(self, request: ChunkRequest) -> LayerInfo:
@@ -374,7 +253,7 @@ class ChunkLoader:
         KeyError
             If the layer is not found.
         """
-        layer_id = request.key.layer_key.layer_id
+        layer_id = request.location.layer_id
 
         # Raises KeyError if not found. This should never happen because we
         # add the layer to the layer_map in ChunkLoader.create_request().
@@ -395,9 +274,9 @@ class ChunkLoader:
         """Wait for all in-progress requests to finish."""
         self.delay_queue.flush()
 
-        for future_list in self.futures.values():
+        for future_list in self._futures.values():
             # Result blocks until the future is done or cancelled
-            [future.result() for future in future_list]
+            map(lambda x: x.result(), future_list)
 
     def wait_for_data_id(self, data_id: int) -> None:
         """Wait for the given data to be loaded.
@@ -408,22 +287,23 @@ class ChunkLoader:
             Wait on chunks for this data_id.
         """
         try:
-            future_list = self.futures[data_id]
+            future_list = self._futures[data_id]
         except KeyError:
             LOGGER.warning(
-                "ChunkLoader.wait: no futures for data_id %d", data_id
+                "wait_for_data_id: no futures for data_id=%d", data_id
             )
             return
 
         LOGGER.info(
-            "ChunkLoader.wait: waiting on %d futures for %d",
+            "wait_for_data_id: waiting on %d futures for data_id=%d",
             len(future_list),
             data_id,
         )
 
-        # Call result() will block until the future has finished or was cancelled.
-        [future.result() for future in future_list]
-        del self.futures[data_id]
+        # Calling result() will block until the future has finished or was
+        # cancelled.
+        map(lambda x: x.result(), future_list)
+        del self._futures[data_id]
 
 
 @contextmanager
@@ -434,15 +314,64 @@ def synchronous_loading(enabled):
         layer = Image(data)
         ... use layer ...
     """
-    previous = chunk_loader.synchronous
-    chunk_loader.synchronous = enabled
+    previous = chunk_loader.force_synchronous
+    chunk_loader.force_synchronous = enabled
     yield
-    chunk_loader.synchronous = previous
+    chunk_loader.force_synchronous = previous
 
 
 def wait_for_async():
     """Wait for all asynchronous loads to finish."""
     chunk_loader.wait_for_all()
+
+
+def _setup_logging(config: dict) -> None:
+    """Setup logging.
+
+    String Formatting
+    -----------------
+    It's recommended to use the oldest style of string formatting with
+    logging. With f-strings you'd pay the price of formatting the string
+    even if the log statement is disabled due to the log level, etc. In our
+    case the log will almost always be disabled unless debugging.
+    https://docs.python.org/3/howto/logging.html#optimization
+    https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
+
+    Parameters
+    ----------
+    octree_config : dict
+        The configuration data.
+    """
+    try:
+        log_path = config['loader']['log_path']
+        if log_path is not None:
+            _log_to_file("napari.loader", log_path)
+    except KeyError:
+        pass
+
+    try:
+        log_path = config['loader']['log_path']
+        if log_path is not None:
+            _log_to_file("napari.octree", log_path)
+    except KeyError:
+        pass
+
+
+def _log_to_file(name: str, path: str) -> None:
+    """Log "name" messages to the given file path.
+
+    Parameters
+    ----------
+    path : str
+        Log to this file path.
+    """
+    log_format = "%(levelname)s - %(name)s - %(message)s"
+    logger = logging.getLogger(name)
+    fh = logging.FileHandler(path)
+    formatter = logging.Formatter(log_format)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    logger.setLevel(logging.DEBUG)
 
 
 """
@@ -460,4 +389,4 @@ Think of the ChunkLoader as a shared resource like "the filesystem" where
 multiple clients can be access it at the same time, but it is the interface
 to just one physical resource.
 """
-chunk_loader = ChunkLoader()
+chunk_loader = ChunkLoader() if octree_config else None

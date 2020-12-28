@@ -154,11 +154,7 @@ def test_kwargs_passed(monkeypatch):
     )
     assert viewer_mock.mock_calls == [
         call(
-            title='my viewer',
-            ndisplay=2,
-            order=None,
-            axis_labels=None,
-            show=True,
+            title='my viewer', ndisplay=2, order=(), axis_labels=(), show=True,
         ),
         call().open(
             path='some/path',

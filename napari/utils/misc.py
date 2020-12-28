@@ -26,7 +26,11 @@ def running_as_bundled_app() -> bool:
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     app_module = sys.modules['__main__'].__package__
-    metadata = importlib_metadata.metadata(app_module)
+    try:
+        metadata = importlib_metadata.metadata(app_module)
+    except importlib_metadata.PackageNotFoundError:
+        return False
+
     return 'Briefcase-Version' in metadata
 
 
@@ -140,7 +144,8 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
     """
-    if obj and is_sequence(obj) and is_iterable(obj[0]):
+
+    if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
             raise ValueError(f"length of {obj} must equal {length}")
         return obj
@@ -332,3 +337,23 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def ensure_n_tuple(val, n, fill=0):
+    """Ensure input is a length n tuple.
+
+    Parameters
+    ----------
+    val : iterable
+        Iterable to be forced into length n-tuple.
+    n : int
+        Length of tuple.
+
+    Returns
+    -------
+    tuple
+        Coerced tuple.
+    """
+    assert n > 0, 'n must be greater than 0'
+    tuple_value = tuple(val)
+    return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
