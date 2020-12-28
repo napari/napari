@@ -102,7 +102,6 @@ linux_task:
     - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
     - python -m pip install --retries 3 pytest-cov codecov
     - python tools/minreq.py  # no-op if MIN_REQ is not set
-    - python tools/minreq_test.py # no-op if MIN_REQ is not set
     - python -m pip install -e .[pyside2] $PIP_FLAGS
 
   check_script:

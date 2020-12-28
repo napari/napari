@@ -34,6 +34,23 @@ def pin_config_minimum_requirements(config_filename):
         config.write(fout)
 
 
+def pin_test_minimum_requirements(requirements_filename):
+    # read the file
+    with open(requirements_filename, 'r') as file:
+        lines = file.readlines()
+
+    # force pandas==1.1.5 for compatibility with minimum numpy (1.16.0)
+    output_lines = []
+    for line in lines:
+        if line == 'pandas\n':
+            line = 'pandas==1.1.5\n'
+        output_lines.append(line)
+
+    # rewrite requirements/test.txt with new requirements
+    with open(requirements_filename, 'w') as fout:
+        fout.writelines(output_lines)
+
+
 if __name__ == '__main__':
     if os.environ.get('MIN_REQ', '') == '1':
         # find setup.cfg
@@ -41,3 +58,9 @@ if __name__ == '__main__':
             os.path.dirname(__file__), "..", "setup.cfg"
         )
         pin_config_minimum_requirements(config_filename)
+
+        # find requirements/test.txt
+        test_requirements_filename = os.path.join(
+            os.path.dirname(__file__), "..", "requirements", "test.txt"
+        )
+        pin_test_minimum_requirements(test_requirements_filename)
