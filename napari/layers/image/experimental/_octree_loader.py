@@ -1,15 +1,18 @@
-"""OctreeChunkLoader class.
+"""OctreeLoader class.
 
 Uses ChunkLoader to load data into OctreeChunks in the octree.
 """
 import logging
-from concurrent.futures import Future
-from typing import Dict, List, Set
+from typing import List, Set
 
-from ....components.experimental.chunk import LayerRef, chunk_loader
+from ....components.experimental.chunk import (
+    ChunkRequest,
+    LayerRef,
+    chunk_loader,
+)
 from ._chunk_set import ChunkSet
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeChunkKey, OctreeLocation
+from .octree_chunk import OctreeChunk, OctreeLocation
 
 LOGGER = logging.getLogger("napari.octree.loader")
 LOADER = logging.getLogger("napari.loader.futures")
@@ -21,7 +24,7 @@ LOADER = logging.getLogger("napari.loader.futures")
 NUM_ANCESTORS_LEVELS = 3
 
 
-class OctreeChunkLoader:
+class OctreeLoader:
     """Load data into OctreeChunks in the octree.
 
     The loader is given drawn_set, the chunks we are currently drawing, and
@@ -60,27 +63,27 @@ class OctreeChunkLoader:
     Parameters
     ----------
     octree : Octree
-        The octree we are loading chunks for, and that we are drawing.
+        We are loading chunks for this octree.
     layer_ref : LayerRef
-        A weak reference to the layer we are loading chunks for.
+        A weak reference to the layer the octree lives in.
 
     Attributes
     ----------
-    _futures : Future
-        Futures for chunks which are loading or queued for loading.
-    _last_seen : Set[OctreeLocation]
-        What did we see last frame. Only for logging.
+    _octree : Octree
+        We are loading chunks for this octree.
+    _layer_ref : LayerRef
+        A weak reference to the layer the octree lives in.
     """
 
     def __init__(self, octree: Octree, layer_ref: LayerRef):
         self._octree = octree
         self._layer_ref = layer_ref
 
-        self._futures: Dict[OctreeLocation, Future] = {}
-        self._last_seen: ChunkSet = ChunkSet()
-
     def get_drawable_chunks(
-        self, drawn_set: Set[OctreeChunkKey], ideal_chunks: List[OctreeChunk],
+        self,
+        drawn_set: Set[OctreeChunk],
+        ideal_chunks: List[OctreeChunk],
+        ideal_level: int,
     ) -> List[OctreeChunk]:
         """Return the chunks that should be drawn.
 
@@ -113,7 +116,7 @@ class OctreeChunkLoader:
 
         Parameters
         ----------
-        drawn_chunk_set : Set[OctreeChunkKey]
+        drawn_chunk_set : Set[OctreeChunk]
             The chunks which the visual is currently drawing.
         ideal_chunks : List[OctreeChunk]
             The chunks which are visible to the current view.
@@ -148,49 +151,29 @@ class OctreeChunkLoader:
         # better to see them first, even though they are lower resolution.
         seen.add(ideal_chunks)
 
-        # Cancel all futures (in progress loads) that are no longer seen
-        # chunks. When panning or zooming quickly we create and cancel a
-        # *lot* of futures. Which is fine, it's pretty fast, and we very
-        # much want to avoid loading chunks that we no long need.
-        self._cancel_futures(seen)
-
-        # Save off these for next time, only for logging purposes.
-        self._last_seen = seen
+        # Cancel in-progress loads for any chunks we can no long see. When
+        # panning or zooming rapidly, it's very common that chunks fall out
+        # of view before the load was even started. We need to cancel those
+        # loads or it will tie up the loader loading chunks we aren't even
+        # going to display.
+        self._cancel_unseen(seen)
 
         drawable = []
 
         # Load everything in seen if needed.
         for chunk in seen.chunks():
+            # The ideal level is priority 0, 1 is one level above idea, etc.
+            priority = chunk.location.level_index - ideal_level
+
             if chunk.in_memory:
                 drawable.append(chunk)
-            elif chunk.needs_load and self._load_chunk(chunk):
+            elif chunk.needs_load and self._load_chunk(chunk, priority):
                 drawable.append(chunk)  # It was a sync load, ready to draw.
 
-        # Useful for debugging but spammy.
+        # Useful for debugging but very spammy.
         # log_chunks("drawable", drawable)
-        # self._log_futures()
 
         return drawable
-
-    def _seen_changed(self, drawable: Set[OctreeChunk]) -> bool:
-        """Return True if the locations we are drawing changed.
-
-        Parameters
-        ----------
-        drawable : Set[OctreeChunk]
-            The chunks we are going to draw.
-
-        Return
-        ------
-        bool
-            True if the locations we are drawing changed.
-        """
-        # If different sizes there was definitively a change!
-        if len(drawable) != len(self._last_seen):
-            return True
-
-        # Return True only if there was a change in the set.
-        return drawable != self._last_drawable
 
     def _get_permanent_chunks(self) -> List[OctreeChunk]:
         """Get any permanent chunks we want to always draw.
@@ -214,7 +197,7 @@ class OctreeChunkLoader:
         return [root_tile]
 
     def _get_coverage(
-        self, ideal_chunk: OctreeChunk, drawn_set: Set[OctreeChunkKey]
+        self, ideal_chunk: OctreeChunk, drawn_set: Set[OctreeChunk]
     ) -> List[OctreeChunk]:
         """Return the chunks to draw for this one ideal chunk.
 
@@ -236,7 +219,7 @@ class OctreeChunkLoader:
         ----------
         ideal_chunk : OctreeChunk
             The ideal chunk we'd like to draw.
-        drawn_set : Set[OctreeChunkKey]
+        drawn_set : Set[OctreeChunk]
             The chunks which the visual is currently drawing.
 
         Return
@@ -247,7 +230,7 @@ class OctreeChunkLoader:
 
         # If the ideal chunk is already being drawn, that's all we need,
         # there is no point in returning more than that.
-        if ideal_chunk.in_memory and ideal_chunk.key in drawn_set:
+        if ideal_chunk.in_memory and ideal_chunk in drawn_set:
             return [ideal_chunk]
 
         # Get alternates for this chunk, from other levels.
@@ -266,10 +249,10 @@ class OctreeChunkLoader:
         # best user experience is to see imagery quickly even if not at the
         # ideal level.
         def keep_chunk(chunk) -> bool:
-            lower = chunk.location.level_index < ideal_level_index
+            lower_level = chunk.location.level_index < ideal_level_index
 
-            if lower:
-                return chunk.key in drawn_set
+            if lower_level:
+                return chunk in drawn_set
 
             return True  # Keep all higher level chunks.
 
@@ -307,7 +290,7 @@ class OctreeChunkLoader:
 
         return children + ancestors
 
-    def _load_chunk(self, octree_chunk: OctreeChunk) -> None:
+    def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> None:
         """Load the data for one OctreeChunk.
 
         Parameters
@@ -320,10 +303,6 @@ class OctreeChunkLoader:
         assert not octree_chunk.in_memory
         assert not octree_chunk.loading
 
-        # Create a key that points to this specific location in the octree.
-        layer_key = self._layer_ref.layer_key
-        key = OctreeChunkKey(layer_key, octree_chunk.location)
-
         # The ChunkLoader takes a dict of chunks that should be loaded at
         # the same time. Today we only ever ask it to a load a single chunk
         # at a time. In the future we might want to load multiple layers at
@@ -335,124 +314,68 @@ class OctreeChunkLoader:
         octree_chunk.loading = True
 
         # Create the ChunkRequest and load it with the ChunkLoader.
-        request = chunk_loader.create_request(self._layer_ref, key, chunks)
-        satisfied_request, future = chunk_loader.load_chunk(request)
+        request = ChunkRequest(octree_chunk.location, chunks, priority)
+        satisfied_request = chunk_loader.load_request(request)
 
-        if satisfied_request is not None:
-            # The load was synchronous. Some situations were the
-            # ChunkLoader loads synchronously:
-            #
-            # 1) The force_synchronous config option is set.
-            # 2) The data already was an ndarray, there's nothing to "load".
-            # 3) The data is Dask or similar, but based on past loads it's
-            #    loading so quickly that we decided to load it synchronously.
-            # 4) The data is Dask or similar, but we already loaded this
-            #    exact chunk before, so it was in the cache.
-            #
+        if satisfied_request is None:
+            # An async load was initiated. The load will probably happen in a
+            # worker thread. When the load completes QtChunkReceiver will call
+            # OctreeImage.on_chunk_loaded() with the data.
+            return False
 
-            # Whatever the reason, the data is now ready to draw.
-            octree_chunk.data = satisfied_request.chunks.get('data')
-            assert octree_chunk.in_memory
+        # The load was synchronous. Some situations were the
+        # ChunkLoader loads synchronously:
+        #
+        # 1) The force_synchronous config option is set.
+        # 2) The data already was an ndarray, there's nothing to "load".
+        # 3) The data is Dask or similar, but based on past loads it's
+        #    loading so quickly that we decided to load it synchronously.
+        # 4) The data is Dask or similar, but we already loaded this
+        #    exact chunk before, so it was in the cache.
+        #
 
-            # The chunk as been loaded. It can be a drawable chunk that we
-            # return to the visual.
-            return True
+        # Whatever the reason, the data is now ready to draw.
+        octree_chunk.data = satisfied_request.chunks.get('data')
 
-        # An async load was initiated. The load will probably happen in a
-        # worker thread. When the load completes QtChunkReceiver will call
-        # OctreeImage.on_chunk_loaded() with the data.
+        # The chunk has been loaded, it's now a drawable chunk.
+        assert octree_chunk.in_memory
+        return True
 
-        # We save the future in case we need to cancel it if the camera
-        # move such that the chunk is no longer needed. We can only cancel
-        # the future if the worker thread has not started loading it.
-        assert future
-        self._futures[octree_chunk.location] = future
-
-        return False
-
-    def _log_futures(self) -> None:
-        """Log the futures we are currently tracking."""
-        LOGGER.debug("%d futures:", len(self._futures))
-        for i, location in enumerate(self._futures.keys()):
-            LOGGER.debug("Future %d: %s", i, location)
-
-    def _cancel_futures(self, seen: ChunkSet) -> None:
-        """Cancel futures not in the seen set.
-
-        Any futures no longer seen are stale. There is no point in loading
-        them. So we cancel them. If a worker has already started on the
-        load we can't cancel it, but that chunk will be ignored when it
-        does load.
+    def _cancel_unseen(self, seen: ChunkSet) -> None:
+        """Cancel in-progress loads not in the seen set.
 
         Parameters
         ----------
         seen : ChunkSet
             The set of chunks the loader can see.
         """
-        before = len(self._futures)
 
-        if before == 0:
-            return
+        def _should_cancel(chunk_request: ChunkRequest) -> bool:
+            """Cancel if we are no longer seeing this location."""
+            return not seen.has_location(chunk_request.location)
 
-        # Iterate through every future.
-        for location, future in list(self._futures.items()):
-            # If the location was not seen by the current view.
-            if not seen.has_location(location):
-                # Cancel the load. If Future.cancel() returns False, a
-                # worker has alreadying started loading it and we can't
-                # cancel it.
-                if future.cancel():
-                    self._cancel_load(location)
+        cancelled = chunk_loader.cancel_requests(_should_cancel)
 
-    def _cancel_load(self, location: OctreeLocation) -> None:
-        """Set that this chunk is no longer loading.
+        for request in cancelled:
+            self._on_cancel_request(request.location)
+
+    def _on_cancel_request(self, location: OctreeLocation) -> None:
+        """Request for this location was cancelled.
 
         Parameters
         ----------
-        chunk : OctreeChunk
+        location : OctreeLocation
             Set that this chunk is no longer loading.
         """
-        try:
-            del self._futures[location]
-        except KeyError:
-            # Our self.on_chunk_loaded might have been called even
-            # while we were iterating! In which case the future
-            # might no longer exist. Log for now, but not an error.
-            LOGGER.warn("_cancel_load: Missing future %s", location)
-
-        # Don't create the chunk, but it ought to be there since there was
-        # a load in progress.
+        # Get chunk for this location, don't create the chunk, but it ought
+        # to be there since there was a load in progress.
         chunk: OctreeChunk = self._octree.get_chunk_at_location(
             location, create=False
         )
 
         if chunk is None:
             LOADER.error("_cancel_load: Chunk did not exist %s", location)
-        else:
-            chunk.loading = False
+            return
 
-    def on_chunk_loaded(self, octree_chunk: OctreeChunk) -> None:
-        """The given OctreeChunk was loaded.
-
-        Clear out this chunks future since it's been satisfied.
-
-        Parameters
-        ----------
-        octree_chunk : OctreeChunk
-            The octree chunk that was loaded.
-        """
-        location = octree_chunk.location
-
-        try:
-            del self._futures[location]
-            LOADER.debug(
-                "on_chunk_loaded %s num_features=%d",
-                location,
-                len(self._futures),
-            )
-
-        except KeyError:
-            # This can happen if the location went out of view and the
-            # future was deleted in self._cancel_futures. Log for now
-            # but it's really not an error at all.
-            LOGGER.debug("on_chunk_loaded: Missing Future %s", location)
+        # Chunk is no longer loading.
+        chunk.loading = False

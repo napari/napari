@@ -1,4 +1,5 @@
 import os
+import sys
 import warnings
 from functools import partial
 from typing import List
@@ -83,7 +84,15 @@ def pytest_addoption(parser):
 def qtbot(qtbot):
     """A modified qtbot fixture that makes sure no widgets have been leaked."""
     initial = QApplication.topLevelWidgets()
+    prior_exception = getattr(sys, 'last_value', None)
+
     yield qtbot
+
+    # if an exception was raised during the test, we should just quit now and
+    # skip looking for leaked widgets.
+    if getattr(sys, 'last_value', None) is not prior_exception:
+        return
+
     QApplication.processEvents()
     leaks = set(QApplication.topLevelWidgets()).difference(initial)
     # still not sure how to clean up some of the remaining vispy

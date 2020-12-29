@@ -16,7 +16,7 @@ def test_magicgui_returns_image(make_test_viewer):
         return np.random.rand(10, 10)
 
     viewer = make_test_viewer()
-    viewer.window.add_dock_widget(add_image.Gui())
+    viewer.window.add_dock_widget(add_image)
     assert len(viewer.layers) == 0
     add_image()  # should add a new layer to the list
     assert len(viewer.layers) == 1
@@ -36,7 +36,7 @@ def test_magicgui_returns_label(make_test_viewer):
         return np.random.rand(10, 10)
 
     viewer = make_test_viewer()
-    viewer.window.add_dock_widget(add_labels.Gui())
+    viewer.window.add_dock_widget(add_labels)
     assert len(viewer.layers) == 0
     add_labels()  # should add a new layer to the list
     assert len(viewer.layers) == 1
@@ -53,7 +53,7 @@ def test_magicgui_returns_layer_tuple(make_test_viewer):
         return [(np.random.rand(10, 3), {'size': 20, 'name': 'foo'}, 'points')]
 
     viewer = make_test_viewer()
-    viewer.window.add_dock_widget(add_layer.Gui())
+    viewer.window.add_dock_widget(add_layer)
     assert len(viewer.layers) == 0
 
     add_layer()  # should add a new layer to the list
