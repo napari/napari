@@ -7,17 +7,26 @@ import napari
 # Enums are a convenient way to get a dropdown menu
 class Operation(enum.Enum):
     """A set of valid arithmetic operations for image_arithmetic."""
+
     add = np.add
     subtract = np.subtract
     multiply = np.multiply
     divide = np.divide
 
 
-# Define our function.
-# Note that we can use forward references for the napari objects.
-# You can read more about them here https://www.python.org/dev/peps/pep-0484/#forward-references
-def image_arithmetic(layerA: 'napari.layers.Image', operation: Operation, layerB: 'napari.layers.Image') -> 'napari.layers.Image':
-    """Adds, subtracts, multiplies, or divides two image layers of similar shape."""
+# Define our image_arithmetic function.
+# Note that we can use forward references for the napari type annotations.
+# You can read more about them here:
+# https://www.python.org/dev/peps/pep-0484/#forward-references
+# In this example, because we have already imported napari anyway, it doesn't
+# really matter. But this syntax would let you specify that a parameter is a
+# napari object type without actually importing or depending on napari.
+def image_arithmetic(
+    layerA: 'napari.layers.Image',
+    operation: Operation,
+    layerB: 'napari.layers.Image',
+) -> 'napari.layers.Image':
+    """Adds, subtracts, multiplies, or divides two same-shaped image layers."""
     return operation.value(layerA.data, layerB.data)
 
 
