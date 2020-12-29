@@ -162,7 +162,9 @@ class OctreeLoader:
 
         # Load everything in seen if needed.
         for chunk in seen.chunks():
+            # The ideal level is priority 0, 1 is one level above idea, etc.
             priority = chunk.location.level_index - ideal_level
+
             if chunk.in_memory:
                 drawable.append(chunk)
             elif chunk.needs_load and self._load_chunk(chunk, priority):
@@ -310,8 +312,6 @@ class OctreeLoader:
 
         # Mark that this chunk is being loaded.
         octree_chunk.loading = True
-
-        priority = octree_chunk.location.level_index
 
         # Create the ChunkRequest and load it with the ChunkLoader.
         request = ChunkRequest(octree_chunk.location, chunks, priority)

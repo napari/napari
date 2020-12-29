@@ -26,7 +26,7 @@ DEFAULT_OCTREE_CONFIG = {
         "log_path": None,
         "loaders": {
             0: {"num_workers": 10, "delay_queue_ms": 100},
-            1: {"num_workers": 10, "delay_queue_ms": 0},
+            2: {"num_workers": 10, "delay_queue_ms": 0},
         },
     },
 }
