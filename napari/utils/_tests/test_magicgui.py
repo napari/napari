@@ -1,3 +1,4 @@
+import os
 import sys
 
 import numpy as np
@@ -44,7 +45,10 @@ def test_magicgui_returns_label(make_test_viewer):
     assert isinstance(viewer.layers[0], Image)
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="segfault on mac CI")
+@pytest.mark.skipif(
+    bool(os.environ.get('CI') and sys.platform == "darwin"),
+    reason="segfault on mac CI",
+)
 def test_magicgui_returns_layer_tuple(make_test_viewer):
     """make sure a magicgui function returning Layer adds the right type."""
     viewer = make_test_viewer()
