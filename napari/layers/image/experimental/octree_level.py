@@ -179,7 +179,6 @@ class OctreeLevel:
             array_slice += (slice(None),)  # Add the colors.
 
         data = self.data[array_slice]
-        print(f"data.shape={data.shape}")
 
         return data
 
