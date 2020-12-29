@@ -128,3 +128,17 @@ jobs:
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'
         uses: codecov/codecov-action@v1
+
+      - name: Report Failures
+        if: ${{ failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLATFORM: ${{ matrix.platform }}
+          PYTHON: ${{ matrix.python }}
+          BACKEND: ${{ matrix.toxenv }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: '[test-bot] Comprehensive tests failing'
+        with:
+          filename: .github/TEST_FAIL_TEMPLATE.md
+          update_existing: true

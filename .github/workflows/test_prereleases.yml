@@ -63,6 +63,7 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.backend }}
           RUN_ID: ${{ github.run_id }}
+          TITLE: '[test-bot] pip install --pre is failing'
         with:
-          filename: .github/PRERELEASE_FAIL_TEMPLATE.md
+          filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
