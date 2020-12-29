@@ -211,7 +211,6 @@ class ChunkLoader:
         specify which thread the future's done callback will be called in,
         only that it will be called in some thread in the current process.
         """
-
         LOGGER.debug(
             "_done: load=%.3fms elapsed=%.3fms %s",
             request.load_ms,
@@ -304,6 +303,10 @@ class ChunkLoader:
         # cancelled.
         map(lambda x: x.result(), future_list)
         del self._futures[data_id]
+
+    def shutdown(self) -> None:
+        """When napari is shutting down."""
+        self._loaders.shutdown()
 
 
 @contextmanager

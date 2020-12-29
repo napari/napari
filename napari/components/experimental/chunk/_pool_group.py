@@ -103,6 +103,11 @@ class LoaderPoolGroup:
             cancelled.extend(pool.cancel_requests(should_cancel))
         return cancelled
 
+    def shutdown(self) -> None:
+        """Shutdown the pools."""
+        for pool in self._pools.values():
+            pool.shutdown()
+
 
 def _get_loader_configs(octree_config) -> Dict[int, dict]:
     """Return dict of loader configs for the octree.

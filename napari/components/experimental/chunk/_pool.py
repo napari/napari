@@ -117,7 +117,7 @@ class LoaderPool:
 
         return cancelled
 
-    def _submit(self, request: ChunkRequest) -> None:
+    def _submit(self, request: ChunkRequest) -> Optional[Future]:
         """Initiate an asynchronous load of the given request.
 
         Parameters
@@ -156,6 +156,12 @@ class LoaderPool:
         # Tell the loader this request finished.
         if self._on_done_loader is not None:
             self._on_done_loader(request)
+
+    def shutdown(self) -> None:
+        """Shutdown the pool."""
+        # Avoid crashes or hangs on exit.
+        self._delay_queue.shutdown()
+        self._executor.shutdown(wait=True)
 
     @staticmethod
     def _get_request(future: Future) -> Optional[ChunkRequest]:
