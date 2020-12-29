@@ -10,6 +10,8 @@ import skimage.filters
 
 
 # Define our gaussian blur function.
+# Note that we can use forward references for the napari objects.
+# You can read more about them here https://www.python.org/dev/peps/pep-0484/#forward-references
 def gaussian_blur(layer: 'napari.layers.Image', sigma: float = 1.0, mode="nearest") -> 'napari.layers.Image':
     """Apply a gaussian blur to ``layer``."""
     if layer:

@@ -14,6 +14,8 @@ class Operation(enum.Enum):
 
 
 # Define our function.
+# Note that we can use forward references for the napari objects.
+# You can read more about them here https://www.python.org/dev/peps/pep-0484/#forward-references
 def image_arithmetic(layerA: 'napari.layers.Image', operation: Operation, layerB: 'napari.layers.Image') -> 'napari.layers.Image':
     """Adds, subtracts, multiplies, or divides two image layers of similar shape."""
     return operation.value(layerA.data, layerB.data)
