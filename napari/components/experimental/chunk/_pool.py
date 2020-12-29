@@ -95,26 +95,21 @@ class LoaderPool:
         # Cancelling requests in the delay queue is fast and easy.
         cancelled = self._delay_queue.cancel_requests(should_cancel)
 
-        for request in cancelled:
-            assert isinstance(request, ChunkRequest)
-
         num_before = len(self._futures)
 
-        # Cancelling the futures is a little more work. If Future.cancel()
-        # returns False it means the a worker is already loading the request
-        # so it cannot be cancelled. This load will likely be pointless and
-        # we will throw it away.
+        # Cancelling futures may or may not work. Future.cancel() will
+        # return False if the worker is already loading the request and it
+        # cannot be cancelled.
         for request in list(self._futures.keys()):
             if self._futures[request].cancel():
                 del self._futures[request]
-                assert isinstance(request, ChunkRequest)
                 cancelled.append(request)
 
         num_after = len(self._futures)
         num_cancelled = num_before - num_after
 
         LOGGER.debug(
-            "cance_requests: %d -> %d futures (cancelled %d)",
+            "cancel_requests: %d -> %d futures (cancelled %d)",
             num_before,
             num_after,
             num_cancelled,

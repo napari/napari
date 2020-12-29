@@ -66,8 +66,7 @@ class LoaderPoolGroup:
         This method is pretty fast, but since the mapping from priority to
         LoaderPool is static, use lru_cache.
         """
-        if priority < 0:
-            raise ValueError("Negative priority not allowed")
+        priority = max(priority, 0)  # No negative priorities.
         keys = sorted(self._pools.keys())
         index = bisect.bisect_left(keys, priority)
         if index < len(keys) and keys[index] == priority:

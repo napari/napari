@@ -64,9 +64,6 @@ def test_get_loader_config_override():
 def test_loader_pool_group():
     group = LoaderPoolGroup(TEST_CONFIG)
 
-    with pytest.raises(ValueError):
-        group._get_loader_priority(-1)  # No negative priorities.
-
     # Test _get_loader_priority() returns the priority of the pool we
     # should use. The one at or below the priority we give it.
     assert group._get_loader_priority(0) == 0
