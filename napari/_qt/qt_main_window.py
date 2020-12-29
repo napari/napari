@@ -579,6 +579,13 @@ class Window:
             shortcut=shortcut,
         )
         self._add_viewer_dock_widget(dock_widget)
+
+        if hasattr(widget, 'reset_choices'):
+            # Keep the dropdown menus in the widget in sync with the layer model
+            # if widget has a `reset_choices`, which is true for all magicgui
+            # `CategoricalWidget`s
+            self.qt_viewer.viewer.layers.events.connect(widget.reset_choices)
+
         return dock_widget
 
     def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
@@ -635,6 +642,52 @@ class Window:
         # been removed. and anyway: people should be using add_dock_widget
         # rather than directly using _add_viewer_dock_widget
         _dw.deleteLater()
+
+    def add_function_widget(
+        self,
+        function,
+        *,
+        magic_kwargs=None,
+        name: str = '',
+        area: str = 'bottom',
+        allowed_areas=None,
+        shortcut=None,
+    ):
+        """Turn a function into a dock widget via magicgui.
+
+        Parameters
+        ----------
+        function : callable
+            Function that you want to add.
+        magic_kwargs : dict, optional
+            Keyword arguments to :func:`magicgui.magicgui` that
+            can be used to specify widget.
+        name : str, optional
+            Name of dock widget to appear in window menu.
+        area : str
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
+        allowed_areas : list[str], optional
+            Areas, relative to main window, that the widget is allowed dock.
+            Each item in list must be in {'left', 'right', 'top', 'bottom'}
+            By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
+
+        Returns
+        -------
+        dock_widget : QtViewerDockWidget
+            `dock_widget` that can pass viewer events.
+        """
+        from magicgui import magicgui
+
+        return self.add_dock_widget(
+            magicgui(function, **magic_kwargs or {}),
+            name=name or function.__name__.replace('_', ' '),
+            area=area,
+            allowed_areas=allowed_areas,
+            shortcut=shortcut,
+        )
 
     def resize(self, width, height):
         """Resize the window.
