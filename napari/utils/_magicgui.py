@@ -78,23 +78,19 @@ def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
         return tuple(v for v in globals().values() if isinstance(v, Viewer))
 
 
-def get_layers(gui, layer_type: Type[Layer] = None) -> Tuple[Layer, ...]:
-    """Retrieve layers of type `layer_type`, from the Viewer the gui is in.
+def get_layers(gui) -> Tuple[Layer, ...]:
+    """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : magicgui.widgets.Widget
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    layer_type : type
-        This is the exact type used in the type hint of the user's
-        function. It may be a subclass of napari.layers.Layer.
-        REMOVED in magicgui v0.2.0!
 
     Returns
     -------
     tuple
-        Tuple of layers of type ``layer_type``
+        Tuple of layers of type ``gui.annotation``
 
     Examples
     --------
@@ -106,28 +102,10 @@ def get_layers(gui, layer_type: Type[Layer] = None) -> Tuple[Layer, ...]:
     ...     return layer.data.mean()
 
     """
-    # in magicgui v0.2.0 `gui` will be the magicgui parameter widget itself,
-    # which contains all of the necessary information.
-    # the layer type (which was just the annotation), is at gui.annotation
-    if layer_type is None:
-        gui, layer_type = gui.native, gui.annotation
-    # else:
-    #     import warnings
-    #     from magicgui import __version__ as magicgui_version
-    #
-    #     warnings.warn(
-    #         f"A future version of napari will no longer support magicgui "
-    #         f"<0.2.0. (You have v{magicgui_version}). "
-    #         "Please use `pip install -U magicgui` to update to >=0.2.0",
-    #         FutureWarning,
-    #     )
-
-    viewer = find_viewer_ancestor(gui)
-    if viewer:
-        return tuple(
-            layer for layer in viewer.layers if isinstance(layer, layer_type)
-        )
-    return ()
+    viewer = find_viewer_ancestor(gui.native)
+    if not viewer:
+        return ()
+    return tuple(x for x in viewer.layers if isinstance(x, gui.annotation))
 
 
 def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
