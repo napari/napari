@@ -136,13 +136,15 @@ class OctreeLevel:
             The newly created chunk.
         """
         level_index = self.info.level_index
-        layer_ref = self.info.meta.layer_ref
+
+        meta = self.info.meta
+        layer_ref = meta.layer_ref
+
         location = OctreeLocation(
             layer_ref, self.slice_id, level_index, row, col
         )
 
         scale = self.info.scale
-        scale_vec = np.array([scale, scale], dtype=np.float32)
 
         tile_size = self.info.meta.tile_size
         scaled_size = tile_size * scale
@@ -151,10 +153,15 @@ class OctreeLevel:
             [col * scaled_size, row * scaled_size], dtype=np.float32
         )
 
-        # Geom is used by the visual for rendering this chunk.
-        geom = OctreeChunkGeom(pos, scale_vec)
-
         data = self._get_data(row, col)
+
+        # Geom is used by the visual for rendering this chunk, size
+        # it based on the base image pixels, not based on the data
+        # in this level, so it's exact.
+        base = np.array(meta.base_shape[::-1], dtype=np.float)
+        remain = base - pos
+        size = np.minimum(remain, [scaled_size, scaled_size])
+        geom = OctreeChunkGeom(pos, size)
 
         # Return the newly created chunk.
         return OctreeChunk(data, location, geom)
@@ -172,6 +179,7 @@ class OctreeLevel:
             array_slice += (slice(None),)  # Add the colors.
 
         data = self.data[array_slice]
+        print(f"data.shape={data.shape}")
 
         return data
 
