@@ -781,6 +781,7 @@ def _stop_monitor() -> None:
 
 
 def _shutdown_chunkloader() -> None:
+    """Shutdown the ChunkLoader."""
     if config.async_loading:
         from ..components.experimental.chunk import chunk_loader
 
