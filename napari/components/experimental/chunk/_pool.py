@@ -19,6 +19,8 @@ PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
 
 LOGGER = logging.getLogger("napari.loader")
 
+DoneCallback = Optional[Callable[[Future], None]]
+
 
 class LoaderPool:
     """Loads chunks asynchronously in worker threads or processes.
@@ -50,12 +52,12 @@ class LoaderPool:
         Requests sit in here for a bit before submission.
     """
 
-    def __init__(self, config: dict, on_done_loader: Callable[[Future], None]):
+    def __init__(self, config: dict, on_done_loader: DoneCallback = None):
         self.config = config
         self._on_done_loader = on_done_loader
 
         self.num_workers: int = int(config['num_workers'])
-        self.use_processes: bool = bool(config['use_processes'])
+        self.use_processes: bool = bool(config.get('use_processes', False))
 
         self._executor: PoolExecutor = _create_executor(
             self.use_processes, self.num_workers
@@ -93,26 +95,21 @@ class LoaderPool:
         # Cancelling requests in the delay queue is fast and easy.
         cancelled = self._delay_queue.cancel_requests(should_cancel)
 
-        for request in cancelled:
-            assert isinstance(request, ChunkRequest)
-
         num_before = len(self._futures)
 
-        # Cancelling the futures is a little more work. If Future.cancel()
-        # returns False it means the a worker is already loading the request
-        # so it cannot be cancelled. This load will likely be pointless and
-        # we will throw it away.
+        # Cancelling futures may or may not work. Future.cancel() will
+        # return False if the worker is already loading the request and it
+        # cannot be cancelled.
         for request in list(self._futures.keys()):
             if self._futures[request].cancel():
                 del self._futures[request]
-                assert isinstance(request, ChunkRequest)
                 cancelled.append(request)
 
         num_after = len(self._futures)
         num_cancelled = num_before - num_after
 
         LOGGER.debug(
-            "cance_requests: %d -> %d futures (cancelled %d)",
+            "cancel_requests: %d -> %d futures (cancelled %d)",
             num_before,
             num_after,
             num_cancelled,
@@ -120,7 +117,7 @@ class LoaderPool:
 
         return cancelled
 
-    def _submit(self, request: ChunkRequest) -> None:
+    def _submit(self, request: ChunkRequest) -> Optional[Future]:
         """Initiate an asynchronous load of the given request.
 
         Parameters
@@ -157,7 +154,14 @@ class LoaderPool:
             return  # Future was cancelled, nothing to do.
 
         # Tell the loader this request finished.
-        self._on_done_loader(request)
+        if self._on_done_loader is not None:
+            self._on_done_loader(request)
+
+    def shutdown(self) -> None:
+        """Shutdown the pool."""
+        # Avoid crashes or hangs on exit.
+        self._delay_queue.shutdown()
+        self._executor.shutdown(wait=True)
 
     @staticmethod
     def _get_request(future: Future) -> Optional[ChunkRequest]:

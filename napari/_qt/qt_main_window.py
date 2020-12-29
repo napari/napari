@@ -296,6 +296,7 @@ class Window:
                 perf.timers.stop_trace_file()
 
             _stop_monitor()
+            _shutdown_chunkloader()
 
         exitAction.triggered.connect(handle_exit)
 
@@ -777,3 +778,11 @@ def _stop_monitor() -> None:
         from ..components.experimental.monitor import monitor
 
         monitor.stop()
+
+
+def _shutdown_chunkloader() -> None:
+    """Shutdown the ChunkLoader."""
+    if config.async_loading:
+        from ..components.experimental.chunk import chunk_loader
+
+        chunk_loader.shutdown()

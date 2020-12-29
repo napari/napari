@@ -327,14 +327,14 @@ class OctreeImage(Image):
         # and in VRAM. When all loading is done, we will draw all the ideal
         # chunks.
         ideal_chunks = self._intersection.get_chunks(create=True)
-        level_index = self._intersection.level.info.level_index
+        ideal_level = self._intersection.level.info.level_index
 
         # log_chunks("ideal_chunks", ideal_chunks)
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
         if self._view.auto_level:
-            self._data_level = level_index
+            self._data_level = ideal_level
 
         # The loader will initiate loads on any ideal chunks which are not
         # yet in memory. And it will return the chunks we should draw. The
@@ -342,7 +342,9 @@ class OctreeImage(Image):
         # memory, but they also might be chunks from higher or lower levels
         # in the octree. In general we try to draw "cover the view" with
         # the "best available" data.
-        return self._slice.loader.get_drawable_chunks(drawn_set, ideal_chunks)
+        return self._slice.loader.get_drawable_chunks(
+            drawn_set, ideal_chunks, ideal_level
+        )
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold

@@ -78,12 +78,14 @@ class DelayQueue(threading.Thread):
         submit_func: Callable[[ChunkRequest], None],
     ):
         super().__init__(daemon=True)
+        self._shutdown = False
         self.delay_seconds: float = (delay_queue_ms / 1000)
         self._submit_func = submit_func
 
         self._entries: List[QueueEntry] = []
         self._lock = threading.Lock()
-        self._event = threading.Event()
+        self._wakeup = threading.Event()
+        self._exit = threading.Event()
 
         self.start()
 
@@ -112,7 +114,7 @@ class DelayQueue(threading.Thread):
         add_counter_event("delay_queue", entries=num_entries)
 
         if num_entries == 1:
-            self._event.set()  # The list was empty so wake up the worker.
+            self._wakeup.set()  # The list was empty so wake up the worker.
 
     def cancel_requests(
         self, should_cancel: Callable[[ChunkRequest], bool]
@@ -166,10 +168,10 @@ class DelayQueue(threading.Thread):
     def run(self):
         """The DelayQueue thread's main method.
 
-        Submit all due entires, then sleep or wait on self._event
+        Submit all due entires, then sleep or wait on self._wakeup
         for new entries.
         """
-        while True:
+        while self._shutdown is False:
             now = time.time()
 
             with self._lock:
@@ -180,14 +182,22 @@ class DelayQueue(threading.Thread):
 
             if seconds is None:
                 # There were no entries left, so wait until there is one.
-                self._event.wait()
-                self._event.clear()
+                self._wakeup.wait()
+                self._wakeup.clear()
             else:
                 # Sleep until the next entry is due. This will tend to
                 # oversleep by a few milliseconds, but close enough for our
                 # purposes. Once we wake up we'll submit all due entries.
                 # So we won't miss any.
                 time.sleep(seconds)
+
+        self._exit.set()  # We are exiting now.
+
+    def shutdown(self) -> None:
+        """Shutdown the DelayQueue's thread."""
+        self._shutdown = True
+        self._wakeup.set()
+        self._exit.wait()
 
     def _submit_due_entries(self, now: float) -> Optional[float]:
         """Submit all due entries, oldest to newest.
