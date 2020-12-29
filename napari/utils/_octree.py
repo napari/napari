@@ -12,7 +12,7 @@ from typing import Optional
 LOGGER = logging.getLogger("napari.loader")
 
 DEFAULT_OCTREE_CONFIG = {
-    "loader": {
+    "loader_defaults": {
         "log_path": None,
         "force_synchronous": False,
         "num_workers": 10,
@@ -20,7 +20,15 @@ DEFAULT_OCTREE_CONFIG = {
         "auto_sync_ms": 30,
         "delay_queue_ms": 100,
     },
-    "octree": {"enabled": True, "tile_size": 256, "log_path": None},
+    "octree": {
+        "enabled": True,
+        "tile_size": 256,
+        "log_path": None,
+        "loaders": {
+            0: {"num_workers": 10, "delay_queue_ms": 100},
+            2: {"num_workers": 10, "delay_queue_ms": 0},
+        },
+    },
 }
 
 

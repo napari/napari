@@ -83,7 +83,12 @@ class ChunkRequest:
         Timing information about chunk load time.
     """
 
-    def __init__(self, location: ChunkLocation, chunks: Dict[str, ArrayLike]):
+    def __init__(
+        self,
+        location: ChunkLocation,
+        chunks: Dict[str, ArrayLike],
+        priority: int = 0,
+    ):
         # Make sure chunks dict is valid.
         for chunk_key, array in chunks.items():
             assert isinstance(chunk_key, str)
@@ -94,6 +99,8 @@ class ChunkRequest:
 
         self.create_time = time.time()
         self._timers: Dict[str, PerfEvent] = {}
+
+        self.priority = priority
 
     @property
     def elapsed_ms(self) -> float:
