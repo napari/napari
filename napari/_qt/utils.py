@@ -167,7 +167,11 @@ def combine_widgets(
     TypeError
         If ``widgets`` is neither a ``QWidget`` or a sequence of ``QWidgets``.
     """
-    if isinstance(widgets, QWidget):
+    if isinstance(getattr(widgets, 'native', None), QWidget):
+        # compatibility with magicgui v0.2.0 which no longer uses QWidgets
+        # directly. Like vispy, the backend widget is at widget.native
+        return widgets.native  # type: ignore
+    elif isinstance(widgets, QWidget):
         return widgets
     elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
         container = QWidget()
@@ -183,9 +187,5 @@ def combine_widgets(
         ):
             container.layout.addStretch()
         return container
-    elif isinstance(getattr(widgets, 'native', None), QWidget):
-        # compatibility with magicgui v0.2.0 which no longer uses QWidgets
-        # directly. Like vispy, the backend widget is at widget.native
-        return widgets.native  # type: ignore
     else:
         raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')

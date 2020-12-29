@@ -80,7 +80,10 @@ class OctreeLoader:
         self._layer_ref = layer_ref
 
     def get_drawable_chunks(
-        self, drawn_set: Set[OctreeChunk], ideal_chunks: List[OctreeChunk],
+        self,
+        drawn_set: Set[OctreeChunk],
+        ideal_chunks: List[OctreeChunk],
+        ideal_level: int,
     ) -> List[OctreeChunk]:
         """Return the chunks that should be drawn.
 
@@ -159,9 +162,12 @@ class OctreeLoader:
 
         # Load everything in seen if needed.
         for chunk in seen.chunks():
+            # The ideal level is priority 0, 1 is one level above idea, etc.
+            priority = chunk.location.level_index - ideal_level
+
             if chunk.in_memory:
                 drawable.append(chunk)
-            elif chunk.needs_load and self._load_chunk(chunk):
+            elif chunk.needs_load and self._load_chunk(chunk, priority):
                 drawable.append(chunk)  # It was a sync load, ready to draw.
 
         # Useful for debugging but very spammy.
@@ -284,7 +290,7 @@ class OctreeLoader:
 
         return children + ancestors
 
-    def _load_chunk(self, octree_chunk: OctreeChunk) -> None:
+    def _load_chunk(self, octree_chunk: OctreeChunk, priority: int) -> None:
         """Load the data for one OctreeChunk.
 
         Parameters
@@ -308,7 +314,7 @@ class OctreeLoader:
         octree_chunk.loading = True
 
         # Create the ChunkRequest and load it with the ChunkLoader.
-        request = ChunkRequest(octree_chunk.location, chunks)
+        request = ChunkRequest(octree_chunk.location, chunks, priority)
         satisfied_request = chunk_loader.load_request(request)
 
         if satisfied_request is None:

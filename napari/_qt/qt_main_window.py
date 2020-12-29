@@ -23,7 +23,6 @@ from qtpy.QtWidgets import (
 )
 
 from .. import __version__
-from ..resources import get_stylesheet
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -33,6 +32,7 @@ from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
+from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .qthreading import wait_for_workers_to_quit
 from .tracing.qt_debug_menu import DebugMenu
@@ -296,6 +296,7 @@ class Window:
                 perf.timers.stop_trace_file()
 
             _stop_monitor()
+            _shutdown_chunkloader()
 
         exitAction.triggered.connect(handle_exit)
 
@@ -830,3 +831,11 @@ def _stop_monitor() -> None:
         from ..components.experimental.monitor import monitor
 
         monitor.stop()
+
+
+def _shutdown_chunkloader() -> None:
+    """Shutdown the ChunkLoader."""
+    if config.async_loading:
+        from ..components.experimental.chunk import chunk_loader
+
+        chunk_loader.shutdown()

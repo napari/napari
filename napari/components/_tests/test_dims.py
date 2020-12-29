@@ -200,7 +200,7 @@ def test_roll_skip_dummy_axis_3():
     assert dims.order == (0, 1, 2, 3)
 
 
-def test_changing_focus(qtbot):
+def test_changing_focus():
     """Test changing focus updates the last_used prop."""
     # too-few dims, should have no sliders to update
     dims = Dims(2)

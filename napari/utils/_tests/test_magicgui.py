@@ -12,7 +12,7 @@ def test_magicgui_returns_image(make_test_viewer):
     """make sure a magicgui function returning Image adds an Image."""
 
     @magicgui.magicgui
-    def add_image(x) -> Image:
+    def add_image() -> Image:
         return np.random.rand(10, 10)
 
     viewer = make_test_viewer()
@@ -32,7 +32,7 @@ def test_magicgui_returns_label(make_test_viewer):
     """make sure a magicgui function returning Labels adds a Labels."""
 
     @magicgui.magicgui
-    def add_labels(x) -> Labels:
+    def add_labels() -> Labels:
         return np.random.rand(10, 10)
 
     viewer = make_test_viewer()
@@ -49,7 +49,7 @@ def test_magicgui_returns_layer_tuple(make_test_viewer):
     """make sure a magicgui function returning Layer adds the right type."""
 
     @magicgui.magicgui
-    def add_layer(x) -> Layer:
+    def add_layer() -> Layer:
         return [(np.random.rand(10, 3), {'size': 20, 'name': 'foo'}, 'points')]
 
     viewer = make_test_viewer()
