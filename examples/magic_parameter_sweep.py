@@ -10,7 +10,7 @@ import skimage.filters
 
 
 # Define our gaussian blur function.
-def gaussian_blur(layer: napari.layers.Image, sigma: float = 1.0, mode="nearest") -> napari.layers.Image:
+def gaussian_blur(layer: 'napari.layers.Image', sigma: float = 1.0, mode="nearest") -> 'napari.layers.Image':
     """Apply a gaussian blur to ``layer``."""
     if layer:
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)

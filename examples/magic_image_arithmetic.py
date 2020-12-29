@@ -14,7 +14,7 @@ class Operation(enum.Enum):
 
 
 # Define our function.
-def image_arithmetic(layerA: napari.layers.Image, operation: Operation, layerB: napari.layers.Image) -> napari.layers.Image:
+def image_arithmetic(layerA: 'napari.layers.Image', operation: Operation, layerB: 'napari.layers.Image') -> 'napari.layers.Image':
     """Adds, subtracts, multiplies, or divides two image layers of similar shape."""
     return operation.value(layerA.data, layerB.data)
 
