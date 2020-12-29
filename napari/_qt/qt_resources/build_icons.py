@@ -10,9 +10,11 @@ import sys
 from subprocess import SubprocessError, check_call
 from typing import Dict, List, Tuple
 
-from ..utils.theme import _themes
+import napari.resources
 
-RESOURCES_DIR = os.path.abspath(os.path.dirname(__file__))
+from ...utils.theme import _themes
+
+RESOURCES_DIR = os.path.abspath(os.path.dirname(napari.resources.__file__))
 SVGPATH = os.path.join(RESOURCES_DIR, 'icons')
 
 svg_tag_open = re.compile(r'(<svg[^>]*>)')

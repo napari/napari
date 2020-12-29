@@ -11,8 +11,6 @@ of those custom classes, magicgui will know what to do with it.
 """
 from typing import Any, Optional, Tuple, Type
 
-from qtpy.QtWidgets import QWidget
-
 from ..layers import Layer
 from ..viewer import Viewer
 
@@ -42,7 +40,7 @@ def register_types_with_magicgui():
     register_type(Viewer, choices=get_viewers)
 
 
-def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
+def find_viewer_ancestor(widget) -> Optional[Viewer]:
     """Return the Viewer object if it is an ancestor of ``widget``, else None.
 
     Parameters
@@ -57,7 +55,7 @@ def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
     """
     # magicgui v0.2.0 widgets are no longer QWidget subclasses, but the native
     # widget is available at widget.native
-    if hasattr(widget, 'native') and isinstance(widget.native, QWidget):
+    if hasattr(widget, 'native') and hasattr(widget.native, 'parent'):
         parent = widget.native.parent()
     else:
         parent = widget.parent()
