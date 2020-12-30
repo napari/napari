@@ -1,5 +1,5 @@
 # Our minimal suite of tests that run on each pull request
-name: Quick PR Tests
+name: PR Test
 
 on:
   pull_request:
@@ -7,8 +7,8 @@ on:
       - master
 
 jobs:
-  qa:
-    name: Code Quality
+  code:
+    name: Code
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

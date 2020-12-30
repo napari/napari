@@ -1,7 +1,7 @@
 # An "early warning" cron job that will install dependencies
 # with `pip install --pre` periodically to test for breakage
 # (and open an issue if a test fails)
-name: Test Dependency Pre-releases
+name: --pre Test
 
 on:
   push:

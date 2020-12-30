@@ -1,6 +1,6 @@
 # The full test suite, which will be run anytime anything is merged into master.
 # See test_pull_request.yml for the tests that will be run
-name: Comprehensive Tests
+name: Full Test
 
 on:
   push:
@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  qa:
-    name: Code Quality
+  code:
+    name: Code
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -34,7 +34,7 @@ jobs:
 
   manifest:
     name: Check Manifest
-    needs: qa
+    needs: code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
