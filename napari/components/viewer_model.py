@@ -996,7 +996,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             # actually add the layer
             new = self._add_layer_from_data(*_data)
             # store the source of the layer in metadata, if not present yet
-            if not 'source' in new.metadata:
+            if 'source' not in new.metadata:
                 new.metadata['source'] = filename
             # some add_* methods return a List[Layer], others just a Layer
             # we want to always return a list
