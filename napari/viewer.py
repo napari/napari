@@ -1,5 +1,4 @@
 from . import __version__
-from ._qt import Window
 from .components import ViewerModel
 from .utils import config
 
@@ -45,6 +44,10 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        # having this import here makes all of Qt imported lazily, upon
+        # instantiating the first Viewer.
+        from .window import Window
+
         self.window = Window(self, show=show)
 
     def update_console(self, variables):

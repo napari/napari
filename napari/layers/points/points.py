@@ -379,6 +379,7 @@ class Points(Layer):
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
+        self._round_index = False
 
         with self.block_update_properties():
             self._edge_color_property = ''
@@ -1520,7 +1521,7 @@ class Points(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, scale
             else:
-                data = self.data[:, not_disp].astype('int')
+                data = self.data[:, not_disp]
                 matches = np.all(data == indices[not_disp], axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
