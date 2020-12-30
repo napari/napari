@@ -4,7 +4,7 @@ TiledImageVisual uses this class to track the tiles it's drawing.
 """
 from typing import Dict, List, NamedTuple, Set
 
-from ...layers.image.experimental import OctreeChunk, OctreeChunkKey
+from ...layers.image.experimental import OctreeChunk
 from .texture_atlas import AtlasTile
 
 
@@ -33,13 +33,13 @@ class TileSet:
     ----------
     _tiles : Dict[int, TileData]
         Maps tile_index to the the TileData we have for that tile.
-    _chunks : Set[OctreeChunkKey]
+    _chunks : Set[OctreeChunk]
         The chunks we have in the set, for fast membership tests.
     """
 
     def __init__(self):
         self._tiles: Dict[int, TileData] = {}
-        self._chunks: Set[OctreeChunkKey] = set()
+        self._chunks: Set[OctreeChunk] = set()
 
     def __len__(self) -> int:
         """Return the number of tiles in the set.
@@ -69,7 +69,7 @@ class TileSet:
         tile_index = atlas_tile.index
 
         self._tiles[tile_index] = TileData(octree_chunk, atlas_tile)
-        self._chunks.add(octree_chunk.key)
+        self._chunks.add(octree_chunk)
 
     def remove(self, tile_index: int) -> None:
         """Remove the TileData at this index from the set.
@@ -78,16 +78,16 @@ class TileSet:
             Remove the TileData at this index.
         """
         octree_chunk = self._tiles[tile_index].octree_chunk
-        self._chunks.remove(octree_chunk.key)
+        self._chunks.remove(octree_chunk)
         del self._tiles[tile_index]
 
     @property
-    def chunk_set(self) -> Set[OctreeChunkKey]:
+    def chunk_set(self) -> Set[OctreeChunk]:
         """Return the set of chunks we drawing.
 
         Return
         ------
-        Set[OctreeChunkKey]
+        Set[OctreeChunk]
             The set of chunks we are drawing.
         """
         return self._chunks
@@ -147,4 +147,4 @@ class TileSet:
         bool
             True if the set contains this chunk data.
         """
-        return octree_chunk.key in self._chunks
+        return octree_chunk in self._chunks

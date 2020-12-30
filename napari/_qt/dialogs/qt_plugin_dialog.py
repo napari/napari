@@ -58,6 +58,10 @@ class Installer:
             [user_site_packages(), env.systemEnvironment().value("PYTHONPATH")]
         )
         env.insert("PYTHONPATH", combined_paths)
+        # use path of parent process
+        env.insert(
+            "PATH", QProcessEnvironment.systemEnvironment().value("PATH")
+        )
         self.process.setProcessEnvironment(env)
         self.process.finished.connect(lambda: plugin_manager.discover())
         self.process.finished.connect(lambda: plugin_manager.prune())
