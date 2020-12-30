@@ -121,6 +121,7 @@ def test_add_remove_layer_external_callbacks(
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 1
 
+
 def test_open_metadata_source_stored(make_test_viewer):
 
     image_web_url = 'https://github.com/napari/napari/raw/master/docs/source/img/napari_logo.png'
