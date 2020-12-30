@@ -13,8 +13,21 @@ from .viewer import Viewer  # isort:skip
 # see: https://github.com/napari/napari/issues/1347
 from scipy import stats  # noqa: F401
 
-from ._qt import gui_qt
+from ._event_loop import event_loop
 from .plugins.io import save_layers
+
+
+def __getattr__(name):
+    if name == 'gui_qt':
+        from warnings import warn
+
+        warn(
+            "napari.gui_qt is deprecated. Use napari.event_loop instead",
+            DeprecationWarning,
+        )
+        return event_loop
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
 
 # register napari object types with magicgui if it is installed
 from .utils import _magicgui, sys_info
@@ -47,5 +60,5 @@ __all__ = [
     'view_surface',
     'view_tracks',
     'view_vectors',
-    'gui_qt',
+    'event_loop',
 ]

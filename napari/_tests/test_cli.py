@@ -32,12 +32,12 @@ def test_cli_parses_unknowns(monkeypatch):
         assert kwargs['contrast_limits'] == (0, 1)
 
     @contextmanager
-    def gui_qt(**kwargs):
+    def event_loop(**kwargs):
         yield
 
     # testing all the variants of literal_evals
     monkeypatch.setattr(__main__, 'view_path', assert_kwargs)
-    monkeypatch.setattr(__main__, 'gui_qt', gui_qt)
+    monkeypatch.setattr(__main__, 'event_loop', event_loop)
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits', '(0, 1)'])
         __main__.main()
@@ -82,12 +82,12 @@ def test_cli_passes_kwargs(monkeypatch):
     """test that we can parse layer keyword arg variants"""
 
     @contextmanager
-    def gui_qt(**kwargs):
+    def event_loop(**kwargs):
         yield
 
     viewer_mock = MagicMock(napari.Viewer)
     monkeypatch.setattr(napari, 'Viewer', viewer_mock)
-    monkeypatch.setattr(__main__, 'gui_qt', gui_qt)
+    monkeypatch.setattr(__main__, 'event_loop', event_loop)
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['n', 'file', '--name', 'some name'])
         __main__.main()

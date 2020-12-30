@@ -114,7 +114,7 @@ To do the same thing inside a script call
 from skimage import data
 import napari
 
-with napari.gui_qt():
+with napari.event_loop():
     viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
 
