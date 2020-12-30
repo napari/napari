@@ -76,6 +76,7 @@ filterwarnings = [
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
   "ignore:pythonw executable not found:UserWarning:",
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
+  "ignore:For best performance with Dask arrays in napari:UserWarning:",
 ]
 markers = [
     "perfmon: marks tests that require perfmon to be enabled",
