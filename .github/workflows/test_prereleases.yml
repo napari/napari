@@ -1,13 +1,16 @@
+# An "early warning" cron job that will install dependencies
+# with `pip install --pre` periodically to test for breakage
+# (and open an issue if a test fails)
 name: Test Dependency Pre-releases
 
-on: [push, pull_request]  # TODO: change to pull_request before merging
-# TODO: enable ⏬ and disable ⏫ before merge
-# on:
-#   push:
-#     branches:
-#       - master
-#   schedule:
-#     - cron: '0 */12 * * *'  # every 12 hours
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 */12 * * *'  # every 12 hours
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   test:
@@ -52,8 +55,9 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           BACKEND: ${{ matrix.backend }}
-          PYVISTA_OFF_SCREEN: True
+          PYVISTA_OFF_SCREEN: True  # required for opengl on windows
 
+      # If something goes wrong, we can open an issue in the repo
       - name: Report Failures
         if: ${{ failure() }}
         uses: JasonEtco/create-an-issue@v2

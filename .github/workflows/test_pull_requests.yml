@@ -1,9 +1,10 @@
+# Our minimal suite of tests that run on each pull request
 name: Quick PR Tests
 
-on: [push, pull_request]  # TODO: change to pull_request before merging
-# TODO: enable ⏬ and disable ⏫ before merge
-# on: [pull_request]
-
+on:
+  pull_request:
+    branches:
+      - master
 
 jobs:
   qa:
@@ -27,6 +28,7 @@ jobs:
         run: tox -e ${{ matrix.task }}
 
   manifest:
+    # make sure all necessary files will be bundled in the release
     name: Check Manifest
     runs-on: ubuntu-latest
     steps:
@@ -57,7 +59,7 @@ jobs:
           # macOS py38
           - python: 3.8
             platform: macos-latest
-            backend: pyqt
+            backend: pyqt # (only testing pyqt on mac in the interest of speed)
           # minimum specified requirements
           - python: 3.7
             platform: ubuntu-18.04
@@ -70,7 +72,9 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python }}
-      
+
+      # these libraries, along with pytest-xvfb (added in the `deps` in tox.ini),
+      # enable testing on Qt on linux
       - name: Install Linux libraries
         if: runner.os == 'Linux'
         run: |
@@ -78,20 +82,31 @@ jobs:
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
 
+      # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
           git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
 
+      # tox and tox-gh-actions will take care of the "actual" installation
+      # of python dependendencies into a virtualenv.  see tox.ini for more
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           pip install setuptools tox tox-gh-actions
-          python tools/minreq.py  # no-op if MIN_REQ is not set
+          python tools/minreq.py
         env:
+          # tools/minreq.py sets all deps to their minumim stated versions
+          # it is a no-op if MIN_REQ is not set
           MIN_REQ: ${{ matrix.MIN_REQ }}
 
+      # here we pass off control of environment creation and running of tests to tox
+      # tox-gh-actions, installed above, helps to convert environment variables into
+      # tox "factors" ... limiting the scope of what gets tested on each platform
+      # for instance, on ubuntu-latest with python 3.8, it would be equivalent to this command:
+      # `tox -e py38-linux-pyqt,py38-linux-pyside`
+      # see tox.ini for more
       - name: Test with tox
         run: tox
         env:

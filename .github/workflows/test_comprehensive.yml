@@ -1,13 +1,15 @@
+# The full test suite, which will be run anytime anything is merged into master.
+# See test_pull_request.yml for the tests that will be run
 name: Comprehensive Tests
 
-on: [push, pull_request]
-# TODO: enable ⏬ and disable ⏫ before merge
-# on:
-#   push:
-#     branches:
-#       - master
-#     tags:
-#       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
 jobs:
   qa:
@@ -82,6 +84,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      # we only really need miniconda for things that fail to build wheels.
+      # At the time this PR was submitted, that was only "numcodecs" on macos with
+      # python3.9. The specific dependencies that will be installed with conda are
+      # specified in tox.ini under the `testenv.conda_deps` section. For example:
+      #
+      # conda_deps =
+      #   py39-macos: numcodecs
+      #
+      # the "if:" section of this step may need to be updated in the future
+      # (and then change the Install tox-conda if: below as well)
       - name: Setup Miniconda
         if: runner.os == 'macOS' && matrix.python == '3.9'
         uses: conda-incubator/setup-miniconda@v2
@@ -91,6 +103,8 @@ jobs:
           channel-priority: strict
           python-version: ${{ matrix.python }}
 
+      # these libraries, along with pytest-xvfb (added in the `deps` in tox.ini),
+      # enable testing on Qt on linux
       - name: Install Linux libraries
         if: runner.os == 'Linux'
         run: |
@@ -98,6 +112,7 @@ jobs:
             libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
 
+      # strategy borrowed from vispy for installing opengl libs on windows
       - name: Install Windows OpenGL
         if: runner.os == 'Windows'
         run: |
@@ -116,6 +131,12 @@ jobs:
         if: runner.os == 'macOS' && matrix.python == '3.9'
         run: pip install tox-conda>=0.5.0
 
+      # here we pass off control of environment creation and running of tests to tox
+      # tox-gh-actions, installed above, helps to convert environment variables into
+      # tox "factors" ... limiting the scope of what gets tested on each platform
+      # The one exception is if the "toxenv" environment variable has been set,
+      # in which case we are declaring one specific tox environment to run.
+      # see tox.ini for more
       - name: Test with tox
         shell: bash -l {0}
         run: tox
