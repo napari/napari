@@ -32,7 +32,7 @@ def test_int(dtype):
     )
 
 
-@pytest.mark.parametrize("dtype", [np.float64, np.float32, np.float])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32, float])
 def test_float(dtype):
     data = np.linspace(0, 0.5, 128, dtype=dtype, endpoint=False)
     res = np.arange(128, dtype=np.uint8)
