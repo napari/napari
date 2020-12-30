@@ -46,7 +46,7 @@ def test_float(dtype):
 
 
 def test_bool():
-    data = np.zeros((10, 10), dtype=np.bool)
+    data = np.zeros((10, 10), dtype=bool)
     data[2:-2, 2:-2] = 1
     converted = convert_to_uint8(data)
     assert converted.dtype == np.uint8
