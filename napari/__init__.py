@@ -37,11 +37,11 @@ def __getattr__(name):
         from warnings import warn
 
         warn(
-            "napari.gui_qt is deprecated. Use napari.event_loop instead",
+            "napari.gui_qt is deprecated. Please use napari.event_loop instead",
             DeprecationWarning,
         )
         return event_loop
-    raise AttributeError(f"module {__name__} has no attribute {name}")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 del stats
