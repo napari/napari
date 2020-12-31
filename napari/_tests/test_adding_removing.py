@@ -122,7 +122,7 @@ def test_add_remove_layer_external_callbacks(
         assert len(em.callbacks) == 1
 
 
-def test_open_metadata_source_stored(make_test_viewer):
+def test_open_source_stored(make_test_viewer):
 
     image_web_url = 'https://github.com/napari/napari/raw/master/docs/source/img/napari_logo.png'
 
@@ -132,3 +132,7 @@ def test_open_metadata_source_stored(make_test_viewer):
     layers = viewer.open(image_web_url)
     # check if the filename / url was stored in the metadata
     assert layers[0].source == image_web_url
+
+    # add another layer where source is supposed to be None
+    layer = viewer.add_image(np.zeros([2,2]))
+    assert layer.source == None
