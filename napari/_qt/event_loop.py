@@ -46,7 +46,12 @@ def get_app() -> QApplication:
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
+        from napari import __version__
+
         app.setApplicationName('napari')
+        app.setApplicationVersion(__version__)
+        app.setOrganizationName('napari')
+        app.setOrganizationDomain('napari.org')
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
