@@ -7,7 +7,14 @@ from magicgui import magicgui
 
 from napari.layers import Image, Labels, Layer, Points
 
-qtpy = pytest.importorskip('qtpy', reason='Cannot test magicgui without qtpy.')
+try:
+    import qtpy  # noqa
+except ImportError:
+    pytest.skip('Cannot test magicgui without qtpy.', allow_module_level=True)
+except RuntimeError:
+    pytest.skip(
+        'Cannot test magicgui without Qt bindings.', allow_module_level=True
+    )
 
 
 def test_magicgui_returns_image(make_test_viewer):
