@@ -31,7 +31,7 @@ from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
-from .event_loop import get_app
+from .qt_event_loop import get_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .tracing.qt_debug_menu import DebugMenu
