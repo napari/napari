@@ -11,7 +11,7 @@ from .exceptions import ExceptionHandler
 from .qthreading import wait_for_workers_to_quit
 
 
-def get_qt_app() -> QApplication:
+def get_app() -> QApplication:
     """Get or create the Qt QApplication
 
     Notes
@@ -80,7 +80,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     """
     splash_widget = None
 
-    app = get_qt_app()
+    app = get_app()
     if startup_logo and app.applicationName() == 'napari':
         logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
         pm = QPixmap(logopath).scaled(
@@ -111,12 +111,12 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
         app.exec_()
 
 
-def run_app(*, force=False):
+def run_qt_app(*, force=False):
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
             'No Qt app has been created. '
-            'One can be created by calling `get_qt_app()` '
+            'One can be created by calling `get_app()` '
             'or qtpy.QtWidgets.QApplication([])'
         )
     if not app.topLevelWidgets() and not force:
@@ -124,7 +124,7 @@ def run_app(*, force=False):
 
         warn(
             "Refusing to run a QtApplication with no topLevelWidgets(). "
-            "To run the app anyway, use `run_app(force=True)`"
+            "To run the app anyway, use `run_qt_app(force=True)`"
         )
         return
     app.exec_()

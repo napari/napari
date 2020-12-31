@@ -31,7 +31,7 @@ from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
-from .event_loop import get_qt_app
+from .event_loop import get_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .tracing.qt_debug_menu import DebugMenu
@@ -68,9 +68,9 @@ class Window:
 
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        app = get_qt_app()
+        app = get_app()
 
-        # TODO: We should move this stuff to `get_qt_app` logic
+        # TODO: We should move this stuff to `get_app` logic
         # but it's currently tied to attributes on the viewer instance
         # >>>>>>>>>>>>>>>>>>
         _napari_app_id = getattr(
