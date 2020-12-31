@@ -28,7 +28,7 @@ class ExceptionHandler(QObject):
     gui_exceptions : bool, optional
         Whether to show exceptions as, by default True.  May be overriden by
         environment variable: ``NAPARI_CATCH_ERRORS=1`
-        Note: this ``False`` by default in :func:`napari._qt.gui_qt` (the main
+        Note: this ``False`` by default in ``gui_qt()`` (the main
         instantiator of this class), but it is ``True`` in ``napari.__main__``.
         As a result, exceptions will be shown in the GUI only (mostly) when
         running napari as ``napari`` or ``python -m napari`` from the command
@@ -63,8 +63,8 @@ class ExceptionHandler(QObject):
         This function handles uncaught exceptions and can delegate to a
         secondary handler, whether it be a GUI dialog, or an IPython traceback
         printout.  The override to ``sys.excepthook`` happens in
-        :func:`napari._qt.gui_qt`, and therefore this is only active when the
-        qt event loop has been started by napari.
+        :func:`napari.gui_qt`, and therefore this is only active when the qt
+        event loop has been started by napari.
 
         The three parameters here are what would be returned from
         :func:`sys.exc_info()`.

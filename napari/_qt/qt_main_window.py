@@ -77,7 +77,7 @@ class Window:
             message = (
                 "napari requires a Qt event loop to run. To create one, "
                 "try one of the following: \n"
-                "  - use the `napari.event_loop()` context manager. See "
+                "  - use the `napari.gui_qt()` context manager. See "
                 "https://github.com/napari/napari/tree/master/examples for"
                 " usage examples.\n"
                 "  - In IPython or a local Jupyter instance, use the "

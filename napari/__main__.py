@@ -14,7 +14,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from . import __version__, event_loop, layers, view_path
+from . import __version__, gui_qt, layers, view_path
 from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
 
@@ -175,14 +175,14 @@ def _run():
                 'single positional argument may be provided'
             )
 
-        with event_loop(startup_logo=True) as app:
+        with gui_qt(startup_logo=True) as app:
             if hasattr(app, '_splash_widget'):
                 app._splash_widget.close()
             runpy.run_path(args.paths[0])
             if getattr(app, '_existed', False):
                 sys.exit()
     else:
-        with event_loop(startup_logo=True, gui_exceptions=True):
+        with gui_qt(startup_logo=True, gui_exceptions=True):
             view_path(
                 args.paths,
                 stack=args.stack,
