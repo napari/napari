@@ -131,4 +131,4 @@ def test_open_metadata_source_stored(make_test_viewer):
     # open layer(s) using a filename / url
     layers = viewer.open(image_web_url)
     # check if the filename / url was stored in the metadata
-    assert layers[0].metadata['source'] == image_web_url
+    assert layers[0].source == image_web_url
