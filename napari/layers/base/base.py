@@ -138,6 +138,9 @@ class Layer(KeymapProvider, ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
+    source : str
+        Contains the filename or URL, if the layer was loaded via napari. None otherwise.
+
 
 
     Notes
@@ -175,6 +178,7 @@ class Layer(KeymapProvider, ABC):
 
         self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
+        self._source = None
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
@@ -1013,3 +1017,9 @@ class Layer(KeymapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    @property
+    def source(self) -> Optional[str]:
+        """Return source (filename or URL) of data if loaded from a file. None otherwise.
+        """
+        return self._source
