@@ -1002,7 +1002,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
             # store the source of the layer
             for layer in new:
-                layer.source = filename
+                layer._source = filename
 
             added.extend(new)
         return added
