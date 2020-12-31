@@ -14,7 +14,7 @@ with napari.gui_qt():
 
     # open locally stored image
     layers = viewer.open(image_local_filename)
-    print("Image " + layers[0].metadata['source'] + " loaded.")
+    print("Image " + layers[0].source + " loaded.")
 
     # open image from web
     layers = viewer.open(image_web_url)
