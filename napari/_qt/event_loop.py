@@ -8,10 +8,11 @@ from qtpy.QtWidgets import QApplication, QSplashScreen
 
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
+from .qthreading import wait_for_workers_to_quit
 
 
-def _create_application(argv) -> QApplication:
-    """Create our QApplication.
+def get_qt_app() -> QApplication:
+    """Get or create the Qt QApplication
 
     Notes
     -----
@@ -19,16 +20,43 @@ def _create_application(argv) -> QApplication:
 
     With IPython/Jupyter we call convert_app_for_tracing() which deletes
     the QApplication and creates a new one. However here with gui_qt we
-    need to create the correct QApplication up front, or we will crash.
-    We'll crash because we'd be deleting the QApplication after we created
-    QWidgets with it, such as we do for the splash screen.
+    need to create the correct QApplication up front, or we will crash because
+    we'd be deleting the QApplication after we created QWidgets with it,
+    such as we do for the splash screen.
     """
-    if perf_config and perf_config.trace_qt_events:
-        from .tracing.qt_event_tracing import QApplicationWithTracing
+    app = QApplication.instance()
+    if app:
+        if perf_config and perf_config.trace_qt_events:
+            from .tracing.qt_event_tracing import convert_app_for_tracing
 
-        return QApplicationWithTracing(argv)
+            # no-op if app is already a QApplicationWithTracing
+            app = convert_app_for_tracing(app)
+        app._existed = True
     else:
-        return QApplication(argv)
+        # automatically determine monitor DPI.
+        # Note: this MUST be set before the QApplication is instantiated
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+
+        if perf_config and perf_config.trace_qt_events:
+            from .tracing.qt_event_tracing import QApplicationWithTracing
+
+            app = QApplicationWithTracing(sys.argv)
+        else:
+            app = QApplication(sys.argv)
+
+        # if this is the first time the Qt app is being instantiated, we set
+        # the name, so that we know whether to raise_ in Window.show()
+        app.setApplicationName('napari')
+
+    if perf_config and not perf_config.patched:
+        # Will patch based on config file.
+        perf_config.patch_callables()
+
+    # see docstring of `wait_for_workers_to_quit` for caveats on killing
+    # workers at shutdown.
+    app.aboutToQuit.connect(wait_for_workers_to_quit)
+
+    return app
 
 
 @contextmanager
@@ -51,25 +79,16 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     ``ipython --gui=qt``.
     """
     splash_widget = None
-    app = QApplication.instance()
-    if not app:
-        # automatically determine monitor DPI.
-        # Note: this MUST be set before the QApplication is instantiated
-        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
-        # if this is the first time the Qt app is being instantiated, we set
-        # the name, so that we know whether to raise_ in Window.show()
-        app = _create_application(sys.argv)
-        app.setApplicationName('napari')
-        if startup_logo:
-            logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
-            pm = QPixmap(logopath).scaled(
-                360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-            splash_widget = QSplashScreen(pm)
-            splash_widget.show()
-            app._splash_widget = splash_widget
-    else:
-        app._existed = True
+
+    app = get_qt_app()
+    if startup_logo and app.applicationName() == 'napari':
+        logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
+        pm = QPixmap(logopath).scaled(
+            360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+        splash_widget = QSplashScreen(pm)
+        splash_widget.show()
+        app._splash_widget = splash_widget
 
     # instantiate the exception handler
     exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
@@ -83,10 +102,29 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
     # ``app.exec_``, we avoid blocking.
-    # see also https://github.com/napari/napari/pull/2016
     # we add 'magicgui' so that anyone using @magicgui *before* calling gui_qt
     # will also have the application executed. (a bandaid for now?...)
+    # see https://github.com/napari/napari/pull/2016
     if app.applicationName() in ('napari', 'magicgui'):
         if splash_widget and startup_logo:
             splash_widget.close()
         app.exec_()
+
+
+def run_qt_app(*, force=False):
+    app = QApplication.instance()
+    if not app:
+        raise RuntimeError(
+            'No Qt app has been created. '
+            'One can be created by calling `get_qt_app()` '
+            'or qtpy.QtWidgets.QApplication([])'
+        )
+    if not app.topLevelWidgets() and not force:
+        from warnings import warn
+
+        warn(
+            "Refusing to run a QtApplication with no topLevelWidgets(). "
+            "To run the app anyway, use `run_qt_app(force=True)`"
+        )
+        return
+    app.exec_()
