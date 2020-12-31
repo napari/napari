@@ -13,10 +13,8 @@ from .viewer import Viewer  # isort:skip
 # see: https://github.com/napari/napari/issues/1347
 from scipy import stats  # noqa: F401
 
-from ._qt.event_loop import gui_qt, run_app
+from ._event_loop import gui_qt, run_app
 from .plugins.io import save_layers
-
-# register napari object types with magicgui if it is installed
 from .utils import _magicgui, sys_info
 from .view_layers import (  # type: ignore
     view_image,
@@ -29,6 +27,7 @@ from .view_layers import (  # type: ignore
     view_vectors,
 )
 
+# register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()
 del _magicgui
 
