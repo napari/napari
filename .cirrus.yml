@@ -44,11 +44,6 @@ linux_task:
       PIP_FLAGS: ""
     env:
       PY_VER: "3.8"
-      PYTEST_FLAGS: --perfmon-only
-      NAPARI_PERFMON: "1"
-      PIP_FLAGS: ""
-    env:
-      PY_VER: "3.8"
       PYTEST_FLAGS: --async_only
       NAPARI_ASYNC: "1"
       PIP_FLAGS: ""

@@ -11,7 +11,7 @@ Trace File -> Stop Tracing
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
-from ...utils import perf
+from ...utils.perf import get_perf_config, timers
 
 
 def _ensure_extension(filename: str, extension: str):
@@ -48,8 +48,9 @@ class PerformanceSubMenu:
         self.stop = self._add_stop()
         self._set_recording(False)
 
-        if perf.perf_config:
-            path = perf.perf_config.trace_file_on_start
+        perf_config = get_perf_config()
+        if perf_config:
+            path = perf_config.trace_file_on_start
             if path is not None:
                 # Config option "trace_file_on_start" means immediately
                 # start tracing to that file. This is very useful if you
@@ -109,11 +110,11 @@ class PerformanceSubMenu:
             QTimer.singleShot(0, start_trace)
 
     def _start_trace(self, path: str):
-        perf.timers.start_trace_file(path)
+        timers.start_trace_file(path)
         self._set_recording(True)
 
     def _stop_trace(self):
         """Stop recording a trace file.
         """
-        perf.timers.stop_trace_file()
+        timers.stop_trace_file()
         self._set_recording(False)

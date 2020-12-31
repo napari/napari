@@ -5,9 +5,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
-import pytest
 
-from .. import timers
+from napari.utils.perf import get_perf_config, timers
 
 
 @contextmanager
@@ -29,9 +28,20 @@ def _trace_file_okay(trace_path: str) -> bool:
     """For now okay just means valid JSON and not empty."""
 
 
-@pytest.mark.perfmon
-def test_trace_on_start(make_test_viewer):
+def test_perfmon_off_by_default():
+    """Make sure perfmon off by default."""
+    # Check perfmon is not enabled, clear lru cache first
+    get_perf_config.cache_clear()
+    assert get_perf_config() is None
+
+
+def test_trace_on_start(monkeypatch, make_test_viewer):
     """Make sure napari can write a perfmon trace file."""
+    monkeypatch.setenv('NAPARI_PERFMON', '1')
+    # Check perfmon is enabled, clear lru cache first
+    get_perf_config.cache_clear()
+    assert get_perf_config()
+
     with temporary_file('json') as trace_path:
         timers.start_trace_file(trace_path)
 

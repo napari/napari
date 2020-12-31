@@ -6,7 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
-from ..utils.perf import perf_config
+from ..utils.perf import get_perf_config
 from .exceptions import ExceptionHandler
 
 
@@ -23,6 +23,7 @@ def _create_application(argv) -> QApplication:
     We'll crash because we'd be deleting the QApplication after we created
     QWidgets with it, such as we do for the splash screen.
     """
+    perf_config = get_perf_config()
     if perf_config and perf_config.trace_qt_events:
         from .tracing.qt_event_tracing import QApplicationWithTracing
 

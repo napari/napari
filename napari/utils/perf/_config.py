@@ -2,13 +2,13 @@
 """
 import json
 import os
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
 import wrapt
 
 from ._patcher import patch_callables
-from ._timers import perf_timer
 
 PERFMON_ENV_VAR = "NAPARI_PERFMON"
 
@@ -35,6 +35,8 @@ def _patch_perf_timer(parent, callable: str, label: str) -> None:
 
     @wrapt.patch_function_wrapper(parent, callable)
     def perf_time_callable(wrapped, instance, args, kwargs):
+        from ._timers import perf_timer
+
         with perf_timer(f"{label}"):
             return wrapped(*args, **kwargs)
 
@@ -70,6 +72,7 @@ class PerfmonConfig:
     """
 
     def __init__(self, config_path: Optional[str]):
+
         # Should only patch once, but it can't be on module load, user
         # should patch once main() as started running during startup.
         self.patched = False
@@ -147,7 +150,18 @@ class PerfmonConfig:
             return None
 
 
-def _create_perf_config():
+@lru_cache(maxsize=1)
+def get_perf_config():
+    """Get perfmon config
+
+    Returns
+    -------
+    napari.utils.perf.PerfmonConfig or None
+        Returns None if perfmon disabled, config otherwise.
+        Value is cached, so returns same value after initial
+        call.
+    """
+
     value = os.getenv("NAPARI_PERFMON")
 
     if value is None or value == "0":
@@ -156,7 +170,3 @@ def _create_perf_config():
         return PerfmonConfig(None)  # Legacy no config, Qt events only.
     else:
         return PerfmonConfig(value)  # Normal parse the config file.
-
-
-# The global instance
-perf_config = _create_perf_config()
