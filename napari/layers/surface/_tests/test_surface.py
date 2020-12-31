@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Surface
@@ -77,8 +78,9 @@ def test_random_3D_timeseries_surface():
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
-    layer._slice_dims(ndisplay=3, order=[3, 0, 1, 2])
-    assert len(layer._data_view) == 0
+    with pytest.warns(UserWarning):
+        layer._slice_dims(ndisplay=3, order=[3, 0, 1, 2])
+        assert len(layer._data_view) == 0
 
 
 def test_random_3D_multitimeseries_surface():
