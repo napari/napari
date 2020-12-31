@@ -8,7 +8,7 @@ black_task:
   name: Black Formatting
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install `cat requirements/development.txt | grep black`
+    - pip install black==19.10b0
   test_script:
     - black --check .
 
@@ -18,7 +18,7 @@ lint_task:
   name: Flake8 Linting
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install `cat requirements/development.txt | grep flake8`
+    - pip install flake8==3.8.3
   test_script:
     - flake8 napari
 
@@ -87,17 +87,17 @@ linux_task:
     folder: ~/.cache/pip
     fingerprint_script:
       - echo $PYTHON_VERSION
-      - cat requirements/test.txt
+      - cat setup.cfg
     populate_script:
       - python -m pip install --retries 3 --upgrade pip
-      - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
+      - python -m pip install --retries 3 pytest-cov codecov
+      - python -m pip install .[pyside2,testing] $PIP_FLAGS
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
     - python -m pip install --retries 3 pytest-cov codecov
     - python tools/minreq.py  # no-op if MIN_REQ is not set
-    - python -m pip install -e .[pyside2] $PIP_FLAGS
+    - python -m pip install .[pyside2,testing] $PIP_FLAGS
 
   check_script:
     - conda list
@@ -111,7 +111,7 @@ linux_task:
 
   test_pyqt5_script:
     - python -m pip uninstall -y pyside2
-    - python -m pip install -e .[pyqt5]
+    - python -m pip install .[pyqt5]
     - pytest napari -v $PYTEST_FLAGS
 
 mac_task:
@@ -153,16 +153,15 @@ mac_task:
     folder: $HOME/Library/Caches/pip
     fingerprint_script:
       - echo $PYTHON_VERSION
-      - cat requirements/test.txt
+      - cat setup.cfg
     populate_script:
       - export MACOSX_DEPLOYMENT_TARGET=10.10
       - python -m pip install --retries 3 --upgrade pip
-      - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
+      - python -m pip install .[pyside2,testing] $PIP_FLAGS
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
-    - python -m pip install -e .[pyside2] $PIP_FLAGS
+    - python -m pip install .[pyside2,testing] $PIP_FLAGS
 
   check_script:
     - conda list
@@ -227,15 +226,14 @@ win_task:
     folder: $LOCALAPPDATA\pip\Cache
     fingerprint_script:
       - echo $PYTHON_VERSION
-      - type requirements\test.txt
+      - type setup.cfg
     populate_script:
       - python -m pip install --retries 3 --upgrade pip
-      - python -m pip install --retries 3 -r requirements/test.txt %PIP_FLAGS%
+      - python -m pip install .[pyside2,testing] %PIP_FLAGS%
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 -r requirements/test.txt %PIP_FLAGS%
-    - python -m pip install -e .[pyside2] %PIP_FLAGS%
+    - python -m pip install .[pyside2,testing] %PIP_FLAGS%
 
   check_script:
     - conda list
