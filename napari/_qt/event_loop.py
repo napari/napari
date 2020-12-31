@@ -60,7 +60,7 @@ def get_app() -> QApplication:
 
 
 @contextmanager
-def gui_qt(*, startup_logo=False, gui_exceptions=False):
+def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
 
     Parameters
@@ -70,6 +70,9 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     gui_exceptions : bool, optional
         Whether to show uncaught exceptions in the GUI, by default they will be
         shown in the console that launched the event loop.
+    force : bool, optional
+        Force the application event_loop to start, even if there are no top
+        level widgets to show.
 
     Notes
     -----
@@ -108,7 +111,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     if app.applicationName() in ('napari', 'magicgui'):
         if splash_widget and startup_logo:
             splash_widget.close()
-        run_app()
+        run_app(force=force)
 
 
 def run_app(*, force=False):
@@ -123,7 +126,7 @@ def run_app(*, force=False):
         from warnings import warn
 
         warn(
-            "Refusing to run a QtApplication with no topLevelWidgets(). "
+            "Refusing to run a QApplication with no topLevelWidgets. "
             "To run the app anyway, use `run_app(force=True)`"
         )
         return
