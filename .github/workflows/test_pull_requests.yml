@@ -45,7 +45,7 @@ jobs:
         run: check-manifest
 
   test:
-    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && '(minreq)' }}
+    name: ${{ matrix.platform }} ${{ matrix.python }} ${{ matrix.toxenv || matrix.backend }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -56,10 +56,10 @@ jobs:
           # Windows py38
           - python: 3.8
             platform: windows-latest
-          # macOS py38 (only testing pyqt on mac in the interest of speed)
+          # macOS py38
           - python: 3.8
             platform: macos-latest
-            backend: pyqt
+            backend: pyqt # (only testing pyqt on mac in the interest of speed)
           # minimum specified requirements
           - python: 3.7
             platform: ubuntu-18.04
@@ -75,7 +75,7 @@ jobs:
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04
-            backend: headless
+            toxenv: headless-py38-linux
 
     steps:
       - uses: actions/checkout@v2
