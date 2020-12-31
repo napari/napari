@@ -111,7 +111,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
         app.exec_()
 
 
-def run_qt_app(*, force=False):
+def run_app(*, force=False):
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
@@ -124,7 +124,7 @@ def run_qt_app(*, force=False):
 
         warn(
             "Refusing to run a QtApplication with no topLevelWidgets(). "
-            "To run the app anyway, use `run_qt_app(force=True)`"
+            "To run the app anyway, use `run_app(force=True)`"
         )
         return
     app.exec_()
