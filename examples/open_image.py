@@ -18,4 +18,4 @@ with napari.gui_qt():
 
     # open image from web
     layers = viewer.open(image_web_url)
-    print("Image " + layers[0].metadata['source'] + " loaded.")
+    print("Image " + layers[0].source + " loaded.")
