@@ -7,4 +7,4 @@ import napari
 
 viewer = napari.view_image(data.astronaut(), rgb=True)
 
-napari.run_qt_app()
+napari.run_app()
