@@ -134,5 +134,5 @@ def test_open_source_stored(make_test_viewer):
     assert layers[0].source == image_web_url
 
     # add another layer where source is supposed to be None
-    layer = viewer.add_image(np.zeros([2,2]))
-    assert layer.source == None
+    layer = viewer.add_image(np.zeros([2, 2]))
+    assert layer.source is None
