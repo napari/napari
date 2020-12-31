@@ -108,7 +108,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False):
     if app.applicationName() in ('napari', 'magicgui'):
         if splash_widget and startup_logo:
             splash_widget.close()
-        app.exec_()
+        run_app()
 
 
 def run_app(*, force=False):
