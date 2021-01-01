@@ -147,4 +147,4 @@ def _get_loader_configs(octree_config) -> Dict[int, dict]:
         return merged
 
     # Return merged configs.
-    return {key: merge(config) for (key, config) in configs.items()}
+    return {int(key): merge(config) for (key, config) in configs.items()}
