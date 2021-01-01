@@ -50,7 +50,7 @@ jobs:
         run: check-manifest
 
   test:
-    needs: qa
+    needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
