@@ -62,6 +62,9 @@ jobs:
         with:
           python-version: 3.8
 
+      - name: Force Fail
+        run: exit 1
+
       - name: Report Failures
         if: ${{ failure() }}
         uses: JasonEtco/create-an-issue@v2
