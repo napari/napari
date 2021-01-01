@@ -116,10 +116,28 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     if app.applicationName() in ('napari', 'magicgui'):
         if splash_widget and startup_logo:
             splash_widget.close()
-        run_app(force=force)
+        run_app(force=force, _func_name='gui_qt')
 
 
-def run_app(*, force=False):
+def run_app(*, force=False, _func_name='run_app'):
+    """Start the Qt Event Loop
+
+    Parameters
+    ----------
+    force : bool, optional
+        Force the application event_loop to start, even if there are no top
+        level widgets to show.
+    _func_name : str, optional
+        name of calling function, by default 'run_app'.  This is only here to
+        provide functions like `gui_qt` a way to inject their name into the
+        warning message.
+
+    Raises
+    ------
+    RuntimeError
+        (To avoid confusion) if no widgets would be shown upon starting the
+        event loop.
+    """
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
@@ -132,7 +150,7 @@ def run_app(*, force=False):
 
         warn(
             "Refusing to run a QApplication with no topLevelWidgets. "
-            "To run the app anyway, use `run_app(force=True)`"
+            f"To run the app anyway, use `{_func_name}(force=True)`"
         )
         return
     app.exec_()
