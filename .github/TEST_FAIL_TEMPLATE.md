@@ -1,5 +1,5 @@
 ---
-title: {{ env.TITLE }}
+title: " {{ env.TITLE }}"
 labels: [bug]
 ---
 The {{ workflow }} workflow failed on {{ date | date("YYYY-MM-DD HH:mm") }} UTC
