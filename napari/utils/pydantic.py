@@ -1,5 +1,5 @@
 import numpy as np
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .events.dataclass import _type_to_compare, is_equal
 from .events.event import EmitterGroup
@@ -158,28 +158,25 @@ class ConfiguredModel(BaseModel):
         json_encoders = JSON_ENCODERS
 
 
-class EventedModel(ConfiguredModel):
+class EventedModel(BaseModel):
+    # __slots__ = ('__weakref__',)
+
+    events: EmitterGroup = Field(default_factory=EmitterGroup)
+    __equality_checks__: dict = {}
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # get fields
         _fields = list(self.__fields__)
+        _fields.remove('events')
         e_fields = {fld: None for fld in _fields}
 
-        # create an EmitterGroup with an EventEmitter for each field
-        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
-            for em in self.events.emitters:
-                e_fields.pop(em, None)
-            self.events.add(**e_fields)
-        else:
-            self.events = EmitterGroup(
-                source=self, auto_connect=False, **e_fields,
-            )
+        # add events for each field
+        self.events.add(**e_fields)
 
         # create dict with compare functions for fields which cannot be compared
         # using standard equal operator, like numpy arrays.
-        # it will be set to __equality_checks__ class parameter.
-        compare_dict_base = getattr(self, "__equality_checks__", {})
         compare_dict = {
             n: t
             for n, t in {
@@ -187,13 +184,10 @@ class EventedModel(ConfiguredModel):
                 for name, type_ in self.__dict__.get(
                     '__annotations__', {}
                 ).items()
-                if name not in compare_dict_base
             }.items()
             if t is not None  # walrus operator is supported from python 3.8
         }
-        # use compare functions provided by class creator.
-        compare_dict.update(compare_dict_base)
-        setattr(self, '__equality_checks__', compare_dict)
+        self.__equality_checks__.update(compare_dict)
 
     def __setattr__(self, name, value):
         if name not in getattr(self, 'events', {}):
@@ -212,3 +206,12 @@ class EventedModel(ConfiguredModel):
         if not self.__equality_checks__.get(name, is_equal)(after, before):
             # emit event
             getattr(self.events, name)(value=after)
+
+    # Pydandic config so that assigments are validated
+    class Config:
+        arbitrary_types_allowed = True
+        validate_assignment = True
+        underscore_attrs_are_private = True
+        use_enum_values = True
+        validate_all = True
+        json_encoders = JSON_ENCODERS
