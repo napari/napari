@@ -71,7 +71,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: 'Comprehensive tests failing'
+          TITLE: '[test-bot] Comprehensive tests failing'
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
