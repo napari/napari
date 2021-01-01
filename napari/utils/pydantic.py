@@ -156,3 +156,59 @@ class ConfiguredModel(BaseModel):
         use_enum_values = True
         validate_all = True
         json_encoders = JSON_ENCODERS
+
+
+class EventedModel(ConfiguredModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # get fields
+        _fields = list(self.__fields__)
+        e_fields = {fld: None for fld in _fields}
+
+        # create an EmitterGroup with an EventEmitter for each field
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+            for em in self.events.emitters:
+                e_fields.pop(em, None)
+            self.events.add(**e_fields)
+        else:
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **e_fields,
+            )
+
+        # create dict with compare functions for fields which cannot be compared
+        # using standard equal operator, like numpy arrays.
+        # it will be set to __equality_checks__ class parameter.
+        compare_dict_base = getattr(self, "__equality_checks__", {})
+        compare_dict = {
+            n: t
+            for n, t in {
+                name: _type_to_compare(type_)
+                for name, type_ in self.__dict__.get(
+                    '__annotations__', {}
+                ).items()
+                if name not in compare_dict_base
+            }.items()
+            if t is not None  # walrus operator is supported from python 3.8
+        }
+        # use compare functions provided by class creator.
+        compare_dict.update(compare_dict_base)
+        setattr(self, '__equality_checks__', compare_dict)
+
+    def __setattr__(self, name, value):
+        if name not in getattr(self, 'events', {}):
+            # fallback to default behavior
+            super().__setattr__(name, value)
+            return
+
+        # grab current value
+        before = getattr(self, name, object())
+
+        # set value using original setter
+        super().__setattr__(name, value)
+
+        # if different we emit the event with new value
+        after = getattr(self, name)
+        if not self.__equality_checks__.get(name, is_equal)(after, before):
+            # emit event
+            getattr(self.events, name)(value=after)
