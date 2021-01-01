@@ -88,9 +88,9 @@ jobs:
         # python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
-          # - python: 3.9.0
-          #   platform: macos-11.0
-          #   toxenv: py390-macos-pyqt
+          - python: 3.9.0
+            platform: macos-11.0
+            toxenv: py390-macos-pyqt
           # test with minimum specified requirements
           # - python: 3.7
           #   platform: ubuntu-18.04
