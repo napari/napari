@@ -71,7 +71,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: 'Comprehensive tests failing'
+          TITLE: Comprehensive tests failing
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
@@ -88,9 +88,9 @@ jobs:
         # python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
-          - python: 3.9.0
-            platform: macos-11.0
-            toxenv: py390-macos-pyqt
+          # - python: 3.9.0
+          #   platform: macos-11.0
+          #   toxenv: py390-macos-pyqt
           # test with minimum specified requirements
           # - python: 3.7
           #   platform: ubuntu-18.04
