@@ -2,14 +2,16 @@
 # See test_pull_request.yml for the tests that will be run
 name: Full Test
 
-on:
-  push:
-    branches:
-      - master
-    tags:
-      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+on: push
+
+# on:
+#   push:
+#     branches:
+#       - master
+#     tags:
+#       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+#   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
 
 jobs:
   code:
@@ -56,29 +58,29 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest]
-        python: [3.7, 3.8, 3.9]
+        # platform: [ubuntu-latest, windows-latest, macos-latest]
+        # python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
           - python: 3.9
             platform: macos-11.0
             toxenv: py390-macos-pyqt
           # test with minimum specified requirements
-          - python: 3.7
-            platform: ubuntu-18.04
-            MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: async-py38-linux-pyqt
-          # test with --perfmon-only
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: perfmon-py38-linux-pyqt
-          # test without any Qt backends
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: headless-py38-linux
+          # - python: 3.7
+          #   platform: ubuntu-18.04
+          #   MIN_REQ: 1
+          # # test with --async_only
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: async-py38-linux-pyqt
+          # # test with --perfmon-only
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: perfmon-py38-linux-pyqt
+          # # test without any Qt backends
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: headless-py38-linux
 
     steps:
       - uses: actions/checkout@v2
