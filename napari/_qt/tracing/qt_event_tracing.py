@@ -38,9 +38,9 @@ def convert_app_for_tracing(app: QApplication) -> QApplication:
         from qtpy import API_NAME
 
         if API_NAME == 'PySide2':
-            import shiboken
+            import shiboken2
 
-            shiboken.delete(app)
+            shiboken2.delete(app)
         else:
             import sip
 
