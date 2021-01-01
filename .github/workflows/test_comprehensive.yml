@@ -3,7 +3,6 @@
 name: Full Test
 
 on: push
-
 # on:
 #   push:
 #     branches:
@@ -51,62 +50,36 @@ jobs:
       - name: Check Manifest
         run: check-manifest
 
-  fail:
-    runs-on: ubuntu-latest
-    name: fail
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Force Fail
-        run: exit 1
-
-      - name: Report Failures
-        if: ${{ failure() }}
-        uses: JasonEtco/create-an-issue@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_ID: ${{ github.run_id }}
-          TITLE: '[test-bot] Comprehensive tests failing'
-        with:
-          filename: .github/TEST_FAIL_TEMPLATE.md
-          update_existing: true
-
-
   test:
-    # needs: code
+    needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
-        # platform: [ubuntu-latest, windows-latest, macos-latest]
-        # python: [3.7, 3.8, 3.9]
+        platform: [ubuntu-latest, windows-latest, macos-latest]
+        python: [3.7, 3.8, 3.9]
         include:
           # test big sur on 3.9.0
-          - python: 3.9.0
+          - python: 3.9
             platform: macos-11.0
             toxenv: py390-macos-pyqt
           # test with minimum specified requirements
-          # - python: 3.7
-          #   platform: ubuntu-18.04
-          #   MIN_REQ: 1
-          # # test with --async_only
-          # - python: 3.8
-          #   platform: ubuntu-18.04
-          #   toxenv: async-py38-linux-pyqt
-          # # test with --perfmon-only
-          # - python: 3.8
-          #   platform: ubuntu-18.04
-          #   toxenv: perfmon-py38-linux-pyqt
-          # # test without any Qt backends
-          # - python: 3.8
-          #   platform: ubuntu-18.04
-          #   toxenv: headless-py38-linux
+          - python: 3.7
+            platform: ubuntu-18.04
+            MIN_REQ: 1
+          # test with --async_only
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: async-py38-linux-pyqt
+          # test with --perfmon-only
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: perfmon-py38-linux-pyqt
+          # test without any Qt backends
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: headless-py38-linux
 
     steps:
       - uses: actions/checkout@v2
@@ -191,7 +164,7 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: 'Comprehensive tests failing'
+          TITLE: '[test-bot] Comprehensive tests failing'
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
