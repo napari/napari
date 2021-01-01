@@ -51,6 +51,29 @@ jobs:
       - name: Check Manifest
         run: check-manifest
 
+  fail:
+    runs-on: ubuntu-latest
+    name: fail
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Report Failures
+        if: ${{ failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: 'Comprehensive tests failing'
+        with:
+          filename: .github/TEST_FAIL_TEMPLATE.md
+          update_existing: true
+
+
   test:
     # needs: code
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
@@ -155,9 +178,6 @@ jobs:
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'
         uses: codecov/codecov-action@v1
-
-      - name: Force Fail
-        run : exit 1
 
       - name: Report Failures
         if: ${{ failure() }}
