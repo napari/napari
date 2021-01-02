@@ -1,13 +1,12 @@
 from pydantic import Field, validator
 
+from ..utils._pydantic import Array, EventedModel
 from ..utils.colormaps.colormap_utils import make_default_color_array
 from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.pydantic import Array, ConfiguredModel, evented_model
 from ._viewer_constants import Position
 
 
-@evented_model
-class ScaleBar(ConfiguredModel):
+class ScaleBar(EventedModel):
     """Scale bar indicating size in world coordinates.
 
     Attributes

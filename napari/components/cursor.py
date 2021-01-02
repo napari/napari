@@ -1,11 +1,10 @@
 from typing import Tuple
 
-from ..utils.pydantic import ConfiguredModel, evented_model
+from ..utils._pydantic import EventedModel
 from ._viewer_constants import CursorStyle
 
 
-@evented_model
-class Cursor(ConfiguredModel):
+class Cursor(EventedModel):
     """Cursor object with position and properties of the cursor.
 
     Attributes

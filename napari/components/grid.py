@@ -2,11 +2,10 @@ from typing import Tuple
 
 import numpy as np
 
-from ..utils.pydantic import ConfiguredModel, evented_model
+from ..utils._pydantic import EventedModel
 
 
-@evented_model
-class GridCanvas(ConfiguredModel):
+class GridCanvas(EventedModel):
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
