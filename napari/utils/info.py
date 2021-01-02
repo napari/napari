@@ -54,14 +54,33 @@ def sys_info(as_html=False):
         except Exception as e:
             text += f"<b>{name}</b>: Import failed ({e})<br>"
 
+    text += "<br><b>OpenGL:</b><br>"
+
     if loaded.get('vispy', False):
-        sys_info_text = "<br>".join(
-            [
-                loaded['vispy'].sys_info().split("\n")[index]
-                for index in [-4, -3]
-            ]
-        ).replace("'", "")
-        text += f'<br>{sys_info_text}'
+        sys_info_text = (
+            "<br>".join(
+                [
+                    loaded['vispy'].sys_info().split("\n")[index]
+                    for index in [-4, -3]
+                ]
+            )
+            .replace("'", "")
+            .replace("<br>", "<br>  - ")
+        )
+        text += f'  - {sys_info_text}<br>'
+    else:
+        text += "  - failed to load vispy"
+
+    text += "<br><b>Screens:</b><br>"
+
+    try:
+        from qtpy.QtGui import QGuiApplication
+
+        screen_list = QGuiApplication.screens()
+        for i, screen in enumerate(screen_list, start=1):
+            text += f"  - screen #{i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>"
+    except Exception as e:
+        text += f"  - failed to load screen information {e}"
 
     plugin_manager.discover()
     plugin_strings = []
@@ -72,23 +91,12 @@ def sys_info(as_html=False):
         version = meta.get('version')
         version_string = f": {version}" if version else ""
         plugin_strings.append(f"  - {plugin_name}{version_string}")
-    text += '<br><br><b>Plugins</b>:'
+    text += '<br><b>Plugins</b>:'
     text += (
         ("<br>" + "<br>".join(sorted(plugin_strings)))
         if plugin_strings
         else '  None'
     )
-
-    text += "<br><br><b>Screen info:</b><br>"
-
-    try:
-        from qtpy.QtGui import QGuiApplication
-
-        screen_list = QGuiApplication.screens()
-        for i, screen in enumerate(screen_list, start=1):
-            text += f"<b>Screen {i}:</b> Resolution: {screen.geometry().width()}x{screen.geometry().height()}, Scale: {screen.devicePixelRatio()}<br>"
-    except Exception as e:
-        text += f"Failed to load screen information {e}"
 
     if not as_html:
         text = (
