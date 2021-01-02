@@ -1,11 +1,12 @@
 import numpy as np
-from qtpy.QtWidgets import QDockWidget
 
 import napari.layers
 
 
 def test_add_function_widget(make_test_viewer):
     """Test basic add_function_widget functionality"""
+    from qtpy.QtWidgets import QDockWidget
+
     viewer = make_test_viewer()
 
     # Define a function.
