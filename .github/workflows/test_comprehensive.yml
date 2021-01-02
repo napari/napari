@@ -129,7 +129,9 @@ jobs:
 
       - name: Install tox-conda
         if: runner.os == 'macOS' && matrix.python == '3.9'
-        run: pip install tox-conda>=0.5.0
+        # see https://github.com/napari/napari/pull/2061
+        # can use tox-conda after https://github.com/tox-dev/tox-conda/pull/59 merges 
+        run: pip install git+https://github.com/tlambert-forks/tox-conda.git
 
       # here we pass off control of environment creation and running of tests to tox
       # tox-gh-actions, installed above, helps to convert environment variables into
