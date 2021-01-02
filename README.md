@@ -34,7 +34,7 @@ We recommend that you use conda to help manage the virtual environment. Otherwis
 ### from pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.7 and 3.8 using pip. However, for Windows users, you need to preinstall [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/)
+Python 3.7, 3.8, and 3.9 using pip. However, for Windows users, you need to preinstall [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/)
 in order to install VisPy (one of the packages we depend on) on Windows machines.
 
 The simplest command to install with pip is:

@@ -43,21 +43,21 @@ def test_empty_points_with_properties():
     """
     properties = {
         'label': np.array(['label1', 'label2']),
-        'cont_prop': np.array([0], dtype=np.float),
+        'cont_prop': np.array([0], dtype=float),
     }
     pts = Points(properties=properties)
     current_props = {k: v[0] for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
     # verify the property datatype is correct
-    assert pts.properties['cont_prop'].dtype == np.float
+    assert pts.properties['cont_prop'].dtype == float
 
     # add two points and verify the default property was applied
     pts.add([10, 10])
     pts.add([20, 20])
     props = {
         'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=np.float),
+        'cont_prop': np.array([0, 0], dtype=float),
     }
     np.testing.assert_equal(pts.properties, props)
 
@@ -78,7 +78,7 @@ def test_empty_points_with_properties_list():
     pts.add([20, 20])
     props = {
         'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=np.float),
+        'cont_prop': np.array([0, 0], dtype=float),
     }
     np.testing.assert_equal(pts.properties, props)
 
@@ -87,7 +87,7 @@ def test_empty_layer_with_face_colorap():
     """ Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
         properties=default_properties,
         face_color='point_type',
@@ -105,7 +105,7 @@ def test_empty_layer_with_edge_colormap():
     """ Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
         properties=default_properties,
         edge_color='point_type',

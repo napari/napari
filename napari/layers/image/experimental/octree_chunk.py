@@ -12,14 +12,10 @@ LOGGER = logging.getLogger("napari.octree")
 
 
 class OctreeChunkGeom(NamedTuple):
-    """Position and scale of the chunk, for rendering.
-
-    Stored in the OctreeChunk so that we calculate them just once
-    at OctreeChunk creation time. So the visual does not have to.
-    """
+    """Position and size of the chunk, for rendering."""
 
     pos: np.ndarray
-    scale: np.ndarray
+    size: np.ndarray
 
 
 class OctreeLocation(ChunkLocation):
@@ -90,7 +86,7 @@ class OctreeChunk:
     location : OctreeLocation
         The location of this chunk, including the level_index, row, col.
     geom : OctreeChunkGeom
-        The x, y coordinates and scale of the chunk.
+        The position and size of the chunk.
 
     Attributes
     ----------

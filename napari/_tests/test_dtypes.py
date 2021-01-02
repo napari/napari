@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 dtypes = [
-    np.dtype(np.bool),
+    np.dtype(bool),
     np.dtype(np.int8),
     np.dtype(np.uint8),
     np.dtype(np.int16),

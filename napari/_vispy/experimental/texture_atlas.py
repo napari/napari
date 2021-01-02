@@ -48,10 +48,7 @@ def _chunk_verts(octree_chunk: OctreeChunk) -> np.ndarray:
         The quad vertices.
     """
     geom = octree_chunk.geom
-    scaled_shape = octree_chunk.data.shape[:2] * geom.scale
-    size = scaled_shape[::-1]  # Reverse into (X, Y) form.
-
-    return _quad(size, geom.pos)
+    return _quad(geom.size, geom.pos)
 
 
 class AtlasTile(NamedTuple):
@@ -217,7 +214,7 @@ class TextureAtlas2D(Texture2D):
         """Return the texture coordinates for this tile.
 
         This is only called from __init__ when we pre-compute the
-        texture coordinates for every tiles.
+        texture coordinates for every tile.
 
         Parameters
         ----------
@@ -295,7 +292,7 @@ class TextureAtlas2D(Texture2D):
         if self.spec.shape == data.shape:
             return self._tex_coords[tile_index]
 
-        # It's smaller than a full size tile, so compute exact coords.
+        # Edge or corner tile, compute exact coords.
         return self._calc_tex_coords(tile_index, data.shape)
 
     def remove_tile(self, tile_index: int) -> None:

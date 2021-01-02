@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
 def test_big_2D_image(make_test_viewer):
     """Test big 2D image with axis exceeding max texture size."""
     viewer = make_test_viewer()
@@ -17,7 +16,6 @@ def test_big_2D_image(make_test_viewer):
         assert np.all(layer._transforms['tile2data'].scale == s)
 
 
-@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
 def test_big_3D_image(make_test_viewer):
     """Test big 3D image with axis exceeding max texture size."""
     viewer = make_test_viewer(ndisplay=3)
@@ -35,7 +33,6 @@ def test_big_3D_image(make_test_viewer):
 @pytest.mark.parametrize(
     "shape", [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
 )
-@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
 def test_downsample_value(make_test_viewer, shape):
     """Test getting correct value for downsampled data."""
     viewer = make_test_viewer()
