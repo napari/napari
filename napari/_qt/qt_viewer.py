@@ -10,7 +10,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
-from ..utils import config
+from ..utils import config, perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -20,7 +20,6 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils.perf import get_perf_config
 from ..utils.theme import get_theme, template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
@@ -273,7 +272,7 @@ class QtViewer(QSplitter):
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
         """
-        if get_perf_config():
+        if perf.USE_PERFMON:
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
@@ -296,7 +295,7 @@ class QtViewer(QSplitter):
     @console.setter
     def console(self, console):
         self._console = console
-        self.dockConsole.widget = console
+        self.dockConsole.setWidget(console)
         self._update_theme()
 
     def _constrain_width(self, event):

@@ -23,10 +23,10 @@ from qtpy.QtWidgets import (
 )
 
 from .. import __version__
-from ..utils import config
+from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.perf import get_perf_config
+from ..utils.perf import perf_config
 from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
@@ -88,7 +88,7 @@ class Window:
                 " Then, restart IPython."
             )
             raise RuntimeError(message)
-        perf_config = get_perf_config()
+
         if perf_config:
             if perf_config.trace_qt_events:
                 from .perf.qt_event_tracing import convert_app_for_tracing
@@ -178,7 +178,7 @@ class Window:
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.theme.connect(self._update_theme)
 
-        if perf_config:
+        if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
             self._debug_menu = DebugMenu(self)
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
@@ -290,12 +290,10 @@ class Window:
                 QApplication.setWindowIcon(QIcon())
                 self.close()
 
-            if get_perf_config():
+            if perf.USE_PERFMON:
                 # Write trace file before exit, if we were writing one.
                 # Is there a better place to make sure this is done on exit?
-                from ..utils.perf import timers
-
-                timers.stop_trace_file()
+                perf.timers.stop_trace_file()
 
             _stop_monitor()
             _shutdown_chunkloader()

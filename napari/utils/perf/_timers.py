@@ -1,14 +1,15 @@
 """PerfTimers class and global instance.
 """
 import contextlib
-from functools import partial
+import os
 from typing import Dict, Optional
 
 from ._compat import perf_counter_ns
-from ._config import get_perf_config
 from ._event import PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
+
+USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 
 
 class PerfTimers:
@@ -133,7 +134,6 @@ def block_timer(
     name: str,
     category: Optional[str] = None,
     print_time: bool = False,
-    perfmon: bool = False,
     **kwargs,
 ):
     """Time a block of code.
@@ -174,44 +174,64 @@ def block_timer(
     # Update with the real end time.
     event.update_end_ns(perf_counter_ns())
 
-    if perfmon and get_perf_config():
+    if timers:
         timers.add_event(event)
     if print_time:
         print(f"{name} {event.duration_ms:.3f}ms")
 
 
-def add_instant_event(name: str, **kwargs):
-    """Add one instant event.
+def _create_timer():
+    # The one global instance
+    timers = PerfTimers()
 
-    Parameters
-    ----------
-    event : PerfEvent
-        Add this event.
-    kwargs
-        Arguments to display in the Args section of the Chrome Tracing GUI.
-    """
-    timers.add_instant_event(name, **kwargs)
+    # perf_timer is enabled
+    perf_timer = block_timer
+
+    def add_instant_event(name: str, **kwargs):
+        """Add one instant event.
+
+        Parameters
+        ----------
+        event : PerfEvent
+            Add this event.
+        kwargs
+            Arguments to display in the Args section of the Chrome Tracing GUI.
+        """
+        timers.add_instant_event(name, **kwargs)
+
+    def add_counter_event(name: str, **kwargs: Dict[str, float]):
+        """Add one counter event.
+
+        Parameters
+        ----------
+        name : str
+            The name of this event like "draw".
+        kwargs : Dict[str, float]
+            The individual counters for this event.
+
+        Notes
+        -----
+        For example add_counter_event("draw", triangles=5, squares=10).
+        """
+        timers.add_counter_event(name, **kwargs)
+
+    return timers, perf_timer, add_instant_event, add_counter_event
 
 
-def add_counter_event(name: str, **kwargs: Dict[str, float]):
-    """Add one counter event.
+if USE_PERFMON:
+    timers, perf_timer, add_instant_event, add_counter_event = _create_timer()
 
-    Parameters
-    ----------
-    name : str
-        The name of this event like "draw".
-    kwargs : Dict[str, float]
-        The individual counters for this event.
+else:
+    # Make sure no one accesses the timers when they are disabled.
+    timers = None
 
-    Notes
-    -----
-    For example add_counter_event("draw", triangles=5, squares=10).
-    """
-    timers.add_counter_event(name, **kwargs)
+    def add_instant_event(name: str, **kwargs) -> None:
+        pass
 
+    def add_counter_event(name: str, **kwargs: Dict[str, float]) -> None:
+        pass
 
-# The one global instance
-timers = PerfTimers()
-
-# perf_timer is enabled
-perf_timer = partial(block_timer, perfmon=True)
+    # perf_timer is disabled. Using contextlib.nullcontext did not work.
+    @contextlib.contextmanager
+    def perf_timer(name: str, category: Optional[str] = None, **kwargs):
+        yield

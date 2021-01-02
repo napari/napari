@@ -51,7 +51,7 @@ not to leave them in the code. Think of them as similar to debug prints.
 import os
 
 from ._compat import perf_counter_ns
-from ._config import get_perf_config
+from ._config import perf_config
 from ._event import PerfEvent
 from ._timers import (
     add_counter_event,
@@ -60,3 +60,5 @@ from ._timers import (
     perf_timer,
     timers,
 )
+
+USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
