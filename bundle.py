@@ -213,14 +213,14 @@ def bundle():
         if WINDOWS:
             patch_wxs()
 
-        # build
-        cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
-        subprocess.check_call(cmd)
+    # build
+    cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
+    subprocess.check_call(cmd)
 
-        # package
-        cmd = ['briefcase', 'package']
-        cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
-        subprocess.check_call(cmd)
+    # package
+    cmd = ['briefcase', 'package']
+    cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
+    subprocess.check_call(cmd)
 
     # compress
     dest = make_zip()
