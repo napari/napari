@@ -25,7 +25,7 @@ def _create_application(argv) -> QApplication:
     """
     perf_config = get_perf_config()
     if perf_config and perf_config.trace_qt_events:
-        from .tracing.qt_event_tracing import QApplicationWithTracing
+        from .perf.qt_event_tracing import QApplicationWithTracing
 
         return QApplicationWithTracing(argv)
     else:

@@ -5,7 +5,9 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
+import pytest
 
+from napari._qt.perf.qt_event_tracing import QApplicationWithTracing
 from napari.utils.perf import get_perf_config, timers
 
 
@@ -41,6 +43,11 @@ def test_perfmon_off_by_default():
     # Check perfmon is not enabled
     with clear_perf_context():
         assert get_perf_config() is None
+
+
+@pytest.fixture(scope="function")
+def qapp():
+    yield QApplicationWithTracing([])
 
 
 def test_trace_on_start(monkeypatch, make_test_viewer):
