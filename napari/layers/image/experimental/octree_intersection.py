@@ -89,7 +89,7 @@ class OctreeIntersection:
         # are just one variable each? Use numpy more.
         rows, cols = view.corners[:, 0], view.corners[:, 1]
 
-        base = level_info.slice_config.base_shape
+        base = level_info.meta.base_shape
 
         self.normalized_range = np.array(
             [np.clip(rows / base[0], 0, 1), np.clip(cols / base[1], 0, 1)]
@@ -117,7 +117,7 @@ class OctreeIntersection:
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
 
-        tile_size = self.level.info.slice_config.tile_size
+        tile_size = self.level.info.meta.tile_size
 
         span_tiles = [span[0] / tile_size, span[1] / tile_size]
         clamped = [
@@ -235,14 +235,14 @@ class OctreeIntersection:
             The file config.
         """
         # TODO_OCTREE: Need to cleanup and re-name and organize
-        # OctreeLevelInfo and SliceConfig attrbiutes. Messy.
+        # OctreeLevelInfo and OctreeMetadata attrbiutes. Messy.
         level = self.level
         image_shape = level.info.image_shape
         shape_in_tiles = level.info.shape_in_tiles
 
-        slice_config = level.info.slice_config
-        base_shape = slice_config.base_shape
-        tile_size = slice_config.tile_size
+        meta = level.info.meta
+        base_shape = meta.base_shape
+        tile_size = meta.tile_size
 
         return {
             "base_shape": base_shape,

@@ -62,6 +62,7 @@ ignore = [
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
+  "tox.ini",
 ]
 
 [tool.isort]
@@ -70,15 +71,20 @@ line_length = 79
 skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 
 [tool.pytest.ini_options]
+# These follow standard library warnings filters syntax.  See more here:
+# https://docs.python.org/3/library/warnings.html#describing-warning-filters
 filterwarnings = [
+  # turn warnings from napari into errors, unless explicitly allowed below
+  "error:::napari\\.",
+  "default:::napari.+vendored.+",  # just print warnings inside vendored modules
   "ignore::DeprecationWarning:ipykernel",
-  "ignore::DeprecationWarning:skimage.util.dtype:226",
-  "ignore:QFontMetrics.width::qtconsole",
-  "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client"
+  "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
+  "ignore:pythonw executable not found:UserWarning:",
+  "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
+  "ignore:For best performance with Dask arrays in napari:UserWarning:",
 ]
 markers = [
     "perfmon: marks tests that require perfmon to be enabled",
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously"
 ]
-

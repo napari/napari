@@ -39,7 +39,7 @@ def test_qt_viewer_with_console(make_test_viewer):
     assert view._console is None
     # Check console is created when requested
     assert view.console is not None
-    assert view.dockConsole.widget == view.console
+    assert view.dockConsole.widget() is view.console
 
 
 def test_qt_viewer_toggle_console(make_test_viewer):
@@ -51,7 +51,7 @@ def test_qt_viewer_toggle_console(make_test_viewer):
     # Check console has been created when it is supposed to be shown
     view.toggle_console_visibility(None)
     assert view._console is not None
-    assert view.dockConsole.widget == view.console
+    assert view.dockConsole.widget() is view.console
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
@@ -289,3 +289,15 @@ def test_qt_viewer_data_integrity(make_test_viewer, dtype):
     viewer.dims.ndisplay = 2
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean
+
+
+def test_points_layer_display_correct_slice_on_scale(make_test_viewer):
+    viewer = make_test_viewer()
+    data = np.zeros((60, 60, 60))
+    viewer.add_image(data, scale=[0.29, 0.26, 0.26])
+    pts = viewer.add_points(name='test', size=1, ndim=3)
+    pts.add((8.7, 0, 0))
+    viewer.dims.set_point(0, 30 * 0.29)  # middle plane
+    layer = viewer.layers[1]
+    indices, scale = layer._slice_data(layer._slice_indices)
+    np.testing.assert_equal(indices, [0])

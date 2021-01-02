@@ -14,8 +14,6 @@ from typing import List, Set
 
 import numpy as np
 
-from napari.layers.image.experimental.octree_chunk import OctreeChunkKey
-
 from ...layers.image.experimental import OctreeChunk
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
@@ -249,12 +247,12 @@ class TiledImageVisual(ImageVisual):
         self._need_vertex_update = True
 
     @property
-    def chunk_set(self) -> Set[OctreeChunkKey]:
+    def chunk_set(self) -> Set[OctreeChunk]:
         """Return the set of chunks we are drawing.
 
         Return
         ------
-        Set[OctreeChunkKey]
+        Set[OctreeChunk]
             The set of chunks we are drawing.
         """
         return self._tiles.chunk_set
