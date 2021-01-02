@@ -36,15 +36,11 @@ class EventedModel(BaseModel):
         # create dict with compare functions for fields which cannot be compared
         # using standard equal operator, like numpy arrays.
         compare_dict = {
-            n: t
-            for n, t in {
-                name: _type_to_compare(type_)
-                for name, type_ in self.__dict__.get(
-                    '__annotations__', {}
-                ).items()
-            }.items()
-            if t is not None  # walrus operator is supported from python 3.8
+            field.name: _type_to_compare(field.type_)
+            for field in self.__fields__.values()
+            if _type_to_compare(field.type_) is not None
         }
+
         self.__equality_checks__.update(compare_dict)
 
     def __setattr__(self, name, value):
