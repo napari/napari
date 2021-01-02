@@ -295,7 +295,7 @@ class QtViewer(QSplitter):
     @console.setter
     def console(self, console):
         self._console = console
-        self.dockConsole.widget = console
+        self.dockConsole.setWidget(console)
         self._update_theme()
 
     def _constrain_width(self, event):

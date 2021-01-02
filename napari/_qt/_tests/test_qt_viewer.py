@@ -39,7 +39,7 @@ def test_qt_viewer_with_console(make_test_viewer):
     assert view._console is None
     # Check console is created when requested
     assert view.console is not None
-    assert view.dockConsole.widget == view.console
+    assert view.dockConsole.widget() is view.console
 
 
 def test_qt_viewer_toggle_console(make_test_viewer):
@@ -51,7 +51,7 @@ def test_qt_viewer_toggle_console(make_test_viewer):
     # Check console has been created when it is supposed to be shown
     view.toggle_console_visibility(None)
     assert view._console is not None
-    assert view.dockConsole.widget == view.console
+    assert view.dockConsole.widget() is view.console
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
