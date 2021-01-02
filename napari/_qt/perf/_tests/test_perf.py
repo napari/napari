@@ -1,4 +1,6 @@
 import json
+import os
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -10,6 +12,17 @@ from qtpy.QtWidgets import QApplication
 from napari._qt.perf.qt_event_tracing import QApplicationWithTracing
 from napari._qt.utils import delete_qapp
 from napari.utils.perf import get_perf_config, timers
+
+if (
+    sys.platform.startswith('linux')
+    and os.getenv('CI', '0') != '0'
+    and qtpy.API_NAME == "PySide2"
+):
+    # this test is covered by other platforms, and also seems to work locally
+    # on linux
+    pytest.skip(
+        "Perfmon segfaults on linux CI with pyside2", allow_module_level=True
+    )
 
 
 @pytest.fixture(scope="module")
