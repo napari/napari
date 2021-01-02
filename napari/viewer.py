@@ -1,5 +1,4 @@
 from . import __version__
-from ._qt import Window
 from .components import ViewerModel
 from .utils import config
 
@@ -35,8 +34,8 @@ class Viewer(ViewerModel):
         *,
         title='napari',
         ndisplay=2,
-        order=None,
-        axis_labels=None,
+        order=(),
+        axis_labels=(),
         show=True,
     ):
         super().__init__(
@@ -45,6 +44,10 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        # having this import here makes all of Qt imported lazily, upon
+        # instantiating the first Viewer.
+        from .window import Window
+
         self.window = Window(self, show=show)
 
     def update_console(self, variables):
@@ -95,6 +98,9 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Remove all the layers from the viewer
+        self.layers.clear()
+        # Close the main window
         self.window.close()
 
         if config.async_loading:

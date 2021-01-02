@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from napari._tests.utils import good_layer_data
+from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 
@@ -313,7 +313,7 @@ def test_swappable_dims():
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
-    assert viewer.dims.order == [0, 2, 1, 3]
+    assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
         viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
     )
@@ -534,6 +534,24 @@ def test_active_layer_status_update():
     assert viewer.status == viewer.active_layer.status
 
 
+def test_active_layer_cursor_size():
+    """Test cursor size update on active layer."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((10, 10)))
+    # Base layer has a default cursor size of 1
+    assert viewer.cursor.size == 1
+
+    viewer.add_labels(np.random.random((10, 10)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    viewer.layers[1].mode = 'paint'
+    # Labels layer has a default cursor size of 10
+    # due to paintbrush
+    assert viewer.cursor.size == 10
+
+
 def test_sliced_world_extent():
     """Test world extent after adding layers and slicing."""
     np.random.seed(0)
@@ -569,18 +587,97 @@ def test_camera():
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
-    assert viewer.camera.ndisplay == 3
     assert viewer.camera.center == (4.5, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
+
+
+def test_update_scale():
+    viewer = ViewerModel()
+    np.random.seed(0)
+    shape = (10, 15, 20)
+    data = np.random.random(shape)
+    viewer.add_image(data)
+    assert viewer.dims.range == tuple((0.0, x - 1.0, 1.0) for x in shape)
+    scale = (3.0, 2.0, 1.0)
+    viewer.layers[0].scale = scale
+    assert viewer.dims.range == tuple(
+        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
+    )
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_add_remove_layer_no_callbacks(Layer, data, ndim):
+    """Test all callbacks for layer emmitters removed."""
+    viewer = ViewerModel()
+
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
+
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+    viewer.layers.append(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 1
+
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+
+    viewer.layers.remove(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 0
+
+    # Check that all callbacks have been removed
+    assert len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_add_remove_layer_external_callbacks(Layer, data, ndim):
+    """Test external callbacks for layer emmitters preserved."""
+    viewer = ViewerModel()
+
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
+
+    # Connect a custom callback
+    def my_custom_callback(event):
+        return
+
+    layer.events.connect(my_custom_callback)
+
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 1
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 1
+
+    viewer.layers.append(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 1
+
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+
+    viewer.layers.remove(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 0
+
+    # Check that all internal callbacks have been removed
+    assert len(layer.events.callbacks) == 1
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 1

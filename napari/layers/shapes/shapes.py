@@ -365,7 +365,7 @@ class Shapes(Layer):
         self._allow_thumbnail_update = True
 
         self._display_order_stored = []
-        self._ndisplay_stored = self._dims.ndisplay
+        self._ndisplay_stored = self._ndisplay
 
         # Save the properties
         if properties is None:
@@ -406,9 +406,9 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._data_view = ShapeList(ndisplay=self._dims.ndisplay)
+        self._data_view = ShapeList(ndisplay=self._ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
-            list(self._dims.not_displayed)
+            list(self._dims_not_displayed)
         ]
 
         self._value = (None, None)
@@ -435,10 +435,6 @@ class Shapes(Layer):
         self._mode_history = self._mode
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
-
-        self.events.deselect.connect(self._finish_drawing)
-        self.events.face_color.connect(self._update_thumbnail)
-        self.events.edge_color.connect(self._update_thumbnail)
 
         self._init_shapes(
             data,
@@ -548,6 +544,24 @@ class Shapes(Layer):
 
         self._update_dims()
         self.events.data()
+        self._set_editable()
+
+    @property
+    def selected(self):
+        """bool: Whether this layer is selected or not."""
+        return self._selected
+
+    @selected.setter
+    def selected(self, selected):
+        if selected == self.selected:
+            return
+        self._selected = selected
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
+            self._finish_drawing()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -635,6 +649,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, self._current_edge_color)
             self.events.edge_color()
+            self._update_thumbnail()
         self.events.current_edge_color()
 
     @property
@@ -650,6 +665,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_face_color(i, self._current_face_color)
             self.events.face_color()
+            self._update_thumbnail()
         self.events.current_face_color()
 
     @property
@@ -688,6 +704,7 @@ class Shapes(Layer):
     def edge_color(self, edge_color):
         self._set_color(edge_color, 'edge')
         self.events.edge_color()
+        self._update_thumbnail()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -754,6 +771,7 @@ class Shapes(Layer):
     def face_color(self, face_color):
         self._set_color(face_color, 'face')
         self.events.face_color()
+        self._update_thumbnail()
 
     @property
     def face_color_cycle(self) -> np.ndarray:
@@ -1283,7 +1301,7 @@ class Shapes(Layer):
             Array of coordindates for the N text elements in view
         """
         return self.text.compute_text_coords(
-            self._data_view.data, self._dims.ndisplay
+            self._data_view.data, self._ndisplay
         )
 
     @property
@@ -1402,7 +1420,7 @@ class Shapes(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._dims.ndisplay == 3:
+            if self._ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -1697,8 +1715,8 @@ class Shapes(Layer):
                     d,
                     edge_width=ew,
                     z_index=z,
-                    dims_order=self._dims.order,
-                    ndisplay=self._dims.ndisplay,
+                    dims_order=self._dims_order,
+                    ndisplay=self._ndisplay,
                 )
 
                 # Add shape
@@ -1706,8 +1724,8 @@ class Shapes(Layer):
                     shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
                 )
 
-        self._display_order_stored = copy(self._dims.order)
-        self._ndisplay_stored = copy(self._dims.ndisplay)
+        self._display_order_stored = copy(self._dims_order)
+        self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
 
     def _validate_properties(
@@ -1747,23 +1765,21 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._dims.ndisplay == self._ndisplay_stored:
+        if not self._ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(
-                self._dims.ndim, self._dims.ndisplay
-            )
-            self._ndisplay_stored = copy(self._dims.ndisplay)
+            self._data_view.ndisplay = min(self.ndim, self._ndisplay)
+            self._ndisplay_stored = copy(self._ndisplay)
             self._clipboard = {}
 
-        if not self._dims.order == self._display_order_stored:
+        if not self._dims_order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims.order)
-            self._display_order_stored = copy(self._dims.order)
+            self._data_view.update_dims_order(self._dims_order)
+            self._display_order_stored = copy(self._dims_order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
         slice_key = np.array(self._slice_indices)[
-            list(self._dims.not_displayed)
+            list(self._dims_not_displayed)
         ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
@@ -2017,12 +2033,12 @@ class Shapes(Layer):
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
             de = self._extent_data
-            offset = np.array([de[0, d] for d in self._dims.displayed]) + 0.5
+            offset = np.array([de[0, d] for d in self._dims_displayed]) + 0.5
             # calculate range of values for the vertices and pad with 1
             # padding ensures the entire shape can be represented in the thumbnail
             # without getting clipped
             shape = np.ceil(
-                [de[1, d] - de[0, d] + 1 for d in self._dims.displayed]
+                [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -2130,14 +2146,14 @@ class Shapes(Layer):
             Full D dimensional data array of the shape.
         """
         if self.ndim == 2:
-            data_full = data[:, self._dims.displayed_order]
+            data_full = data[:, self._dims_displayed_order]
         else:
             data_full = np.zeros((len(data), self.ndim), dtype=float)
             indices = np.array(self._slice_indices)
-            data_full[:, self._dims.not_displayed] = indices[
-                self._dims.not_displayed
+            data_full[:, self._dims_not_displayed] = indices[
+                self._dims_not_displayed
             ]
-            data_full[:, self._dims.displayed] = data
+            data_full[:, self._dims_displayed] = data
 
         return data_full
 
@@ -2155,7 +2171,7 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._dims.ndisplay == 3:
+        if self._ndisplay == 3:
             return (None, None)
 
         if self._is_moving:
@@ -2256,7 +2272,7 @@ class Shapes(Layer):
             # Calculate offset based on dimension shifts
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
-                for i in self._dims.not_displayed
+                for i in self._dims_not_displayed
             ]
 
             for k in self.properties:
@@ -2269,8 +2285,8 @@ class Shapes(Layer):
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self._dims.not_displayed] = data[
-                    :, self._dims.not_displayed
+                data[:, self._dims_not_displayed] = data[
+                    :, self._dims_not_displayed
                 ] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]

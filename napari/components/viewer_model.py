@@ -15,10 +15,12 @@ from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.misc import is_sequence
-from ..utils.theme import palettes
+
+# Private _themes import needed until viewer.palette is dropped
+from ..utils.theme import _themes, available_themes, get_theme
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -27,6 +29,8 @@ from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
+
+DEFAULT_THEME = 'dark'
 
 
 class ViewerModel(KeymapHandler, KeymapProvider):
@@ -54,15 +58,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         List of contained layers.
     dims : Dimensions
         Contains axes, indices, dimensions and sliders.
-    themes : dict of str: dict of str: str
-        Preset color palettes.
     """
 
-    themes = palettes
-
-    def __init__(
-        self, title='napari', ndisplay=2, order=None, axis_labels=None
-    ):
+    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -71,19 +69,18 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             status=Event,
             help=Event,
             title=Event,
-            interactive=Event,
             reset_view=Event,
             active_layer=Event,
-            palette=Event,
+            theme=Event,
             layers_change=Event,
         )
 
         self.dims = Dims(
-            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+            ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
 
         self.layers = LayerList()
-        self.camera = Camera(self.dims)
+        self.camera = Camera()
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -91,14 +88,12 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._status = 'Ready'
         self._help = ''
         self._title = title
+        self._theme = DEFAULT_THEME
 
-        self._interactive = True
         self._active_layer = None
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
-        self._palette = None
-        self.theme = 'dark'
 
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
@@ -108,11 +103,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
-        self.layers.events.inserted.connect(self._on_grid_change)
-        self.layers.events.removed.connect(self._on_grid_change)
+        self.layers.events.inserted.connect(self._on_add_layer)
+        self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
-        self.layers.events.inserted.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
         self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -134,47 +127,68 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def palette(self):
-        """dict of str: str : Color palette with which to style the viewer.
+        """Dict[str, str]: Color palette for styling the viewer.
         """
-        return self._palette
+        warnings.warn(
+            (
+                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
+                " To access the palette you can call it using napari.utils.theme.register_theme"
+                " using the viewer.theme as the key."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return get_theme(self.theme)
 
     @palette.setter
     def palette(self, palette):
-        if palette == self.palette:
-            return
-
-        self._palette = palette
-        self.axes.background_color = self.palette['canvas']
-        self.scale_bar.background_color = self.palette['canvas']
-        self.events.palette()
+        warnings.warn(
+            (
+                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
+                " To add a new palette you should add it using napari.utils.theme.register_theme"
+                " and then set the viewer.theme attribute."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        for existing_theme_name, existing_theme in _themes.items():
+            if existing_theme == palette:
+                self.theme = existing_theme_name
+                return
+        raise ValueError(
+            f"Palette not found among existing themes; "
+            f"options are {available_themes()}."
+        )
 
     @property
     def theme(self):
-        """string or None : Preset color palette.
+        """string or None : Color theme.
         """
-        for theme, palette in self.themes.items():
-            if palette == self.palette:
-                return theme
+        return self._theme
 
     @theme.setter
     def theme(self, theme):
         if theme == self.theme:
             return
 
-        try:
-            self.palette = self.themes[theme]
-        except KeyError:
+        if theme in available_themes():
+            self._theme = theme
+        else:
             raise ValueError(
                 f"Theme '{theme}' not found; "
-                f"options are {list(self.themes)}."
+                f"options are {available_themes()}."
             )
+        theme = get_theme(self.theme)
+        self.axes.background_color = theme['canvas']
+        self.scale_bar.background_color = theme['canvas']
+        self.events.theme(value=self.theme)
 
     @property
     def grid_size(self):
         """tuple: Size of grid."""
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -186,7 +200,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_size(self, grid_size):
         warnings.warn(
             (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.shape"
             ),
             category=DeprecationWarning,
@@ -199,7 +213,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """int: Number of layers in each grid square."""
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -211,7 +225,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def grid_stride(self, grid_stride):
         warnings.warn(
             (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
                 " Instead you should use viewer.grid.stride"
             ),
             category=DeprecationWarning,
@@ -230,7 +244,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if status == self.status:
             return
         self._status = status
-        self.events.status(text=self._status)
+        self.events.status(value=self._status)
 
     @property
     def help(self):
@@ -244,7 +258,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if help == self.help:
             return
         self._help = help
-        self.events.help(text=self._help)
+        self.events.help(value=self._help)
 
     @property
     def title(self):
@@ -257,20 +271,32 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if title == self.title:
             return
         self._title = title
-        self.events.title(text=self._title)
+        self.events.title(value=self._title)
 
     @property
     def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
-        """
-        return self._interactive
+        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.camera.interactive
 
     @interactive.setter
     def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self._interactive = interactive
-        self.events.interactive()
+        warnings.warn(
+            (
+                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
+                " Instead you should use viewer.camera.interactive"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.camera.interactive = interactive
 
     @property
     def active_layer(self):
@@ -291,7 +317,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if active_layer is not None:
             self.keymap_providers.insert(0, active_layer)
 
-        self.events.active_layer(item=self._active_layer)
+        self.events.active_layer(value=self._active_layer)
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
@@ -325,7 +351,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
-
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
@@ -376,7 +401,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
     def _toggle_theme(self):
         """Switch to next theme in list of themes
         """
-        theme_names = list(self.themes.keys())
+        theme_names = available_themes()
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
@@ -405,13 +430,14 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
-            self.interactive = True
+            self.camera.interactive = True
             self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
-            self.interactive = active_layer.interactive
+            self.cursor.size = active_layer.cursor_size
+            self.camera.interactive = active_layer.interactive
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
@@ -431,7 +457,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+        self.camera.interactive = event.interactive
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
@@ -479,7 +505,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
@@ -500,7 +526,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """
         warnings.warn(
             (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
                 " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
             ),
             category=DeprecationWarning,
@@ -536,6 +562,82 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
         return ExperimentalNamespace(self.layers)
 
+    def _on_add_layer(self, event):
+        """Connect new layer events.
+
+        Parameters
+        ----------
+        event : :class:`napari.layers.Layer`
+            Layer to add.
+        """
+        layer = event.value
+
+        # Coerce name into being unique and connect event to ensure uniqueness
+        layer.name = self.layers._coerce_name(layer.name, layer)
+
+        # Connect individual layer events to viewer events
+        layer.events.select.connect(self._update_active_layer)
+        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.interactive.connect(self._update_interactive)
+        layer.events.cursor.connect(self._update_cursor)
+        layer.events.cursor_size.connect(self._update_cursor_size)
+        layer.events.data.connect(self._on_layers_change)
+        layer.events.scale.connect(self._on_layers_change)
+        layer.events.translate.connect(self._on_layers_change)
+        layer.events.rotate.connect(self._on_layers_change)
+        layer.events.shear.connect(self._on_layers_change)
+        layer.events.affine.connect(self._on_layers_change)
+        layer.events.name.connect(self.layers._update_name)
+
+        # For the labels layer we need to reset the undo/ redo
+        # history whenever the displayed slice changes. Once
+        # we have full undo/ redo functionality, this can be
+        # dropped.
+        if hasattr(layer, '_reset_history'):
+            self.dims.events.ndisplay.connect(layer._reset_history)
+            self.dims.events.order.connect(layer._reset_history)
+            self.dims.events.current_step.connect(layer._reset_history)
+
+        # Make layer selected and unselect all others
+        layer.selected = True
+        self.layers.unselect_all(ignore=layer)
+
+        # Update dims and grid model
+        self._on_layers_change(None)
+        self._on_grid_change(None)
+        # Slice current layer based on dims
+        self._update_layers(layers=[layer])
+
+        if len(self.layers) == 1:
+            self.reset_view()
+
+    def _on_remove_layer(self, event):
+        """Disconnect old layer events.
+
+        Parameters
+        ----------
+        layer : :class:`napari.layers.Layer`
+            Layer to add.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Layer` or list
+            The layer that was added (same as input).
+        """
+        layer = event.value
+
+        # Disconnect all connections from layer
+        disconnect_events(layer.events, self)
+        disconnect_events(layer.events, self.layers)
+
+        # For the labels layer disconnect history resets
+        if hasattr(layer, '_reset_history'):
+            self.dims.events.ndisplay.disconnect(layer._reset_history)
+            self.dims.events.order.disconnect(layer._reset_history)
+            self.dims.events.current_step.disconnect(layer._reset_history)
+        self._on_layers_change(None)
+        self._on_grid_change(None)
+
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
 
@@ -549,21 +651,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
-        layer.events.interactive.connect(self._update_interactive)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
-        layer.name = self.layers._coerce_name(layer.name, layer)
-        layer.events.name.connect(self.layers._update_name)
-        layer.selected = True
+        # Adding additional functionality inside `add_layer`
+        # should be avoided to keep full functionality
+        # from adding a layer through the `layers.append`
+        # method
         self.layers.append(layer)
-        self.layers.unselect_all(ignore=layer)
-        self._update_layers(layers=[layer])
-
-        if len(self.layers) == 1:
-            self.reset_view()
         return layer
 
     def add_image(
@@ -760,14 +852,17 @@ class ViewerModel(KeymapHandler, KeymapProvider):
                         f"Received sequence for argument '{k}', "
                         "did you mean to specify a 'channel_axis'? "
                     )
+            layer = image_class(data, **kwargs)
+            self.layers.append(layer)
 
-            return self.add_layer(image_class(data, **kwargs))
+            return layer
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.add_layer(image_class(image, **i_kwargs))
+                layer = image_class(image, **i_kwargs)
+                self.layers.append(layer)
                 layer_list.append(layer)
 
             return layer_list
@@ -987,7 +1082,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
 def _get_image_class() -> layers.Image:
     """Return Image or OctreeImage based config settings."""
-    if config.create_octree_image():
+    if config.async_octree:
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage

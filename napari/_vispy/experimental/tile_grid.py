@@ -42,9 +42,7 @@ def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
     """
     geom = chunk.geom
     x, y = geom.pos
-    h, w = chunk.data.shape[:2]
-    w *= geom.scale[1]
-    h *= geom.scale[0]
+    w, h = geom.size
 
     outline = _OUTLINE.copy()
 

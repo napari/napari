@@ -1,10 +1,10 @@
 import numpy as np
 
 from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.dataclass import Property, dataclass
+from ..utils.events.dataclass import Property, evented_dataclass
 
 
-@dataclass(events=True, properties=True)
+@evented_dataclass
 class Axes:
     """Axes indicating world coordinate origin and orientation.
 

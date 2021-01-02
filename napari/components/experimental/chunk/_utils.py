@@ -2,29 +2,33 @@
 """
 from typing import Optional
 
+import dask.array as da
 import numpy as np
 
 
-def get_data_id(layer) -> int:
-    """Return the data_id to use for this layer.
+def _get_type_str(data) -> str:
+    """Get human readable name for the data's type.
 
-    Parameters
-    ----------
-    layer
-        The layer to get the data_id from.
-
-    Notes
-    -----
-    We use data_id rather than just the layer_id, because if someone
-    changes the data out from under a layer, we do not want to use the
-    wrong chunks.
+    Returns
+    -------
+    str
+        A string like "ndarray" or "dask".
     """
-    data = layer.data
-    if isinstance(data, list):
-        assert data  # data should not be empty for image layers.
-        return id(data[0])  # Just use the ID from the 0'th layer.
+    data_type = type(data)
 
-    return id(data)  # Not a list, just use it.
+    if data_type == list:
+        if len(data) == 0:
+            return "EMPTY"
+        # Recursively get the type string of the zeroth level.
+        return _get_type_str(data[0])
+
+    if data_type == da.Array:
+        # Special case this because otherwise data_type.__name__
+        # below would just return "Array".
+        return "dask"
+
+    # For class numpy.ndarray this returns "ndarray"
+    return data_type.__name__
 
 
 class StatWindow:

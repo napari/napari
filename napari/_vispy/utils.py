@@ -1,5 +1,5 @@
 from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
-from ..utils import config
+from ..utils.config import async_octree
 from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -18,7 +18,7 @@ layer_to_visual = {
 }
 
 
-if config.create_octree_image():
+if async_octree:
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 

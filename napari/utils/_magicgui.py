@@ -11,16 +11,14 @@ of those custom classes, magicgui will know what to do with it.
 """
 from typing import Any, Optional, Tuple, Type
 
-from qtpy.QtWidgets import QWidget
-
 from ..layers import Layer
 from ..viewer import Viewer
 
 try:
-    from magicgui import register_type as _magictype
+    from magicgui import register_type
 except ImportError:
 
-    def _magictype(*args, **kwargs):
+    def register_type(*args, **kwargs):
         pass
 
 
@@ -38,11 +36,11 @@ def register_types_with_magicgui():
             corresponding layer type will be added.
             see `show_layer_result` for detail
     """
-    _magictype(Layer, choices=get_layers, return_callback=show_layer_result)
-    _magictype(Viewer, choices=get_viewers)
+    register_type(Layer, choices=get_layers, return_callback=show_layer_result)
+    register_type(Viewer, choices=get_viewers)
 
 
-def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
+def find_viewer_ancestor(widget) -> Optional[Viewer]:
     """Return the Viewer object if it is an ancestor of ``widget``, else None.
 
     Parameters
@@ -55,7 +53,12 @@ def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
     viewer : napari.Viewer or None
         Viewer instance if one exists, else None.
     """
-    parent = widget.parent()
+    # magicgui v0.2.0 widgets are no longer QWidget subclasses, but the native
+    # widget is available at widget.native
+    if hasattr(widget, 'native') and hasattr(widget.native, 'parent'):
+        parent = widget.native.parent()
+    else:
+        parent = widget.parent()
     while parent:
         if hasattr(parent, 'qt_viewer'):
             return parent.qt_viewer.viewer
@@ -75,22 +78,19 @@ def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
         return tuple(v for v in globals().values() if isinstance(v, Viewer))
 
 
-def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
-    """Retrieve layers of type `layer_type`, from the Viewer the gui is in.
+def get_layers(gui) -> Tuple[Layer, ...]:
+    """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     Parameters
     ----------
-    gui : MagicGui or QWidget
+    gui : magicgui.widgets.Widget
         The instantiated MagicGui widget.  May or may not be docked in a
         dock widget.
-    layer_type : type
-        This is the exact type used in the type hint of the user's
-        function. It may be a subclass of napari.layers.Layer
 
     Returns
     -------
     tuple
-        Tuple of layers of type ``layer_type``
+        Tuple of layers of type ``gui.annotation``
 
     Examples
     --------
@@ -102,13 +102,10 @@ def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
     ...     return layer.data.mean()
 
     """
-
-    viewer = find_viewer_ancestor(gui)
-    if viewer:
-        return tuple(
-            layer for layer in viewer.layers if isinstance(layer, layer_type)
-        )
-    return ()
+    viewer = find_viewer_ancestor(gui.native)
+    if not viewer:
+        return ()
+    return tuple(x for x in viewer.layers if isinstance(x, gui.annotation))
 
 
 def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:

@@ -2,9 +2,13 @@
 import numpy as np
 import pytest
 
-from napari.components.experimental.chunk import ChunkKey, chunk_loader
+from napari.components.experimental.chunk import (
+    ChunkLocation,
+    ChunkRequest,
+    LayerRef,
+    chunk_loader,
+)
 from napari.layers.image import Image
-from napari.utils import config
 
 
 def _create_layer() -> Image:
@@ -13,49 +17,29 @@ def _create_layer() -> Image:
     return Image(data)
 
 
-def test_chunk_key():
-    """Test the ChunkKey class."""
+def test_base_location():
+    """Test the base ChunkLocation class.
 
-    layer1 = _create_layer()
-    layer2 = _create_layer()
+    The base ChunkLocation is not really used, only the derived
+    ImageLocation and OctreeLocation are, but test it anyway.
+    """
+    layer_ref1 = LayerRef.from_layer(_create_layer())
+    layer_ref2 = LayerRef.from_layer(_create_layer())
 
-    # key1 and key2 should be identical.
-    key1 = ChunkKey(layer1, (0, 0))
-    key2 = ChunkKey(layer1, (0, 0))
-    assert key1 == key2
-    assert key1.key == key2.key
+    location1a = ChunkLocation(layer_ref1)
+    location1b = ChunkLocation(layer_ref1)
+    location2 = ChunkLocation(layer_ref2)
 
-    # Check key1 attributes.
-    assert key1.layer_key.layer_id == id(layer1)
-    assert key1.layer_key.data_level == layer1.data_level
-
-    # key3 is for a different layer.
-    key3 = ChunkKey(layer2, (0, 0))
-    assert key1 != key3
-    assert key2 != key3
-
-    # key4 has different indices.
-    key4 = ChunkKey(layer2, (0, 1))
-    assert key1 != key4
-    assert key2 != key4
-    assert key3 != key4
-
-    # key5 matches key4.
-    key5 = ChunkKey(layer2, (0, 1))
-    assert key1 != key5
-    assert key2 != key5
-    assert key3 != key5
-    assert key4 == key5
+    assert location1a == location1b
+    assert location1a != location2
+    assert location1b != location2
 
 
+@pytest.mark.async_only
 def test_loader():
     """Test ChunkRequest and the ChunkLoader."""
-    if not config.async_loading:
-        return  # temporary until we add the @async_only pytest mark
 
     layer = _create_layer()
-    key = ChunkKey(layer, (0, 0))
-
     shape = (64, 32)
     transpose_shape = (32, 64)
 
@@ -67,13 +51,11 @@ def test_loader():
     data2 = data * 2
 
     # Create the ChunkRequest.
-    request = chunk_loader.create_request(layer, key, chunks)
-
-    # Should be compatible with the layer we made it from!
-    # assert request.is_compatible(layer)
+    location = ChunkLocation.from_layer(layer)
+    request = ChunkRequest(location, chunks)
 
     # Load the ChunkRequest.
-    request = chunk_loader.load_chunk(request)
+    request = chunk_loader.load_request(request)
 
     # Data should only match data not data2.
     assert np.all(data == request.image.data)
@@ -82,7 +64,7 @@ def test_loader():
     # request.image is just short-hand for request.chunks['image']
     assert np.all(request.image.data == request.chunks['image'].data)
 
-    # Since we didn't ask for a thumbnail_source it should be the image.
+    # Since we didn't ask for a thumbnail_source it should just be the image data.
     assert np.all(request.thumbnail_source.data == request.image.data)
 
     # KeyError for chunks that do not exist.

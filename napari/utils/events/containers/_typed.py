@@ -119,7 +119,33 @@ class TypedMutableSequence(MutableSequence[_T]):
         ...  # pragma: no cover
 
     def __getitem__(self, key):  # noqa: F811
-        _key = self.index(key) if type(key) in self._lookup else key
+        """Get an item from the list
+
+        Parameters
+        ----------
+        key : int, slice, or any type in self._lookup
+            The key to get.
+
+        Returns
+        -------
+        The value at `key`
+
+        Raises
+        ------
+        IndexError:
+            If ``type(key)`` is not in ``self._lookup`` (usually an int, like a regular
+            list), and the index is out of range.
+        KeyError:
+            If type(key) is in self._lookup and the key is not in the list (after)
+            applying the self._lookup[key] function to each item in the list
+        """
+        if type(key) in self._lookup:
+            try:
+                _key = self.index(key)
+            except ValueError as e:
+                raise KeyError(str(e)) from e
+        else:
+            _key = key
         result = self._list[_key]
         return self.__newlike__(result) if isinstance(result, list) else result
 
