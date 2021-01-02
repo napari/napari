@@ -346,14 +346,14 @@ def _setup_logging(config: dict) -> None:
         The configuration data.
     """
     try:
-        log_path = config['loader']['log_path']
+        log_path = config['loader_defaults']['log_path']
         if log_path is not None:
             _log_to_file("napari.loader", log_path)
     except KeyError:
         pass
 
     try:
-        log_path = config['loader']['log_path']
+        log_path = config['octree']['log_path']
         if log_path is not None:
             _log_to_file("napari.octree", log_path)
     except KeyError:
