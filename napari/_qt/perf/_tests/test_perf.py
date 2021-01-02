@@ -4,13 +4,17 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QApplication
 
 from napari._qt.perf.qt_event_tracing import QApplicationWithTracing
+from napari._qt.utils import delete_qapp
 from napari.utils.perf import get_perf_config, timers
 
 
 @pytest.fixture(scope="module")
 def qapp():
+    if QApplication.instance() is not None:
+        delete_qapp(QApplication.instance())
     yield QApplicationWithTracing([])
 
 

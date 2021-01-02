@@ -3,10 +3,11 @@ from functools import lru_cache
 from typing import Sequence, Union
 
 import numpy as np
-from qtpy import API_NAME
+import qtpy
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
+    QApplication,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
@@ -41,7 +42,7 @@ def QImg2array(img):
     # As vispy doesn't use qtpy we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if API_NAME == 'PySide2':
+    if qtpy.API_NAME == 'PySide2':
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)
@@ -198,11 +199,14 @@ def delete_qapp(app):
     ----------
     app : qtpy.QApplication
     """
-    if API_NAME == 'PySide2':
-        import shiboken2
+    try:
+        # Pyside2
+        from shiboken2 import delete
+    except ImportError:
+        # PyQt5
+        from sip import delete
 
-        shiboken2.delete(app)
-    else:
-        import sip
-
-        sip.delete(app)
+    delete(app)
+    # calling a second time is necessary on PySide2...
+    # see: https://bugreports.qt.io/browse/PYSIDE-1470
+    QApplication.instance()
