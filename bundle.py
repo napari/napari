@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 
 import tomlkit
 
@@ -43,20 +44,21 @@ elif MACOS:
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
 
 
-with open(PYPROJECT_TOML, 'r') as f:
-    original_toml = f.read()
-
 with open(os.path.join(HERE, "napari", "_version.py")) as f:
     match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
     if match:
         VERSION = match.groups()[0].split('+')[0]
 
 
-def patch_toml():
+@contextmanager
+def patched_toml():
     parser = configparser.ConfigParser()
     parser.read(SETUP_CFG)
     requirements = parser.get("options", "install_requires").splitlines()
     requirements = [r.split('#')[0].strip() for r in requirements if r]
+
+    with open(PYPROJECT_TOML, 'r') as f:
+        original_toml = f.read()
 
     toml = tomlkit.parse(original_toml)
 
@@ -92,6 +94,12 @@ def patch_toml():
     )
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
+
+    try:
+        yield
+    finally:
+        with open(PYPROJECT_TOML, 'w') as f:
+            f.write(original_toml)
 
 
 def patch_dmgbuild():
@@ -192,34 +200,31 @@ def bundle():
 
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
-    patch_toml()
 
-    # create
-    cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
-    subprocess.check_call(cmd)
+    with patched_toml():
+        # create
+        cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
+        subprocess.check_call(cmd)
 
-    time.sleep(0.5)
+        time.sleep(0.5)
 
-    add_site_packages_to_path()
+        add_site_packages_to_path()
 
-    if WINDOWS:
-        patch_wxs()
+        if WINDOWS:
+            patch_wxs()
 
-    # build
-    cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
-    subprocess.check_call(cmd)
+        # build
+        cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
+        subprocess.check_call(cmd)
 
-    # package
-    cmd = ['briefcase', 'package']
-    cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
-    subprocess.check_call(cmd)
+        # package
+        cmd = ['briefcase', 'package']
+        cmd += ['--no-sign'] if MACOS else (['--no-docker'] if LINUX else [])
+        subprocess.check_call(cmd)
 
     # compress
     dest = make_zip()
     clean()
-
-    with open(PYPROJECT_TOML, 'w') as f:
-        f.write(original_toml)
 
     return dest
 
