@@ -27,7 +27,6 @@ EXTRA_REQS = [
     "numpy==1.19.3",
 ]
 
-
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
