@@ -182,7 +182,7 @@ class QtPerformance(QWidget):
 
         # Now safe to update the GUI: progress bar first.
         if average is not None:
-            self.bar.setValue(average)
+            self.bar.setValue(int(average))
 
         # And log any new slow events.
         for name, time_ms in long_events:

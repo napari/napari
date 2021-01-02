@@ -84,7 +84,6 @@ filterwarnings = [
   "ignore:For best performance with Dask arrays in napari:UserWarning:",
 ]
 markers = [
-    "perfmon: marks tests that require perfmon to be enabled",
     "sync_only: Test should only be run synchronously",
     "async_only: Test should only be run asynchronously"
 ]

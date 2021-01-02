@@ -27,7 +27,7 @@ def get_app() -> QApplication:
     app = QApplication.instance()
     if app:
         if perf_config and perf_config.trace_qt_events:
-            from .tracing.qt_event_tracing import convert_app_for_tracing
+            from .perf.qt_event_tracing import convert_app_for_tracing
 
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
@@ -38,7 +38,7 @@ def get_app() -> QApplication:
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 
         if perf_config and perf_config.trace_qt_events:
-            from .tracing.qt_event_tracing import QApplicationWithTracing
+            from .perf.qt_event_tracing import QApplicationWithTracing
 
             app = QApplicationWithTracing(sys.argv)
         else:

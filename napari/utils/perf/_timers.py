@@ -180,7 +180,7 @@ def block_timer(
         print(f"{name} {event.duration_ms:.3f}ms")
 
 
-if USE_PERFMON:
+def _create_timer():
     # The one global instance
     timers = PerfTimers()
 
@@ -215,6 +215,11 @@ if USE_PERFMON:
         """
         timers.add_counter_event(name, **kwargs)
 
+    return timers, perf_timer, add_instant_event, add_counter_event
+
+
+if USE_PERFMON:
+    timers, perf_timer, add_instant_event, add_counter_event = _create_timer()
 
 else:
     # Make sure no one accesses the timers when they are disabled.
