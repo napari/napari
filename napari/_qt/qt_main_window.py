@@ -90,15 +90,15 @@ class Window:
             raise RuntimeError(message)
         perf_config = get_perf_config()
         if perf_config:
-            # if perf_config.trace_qt_events:
-            #     from .perf.qt_event_tracing import convert_app_for_tracing
+            if perf_config.trace_qt_events:
+                from .perf.qt_event_tracing import convert_app_for_tracing
 
-            #     # For tracing Qt events we need a special QApplication. If
-            #     # using `gui_qt` we already have the special one, and no
-            #     # conversion is done here. However when running inside
-            #     # IPython or Jupyter this is where we switch out the
-            #     # QApplication.
-            #     app = convert_app_for_tracing(app)
+                # For tracing Qt events we need a special QApplication. If
+                # using `gui_qt` we already have the special one, and no
+                # conversion is done here. However when running inside
+                # IPython or Jupyter this is where we switch out the
+                # QApplication.
+                app = convert_app_for_tracing(app)
 
             # Will patch based on config file.
             perf_config.patch_callables()

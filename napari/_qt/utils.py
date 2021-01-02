@@ -189,3 +189,20 @@ def combine_widgets(
         return container
     else:
         raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+
+
+def delete_qapp(app):
+    """Delete a QApplication
+
+    Parameters
+    ----------
+    app : qtpy.QApplication
+    """
+    if API_NAME == 'PySide2':
+        import shiboken2
+
+        shiboken2.delete(app)
+    else:
+        import sip
+
+        sip.delete(app)

@@ -12,6 +12,7 @@ from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
 from ...utils import perf
+from ..utils import delete_qapp
 
 
 def convert_app_for_tracing(app: QApplication) -> QApplication:
@@ -34,17 +35,7 @@ def convert_app_for_tracing(app: QApplication) -> QApplication:
         # wrapped C++ method. So we delete the current app and create a new
         # one. This must be done very early before any Qt objects are
         # created or we will crash!
-
-        from qtpy import API_NAME
-
-        if API_NAME == 'PySide2':
-            import shiboken2
-
-            shiboken2.delete(app)
-        else:
-            import sip
-
-            sip.delete(app)
+        delete_qapp(app)
 
     return QApplicationWithTracing(sys.argv)
 
