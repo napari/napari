@@ -1,6 +1,6 @@
-from typing import ClassVar, List, Set
+from typing import Dict, List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 
 
 class MousemapProvider:
@@ -30,7 +30,7 @@ class MousemapProvider:
         self._mouse_wheel_gen = {}
 
 
-class MousemapProviderModel(BaseModel):
+class MousemapProviderMixin(BaseModel):
     """Mix-in to add mouse binding functionality.
 
     Attributes
@@ -44,12 +44,12 @@ class MousemapProviderModel(BaseModel):
     """
 
     # Hold callbacks for when mouse moves with nothing pressed
-    mouse_move_callbacks: ClassVar[List] = Field(default_factory=list)
+    mouse_move_callbacks: List = Field(default_factory=list)
     # Hold callbacks for when mouse is pressed, dragged, and released
-    mouse_drag_callbacks: ClassVar[List] = Field(default_factory=list)
+    mouse_drag_callbacks: List = Field(default_factory=list)
     # Hold callbacks for when mouse wheel is scrolled
-    mouse_wheel_callbacks: ClassVar[List] = Field(default_factory=list)
+    mouse_wheel_callbacks: List = Field(default_factory=list)
 
-    _persisted_mouse_event: Set = Field(default_factory=set)
-    _mouse_drag_gen: Set = Field(default_factory=set)
-    _mouse_wheel_gen: Set = Field(default_factory=set)
+    _persisted_mouse_event: Dict = PrivateAttr(default_factory=dict)
+    _mouse_drag_gen: Dict = PrivateAttr(default_factory=dict)
+    _mouse_wheel_gen: Dict = PrivateAttr(default_factory=dict)

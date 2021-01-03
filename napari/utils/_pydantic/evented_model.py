@@ -35,7 +35,7 @@ class EventedModel(BaseModel):
         # a dict used to customise the way types are encoded to JSON
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         json_encoders = JSON_ENCODERS
-        # comment needed ....
+        # allow extra attributes during model initialization, useful for mixins
         extra = 'allow'
 
     def __init__(self, *args, **kwargs):
