@@ -4,6 +4,7 @@ import numpy as np
 class Array(np.ndarray):
     def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
+
     @classmethod
     def __get_validators__(cls):
         yield cls.validate_type
