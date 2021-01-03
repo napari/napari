@@ -37,9 +37,11 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class _QtMainWindow(QMainWindow):
+    _window_icon = NAPARI_ICON_PATH
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.setWindowIcon(QIcon(NAPARI_ICON_PATH))
+        self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
