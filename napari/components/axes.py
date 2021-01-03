@@ -1,8 +1,7 @@
-from ..utils.pydantic import ConfiguredModel, evented_model
+from ..utils._pydantic import EventedModel
 
 
-@evented_model
-class Axes(ConfiguredModel):
+class Axes(EventedModel):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes

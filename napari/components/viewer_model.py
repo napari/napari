@@ -15,18 +15,17 @@ from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
 from ..utils import config
+from ..utils._pydantic import EventedModel
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.pydantic import ConfiguredModel, evented_model
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
-
-# from ._viewer_mouse_bindings import dims_scroll
+from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
@@ -38,8 +37,8 @@ from .scale_bar import ScaleBar
 DEFAULT_THEME = 'dark'
 
 
-@evented_model
-class ViewerModel(KeymapProvider, MousemapProvider, ConfiguredModel):
+# How to deal with KeymapProvider & MousemapProvider ?????
+class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -66,15 +65,21 @@ class ViewerModel(KeymapProvider, MousemapProvider, ConfiguredModel):
         Contains axes, indices, dimensions and sliders.
     """
 
+    # After https://github.com/samuelcolvin/pydantic/pull/2196 is released
+    # make all of these fields with allow_mutation=False
     axes: Axes = Axes()
     camera: Camera = Camera()
     cursor: Cursor = Cursor()
     dims: Dims = Dims()
     grid: GridCanvas = GridCanvas()
-    layers: LayerList = Field(default_factory=LayerList)
+    layers: LayerList = Field(
+        default_factory=LayerList
+    )  # Need to create custom JSON encoder for layer!
     scale_bar: ScaleBar = ScaleBar()
 
-    active_layer: Optional[Layer] = None
+    active_layer: Optional[
+        Layer
+    ] = None  # Would be nice to remove this/ make it layer name instead of layer?
     help: str = ''
     status: str = 'Ready'
     theme: str = DEFAULT_THEME
@@ -112,7 +117,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, ConfiguredModel):
         self.layers.events.reordered.connect(self._on_layers_change)
 
         # Add mouse callback
-        # self.mouse_wheel_callbacks.append(dims_scroll)
+        self.mouse_wheel_callbacks.append(dims_scroll)
 
     @validator('theme')
     def _valid_theme(cls, v):

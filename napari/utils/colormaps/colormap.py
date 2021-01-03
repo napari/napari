@@ -3,7 +3,7 @@ from enum import Enum
 import numpy as np
 from pydantic import validator
 
-from ..pydantic import Array, ConfiguredModel, evented_model
+from .._pydantic import Array, EventedModel
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 
@@ -22,8 +22,7 @@ class ColormapInterpolationMode(str, Enum):
     ZERO = 'zero'
 
 
-@evented_model
-class Colormap(ConfiguredModel):
+class Colormap(EventedModel):
     """Colormap that relates intensity values to colors.
 
     Attributes

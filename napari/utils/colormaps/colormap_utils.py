@@ -500,4 +500,4 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
 
 def make_default_color_array():
-    return np.zeros(4)
+    return np.array([0, 0, 0, 1])

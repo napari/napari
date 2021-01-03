@@ -4,11 +4,10 @@ import numpy as np
 from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils.pydantic import ConfiguredModel, evented_model
+from ..utils._pydantic import EventedModel
 
 
-@evented_model
-class Dims(ConfiguredModel):
+class Dims(EventedModel):
     """Dimensions object modeling slicing and displaying.
 
     Parameters

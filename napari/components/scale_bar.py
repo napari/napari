@@ -1,9 +1,8 @@
-from ..utils.pydantic import ConfiguredModel, evented_model
+from ..utils._pydantic import EventedModel
 from ._viewer_constants import Position
 
 
-@evented_model
-class ScaleBar(ConfiguredModel):
+class ScaleBar(EventedModel):
     """Scale bar indicating size in world coordinates.
 
     Attributes

@@ -370,7 +370,7 @@ class Tracks(Layer):
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by} not present in"
+                    f"Previous color_by key {self._color_by!r} not present in"
                     " new properties. Falling back to track_id"
                 ),
                 UserWarning,

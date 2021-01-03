@@ -10,9 +10,11 @@ import sys
 from subprocess import SubprocessError, check_call
 from typing import Dict, List, Tuple
 
-from ..utils.theme import _themes
+import napari.resources
 
-RESOURCES_DIR = os.path.abspath(os.path.dirname(__file__))
+from ...utils.theme import _themes
+
+RESOURCES_DIR = os.path.abspath(os.path.dirname(napari.resources.__file__))
 SVGPATH = os.path.join(RESOURCES_DIR, 'icons')
 
 svg_tag_open = re.compile(r'(<svg[^>]*>)')
@@ -218,7 +220,7 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
     #     napari-pyqt5
     for name in _find_rcc_or_raise():
         try:
-            check_call([name, '-o', out_path, qrc_path])
+            check_call([sys.executable, name, '-o', out_path, qrc_path])
             break
         except SubprocessError:
             pass
