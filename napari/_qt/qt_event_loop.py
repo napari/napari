@@ -103,12 +103,12 @@ def get_app(
         app.setOrganizationName(org_name)
         app.setOrganizationDomain(org_domain)
         app.setWindowIcon(QIcon(icon))
+        set_app_id(app_id)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    set_app_id(app_id)
     # see docstring of `wait_for_workers_to_quit` for caveats on killing
     # workers at shutdown.
     app.aboutToQuit.connect(wait_for_workers_to_quit)
