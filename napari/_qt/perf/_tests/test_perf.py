@@ -26,7 +26,13 @@ if (
 
 @pytest.fixture(scope="module")
 def qapp():
-    """A modified QApplicationWithTracing just for this test module."""
+    """A modified QApplicationWithTracing just for this test module.
+
+    Note: Because of the difficulty in destroying a QApplication that overrides
+    .notify() like QApplicationWithTracing does This test must be run last
+    globally, so in napari/conftest.py, we ensure that this test is always last
+    (in `pytest_collection_modifyitems`)
+    """
 
     # before creating QApplicationWithTracing, we need to monkeypatch
     # the `perf.perf_timer` context manager that gets used in the

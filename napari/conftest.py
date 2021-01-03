@@ -378,3 +378,15 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
     @pytest.hookimpl(tryfirst=True)
     def pytest_internalerror(excinfo):
         raise excinfo.value
+
+
+def pytest_collection_modifyitems(session, config, items):
+
+    put_at_end = 'test_trace_on_start'
+    at_end = []
+    for i, item in enumerate(items):
+        if item.name in put_at_end:
+            at_end.append(items.pop(i))
+
+    items.extend([x for _, x in sorted(zip(put_at_end, at_end))])
+    print([i.name for i in items])
