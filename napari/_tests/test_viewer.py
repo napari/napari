@@ -1,10 +1,9 @@
 import os
-import platform
 
 import numpy as np
 import pytest
 
-from napari import Viewer, layers
+from napari import layers
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -196,41 +195,3 @@ def test_toggling_scale_bar(make_test_viewer):
     # Make scale bar not visible
     viewer.scale_bar.visible = False
     assert not viewer.scale_bar.visible
-
-
-@pytest.mark.skipif(platform.system() != "Windows", reason="Windows specific")
-def test_windows_grouping_overwrite(make_test_viewer):
-    import ctypes
-
-    def get_app_id():
-        mem = ctypes.POINTER(ctypes.c_wchar)()
-        ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID(
-            ctypes.byref(mem)
-        )
-        res = ctypes.wstring_at(mem)
-        ctypes.windll.Ole32.CoTaskMemFree(mem)
-        return res
-
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("test_text")
-
-    assert "test_text" == get_app_id()
-
-    class OwnViewer(Viewer):
-        _napari_app_id = "custom_string"
-
-    make_test_viewer(viewer_class=OwnViewer)
-
-    assert OwnViewer._napari_app_id == get_app_id()
-
-    make_test_viewer()
-
-    assert Viewer._napari_app_id == get_app_id()
-
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("test_text")
-
-    class OwnViewer2(Viewer):
-        _napari_app_id = ""
-
-    make_test_viewer(viewer_class=OwnViewer2)
-
-    assert "test_text" == get_app_id()
