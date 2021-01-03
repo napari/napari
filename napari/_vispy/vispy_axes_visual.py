@@ -59,10 +59,14 @@ def make_arrow_head(num_segments, axis):
 
 def color_lines(colors):
     if len(colors) == 2:
-        return np.concatenate([[colors[0]] * 2, [colors[1]] * 2], axis=0,)
+        return np.concatenate(
+            [[colors[0]] * 2, [colors[1]] * 2],
+            axis=0,
+        )
     elif len(colors) == 3:
         return np.concatenate(
-            [[colors[0]] * 2, [colors[1]] * 2, [colors[2]] * 2], axis=0,
+            [[colors[0]] * 2, [colors[1]] * 2, [colors[2]] * 2],
+            axis=0,
         )
     else:
         return ValueError(
@@ -72,7 +76,10 @@ def color_lines(colors):
 
 def color_dashed_lines(colors):
     if len(colors) == 2:
-        return np.concatenate([[colors[0]] * 2, [colors[1]] * 4 * 2], axis=0,)
+        return np.concatenate(
+            [[colors[0]] * 2, [colors[1]] * 4 * 2],
+            axis=0,
+        )
     elif len(colors) == 3:
         return np.concatenate(
             [[colors[0]] * 2, [colors[1]] * 4 * 2, [colors[2]] * 8 * 2],
@@ -87,7 +94,8 @@ def color_dashed_lines(colors):
 def color_arrowheads(colors, num_segments):
     if len(colors) == 2:
         return np.concatenate(
-            [[colors[0]] * num_segments, [colors[1]] * num_segments], axis=0,
+            [[colors[0]] * num_segments, [colors[1]] * num_segments],
+            axis=0,
         )
     elif len(colors) == 3:
         return np.concatenate(
@@ -139,7 +147,8 @@ class VispyAxesVisual:
 
         # note order is x, y, z for VisPy
         self._dashed_line_data2D = np.concatenate(
-            [[[1, 0, 0], [0, 0, 0]], make_dashed_line(4, axis=1)], axis=0,
+            [[[1, 0, 0], [0, 0, 0]], make_dashed_line(4, axis=1)],
+            axis=0,
         )
         self._dashed_line_data3D = np.concatenate(
             [
@@ -290,8 +299,7 @@ class VispyAxesVisual:
         self.text_node.pos = text_data + self._text_offsets
 
     def _on_zoom_change(self, event):
-        """Update axes length based on zoom scale.
-        """
+        """Update axes length based on zoom scale."""
         if not self._axes.visible:
             return
 

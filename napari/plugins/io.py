@@ -118,7 +118,10 @@ def read_data_with_plugins(
 
 
 def save_layers(
-    path: str, layers: List[Layer], *, plugin: Optional[str] = None,
+    path: str,
+    layers: List[Layer],
+    *,
+    plugin: Optional[str] = None,
 ) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 

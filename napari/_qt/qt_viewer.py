@@ -270,8 +270,7 @@ class QtViewer(QSplitter):
             self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
-        """Create the dock widget that shows performance metrics.
-        """
+        """Create the dock widget that shows performance metrics."""
         if perf.USE_PERFMON:
             return QtViewerDockWidget(
                 self,
@@ -284,8 +283,7 @@ class QtViewer(QSplitter):
 
     @property
     def console(self):
-        """QtConsole: iPython console terminal integrated into the napari GUI.
-        """
+        """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             from .widgets.qt_console import QtConsole
 

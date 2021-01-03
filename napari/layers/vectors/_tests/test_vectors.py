@@ -60,8 +60,7 @@ def test_empty_vectors_with_properties():
 
 
 def test_empty_layer_with_edge_colormap():
-    """ Test creating an empty layer where the edge color is a colormap
-    """
+    """Test creating an empty layer where the edge color is a colormap"""
     shape = (0, 2, 2)
     data = np.empty(shape)
     default_properties = {'angle': np.array([1.5], dtype=float)}
@@ -80,13 +79,14 @@ def test_empty_layer_with_edge_colormap():
 
 
 def test_empty_layer_with_edge_color_cycle():
-    """ Test creating an empty layer where the edge color is a color cycle
-    """
+    """Test creating an empty layer where the edge color is a color cycle"""
     shape = (0, 2, 2)
     data = np.empty(shape)
     default_properties = {'vector_type': np.array(['A'])}
     layer = Vectors(
-        data=data, properties=default_properties, edge_color='vector_type',
+        data=data,
+        properties=default_properties,
+        edge_color='vector_type',
     )
 
     assert layer.edge_color_mode == 'cycle'
@@ -351,7 +351,10 @@ def test_edge_color_colormap():
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {'angle': np.array([0, 1.5] * int((shape[0] / 2)))}
     layer = Vectors(
-        data, properties=properties, edge_color='angle', edge_colormap='gray',
+        data,
+        properties=properties,
+        edge_color='angle',
+        edge_colormap='gray',
     )
     assert layer.properties == properties
     assert layer.edge_color_mode == 'colormap'

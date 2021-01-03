@@ -79,7 +79,8 @@ def test_add_layer_magic_name(
     # Tests for issue #1709
     viewer = make_test_viewer()  # noqa: F841
     layer = eval_with_filename(
-        "add_layer_by_type(viewer, layer_class, a_unique_name)", "somefile.py",
+        "add_layer_by_type(viewer, layer_class, a_unique_name)",
+        "somefile.py",
     )
     assert layer.name == "a_unique_name"
 

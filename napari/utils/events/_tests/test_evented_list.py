@@ -29,10 +29,22 @@ def test_list(request, regular_list):
         ('__setitem__', (slice(2), [1, 2]), ('changed',)),  # update slice
         ('__setitem__', (slice(2, 2), [1, 2]), ('changed',)),  # update slice
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
-        ('__delitem__', (slice(2),), ('removing', 'removed') * 2,),
+        (
+            '__delitem__',
+            (slice(2),),
+            ('removing', 'removed') * 2,
+        ),
         ('__delitem__', (slice(0, 0),), ('removing', 'removed')),
-        ('__delitem__', (slice(-3),), ('removing', 'removed') * 2,),
-        ('__delitem__', (slice(-2, None),), ('removing', 'removed') * 2,),
+        (
+            '__delitem__',
+            (slice(-3),),
+            ('removing', 'removed') * 2,
+        ),
+        (
+            '__delitem__',
+            (slice(-2, None),),
+            ('removing', 'removed') * 2,
+        ),
         # inherited interface
         ('append', (3,), ('inserting', 'inserted')),
         ('clear', (), ('removing', 'removed') * 5),
@@ -166,8 +178,7 @@ def test_move_multiple(sources, dest, expectation):
 
 
 def test_move_multiple_mimics_slice_reorder():
-    """Test the that move_multiple provides the same result as slice insertion.
-    """
+    """Test the that move_multiple provides the same result as slice insertion."""
     data = list(range(8))
     el = EventedList(data)
     el.events = Mock(wraps=el.events)
@@ -181,7 +192,9 @@ def test_move_multiple_mimics_slice_reorder():
     assert el == data
     el.events.moving.assert_called_with(index=new_order, new_index=0)
     el.events.moved.assert_called_with(
-        index=new_order, new_index=0, value=new_order,
+        index=new_order,
+        new_index=0,
+        value=new_order,
     )
     el.events.reordered.assert_called_with(value=new_order)
 
@@ -242,9 +255,21 @@ def test_nested_indexing():
         ('__delitem__', ((),), ('removing', 'removed')),  # delete
         ('__delitem__', ((1,),), ('removing', 'removed')),  # delete
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
-        ('__delitem__', (slice(2),), ('removing', 'removed') * 2,),
-        ('__delitem__', (slice(-1),), ('removing', 'removed') * 2,),
-        ('__delitem__', (slice(-2, None),), ('removing', 'removed') * 2,),
+        (
+            '__delitem__',
+            (slice(2),),
+            ('removing', 'removed') * 2,
+        ),
+        (
+            '__delitem__',
+            (slice(-1),),
+            ('removing', 'removed') * 2,
+        ),
+        (
+            '__delitem__',
+            (slice(-2, None),),
+            ('removing', 'removed') * 2,
+        ),
         # inherited interface
         ('append', (3,), ('inserting', 'inserted')),
         ('clear', (), ('removing', 'removed') * 3),

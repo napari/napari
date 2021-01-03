@@ -1,17 +1,17 @@
 repos:
 -   repo: https://github.com/pycqa/isort
-    rev: 5.3.2
+    rev: 5.7.0
     hooks:
     - id: isort
       exclude: _vendor|vendored|examples
 -   repo: https://github.com/python/black
-    rev: 19.10b0
+    rev: 20.8b1
     hooks:
     - id: black
       pass_filenames: true
       exclude: _vendor|vendored|examples
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.3
+    rev: 3.8.4
     hooks:
     - id: flake8
       pass_filenames: true

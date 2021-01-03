@@ -311,7 +311,10 @@ def write_csv(
     """
     with open(filename, mode='w', newline='') as csvfile:
         writer = csv.writer(
-            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+            csvfile,
+            delimiter=',',
+            quotechar='"',
+            quoting=csv.QUOTE_MINIMAL,
         )
         if column_names is not None:
             writer.writerow(column_names)

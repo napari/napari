@@ -259,7 +259,9 @@ class NestableEventedList(EventedList[_T]):
         return dest_index
 
     def move_multiple(
-        self, sources: Sequence[NestedIndex], dest_index: NestedIndex = (0,),
+        self,
+        sources: Sequence[NestedIndex],
+        dest_index: NestedIndex = (0,),
     ) -> int:
         """Move a batch of nested indices, to a single destination.
 

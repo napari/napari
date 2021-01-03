@@ -127,8 +127,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def palette(self):
-        """Dict[str, str]: Color palette for styling the viewer.
-        """
+        """Dict[str, str]: Color palette for styling the viewer."""
         warnings.warn(
             (
                 "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
@@ -162,8 +161,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def theme(self):
-        """string or None : Color theme.
-        """
+        """string or None : Color theme."""
         return self._theme
 
     @theme.setter
@@ -235,8 +233,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def status(self):
-        """string: Status string
-        """
+        """string: Status string"""
         return self._status
 
     @status.setter
@@ -262,8 +259,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def title(self):
-        """string: String that is displayed in window title.
-        """
+        """string: String that is displayed in window title."""
         return self._title
 
     @title.setter
@@ -300,8 +296,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     @property
     def active_layer(self):
-        """int: index of active_layer
-        """
+        """int: index of active_layer"""
         return self._active_layer
 
     @active_layer.setter
@@ -399,8 +394,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             )
 
     def _toggle_theme(self):
-        """Switch to next theme in list of themes
-        """
+        """Switch to next theme in list of themes"""
         theme_names = available_themes()
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
@@ -522,8 +516,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.grid.enabled = True
 
     def stack_view(self):
-        """Arrange the current layers in a stack.
-        """
+        """Arrange the current layers in a stack."""
         warnings.warn(
             (
                 "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."

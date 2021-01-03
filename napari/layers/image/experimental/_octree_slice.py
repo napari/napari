@@ -196,7 +196,8 @@ class OctreeSlice:
             # The original load finished, but we are now showing a new slice.
             # Don't consider it error, just ignore the chunk.
             LOGGER.debug(
-                "on_chunk_loaded: wrong slice_id: %s", location,
+                "on_chunk_loaded: wrong slice_id: %s",
+                location,
             )
             return False  # Do not add the chunk.
 
@@ -208,7 +209,8 @@ class OctreeSlice:
             # OctreeChunk's when a load is initiated. So this is an error,
             # but log it and keep going, maybe some transient weirdness.
             LOGGER.error(
-                "on_chunk_loaded: missing OctreeChunk: %s", octree_chunk,
+                "on_chunk_loaded: missing OctreeChunk: %s",
+                octree_chunk,
             )
             return False  # Did not add the chunk.
 
