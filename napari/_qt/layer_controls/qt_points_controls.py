@@ -187,7 +187,7 @@ class QtPointsControls(QtLayerControls):
         self.layer.status = self.layer.mode
 
     def _on_mode_change(self, event):
-        """ "Update ticks in checkbox widgets when points layer mode is changed.
+        """Update ticks in checkbox widgets when points layer mode is changed.
 
         Available modes for points layer are:
         * ADD
