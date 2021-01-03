@@ -1,12 +1,9 @@
 import numpy as np
 
 
-class _ArrayMeta(type):
-    def __getitem__(self, t):
+class Array(np.ndarray):
+    def __class_getitem__(cls, t):
         return type('Array', (Array,), {'__dtype__': t})
-
-
-class Array(np.ndarray, metaclass=_ArrayMeta):
     @classmethod
     def __get_validators__(cls):
         yield cls.validate_type
