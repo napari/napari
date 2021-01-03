@@ -22,28 +22,19 @@ custom_app_kwargs = {
 }
 
 
-@pytest.fixture(scope='module')
-def qapp(request):
+@pytest.fixture(scope="module")
+def qapp():
     yield get_app(**custom_app_kwargs)
 
 
 # @pytest.mark.skipif(LINUX_CI_PYSIDE, "Can't recreate pyside QApp on CI linux")
 def test_get_app(qtbot):
     """Test that calling get_app defines the attributes of the QApp."""
-    app = None
-
-    def _assert():
-        assert app.applicationName() == custom_app_kwargs.get("app_name")
-        assert app.applicationVersion() == custom_app_kwargs.get("app_version")
-        assert app.organizationName() == custom_app_kwargs.get("org_name")
-        assert app.organizationDomain() == custom_app_kwargs.get("org_domain")
-
     app = get_app()
-    _assert()
-
-    # QApp is a singleton, calling a second time has no effect
-    app = get_app(app_name='x', app_version='x', org_name='x', org_domain='x')
-    _assert()
+    assert app.applicationName() == custom_app_kwargs.get("app_name")
+    assert app.applicationVersion() == custom_app_kwargs.get("app_version")
+    assert app.organizationName() == custom_app_kwargs.get("org_name")
+    assert app.organizationDomain() == custom_app_kwargs.get("org_domain")
 
 
 @pytest.mark.skipif(os.name != "Windows", reason="Windows specific")
