@@ -16,11 +16,23 @@ class EventedModel(BaseModel):
     # Definte the config so that assigments are validated
     # and add custom encoders
     class Config:
+        # whether to allow arbitrary user types for fields (they are validated
+        # simply by checking if the value is an instance of the type). If
+        # False, RuntimeError will be raised on model declaration
         arbitrary_types_allowed = True
+        # whether to perform validation on assignment to attributes
         validate_assignment = True
+        # whether to treat any underscore non-class var attrs as private
+        # https://pydantic-docs.helpmanual.io/usage/models/#private-model-attributes
         underscore_attrs_are_private = True
+        # whether to populate models with the value property of enums, rather
+        # than the raw enum. This may be useful if you want to serialise
+        # model.dict() later
         use_enum_values = True
+        # whether to validate field defaults (default: False)
         validate_all = True
+        # a dict used to customise the way types are encoded to JSON
+        # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         json_encoders = JSON_ENCODERS
 
     def __init__(self, *args, **kwargs):
