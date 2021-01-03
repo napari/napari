@@ -4,7 +4,7 @@ import sys
 import pytest
 import qtpy
 
-from napari._qt.qt_event_loop import __version__, get_app, set_app_id
+from napari._qt.qt_event_loop import get_app, set_app_id
 
 LINUX_CI_PYSIDE = bool(
     sys.platform.startswith('linux')
@@ -13,35 +13,30 @@ LINUX_CI_PYSIDE = bool(
 )
 
 
-@pytest.fixture
-def qapp(request):
-    yield get_app(**request.getfixturevalue('app_kwargs'))
-
-
-custom = {
+custom_app_kwargs = {
     'app_name': 'custom',
     'app_version': 'custom',
     'icon': 'custom',
     'org_name': 'custom',
-    'org_domain': 'custom',
+    'org_domain': 'custom.com',
 }
 
 
+@pytest.fixture(scope='module')
+def qapp(request):
+    yield get_app(**custom_app_kwargs)
+
+
 # @pytest.mark.skipif(LINUX_CI_PYSIDE, "Can't recreate pyside QApp on CI linux")
-@pytest.mark.parametrize('app_kwargs', [{}, custom], ids=['default', 'custom'])
-def test_get_app(qtbot, app_kwargs):
+def test_get_app(qtbot):
     """Test that calling get_app defines the attributes of the QApp."""
     app = None
 
     def _assert():
-        assert app.applicationName() == app_kwargs.get("app_name", 'napari')
-        assert app.applicationVersion() == app_kwargs.get(
-            "app_version", __version__
-        )
-        assert app.organizationName() == app_kwargs.get("org_name", 'napari')
-        assert app.organizationDomain() == app_kwargs.get(
-            "org_domain", 'napari.org'
-        )
+        assert app.applicationName() == custom_app_kwargs.get("app_name")
+        assert app.applicationVersion() == custom_app_kwargs.get("app_version")
+        assert app.organizationName() == custom_app_kwargs.get("org_name")
+        assert app.organizationDomain() == custom_app_kwargs.get("org_domain")
 
     app = get_app()
     _assert()
