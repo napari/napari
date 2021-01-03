@@ -26,25 +26,55 @@ def set_app_id(app_id):
 
 
 def get_app(
-    app_name='napari',
-    app_version=__version__,
-    icon=NAPARI_ICON_PATH,
-    org_name='napari',
-    org_domain='napari.org',
-    app_id=NAPARI_APP_ID,
+    app_name: str = 'napari',
+    app_version: str = __version__,
+    icon: str = NAPARI_ICON_PATH,
+    org_name: str = 'napari',
+    org_domain: str = 'napari.org',
+    app_id: str = NAPARI_APP_ID,
 ) -> QApplication:
-    """Get or create the Qt QApplication
+    """Get or create the Qt QApplication.
+
+    There is only one global QApplication instance, which can be retrieved by
+    calling get_app again, (or by using QApplication.instance())
+
+    Parameters
+    ----------
+    app_name : str, optional
+        Set app name (if creating for the first time), by default 'napari'
+    app_version : str, optional
+        Set app version (if creating for the first time), by default __version__
+    icon : str, optional
+        Set app icon (if creating for the first time), by default
+        NAPARI_ICON_PATH
+    org_name : str, optional
+        Set organization name (if creating for the first time), by default
+        'napari'
+    org_domain : str, optional
+        Set organization domain (if creating for the first time), by default
+        'napari.org'
+    app_id : str, optional
+        Set organization domain (if creating for the first time).  Will be
+        passed to set_app_id (which may also be called independently), by
+        default NAPARI_APP_ID
+
+    Returns
+    -------
+    QApplication
+        [description]
 
     Notes
     -----
-    Substitute QApplicationWithTracing when using perfmon.
+    Substitutes QApplicationWithTracing when the NAPARI_PERFMON env variable
+    is set.
 
-    With IPython/Jupyter we call convert_app_for_tracing() which deletes
-    the QApplication and creates a new one. However here with gui_qt we
-    need to create the correct QApplication up front, or we will crash because
-    we'd be deleting the QApplication after we created QWidgets with it,
-    such as we do for the splash screen.
+    If the QApplication already exists, we call convert_app_for_tracing() which
+    deletes the QApplication and creates a new one. However here with get_app
+    we need to create the correct QApplication up front, or we will crash
+    because we'd be deleting the QApplication after we created QWidgets with
+    it, such as we do for the splash screen.
     """
+
     app = QApplication.instance()
     if app:
         if perf_config and perf_config.trace_qt_events:
