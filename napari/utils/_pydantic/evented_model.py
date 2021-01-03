@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import ClassVar, Dict, Set
 
 from pydantic import BaseModel, PrivateAttr
 
@@ -12,9 +12,10 @@ class EventedModel(BaseModel):
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
     __equality_checks__: Dict = PrivateAttr(default_factory=dict)
+    __slots__: ClassVar[Set[str]] = {"__weakref__"}
 
-    # Definte the config so that assigments are validated
-    # and add custom encoders
+    # pydantic BaseModel configuration.  see:
+    # https://pydantic-docs.helpmanual.io/usage/model_config/
     class Config:
         # whether to allow arbitrary user types for fields (they are validated
         # simply by checking if the value is an instance of the type). If
@@ -38,12 +39,9 @@ class EventedModel(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # get fields and add to EmitterGroup
-        _fields = list(self.__fields__)
-        e_fields = {fld: None for fld in _fields}
-
         # add events for each field
-        self.events.add(**e_fields)
+        self._events.source = self
+        self._events.add(**dict.fromkeys(self.__fields__))
 
         # create dict with compare functions for fields which cannot be compared
         # using standard equal operator, like numpy arrays.
