@@ -393,7 +393,7 @@ class QtViewer(QSplitter):
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise IOError("Nothing to save")
+            raise OSError("Nothing to save")
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
@@ -408,7 +408,7 @@ class QtViewer(QSplitter):
                     [str(x.message.args[0]) for x in wa]
                 )
             if not saved:
-                raise IOError(
+                raise OSError(
                     f"File {filename} save failed.\n{error_messages}"
                 )
 

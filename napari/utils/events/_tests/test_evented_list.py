@@ -225,8 +225,7 @@ def flatten(container):
     """
     for i in container:
         if isinstance(i, MutableSequence):
-            for j in flatten(i):
-                yield j
+            yield from flatten(i)
         else:
             yield i
 

@@ -389,7 +389,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(e, list):
             return self.__newlike__(e)
         if self._basetypes:
-            _types = set(self._basetypes) | set([NestableEventedList])
+            _types = set(self._basetypes) | {NestableEventedList}
             if not any(isinstance(e, t) for t in _types):
                 raise TypeError(
                     f'Cannot add object with type {type(e)!r} to '

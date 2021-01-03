@@ -37,7 +37,7 @@ elif MACOS:
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
 
 
-with open(PYPROJECT_TOML, 'r') as f:
+with open(PYPROJECT_TOML) as f:
     original_toml = f.read()
 
 with open(os.path.join(HERE, "napari", "_version.py")) as f:
@@ -92,7 +92,7 @@ def patch_dmgbuild():
 
     # will not be required after dmgbuild > v1.3.3
     # see https://github.com/al45tair/dmgbuild/pull/18
-    with open(core.__file__, 'r') as f:
+    with open(core.__file__) as f:
         src = f.read()
     with open(core.__file__, 'w') as f:
         f.write(
@@ -145,7 +145,7 @@ def patch_wxs():
     fname = os.path.join(BUILD_DIR, APP, f'{APP}.wxs')
 
     if os.path.exists(fname):
-        with open(fname, 'r') as f:
+        with open(fname) as f:
             source = f.read()
         with open(fname, 'w') as f:
             f.write(source.replace('pythonw.exe', 'python.exe'))

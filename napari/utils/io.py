@@ -338,11 +338,11 @@ def guess_layer_type_from_column_names(
         Layer type if recognized, otherwise None.
     """
 
-    if set(
-        ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
-    ).issubset(column_names):
+    if {'index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1'}.issubset(
+        column_names
+    ):
         return 'shapes'
-    elif set(['axis-0', 'axis-1']).issubset(column_names):
+    elif {'axis-0', 'axis-1'}.issubset(column_names):
         return 'points'
     else:
         return None

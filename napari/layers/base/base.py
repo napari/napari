@@ -229,11 +229,9 @@ class Layer(KeymapProvider, ABC):
             data2world_transform = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine, '
-                    f'ndarray, or None. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine, '
+                f'ndarray, or None. Got {type(affine)}'
             )
 
         self._transforms = TransformChain(
@@ -450,11 +448,9 @@ class Layer(KeymapProvider, ABC):
             self._transforms['data2world'] = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine '
-                    f'or ndarray. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine '
+                f'or ndarray. Got {type(affine)}'
             )
         self._update_dims()
         self.events.affine()

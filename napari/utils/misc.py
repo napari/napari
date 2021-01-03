@@ -279,7 +279,7 @@ class CallDefault(inspect.Parameter):
             self._default is not inspect._empty
             or kind == inspect._KEYWORD_ONLY
         ):
-            formatted = '{}={}'.format(formatted, formatted)
+            formatted = f'{formatted}={formatted}'
 
         if kind == inspect._VAR_POSITIONAL:
             formatted = '*' + formatted
@@ -309,7 +309,7 @@ class CallSignature(inspect.Signature):
 
         if self.return_annotation is not inspect._empty:
             anno = inspect.formatannotation(self.return_annotation)
-            rendered += ' -> {}'.format(anno)
+            rendered += f' -> {anno}'
 
         return rendered
 

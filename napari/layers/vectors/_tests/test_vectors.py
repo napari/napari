@@ -330,7 +330,7 @@ def test_edge_color_cycle():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'vector_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     color_cycle = ['red', 'blue']
     layer = Vectors(
         data,
@@ -339,7 +339,7 @@ def test_edge_color_cycle():
         edge_color_cycle=color_cycle,
     )
     np.testing.assert_equal(layer.properties, properties)
-    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)
 
 
@@ -349,7 +349,7 @@ def test_edge_color_colormap():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'angle': np.array([0, 1.5] * int((shape[0] / 2)))}
+    properties = {'angle': np.array([0, 1.5] * int(shape[0] / 2))}
     layer = Vectors(
         data,
         properties=properties,
@@ -358,9 +358,7 @@ def test_edge_color_colormap():
     )
     assert layer.properties == properties
     assert layer.edge_color_mode == 'colormap'
-    edge_color_array = transform_color(
-        ['black', 'white'] * int((shape[0] / 2))
-    )
+    edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)
 
     # change the color cycle - edge_color should not change
@@ -390,7 +388,7 @@ def test_edge_color_map_non_numeric_property():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'vector_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     color_cycle = ['red', 'blue']
     initial_color = [0, 1, 0, 1]
     layer = Vectors(
@@ -421,7 +419,7 @@ def test_switching_edge_color_mode():
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {
         'magnitude': np.arange(shape[0]),
-        'vector_type': np.array(['A', 'B'] * int((shape[0] / 2))),
+        'vector_type': np.array(['A', 'B'] * int(shape[0] / 2)),
     }
     color_cycle = ['red', 'blue']
     initial_color = [0, 1, 0, 1]
@@ -452,7 +450,7 @@ def test_switching_edge_color_mode():
     # switch to color cycle
     layer.edge_color_mode = 'cycle'
     layer.edge_color = 'vector_type'
-    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(layer.edge_color, edge_color_array)
 
     # switch back to direct, edge_colors shouldn't change

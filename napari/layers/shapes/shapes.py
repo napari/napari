@@ -943,12 +943,7 @@ class Shapes(Layer):
                     self.current_edge_color = edge_color
 
             edge_width = list(
-                set(
-                    [
-                        self._data_view.shapes[i].edge_width
-                        for i in selected_data
-                    ]
-                )
+                {self._data_view.shapes[i].edge_width for i in selected_data}
             )
             if len(edge_width) == 1:
                 edge_width = edge_width[0]

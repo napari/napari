@@ -1283,9 +1283,7 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_face_color = face_color
 
-        size = list(
-            set([self.size[i, self._dims_displayed].mean() for i in index])
-        )
+        size = list({self.size[i, self._dims_displayed].mean() for i in index})
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():

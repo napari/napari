@@ -830,7 +830,7 @@ def test_switch_color_mode(attribute):
     setattr(layer, f'{attribute}_color_mode', 'cycle')
     setattr(layer, f'{attribute}_color', 'shape_type')
     color = getattr(layer, f'{attribute}_color')
-    layer_color = transform_color(color_cycle * int((shape[0] / 2)))
+    layer_color = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(color, layer_color)
 
     # switch back to direct, edge_colors shouldn't change
@@ -1074,7 +1074,7 @@ def test_color_colormap(attribute):
     assert layer.properties == properties
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
-    color_array = transform_color(['black', 'white'] * int((shape[0] / 2)))
+    color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.all(attribute_color == color_array)
 

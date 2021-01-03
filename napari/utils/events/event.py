@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
@@ -50,7 +49,6 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 
-from __future__ import division
 
 import inspect
 import traceback
@@ -62,7 +60,7 @@ from typing import Any
 from vispy.util.logs import _handle_exception, logger
 
 
-class Event(object):
+class Event:
 
     """Class describing events that occur and can be reacted to with callbacks.
     Each event instance contains information about a single event that has
@@ -175,8 +173,8 @@ class Event(object):
                     continue
                 attr = getattr(self, name)
 
-                attrs.append("%s=%s" % (name, attr))
-            return "<%s %s>" % (self.__class__.__name__, " ".join(attrs))
+                attrs.append(f"{name}={attr}")
+            return "<{} {}>".format(self.__class__.__name__, " ".join(attrs))
         finally:
             _event_repr_depth -= 1
 
@@ -192,7 +190,7 @@ class Event(object):
 _event_repr_depth = 0
 
 
-class EventEmitter(object):
+class EventEmitter:
 
     """Encapsulates a list of event callbacks.
 
@@ -784,8 +782,7 @@ class EmitterGroup(EventEmitter):
         """
         Iterates over the names of emitters in this group.
         """
-        for k in self._emitters:
-            yield k
+        yield from self._emitters
 
     def block_all(self):
         """Block all emitters in this group."""
@@ -863,7 +860,7 @@ class EmitterGroup(EventEmitter):
         return EventBlockerAll(self)
 
 
-class EventBlocker(object):
+class EventBlocker:
 
     """Represents a block for an EventEmitter to be used in a context
     manager (i.e. 'with' statement).
@@ -880,7 +877,7 @@ class EventBlocker(object):
         self.target.unblock(self.callback)
 
 
-class EventBlockerAll(object):
+class EventBlockerAll:
 
     """Represents a block_all for an EmitterGroup to be used in a context
     manager (i.e. 'with' statement).
