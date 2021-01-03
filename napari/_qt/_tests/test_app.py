@@ -3,8 +3,10 @@ import sys
 
 import pytest
 import qtpy
+from qtpy.QtWidgets import QApplication
 
-from napari._qt.qt_event_loop import get_app, set_app_id
+from napari._qt.qt_event_loop import __version__, get_app, set_app_id
+from napari._qt.utils import delete_qapp
 
 LINUX_CI_PYSIDE = bool(
     sys.platform.startswith('linux')
@@ -13,7 +15,7 @@ LINUX_CI_PYSIDE = bool(
 )
 
 
-custom_app_kwargs = {
+custom = {
     'app_name': 'custom',
     'app_version': 'custom',
     'icon': 'custom',
@@ -22,19 +24,35 @@ custom_app_kwargs = {
 }
 
 
-@pytest.fixture(scope="module")
-def qapp():
-    yield get_app(**custom_app_kwargs)
+@pytest.fixture
+def qapp(request):
+    if QApplication.instance():
+        delete_qapp(QApplication.instance())
+    yield get_app(**request.getfixturevalue('app_kwargs'))
 
 
 # @pytest.mark.skipif(LINUX_CI_PYSIDE, "Can't recreate pyside QApp on CI linux")
-def test_get_app(qtbot):
+@pytest.mark.parametrize('app_kwargs', [custom, {}], ids=['custom', 'default'])
+def test_get_app(qtbot, app_kwargs):
     """Test that calling get_app defines the attributes of the QApp."""
+    app = None
+
+    def _assert():
+        assert app.applicationName() == app_kwargs.get("app_name", 'napari')
+        assert app.applicationVersion() == app_kwargs.get(
+            "app_version", __version__
+        )
+        assert app.organizationName() == app_kwargs.get("org_name", 'napari')
+        assert app.organizationDomain() == app_kwargs.get(
+            "org_domain", 'napari.org'
+        )
+
     app = get_app()
-    assert app.applicationName() == custom_app_kwargs.get("app_name")
-    assert app.applicationVersion() == custom_app_kwargs.get("app_version")
-    assert app.organizationName() == custom_app_kwargs.get("org_name")
-    assert app.organizationDomain() == custom_app_kwargs.get("org_domain")
+    _assert()
+
+    # QApp is a singleton, calling a second time has no effect
+    app = get_app(app_name='x', app_version='x', org_name='x', org_domain='x')
+    _assert()
 
 
 @pytest.mark.skipif(os.name != "Windows", reason="Windows specific")

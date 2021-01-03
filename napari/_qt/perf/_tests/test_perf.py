@@ -1,6 +1,7 @@
 import json
-import os
-import sys
+
+# import os
+# import sys
 from pathlib import Path
 
 import numpy as np
@@ -12,16 +13,16 @@ from napari._qt.perf import qt_event_tracing
 from napari._qt.utils import delete_qapp
 from napari.utils import perf
 
-if (
-    sys.platform.startswith('linux')
-    and os.getenv('CI', '0') != '0'
-    and qtpy.API_NAME == "PySide2"
-):
-    # this test is covered by other platforms, and also seems to work locally
-    # on linux
-    pytest.skip(
-        "Perfmon segfaults on linux CI with pyside2", allow_module_level=True
-    )
+# if (
+#     sys.platform.startswith('linux')
+#     and os.getenv('CI', '0') != '0'
+#     and qtpy.API_NAME == "PySide2"
+# ):
+#     # this test is covered by other platforms, and also seems to work locally
+#     # on linux
+#     pytest.skip(
+#         "Perfmon segfaults on linux CI with pyside2", allow_module_level=True
+#     )
 
 
 @pytest.fixture(scope="module")
@@ -29,9 +30,9 @@ def qapp():
     """A modified QApplicationWithTracing just for this test module.
 
     Note: Because of the difficulty in destroying a QApplication that overrides
-    .notify() like QApplicationWithTracing does This test must be run last
-    globally, so in napari/conftest.py, we ensure that this test is always last
-    (in `pytest_collection_modifyitems`)
+    .notify() like QApplicationWithTracing does, this test must be run last
+    (globally).  So in napari/conftest.py::pytest_collection_modifyitems,
+    we ensure that this test is always last.
     """
 
     # before creating QApplicationWithTracing, we need to monkeypatch
