@@ -3,8 +3,6 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import os
-import platform
-import sys
 import time
 
 from qtpy.QtCore import Qt
@@ -18,11 +16,9 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QShortcut,
-    QStatusBar,
     QWidget,
 )
 
-from .. import __version__
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -32,12 +28,23 @@ from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
-from .qt_event_loop import get_app
+from .qt_event_loop import NAPARI_ICON_PATH, get_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+
+
+class _QtMainWindow(QMainWindow):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.setWindowIcon(QIcon(NAPARI_ICON_PATH))
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setUnifiedTitleAndToolBarOnMac(True)
+        center = QWidget(self)
+        center.setLayout(QHBoxLayout())
+        self.setCentralWidget(center)
 
 
 class Window:
@@ -68,59 +75,22 @@ class Window:
 
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        app = get_app()
-
-        # TODO: We should move this stuff to `get_app` logic
-        # but it's currently tied to attributes on the viewer instance
-        # >>>>>>>>>>>>>>>>>>
-        _napari_app_id = getattr(
-            viewer,
-            "_napari_app_id",
-            'napari.napari.viewer.' + str(__version__),
-        )
-        if (
-            platform.system() == "Windows"
-            and not getattr(sys, 'frozen', False)
-            and _napari_app_id
-        ):
-            import ctypes
-
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                _napari_app_id
-            )
-
-        logopath = os.path.join(
-            os.path.dirname(__file__), '..', 'resources', 'logo.png'
-        )
-
-        if getattr(viewer, "_napari_global_logo", True):
-            app = QApplication.instance()
-            app.setWindowIcon(QIcon(logopath))
-        # <<<<<<<<<<<<<<<<<<<
+        get_app()
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
-
-        self._qt_window = QMainWindow()
-        self._qt_window.setWindowIcon(QIcon(logopath))
-        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
-        self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
+        self._qt_window = _QtMainWindow()
+        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
+        self._qt_center = self._qt_window.centralWidget()
+        self._status_bar = self._qt_window.statusBar()
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
             self._qt_window.windowHandle().screenChanged.connect(
                 self.qt_viewer.canvas._backend.screen_changed
             )
-        self._qt_center = QWidget(self._qt_window)
-
-        self._qt_window.setCentralWidget(self._qt_center)
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
-        self._qt_center.setLayout(QHBoxLayout())
-        self._status_bar = QStatusBar()
-        self._qt_window.setStatusBar(self._status_bar)
 
         self._add_menubar()
-
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()

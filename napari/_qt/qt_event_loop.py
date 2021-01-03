@@ -1,17 +1,38 @@
+import os
 import sys
 from contextlib import contextmanager
-from os.path import dirname, join
 
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
+
+from napari import __version__
 
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 from .qthreading import wait_for_workers_to_quit
 
+NAPARI_ICON_PATH = os.path.join(
+    os.path.dirname(__file__), '..', 'resources', 'logo.png'
+)
+NAPARI_APP_ID = f'napari.napari.viewer.{__version__}'
 
-def get_app() -> QApplication:
+
+def set_app_id(app_id):
+    if os.name == "nt" and app_id and not getattr(sys, 'frozen', False):
+        import ctypes
+
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
+
+def get_app(
+    app_name='napari',
+    app_version=__version__,
+    icon=NAPARI_ICON_PATH,
+    org_name='napari',
+    org_domain='napari.org',
+    app_id=NAPARI_APP_ID,
+) -> QApplication:
     """Get or create the Qt QApplication
 
     Notes
@@ -46,17 +67,18 @@ def get_app() -> QApplication:
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
-        from napari import __version__
 
-        app.setApplicationName('napari')
-        app.setApplicationVersion(__version__)
-        app.setOrganizationName('napari')
-        app.setOrganizationDomain('napari.org')
+        app.setApplicationName(app_name)
+        app.setApplicationVersion(app_version)
+        app.setOrganizationName(org_name)
+        app.setOrganizationDomain(org_domain)
+        app.setWindowIcon(QIcon(icon))
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
 
+    set_app_id(app_id)
     # see docstring of `wait_for_workers_to_quit` for caveats on killing
     # workers at shutdown.
     app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -90,8 +112,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
 
     app = get_app()
     if startup_logo and app.applicationName() == 'napari':
-        logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
-        pm = QPixmap(logopath).scaled(
+        pm = QPixmap(NAPARI_ICON_PATH).scaled(
             360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
         splash_widget = QSplashScreen(pm)
