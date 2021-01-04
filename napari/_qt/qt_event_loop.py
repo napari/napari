@@ -25,13 +25,24 @@ def set_app_id(app_id):
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
 
+_defaults = {
+    'app_name': 'napari',
+    'app_version': __version__,
+    'icon': NAPARI_ICON_PATH,
+    'org_name': 'napari',
+    'org_domain': 'napari.org',
+    'app_id': NAPARI_APP_ID,
+}
+
+
 def get_app(
-    app_name: str = 'napari',
-    app_version: str = __version__,
-    icon: str = NAPARI_ICON_PATH,
-    org_name: str = 'napari',
-    org_domain: str = 'napari.org',
-    app_id: str = NAPARI_APP_ID,
+    *,
+    app_name: str = None,
+    app_version: str = None,
+    icon: str = None,
+    org_name: str = None,
+    org_domain: str = None,
+    app_id: str = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -74,9 +85,20 @@ def get_app(
     because we'd be deleting the QApplication after we created QWidgets with
     it, such as we do for the splash screen.
     """
+    # napari defaults are all-or nothing.  If any of the keywords are used
+    # then they are all used.
+    set_values = {k for k, v in locals().items() if v}
+    kwargs = locals() if set_values else _defaults
 
     app = QApplication.instance()
     if app:
+        if set_values:
+            from warnings import warn
+
+            warn(
+                "QApplication already existed, these arguments to to 'get_app'"
+                " were ignored: {}".format(set_values)
+            )
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import convert_app_for_tracing
 
@@ -98,12 +120,12 @@ def get_app(
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
 
-        app.setApplicationName(app_name)
-        app.setApplicationVersion(app_version)
-        app.setOrganizationName(org_name)
-        app.setOrganizationDomain(org_domain)
-        app.setWindowIcon(QIcon(icon))
-        set_app_id(app_id)
+        app.setApplicationName(kwargs.get('app_name'))
+        app.setApplicationVersion(kwargs.get('app_version'))
+        app.setOrganizationName(kwargs.get('org_name'))
+        app.setOrganizationDomain(kwargs.get('org_domain'))
+        app.setWindowIcon(QIcon(kwargs.get('icon')))
+        set_app_id(kwargs.get('app_id'))
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
