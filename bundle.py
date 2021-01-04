@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import time
+from contextlib import contextmanager
 
 import tomlkit
 
@@ -18,8 +19,14 @@ APP = 'napari'
 # PySide2:
 # python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
 
-EXTRA_REQS = ["pip", "PySide2==5.14.2.3", "scikit-image", "zarr", "pims"]
-
+EXTRA_REQS = [
+    "pip",
+    "PySide2==5.15.2",
+    "scikit-image",
+    "zarr",
+    "pims",
+    "numpy==1.19.3",
+]
 
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
@@ -37,21 +44,21 @@ elif MACOS:
     APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
 
 
-with open(PYPROJECT_TOML, 'r') as f:
-    original_toml = f.read()
-
 with open(os.path.join(HERE, "napari", "_version.py")) as f:
     match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
     if match:
         VERSION = match.groups()[0].split('+')[0]
 
 
-def patch_toml():
+@contextmanager
+def patched_toml():
     parser = configparser.ConfigParser()
     parser.read(SETUP_CFG)
     requirements = parser.get("options", "install_requires").splitlines()
     requirements = [r.split('#')[0].strip() for r in requirements if r]
-    requirements += EXTRA_REQS
+
+    with open(PYPROJECT_TOML, 'r') as f:
+        original_toml = f.read()
 
     toml = tomlkit.parse(original_toml)
 
@@ -60,18 +67,22 @@ def patch_toml():
         for item in sys.argv[sys.argv.index('--add') + 1 :]:
             if item.startswith('-'):
                 break
-            _base = re.split('<|>|=', item, maxsplit=1)[0]
-            for r in requirements:
-                if r.startswith(_base):
-                    requirements.remove(r)
-                    break
-            if _base.lower().startswith('pyqt5'):
-                try:
-                    i = next(x for x in requirements if x.startswith('PySide'))
-                    requirements.remove(i)
-                except StopIteration:
-                    pass
-            requirements.append(item)
+            EXTRA_REQS.append(item)
+
+    for item in EXTRA_REQS:
+        _base = re.split('<|>|=', item, maxsplit=1)[0]
+        for r in requirements:
+            if r.startswith(_base):
+                requirements.remove(r)
+                break
+        if _base.lower().startswith('pyqt5'):
+            try:
+                i = next(x for x in requirements if x.startswith('PySide'))
+                requirements.remove(i)
+            except StopIteration:
+                pass
+
+    requirements += EXTRA_REQS
 
     toml['tool']['briefcase']['app'][APP]['requires'] = requirements
     toml['tool']['briefcase']['version'] = VERSION
@@ -83,6 +94,12 @@ def patch_toml():
     )
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
+
+    try:
+        yield
+    finally:
+        with open(PYPROJECT_TOML, 'w') as f:
+            f.write(original_toml)
 
 
 def patch_dmgbuild():
@@ -183,18 +200,18 @@ def bundle():
 
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
-    patch_toml()
 
-    # create
-    cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
-    subprocess.check_call(cmd)
+    with patched_toml():
+        # create
+        cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
+        subprocess.check_call(cmd)
 
-    time.sleep(0.5)
+        time.sleep(0.5)
 
-    add_site_packages_to_path()
+        add_site_packages_to_path()
 
-    if WINDOWS:
-        patch_wxs()
+        if WINDOWS:
+            patch_wxs()
 
     # build
     cmd = ['briefcase', 'build'] + (['--no-docker'] if LINUX else [])
@@ -208,9 +225,6 @@ def bundle():
     # compress
     dest = make_zip()
     clean()
-
-    with open(PYPROJECT_TOML, 'w') as f:
-        f.write(original_toml)
 
     return dest
 

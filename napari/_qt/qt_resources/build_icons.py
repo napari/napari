@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 
 import napari.resources
 
+from ...utils.misc import bundle_bin_dir
 from ...utils.theme import _themes
 
 RESOURCES_DIR = os.path.abspath(os.path.dirname(napari.resources.__file__))
@@ -163,6 +164,10 @@ def _find_rcc_or_raise() -> str:
     paths = [python_dir, os.environ.get("PATH", '')]
     if os.name == 'nt':
         paths.insert(0, os.path.join(python_dir, 'Scripts'))
+    # inject bundle binary path if it exists
+    bundle_bin = bundle_bin_dir()
+    if bundle_bin:
+        paths.insert(0, bundle_bin)
     path = os.pathsep.join(paths)
 
     for bin_name in ('pyrcc5', 'pyside2-rcc'):
