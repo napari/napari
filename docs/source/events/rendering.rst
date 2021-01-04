@@ -114,6 +114,39 @@ some limitations, and we need need to create a subclass of
 :class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`
 which is Octree-specific at some point.
 
+The :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
+is a subclass of the basic Vispy `Texture2D` class. Its key method is
+:meth:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D.add_tile`
+which adds a next texture to the atlas. Each texture in the atlas has
+texture coordinates which denotes a tile-sized rectangle within the full
+texture, and vertices which denote where that texture should be drawn in
+the scene.
+
+Future Work: Multiple Tile Sizes
+--------------------------------
+
+Today all tiles in the texture atlas have to be the same size. However the
+coarsest level in multiscale datasets in the wild are often much bigger
+than our tile size. Today we solve that with a method
+:meth:`~napari.layers.image.experimental.octree_image.OctreeImage._create_extra_levels`
+that adds levels to the multiscale data until the coarsest level fits
+within a single tile.
+
+This is not a great solution. It's potentially quite slow to add these
+additional levels, since it involves downsampling.  It would be better if
+we could make an exception for the highest level and allow its tile size to
+be bigger than what we use in the rest of the tree. As long as it smaller
+than the max texture size, which is (16384, 16384) on some hardware.
+
+This is also probably a necessary step if we want `OctreeImage` to someday
+replace `Image`. If an image is smaller than the max texture size, in at
+least some cases we probably want to draw that image as a single tile.  If
+`OctreeImage` is going to replace `Image` we probably want to avoid
+unnecessarily tiling images that do not need to be tiled.
+
+
+Octree Rendering
+----------------
 The interface between the visuals and the Octree is the `OctreeImage`
 method
 :meth:`~napari.layers.image.experimental.octree_image.OctreeImage.get_drawable_chunks`.
