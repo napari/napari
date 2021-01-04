@@ -37,6 +37,9 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class _QtMainWindow(QMainWindow):
+    # This was added so that someone can patch
+    # `napari._qt.qt_main_window._QtMainWindow._window_icon`
+    # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
     def __init__(self, *args, **kwargs) -> None:
