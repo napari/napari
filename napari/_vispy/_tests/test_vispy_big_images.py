@@ -31,7 +31,8 @@ def test_big_3D_image(make_test_viewer):
 
 
 @pytest.mark.parametrize(
-    "shape", [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
+    "shape",
+    [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
 )
 def test_downsample_value(make_test_viewer, shape):
     """Test getting correct value for downsampled data."""

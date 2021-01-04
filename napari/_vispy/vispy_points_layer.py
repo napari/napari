@@ -102,11 +102,14 @@ class VispyPointsLayer(VispyBaseLayer):
                 width = self._highlight_width
 
             self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1], color=self._highlight_color, width=width,
+                pos=pos[:, ::-1],
+                color=self._highlight_color,
+                width=width,
             )
         else:
             self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._ndisplay)), width=0,
+                pos=np.zeros((1, self.layer._ndisplay)),
+                width=0,
             )
 
         self.node.update()

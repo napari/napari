@@ -236,7 +236,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
-        """"Update ticks in checkbox widgets when shapes layer mode changed.
+        """Update ticks in checkbox widgets when shapes layer mode changed.
 
         Available modes for shapes layer are:
         * SELECT

@@ -63,7 +63,8 @@ class VispyCamera:
         if self._view.camera == self._3D_camera:
             # Create and set quaternion
             quat = self._view.camera._quaternion.create_from_euler_angles(
-                *angles, degrees=True,
+                *angles,
+                degrees=True,
             )
             self._view.camera._quaternion = quat
             self._view.camera.view_changed()

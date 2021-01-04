@@ -57,8 +57,7 @@ class Mesh:
         self.clear()
 
     def clear(self):
-        """Resets mesh data
-        """
+        """Resets mesh data"""
         self.vertices = np.empty((0, self.ndisplay))
         self.vertices_centers = np.empty((0, self.ndisplay))
         self.vertices_offsets = np.empty((0, self.ndisplay))

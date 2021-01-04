@@ -162,7 +162,10 @@ def test_scale_translate_rotate_shear_compose():
     coord = [10, 13]
     transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25, shear=[1])
     transform_b = Affine(
-        scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65, shear=[-0.5],
+        scale=[0.3, 1.4],
+        translate=[-2.2, 3],
+        rotate=65,
+        shear=[-0.5],
     )
     transform_c = transform_b.compose(transform_a)
 

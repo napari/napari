@@ -139,8 +139,7 @@ class Dims:
         self._on_ndim_set(max_ndim)
 
     def _on_ndim_set(self, ndim):
-        """Adjust lengths of other attributes based on number of dimensions.
-        """
+        """Adjust lengths of other attributes based on number of dimensions."""
         # Gets called after the ndim attribute is set.
         if len(self.range) < ndim:
             # Range value is (min, max, step) for the entire slider
@@ -203,8 +202,7 @@ class Dims:
 
     @property
     def nsteps(self):
-        """Tuple of int: Number of slider steps for each dimension.
-        """
+        """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
             int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self.range

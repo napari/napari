@@ -183,7 +183,9 @@ class OctreeChunk:
 
 
 def log_chunks(
-    label: str, chunks: List[OctreeChunk], location: OctreeLocation = None,
+    label: str,
+    chunks: List[OctreeChunk],
+    location: OctreeLocation = None,
 ) -> None:
     """Log the given chunks with an intro header message.
 

@@ -108,7 +108,7 @@ def read_data_with_plugins(
         raise ValueError(f'No plugin found capable of reading {path_repr}.')
 
     if errors:
-        names = set([repr(e.plugin_name) for e in errors])
+        names = {repr(e.plugin_name) for e in errors}
         err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
         err_msg += f"occurred in plugins: {', '.join(names)}. "
         err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
@@ -118,7 +118,10 @@ def read_data_with_plugins(
 
 
 def save_layers(
-    path: str, layers: List[Layer], *, plugin: Optional[str] = None,
+    path: str,
+    layers: List[Layer],
+    *,
+    plugin: Optional[str] = None,
 ) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
