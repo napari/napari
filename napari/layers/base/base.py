@@ -222,18 +222,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             )
         elif isinstance(affine, np.ndarray) or isinstance(affine, list):
             data2world_transform = Affine(
-                affine_matrix=np.array(affine), name='data2world',
+                affine_matrix=np.array(affine),
+                name='data2world',
             )
         elif isinstance(affine, Affine):
             affine.name = 'data2world'
             data2world_transform = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine, '
-                    f'ndarray, or None. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine, '
+                f'ndarray, or None. Got {type(affine)}'
             )
 
         self._transforms = TransformChain(
@@ -319,8 +318,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def opacity(self):
-        """float: Opacity value between 0.0 and 1.0.
-        """
+        """float: Opacity value between 0.0 and 1.0."""
         return self._opacity
 
     @opacity.setter
@@ -445,11 +443,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._transforms['data2world'] = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine '
-                    f'or ndarray. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine '
+                f'or ndarray. Got {type(affine)}'
             )
         self._update_dims()
         self.events.affine()
@@ -890,8 +886,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         pass
 
     def refresh(self, event=None):
-        """Refresh all layer data based on current view slice.
-        """
+        """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
             self.events.set_data()

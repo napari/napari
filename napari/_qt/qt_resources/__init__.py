@@ -153,11 +153,11 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     resources_dir = abspath(dirname(__file__))
     stylesheet = ''
     for file in sorted(glob(join(resources_dir, 'styles/*.qss'))):
-        with open(file, 'r') as f:
+        with open(file) as f:
             stylesheet += f.read()
     if extra:
         for file in extra:
-            with open(file, 'r') as f:
+            with open(file) as f:
                 stylesheet += f.read()
     return stylesheet
 

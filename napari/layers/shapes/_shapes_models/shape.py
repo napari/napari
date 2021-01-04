@@ -170,8 +170,7 @@ class Shape(ABC):
 
     @property
     def edge_width(self):
-        """float: thickness of lines and edges.
-        """
+        """float: thickness of lines and edges."""
         return self._edge_width
 
     @edge_width.setter

@@ -45,20 +45,6 @@ def test_viewer(make_test_viewer):
         func(viewer)
 
 
-@pytest.mark.run(order=1)  # provided by pytest-ordering
-def test_no_qt_loop():
-    """Test informative error raised when no Qt event loop exists.
-
-    Logically, this test should go at the top of the file. Howveer, that
-    resulted in tests passing when only this file was run, but failing when
-    other tests involving Qt-bot were run before this file. Putting this test
-    second provides a sanity check that pytest-ordering is correctly doing its
-    magic.
-    """
-    with pytest.raises(RuntimeError):
-        _ = Viewer()
-
-
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
 def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
@@ -79,7 +65,8 @@ def test_add_layer_magic_name(
     # Tests for issue #1709
     viewer = make_test_viewer()  # noqa: F841
     layer = eval_with_filename(
-        "add_layer_by_type(viewer, layer_class, a_unique_name)", "somefile.py",
+        "add_layer_by_type(viewer, layer_class, a_unique_name)",
+        "somefile.py",
     )
     assert layer.name == "a_unique_name"
 

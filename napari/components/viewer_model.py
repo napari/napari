@@ -16,7 +16,7 @@ from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
-from ..utils.key_bindings import KeymapHandler, KeymapProvider
+from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 
@@ -34,7 +34,7 @@ from .scale_bar import ScaleBar
 DEFAULT_THEME = 'dark'
 
 
-class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
+class ViewerModel(KeymapProvider, MousemapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -109,7 +109,6 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
 
-        self.keymap_providers = [self]
         self.mouse_wheel_callbacks.append(dims_scroll)
 
     def __str__(self):
@@ -118,8 +117,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
 
     @property
     def palette(self):
-        """Dict[str, str]: Color palette for styling the viewer.
-        """
+        """Dict[str, str]: Color palette for styling the viewer."""
         warnings.warn(
             (
                 "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
@@ -153,8 +151,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
 
     @property
     def theme(self):
-        """string or None : Color theme.
-        """
+        """string or None : Color theme."""
         return self._theme
 
     @theme.setter
@@ -169,9 +166,6 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
                 f"Theme '{theme}' not found; "
                 f"options are {available_themes()}."
             )
-        theme = get_theme(self.theme)
-        self.axes.background_color = theme['canvas']
-        self.scale_bar.background_color = theme['canvas']
         self.events.theme(value=self.theme)
 
     @property
@@ -226,8 +220,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
 
     @property
     def status(self):
-        """string: Status string
-        """
+        """string: Status string"""
         return self._status
 
     @status.setter
@@ -253,8 +246,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
 
     @property
     def title(self):
-        """string: String that is displayed in window title.
-        """
+        """string: String that is displayed in window title."""
         return self._title
 
     @title.setter
@@ -291,8 +283,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
 
     @property
     def active_layer(self):
-        """int: index of active_layer
-        """
+        """int: index of active_layer"""
         return self._active_layer
 
     @active_layer.setter
@@ -300,14 +291,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         if active_layer == self.active_layer:
             return
 
-        if self._active_layer is not None:
-            self.keymap_providers.remove(self._active_layer)
-
         self._active_layer = active_layer
-
-        if active_layer is not None:
-            self.keymap_providers.insert(0, active_layer)
-
         self.events.active_layer(value=self._active_layer)
 
     @property
@@ -390,8 +374,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
             )
 
     def _toggle_theme(self):
-        """Switch to next theme in list of themes
-        """
+        """Switch to next theme in list of themes"""
         theme_names = available_themes()
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
@@ -513,8 +496,7 @@ class ViewerModel(KeymapHandler, KeymapProvider, MousemapProvider):
         self.grid.enabled = True
 
     def stack_view(self):
-        """Arrange the current layers in a stack.
-        """
+        """Arrange the current layers in a stack."""
         warnings.warn(
             (
                 "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."

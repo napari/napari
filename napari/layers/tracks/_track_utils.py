@@ -356,8 +356,8 @@ class TrackManager:
 
     @property
     def track_colors(self) -> np.ndarray:
-        """ return the vertex colors according to the currently selected
-        property """
+        """return the vertex colors according to the currently selected
+        property"""
         return self._track_colors
 
     @property

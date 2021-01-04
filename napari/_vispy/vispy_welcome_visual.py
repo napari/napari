@@ -12,8 +12,7 @@ from .image import Image as ImageNode
 
 
 class VispyWelcomeVisual:
-    """Welcome to napari visual.
-    """
+    """Welcome to napari visual."""
 
     def __init__(self, viewer, parent=None, order=0):
 
@@ -58,10 +57,14 @@ class VispyWelcomeVisual:
             )
         else:
             background_color = np.divide(
-                str_to_rgb(lighten(theme['background'], 70)), 255,
+                str_to_rgb(lighten(theme['background'], 70)),
+                255,
             )
 
-        foreground_color = np.divide(str_to_rgb(theme['primary']), 255,)
+        foreground_color = np.divide(
+            str_to_rgb(theme['primary']),
+            255,
+        )
         text_color = list(foreground_color) + [1]
 
         new_logo = np.zeros(self._logo_raw.shape)
