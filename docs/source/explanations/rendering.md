@@ -2,7 +2,7 @@
 
 ## Status
 
-As of napari version 0.4.2 there are two opt-in experimental features
+As of napari version 0.4.3 there are two opt-in experimental features
 related to rendering. They can be accessed by setting the environment
 variables `NAPARI_ASYNC=1` or `NAPARI_OCTREE=1`. See the Guide on Rendering
 for specific information about those two features. This document is more of
