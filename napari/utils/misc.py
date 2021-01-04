@@ -34,6 +34,13 @@ def running_as_bundled_app() -> bool:
     return 'Briefcase-Version' in metadata
 
 
+def bundle_bin_dir() -> Optional[str]:
+    """Return path to briefcase app_packages/bin if it exists."""
+    bin = path.join(path.dirname(sys.exec_prefix), 'app_packages', 'bin')
+    if path.isdir(bin):
+        return bin
+
+
 def in_jupyter() -> bool:
     """Return true if we're running in jupyter notebook/lab or qtconsole."""
     try:

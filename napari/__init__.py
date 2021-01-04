@@ -13,7 +13,7 @@ from .viewer import Viewer  # isort:skip
 # see: https://github.com/napari/napari/issues/1347
 from scipy import stats  # noqa: F401
 
-from ._event_loop import gui_qt
+from ._event_loop import gui_qt, run
 from .plugins.io import save_layers
 from .utils import _magicgui, sys_info
 from .view_layers import (  # type: ignore

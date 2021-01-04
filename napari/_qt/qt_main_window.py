@@ -26,16 +26,15 @@ from .. import __version__
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.perf import perf_config
 from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
+from .qt_event_loop import get_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
-from .qthreading import wait_for_workers_to_quit
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -68,40 +67,12 @@ class Window:
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer, *, show: bool = True):
+        # create QApplication if it doesn't already exist
+        app = get_app()
 
-        # Check there is a running app
-        # instance() returns the singleton instance if it exists, or None
-        app = QApplication.instance()
-        # if None, raise a RuntimeError with the appropriate message
-        if app is None:
-            message = (
-                "napari requires a Qt event loop to run. To create one, "
-                "try one of the following: \n"
-                "  - use the `napari.gui_qt()` context manager. See "
-                "https://github.com/napari/napari/tree/master/examples for"
-                " usage examples.\n"
-                "  - In IPython or a local Jupyter instance, use the "
-                "`%gui qt` magic command.\n"
-                "  - Launch IPython with the option `--gui=qt`.\n"
-                "  - (recommended) in your IPython configuration file, add"
-                " or uncomment the line `c.TerminalIPythonApp.gui = 'qt'`."
-                " Then, restart IPython."
-            )
-            raise RuntimeError(message)
-
-        if perf_config:
-            if perf_config.trace_qt_events:
-                from .perf.qt_event_tracing import convert_app_for_tracing
-
-                # For tracing Qt events we need a special QApplication. If
-                # using `gui_qt` we already have the special one, and no
-                # conversion is done here. However when running inside
-                # IPython or Jupyter this is where we switch out the
-                # QApplication.
-                app = convert_app_for_tracing(app)
-
-            # Will patch based on config file.
-            perf_config.patch_callables()
+        # TODO: We should move this stuff to `get_app` logic
+        # but it's currently tied to attributes on the viewer instance
+        # >>>>>>>>>>>>>>>>>>
         _napari_app_id = getattr(
             viewer,
             "_napari_app_id",
@@ -125,10 +96,7 @@ class Window:
         if getattr(viewer, "_napari_global_logo", True):
             app = QApplication.instance()
             app.setWindowIcon(QIcon(logopath))
-
-        # see docstring of `wait_for_workers_to_quit` for caveats on killing
-        # workers at shutdown.
-        app.aboutToQuit.connect(wait_for_workers_to_quit)
+        # <<<<<<<<<<<<<<<<<<<
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
