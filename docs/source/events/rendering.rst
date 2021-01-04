@@ -68,6 +68,9 @@ from seeming hung and showing the spinning wheel of death.
 NAPARI_OCTREE
 -------------
 
+Enabling the Octree automatically enables the
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader`.
+
 Setting `NAPARI_OCTREE=1` enables Octree with the default configuration. To
 customize the configuration set `NAPARI_OCTREE` to be the path of a JSON
 config file, such as `NAPARI_OCTREE=/tmp/octree.json`
@@ -96,7 +99,64 @@ config file format, for example:
         },
     }
 
+Tiled Visuals
+-------------
 
+The visual portion of Octree rendering is implemented by three classes:
+:class:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer`,
+:class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`,
+and :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D`.
 
+The first two classes are named "tiled image" rather than "octree" because
+currently they do not know that they are rendering out of an octree. We did
+this to keep the visuals simpler and more general, however the approach has
+some limitations, and we need need to create a subclass of
+:class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`
+which is Octree-specific at some point.
 
+The interface between the visuals and the Octree is the `OctreeImage`
+method
+:meth:`~napari.layers.image.experimental.octree_image.OctreeImage.get_drawable_chunks`.
+The method is called by
+:meth:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer._update_drawn_chunks`
+every frame so it can update which tiles are drawn. The
+:class:`~napari.layers.image.experimental.octree_image.OctreeImage` calls
+the `get_intersection()` on its
+:class:`~napari.layers.image.experimental._octree_slice.OctreeSlice` to get
+an
+:class:`~napari.layers.image.experimental.octree_intersection.OctreeIntersection`
+object which contains the "ideal chunks" that should be drawn for the
+current camera position.
 
+The ideal chunks are the ones at the preferred level of detail, the level
+of detail that best matches the current canvas resolution. Drawing chunks
+which are more detailed that this will look fine, the graphics card will
+downsample them, but it will take longer. Drawing chunks that are coarser
+than the ideal level will look blurry, but it's better than drawing nothing.
+
+The decision about what level of detail to use is made by the
+:class:`~napari.layers.image.experimental._octree_loader.OctreeLoader`
+class and its method
+:meth::`~napari.layers.image.experimental._octree_loader.OctreeLoader.get_drawable_chunks`.
+In addition to deciding what level of detail to draw for each ideal chunk,
+the class initiates asynchronous loads with the
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader` for
+chunks it wants to draw in the future.
+
+The basic algorithm is the loader will only use chunks from a higher
+resolution if they are already being drawn. It will never initiate loads on
+higher resolution chunks, because it's better off loading the ideal chunks.
+
+The loader will load lower resolution chunks in some cases. Although this
+can slightly delay when the ideal chunks are loaded, it's a very quick way
+to get reasonable looking "coverage" of the area of interest. Often data
+from one or two levels up is noticeable that degraded. This table shows how
+many ideal chunks are "covered" a chunk at a higher level:
+
+==================  ======
+Levels Above Ideal  Coverage
+------------------  ------
+1                   4
+2                   16
+3                   64
+==================  ======
