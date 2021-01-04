@@ -84,7 +84,7 @@ def themify_icons(
             new_file = os.path.join(theme_dir, svg_name)
             color = color_lookup.get(icon_name, 'icon')
             css = svg_style_insert.replace('{{ color }}', theme[color])
-            with open(os.path.join(SVGPATH, svg_name), 'r') as fr:
+            with open(os.path.join(SVGPATH, svg_name)) as fr:
                 contents = fr.read()
             with open(new_file, 'w') as fw:
                 # use regex to find the svg tag and insert css right after
@@ -230,7 +230,7 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
         except SubprocessError:
             pass
     # make sure we import from qtpy
-    with open(out_path, "rt") as fin:
+    with open(out_path) as fin:
         data = fin.read()
         data = data.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
     with open(out_path, "wt") as fin:

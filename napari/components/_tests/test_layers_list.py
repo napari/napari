@@ -424,7 +424,7 @@ def test_layers_save(tmpdir, layer_data_and_types):
 
     # Check no additional files exist
     assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+    assert set(os.listdir(tmpdir)) == {'layers_folder'}
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
@@ -481,8 +481,8 @@ def test_layers_save_seleteced(tmpdir, layer_data_and_types):
     assert not os.path.isfile(os.path.join(path, filenames[1]))
 
     # Check no additional files exist
-    assert set(os.listdir(path)) == set([filenames[0], filenames[2]])
-    assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+    assert set(os.listdir(path)) == {filenames[0], filenames[2]}
+    assert set(os.listdir(tmpdir)) == {'layers_folder'}
 
 
 # the layers fixture is defined in napari/conftest.py

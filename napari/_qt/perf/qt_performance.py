@@ -89,8 +89,7 @@ class QtPerformance(QWidget):
     UPDATE_MS = 250
 
     def __init__(self):
-        """Create our windgets.
-        """
+        """Create our windgets."""
         super().__init__()
         layout = QVBoxLayout()
 
@@ -144,14 +143,12 @@ class QtPerformance(QWidget):
         self.timer.start()
 
     def _change_thresh(self, text):
-        """Threshold combo box change.
-        """
+        """Threshold combo box change."""
         self.thresh_ms = float(text)
         self.log.clear()  # start fresh with this new threshold
 
     def _get_timer_info(self):
-        """Get the information from the timers that we want to display.
-        """
+        """Get the information from the timers that we want to display."""
         average = None
         long_events = []
 
@@ -172,8 +169,7 @@ class QtPerformance(QWidget):
         return average, long_events
 
     def update(self):
-        """Update our label and progress bar and log any new slow events.
-        """
+        """Update our label and progress bar and log any new slow events."""
         # Update our timer label.
         elapsed = time.time() - self.start_time
         self.timer_label.setText(f"Uptime: {elapsed:.2f}")

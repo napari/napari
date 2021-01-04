@@ -64,8 +64,7 @@ def in_ipython() -> bool:
 
 
 def str_to_rgb(arg):
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
-    """
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
     return list(
         map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
     )
@@ -173,8 +172,7 @@ def formatdoc(obj):
 
 class StringEnumMeta(EnumMeta):
     def __getitem__(self, item):
-        """ set the item name case to uppercase for name lookup
-        """
+        """set the item name case to uppercase for name lookup"""
         if isinstance(item, str):
             item = item.upper()
 
@@ -190,8 +188,7 @@ class StringEnumMeta(EnumMeta):
         type=None,
         start=1,
     ):
-        """ set the item value case to lowercase for value lookup
-        """
+        """set the item value case to lowercase for value lookup"""
         # simple value lookup
         if names is None:
             if isinstance(value, str):
@@ -220,8 +217,7 @@ class StringEnumMeta(EnumMeta):
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):
-        """ autonaming function assigns each value its own name as a value
-        """
+        """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
     def __str__(self):
@@ -290,7 +286,7 @@ class CallDefault(inspect.Parameter):
             self._default is not inspect._empty
             or kind == inspect._KEYWORD_ONLY
         ):
-            formatted = '{}={}'.format(formatted, formatted)
+            formatted = f'{formatted}={formatted}'
 
         if kind == inspect._VAR_POSITIONAL:
             formatted = '*' + formatted
@@ -320,7 +316,7 @@ class CallSignature(inspect.Signature):
 
         if self.return_annotation is not inspect._empty:
             anno = inspect.formatannotation(self.return_annotation)
-            rendered += ' -> {}'.format(anno)
+            rendered += f' -> {anno}'
 
         return rendered
 

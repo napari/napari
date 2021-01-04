@@ -8,8 +8,7 @@ from ..utils.theme import get_theme
 
 
 class VispyScaleBarVisual:
-    """Scale bar in world coordinates.
-    """
+    """Scale bar in world coordinates."""
 
     def __init__(self, viewer, parent=None, order=0):
         self._viewer = viewer
@@ -55,8 +54,7 @@ class VispyScaleBarVisual:
         self._on_position_change(None)
 
     def _on_zoom_change(self, event):
-        """Update axes length based on zoom scale.
-        """
+        """Update axes length based on zoom scale."""
         if not self._viewer.scale_bar.visible:
             return
 

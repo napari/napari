@@ -599,7 +599,7 @@ class Vectors(Layer):
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
         return self._edge_contrast_limits
