@@ -4,14 +4,16 @@
 
 As of napari version 0.4.2 there are two opt-in experimental features
 related to rendering. They can be accessed by setting the environment
-variables `NAPARI_ASYNC=1` or `NAPARI_OCTREE=1`. They are a work in
-progress. See the guide on Rendering for more information.
+variables `NAPARI_ASYNC=1` or `NAPARI_OCTREE=1`. See the Guide on Rendering
+for specific information about those two features. This document is more of
+a general backgrounder on our approach to rendering.
 
 ## Framerate
 
 The most common screen refresh rate is 60Hz, so most graphics applications
-try to draw 60Hz as well. For napari, the primary source of motion is the
-user panning or zooming the camera. If 60Hz cannot be achieved, it's
+try to draw at least 60Hz as well. For napari, the primary source of motion
+is the user panning or zooming the camera. If napari renders at 60Hz that
+motion will be appear smooth to the user. If 60Hz cannot be achieved, it's
 important that the application render as fast as possible. The user
 experience degrades rapidly as the framerate gets slower:
 
@@ -31,11 +33,11 @@ sliders becomes almost impossible if the framerate is really slow. This
 creates a deeply frustrating experience for the user. Furthermore, if
 napari "blocks" for several seconds, the operating system might indicate to
 the user that the application is hung or has crashed. For example MacOS
-will show the "spinning wheel of death".
+will show the "spinning wheel of death". This is clearly not acceptable.
 
 A fast average framerate is important, but it's also important that napari
-does not have isolated slow frames, and does not have a framerate that
-bounces around. A jumpy framerate leads to something called
+has as few isolated slow frames as possible, that it does not have a
+framerate that bounces around. A jumpy framerate leads to something called
 [jank](http://jankfree.org/). For the best user experience we want a
 framerate that's fast, but also one that's consistently fast.
 
@@ -43,12 +45,12 @@ framerate that's fast, but also one that's consistently fast.
 
 Napari renders data out of an array-like interface. The data can be owned
 by any object that supports `numpy`'s slicing syntax. One common such
-object is a [Dask](https://dask.org/) array. Rendering any array-like data
-is flexible and powerful, but it means that simple array accesses can
-result in the execution of arbitrary code. For example, an array access
-might result in disk or network IO, or even a complex machine learning
-computation. This means array accesses can take an arbitrary long time to
-complete.
+object is a [Dask](https://dask.org/) array. The fact that napari can
+render out of any array-like data is flexible and powerful, but it means
+that simple array accesses can result in the execution of arbitrary code.
+For example, an array access might result in disk or network IO, or even a
+complex machine learning computation. This means array accesses can take an
+arbitrary long time to complete.
 
 ## Asynchronous Rendering
 
@@ -60,14 +62,15 @@ memory ready to be drawn, while in the background worker threads load more
 data into memory to be drawn in the future.
 
 This necessarily means that napari will sometimes have to draw data that's
-only partly loaded. For example, napari might have to show a lower
-resolution version of the data, such that the data appears blurry. There
-might even be totally blank portions of the screen.
+only partially loaded. For example, napari might have to show a lower
+resolution version of the data, such that the data appears blurry until the
+rest of the data has loaded in. There might even be totally blank portions
+of the screen.
 
 Although showing the user partial data is not ideal, it's vastly better
 than letting the GUI thread block and napari hang. If napari stays
-responsive the user can sit still an watch the data load in, or they can
-navigate somewhere else entirely, the choice is theirs.
+responsive the user stays in control. The user can sit still and watch the
+data load in, or they can navigate somewhere else entirely.
 
 Issues that napari has without asynchronous rendering include
 [#845](https://github.com/napari/napari/issues/845),
@@ -80,7 +83,7 @@ There is a two step process to prepare data for rendering. First the data
 needs to be loaded it RAM, then it needs to be transferred from RAM to
 VRAM. Some hardware has "unified memory" where there is no actual VRAM, but
 there is still a change of status when data goes from raw bytes in RAM to a
-graphics "resource" like a texture that can be drawn.
+graphics "resource" like a texture or geometry that can be drawn.
 
 The transfer of data from RAM to VRAM must be done in the GUI thread.
 Worker threads are useful for loading data into RAM in the background, but
@@ -92,16 +95,19 @@ into VRAM, we can only do it for a few milliseconds per frame.
 
 ## Chunks
 
-A consequence of the VRAM situation is that all data that napari renders
-needs to be broken into chunks. A chunk is a deliberately vague term for a
-portion of the data that napari can load and render independently. The
-chunk size needs to be small enough that the renderer can at least load one
-chunk per frame into VRAM without a framerate glitch, so that over time all
-chunks can be loaded into VRAM smoothly.
+For paging into both RAM and VRAM it's a requirement that the data napari
+renders needs to be broken into "chunks". A chunk is a deliberately vague
+term for a portion of the data that napari can load and render
+independently.
+
+The chunk size needs to be small enough that the renderer can at least load
+one chunk per frame into VRAM without a framerate glitch, so that over time
+all chunks can be loaded into VRAM smoothly. However using chunks that are
+too small is wasteful, since there is some overhead for each chunk.
 
 Napari's chunks play a similar role as do packets on a network or blocks on
 a disk. In all cases the goal is to break down arbitrarily sized data into
-digestible pieces of that can be processed smoothly.
+digestible pieces of that can be processed smoothly one at a time.
 
 ## Renderer Requirements
 
@@ -185,7 +191,16 @@ user's experience in this case.
 
 ## Octree
 
-Napari uses an Octree to organize and navigate multiscale data. See Apple's
+The `NAPARI_ASYNC` flag enables the experimental `ChunkLoader` which
+implements asynchronous loading. One step beyond this is `NAPARI_OCTREE`
+which replaces the regular `Image` class with a new class called
+`OctreeImage`, and replaces the `ImageVisual` with a new `TiledImageVisual`.
+
+The advantage of `OctreeImage` over `Image` is that it renders multi-scale
+images using tiles. This is much more efficient that one `Image` did
+particularly for remote data.
+
+An Octree is a hierarchical spatial subdivision datastructure. See Apple's
 nice [illustration of an
 octree](https://developer.apple.com/documentation/gameplaykit/gkoctree):
 
@@ -194,8 +209,8 @@ octree](https://developer.apple.com/documentation/gameplaykit/gkoctree):
 Each level of the Octree contains a depiction of the entire dataset, but at
 a different level of detail. In napari we call the data at full resolution
 level 0. Level 1 is the entire data again, but downsampled by half, and so
-on for each level. The highest level is typically the first one where
-the downsampled data fits on a single tile.
+on for each level. The highest level is typically the first level where the
+downsampled data fits into a single tile.
 
 For 2D images the Octree is really just a Quadtree, but the intent is that
 we'll have one set of Octree code that can be used for 2D images or 3D
@@ -203,16 +218,17 @@ volumes. So we use the name Octree in the code for both cases.
 
 A key property of the Octree is that if the user is looking at the data at
 one level of detail, it's trivial to find the same data at a higher or
-lower level of detail. The data is spatially organized so the same data at
-different levels of detail is easy to find.
+lower level of detail. The data is spatially organized so it's fast and
+easy to jump from one level fo detail to another.
 
 ## Sparse Octree
 
 Napari does not construct or maintain an Octree for the whole dataset. The
 Octree is created on the fly only for the portion of the data napari is
 rendering. For some datasets level 0 of the Octree contains tens of
-millions of chunks. We can't afford to allocate anything for all those
-chunks. So we only create the Octree where the user is looking.
+millions of chunks. No matter how little data we stored per chunk, it would
+be slow and wasteful to create an octree that contains all of the data. So
+we only create the Octree where the camera is actively looking.
 
 ## Beyond Images
 
