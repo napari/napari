@@ -11,11 +11,11 @@ a general backgrounder on our approach to rendering.
 ## Framerate
 
 The most common screen refresh rate is 60Hz, so most graphics applications
-try to draw at least 60Hz as well. For napari, the primary source of motion
-is the user panning or zooming the camera. If napari renders at 60Hz that
-motion will be appear smooth to the user. If 60Hz cannot be achieved, it's
-important that the application render as fast as possible. The user
-experience degrades rapidly as the framerate gets slower:
+try to draw at least 60Hz as well. If napari renders at 60Hz then any
+motion, for example from panning and zooming the camera, will appear
+smooth. If 60Hz cannot be achieved, however, it's important that napari
+render as fast as possible. The user experience degrades rapidly as the
+framerate gets slower:
 
 ```eval_rst
 ========== ============= =================
@@ -36,10 +36,10 @@ the user that the application is hung or has crashed. For example MacOS
 will show the "spinning wheel of death". This is clearly not acceptable.
 
 A fast average framerate is important, but it's also important that napari
-has as few isolated slow frames as possible, that it does not have a
-framerate that bounces around. A jumpy framerate leads to something called
-[jank](http://jankfree.org/). For the best user experience we want a
-framerate that's fast, but also one that's consistently fast.
+has as few isolated slow frames as possible. A framerate that jumps around
+leads to something called [jank](http://jankfree.org/). For the best user
+experience we want a framerate that's fast, but also one that's
+consistently fast.
 
 ## Array-like Interface
 
@@ -48,7 +48,7 @@ by any object that supports `numpy`'s slicing syntax. One common such
 object is a [Dask](https://dask.org/) array. The fact that napari can
 render out of any array-like data is flexible and powerful, but it means
 that simple array accesses can result in the execution of arbitrary code.
-For example, an array access might result in disk or network IO, or even a
+For example, an array access might result disk IO or network IO, or even a
 complex machine learning computation. This means array accesses can take an
 arbitrary long time to complete.
 
@@ -70,7 +70,8 @@ of the screen.
 Although showing the user partial data is not ideal, it's vastly better
 than letting the GUI thread block and napari hang. If napari stays
 responsive the user stays in control. The user can sit still and watch the
-data load in, or they can navigate somewhere else entirely.
+data load in, or they can navigate somewhere else entirely, they are free
+to choose.
 
 Issues that napari has without asynchronous rendering include
 [#845](https://github.com/napari/napari/issues/845),
@@ -96,9 +97,8 @@ into VRAM, we can only do it for a few milliseconds per frame.
 ## Chunks
 
 For paging into both RAM and VRAM it's a requirement that the data napari
-renders needs to be broken into "chunks". A chunk is a deliberately vague
-term for a portion of the data that napari can load and render
-independently.
+renders is broken down into "chunks". A chunk is a deliberately vague term
+for a portion of the data that napari can load and render independently.
 
 The chunk size needs to be small enough that the renderer can at least load
 one chunk per frame into VRAM without a framerate glitch, so that over time
@@ -106,8 +106,8 @@ all chunks can be loaded into VRAM smoothly. However using chunks that are
 too small is wasteful, since there is some overhead for each chunk.
 
 Napari's chunks play a similar role as do packets on a network or blocks on
-a disk. In all cases the goal is to break down arbitrarily sized data into
-digestible pieces of that can be processed smoothly one at a time.
+a disk. In all cases the goal is to break down large data into digestible
+pieces of that can be processed smoothly one at a time.
 
 ## Renderer Requirements
 
@@ -280,10 +280,10 @@ to be serialized, and not all objects can be easily serialized.
 
 The Dask developers have extensive experience with serialization, and their
 library contains it's own serialization routines. Long term we might decide
-that napari should only support thread pools, and if you need
-processes you should use napari with Dask. Basically we might outsource
-multi-processing to Dask. How exactly napari will interoperate with Dask is
-to be determined.
+that napari should only support thread pools, and if you need processes you
+should use napari with Dask. Basically, we might outsource multi-processing
+to Dask. How exactly napari will interoperate with Dask is to be
+determined.
 
 ### B. Number of Workers
 
