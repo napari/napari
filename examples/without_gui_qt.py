@@ -13,10 +13,10 @@ screenshot = viewer.screenshot()
 print('Maximum value', screenshot.max())
 
 # To see the napari viewer and interact with the graphical user interface,
-# use `napari.run_app()`.  (it's similar to `plt.show` in matplotlib)
+# use `napari.run()`.  (it's similar to `plt.show` in matplotlib)
 # If you only wanted the screenshot then you could skip this entirely.
-# *run_app* will *block execution of your script* until the window is closed.
-napari.run_app()
+# *run* will *block execution of your script* until the window is closed.
+napari.run()
 
 # When the window is closed, your script continues and you can still inspect
 # the viewer object.  For example, add click the buttons to add various layer

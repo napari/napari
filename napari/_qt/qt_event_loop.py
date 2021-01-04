@@ -167,10 +167,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     if app.applicationName() in ('napari', 'magicgui'):
         if splash_widget and startup_logo:
             splash_widget.close()
-        run_app(force=force, _func_name='gui_qt')
+        run(force=force, _func_name='gui_qt')
 
 
-def run_app(*, force=False, _func_name='run_app'):
+def run(*, force=False, _func_name='run'):
     """Start the Qt Event Loop
 
     Parameters
@@ -179,7 +179,7 @@ def run_app(*, force=False, _func_name='run_app'):
         Force the application event_loop to start, even if there are no top
         level widgets to show.
     _func_name : str, optional
-        name of calling function, by default 'run_app'.  This is only here to
+        name of calling function, by default 'run'.  This is only here to
         provide functions like `gui_qt` a way to inject their name into the
         warning message.
 
