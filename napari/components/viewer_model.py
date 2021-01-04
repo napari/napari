@@ -176,9 +176,6 @@ class ViewerModel(KeymapProvider):
                 f"Theme '{theme}' not found; "
                 f"options are {available_themes()}."
             )
-        theme = get_theme(self.theme)
-        self.axes.background_color = theme['canvas']
-        self.scale_bar.background_color = theme['canvas']
         self.events.theme(value=self.theme)
 
     @property
