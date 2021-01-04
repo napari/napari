@@ -1,5 +1,5 @@
 try:
-    from ._qt.qt_event_loop import gui_qt, run_app
+    from ._qt.qt_event_loop import gui_qt, run
 
 # qtpy raises a RuntimeError if no Qt bindings can be found
 except (ImportError, RuntimeError) as e:
@@ -9,5 +9,5 @@ except (ImportError, RuntimeError) as e:
     def gui_qt(**kwargs):
         raise exc
 
-    def run_app(**kwargs):
+    def run(**kwargs):
         raise exc
