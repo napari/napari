@@ -52,7 +52,7 @@ We've also made good progress on our experimental support for an octree system f
 - Complete qt isolation (#2055)
 - Create QApplication on demand in viewer.Window, add napari.run function (#2056)
 - Remove global app logic from Window init (#2065)
-
+- async-45: Docs and Cleanup (#2067)
 
 ## Bug Fixes
 - Fix append and remove from layerlist (#1955)
