@@ -18,6 +18,7 @@ from ..utils.colormaps import ensure_colormap
 from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
+from ..utils.mouse_bindings import MousemapProvider
 
 # Private _themes import needed until viewer.palette is dropped
 from ..utils.theme import _themes, available_themes, get_theme
@@ -33,7 +34,7 @@ from .scale_bar import ScaleBar
 DEFAULT_THEME = 'dark'
 
 
-class ViewerModel(KeymapProvider):
+class ViewerModel(KeymapProvider, MousemapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -108,16 +109,7 @@ class ViewerModel(KeymapProvider):
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
 
-        # Hold callbacks for when mouse moves with nothing pressed
-        self.mouse_move_callbacks = []
-        # Hold callbacks for when mouse is pressed, dragged, and released
-        self.mouse_drag_callbacks = []
-        # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks = [dims_scroll]
-
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
-        self._mouse_wheel_gen = {}
+        self.mouse_wheel_callbacks.append(dims_scroll)
 
     def __str__(self):
         """Simple string representation"""
