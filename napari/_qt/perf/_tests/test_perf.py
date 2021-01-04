@@ -12,7 +12,7 @@ from napari._qt.perf import qt_event_tracing
 from napari._qt.utils import delete_qapp
 from napari.utils import perf
 
-if (
+if sys.version_info >= (3, 9) or (
     sys.platform.startswith('linux')
     and os.getenv('CI', '0') != '0'
     and qtpy.API_NAME == "PySide2"
