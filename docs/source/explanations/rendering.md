@@ -76,11 +76,11 @@ Issues that napari has without asynchronous rendering include
 
 ## RAM and VRAM
 
-There is a two step process to prepare data for rendering. First it needs
-to be loaded it RAM, then it needs to be transferred from RAM to VRAM. Some
-hardware has "unified memory" where there is no actual VRAM, but there is
-still a change of status when data goes from raw bytes in RAM to a graphics
-"resource" like a texture that can be drawn.
+There is a two step process to prepare data for rendering. First the data
+needs to be loaded it RAM, then it needs to be transferred from RAM to
+VRAM. Some hardware has "unified memory" where there is no actual VRAM, but
+there is still a change of status when data goes from raw bytes in RAM to a
+graphics "resource" like a texture that can be drawn.
 
 The transfer of data from RAM to VRAM must be done in the GUI thread.
 Worker threads are useful for loading data into RAM in the background, but
@@ -99,10 +99,9 @@ chunk size needs to be small enough that the renderer can at least load one
 chunk per frame into VRAM without a framerate glitch, so that over time all
 chunks can be loaded into VRAM smoothly.
 
-Napari's chunks play a similar role to packets on a network or blocks on a
-disk. In all cases the smaller units of subdivision allow the code to
-operate smoothly on one piece at a time, even if the full amount of data is
-huge.
+Napari's chunks play a similar role as do packets on a network or blocks on
+a disk. In all cases the goal is to break down arbitrarily sized data into
+digestible pieces of that can be processed smoothly.
 
 ## Renderer Requirements
 
@@ -202,11 +201,18 @@ For 2D images the Octree is really just a Quadtree, but the intent is that
 we'll have one set of Octree code that can be used for 2D images or 3D
 volumes. So we use the name Octree in the code for both cases.
 
+A key property of the Octree is that if the user is looking at the data at
+one level of detail, it's trivial to find the same data at a higher or
+lower level of detail. The data is spatially organized so the same data at
+different levels of detail is easy to find.
+
+## Sparse Octree
+
 Napari does not construct or maintain an Octree for the whole dataset. The
 Octree is created on the fly only for the portion of the data napari is
-rendering. For some datasets we load level zero of the Octree contains tens
-of millions of chunks. By only creating the Octree where we are rendering,
-we use zero bytes on those unseen chunks.
+rendering. For some datasets level 0 of the Octree contains tens of
+millions of chunks. We can't afford to allocate anything for all those
+chunks. So we only create the Octree where the user is looking.
 
 ## Beyond Images
 
