@@ -67,8 +67,7 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
 
 
 def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
-    """Return the viewer that the magicwidget is in, or a list of all Viewers.
-    """
+    """Return the viewer that the magicwidget is in, or a list of all Viewers."""
     viewer = find_viewer_ancestor(gui)
     if viewer:
         return (viewer,)

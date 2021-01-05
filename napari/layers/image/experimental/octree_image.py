@@ -450,7 +450,10 @@ class OctreeImage(Image):
 
         # Create the slice, it will create the actual Octree.
         self._slice = OctreeSlice(
-            slice_data, layer_ref, meta, self._raw_to_displayed,
+            slice_data,
+            layer_ref,
+            meta,
+            self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:

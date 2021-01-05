@@ -67,7 +67,7 @@ class Dims(EventedModel):
     ndim: int = 2
     ndisplay: Literal[2, 3] = 2
     last_used: int = 0
-    range: Tuple[Tuple[float, float, float], ...] = (())
+    range: Tuple[Tuple[float, float, float], ...] = ()
     current_step: Tuple[int, ...] = ()
     order: Tuple[int, ...] = ()
     axis_labels: Tuple[str, ...] = ()
@@ -132,8 +132,7 @@ class Dims(EventedModel):
 
     @property
     def nsteps(self) -> Tuple[int, ...]:
-        """Tuple of int: Number of slider steps for each dimension.
-        """
+        """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
             int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self.range

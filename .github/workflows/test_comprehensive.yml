@@ -71,10 +71,6 @@ jobs:
           - python: 3.8
             platform: ubuntu-18.04
             toxenv: async-py38-linux-pyqt
-          # test with --perfmon-only
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: perfmon-py38-linux-pyqt
           # test without any Qt backends
           - python: 3.8
             platform: ubuntu-18.04

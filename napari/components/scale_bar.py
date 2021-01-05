@@ -1,8 +1,4 @@
-from pydantic import Field, validator
-
-from ..utils._pydantic import Array, EventedModel
-from ..utils.colormaps.colormap_utils import make_default_color_array
-from ..utils.colormaps.standardize_color import transform_single_color
+from ..utils._pydantic import EventedModel
 from ._viewer_constants import Position
 
 
@@ -33,11 +29,3 @@ class ScaleBar(EventedModel):
     colored: bool = False
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
-    background_color: Array[float, (4,)] = Field(
-        default_factory=make_default_color_array
-    )
-
-    # validators
-    _ensure_single_color = validator(
-        'background_color', pre=True, allow_reuse=True
-    )(transform_single_color)

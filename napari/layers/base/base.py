@@ -10,6 +10,7 @@ from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
+from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ...utils.transforms import Affine, TransformChain
@@ -22,7 +23,7 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
-class Layer(KeymapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 
     Parameters
@@ -221,18 +222,17 @@ class Layer(KeymapProvider, ABC):
             )
         elif isinstance(affine, np.ndarray) or isinstance(affine, list):
             data2world_transform = Affine(
-                affine_matrix=np.array(affine), name='data2world',
+                affine_matrix=np.array(affine),
+                name='data2world',
             )
         elif isinstance(affine, Affine):
             affine.name = 'data2world'
             data2world_transform = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine, '
-                    f'ndarray, or None. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine, '
+                f'ndarray, or None. Got {type(affine)}'
             )
 
         self._transforms = TransformChain(
@@ -281,12 +281,6 @@ class Layer(KeymapProvider, ABC):
         )
         self.name = name
 
-        self.mouse_move_callbacks = []
-        self.mouse_drag_callbacks = []
-        self.mouse_wheel_callbacks = []
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
-
     def __str__(self):
         """Return self.name."""
         return self.name
@@ -324,8 +318,7 @@ class Layer(KeymapProvider, ABC):
 
     @property
     def opacity(self):
-        """float: Opacity value between 0.0 and 1.0.
-        """
+        """float: Opacity value between 0.0 and 1.0."""
         return self._opacity
 
     @opacity.setter
@@ -450,11 +443,9 @@ class Layer(KeymapProvider, ABC):
             self._transforms['data2world'] = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine '
-                    f'or ndarray. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine '
+                f'or ndarray. Got {type(affine)}'
             )
         self._update_dims()
         self.events.affine()
@@ -895,8 +886,7 @@ class Layer(KeymapProvider, ABC):
         pass
 
     def refresh(self, event=None):
-        """Refresh all layer data based on current view slice.
-        """
+        """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
             self.events.set_data()

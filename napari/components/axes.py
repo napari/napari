@@ -1,8 +1,4 @@
-from pydantic import Field, validator
-
-from ..utils._pydantic import Array, EventedModel
-from ..utils.colormaps.colormap_utils import make_default_color_array
-from ..utils.colormaps.standardize_color import transform_single_color
+from ..utils._pydantic import EventedModel
 
 
 class Axes(EventedModel):
@@ -26,9 +22,6 @@ class Axes(EventedModel):
         y=dashed, z=dotted.
     arrows : bool
         If axes have arrowheads or not.
-    background_color : np.ndarray
-        Background color of canvas. If axes are not colored
-        then they have the color opposite of this color.
     """
 
     # fields
@@ -37,11 +30,3 @@ class Axes(EventedModel):
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
-    background_color: Array[float, (4,)] = Field(
-        default_factory=make_default_color_array
-    )
-
-    # validators
-    _ensure_single_color = validator(
-        'background_color', pre=True, allow_reuse=True
-    )(transform_single_color)

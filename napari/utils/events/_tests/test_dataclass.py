@@ -309,7 +309,8 @@ def test_is_equal_warnings():
 
     with pytest.warns(UserWarning, match="Comparison method failed*"):
         assert not is_equal(
-            {1: np.ones(2), 2: np.zeros(2)}, {1: np.ones(2), 2: np.zeros(2)},
+            {1: np.ones(2), 2: np.zeros(2)},
+            {1: np.ones(2), 2: np.zeros(2)},
         )
 
 
