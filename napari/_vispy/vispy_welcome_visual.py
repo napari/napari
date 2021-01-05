@@ -1,4 +1,3 @@
-import sys
 from os.path import dirname, join
 
 import numpy as np
@@ -8,13 +7,12 @@ from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
 from ..utils.misc import str_to_rgb
-from ..utils.theme import darken, lighten
+from ..utils.theme import darken, get_theme, lighten
 from .image import Image as ImageNode
 
 
 class VispyWelcomeVisual:
-    """Welcome to napari visual.
-    """
+    """Welcome to napari visual."""
 
     def __init__(self, viewer, parent=None, order=0):
 
@@ -45,49 +43,29 @@ class VispyWelcomeVisual:
             '   - select File > Open from the menu\n'
             '   - call a viewer.add_* method'
         )
-        self.text_node.color = np.divide(
-            str_to_rgb(darken(self._viewer.palette['foreground'], 30)), 255
-        )
 
-        self._on_palette_change(None)
+        self._on_theme_change(None)
         self._on_visible_change(None)
         self._on_canvas_change(None)
 
-    def _on_palette_change(self, event):
+    def _on_theme_change(self, event):
         """Change colors of the logo and text."""
-        if (
-            np.mean(str_to_rgb(self._viewer.palette['background'])[:3])
-            < 255 / 2
-        ):
-            foreground_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
-            )
+        theme = get_theme(self._viewer.theme)
+        if np.mean(str_to_rgb(theme['background'])[:3]) < 255 / 2:
             background_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
+                str_to_rgb(darken(theme['background'], 70)), 255
             )
-            text_color = foreground_color
-            if sys.platform == 'darwin':
-                # Note this unsual scaling is done to preserve color balance on
-                # rendering by VisPy, which appears to be off when opacity < 1.
-                # It only needs to be done on a mac, where we need opacity < 1
-                # to achieve good blending.
-                text_color = np.multiply(text_color, [0.4, 0.65, 0.9])
-                text_color = list(text_color) + [0.7]
-            else:
-                text_color = list(text_color) + [1]
-
         else:
-            foreground_color = np.divide(
-                str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
-                255,
-            )
             background_color = np.divide(
-                str_to_rgb(lighten(self._viewer.palette['background'], 30)),
+                str_to_rgb(lighten(theme['background'], 70)),
                 255,
             )
-            text_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 60)), 255
-            )
+
+        foreground_color = np.divide(
+            str_to_rgb(theme['primary']),
+            255,
+        )
+        text_color = list(foreground_color) + [1]
 
         new_logo = np.zeros(self._logo_raw.shape)
         new_logo[self._logo_border, :3] = foreground_color

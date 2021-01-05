@@ -92,7 +92,7 @@ manages the work being done by your function in another thread.  It also
 exposes a few "signals" that let you respond to events happening in the other
 thread.  Here, we connect the ``worker.returned`` signal to the
 :meth:`viewer.add_image
-<napari.components.add_layers_mixin.AddLayersMixin.add_image>` function
+<napari.components.viewer_model.ViewerModel.add_image>` function
 (**14**), which has the effect of adding the result to the viewer when it is
 ready. Lastly, we start the worker with
 :meth:`~napari.qt.threading.WorkerBase.start` (**15**) because workers do not

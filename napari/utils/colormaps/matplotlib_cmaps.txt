@@ -3,6 +3,7 @@ magma
 inferno
 plasma
 gray
+gray_r
 hsv
 turbo
 twilight

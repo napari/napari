@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils import config
+from ...utils.events import disconnect_events
 
 if TYPE_CHECKING:
     from ..experimental.qt_chunk_receiver import QtChunkReceiver
@@ -24,6 +25,9 @@ if TYPE_CHECKING:
 
 def _create_chunk_receiver(parent: QObject) -> 'Optional[QtChunkReceiver]':
     """Return a QtChunkReceiver or None if not using async.
+
+    The QtChunkReceiver object allows the ChunkLoader to pass newly
+    loaded chunks to the layers that requested them.
 
     Attributes
     ----------
@@ -65,6 +69,8 @@ class QtLayerList(QScrollArea):
         super().__init__()
 
         self.layers = layers
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self.setWidgetResizable(True)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scrollWidget = QWidget()
@@ -88,7 +94,7 @@ class QtLayerList(QScrollArea):
         self.setToolTip('Layer list')
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
-        self.layers.events.added.connect(self._add)
+        self.layers.events.inserted.connect(self._add)
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
@@ -98,14 +104,14 @@ class QtLayerList(QScrollArea):
         self.chunk_receiver = _create_chunk_receiver(self)
 
     def _add(self, event):
-        """Insert widget for layer `event.item` at index `event.index`.
+        """Insert widget for layer `event.value` at index `event.index`.
 
         Parameters
         ----------
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
         widget = QtLayerWidget(layer)
@@ -128,7 +134,8 @@ class QtLayerList(QScrollArea):
         widget = self.vbox_layout.itemAt(index).widget()
         divider = self.vbox_layout.itemAt(index + 1).widget()
         self.vbox_layout.removeWidget(widget)
-        widget.deleteLater()
+        disconnect_events(widget.layer.events, self)
+        widget.close()
         self.vbox_layout.removeWidget(divider)
         divider.deleteLater()
 
@@ -512,11 +519,13 @@ class QtLayerWidget(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.select.connect(lambda v: self.setSelected(True))
-        layer.events.deselect.connect(lambda v: self.setSelected(False))
-        layer.events.name.connect(self._on_layer_name_change)
-        layer.events.visible.connect(self._on_visible_change)
-        layer.events.thumbnail.connect(self._on_thumbnail_change)
+        self.layer.events.select.connect(self._on_select_change)
+        self.layer.events.deselect.connect(self._on_deselect_change)
+        self.layer.events.name.connect(self._on_name_change)
+        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.thumbnail.connect(self._on_thumbnail_change)
+
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setObjectName('layer')
 
@@ -635,7 +644,27 @@ class QtLayerWidget(QFrame):
         """
         event.ignore()
 
-    def _on_layer_name_change(self, event=None):
+    def _on_select_change(self, event=None):
+        """Update selected state of the layer.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
+        """
+        self.setSelected(True)
+
+    def _on_deselect_change(self, event=None):
+        """Update selected state of the layer.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
+        """
+        self.setSelected(False)
+
+    def _on_name_change(self, event=None):
         """Update text displaying name of layer.
 
         Parameters
@@ -677,6 +706,6 @@ class QtLayerWidget(QFrame):
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
 
     def close(self):
-        """Viewer is closing."""
-        if self.chunk_receiver is not None:
-            self.chunk_receiver.close()
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        super().close()

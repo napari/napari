@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg
 
 
 def compose_linear_matrix(rotate, scale, shear) -> np.array:
@@ -92,7 +93,7 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     full_scale = embed_in_identity_matrix(scale_mat, ndim)
     full_rotate = embed_in_identity_matrix(rotate_mat, ndim)
     full_shear = embed_in_identity_matrix(shear_mat, ndim)
-    return full_rotate @ full_scale @ full_shear
+    return full_rotate @ full_shear @ full_scale
 
 
 def expand_upper_triangular(vector):
@@ -149,7 +150,9 @@ def embed_in_identity_matrix(matrix, ndim):
         return full_matrix
 
 
-def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
+def decompose_linear_matrix(
+    matrix, upper_triangular=True
+) -> (np.array, np.array, np.array):
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -160,6 +163,9 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     ----------
     matrix : np.array shape (N, N)
         nD array representing the composed linear transform.
+    upper_triangular : bool
+        Whether to decompose shear into an upper triangular or
+        lower triangular matrix.
 
     Returns
     -------
@@ -174,22 +180,33 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
         An empty translation vector implies no scaling.
-    shear : n-D array
-        An n-D shear matrix.
+    shear : 1-D array or n-D array
+        1-D array of upper triangular values or an n-D matrix if lower
+        triangular.
     """
     n = matrix.shape[0]
 
-    rotate, upper_tri = np.linalg.qr(matrix)
+    if upper_triangular:
+        rotate, tri = scipy.linalg.qr(matrix)
+    else:
+        upper_tri, rotate = scipy.linalg.rq(matrix.T)
+        rotate = rotate.T
+        tri = upper_tri.T
 
-    scale = np.diag(upper_tri).copy()
-    upper_tri_normalized = upper_tri / scale[:, np.newaxis]
+    scale = np.diag(tri).copy()
 
+    # Take any reflection into account
     if np.linalg.det(rotate) < 0:
         scale[0] *= -1
-        upper_tri[0] *= -1
-        rotate = matrix @ np.linalg.inv(upper_tri)
+        tri[0] *= -1
+        rotate = matrix @ np.linalg.inv(tri)
 
-    shear = upper_tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
+    tri_normalized = tri @ np.linalg.inv(np.diag(scale))
+
+    if upper_triangular:
+        shear = tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
+    else:
+        shear = tri_normalized
 
     return rotate, scale, shear
 
@@ -215,3 +232,53 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     matrix = np.eye(ndim)
     matrix[axes] = np.tan(np.deg2rad(90 - angle))
     return matrix
+
+
+def is_matrix_upper_triangular(matrix):
+    """Check if a matrix is upper triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        Whether matrix is upper triangular or not.
+    """
+    return np.allclose(matrix, np.triu(matrix))
+
+
+def is_matrix_lower_triangular(matrix):
+    """Check if a matrix is lower triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        Whether matrix is lower triangular or not.
+    """
+    return np.allclose(matrix, np.tril(matrix))
+
+
+def is_matrix_triangular(matrix):
+    """Check if a matrix is triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        Whether matrix is triangular or not.
+    """
+    return is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
+        matrix
+    )

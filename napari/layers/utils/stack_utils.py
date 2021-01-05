@@ -11,7 +11,9 @@ from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 
 def split_channels(
-    data: np.ndarray, channel_axis: int, **kwargs,
+    data: np.ndarray,
+    channel_axis: int,
+    **kwargs,
 ) -> List[FullLayerData]:
     """Split the data array into separate arrays along an axis.
 
@@ -52,7 +54,13 @@ def split_channels(
     kwargs['blending'] = kwargs.get('blending') or 'additive'
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
-    iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+    iterable_kwargs = {
+        'scale',
+        'translate',
+        'affine',
+        'contrast_limits',
+        'metadata',
+    }
 
     # turn the kwargs dict into a mapping of {key: iterator}
     # so that we can use {k: next(v) for k, v in kwargs.items()} below
@@ -102,7 +110,11 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
+def stack_to_images(
+    stack: Image,
+    axis: int,
+    **kwargs: Dict,
+) -> List[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -181,7 +193,9 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
 
 def images_to_stack(
-    images: List[Image], axis: int = 0, **kwargs: Dict,
+    images: List[Image],
+    axis: int = 0,
+    **kwargs: Dict,
 ) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 

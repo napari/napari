@@ -1,4 +1,3 @@
-import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
 
@@ -242,7 +241,7 @@ class QtGridViewButton(QCheckBox):
 
         self.viewer = viewer
         self.setToolTip('Toggle grid view')
-        self.viewer.events.grid.connect(self._on_grid_change)
+        self.viewer.grid.events.connect(self._on_grid_change)
         self.stateChanged.connect(self.change_grid)
         self._on_grid_change()
 
@@ -254,10 +253,7 @@ class QtGridViewButton(QCheckBox):
         state : qtpy.QtCore.Qt.CheckState
             State of the checkbox.
         """
-        if state == Qt.Checked:
-            self.viewer.stack_view()
-        else:
-            self.viewer.grid_view()
+        self.viewer.grid.enabled = not state == Qt.Checked
 
     def _on_grid_change(self, event=None):
         """Update grid layout size.
@@ -267,8 +263,8 @@ class QtGridViewButton(QCheckBox):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.viewer.events.grid.blocker():
-            self.setChecked(bool(np.all(self.viewer.grid_size == (1, 1))))
+        with self.viewer.grid.events.blocker():
+            self.setChecked(not self.viewer.grid.enabled)
 
 
 class QtNDisplayButton(QCheckBox):

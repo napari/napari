@@ -44,8 +44,8 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.edge_width.connect(self._on_width_change)
-        self.layer.events.length.connect(self._on_len_change)
+        self.layer.events.edge_width.connect(self._on_edge_width_change)
+        self.layer.events.length.connect(self._on_length_change)
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
@@ -186,7 +186,7 @@ class QtVectorsControls(QtLayerControls):
         self.setFocus()
 
     def _update_edge_color_gui(self, mode: str):
-        """ Update the GUI element associated with edge_color.
+        """Update the GUI element associated with edge_color.
         This is typically used when edge_color_mode changes
 
         Parameters
@@ -223,7 +223,7 @@ class QtVectorsControls(QtLayerControls):
 
         return property_values
 
-    def _on_len_change(self, event=None):
+    def _on_length_change(self, event=None):
         """Change length of vectors.
 
         Parameters
@@ -234,8 +234,8 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
 
-    def _on_width_change(self, event=None):
-        """"Receive layer model width change event and update width spinbox.
+    def _on_edge_width_change(self, event=None):
+        """Receive layer model width change event and update width spinbox.
 
         Parameters
         ----------
@@ -246,7 +246,7 @@ class QtVectorsControls(QtLayerControls):
             self.widthSpinBox.setValue(self.layer.edge_width)
 
     def _on_edge_color_mode_change(self, event=None):
-        """"Receive layer model edge color mode change event & update dropdown.
+        """Receive layer model edge color mode change event & update dropdown.
 
         Parameters
         ----------
@@ -263,7 +263,7 @@ class QtVectorsControls(QtLayerControls):
             self._update_edge_color_gui(mode)
 
     def _on_edge_color_change(self, event=None):
-        """"Receive layer model edge color  change event & update dropdown.
+        """Receive layer model edge color  change event & update dropdown.
 
         Parameters
         ----------

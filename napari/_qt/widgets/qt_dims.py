@@ -56,12 +56,11 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.current_step.connect(
-            lambda ev: self._update_slider(ev.axis)
-        )
-        self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
+        self.dims.events.current_step.connect(self._update_slider)
+        self.dims.events.range.connect(self._update_range)
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
+        self.dims.events.last_used.connect(self._on_last_used_changed)
 
     @property
     def nsliders(self):
@@ -74,71 +73,42 @@ class QtDims(QWidget):
         """
         return len(self.slider_widgets)
 
-    @property
-    def last_used(self):
-        """Returns the integer index of the last used slider.
-
-        Returns
-        -------
-        int
-            Index of slider last used.
-        """
-        return self.dims.last_used
-
-    @last_used.setter
-    def last_used(self, last_used: int):
-        """Sets the last used slider.
+    def _on_last_used_changed(self, event):
+        """Sets the style of the last used slider.
 
         Parameters
         ----------
-        last_used : int
-            Index of slider last used.
+        event : napari.utils.events.Event
+            Event that triggered method.
         """
-        dims_last_used = self.dims.last_used
-        if last_used == dims_last_used:
-            return
-
-        formerly_used = dims_last_used
-        if formerly_used is not None:
-            sld = self.slider_widgets[formerly_used].slider
-            sld.setProperty('last_used', False)
+        for i, widget in enumerate(self.slider_widgets):
+            sld = widget.slider
+            sld.setProperty('last_used', i == self.dims.last_used)
             sld.style().unpolish(sld)
             sld.style().polish(sld)
 
-        self.dims.last_used = last_used
-        if last_used is not None:
-            sld = self.slider_widgets[last_used].slider
-            sld.setProperty('last_used', True)
-            sld.style().unpolish(sld)
-            sld.style().polish(sld)
-
-    def _update_slider(self, axis: int):
+    def _update_slider(self, event):
         """Updates position for a given slider.
 
         Parameters
         ----------
-        axis : int
-            Axis index.
+        event : napari.events.Event
+            Event that triggers update, emitted by viewer.dims.current_step.
         """
+        for widget in self.slider_widgets:
+            widget._update_slider()
 
-        if axis >= len(self.slider_widgets):
-            return
-
-        self.slider_widgets[axis]._update_slider()
-        self.dims.last_used = axis
-
-    def _update_range(self, axis: int):
+    def _update_range(self, event):
         """Updates range for a given slider.
 
         Parameters
         ----------
-        axis : int
-            Axis index.
+        event : napari.events.Event
+            Event that triggers update, emitted by viewer.dims.range.
         """
-        if axis >= len(self.slider_widgets):
-            return
+        for widget in self.slider_widgets:
+            widget._update_range()
 
-        self.slider_widgets[axis]._update_range()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
@@ -276,30 +246,6 @@ class QtDims(QWidget):
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
         self.dims.last_used = None
-
-    def focus_up(self):
-        """Shift focused dimension slider to be the next slider above."""
-        displayed = list(np.nonzero(self._displayed_sliders)[0])
-        if len(displayed) == 0:
-            return
-
-        if self.dims.last_used is None:
-            self.dims.last_used = displayed[-1]
-        else:
-            index = (displayed.index(self.dims.last_used) + 1) % len(displayed)
-            self.dims.last_used = displayed[index]
-
-    def focus_down(self):
-        """Shift focused dimension slider to be the next slider bellow."""
-        displayed = list(np.nonzero(self._displayed_sliders)[0])
-        if len(displayed) == 0:
-            return
-
-        if self.dims.last_used is None:
-            self.dims.last_used = displayed[-1]
-        else:
-            index = (displayed.index(self.dims.last_used) - 1) % len(displayed)
-            self.dims.last_used = displayed[index]
 
     def play(
         self,

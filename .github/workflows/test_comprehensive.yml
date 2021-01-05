@@ -1,0 +1,167 @@
+# The full test suite, which will be run anytime anything is merged into master.
+# See test_pull_request.yml for the tests that will be run
+name: Full Test
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  code:
+    name: Code
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [flake8, black, isort]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install tox
+      - name: Run task
+        run: tox -e ${{ matrix.task }}
+
+  manifest:
+    name: Check Manifest
+    needs: code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install check-manifest
+      - name: Check Manifest
+        run: check-manifest
+
+  test:
+    needs: code
+    name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.toxenv }} ${{ matrix.MIN_REQ && 'min_req' }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-latest, windows-latest, macos-latest]
+        python: [3.7, 3.8, 3.9]
+        include:
+          # test big sur on 3.9.0
+          - python: 3.9
+            platform: macos-11.0
+            toxenv: py390-macos-pyqt
+          # test with minimum specified requirements
+          - python: 3.7
+            platform: ubuntu-18.04
+            MIN_REQ: 1
+          # test with --async_only
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: async-py38-linux-pyqt
+          # test without any Qt backends
+          - python: 3.8
+            platform: ubuntu-18.04
+            toxenv: headless-py38-linux
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      # we only really need miniconda for things that fail to build wheels.
+      # At the time this PR was submitted, that was only "numcodecs" on macos with
+      # python3.9. The specific dependencies that will be installed with conda are
+      # specified in tox.ini under the `testenv.conda_deps` section. For example:
+      #
+      # conda_deps =
+      #   py39-macos: numcodecs
+      #
+      # the "if:" section of this step may need to be updated in the future
+      # (and then change the Install tox-conda if: below as well)
+      - name: Setup Miniconda
+        if: runner.os == 'macOS' && matrix.python == '3.9'
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          channel-priority: strict
+          python-version: ${{ matrix.python }}
+
+      # these libraries, along with pytest-xvfb (added in the `deps` in tox.ini),
+      # enable testing on Qt on linux
+      - name: Install Linux libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+
+      # strategy borrowed from vispy for installing opengl libs on windows
+      - name: Install Windows OpenGL
+        if: runner.os == 'Windows'
+        run: |
+          git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
+          powershell gl-ci-helpers/appveyor/install_opengl.ps1
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install setuptools tox tox-gh-actions
+          python tools/minreq.py  # no-op if MIN_REQ is not set
+        env:
+          MIN_REQ: ${{ matrix.MIN_REQ }}
+
+      - name: Install tox-conda
+        if: runner.os == 'macOS' && matrix.python == '3.9'
+        # see https://github.com/napari/napari/pull/2061
+        # can use tox-conda after https://github.com/tox-dev/tox-conda/pull/59 merges 
+        run: pip install git+https://github.com/tlambert-forks/tox-conda.git
+
+      # here we pass off control of environment creation and running of tests to tox
+      # tox-gh-actions, installed above, helps to convert environment variables into
+      # tox "factors" ... limiting the scope of what gets tested on each platform
+      # The one exception is if the "toxenv" environment variable has been set,
+      # in which case we are declaring one specific tox environment to run.
+      # see tox.ini for more
+      - name: Test with tox
+        shell: bash -l {0}
+        run: tox
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          TOXENV: ${{ matrix.toxenv }}
+          NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
+          PYVISTA_OFF_SCREEN: True
+
+      - name: Coverage
+        if: runner.os == 'Linux' && matrix.python == '3.9'
+        uses: codecov/codecov-action@v1
+
+      - name: Report Failures
+        if: ${{ failure() }}
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PLATFORM: ${{ matrix.platform }}
+          PYTHON: ${{ matrix.python }}
+          BACKEND: ${{ matrix.toxenv }}
+          RUN_ID: ${{ github.run_id }}
+          TITLE: '[test-bot] Comprehensive tests failing'
+        with:
+          filename: .github/TEST_FAIL_TEMPLATE.md
+          update_existing: true

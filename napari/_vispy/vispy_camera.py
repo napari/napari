@@ -63,7 +63,8 @@ class VispyCamera:
         if self._view.camera == self._3D_camera:
             # Create and set quaternion
             quat = self._view.camera._quaternion.create_from_euler_angles(
-                *angles, degrees=True,
+                *angles,
+                degrees=True,
             )
             self._view.camera._quaternion = quat
             self._view.camera.view_changed()
@@ -84,6 +85,7 @@ class VispyCamera:
         if self.center == tuple(center):
             return
         self._view.camera.center = center[::-1]
+        self._view.camera.view_changed()
 
     @property
     def zoom(self):
@@ -115,7 +117,7 @@ class VispyCamera:
             self._view.camera.rect = tuple(corner) + (scale, scale)
 
     def _on_ndisplay_change(self, event):
-        if self._camera.ndisplay == 3:
+        if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
         else:
             self._view.camera = self._2D_camera
@@ -124,7 +126,7 @@ class VispyCamera:
         self._on_angles_change(None)
 
     def _on_center_change(self, event):
-        self.center = self._camera.center
+        self.center = self._camera.center[-self._dims.ndisplay :]
 
     def _on_zoom_change(self, event):
         self.zoom = self._camera.zoom
@@ -137,7 +139,7 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
-        with self._camera.events.center.blocker(self._on_angles_change):
+        with self._camera.events.angles.blocker(self._on_angles_change):
             self._camera.angles = self.angles
         with self._camera.events.center.blocker(self._on_center_change):
             self._camera.center = self.center

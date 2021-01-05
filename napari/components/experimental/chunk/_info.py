@@ -1,50 +1,24 @@
 """LoadType, LoadStats and LayerInfo.
 """
 import logging
-import weakref
+import time
 from enum import Enum
 
-import dask.array as da
-
+from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
-from ._config import async_config
-from ._request import ChunkRequest
+from ._request import ChunkRequest, LayerRef
 from ._utils import StatWindow
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 class LoadCounts:
+    """Count statistics about loaded chunks."""
+
     def __init__(self):
         self.loads: int = 0
         self.chunks: int = 0
         self.bytes: int = 0
-
-
-def _get_type_str(data) -> str:
-    """Get human readable name for the data's type.
-
-    Returns
-    -------
-    str
-        A string like "ndarray" or "dask".
-    """
-    data_type = type(data)
-
-    if data_type == list:
-        if len(data) == 0:
-            return "EMPTY"
-        else:
-            # Recursively get the type string of the zeroth level.
-            return _get_type_str(data[0])
-
-    if data_type == da.Array:
-        # Special case this because otherwise data_type.__name__
-        # below would just return "Array".
-        return "dask"
-
-    # For class numpy.ndarray this returns "ndarray"
-    return data_type.__name__
 
 
 def _mbits(num_bytes, duration_ms) -> float:
@@ -117,14 +91,7 @@ class LoadStats:
         sync : bool
             True if the load was synchronous.
         """
-        try:
-            # Use the special "load_chunks" timer for all chunks combined.
-            load_ms = request.timers['load_chunks'].duration_ms
-
-            # Update our StatWindow.
-            self.window_ms.add(load_ms)
-        except KeyError:
-            pass  # there was no 'load_chunks" timer...
+        self.window_ms.add(request.load_ms)  # Update our StatWindow.
 
         # Record the number of loads and chunks.
         self.counts.loads += 1
@@ -135,7 +102,7 @@ class LoadStats:
         self.counts.bytes += num_bytes
 
         # Time to load all chunks.
-        load_ms = request.timers['load_chunks'].duration_ms
+        load_ms = request.load_ms
 
         # Update our StatWindows.
         self.window_bytes.add(num_bytes)
@@ -145,6 +112,18 @@ class LoadStats:
         load_info = LoadInfo(num_bytes, load_ms, sync=sync)
         keep = self.NUM_RECENT_LOADS - 1
         self.recent_loads = self.recent_loads[-keep:] + [load_info]
+
+        if monitor:
+            # Send stats about this one load.
+            monitor.send_message(
+                {
+                    "load_chunk": {
+                        "time": time.time(),
+                        "num_bytes": num_bytes,
+                        "load_ms": load_ms,
+                    }
+                }
+            )
 
     @property
     def mbits(self) -> float:
@@ -200,15 +179,13 @@ class LayerInfo:
     We store a weak reference because we do not want an in-progress request
     to prevent a layer from being deleted. Meanwhile, once a request has
     finished, we can de-reference the weakref to make sure the layer was
-    note deleted during the load process.
+    not deleted during the load process.
     """
 
-    def __init__(self, layer):
-        self.layer_id: int = id(layer)
-        self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
-        self.data_type: str = _get_type_str(layer.data)
+    def __init__(self, layer_ref: LayerRef, auto_sync_ms):
+        self.layer_ref = layer_ref
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = async_config.auto_sync_ms
+        self.auto_sync_ms = auto_sync_ms
 
         self.stats = LoadStats()
 
@@ -220,11 +197,10 @@ class LayerInfo:
         layer : Layer
             The layer for this ChunkRequest.
         """
-        layer = self.layer_ref()
+        layer = self.layer_ref.layer
         if layer is None:
-            LOGGER.debug(
-                "LayerInfo.get_layer: layer %d was deleted", self.layer_id
-            )
+            layer_id = self.layer_ref.layer_id
+            LOGGER.debug("LayerInfo.get_layer: layer %d was deleted", layer_id)
         return layer
 
     @property

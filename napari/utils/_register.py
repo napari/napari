@@ -4,7 +4,7 @@ from .misc import callsignature, camel_to_snake
 
 template = """def {name}(self, {signature}):
     layer = {cls_name}({call_args})
-    self.add_layer(layer)
+    self.layers.append(layer)
     return layer
 """
 
