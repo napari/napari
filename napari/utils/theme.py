@@ -1,6 +1,7 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import re
+import warnings
 from ast import literal_eval
 
 try:
@@ -14,6 +15,12 @@ except Exception:
 
 def __getattr__(attr):
     if attr == "palettes":
+        warnings.warn(
+            "palette is deprecated and will be removed after version 0.4.6."
+            " Please use get_theme and register_theme instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return _themes
     raise AttributeError
 

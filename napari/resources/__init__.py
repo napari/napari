@@ -5,7 +5,7 @@ from typing import List, Optional
 def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     """For backward compatibility"""
     warnings.warn(
-        "Moved to module napari._qt.qt_resources. Qill be removed after version 0.4.6.",
+        "Moved to module napari._qt.qt_resources. Will be removed after version 0.4.6.",
         category=DeprecationWarning,
         stacklevel=2,
     )
