@@ -2,12 +2,13 @@ import os
 import sys
 from contextlib import contextmanager
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QTimer
 from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
 from napari import __version__
 
+from ..utils.misc import in_ipython
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 from .qthreading import wait_for_workers_to_quit
@@ -104,6 +105,24 @@ def get_app(
 
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
+
+        if (
+            in_ipython()
+            and app.applicationName() == ' '  # will be true in IPython gui qt
+            and not getattr(app, '_ipython_patched', False)
+        ):
+            # we're using the IPython gui qt QApp.
+            # we can patch sys.excepthook to give better console tracebacks
+            # may be included upstream eventually?
+            # see https://github.com/ipython/ipython/issues/10057
+            def _patch_excepthook():
+                from IPython import get_ipython
+
+                print("patching")
+                sys.excepthook = get_ipython().excepthook
+
+            QTimer.singleShot(0, _patch_excepthook)
+            app._ipython_patched = True
         app._existed = True
     else:
         # automatically determine monitor DPI.
