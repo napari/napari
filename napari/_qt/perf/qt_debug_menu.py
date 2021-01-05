@@ -38,8 +38,7 @@ class DebugMenu:
 
 
 class PerformanceSubMenu:
-    """The flyout menu to start/stop recording a trace file.
-    """
+    """The flyout menu to start/stop recording a trace file."""
 
     def __init__(self, main_window, sub_menu):
         self.main_window = main_window
@@ -69,8 +68,7 @@ class PerformanceSubMenu:
         self.stop.setEnabled(recording)
 
     def _add_start(self):
-        """Add Start Recording action.
-        """
+        """Add Start Recording action."""
         start = QAction('Start Recording...', self.main_window._qt_window)
         start.setShortcut('Alt+T')
         start.setStatusTip('Start recording a trace file')
@@ -79,8 +77,7 @@ class PerformanceSubMenu:
         return start
 
     def _add_stop(self):
-        """Add Stop Recording action.
-        """
+        """Add Stop Recording action."""
         stop = QAction('Stop Recording', self.main_window._qt_window)
         stop.setShortcut('Shift+Alt+T')
         stop.setStatusTip('Stop recording a trace file')
@@ -113,7 +110,6 @@ class PerformanceSubMenu:
         self._set_recording(True)
 
     def _stop_trace(self):
-        """Stop recording a trace file.
-        """
+        """Stop recording a trace file."""
         perf.timers.stop_trace_file()
         self._set_recording(False)

@@ -12,6 +12,7 @@ from typing import Dict, List, Tuple
 
 import napari.resources
 
+from ...utils.misc import bundle_bin_dir
 from ...utils.theme import _themes
 
 RESOURCES_DIR = os.path.abspath(os.path.dirname(napari.resources.__file__))
@@ -83,7 +84,7 @@ def themify_icons(
             new_file = os.path.join(theme_dir, svg_name)
             color = color_lookup.get(icon_name, 'icon')
             css = svg_style_insert.replace('{{ color }}', theme[color])
-            with open(os.path.join(SVGPATH, svg_name), 'r') as fr:
+            with open(os.path.join(SVGPATH, svg_name)) as fr:
                 contents = fr.read()
             with open(new_file, 'w') as fw:
                 # use regex to find the svg tag and insert css right after
@@ -163,6 +164,10 @@ def _find_rcc_or_raise() -> str:
     paths = [python_dir, os.environ.get("PATH", '')]
     if os.name == 'nt':
         paths.insert(0, os.path.join(python_dir, 'Scripts'))
+    # inject bundle binary path if it exists
+    bundle_bin = bundle_bin_dir()
+    if bundle_bin:
+        paths.insert(0, bundle_bin)
     path = os.pathsep.join(paths)
 
     for bin_name in ('pyrcc5', 'pyside2-rcc'):
@@ -225,7 +230,7 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
         except SubprocessError:
             pass
     # make sure we import from qtpy
-    with open(out_path, "rt") as fin:
+    with open(out_path) as fin:
         data = fin.read()
         data = data.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
     with open(out_path, "wt") as fin:

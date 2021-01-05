@@ -1,7 +1,4 @@
-import numpy as np
-
-from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.events.dataclass import evented_dataclass
 
 
 @evented_dataclass
@@ -26,9 +23,6 @@ class Axes:
         y=dashed, z=dotted.
     arrows : bool
         If axes have arrowheads or not.
-    background_color : np.ndarray
-        Background color of canvas. If axes are not colored
-        then they have the color opposite of this color.
     """
 
     visible: bool = False
@@ -36,6 +30,3 @@ class Axes:
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
-    background_color: Property[
-        np.ndarray, None, transform_single_color
-    ] = np.array([1, 1, 1, 1])

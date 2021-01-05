@@ -45,8 +45,7 @@ class PerfTimers:
     """
 
     def __init__(self):
-        """Create PerfTimers.
-        """
+        """Create PerfTimers."""
         # Maps a timer name to one Stat object.
         self.timers: Dict[str, Stat] = {}
 
@@ -105,8 +104,7 @@ class PerfTimers:
         self.add_event(PerfEvent(name, now, now, phase="C", **kwargs))
 
     def clear(self):
-        """Clear all timers.
-        """
+        """Clear all timers."""
         # After the GUI displays timing information it clears the timers
         # so that we start accumulating fresh information.
         self.timers.clear()
@@ -122,8 +120,7 @@ class PerfTimers:
         self.trace_file = PerfTraceFile(path)
 
     def stop_trace_file(self) -> None:
-        """Stop recording a trace file.
-        """
+        """Stop recording a trace file."""
         if self.trace_file is not None:
             self.trace_file.close()
             self.trace_file = None

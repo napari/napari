@@ -5,8 +5,7 @@ import numpy as np
 
 
 def test_viewer_mouse_bindings(make_test_viewer):
-    """Test adding mouse bindings to the viewer
-    """
+    """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer
@@ -79,8 +78,7 @@ def test_viewer_mouse_bindings(make_test_viewer):
 
 
 def test_layer_mouse_bindings(make_test_viewer):
-    """Test adding mouse bindings to a layer that is selected
-    """
+    """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer
@@ -155,8 +153,7 @@ def test_layer_mouse_bindings(make_test_viewer):
 
 
 def test_unselected_layer_mouse_bindings(make_test_viewer):
-    """Test adding mouse bindings to a layer that is not selected
-    """
+    """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer

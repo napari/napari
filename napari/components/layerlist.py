@@ -23,7 +23,9 @@ class LayerList(EventedList):
 
     def __init__(self, data=()):
         super().__init__(
-            data=data, basetype=Layer, lookup={str: lambda e: e.name},
+            data=data,
+            basetype=Layer,
+            lookup={str: lambda e: e.name},
         )
 
     def __newlike__(self, data):
@@ -123,8 +125,7 @@ class LayerList(EventedList):
                 self[first_to_delete - 1].selected = True
 
     def select_next(self, shift=False):
-        """Selects next item from list.
-        """
+        """Selects next item from list."""
         selected = []
         for i in range(len(self)):
             if self[i].selected:
@@ -141,8 +142,7 @@ class LayerList(EventedList):
             self[-1].selected = True
 
     def select_previous(self, shift=False):
-        """Selects previous item from list.
-        """
+        """Selects previous item from list."""
         selected = []
         for i in range(len(self)):
             if self[i].selected:

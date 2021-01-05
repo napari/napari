@@ -79,7 +79,7 @@ class DelayQueue(threading.Thread):
     ):
         super().__init__(daemon=True)
         self._shutdown = False
-        self.delay_seconds: float = (delay_queue_ms / 1000)
+        self.delay_seconds: float = delay_queue_ms / 1000
         self._submit_func = submit_func
 
         self._entries: List[QueueEntry] = []

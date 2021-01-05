@@ -130,7 +130,10 @@ class QtLabelsControls(QtLayerControls):
 
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
-            None, 'shuffle', slot=self.changeColor, tooltip='shuffle colors',
+            None,
+            'shuffle',
+            slot=self.changeColor,
+            tooltip='shuffle colors',
         )
 
         self.panzoom_button = QtModeRadioButton(
