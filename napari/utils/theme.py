@@ -12,6 +12,12 @@ except Exception:
     use_gradients = False
 
 
+def __getattr__(attr):
+    if attr == "palettes":
+        return _themes
+    raise AttributeError
+
+
 _themes = {
     'dark': {
         'folder': 'dark',
