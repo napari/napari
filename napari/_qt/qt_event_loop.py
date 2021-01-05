@@ -118,7 +118,6 @@ def get_app(
             def _patch_excepthook():
                 from IPython import get_ipython
 
-                print("patching")
                 sys.excepthook = get_ipython().excepthook
 
             QTimer.singleShot(0, _patch_excepthook)
