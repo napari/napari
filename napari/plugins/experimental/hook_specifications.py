@@ -35,7 +35,7 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -45,12 +45,15 @@ from napari_plugin_engine import napari_hook_specification
 
 
 @napari_hook_specification()
-def napari_experimental_provide_functions() -> List[Tuple[callable, dict]]:
+def napari_experimental_provide_functions() -> List[
+    Tuple[Callable, Dict, Dict]
+]:
     """Provide functions and args that can be passed to magicgui.
 
     Returns
     -------
     functions : list
-        List of 2-tuples, where each tuple has a functions and dictionary of
-        keyword arguments for the magicgui decorator.
+        List of 3-tuple, where each tuple has a function a dictionary of
+        keyword arguments for magicgui, and a dictionary of keyword arguments
+        for the viewer.window.add_dock_widget method.
     """
