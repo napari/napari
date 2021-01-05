@@ -5,8 +5,7 @@ from vispy import keys
 
 
 def test_viewer_key_bindings(make_test_viewer):
-    """Test adding key bindings to the viewer
-    """
+    """Test adding key bindings to the viewer"""
     np.random.seed(0)
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer
@@ -74,8 +73,7 @@ def test_viewer_key_bindings(make_test_viewer):
 
 
 def test_layer_key_bindings(make_test_viewer):
-    """Test adding key bindings to a layer
-    """
+    """Test adding key bindings to a layer"""
     np.random.seed(0)
     viewer = make_test_viewer()
     view = viewer.window.qt_viewer

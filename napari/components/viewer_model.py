@@ -137,8 +137,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @property
     def palette(self):
-        """Dict[str, str]: Color palette for styling the viewer.
-        """
+        """Dict[str, str]: Color palette for styling the viewer."""
         warnings.warn(
             (
                 "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
@@ -325,8 +324,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             )
 
     def _toggle_theme(self):
-        """Switch to next theme in list of themes
-        """
+        """Switch to next theme in list of themes"""
         theme_names = available_themes()
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
@@ -449,8 +447,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.grid.enabled = True
 
     def stack_view(self):
-        """Arrange the current layers in a stack.
-        """
+        """Arrange the current layers in a stack."""
         warnings.warn(
             (
                 "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."

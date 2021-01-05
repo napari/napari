@@ -30,8 +30,7 @@ ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
 class NotificationSeverity(StringEnum):
-    """Severity levels for the notification dialog.  Along with icons for each.
-    """
+    """Severity levels for the notification dialog.  Along with icons for each."""
 
     ERROR = auto()
     WARNING = auto()
@@ -89,10 +88,7 @@ class NapariNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        """[summary]
-
-
-        """
+        """[summary]"""
         super().__init__(None)
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.

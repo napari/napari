@@ -95,8 +95,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._set_node_data(self.node, self.layer._data_view)
 
     def _set_node_data(self, node, data):
-        """Our self.layer._data_view has been updated, update our node.
-        """
+        """Our self.layer._data_view has been updated, update our node."""
 
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:

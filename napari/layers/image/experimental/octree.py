@@ -134,7 +134,9 @@ class Octree:
         return level.get_chunk(row, col, create=create)
 
     def get_parent(
-        self, octree_chunk: OctreeChunk, create: bool = False,
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
     ) -> Optional[OctreeChunk]:
         """Return the parent of this octree_chunk.
 
@@ -336,7 +338,12 @@ class Octree:
         # Return an OctreeLevel for each new data level.
         num_current = len(self.levels)
         return [
-            OctreeLevel(slice_id, new_data, self.meta, num_current + index,)
+            OctreeLevel(
+                slice_id,
+                new_data,
+                self.meta,
+                num_current + index,
+            )
             for index, new_data in enumerate(new_levels)
         ]
 

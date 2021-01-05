@@ -333,8 +333,7 @@ class GeneratorWorker(WorkerBase):
             self._pause_requested = True
 
     def resume(self) -> None:
-        """Send a request to resume the worker.
-        """
+        """Send a request to resume the worker."""
         if self.is_paused:
             self._resume_requested = True
 
@@ -632,7 +631,11 @@ def thread_worker(
         kwargs['_connect'] = kwargs.get('_connect', connect)
         kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
         kwargs['_ignore_errors'] = kwargs.get('_ignore_errors', ignore_errors)
-        return create_worker(function, *args, **kwargs,)
+        return create_worker(
+            function,
+            *args,
+            **kwargs,
+        )
 
     return worker_function
 

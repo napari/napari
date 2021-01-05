@@ -11,7 +11,8 @@ from ...layers.image.experimental import OctreeChunk
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(
-    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
+    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]],
+    dtype=np.float32,
 )
 
 
@@ -123,7 +124,10 @@ class TextureAtlas2D(Texture2D):
     MARK_DELETED_TILES = False
 
     def __init__(
-        self, tile_shape: tuple, shape_in_tiles: Tuple[int, int], **kwargs,
+        self,
+        tile_shape: tuple,
+        shape_in_tiles: Tuple[int, int],
+        **kwargs,
     ):
         # Each tile's shape in texels, for example (256, 256, 3).
         self.spec = TileSpec.from_shape(tile_shape)
@@ -209,7 +213,9 @@ class TextureAtlas2D(Texture2D):
         return row * self.spec.height, col * self.spec.width
 
     def _calc_tex_coords(
-        self, tile_index: int, tile_shape: np.ndarray,
+        self,
+        tile_index: int,
+        tile_shape: np.ndarray,
     ) -> np.ndarray:
         """Return the texture coordinates for this tile.
 

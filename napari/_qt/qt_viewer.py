@@ -23,8 +23,8 @@ from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme, template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
+from .perf.qt_performance import QtPerformance
 from .qt_resources import get_stylesheet
-from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
@@ -249,10 +249,14 @@ class QtViewer(QSplitter):
         """
 
         self.axes = VispyAxesVisual(
-            self.viewer, parent=self.view.scene, order=1e6,
+            self.viewer,
+            parent=self.view.scene,
+            order=1e6,
         )
         self.scale_bar = VispyScaleBarVisual(
-            self.viewer, parent=self.view, order=1e6 + 1,
+            self.viewer,
+            parent=self.view,
+            order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
@@ -268,8 +272,7 @@ class QtViewer(QSplitter):
             self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
-        """Create the dock widget that shows performance metrics.
-        """
+        """Create the dock widget that shows performance metrics."""
         if perf.USE_PERFMON:
             return QtViewerDockWidget(
                 self,
@@ -282,8 +285,7 @@ class QtViewer(QSplitter):
 
     @property
     def console(self):
-        """QtConsole: iPython console terminal integrated into the napari GUI.
-        """
+        """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             from .widgets.qt_console import QtConsole
 
@@ -411,7 +413,7 @@ class QtViewer(QSplitter):
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise IOError("Nothing to save")
+            raise OSError("Nothing to save")
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
@@ -426,7 +428,7 @@ class QtViewer(QSplitter):
                     [str(x.message.args[0]) for x in wa]
                 )
             if not saved:
-                raise IOError(
+                raise OSError(
                     f"File {filename} save failed.\n{error_messages}"
                 )
 
