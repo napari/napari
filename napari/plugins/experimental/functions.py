@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, Tuple
 
 from .. import plugin_manager as napari_plugin_manager
 
@@ -6,7 +6,7 @@ from .. import plugin_manager as napari_plugin_manager
 def get_functions_from_plugin(
     plugin,
     plugin_manager=napari_plugin_manager,
-) -> List[Tuple[Callable, Dict, Dict]]:
+) -> Tuple[Tuple[Callable, Dict, Dict]]:
     """Get a list of functions from a plugin.
 
     Parameters
@@ -19,8 +19,8 @@ def get_functions_from_plugin(
 
     Returns
     -------
-    functions : list
-        List of 3-tuple, where each tuple has a function a dictionary of
+    functions : tuple
+        Tuple of 3-tuple, where each tuple has a function a dictionary of
         keyword arguments for magicgui, and a dictionary of keyword arguments
         for the viewer.window.add_dock_widget method.
     """
