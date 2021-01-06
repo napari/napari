@@ -251,7 +251,8 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
                 '`napari.layers.Layer` is deprecated.  To indicate that your '
                 'function returns a layer data tuple, please use a return '
                 'annotation of `napari.types.LayerDataTuple` or '
-                '`List[napari.types.LayerDataTuple]`'
+                '`List[napari.types.LayerDataTuple]`\n'
+                'This will raise an exception in napari v0.4.5'
             )
             msg = "\n" + "\n".join(textwrap.wrap(msg, width=70))
             warnings.warn(msg)
@@ -273,7 +274,8 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
         msg += (
             "\n\n@magicgui\n"
             "def func(nx: int, ny: int) -> napari.types.ImageData:\n"
-            "    return np.random.rand(ny, nx)\n"
+            "    return np.random.rand(ny, nx)\n\n"
+            "This will raise an exception in napari v0.4.5"
         )
         warnings.warn(msg)
         data_type = getattr(types, f'{return_type.__name__.title()}Data')
