@@ -3,80 +3,80 @@
 Napari Async Rendering
 ======================
 
-As discussed in the rendering backgrounder, in order for napari to remain
-responsive we cannot access array-like data in the GUI thread. Array-like
-objects such as `Dask <https://dask.org>`_ arrays can perform IO or
-computations when they are accessed, and that IO or computation might take
-a very long time.
-
-Instead using the experimental
-:class:`~napari.components.experimental.chunk._loader.ChunkLoader` class we
-access the data in a worker thread. Meanwhile napari renders without
-blocking using the data which has already been loaded.
-
-
-Enabling Async Rendering
-------------------------
-
-There are two experimental rendering features which you can opt-in to using
-with the following environment variables:
-
-Set `NAPARI_ASYNC=1` to use the regular `Image` class with the experimental
-`ChunkLoader` for asynchronous loading.
-
-Set `NAPARI_OCTREE=1` to use the experimental
-:class:`~napari.layers.image.experimental.octree_image.OctreeImage` class
-with the experimental
-:class:`~napari.components.experimental.chunk._loader.ChunkLoader` and the
-experimental
-:class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
-for tiled rendering.
+There are two experimental features in Napari that enable "asynchronous
+rendering" in different ways. The first environment variable is
+`NAPARI_ASYNC` and the second is `NAPARI_OCTREE`.
 
 NAPARI_ASYNC
 ------------
 
-When the :class:`~napari.components.experimental.chunk._loader.ChunkLoader`
-is enabled with the regular :class:`~napari.layers.image.image.Image` both
-single-scale and multi-scale images are loaded asynchronously.
+Running `NAPARI_ASYNC=1 napari` enables asynchronous rendering using the
+existing :class:`~napari.layers.image.image.Image` class. The
+:class:`~napari.layers.image.image.Image` class will no longer call
+`np.asarray()` in the GUI thread. Calling `np.asarray()` on a `Dask
+<https://dask.org>`_ or similar array-like object can result in disk or
+network IO or computations that block the GUI thread and ruin the
+framerate.
 
-Single-scale images
-^^^^^^^^^^^^^^^^^^^
+Instead of calling `np.asarray()` in the GUI thread, when `NAPARI_ASYNC` is
+set :class:`~napari.layers.image.image.Image` will use the
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader`. The
+`ChunkLoader` will call `np.asarray()` in a worker thread. If that results
+in IO or computation only the worker thread will block. Rendering can
+continue and napari remains responsive and usable. When the worker thread
+finishes it will call
+:meth:`~napari.layers.image.image.Image.on_chunk_loaded` with the loaded
+data, and the next frame :class:`~napari.layers.image.image.Image` can
+display the new data.
 
-Without asynchronous loading, when scrolling through slices of a single
-scale image, you must wait the full duration of each slice loading before
-you can advance to the next slice. If the images are load to load, this can
-lead the user to feel stuck, unable to freely select a slice. It can also
-lead to the spinning wheel of death if the slice takes a really long time
-to load.
+Using `NAPARI_ASYNC` can improve the viewing of both single-scale and
+multi-scale images. It is particularly helpful with remote or otherwise
+slow loading data. The main benefit for single-scale images is you can
+interrupt the loading of a slice at any time by advancing to the next
+slice. Without `NAPARI_ASYNC` napari will block until the slice is fully
+loaded. With `NAPARI_ASYNC` you can freely advance through slices.
 
-With asynchronous loading you can freely change slices even if the current
-slice has not loaded yet. The asynchronous load that was in progress is
-either aborted, or it just completes in the background and has no effect.
+`NAPARI_ASYNC` also improves viewing multi-scale images. However, it's
+helpful to understand how multi-scaling viewing works with today's
+:class:`~napari.layers.image.image.Image`.  There are no tiles or chunks
+when viewing multi-scale images with today's
+:class:`~napari.layers.image.image.Image` class. Instead, whenever the
+camera is panned or zoomed, even a tiny bit, napari fetches all the data
+needed to draw the entire current canvas.
 
-Multi-scale images
-^^^^^^^^^^^^^^^^^^
+This actually works amazingly well with local data. Fetching the whole
+camera view each time is quite fast. With remote or other high latency
+data, however, this method is slow. Even if you pan only a tiny amount, it
+has to fetch the whole canvas worth of data.
 
-The :class:`~napari.layers.image.image.Image` class implements multi-scale
-rendering without using tiles. When the image is panned or zoom, the entire
-contents of the current view of the data is loaded. This works surprisingly
-well for local data, but it's quite slow for remote data because even if
-you pan only a tiny bit, it gets an entire window's worth of data.
-
-Still asynchronous rendering improves the experience and prevents napari
-from seeming hung and showing the spinning wheel of death.
+Most large image viewers improve on this using tiles. With tiles when the
+image is panned the existing tiles are translated. Then the viewier only
+needs to fetch a few new tiles. Everything else is reused. This tiled
+rendering is exactly what we implemented with `NAPARI_OCTREE`.
 
 NAPARI_OCTREE
 -------------
 
-Enabling the Octree automatically enables the
-:class:`~napari.components.experimental.chunk._loader.ChunkLoader`.
+Set `NAPARI_OCTREE=1` to use the experimental
+:class:`~napari.layers.image.experimental.octree_image.OctreeImage` class
+instead of the normal :class:`~napari.layers.image.image.Image` class. The
+new :class:`~napari.layers.image.experimental.octree_image.OctreeImage`
+class will use the same
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader` that
+`NAPARI_ASYNC` enables. In addition, `NAPARI_OCTREE` uses the new
+:class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
+instead of the regular Vispy `ImageVisual` that the normal
+:class:`~napari.layers.image.image.Image` class uses.
+
+Config File
+^^^^^^^^^^^
 
 Setting `NAPARI_OCTREE=1` enables Octree with the default configuration. To
 customize the configuration set `NAPARI_OCTREE` to be the path of a JSON
 config file, such as `NAPARI_OCTREE=/tmp/octree.json`
 
 See :data:`~napari.utils._octree.DEFAULT_OCTREE_CONFIG` for the current
-config file format, for example:
+config file format. Currently it's:
 
 .. code-block:: python
     {
@@ -99,8 +99,8 @@ config file format, for example:
         },
     }
 
-Tiled Visuals
--------------
+Octree Visuals
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The visual portion of Octree rendering is implemented by three classes:
 :class:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer`,
@@ -108,45 +108,35 @@ The visual portion of Octree rendering is implemented by three classes:
 and :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D`.
 
 The first two classes are named "tiled image" rather than "octree" because
-currently they do not know that they are rendering out of an octree. We did
-this to keep the visuals simpler and more general, however the approach has
-some limitations, and we need need to create a subclass of
+currently they do not "know" that they are rendering out of an octree. We
+did this intentionally to keep the visuals simpler and more general.
+However the approach has some limitations, and we might later need need to
+create a subclass of
 :class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`
-which is Octree-specific at some point.
+which is Octree-specific to get all the octree rendering behaviors we want.
 
 The :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
-is a subclass of the basic Vispy `Texture2D` class. Its key method is
-:meth:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D.add_tile`
-which adds a next texture to the atlas. Each texture in the atlas has
-texture coordinates which denotes a tile-sized rectangle within the full
-texture, and vertices which denote where that texture should be drawn in
-the scene.
+is a subclass of the basic Vispy `Texture2D` class. Our
+:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
+uses one texture, stored by its base `Texture2D` class. However it uses
+this one texture as an "atlas" for tiles.
 
-Future Work: Multiple Tile Sizes
---------------------------------
+For example, by default we use a (4096, 4096) texture that stores 256
+different (256, 256) pixel tiles. Adding or remove a single tile from the
+full atlas texture is very fast. Under the hood adding one tile results in
+a `glTexSubImage2D()` call that only updates the data in that one (256,
+256) region of the full texture.
 
-Today all tiles in the texture atlas have to be the same size. However the
-coarsest level in multiscale datasets in the wild are often much bigger
-than our tile size. Today we solve that with a method
-:meth:`~napari.layers.image.experimental.octree_image.OctreeImage._create_extra_levels`
-that adds levels to the multiscale data until the coarsest level fits
-within a single tile.
-
-This is not a great solution. It's potentially quite slow to add these
-additional levels, since it involves downsampling.  It would be better if
-we could make an exception for the highest level and allow its tile size to
-be bigger than what we use in the rest of the tree. As long as it smaller
-than the max texture size, which is (16384, 16384) on some hardware.
-
-This is also probably a necessary step if we want `OctreeImage` to someday
-replace `Image`. If an image is smaller than the max texture size, in at
-least some cases we probably want to draw that image as a single tile.  If
-`OctreeImage` is going to replace `Image` we probably want to avoid
-unnecessarily tiling images that do not need to be tiled.
+Aside from the data transfer, it's also fast because we do not have to
+modify the scene graph or rebuild any shaders. In an early version of tiled
+rendering we created a new `ImageVisual` for every tile. This did require
+scene graph changes and a shader rebuild. At the time the scene graph
+changes were causing crashes with `PyQt5`, but the atlas approach is better
+for multiple reasons, so we were happy to switch to it.
 
 
 Octree Rendering
-----------------
+^^^^^^^^^^^^^^^^
 The interface between the visuals and the Octree is the `OctreeImage`
 method
 :meth:`~napari.layers.image.experimental.octree_image.OctreeImage.get_drawable_chunks`.
@@ -164,8 +154,9 @@ current camera position.
 The ideal chunks are the ones at the preferred level of detail, the level
 of detail that best matches the current canvas resolution. Drawing chunks
 which are more detailed that this will look fine, the graphics card will
-downsample them, but it will take longer. Drawing chunks that are coarser
-than the ideal level will look blurry, but it's better than drawing nothing.
+downsample them, but it is creating unnecessary work. Drawing chunks that
+are coarser than the ideal level will look blurry, but it's much better than
+drawing nothing.
 
 The decision about what level of detail to use is made by the
 :class:`~napari.layers.image.experimental._octree_loader.OctreeLoader`
@@ -193,3 +184,60 @@ Levels Above Ideal  Coverage
 2                   16
 3                   64
 ==================  ======
+
+Future Work: Extending TextureAtlas2D
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+We could improve our
+:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class in
+a number of ways:
+
+1. Support setting the atlas texture size on the fly.
+2. Support setting the tile size on the fly.
+3. Support a mix of tiles sizes in one atlas.
+4. Support multiple atlas textures in a single atlas.
+
+This would allow us to use "very large tiles" in some cases. Often the
+coarsest level of multi-scale data "in the wild" is much bigger than one of
+our (256, 256) tiles. Today we solve that by creating additional Octree
+levels, downsampling the data until the coarsest level fits within a single
+tile.
+
+A better solution might be to use "small tiles" for the interior data, but
+allow a pretty big tile as root octree level. For example we might be using
+(256, 256) pixel tiles, but the root level might be (2500, 2500) and we decide
+to leave that as a single tile.
+
+Long term it would be nice if
+:class:`~napari.layers.image.experimental.octree_image.OctreeImage` were
+the only image class. So we did not have to support two very different
+paths in the code. Two types of layers, two types of visuals, etc. However
+it's probably unwise to chop up modest sizes images, like (4096, 4096),
+into small tiles. When the graphics card can handle (4096, 4096) perfectly
+fine.
+
+With a flexible
+:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` we should
+choose the optimal tile size for every situation. So we'd use the
+:class:`~napari.layers.image.experimental.octree_image.OctreeImage` code in
+all cases. But in some cases the "octree" would be just a single (4096,
+4096) texture.
+
+Future Work: Level Zero Only Octrees
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In issue `#1300 <https://github.com/napari/napari/issues/1300>`_ it takes
+1500ms to switch slices in a (16384, 16384) image that entirely in RAM. The
+image is not a multi-scale image. Generally we've found downsampling to
+create multi-scale image is slow. On thing that might were for this case
+is to create an Octree that only has a level zero.
+
+Chopping up an `numpy` array into tiles is very fast, because no memory is
+moved. It's really just creating a bunch of "views" into the single array.
+So creating a level zero Octree should be very fast. For there we can use
+our existing Octree code and our existing
+:class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`
+to transfer over one tile at a time without hurting the frame rate.
+
+It's TBD exactly how we'd display this for the user. But instead of a
+1500ms hang the users would see the tiles appearing very quickly one at a
+time, and they would be free to interrupt and change slices at anytime.
