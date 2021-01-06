@@ -9,6 +9,7 @@ from magicgui import magicgui
 from napari import types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer, Points
+from napari.utils.misc import all_subclasses
 
 try:
     import qtpy  # noqa
@@ -18,6 +19,13 @@ except RuntimeError:
     pytest.skip(
         'Cannot test magicgui without Qt bindings.', allow_module_level=True
     )
+
+
+# only test the first of each layer type
+test_data = [
+    next(x for x in layer_test_data if x[0] is cls)
+    for cls in all_subclasses(Layer)
+]
 
 
 def test_magicgui_returns_image(make_test_viewer):
@@ -92,7 +100,7 @@ def test_magicgui_returns_layer_tuple(make_test_viewer):
     assert layer.data.shape == (10, 3)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', layer_test_data)
+@pytest.mark.parametrize('LayerType, data, ndim', test_data)
 def test_magicgui_add_data(make_test_viewer, LayerType, data, ndim):
     """Test that annotating with napari.types.<layer_type>Data works.
 
@@ -114,7 +122,29 @@ def test_magicgui_add_data(make_test_viewer, LayerType, data, ndim):
     assert isinstance(viewer.layers[0], LayerType)
 
 
-@pytest.mark.parametrize('LayerType, data, ndim', layer_test_data)
+@pytest.mark.parametrize('LayerType, data, ndim', test_data)
+def test_magicgui_get_data(make_test_viewer, LayerType, data, ndim):
+    """Test that annotating parameters with napari.types.<layer_type>Data.
+
+    This will provide the same dropdown menu appearance as when annotating
+    a parameter with napari.layers.<layer_type>... but the function will
+    receive `layer.data` rather than `layer`
+    """
+    viewer = make_test_viewer()
+    dtype = getattr(types, f'{LayerType.__name__}Data')
+
+    @magicgui
+    # where `dtype` is something like napari.types.ImageData
+    def add_data(x: dtype):
+        # and data is just the bare numpy-array or similar
+        return data
+
+    viewer.window.add_dock_widget(add_data)
+    layer = LayerType(data)
+    viewer.add_layer(layer)
+
+
+@pytest.mark.parametrize('LayerType, data, ndim', test_data)
 def test_magicgui_add_layer(make_test_viewer, LayerType, data, ndim):
     viewer = make_test_viewer()
 

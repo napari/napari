@@ -12,8 +12,7 @@ of those custom classes, magicgui will know what to do with it.
 import warnings
 from typing import Any, List, Optional, Tuple, Type
 
-from .. import types
-from ..layers import NAMES, Layer
+from .. import layers, types
 from ..utils.misc import ensure_list_of_layer_data_tuple
 from ..viewer import Viewer
 
@@ -50,7 +49,7 @@ def register_types_with_magicgui():
 
     """
     register_type(
-        Layer, choices=get_layers, return_callback=add_layer_to_viewer
+        layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
     )
     register_type(Viewer, choices=get_viewers)
     register_type(
@@ -61,9 +60,13 @@ def register_types_with_magicgui():
         List[types.LayerDataTuple],
         return_callback=add_layer_data_tuples_to_viewer,
     )
-    for layer_name in NAMES:
+    for layer_name in layers.NAMES:
         data_type = getattr(types, f'{layer_name.title()}Data')
-        register_type(data_type, return_callback=add_layer_data_to_viewer)
+        register_type(
+            data_type,
+            choices=get_layers_data,
+            return_callback=add_layer_data_to_viewer,
+        )
 
 
 def add_layer_data_to_viewer(gui, result, return_type):
@@ -84,6 +87,16 @@ def add_layer_data_to_viewer(gui, result, return_type):
         *just* the data part of the corresponding layer type.
     return_type : type
         The return annotation that was used in the decorated function.
+
+    Examples
+    --------
+    This allows the user to do this, and add the result as a viewer Image.
+
+    >>> @magicgui
+    ... def make_layer() -> napari.types.ImageData:
+    ...     return np.random.rand(256, 256)
+
+
     """
 
     if result is None:
@@ -119,6 +132,19 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
         *just* the data part of the corresponding layer type.
     return_type : type
         The return annotation that was used in the decorated function.
+
+    Examples
+    --------
+    This allows the user to do this, and add the result to the viewer
+
+    >>> @magicgui
+    ... def make_layer() -> napari.types.LayerDataTuple:
+    ...     return (np.ones((10,10)), {'name': 'hi'})
+
+    >>> @magicgui
+    ... def make_layer() -> List[napari.types.LayerDataTuple]:
+    ...     return [(np.ones((10,10)), {'name': 'hi'})]
+
     """
 
     if result is None:
@@ -184,7 +210,7 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     return None
 
 
-def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
+def get_viewers(gui) -> Tuple[Viewer, ...]:
     """Return the viewer that the magicwidget is in, or a list of all Viewers."""
     viewer = find_viewer_ancestor(gui)
     if viewer:
@@ -195,7 +221,7 @@ def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
         return tuple(v for v in globals().values() if isinstance(v, Viewer))
 
 
-def get_layers(gui) -> Tuple[Layer, ...]:
+def get_layers(gui) -> Tuple[layers.Layer, ...]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     Parameters
@@ -225,7 +251,47 @@ def get_layers(gui) -> Tuple[Layer, ...]:
     return tuple(x for x in viewer.layers if isinstance(x, gui.annotation))
 
 
-def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
+def get_layers_data(gui) -> Tuple[Tuple[str, Any], ...]:
+    """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
+
+    As opposed to `get_layers`, this function returns just `layer.data` rather
+    than the full layer object.
+
+    Parameters
+    ----------
+    gui : magicgui.widgets.Widget
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+
+    Returns
+    -------
+    tuple
+        Tuple of layer.data from layers of type ``gui.annotation``
+
+    Examples
+    --------
+    This allows the user to do this, and get a dropdown box in their GUI
+    that shows the available image layers, but just get the data from the image
+    as function input
+
+    >>> @magicgui
+    ... def get_layer_mean(data: napari.types.ImageData) -> float:
+    ...     return data.mean()
+
+    """
+
+    lay_type = gui.annotation.__name__.replace("Data", "").title()
+    prior, gui.annotation = gui.annotation, getattr(layers, lay_type)
+    try:
+        layerlist = get_layers(gui)
+    finally:
+        gui.annotation = prior
+    return tuple((f'{x.name} (data)', x.data) for x in layerlist)
+
+
+def add_layer_to_viewer(
+    gui, result: Any, return_type: Type[layers.Layer]
+) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
@@ -237,15 +303,23 @@ def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
         The result of the function call.
     return_type : type
         The return annotation that was used in the decorated function.
+
+    Examples
+    --------
+    This allows the user to do this, and add the resulting layer to the viewer.
+
+    >>> @magicgui
+    ... def make_layer() -> napari.layers.Image:
+    ...     return napari.layers.Image(np.random.rand(64, 64))
     """
     if result is None:
         return
 
     # This is the pre 0.4.3 API, warn user and pass to the correct function.
-    if not isinstance(result, Layer):
+    if not isinstance(result, layers.Layer):
         import textwrap
 
-        if return_type == Layer:
+        if return_type == layers.Layer:
             msg = (
                 'Annotating a magicgui function with a return type of '
                 '`napari.layers.Layer` is deprecated.  To indicate that your '
