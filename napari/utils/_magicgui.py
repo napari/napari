@@ -9,9 +9,12 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
-from typing import Any, Optional, Tuple, Type
+import warnings
+from typing import Any, List, Optional, Tuple, Type
 
-from ..layers import Layer
+from .. import types
+from ..layers import NAMES, Layer
+from ..utils.misc import ensure_list_of_layer_data_tuple
 from ..viewer import Viewer
 
 try:
@@ -29,15 +32,130 @@ def register_types_with_magicgui():
         napari.layers.Layer, will be rendered as a ComboBox.
             if a parameter is annotated as a subclass Layer type, then the
             combobox options will be limited to that layer type.
+        napari.Viewer, will be rendered as a ComboBox, with the current viewer
+            as the only choice.
 
     Return Annotations -> Widgets:
         napari.layers.Layer will add a new layer to the Viewer.
             if a return is annotated as a subclass of Layer, then the
-            corresponding layer type will be added.
-            see `show_layer_result` for detail
+            corresponding layer type will be added.  As of 0.4.3, the user
+            must return an actual layer instance
+            see `add_layer_to_viewer` for detail
+        napari.types.<layer_type>Data will add a new layer to the Viewer.
+            using a bare data array (e.g. numpy array) as a return value.
+        napari.types.LayerDataTuple will add a new layer to the Viewer.
+            and expects the user to return a single layer data tuple
+        List[napari.types.LayerDataTuple] will add multiple new layer to the
+            Viewer. And expects the user to return a list of layer data tuples.
+
     """
-    register_type(Layer, choices=get_layers, return_callback=show_layer_result)
+    register_type(
+        Layer, choices=get_layers, return_callback=add_layer_to_viewer
+    )
     register_type(Viewer, choices=get_viewers)
+    register_type(
+        types.LayerDataTuple,
+        return_callback=add_layer_data_tuples_to_viewer,
+    )
+    register_type(
+        List[types.LayerDataTuple],
+        return_callback=add_layer_data_tuples_to_viewer,
+    )
+    for layer_name in NAMES:
+        data_type = getattr(types, f'{layer_name.title()}Data')
+        register_type(data_type, return_callback=add_layer_data_to_viewer)
+
+
+def add_layer_data_to_viewer(gui, result, return_type):
+    """Show a magicgui result in the viewer.
+
+    This function will be called when a magicgui-decorated function has a
+    return annotation of one of the `napari.types.<layer_name>Data` ... and
+    will add the data in ``result`` to the current viewer as the corresponding
+    layer type.
+
+    Parameters
+    ----------
+    gui : MagicGui or QWidget
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    result : Any
+        The result of the function call. For this function, this should be
+        *just* the data part of the corresponding layer type.
+    return_type : type
+        The return annotation that was used in the decorated function.
+    """
+
+    if result is None:
+        return
+
+    viewer = find_viewer_ancestor(gui)
+    if not viewer:
+        return
+
+    try:
+        viewer.layers[gui.result_name].data = result
+    except KeyError:
+        layer_type = return_type.__name__.replace("Data", "").lower()
+        adder = getattr(viewer, f'add_{layer_type}')
+        adder(data=result, name=gui.result_name)
+
+
+def add_layer_data_tuples_to_viewer(gui, result, return_type):
+    """Show a magicgui result in the viewer.
+
+    This function will be called when a magicgui-decorated function has a
+    return annotation of one of the `napari.types.<layer_name>Data` ... and
+    will add the data in ``result`` to the current viewer as the corresponding
+    layer type.
+
+    Parameters
+    ----------
+    gui : MagicGui or QWidget
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    result : Any
+        The result of the function call. For this function, this should be
+        *just* the data part of the corresponding layer type.
+    return_type : type
+        The return annotation that was used in the decorated function.
+    """
+
+    if result is None:
+        return
+
+    viewer = find_viewer_ancestor(gui)
+    if not viewer:
+        return
+
+    result = result if isinstance(result, list) else [result]
+    try:
+        result = ensure_list_of_layer_data_tuple(result)
+    except TypeError:
+        raise TypeError(
+            f'magicgui function {gui} annotated with a return type of '
+            'napari.types.LayerDataTuple did not return LayerData tuple(s)'
+        )
+
+    for layer_datum in result:
+        # if the layer data has a meta dict with a 'name' key in it...
+        if (
+            len(layer_datum) > 1
+            and isinstance(layer_datum[1], dict)
+            and layer_datum[1].get("name")
+        ):
+            # then try to update the viewer layer with that name.
+            try:
+                layer = viewer.layers[layer_datum[1].get('name')]
+                layer.data = layer_datum[0]
+                for k, v in layer_datum[1].items():
+                    setattr(layer, k, v)
+                continue
+            except KeyError:  # layer not in the viewer
+                pass
+        # otherwise create a new layer from the layer data
+        layer = viewer._add_layer_from_data(*layer_datum)
+        layer._source = gui
 
 
 def find_viewer_ancestor(widget) -> Optional[Viewer]:
@@ -107,7 +225,7 @@ def get_layers(gui) -> Tuple[Layer, ...]:
     return tuple(x for x in viewer.layers if isinstance(x, gui.annotation))
 
 
-def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
+def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
@@ -123,49 +241,47 @@ def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
     if result is None:
         return
 
+    # This is the pre 0.4.3 API, warn user and pass to the correct function.
+    if not isinstance(result, Layer):
+        import textwrap
+
+        if return_type == Layer:
+            msg = (
+                'Annotating a magicgui function with a return type of '
+                '`napari.layers.Layer` is deprecated.  To indicate that your '
+                'function returns a layer data tuple, please use a return '
+                'annotation of `napari.types.LayerDataTuple` or '
+                '`List[napari.types.LayerDataTuple]`'
+            )
+            msg = "\n" + "\n".join(textwrap.wrap(msg, width=70))
+            warnings.warn(msg)
+            return add_layer_data_tuples_to_viewer(
+                gui, result, types.LayerDataTuple
+            )
+
+        # it's a layer subclass
+        msg = (
+            'As of napari 0.4.3 magicgui functions with a return annotation of '
+            "a napari layer type (such as 'napari.layers.Image') must now "
+            f"return an actual layer instance, rather than {type(result)}. To "
+            "have a plain array object converted to a napari layer, please "
+            "use a return annotation of napari.types.<layer_name>Data, (with "
+            "the corresponding layer name.  For example, the following "
+            "would add an image layer to the viewer:"
+        )
+        msg = "\n" + "\n".join(textwrap.wrap(msg, width=70))
+        msg += (
+            "\n\n@magicgui\n"
+            "def func(nx: int, ny: int) -> napari.types.ImageData:\n"
+            "    return np.random.rand(ny, nx)\n"
+        )
+        warnings.warn(msg)
+        data_type = getattr(types, f'{return_type.__name__.title()}Data')
+        return add_layer_data_to_viewer(gui, result, data_type)
+
     viewer = find_viewer_ancestor(gui)
     if not viewer:
         return
 
-    # if they have annotated the return type as a base layer (layers.Layer),
-    # NOT a subclass of it, then the function MUST return a list of
-    # LayerData tuples where:
-    # LayerData = Union[Tuple[data], Tuple[data, Dict], Tuple[data, Dict, str]]
-    # where `data` is the data for a given layer
-    # and `Dict` is a dict of keywords args that could be passed to that layer
-    # type's add_* method
-    if return_type == Layer:
-        if (
-            isinstance(result, list)
-            and (len(result))
-            and all(isinstance(i, tuple) and (0 < len(i) <= 3) for i in result)
-        ):
-            for layer_datum in result:
-                # if the layer data has a meta dict with a 'name' key in it...
-                if (
-                    len(layer_datum) > 1
-                    and isinstance(layer_datum[1], dict)
-                    and layer_datum[1].get('name')
-                ):
-                    # then try to update the viewer layer with that name.
-                    try:
-                        name = layer_datum[1].get('name')
-                        viewer.layers[name].data = layer_datum[0]
-                        continue
-                    except KeyError:
-                        pass
-                # otherwise create a new layer from the layer data
-                viewer._add_layer_from_data(*layer_datum)
-            return
-        raise TypeError(
-            'Functions annotated with a return type of '
-            'napari.layers.Layer MUST return a list of LayerData tuples'
-        )
-
-    # Otherwise they annotated it as a subclass of layers.Layer, and we allow
-    # the simpler behavior where they only return the layer data.
-    try:
-        viewer.layers[gui.result_name].data = result
-    except KeyError:
-        adder = getattr(viewer, f'add_{return_type.__name__.lower()}')
-        adder(data=result, name=gui.result_name)
+    # After 0.4.3 a return type of a Layer subclass should return a layer.
+    viewer.add_layer(result)

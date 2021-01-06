@@ -360,3 +360,18 @@ def ensure_n_tuple(val, n, fill=0):
     assert n > 0, 'n must be greater than 0'
     tuple_value = tuple(val)
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+
+
+def ensure_layer_data_tuple(val):
+    if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
+        raise TypeError(f'Not a valid layer data tuple: {val!r}')
+    return val
+
+
+def ensure_list_of_layer_data_tuple(val):
+    if isinstance(val, list) and len(val):
+        try:
+            return [ensure_layer_data_tuple(v) for v in val]
+        except TypeError:
+            pass
+    raise TypeError('Not a valid list of layer data tuples!')
