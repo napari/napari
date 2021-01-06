@@ -35,9 +35,20 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, List, Optional, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from napari_plugin_engine import napari_hook_specification
+from qtpy.QtWidgets import QWidget
 
 from ..types import ReaderFunction, WriterFunction
 
@@ -317,3 +328,48 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
+
+
+# -------------------------------------------------------------------------- #
+#                                 GUI Hooks                                  #
+# -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_function() -> List[
+    Tuple[Callable, Dict, Dict]
+]:
+    """Provide functions and args that can be passed to magicgui.
+
+    Returns
+    -------
+    functions : tuple
+        Tuple of 3-tuple, where each tuple has a function a dictionary of
+        keyword arguments for magicgui, and a dictionary of keyword arguments
+        for the viewer.window.add_dock_widget method.
+    """
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_dock_widget() -> Union[
+    Type[QWidget], Sequence[Type[QWidget]]
+]:
+    """Provide QWidget classes that can be added to the viewer as dock widgets.
+
+    Returns
+    -------
+    dock_widgets : QWidget class or sequence of QWidget classes
+        The following class attributes may be used to control how how the
+        plugin appears in the menu.
+            napari_menu_name (str): The name that will appear in the plugin
+                menu
+            napari_shortcut (str): A keyboard shortcut that may be used to open
+                this widget
+            napari_area (str): The initial area (relative to the viewer window)
+                to show this widget.  Must be one of "top", "left", "bottom",
+                "right"
+            napari_allowed_areas (List[str]): The areas (relative to the viewer
+                window) where this widget can be moved. List members must be
+                one of "top", "left", "bottom", "right".
+    """
+    # TODO: handle menu name and keyboard shortcut conflicts.

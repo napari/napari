@@ -2,9 +2,9 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import inspect
 import os
 import time
-import warnings
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -20,8 +20,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.experimental.functions import get_functions_from_plugin
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -77,6 +75,8 @@ class Window:
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
         Window menu.
+    dock_widgets : Dict[str, QtViewerDockWidget]
+        Dock widgets that have been added to the viewer.
     """
 
     raw_stylesheet = get_stylesheet()
@@ -387,6 +387,8 @@ class Window:
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
+        from .. import plugins
+
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
         pip_install_action = QAction(
@@ -407,30 +409,27 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
-        self._plugin_dock_widget_menu = QMenu(
-            'Dock Widgets', parent=self._qt_window
-        )
-        hook_caller = (
-            napari_plugin_manager.hook.napari_experimental_provide_functions
-        )
+        self._plugin_dock_widget_menu = QMenu('Dock Widgets', self._qt_window)
 
-        for imp in hook_caller.get_hookimpls():
-            name = imp.plugin_name
-            action = QAction(
-                name, parent=self._qt_window, checkable=True, checked=False
-            )
+        # Add dock widgets - TODO namespace by plugin name!
+        for name in list(plugins.dock_widgets):
+            action = QAction(name, parent=self._qt_window)
+            action.setCheckable(True)
             action.triggered.connect(
-                lambda s: self._toggle_plugin_dock_widget(name, s)
+                lambda s, name=name: self._toggle_plugin_dock_widget(s, name)
             )
             self._plugin_dock_widget_menu.addAction(action)
-        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
-    def _toggle_plugin_dock_widget(self, plugin, state):
-        """Toggle adding or removing plugin dock widgets."""
-        if state:
-            self._add_plugin_widgets(plugin)
-        else:
-            self._remove_plugin_widgets(plugin)
+        # Add functions - TODO namespace by plugin name!
+        for name in list(plugins.functions):
+            action = QAction(name, parent=self._qt_window)
+            action.setCheckable(True)
+            action.triggered.connect(
+                lambda s, name=name: self._toggle_plugin_function(s, name)
+            )
+            self._plugin_dock_widget_menu.addAction(action)
+
+        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -511,6 +510,62 @@ class Window:
         else:
             axis = self.qt_viewer.viewer.dims.last_used or 0
             self.qt_viewer.dims.play(axis)
+
+    def _toggle_plugin_dock_widget(self, state, key):
+        """Create or destroy a plugin dock widget."""
+        if state:
+            from .. import plugins
+            from ..viewer import Viewer
+
+            Widget = plugins.dock_widgets[key]
+            # if the signature is looking a for a napari viewer, pass it.
+            sig = inspect.signature(Widget.__init__)
+            for param in sig.parameters.values():
+                if param.name == 'napari_viewer':
+                    wdg = Widget(napari_viewer=self.qt_viewer.viewer)
+                    break
+                if param.annotation in ('napari.viewer.Viewer', Viewer):
+                    wdg = Widget(**{param.name: self.qt_viewer.viewer})
+                    break
+                # cannot look for param.kind == param.VAR_KEYWORD because
+                # QWidget allows **kwargs but errs on unknown keyword arguments
+            else:
+                # otherwise instantiate the widget without passing viewer
+                wdg = Widget()
+
+            area = getattr(Widget, 'napari_area', 'right')
+            allowed_areas = getattr(Widget, 'napari_allowed_areas', None)
+            # TODO: discuss the fact that a single shortcut can't be used
+            # for loading the widget from the plugin menu AND hide/show
+            # from the window menu.
+            # shortcut = getattr(wdg, 'napari_shortcut', None)
+            dock_widget = self.add_dock_widget(
+                wdg, name=key, area=area, allowed_areas=allowed_areas
+            )
+            self._plugin_dock_widgets[key] = dock_widget
+        else:
+            # TODO: discuss potential UI confusion of having widget toggle
+            # both in window menu as well as Plugins > DockWidgets
+            dock_widget = self._plugin_dock_widgets[key]
+            self.remove_dock_widget(dock_widget)
+            del self._plugin_dock_widgets[key]
+
+    def _toggle_plugin_function(self, state, key):
+        """Create or destroy a plugin function widget."""
+        if state:
+            from .. import plugins
+
+            func, magic_kwargs, dock_kwargs = plugins.functions[key]
+            dock_widget = self.add_function_widget(
+                func, magic_kwargs=magic_kwargs, **dock_kwargs
+            )
+            self._plugin_dock_widgets[key] = dock_widget
+        else:
+            # TODO: discuss potential UI confusion of having widget toggle
+            # both in window menu as well as Plugins > DockWidgets
+            dock_widget = self._plugin_dock_widgets[key]
+            self.remove_dock_widget(dock_widget)
+            del self._plugin_dock_widgets[key]
 
     def add_dock_widget(
         self,
@@ -663,48 +718,6 @@ class Window:
             allowed_areas=allowed_areas,
             shortcut=shortcut,
         )
-
-    def _add_plugin_widgets(self, plugin):
-        """Add dock widgets provided by a plugin if not already added.
-
-        Parameters
-        ----------
-        plugin : str
-            Name of plugin.
-        """
-        if plugin in self._plugin_dock_widgets.keys():
-            warnings.warn(
-                f'Plugin {plugin} dock widgets have already been added'
-            )
-            return
-
-        functions = get_functions_from_plugin(plugin)
-
-        dock_widgets = []
-        for func, magic_kwargs, dock_kwargs in functions:
-            dock_kwargs.setdefault('name', plugin)
-            dock_widget = self.add_function_widget(
-                func, magic_kwargs=magic_kwargs, **dock_kwargs
-            )
-            dock_widgets.append(dock_widget)
-        self._plugin_dock_widgets[plugin] = dock_widgets
-
-    def _remove_plugin_widgets(self, plugin):
-        """Remove dock widgets provided by a plugin.
-
-        Parameters
-        ----------
-        plugin : str
-            Name of plugin.
-        """
-        if plugin not in self._plugin_dock_widgets.keys():
-            warnings.warn(f'Plugin {plugin} dock widgets not found')
-            return
-
-        dock_widgets = self._plugin_dock_widgets[plugin]
-        for dock_widget in dock_widgets:
-            self.remove_dock_widget(dock_widget)
-        del self._plugin_dock_widgets[plugin]
 
     def resize(self, width, height):
         """Resize the window.
