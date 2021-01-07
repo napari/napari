@@ -70,7 +70,6 @@ what is implemented with the ``NAPARI_OCTREE`` feature.
 
 NAPARI_OCTREE
 -------------
-
 Set ``NAPARI_OCTREE=1`` to use the experimental
 :class:`~napari.layers.image.experimental.octree_image.OctreeImage` class
 instead of the normal :class:`~napari.layers.image.image.Image` class. The
@@ -79,11 +78,10 @@ class will use the same
 :class:`~napari.components.experimental.chunk._loader.ChunkLoader` that
 ``NAPARI_ASYNC`` enables. In addition, ``NAPARI_OCTREE`` will use the new
 :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
-instead of the Vispy ``ImageVisual``class that napari's
+instead of the Vispy ``ImageVisual`` class that napari's
 :class:`~napari.layers.image.image.Image` class uses.
 
 See :ref:`Octree Config File` for Octree configuration options.
-
 
 Octree Visuals
 ^^^^^^^^^^^^^^
@@ -94,68 +92,76 @@ The visual portion of Octree rendering is implemented by three classes:
 and :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D`.
 
 The first two classes are named "tiled image" rather than "octree" because
-currently they do not "know" that they are rendering out of an octree. We
-did this intentionally to keep the visuals simpler and more general.
-However the approach has some limitations, and we might later need need to
-create a subclass of
+currently they do not know that they are rendering out of an octree. We did
+this intentionally to keep the visuals simpler and more general. However,
+the approach has some limitations, and we might later need need to create a
+subclass of
 :class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`
 which is Octree-specific to get all the octree rendering behaviors we want.
 
 The :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
-is a subclass of the basic Vispy `Texture2D` class. Our
-:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
-uses one texture, stored by its base `Texture2D` class. However it uses
-this one texture as an "atlas" for tiles.
+is a subclass of the basic Vispy ``Texture2D`` class. Like ``Texture2D``
+the :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
+uses one texture. However
+:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` uses this
+one texture as an "atlas" which can hold multiple tiles.
 
-For example, by default we use a (4096, 4096) texture that stores 256
-different (256, 256) pixel tiles. Adding or remove a single tile from the
-full atlas texture is very fast. Under the hood adding one tile results in
-a `glTexSubImage2D()` call that only updates the data in that one (256,
-256) region of the full texture.
+For example, by default
+:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` uses a
+(4096, 4096) texture that stores 256 different (256, 256) pixel tiles.
+Adding or remove a single tile from the full atlas texture is very fast.
+Under the hood adding one tile calls ``glTexSubImage2D()`` which only
+updates the data in that one (256, 256) region of the full texture.
 
-Aside from the data transfer, it's also fast because we do not have to
-modify the scene graph or rebuild any shaders. In an early version of tiled
-rendering we created a new `ImageVisual` for every tile. This did require
-scene graph changes and a shader rebuild. At the time the scene graph
-changes were causing crashes with `PyQt5`, but the atlas approach is better
-for multiple reasons, so we were happy to switch to it.
+Aside from the data transfer cost,
+:class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` is also
+fast because we do not have to modify the scene graph or rebuild any
+shaders. In an early version of tiled rendering we created a new
+``ImageVisual`` for every tile. This resulted in scene graph changes and
+shader rebuilds. At the time the scene graph changes were causing crashes
+with `PyQt5`, but the atlas approach is better for multiple reasons, so
+even if that crash were fixed the atlas is a better solution.
 
 
 Octree Rendering
 ^^^^^^^^^^^^^^^^
-The interface between the visuals and the Octree is the `OctreeImage`
+
+The interface between the visuals and the Octree is the ``OctreeImage``
 method
 :meth:`~napari.layers.image.experimental.octree_image.OctreeImage.get_drawable_chunks`.
-The method is called by
+The method is called by ``VispyTiledImageLayer`` method
 :meth:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer._update_drawn_chunks`
-every frame so it can update which tiles are drawn. The
+every frame so it can update which tiles are drawn.
 :class:`~napari.layers.image.experimental.octree_image.OctreeImage` calls
-the `get_intersection()` on its
+the
+:method:`~napari.layers.image.experimental._octree_slice.OctreeSlice.get_intersection`
+method on its
 :class:`~napari.layers.image.experimental._octree_slice.OctreeSlice` to get
 an
 :class:`~napari.layers.image.experimental.octree_intersection.OctreeIntersection`
 object which contains the "ideal chunks" that should be drawn for the
 current camera position.
 
-The ideal chunks are the ones at the preferred level of detail, the level
+The ideal chunks are the chunks at the preferred level of detail, the level
 of detail that best matches the current canvas resolution. Drawing chunks
 which are more detailed that this will look fine, the graphics card will
 downsample them, but it is creating unnecessary work. Drawing chunks that
-are coarser than the ideal level will look blurry, but it's much better than
-drawing nothing.
+are coarser than the ideal level will look blurry, but it's much better
+than drawing nothing.
 
 The decision about what level of detail to use is made by the
 :class:`~napari.layers.image.experimental._octree_loader.OctreeLoader`
 class and its method
-:meth::`~napari.layers.image.experimental._octree_loader.OctreeLoader.get_drawable_chunks`.
+:meth:`~napari.layers.image.experimental._octree_loader.OctreeLoader.get_drawable_chunks`.
 In addition to deciding what level of detail to draw for each ideal chunk,
 the class initiates asynchronous loads with the
 :class:`~napari.components.experimental.chunk._loader.ChunkLoader` for
 chunks it wants to draw in the future.
 
-The basic algorithm is the loader will only use chunks from a higher
-resolution if they are already being drawn. It will never initiate loads on
-higher resolution chunks, because it's better off loading the ideal chunks.
+The loader will only use chunks from a higher resolution if they are
+already being drawn. However, it will never initiate loads on higher
+resolution chunks, since it's better off loading and drawing the ideal
+chunks.
 
 The loader will load lower resolution chunks in some cases. Although this
 can slightly delay when the ideal chunks are loaded, it's a very quick way
