@@ -1,106 +1,91 @@
 .. _rendering:
 
-Napari Async Rendering
+Asynchronous Rendering
 ======================
 
-There are two experimental features in Napari that enable "asynchronous
-rendering" in different ways. The first environment variable is
-`NAPARI_ASYNC` and the second is `NAPARI_OCTREE`.
+As discussed in the rendering Explanations document, asynchronous rendering
+is a feature that allows napari to stay usable and responsive even if the
+data the user is viewing is loading very slowly.
+
+There are two experimental features in napari that enable asynchronous
+rendering. The features are enabled using the environment variables
+``NAPARI_ASYNC`` and ``NAPARI_OCTREE``.
 
 NAPARI_ASYNC
 ------------
 
-Running `NAPARI_ASYNC=1 napari` enables asynchronous rendering using the
-existing :class:`~napari.layers.image.image.Image` class. The
-:class:`~napari.layers.image.image.Image` class will no longer call
-`np.asarray()` in the GUI thread. Calling `np.asarray()` on a `Dask
-<https://dask.org>`_ or similar array-like object can result in disk or
-network IO or computations that block the GUI thread and ruin the
+Running ``NAPARI_ASYNC=1 napari`` enables asynchronous rendering using the
+existing :class:`~napari.layers.image.image.Image` class. With asynchronous
+rendering enabled the :class:`~napari.layers.image.image.Image` class will
+no longer call `np.asarray()` in the GUI thread. Calling ``np.asarray()``
+on a `Dask <https://dask.org>`_ or similar array-like object can result in
+disk or network IO or computations that block the GUI thread and ruin the
 framerate.
 
-Instead of calling `np.asarray()` in the GUI thread, when `NAPARI_ASYNC` is
-set :class:`~napari.layers.image.image.Image` will use the
-:class:`~napari.components.experimental.chunk._loader.ChunkLoader`. The
-`ChunkLoader` will call `np.asarray()` in a worker thread. If that results
-in IO or computation only the worker thread will block. Rendering can
-continue and napari remains responsive and usable. When the worker thread
-finishes it will call
+Instead of calling ``np.asarray()`` in the GUI thread, when
+``NAPARI_ASYNC`` is set :class:`~napari.layers.image.image.Image` will use
+the :class:`~napari.components.experimental.chunk._loader.ChunkLoader`. The
+``ChunkLoader`` will call ``np.asarray()`` in a worker thread. If that
+results in IO or computation only the worker thread will block. Rendering
+can continue in the GUI thread and napari will remain responsive and
+usable. When the worker thread finishes it will call
 :meth:`~napari.layers.image.image.Image.on_chunk_loaded` with the loaded
-data, and the next frame :class:`~napari.layers.image.image.Image` can
-display the new data.
+data. The next frame :class:`~napari.layers.image.image.Image` can display
+the new data.
 
-Using `NAPARI_ASYNC` can improve the viewing of both single-scale and
-multi-scale images. It is particularly helpful with remote or otherwise
-slow loading data. The main benefit for single-scale images is you can
-interrupt the loading of a slice at any time by advancing to the next
-slice. Without `NAPARI_ASYNC` napari will block until the slice is fully
-loaded. With `NAPARI_ASYNC` you can freely advance through slices.
+Time-series Images
+^^^^^^^^^^^^^^^^^^
 
-`NAPARI_ASYNC` also improves viewing multi-scale images. However, it's
-helpful to understand how multi-scaling viewing works with today's
-:class:`~napari.layers.image.image.Image`.  There are no tiles or chunks
-when viewing multi-scale images with today's
-:class:`~napari.layers.image.image.Image` class. Instead, whenever the
-camera is panned or zoomed, even a tiny bit, napari fetches all the data
-needed to draw the entire current canvas.
+With time-series images, asynchronous rendering allows you to interrupt the
+loading of a slice at any time by advancing to the next slice, use the
+slice slider or other means. Without ``NAPARI_ASYNC`` napari will block
+until the slice is fully loaded and you cannot switch slices while this
+load is in progress. With ``NAPARI_ASYNC`` you can freely advance through
+slices.
+
+Multi-scale Images
+^^^^^^^^^^^^^^^^^^
+
+It's helpful to understand how multi-scaling viewing works with today's
+:class:`~napari.layers.image.image.Image` class. There are no tiles or
+chunks. Instead, whenever the camera is panned or zoomed, even a tiny bit,
+napari fetches all the data needed to draw the entire current canvas.
 
 This actually works amazingly well with local data. Fetching the whole
 camera view each time is quite fast. With remote or other high latency
-data, however, this method is slow. Even if you pan only a tiny amount, it
-has to fetch the whole canvas worth of data.
+data, however, this method can be very slow. Even if you pan only a tiny
+amount, it has to fetch the whole canvas worth of data, and you cannot
+interrupt the load the move the camera.
 
-Most large image viewers improve on this using tiles. With tiles when the
-image is panned the existing tiles are translated. Then the viewier only
-needs to fetch a few new tiles. Everything else is reused. This tiled
-rendering is exactly what we implemented with `NAPARI_OCTREE`.
+With ``NAPARI_ASYNC`` set performance is the same, however you can
+interrupt the load by moving the camera. This is a nice improvement, but
+working with slow-loading data is still awkward.
+
+Most large image viewers improve on this experience using tiles. With tiles
+when the image is panned the existing tiles are just translated. Then the
+viewier only needs to fetch a few new tiles. The existing tiles are
+re-used. This tiled rendering is exactly what napari implements with
+``NAPARI_OCTREE``.
 
 NAPARI_OCTREE
 -------------
 
-Set `NAPARI_OCTREE=1` to use the experimental
+Set ``NAPARI_OCTREE=1`` to use the experimental
 :class:`~napari.layers.image.experimental.octree_image.OctreeImage` class
 instead of the normal :class:`~napari.layers.image.image.Image` class. The
 new :class:`~napari.layers.image.experimental.octree_image.OctreeImage`
 class will use the same
 :class:`~napari.components.experimental.chunk._loader.ChunkLoader` that
-`NAPARI_ASYNC` enables. In addition, `NAPARI_OCTREE` uses the new
+`NAPARI_ASYNC` enables. In addition, ``NAPARI_OCTREE`` uses the new
 :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
 instead of the regular Vispy `ImageVisual` that the normal
 :class:`~napari.layers.image.image.Image` class uses.
 
-Config File
-^^^^^^^^^^^
+See section on Octree Config File below for configuration options.
 
-Setting `NAPARI_OCTREE=1` enables Octree with the default configuration. To
-customize the configuration set `NAPARI_OCTREE` to be the path of a JSON
-config file, such as `NAPARI_OCTREE=/tmp/octree.json`
-
-See :data:`~napari.utils._octree.DEFAULT_OCTREE_CONFIG` for the current
-config file format. Currently it's:
-
-.. code-block:: python
-    {
-        "loader_defaults": {
-            "log_path": None,
-            "force_synchronous": False,
-            "num_workers": 10,
-            "use_processes": False,
-            "auto_sync_ms": 30,
-            "delay_queue_ms": 100,
-        },
-        "octree": {
-            "enabled": True,
-            "tile_size": 256,
-            "log_path": None,
-            "loaders": {
-                0: {"num_workers": 10, "delay_queue_ms": 100},
-                2: {"num_workers": 10, "delay_queue_ms": 0},
-            },
-        },
-    }
 
 Octree Visuals
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 The visual portion of Octree rendering is implemented by three classes:
 :class:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer`,
@@ -185,6 +170,66 @@ Levels Above Ideal  Coverage
 3                   64
 ==================  ======
 
+Octree Configuration File
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Setting `NAPARI_OCTREE=1` enables Octree with the default configuration. To
+customize the configuration set `NAPARI_OCTREE` to be the path of a JSON
+config file, such as `NAPARI_OCTREE=/tmp/octree.json`
+
+See :data:`~napari.utils._octree.DEFAULT_OCTREE_CONFIG` for the current
+config file format. Currently it's:
+
+.. code-block:: python
+    {
+        "loader_defaults": {
+            "log_path": None,
+            "force_synchronous": False,
+            "num_workers": 10,
+            "use_processes": False,
+            "auto_sync_ms": 30,
+            "delay_queue_ms": 100,
+        },
+        "octree": {
+            "enabled": True,
+            "tile_size": 256,
+            "log_path": None,
+            "loaders": {
+                0: {"num_workers": 10, "delay_queue_ms": 100},
+                2: {"num_workers": 10, "delay_queue_ms": 0},
+            },
+        },
+    }
+
+``loader_defaults``
++++++++++++++++++++
+``log_path`` - Dedicated log files for debugging.
+
+``force_synchronous`` - If ``true`` the ``ChunkLoader`` is used, but it
+always loads synchronously. This is mainly for testing purposes.
+
+``num_workers`` - The default number of worker threads or worker processes
+in a pool.
+
+``use_processes`` - If ``true` then threads are used instead of processes.
+Threads are the normal case, processes are more eperimental.
+
+``auto_async_ms`` - If chunks for a layer are loading on average faster
+than this, then switch to synchronous loading for that layer.
+
+``delay_queue_ms`` - Delay a chunk load for this long before submitting it
+to the worker pool. Delayed loads prevert the worker pool from being choked
+with requests that are no longer needed due to camera movements or slice
+changes.
+
+The ``num_workers``, ``auto_sync_ms`` and ``delay_queue_ms`` values in
+``loader_defaults`` can be overridden for a specific pool under ``octree``
+-> ``loaders``.
+
+``octree``
+
+
+
 Future Work: Extending TextureAtlas2D
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We could improve our
@@ -228,10 +273,10 @@ Future Work: Level Zero Only Octrees
 In issue `#1300 <https://github.com/napari/napari/issues/1300>`_ it takes
 1500ms to switch slices in a (16384, 16384) image that entirely in RAM. The
 image is not a multi-scale image. Generally we've found downsampling to
-create multi-scale image is slow. On thing that might were for this case
-is to create an Octree that only has a level zero.
+create multi-scale image layers is slow. On thing that might were for this
+case is to create an Octree that only has a level zero.
 
-Chopping up an `numpy` array into tiles is very fast, because no memory is
+Chopping up a ``numpy`` array into tiles is very fast, because no memory is
 moved. It's really just creating a bunch of "views" into the single array.
 So creating a level zero Octree should be very fast. For there we can use
 our existing Octree code and our existing
