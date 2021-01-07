@@ -3,69 +3,70 @@
 Asynchronous Rendering
 ======================
 
-As discussed in the rendering Explanations document, asynchronous rendering
-is a feature that allows napari to stay usable and responsive even if the
-data the user is viewing is loading very slowly.
-
-There are two experimental features in napari that enable asynchronous
-rendering. The features are enabled using the environment variables
-``NAPARI_ASYNC`` and ``NAPARI_OCTREE``.
+As discussed in the explanations document on rendering, asynchronous
+rendering is a feature that allows napari to stay usable and responsive
+even when data is loading very slowly. There are two experimental features
+in napari that enable asynchronous rendering, they are enabled using the
+environment variables ``NAPARI_ASYNC`` and ``NAPARI_OCTREE``.
 
 NAPARI_ASYNC
 ------------
 
-Running ``NAPARI_ASYNC=1 napari`` enables asynchronous rendering using the
-existing :class:`~napari.layers.image.image.Image` class. With asynchronous
-rendering enabled the :class:`~napari.layers.image.image.Image` class will
-no longer call `np.asarray()` in the GUI thread. Calling ``np.asarray()``
-on a `Dask <https://dask.org>`_ or similar array-like object can result in
-disk or network IO or computations that block the GUI thread and ruin the
-framerate.
+Running napari with ``NAPARI_ASYNC=1`` enables asynchronous rendering using
+the existing :class:`~napari.layers.image.image.Image` class. With
+asynchronous rendering enabled the
+:class:`~napari.layers.image.image.Image` class will no longer call
+``np.asarray()`` in the GUI thread. We don't want to call ``np.asarray()``
+in the GUI thread because when using `Dask <https://dask.org>`_  array, or
+a similar array-like object, the array access can result in disk or network
+IO or in computations that block the GUI thread and hurt the framerate.
 
 Instead of calling ``np.asarray()`` in the GUI thread, when
 ``NAPARI_ASYNC`` is set :class:`~napari.layers.image.image.Image` will use
 the :class:`~napari.components.experimental.chunk._loader.ChunkLoader`. The
-``ChunkLoader`` will call ``np.asarray()`` in a worker thread. If that
-results in IO or computation only the worker thread will block. Rendering
-can continue in the GUI thread and napari will remain responsive and
-usable. When the worker thread finishes it will call
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader` will
+call ``np.asarray()`` in a worker thread or worker process. If that results
+in IO or computation only the worker will block. While the worker is
+blocked, rendering can continue in the GUI thread and napari will remain
+responsive and usable. When the worker thread finishes it will call
 :meth:`~napari.layers.image.image.Image.on_chunk_loaded` with the loaded
 data. The next frame :class:`~napari.layers.image.image.Image` can display
 the new data.
 
-Time-series Images
-^^^^^^^^^^^^^^^^^^
+Time-series Data
+^^^^^^^^^^^^^^^^
 
-With time-series images, asynchronous rendering allows you to interrupt the
-loading of a slice at any time by advancing to the next slice, use the
-slice slider or other means. Without ``NAPARI_ASYNC`` napari will block
-until the slice is fully loaded and you cannot switch slices while this
-load is in progress. With ``NAPARI_ASYNC`` you can freely advance through
-slices.
+Without ``NAPARI_ASYNC`` napari will block when switching slices. Napari
+will be unusuable until the new slices has loaded. The slice loads slowly
+enough you might see the "spinning wheel of death" on a Mac indicating the
+process is hung.
+
+Asynchronous rendering allows the user to interrupt the loading of a slice
+at any time by advancing to the next slice, useing the slice slider or
+other means. This is a nice usability improvement especially with remote or
+slow-loading data.
 
 Multi-scale Images
 ^^^^^^^^^^^^^^^^^^
 
-It's helpful to understand how multi-scaling viewing works with today's
-:class:`~napari.layers.image.image.Image` class. There are no tiles or
-chunks. Instead, whenever the camera is panned or zoomed, even a tiny bit,
-napari fetches all the data needed to draw the entire current canvas.
+With today's :class:`~napari.layers.image.image.Image` class there are no
+tiles or chunks. Instead, whenever the camera is panned or zoomed, even a
+tiny bit, napari fetches all the data needed to draw the entire current
+canvas.
 
 This actually works amazingly well with local data. Fetching the whole
-camera view each time is quite fast. With remote or other high latency
-data, however, this method can be very slow. Even if you pan only a tiny
-amount, it has to fetch the whole canvas worth of data, and you cannot
-interrupt the load the move the camera.
+canvas of data each time can be quite fast. With remote or other high
+latency data, however, this method can be very slow. Even if you pan only a
+tiny amount, napari has to fetch the whole canvas worth of data, and you
+cannot interrupt the load the move the camera.
 
-With ``NAPARI_ASYNC`` set performance is the same, however you can
-interrupt the load by moving the camera. This is a nice improvement, but
-working with slow-loading data is still awkward.
-
-Most large image viewers improve on this experience using tiles. With tiles
-when the image is panned the existing tiles are just translated. Then the
-viewier only needs to fetch a few new tiles. The existing tiles are
-re-used. This tiled rendering is exactly what napari implements with
-``NAPARI_OCTREE``.
+With ``NAPARI_ASYNC`` performance is the same, however you can interrupt
+the load by moving the camera. This is a nice improvement. But working with
+slow-loading data is still awkward. Most large image viewers improve on
+this experience using tiles. With tiles when the image is panned the
+existing tiles are just translated. Then the viewer only needs to fetch
+tiles which newly slid onto the screen. This tiled rendering is exactly
+what is implemented with the ``NAPARI_OCTREE`` feature.
 
 NAPARI_OCTREE
 -------------
@@ -76,12 +77,12 @@ instead of the normal :class:`~napari.layers.image.image.Image` class. The
 new :class:`~napari.layers.image.experimental.octree_image.OctreeImage`
 class will use the same
 :class:`~napari.components.experimental.chunk._loader.ChunkLoader` that
-`NAPARI_ASYNC` enables. In addition, ``NAPARI_OCTREE`` uses the new
+``NAPARI_ASYNC`` enables. In addition, ``NAPARI_OCTREE`` will use the new
 :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
-instead of the regular Vispy `ImageVisual` that the normal
+instead of the Vispy ``ImageVisual``class that napari's
 :class:`~napari.layers.image.image.Image` class uses.
 
-See section on Octree Config File below for configuration options.
+See :ref:`Octree Config File` for Octree configuration options.
 
 
 Octree Visuals
