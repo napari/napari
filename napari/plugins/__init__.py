@@ -27,7 +27,9 @@ dock_widgets: Dict[str, Type[QWidget]] = dict()
 functions: Dict[str, Type[Tuple[Callable, Dict, Dict]]] = dict()
 
 
-def register_dock_widget(cls: Union[Type[QWidget], Sequence[Type[QWidget]]]):
+def register_dock_widget(
+    cls: Union[Type[QWidget], Sequence[Type[QWidget]]], hookimpl
+):
     for _cls in cls if is_sequence(cls) else [cls]:
         if not isclass(_cls) and issubclass(_cls, QWidget):
             # what to do here?
@@ -38,26 +40,26 @@ def register_dock_widget(cls: Union[Type[QWidget], Sequence[Type[QWidget]]]):
         if name in dock_widgets:
             # duplicate menu names... what to do here? Can this be namespaced by plugin name?
             continue
-        dock_widgets[name] = _cls
+        dock_widgets[(hookimpl.plugin_name, name)] = _cls
 
 
-def register_function(func):
+def register_function(func, hookimpl):
     for _func in func if is_sequence(func) else [func]:
         # Add something to check cls is right type ....
-        name = _func[0].__name__
+        name = _func[0].__name__.replace('_', ' ')
         if name in functions:
             # duplicate menu names... what to do here? Can this be namespaced by plugin name?
             continue
-        functions[name] = _func
+        functions[(hookimpl.plugin_name, name)] = _func
 
 
 plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
-    result_callback=register_dock_widget
+    result_callback=register_dock_widget, with_impl=True
 )
 
 
 plugin_manager.hook.napari_experimental_provide_function.call_historic(
-    result_callback=register_function
+    result_callback=register_function, with_impl=True
 )
 
 

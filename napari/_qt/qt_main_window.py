@@ -93,6 +93,10 @@ class Window:
         self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
 
+        # Dictionary holding dock widgets from plugins
+        self._plugin_dock_widgets = {}
+        self._plugin_menus = {}
+
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
             self._qt_window.windowHandle().screenChanged.connect(
@@ -124,9 +128,6 @@ class Window:
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.theme.connect(self._update_theme)
-
-        # Dictionary holding dock widgets from plugins
-        self._plugin_dock_widgets = {}
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -411,23 +412,34 @@ class Window:
 
         self._plugin_dock_widget_menu = QMenu('Dock Widgets', self._qt_window)
 
+        # Get names of all plugins providing dock widgets or functions
+        plugin_names = set(
+            [name[0] for name in list(plugins.dock_widgets)]
+            + [name[0] for name in list(plugins.functions)]
+        )
+
+        # Add a menubar for each plugin
+        for name in plugin_names:
+            self._plugin_menus[name] = QMenu(name, self._qt_window)
+            self._plugin_dock_widget_menu.addMenu(self._plugin_menus[name])
+
         # Add dock widgets - TODO namespace by plugin name!
         for name in list(plugins.dock_widgets):
-            action = QAction(name, parent=self._qt_window)
+            action = QAction(name[1], parent=self._qt_window)
             action.setCheckable(True)
             action.triggered.connect(
                 lambda s, name=name: self._toggle_plugin_dock_widget(s, name)
             )
-            self._plugin_dock_widget_menu.addAction(action)
+            self._plugin_menus[name[0]].addAction(action)
 
         # Add functions - TODO namespace by plugin name!
         for name in list(plugins.functions):
-            action = QAction(name, parent=self._qt_window)
+            action = QAction(name[1], parent=self._qt_window)
             action.setCheckable(True)
             action.triggered.connect(
                 lambda s, name=name: self._toggle_plugin_function(s, name)
             )
-            self._plugin_dock_widget_menu.addAction(action)
+            self._plugin_menus[name[0]].addAction(action)
 
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
@@ -535,12 +547,8 @@ class Window:
 
             area = getattr(Widget, 'napari_area', 'right')
             allowed_areas = getattr(Widget, 'napari_allowed_areas', None)
-            # TODO: discuss the fact that a single shortcut can't be used
-            # for loading the widget from the plugin menu AND hide/show
-            # from the window menu.
-            # shortcut = getattr(wdg, 'napari_shortcut', None)
             dock_widget = self.add_dock_widget(
-                wdg, name=key, area=area, allowed_areas=allowed_areas
+                wdg, name=key[1], area=area, allowed_areas=allowed_areas
             )
             self._plugin_dock_widgets[key] = dock_widget
         else:
