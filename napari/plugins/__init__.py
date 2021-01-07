@@ -45,20 +45,22 @@ def register_dock_widget(
 
 def register_function(func, hookimpl):
     for _func in func if is_sequence(func) else [func]:
-        # Add something to check cls is right type ....
-        name = _func[0].__name__.replace('_', ' ')
+        # Add something to check func is right type ....
+        name = getattr(
+            _func[0], 'napari_menu_name', _func[0].__name__.replace('_', ' ')
+        )
         if name in functions:
             # duplicate menu names... what to do here? Can this be namespaced by plugin name?
             continue
         functions[(hookimpl.plugin_name, name)] = _func
 
 
-plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
+plugin_manager.hook.napari_experimental_provide_dock_widgets.call_historic(
     result_callback=register_dock_widget, with_impl=True
 )
 
 
-plugin_manager.hook.napari_experimental_provide_function.call_historic(
+plugin_manager.hook.napari_experimental_provide_functions.call_historic(
     result_callback=register_function, with_impl=True
 )
 

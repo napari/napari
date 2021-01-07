@@ -75,8 +75,6 @@ class Window:
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
         Window menu.
-    dock_widgets : Dict[str, QtViewerDockWidget]
-        Dock widgets that have been added to the viewer.
     """
 
     raw_stylesheet = get_stylesheet()
@@ -423,7 +421,7 @@ class Window:
             self._plugin_menus[name] = QMenu(name, self._qt_window)
             self._plugin_dock_widget_menu.addMenu(self._plugin_menus[name])
 
-        # Add dock widgets - TODO namespace by plugin name!
+        # Add dock widgets
         for name in list(plugins.dock_widgets):
             action = QAction(name[1], parent=self._qt_window)
             action.setCheckable(True)
@@ -432,7 +430,7 @@ class Window:
             )
             self._plugin_menus[name[0]].addAction(action)
 
-        # Add functions - TODO namespace by plugin name!
+        # Add functions
         for name in list(plugins.functions):
             action = QAction(name[1], parent=self._qt_window)
             action.setCheckable(True)
@@ -563,9 +561,14 @@ class Window:
         if state:
             from .. import plugins
 
-            func, magic_kwargs, dock_kwargs = plugins.functions[key]
+            func, magic_kwargs = plugins.functions[key]
+            area = getattr(func, 'napari_area', 'right')
+            allowed_areas = getattr(func, 'napari_allowed_areas', None)
             dock_widget = self.add_function_widget(
-                func, magic_kwargs=magic_kwargs, **dock_kwargs
+                func,
+                magic_kwargs=magic_kwargs,
+                area=area,
+                allowed_areas=allowed_areas,
             )
             self._plugin_dock_widgets[key] = dock_widget
         else:

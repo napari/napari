@@ -357,7 +357,7 @@ def write_layer_data_with_plugins(
 
 
 @napari_hook_implementation
-def napari_experimental_provide_dock_widget():
+def napari_experimental_provide_dock_widgets():
     import qtpy.QtWidgets
 
     return qtpy.QtWidgets.QWidget

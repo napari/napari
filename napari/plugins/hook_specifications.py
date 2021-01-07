@@ -336,22 +336,30 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_function() -> List[
-    Tuple[Callable, Dict, Dict]
+def napari_experimental_provide_functions() -> Union[
+    Tuple[Callable, Dict], Sequence[Tuple[Callable, Dict]]
 ]:
     """Provide functions and args that can be passed to magicgui.
 
     Returns
     -------
-    functions : tuple
-        Tuple of 3-tuple, where each tuple has a function a dictionary of
-        keyword arguments for magicgui, and a dictionary of keyword arguments
-        for the viewer.window.add_dock_widget method.
+    functions : tuple of callable, dict or sequence tuple of callable, dict
+        Tuple of 2-tuple, where each tuple has a callable function a dictionary of
+        keyword arguments for magicgui. The following class attributes may be used
+        to control how how the plugin appears in the menu.
+            napari_menu_name (str): If provided, the name that will appear in the
+                plugin menu. Otherwise function name will be used.
+            napari_area (str): The initial area (relative to the viewer window)
+                to show this widget.  Must be one of "top", "left", "bottom",
+                "right"
+            napari_allowed_areas (List[str]): The areas (relative to the viewer
+                window) where this widget can be moved. List members must be
+                one of "top", "left", "bottom", "right".
     """
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_dock_widget() -> Union[
+def napari_experimental_provide_dock_widgets() -> Union[
     Type[QWidget], Sequence[Type[QWidget]]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
