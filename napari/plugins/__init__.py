@@ -1,10 +1,9 @@
 import os
 import sys
 from inspect import isclass
-from typing import Callable, Dict, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Callable, Dict, Sequence, Tuple, Type, Union
 
 from napari_plugin_engine import PluginManager
-from qtpy.QtWidgets import QAction, QWidget
 
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, is_sequence, running_as_bundled_app
@@ -12,6 +11,10 @@ from . import _builtins, hook_specifications
 
 if sys.platform.startswith('linux') and running_as_bundled_app():
     sys.path.append(user_site_packages())
+
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
 
 
 # the main plugin manager instance for the `napari` plugin namespace.
@@ -23,13 +26,15 @@ with plugin_manager.discovery_blocked():
     plugin_manager.register(_builtins, name='builtins')
 
 
-dock_widgets: Dict[str, Type[QWidget]] = dict()
+dock_widgets: Dict[str, Type['QWidget']] = dict()
 functions: Dict[str, Type[Tuple[Callable, Dict, Dict]]] = dict()
 
 
 def register_dock_widget(
-    cls: Union[Type[QWidget], Sequence[Type[QWidget]]], hookimpl
+    cls: Union[Type['QWidget'], Sequence[Type['QWidget']]], hookimpl
 ):
+    from qtpy.QtWidgets import QWidget
+
     for _cls in cls if is_sequence(cls) else [cls]:
         if not isclass(_cls) and issubclass(_cls, QWidget):
             # what to do here?

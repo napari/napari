@@ -36,6 +36,7 @@ For more general background on the plugin hook calling mechanism, see the
 # imperative!
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -48,9 +49,12 @@ from typing import (
 )
 
 from napari_plugin_engine import napari_hook_specification
-from qtpy.QtWidgets import QWidget
 
 from ..types import ReaderFunction, WriterFunction
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -360,7 +364,7 @@ def napari_experimental_provide_functions() -> Union[
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_dock_widgets() -> Union[
-    Type[QWidget], Sequence[Type[QWidget]]
+    Type['QWidget'], Sequence[Type['QWidget']]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
 
