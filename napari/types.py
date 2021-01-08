@@ -1,6 +1,6 @@
 from functools import wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
 
 import dask.array as da
 import numpy as np
@@ -9,6 +9,9 @@ try:
     import zarr
 except ImportError:
     zarr = None
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -32,6 +35,12 @@ ExcInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
     Tuple[None, None, None],
 ]
+
+# Types for GUI HookSpecs
+MagicFunction = Union[
+    Callable, Tuple[Callable, Dict], Tuple[Callable, Dict, Dict]
+]
+DockWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], Dict]]
 
 
 def image_reader_to_layerdata_reader(

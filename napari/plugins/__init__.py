@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Callable, Dict, Sequence, Tuple, Type, Union
 
 from napari_plugin_engine import PluginManager
 
+from ..types import DockWidget, MagicFunction
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, is_sequence, running_as_bundled_app
 from . import _builtins, hook_specifications
@@ -31,10 +32,11 @@ functions: Dict[str, Type[Tuple[Callable, Dict, Dict]]] = dict()
 
 
 def register_dock_widget(
-    cls: Union[Type['QWidget'], Sequence[Type['QWidget']]], hookimpl
+    cls: Union[DockWidget, Sequence[DockWidget]], hookimpl
 ):
     from qtpy.QtWidgets import QWidget
 
+    # is_sequence logic here needs to be fixed
     for _cls in cls if is_sequence(cls) else [cls]:
         if not isclass(_cls) and issubclass(_cls, QWidget):
             # what to do here?
@@ -42,21 +44,28 @@ def register_dock_widget(
         name = getattr(
             _cls, 'napari_menu_name', camel_to_spaces(_cls.__name__)
         )
-        if name in dock_widgets:
-            # duplicate menu names... what to do here? Can this be namespaced by plugin name?
-            continue
-        dock_widgets[(hookimpl.plugin_name, name)] = _cls
+        key = (hookimpl.plugin_name, name)
+        if key in dock_widgets:
+            warnings.warn(
+                f'Plugin {key[0]} has already registered a widget {key[1]} which has now been overwritten'
+            )
+        dock_widgets[key] = _cls
 
 
-def register_function(func, hookimpl):
+def register_function(
+    func: Union[MagicFunction, Sequence[MagicFunction]], hookimpl
+):
+    # is_sequence logic here needs to be fixed
     for _func in func if is_sequence(func) else [func]:
         # Add something to check func is right type ....
         name = getattr(
             _func[0], 'napari_menu_name', _func[0].__name__.replace('_', ' ')
         )
-        if name in functions:
-            # duplicate menu names... what to do here? Can this be namespaced by plugin name?
-            continue
+        key = (hookimpl.plugin_name, name)
+        if key in functions:
+            warnings.warn(
+                f'Plugin {key[0]} has already registered a function {key[1]} which has now been overwritten'
+            )
         functions[(hookimpl.plugin_name, name)] = _func
 
 

@@ -35,26 +35,11 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, List, Optional, Sequence, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import ReaderFunction, WriterFunction
-
-if TYPE_CHECKING:
-    from qtpy.QtWidgets import QWidget
-
+from ..types import DockWidget, MagicFunction, ReaderFunction, WriterFunction
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -341,7 +326,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_functions() -> Union[
-    Tuple[Callable, Dict], Sequence[Tuple[Callable, Dict]]
+    MagicFunction, Sequence[MagicFunction]
 ]:
     """Provide functions and args that can be passed to magicgui.
 
@@ -364,7 +349,7 @@ def napari_experimental_provide_functions() -> Union[
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_dock_widgets() -> Union[
-    Type['QWidget'], Sequence[Type['QWidget']]
+    DockWidget, Sequence[DockWidget]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
 
