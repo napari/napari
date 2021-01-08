@@ -26,11 +26,12 @@ class Octree:
     going from parent to child or child to parent is trivial, you just
     need to double or half the indexes.
 
-    Future Work: Geometry
-    ---------------------
-    Eventually we want our octree to hold geometry, not just images.
-    Geometry such as points and meshes. For geometry a sparse octree might
-    make more sense than this full/complete region octree.
+    Notes
+    -----
+    Future work related to geometry. Eventually we want our octree to hold
+    geometry, not just images. Geometry such as points and meshes. For
+    geometry a sparse octree might make more sense than this full/complete
+    region octree.
 
     With geometry there might be lots of empty space in between small dense
     pockets of geometry. Some parts of tree might need to be very deep, but

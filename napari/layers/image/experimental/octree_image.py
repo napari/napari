@@ -28,8 +28,8 @@ class OctreeImage(Image):
     a real octree. This class is intended to eventually fully replace the
     existing Image class.
 
-    Background
-    ----------
+    Notes
+    -----
     The original Image class handled single-scale and multi-scale images,
     but they were handled quite differently. And its multi-scale did not
     use chunks or tiles. It worked well locally, but was basically unusable
