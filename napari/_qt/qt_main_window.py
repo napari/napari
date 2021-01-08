@@ -603,16 +603,14 @@ class Window:
         from .. import plugins
 
         func, magic_kwargs = plugins.functions[key]
-        area = getattr(func, 'napari_area', 'right')
-        allowed_areas = getattr(func, 'napari_allowed_areas', None)
 
         # Add function widget
         self.add_function_widget(
             func,
             magic_kwargs=magic_kwargs,
             name=full_name,
-            area=area,
-            allowed_areas=allowed_areas,
+            area=None,
+            allowed_areas=None,
         )
 
     def add_dock_widget(
@@ -734,7 +732,7 @@ class Window:
         *,
         magic_kwargs=None,
         name: str = '',
-        area: str = 'bottom',
+        area=None,
         allowed_areas=None,
         shortcut=None,
     ):
@@ -749,13 +747,15 @@ class Window:
             can be used to specify widget.
         name : str, optional
             Name of dock widget to appear in window menu.
-        area : str
+        area : str, optional
             Side of the main window to which the new dock widget will be added.
-            Must be in {'left', 'right', 'top', 'bottom'}
+            Must be in {'left', 'right', 'top', 'bottom'}. If not provided the
+            default will be determined by the widget.layout, with 'vertical'
+            layouts appearing on the right, otherwise on the bottom.
         allowed_areas : list[str], optional
             Areas, relative to main window, that the widget is allowed dock.
             Each item in list must be in {'left', 'right', 'top', 'bottom'}
-            By default, all areas are allowed.
+            By default, only provided areas is allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
 
@@ -766,8 +766,19 @@ class Window:
         """
         from magicgui import magicgui
 
+        widget = magicgui(function, **magic_kwargs or {})
+
+        if area is None:
+            if str(widget.layout) == 'vertical':
+                area = 'right'
+            else:
+                area = 'bottom'
+
+        if allowed_areas is None:
+            allowed_areas = [area]
+
         return self.add_dock_widget(
-            magicgui(function, **magic_kwargs or {}),
+            widget,
             name=name or function.__name__.replace('_', ' '),
             area=area,
             allowed_areas=allowed_areas,
