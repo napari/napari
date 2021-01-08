@@ -35,7 +35,7 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -326,44 +326,26 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_functions() -> Union[
-    MagicFunction, Sequence[MagicFunction]
+    MagicFunction, List[MagicFunction]
 ]:
     """Provide functions and args that can be passed to magicgui.
 
     Returns
     -------
-    functions : tuple of callable, dict or sequence tuple of callable, dict
-        Tuple of 2-tuple, where each tuple has a callable function a dictionary of
-        keyword arguments for magicgui. The following class attributes may be used
-        to control how how the plugin appears in the menu.
-            napari_menu_name (str): If provided, the name that will appear in the
-                plugin menu. Otherwise function name will be used.
-            napari_area (str): The initial area (relative to the viewer window)
-                to show this widget.  Must be one of "top", "left", "bottom",
-                "right"
-            napari_allowed_areas (List[str]): The areas (relative to the viewer
-                window) where this widget can be moved. List members must be
-                one of "top", "left", "bottom", "right".
+    functions : tuple of callable, dict or list tuple of callable, dict
+        List of 3-tuple, where each tuple has a callable function a dictionary of
+        keyword arguments for magicgui.
     """
 
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_dock_widgets() -> Union[
-    DockWidget, Sequence[DockWidget]
+    DockWidget, List[DockWidget]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
 
     Returns
     -------
-    dock_widgets : QWidget class or sequence of QWidget classes
-        The following class attributes may be used to control how how the
-        plugin appears in the menu.
-            napari_menu_name (str): If provided, the name that will appear in the
-                plugin menu. Otherwise class name will be used.
-            napari_area (str): The initial area (relative to the viewer window)
-                to show this widget.  Must be one of "top", "left", "bottom",
-                "right"
-            napari_allowed_areas (List[str]): The areas (relative to the viewer
-                window) where this widget can be moved. List members must be
-                one of "top", "left", "bottom", "right".
+    dock_widgets : QWidget class or list of QWidget classes
+        QWidget or tuple QWidget, dict.
     """

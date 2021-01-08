@@ -567,7 +567,7 @@ class Window:
         from .. import plugins
         from ..viewer import Viewer
 
-        Widget = plugins.dock_widgets[key]
+        Widget, dock_kwargs = plugins.dock_widgets[key]
         # if the signature is looking a for a napari viewer, pass it.
         sig = inspect.signature(Widget.__init__)
         for param in sig.parameters.values():
@@ -583,12 +583,12 @@ class Window:
             # otherwise instantiate the widget without passing viewer
             wdg = Widget()
 
-        area = getattr(Widget, 'napari_area', 'right')
-        allowed_areas = getattr(Widget, 'napari_allowed_areas', None)
-
         # Add dock widget
         self.add_dock_widget(
-            wdg, name=full_name, area=area, allowed_areas=allowed_areas
+            wdg,
+            name=full_name,
+            area=dock_kwargs.get('area', None),
+            allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
 
     def _add_plugin_function(self, key):
@@ -606,15 +606,15 @@ class Window:
 
         from .. import plugins
 
-        func, magic_kwargs = plugins.functions[key]
+        func, magic_kwargs, dock_kwargs = plugins.functions[key]
 
         # Add function widget
         self.add_function_widget(
             func,
             magic_kwargs=magic_kwargs,
             name=full_name,
-            area=None,
-            allowed_areas=None,
+            area=dock_kwargs.get('area', None),
+            allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
 
     def add_dock_widget(

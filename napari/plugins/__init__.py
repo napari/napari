@@ -1,7 +1,16 @@
 import os
 import sys
 from inspect import isclass
-from typing import TYPE_CHECKING, Callable, Dict, Sequence, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Dict,
+    List,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from napari_plugin_engine import PluginManager
 
@@ -31,42 +40,49 @@ dock_widgets: Dict[str, Type['QWidget']] = dict()
 functions: Dict[str, Type[Tuple[Callable, Dict, Dict]]] = dict()
 
 
-def register_dock_widget(
-    cls: Union[DockWidget, Sequence[DockWidget]], hookimpl
-):
+def register_dock_widget(cls: Union[DockWidget, List[DockWidget]], hookimpl):
     from qtpy.QtWidgets import QWidget
 
-    # is_sequence logic here needs to be fixed
-    for _cls in cls if is_sequence(cls) else [cls]:
-        if not isclass(_cls) and issubclass(_cls, QWidget):
-            # what to do here?
-            continue
-        name = getattr(
-            _cls, 'napari_menu_name', camel_to_spaces(_cls.__name__)
+    for _cls in cls if isinstance(cls, list) else [cls]:
+        if isinstance(_cls, tuple):
+            widget_tuple = _cls + ({},) * (2 - len(_cls))
+        else:
+            widget_tuple = (_cls, {})
+
+        # Get widget name
+        name = widget_tuple[1].get(
+            'name', camel_to_spaces(widget_tuple[0].__name__)
         )
+
         key = (hookimpl.plugin_name, name)
         if key in dock_widgets:
             warnings.warn(
                 f'Plugin {key[0]} has already registered a widget {key[1]} which has now been overwritten'
             )
-        dock_widgets[key] = _cls
+        dock_widgets[key] = widget_tuple
 
 
 def register_function(
-    func: Union[MagicFunction, Sequence[MagicFunction]], hookimpl
+    func: Union[MagicFunction, List[MagicFunction]], hookimpl
 ):
-    # is_sequence logic here needs to be fixed
-    for _func in func if is_sequence(func) else [func]:
-        # Add something to check func is right type ....
-        name = getattr(
-            _func[0], 'napari_menu_name', _func[0].__name__.replace('_', ' ')
+    for _func in func if isinstance(func, list) else [func]:
+        if isinstance(_func, tuple):
+            func_tuple = _func + ({},) * (3 - len(_func))
+        else:
+            func_tuple = (_func, {}, {})
+
+        # Get function name
+        name = func_tuple[2].get(
+            'name', func_tuple[0].__name__.replace('_', ' ')
         )
+
         key = (hookimpl.plugin_name, name)
         if key in functions:
             warnings.warn(
                 f'Plugin {key[0]} has already registered a function {key[1]} which has now been overwritten'
             )
-        functions[(hookimpl.plugin_name, name)] = _func
+
+        functions[(hookimpl.plugin_name, name)] = func_tuple
 
 
 plugin_manager.hook.napari_experimental_provide_dock_widgets.call_historic(
