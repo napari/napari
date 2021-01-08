@@ -360,3 +360,19 @@ def ensure_n_tuple(val, n, fill=0):
     assert n > 0, 'n must be greater than 0'
     tuple_value = tuple(val)
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+
+
+def combine_names(key):
+    """Combine names
+
+    Parameters
+    ----------
+    key : 2-tuple of str
+        Plugin name and item name
+
+    Returns
+    -------
+    str
+        Combined name.
+    """
+    return f'{key[0]}: {key[1]}'
