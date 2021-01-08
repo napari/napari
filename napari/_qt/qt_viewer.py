@@ -559,6 +559,9 @@ class QtViewer(QSplitter):
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
 
+        if viz:
+            self.dockConsole.raise_()
+
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()
         )

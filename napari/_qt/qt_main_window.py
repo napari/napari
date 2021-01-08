@@ -122,9 +122,13 @@ class Window:
 
         self._update_theme()
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerControls, tabify=False
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, tabify=False
+        )
         self.window_menu.addSeparator()
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
@@ -667,15 +671,36 @@ class Window:
 
         return dock_widget
 
-    def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
+    def _add_viewer_dock_widget(
+        self, dock_widget: QtViewerDockWidget, tabify=True
+    ):
         """Add a QtViewerDockWidget to the main window
+
+        If other widgets already present in area then will tabify.
 
         Parameters
         ----------
         dock_widget : QtViewerDockWidget
             `dock_widget` will be added to the main window.
+        tabify : bool
+            Flag to tabify dockwidget or not.
         """
+        # Find if any othe dock widgets are currently in area
+        current_dws_in_area = []
+        for dw in self._qt_window.findChildren(QDockWidget):
+            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area:
+                current_dws_in_area.append(dw)
+
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
+
+        # If another dock widget present in area then tabify
+        if len(current_dws_in_area) > 0 and tabify:
+            self._qt_window.tabifyDockWidget(
+                current_dws_in_area[-1], dock_widget
+            )
+            dock_widget.show()
+            dock_widget.raise_()
+
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
