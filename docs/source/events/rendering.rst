@@ -6,8 +6,9 @@ Asynchronous Rendering
 As discussed in the explanations document on rendering, asynchronous
 rendering is a feature that allows napari to stay usable and responsive
 even when data is loading very slowly. There are two experimental features
-in napari that enable asynchronous rendering, they are enabled using the
-environment variables ``NAPARI_ASYNC`` and ``NAPARI_OCTREE``.
+in napari that enable asynchronous rendering. The two features can be
+enabled using the environment variables ``NAPARI_ASYNC`` and
+``NAPARI_OCTREE``.
 
 NAPARI_ASYNC
 ------------
@@ -37,12 +38,12 @@ Time-series Data
 ^^^^^^^^^^^^^^^^
 
 Without ``NAPARI_ASYNC`` napari will block when switching slices. Napari
-will be unusuable until the new slices has loaded. The slice loads slowly
+will be unusable until the new slices has loaded. The slice loads slowly
 enough you might see the "spinning wheel of death" on a Mac indicating the
 process is hung.
 
 Asynchronous rendering allows the user to interrupt the loading of a slice
-at any time by advancing to the next slice, useing the slice slider or
+at any time by advancing to the next slice, using the slice slider or
 other means. This is a nice usability improvement especially with remote or
 slow-loading data.
 
@@ -81,7 +82,7 @@ class will use the same
 instead of the Vispy ``ImageVisual`` class that napari's
 :class:`~napari.layers.image.image.Image` class uses.
 
-See :ref:`Octree Config File` for Octree configuration options.
+See :ref:`Octree Configuration File` for Octree configuration options.
 
 Octree Visuals
 ^^^^^^^^^^^^^^
@@ -208,34 +209,30 @@ config file format. Currently it's:
         },
     }
 
-``loader_defaults``
-+++++++++++++++++++
-``log_path`` - Dedicated log files for debugging.
+The ``loader_defaults`` key contains settings that will be used by the
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader`:
 
-``force_synchronous`` - If ``true`` the ``ChunkLoader`` is used, but it
-always loads synchronously. This is mainly for testing purposes.
-
-``num_workers`` - The default number of worker threads or worker processes
-in a pool.
-
-``use_processes`` - If ``true` then threads are used instead of processes.
-Threads are the normal case, processes are more eperimental.
-
-``auto_async_ms`` - If chunks for a layer are loading on average faster
-than this, then switch to synchronous loading for that layer.
-
-``delay_queue_ms`` - Delay a chunk load for this long before submitting it
-to the worker pool. Delayed loads prevert the worker pool from being choked
-with requests that are no longer needed due to camera movements or slice
-changes.
++-----------------------+-----------------------------------------------------------+
+| Setting               | Description                                               |
++=======================+===========================================================+
+| ``log_path``          | Write ChunkLoader log file to this path. For debugging.   |
++-----------------------+-----------------------------------------------------------+
+| ``force_synchronous`` | If ``true`` the ``ChunkLoader`` always load synchronously.|
++-----------------------+-----------------------------------------------------------+
+| ``num_workers``       | The number of worker threads or processes.                |
++-----------------------+-----------------------------------------------------------+
+| ``use_processes``     | If ``true`` use worker processes instead of threads.      |
++-----------------------+-----------------------------------------------------------+
+| ``auto_async_ms``     | Switch to synchronous if loads faster than this.          |
++-----------------------+-----------------------------------------------------------+
+| ``delay_queue_ms``    | Delay loads by this much time.                            |
++-----------------------+-----------------------------------------------------------+
+| ``num_workers``       | The number of worker threads or processes.                |
++-----------------------+-----------------------------------------------------------+
 
 The ``num_workers``, ``auto_sync_ms`` and ``delay_queue_ms`` values in
-``loader_defaults`` can be overridden for a specific pool under ``octree``
--> ``loaders``.
-
-``octree``
-
-
+``loader_defaults`` can be overridden for a specific pool under the
+``octree->loaders`` setting.
 
 Future Work: Extending TextureAtlas2D
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
