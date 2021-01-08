@@ -181,12 +181,12 @@ Levels Above Ideal  Coverage
 Octree Configuration File
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Setting `NAPARI_OCTREE=1` enables Octree with the default configuration. To
-customize the configuration set `NAPARI_OCTREE` to be the path of a JSON
-config file, such as `NAPARI_OCTREE=/tmp/octree.json`
+Setting ``NAPARI_OCTREE=1`` enables Octree with the default configuration.
+To customize the configuration set ``NAPARI_OCTREE`` to be the path of a
+JSON config file, such as ``NAPARI_OCTREE=/tmp/octree.json``.
 
 See :data:`~napari.utils._octree.DEFAULT_OCTREE_CONFIG` for the current
-config file format. Currently it's:
+config file format:
 
 .. code-block:: python
     {
@@ -210,7 +210,7 @@ config file format. Currently it's:
     }
 
 The ``loader_defaults`` key contains settings that will be used by the
-:class:`~napari.components.experimental.chunk._loader.ChunkLoader`:
+:class:`~napari.components.experimental.chunk._loader.ChunkLoader`.
 
 +-----------------------+-----------------------------------------------------------+
 | Setting               | Description                                               |
@@ -230,9 +230,63 @@ The ``loader_defaults`` key contains settings that will be used by the
 | ``num_workers``       | The number of worker threads or processes.                |
 +-----------------------+-----------------------------------------------------------+
 
-The ``num_workers``, ``auto_sync_ms`` and ``delay_queue_ms`` values in
-``loader_defaults`` can be overridden for a specific pool under the
-``octree->loaders`` setting.
+The ``octree`` key contains these settings:
+
++-----------------------+-----------------------------------------------------------+
+| Setting               | Description                                               |
++=======================+===========================================================+
+| ``enabled``           | If ``false` then use the old `Image` class.               |
++-----------------------+-----------------------------------------------------------+
+| ``tile_size``         | Size of render tiles to use for rending.                  |
++-----------------------+-----------------------------------------------------------+
+| ``log_path``          | Octree specific log file for debugging.                   |
++-----------------------+-----------------------------------------------------------+
+| ``loaders``           | Optional custom loaders, see below.                       |
++-----------------------+-----------------------------------------------------------+
+
+The ``loaders`` key lets you define and configure multiple
+:class:`~napari.components.experimental.chunk._pool.LoaderPool` pools.
+The key of each loader is the levels relative to the ideal level. In the
+above example config we define two loaders. The first is for loading chunks
+at the ideal level or one above. While the second will load chunks two above
+the ideal level or higher.
+
+Each loader uses the ``loader_defaults`` but you can override the
+``num_workers``, ``auto_sync_ms`` and ``delay_queue_ms`` values in
+``loader_defaults``.
+
+Multiple Loaders
+^^^^^^^^^^^^^^^^
+
+We allow multiple loaders to improve loading performance. There are a lot
+of different strategies one could use when loading chunks. For example,
+we tend to load chunks at a higher level prior to loading the chunks
+at the ideal level. This gets "coverage" on the screen quickly, and then
+the data can be refined by loading the ideal chunks.
+
+One consideration is during rapid movement of the camera it's easy to clog
+up the loader pool with workers loading chunks that have already moved out
+of view. The
+:class:`~napari.components.experimental.chunk._delay_queue.DelayQueue` was
+created to help with this problem.
+
+While we can't cancel a load if a worker as started working on it, we can
+trivially cancel loads that are still in our delay queue. With the
+:class:`~napari.components.experimental.chunk._delay_queue.DelayQueue` we
+temporarily delay loads. If the chunk goes out of view, we cancel the load.
+If the user pauses for a bit, we initiate the loads.
+
+With multiple loaders we can delay the ideal chunks, but immediately load
+higher levels. A single chunk from two levels up will cover 16 ideal chunks.
+So it seems best to just immediately load them. When the camera stops moving
+the :class:`~napari.components.experimental.chunk._pool.LoaderPool` for the
+ideal layer is empty, and we can immediately start loading those chunks.
+
+The ability to have multiple loaders was only recently added. It's to be
+determined how best to configure multiple loaders. And does the best
+configuration vary based on the latency of the data or other
+considerations?
+
 
 Future Work: Extending TextureAtlas2D
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
