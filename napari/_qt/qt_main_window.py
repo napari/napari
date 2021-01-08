@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
 
 from ..utils import config, perf
 from ..utils.io import imsave
-from ..utils.misc import combine_names, in_jupyter
+from ..utils.misc import in_jupyter
 from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
@@ -449,7 +449,7 @@ class Window:
                 action = QAction(name[1], parent=self._qt_window)
                 self._plugin_menus[name[0]].addAction(action)
             else:
-                full_name = combine_names(name)
+                full_name = plugins.menu_item_template.format(*name)
                 action = QAction(full_name, parent=self._qt_window)
                 self._plugin_dock_widget_menu.addAction(action)
             action.triggered.connect(
@@ -462,7 +462,7 @@ class Window:
                 action = QAction(name[1], parent=self._qt_window)
                 self._plugin_menus[name[0]].addAction(action)
             else:
-                full_name = combine_names(name)
+                full_name = plugins.menu_item_template.format(*name)
                 action = QAction(full_name, parent=self._qt_window)
                 self._plugin_dock_widget_menu.addAction(action)
             action.triggered.connect(
@@ -559,13 +559,13 @@ class Window:
         key : 2-tuple of str
             Plugin name and widget name.
         """
-        full_name = combine_names(key)
+        from .. import plugins
+        from ..viewer import Viewer
+
+        full_name = plugins.menu_item_template.format(*key)
         if full_name in list(self.dock_widgets):
             warnings.warn(f'Dock widget {key} already added')
             return
-
-        from .. import plugins
-        from ..viewer import Viewer
 
         Widget, dock_kwargs = plugins.dock_widgets[key]
         # if the signature is looking a for a napari viewer, pass it.
@@ -599,12 +599,12 @@ class Window:
         key : 2-tuple of str
             Plugin name and function name.
         """
-        full_name = combine_names(key)
+        from .. import plugins
+
+        full_name = plugins.menu_item_template.format(*key)
         if full_name in list(self.dock_widgets):
             warnings.warn(f'Dock widget {key} already added')
             return
-
-        from .. import plugins
 
         func, magic_kwargs, dock_kwargs = plugins.functions[key]
 

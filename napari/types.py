@@ -37,10 +37,10 @@ ExcInfo = Union[
 ]
 
 # Types for GUI HookSpecs
-MagicFunction = Union[
-    Callable, Tuple[Callable, Dict], Tuple[Callable, Dict, Dict]
+MagicFunctionArg = Union[
+    Callable, Tuple[Callable, dict], Tuple[Callable, dict, dict]
 ]
-DockWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], Dict]]
+DockWidgetArg = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
 
 
 def image_reader_to_layerdata_reader(

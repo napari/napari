@@ -39,7 +39,12 @@ from typing import Any, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import DockWidget, MagicFunction, ReaderFunction, WriterFunction
+from ..types import (
+    DockWidgetArg,
+    MagicFunctionArg,
+    ReaderFunction,
+    WriterFunction,
+)
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -326,7 +331,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_functions() -> Union[
-    MagicFunction, List[MagicFunction]
+    MagicFunctionArg, List[MagicFunctionArg]
 ]:
     """Provide functions and args that can be passed to magicgui.
 
@@ -340,7 +345,7 @@ def napari_experimental_provide_functions() -> Union[
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_dock_widgets() -> Union[
-    DockWidget, List[DockWidget]
+    DockWidgetArg, List[DockWidgetArg]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
 
