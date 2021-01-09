@@ -432,7 +432,7 @@ class Window:
 
         # Get names of all plugins providing dock widgets or functions
         plugin_names = [name[0] for name in list(plugins.dock_widgets)] + [
-            name[0] for name in list(plugins.functions)
+            name[0] for name in list(plugins.function_widgets)
         ]
 
         unique_names, counts = np.unique(plugin_names, return_counts=True)
@@ -457,7 +457,7 @@ class Window:
             )
 
         # Add functions
-        for name in list(plugins.functions):
+        for name in list(plugins.function_widgets):
             if name[0] in list(self._plugin_menus):
                 action = QAction(name[1], parent=self._qt_window)
                 self._plugin_menus[name[0]].addAction(action)
@@ -606,7 +606,7 @@ class Window:
             warnings.warn(f'Dock widget {key} already added')
             return
 
-        func, magic_kwargs, dock_kwargs = plugins.functions[key]
+        func, magic_kwargs, dock_kwargs = plugins.function_widgets[key]
 
         # Add function widget
         self.add_function_widget(

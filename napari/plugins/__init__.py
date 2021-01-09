@@ -38,7 +38,7 @@ with plugin_manager.discovery_blocked():
 
 
 dock_widgets: Dict[Tuple[str, str], Tuple[Type['QWidget'], dict]] = dict()
-functions: Dict[str, Type[Tuple[Callable, Dict, Dict]]] = dict()
+function_widgets: Dict[Tuple[str, str], Tuple[Callable, dict, dict]] = dict()
 
 
 def register_dock_widget(
@@ -48,12 +48,13 @@ def register_dock_widget(
     from qtpy.QtWidgets import QWidget
 
     plugin_name = hookimpl.plugin_name
+    hook_name = '`napari_experimental_provide_dock_widgets`'
     for arg in args if isinstance(args, list) else [args]:
         if isinstance(arg, tuple):
             if not arg:
                 warn(
-                    f'Plugin {plugin_name} provided invalid tuple to '
-                    '`register_dock_widget`.  Skipping'
+                    f'Plugin {plugin_name} provided an invalid tuple to '
+                    f'{hook_name}.  Skipping'
                 )
                 continue
             _cls = arg[0]
@@ -63,17 +64,15 @@ def register_dock_widget(
 
         if not isclass(_cls) and issubclass(_cls, QWidget):
             warn(
-                f'Plugin {plugin_name} provided invalid an invalid '
-                f'widget type to `register_dock_widget`: {_cls!r}. '
-                'Widget ignored.'
+                f'Plugin {plugin_name} provided an invalid '
+                f'widget type to {hook_name}: {_cls!r}. Widget ignored.'
             )
             continue
 
         if not isinstance(kwargs, dict):
             warn(
                 f'Plugin {plugin_name} provided invalid kwargs '
-                f'to `register_dock_widget` for class {_cls.__name__}. '
-                'Widget ignored.'
+                f'to {hook_name} for class {_cls.__name__}. Widget ignored.'
             )
             continue
 
@@ -83,33 +82,65 @@ def register_dock_widget(
         key = (plugin_name, name)
         if key in dock_widgets:
             warn(
-                "Plugin '{}' has already registered a widget '{}' "
+                "Plugin '{}' has already registered a dock widget '{}' "
                 'which has now been overwritten'.format(*key)
             )
         dock_widgets[key] = (_cls, kwargs)
 
 
 def register_function(
-    func: Union[MagicFunctionArg, List[MagicFunctionArg]], hookimpl
+    args: Union[MagicFunctionArg, List[MagicFunctionArg]],
+    hookimpl: HookImplementation,
 ):
-    for _func in func if isinstance(func, list) else [func]:
-        if isinstance(_func, tuple):
-            func_tuple = _func + ({},) * (3 - len(_func))
+
+    plugin_name = hookimpl.plugin_name
+    hook_name = '`napari_experimental_provide_functions`'
+    for arg in args if isinstance(args, list) else [args]:
+        if isinstance(arg, tuple):
+            if not arg:
+                warn(
+                    f'Plugin {plugin_name} provided an invalid tuple to '
+                    f'{hook_name}. Skipping'
+                )
+                continue
+            func = arg[0]
+            magic_kwargs = arg[1] if len(arg) > 1 else {}
+            dock_kwargs = arg[2] if len(arg) > 2 else {}  # type: ignore
         else:
-            func_tuple = (_func, {}, {})
+            func, magic_kwargs, dock_kwargs = (arg, {}, {})
+
+        if not callable(func):
+            warn(
+                f'Plugin {plugin_name} provided a non-callable type to'
+                f'{hook_name}: {type(func)!r}. Function widget ignored.'
+            )
+            continue
+
+        if not isinstance(magic_kwargs, dict):
+            warn(
+                f'Plugin {plugin_name} provided invalid magicgui kwargs '
+                f'to {hook_name} for function {func.__name__}. Widget ignored.'
+            )
+            continue
+
+        if not isinstance(dock_kwargs, dict):
+            warn(
+                f'Plugin {plugin_name} provided invalid dock widget kwargs '
+                f'to {hook_name} for function {func.__name__}. Widget ignored.'
+            )
+            continue
 
         # Get function name
-        name = func_tuple[2].get(
-            'name', func_tuple[0].__name__.replace('_', ' ')
-        )
+        name = dock_kwargs.get('name') or func.__name__.replace('_', ' ')
 
-        key = (hookimpl.plugin_name, name)
-        if key in functions:
+        key = (plugin_name, name)
+        if key in function_widgets:
             warn(
-                f'Plugin {key[0]} has already registered a function {key[1]} which has now been overwritten'
+                "Plugin '{}' has already registered a function widget '{}' "
+                'which has now been overwritten'.format(*key)
             )
 
-        functions[(hookimpl.plugin_name, name)] = func_tuple
+        function_widgets[key] = (func, magic_kwargs, dock_kwargs)
 
 
 plugin_manager.hook.napari_experimental_provide_dock_widgets.call_historic(
