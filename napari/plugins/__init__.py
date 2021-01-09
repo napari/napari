@@ -88,7 +88,7 @@ def register_dock_widget(
         dock_widgets[key] = (_cls, kwargs)
 
 
-def register_function(
+def register_function_widget(
     args: Union[MagicFunctionArg, List[MagicFunctionArg]],
     hookimpl: HookImplementation,
 ):
@@ -149,7 +149,7 @@ plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
 
 
 plugin_manager.hook.napari_experimental_provide_function_widget.call_historic(
-    result_callback=register_function, with_impl=True
+    result_callback=register_function_widget, with_impl=True
 )
 
 #: Template to use for namespacing a plugin item in the menu bar
