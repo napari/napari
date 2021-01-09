@@ -10,6 +10,10 @@ skip = [
     '3d_kymograph.py',  # needs tqdm
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
+    # this works fine (it causes a deleted object error that is successfully
+    # caught and handled), but shows confusing a confusing warning *AFTER* the
+    # test has successfully exited.  So removing from tests to avoid confusion.
+    'interactive_scripting.py',
 ]
 example_dir = Path(napari.__file__).parent.parent / 'examples'
 examples = [f for f in example_dir.glob("*.py") if f.name not in skip]
@@ -33,7 +37,7 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(ExceptionHandler, 'handle', raise_errors)
 
     # quit examples that explicitly start the event loop with `napari.run()`
-    QTimer.singleShot(10, qapp.quit)
+    QTimer.singleShot(0, qapp.quit)
 
     # run the example!
     assert runpy.run_path(str(fname))
