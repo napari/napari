@@ -22,10 +22,13 @@ except RuntimeError:
 
 
 # only test the first of each layer type
-test_data = [
-    next(x for x in layer_test_data if x[0] is cls)
-    for cls in all_subclasses(Layer)
-]
+test_data = []
+for cls in all_subclasses(Layer):
+    try:
+        test_data.append(next(x for x in layer_test_data if x[0] is cls))
+    except StopIteration:
+        # OctTree Image doesn't have layer_test_data
+        pass
 
 
 def test_magicgui_returns_image(make_test_viewer):
