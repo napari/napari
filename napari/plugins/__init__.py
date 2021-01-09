@@ -1,6 +1,5 @@
 import os
 import sys
-import warnings
 from inspect import isclass
 from typing import (
     TYPE_CHECKING,
@@ -12,6 +11,7 @@ from typing import (
     Type,
     Union,
 )
+from warnings import warn
 
 from napari_plugin_engine import HookImplementation, PluginManager
 
@@ -37,40 +37,56 @@ with plugin_manager.discovery_blocked():
     plugin_manager.register(_builtins, name='builtins')
 
 
-dock_widgets: Dict[Tuple[str, str], Type['QWidget']] = dict()
+dock_widgets: Dict[Tuple[str, str], Tuple[Type['QWidget'], dict]] = dict()
 functions: Dict[str, Type[Tuple[Callable, Dict, Dict]]] = dict()
 
 
 def register_dock_widget(
-    cls: Union[DockWidgetArg, List[DockWidgetArg]],
+    args: Union[DockWidgetArg, List[DockWidgetArg]],
     hookimpl: HookImplementation,
 ):
     from qtpy.QtWidgets import QWidget
 
-    for _cls in cls if isinstance(cls, list) else [cls]:
-        if isinstance(_cls, tuple):
-            widget_tuple = _cls + ({},) * (2 - len(_cls))
-            if not isinstance(widget_tuple[1], dict):
-                warnings.warn(
-                    f'Plugin {hookimpl.plugin_name} provided invalid arguments'
-                    f' to `register_dock_widget` for class {_cls.__name__}. '
-                    'Widget ignored.'
+    plugin_name = hookimpl.plugin_name
+    for arg in args if isinstance(args, list) else [args]:
+        if isinstance(arg, tuple):
+            if not arg:
+                warn(
+                    f'Plugin {plugin_name} provided invalid tuple to '
+                    '`register_dock_widget`.  Skipping'
                 )
                 continue
+            _cls = arg[0]
+            kwargs = arg[1] if len(arg) > 1 else {}
         else:
-            widget_tuple = (_cls, {})
+            _cls, kwargs = (arg, {})
+
+        if not isclass(_cls) and issubclass(_cls, QWidget):
+            warn(
+                f'Plugin {plugin_name} provided invalid an invalid '
+                f'widget type to `register_dock_widget`: {_cls!r}. '
+                'Widget ignored.'
+            )
+            continue
+
+        if not isinstance(kwargs, dict):
+            warn(
+                f'Plugin {plugin_name} provided invalid kwargs '
+                f'to `register_dock_widget` for class {_cls.__name__}. '
+                'Widget ignored.'
+            )
+            continue
 
         # Get widget name
-        name = widget_tuple[1].get(
-            'name', camel_to_spaces(widget_tuple[0].__name__)
-        )
+        name = str(kwargs.get('name')) or camel_to_spaces(_cls.__name__)
 
-        key = (hookimpl.plugin_name, name)
+        key = (plugin_name, name)
         if key in dock_widgets:
-            warnings.warn(
-                f'Plugin {key[0]} has already registered a widget {key[1]} which has now been overwritten'
+            warn(
+                "Plugin '{}' has already registered a widget '{}' "
+                'which has now been overwritten'.format(*key)
             )
-        dock_widgets[key] = widget_tuple
+        dock_widgets[key] = (_cls, kwargs)
 
 
 def register_function(
@@ -89,7 +105,7 @@ def register_function(
 
         key = (hookimpl.plugin_name, name)
         if key in functions:
-            warnings.warn(
+            warn(
                 f'Plugin {key[0]} has already registered a function {key[1]} which has now been overwritten'
             )
 
