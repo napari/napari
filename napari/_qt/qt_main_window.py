@@ -6,8 +6,10 @@ import inspect
 import os
 import time
 import warnings
+from collections import Counter
+from itertools import chain, repeat
+from typing import Dict
 
-import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
@@ -22,10 +24,12 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.theme import get_theme, template
+from ..viewer import Viewer
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -96,8 +100,8 @@ class Window:
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
-        self.dock_widgets = {}
-        self._plugin_menus = {}
+        self.dock_widgets: Dict[str, QtViewerDockWidget] = {}
+        self._plugin_menus: Dict[str, QMenu] = {}
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
@@ -109,8 +113,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
-        if not os.getenv("DISABLE_ALL_PLUGINS"):
-            self._add_plugins_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -404,7 +407,6 @@ class Window:
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
-        from .. import plugins
 
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
@@ -431,43 +433,35 @@ class Window:
         )
 
         # Get names of all plugins providing dock widgets or functions
-        plugin_names = [name[0] for name in list(plugins.dock_widgets)] + [
-            name[0] for name in list(plugins.function_widgets)
-        ]
+        plugin_widgets = chain(plugins.dock_widgets, plugins.function_widgets)
+        plugin_counts = Counter(plug_name for plug_name, _ in plugin_widgets)
 
-        unique_names, counts = np.unique(plugin_names, return_counts=True)
+        # Add submenu for each plugin with more than 1 item
+        for plugin_name, count in plugin_counts.items():
+            if count > 1:
+                menu = QMenu(plugin_name, self._qt_window)
+                self._plugin_menus[plugin_name] = menu
+                self._plugin_dock_widget_menu.addMenu(menu)
 
-        # Add a menubar for each plugin
-        for name, c in zip(unique_names, counts):
-            if c > 1:
-                self._plugin_menus[name] = QMenu(name, self._qt_window)
-                self._plugin_dock_widget_menu.addMenu(self._plugin_menus[name])
-
-        # Add dock widgets
-        for name in list(plugins.dock_widgets):
-            if name[0] in list(self._plugin_menus):
-                action = QAction(name[1], parent=self._qt_window)
-                self._plugin_menus[name[0]].addAction(action)
+        docks = zip(repeat("dock"), plugins.dock_widgets)
+        funcs = zip(repeat("func"), plugins.function_widgets)
+        for hook_type, key in chain(docks, funcs):
+            plugin_name, wdg_name = key
+            if plugin_name in self._plugin_menus:
+                action = QAction(wdg_name, parent=self._qt_window)
+                self._plugin_menus[plugin_name].addAction(action)
             else:
-                full_name = plugins.menu_item_template.format(*name)
+                full_name = plugins.menu_item_template.format(*key)
                 action = QAction(full_name, parent=self._qt_window)
                 self._plugin_dock_widget_menu.addAction(action)
-            action.triggered.connect(
-                lambda s, name=name: self._add_plugin_dock_widget(name)
-            )
 
-        # Add functions
-        for name in list(plugins.function_widgets):
-            if name[0] in list(self._plugin_menus):
-                action = QAction(name[1], parent=self._qt_window)
-                self._plugin_menus[name[0]].addAction(action)
-            else:
-                full_name = plugins.menu_item_template.format(*name)
-                action = QAction(full_name, parent=self._qt_window)
-                self._plugin_dock_widget_menu.addAction(action)
-            action.triggered.connect(
-                lambda s, name=name: self._add_plugin_function(name)
-            )
+            def _add_widget(*args, key=key, hook_type=hook_type):
+                if hook_type == 'dock':
+                    self._add_plugin_dock_widget(key)
+                else:
+                    self._add_plugin_function_widget(key)
+
+            action.triggered.connect(_add_widget)
 
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
@@ -559,39 +553,37 @@ class Window:
         key : 2-tuple of str
             Plugin name and widget name.
         """
-        from .. import plugins
-        from ..viewer import Viewer
-
         full_name = plugins.menu_item_template.format(*key)
-        if full_name in list(self.dock_widgets):
-            warnings.warn(f'Dock widget {key} already added')
+        if full_name in self.dock_widgets:
+            warnings.warn(f'Dock widget {key!r} already added')
             return
 
         Widget, dock_kwargs = plugins.dock_widgets[key]
+
         # if the signature is looking a for a napari viewer, pass it.
-        sig = inspect.signature(Widget.__init__)
-        for param in sig.parameters.values():
+        kwargs = {}
+        for param in inspect.signature(Widget.__init__).parameters.values():
             if param.name == 'napari_viewer':
-                wdg = Widget(napari_viewer=self.qt_viewer.viewer)
+                kwargs['napari_viewer'] = self.qt_viewer.viewer
                 break
             if param.annotation in ('napari.viewer.Viewer', Viewer):
-                wdg = Widget(**{param.name: self.qt_viewer.viewer})
+                kwargs[param.name] = self.qt_viewer.viewer
                 break
             # cannot look for param.kind == param.VAR_KEYWORD because
             # QWidget allows **kwargs but errs on unknown keyword arguments
-        else:
-            # otherwise instantiate the widget without passing viewer
-            wdg = Widget()
+
+        # instantiate the widget
+        wdg = Widget(**kwargs)
 
         # Add dock widget
         self.add_dock_widget(
             wdg,
-            name=full_name,
+            name=plugins.menu_item_template.format(*key),
             area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
 
-    def _add_plugin_function(self, key):
+    def _add_plugin_function_widget(self, key):
         """Add plugin function widget if not already added.
 
         Parameters
@@ -599,11 +591,9 @@ class Window:
         key : 2-tuple of str
             Plugin name and function name.
         """
-        from .. import plugins
-
         full_name = plugins.menu_item_template.format(*key)
-        if full_name in list(self.dock_widgets):
-            warnings.warn(f'Dock widget {key} already added')
+        if full_name in self.dock_widgets:
+            warnings.warn(f'Dock widget {key!r} already added')
             return
 
         func, magic_kwargs, dock_kwargs = plugins.function_widgets[key]
@@ -612,7 +602,7 @@ class Window:
         self.add_function_widget(
             func,
             magic_kwargs=magic_kwargs,
-            name=full_name,
+            name=plugins.menu_item_template.format(*key),
             area=dock_kwargs.get('area', None),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
