@@ -1,6 +1,6 @@
 import os
 import sys
-from inspect import isclass
+from inspect import isclass, signature
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -13,6 +13,7 @@ from typing import (
 )
 from warnings import warn
 
+from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
 
 from ..types import DockWidgetArg, MagicFunctionArg
@@ -53,7 +54,7 @@ def register_dock_widget(
         if isinstance(arg, tuple):
             if not arg:
                 warn(
-                    f'Plugin {plugin_name} provided an invalid tuple to '
+                    f'Plugin {plugin_name!r} provided an invalid tuple to '
                     f'{hook_name}.  Skipping'
                 )
                 continue
@@ -64,20 +65,20 @@ def register_dock_widget(
 
         if not isclass(_cls) and issubclass(_cls, QWidget):
             warn(
-                f'Plugin {plugin_name} provided an invalid '
+                f'Plugin {plugin_name!r} provided an invalid '
                 f'widget type to {hook_name}: {_cls!r}. Widget ignored.'
             )
             continue
 
         if not isinstance(kwargs, dict):
             warn(
-                f'Plugin {plugin_name} provided invalid kwargs '
+                f'Plugin {plugin_name!r} provided invalid kwargs '
                 f'to {hook_name} for class {_cls.__name__}. Widget ignored.'
             )
             continue
 
         # Get widget name
-        name = str(kwargs.get('name')) or camel_to_spaces(_cls.__name__)
+        name = str(kwargs.get('name', '')) or camel_to_spaces(_cls.__name__)
 
         key = (plugin_name, name)
         if key in dock_widgets:
@@ -88,18 +89,20 @@ def register_dock_widget(
         dock_widgets[key] = (_cls, kwargs)
 
 
+valid_magic_kwargs = set(signature(magicgui).parameters)
+
+
 def register_function_widget(
     args: Union[MagicFunctionArg, List[MagicFunctionArg]],
     hookimpl: HookImplementation,
 ):
-
     plugin_name = hookimpl.plugin_name
     hook_name = '`napari_experimental_provide_function_widget`'
     for arg in args if isinstance(args, list) else [args]:
         if isinstance(arg, tuple):
             if not arg:
                 warn(
-                    f'Plugin {plugin_name} provided an invalid tuple to '
+                    f'Plugin {plugin_name!r} provided an invalid tuple to '
                     f'{hook_name}. Skipping'
                 )
                 continue
@@ -110,28 +113,46 @@ def register_function_widget(
             func, magic_kwargs, dock_kwargs = (arg, {}, {})
 
         if not callable(func):
-            warn(
-                f'Plugin {plugin_name} provided a non-callable type to'
+            msg = (
+                f'Plugin {plugin_name!r} provided a non-callable type to '
                 f'{hook_name}: {type(func)!r}. Function widget ignored.'
             )
+            if isinstance(func, tuple):
+                msg += (
+                    " To provide multiple function widgets please use "
+                    "a LIST of tuples"
+                )
+            warn(msg)
             continue
 
         if not isinstance(magic_kwargs, dict):
             warn(
-                f'Plugin {plugin_name} provided invalid magicgui kwargs '
-                f'to {hook_name} for function {func.__name__}. Widget ignored.'
+                f'Plugin {plugin_name!r} provided invalid type '
+                f'({type(magic_kwargs)}) for 2nd argument to {hook_name} '
+                f'for function {func.__name__!r}. Widget ignored.'
+            )
+            continue
+
+        if set(magic_kwargs) - valid_magic_kwargs:
+            warn(
+                f'Plugin {plugin_name!r} provided invalid magicgui kwargs '
+                f'to {hook_name} for function {func.__name__!r}: '
+                f'{set(magic_kwargs) - valid_magic_kwargs}. Widget ignored.'
             )
             continue
 
         if not isinstance(dock_kwargs, dict):
             warn(
-                f'Plugin {plugin_name} provided invalid dock widget kwargs '
-                f'to {hook_name} for function {func.__name__}. Widget ignored.'
+                f'Plugin {plugin_name!r} provided invalid type '
+                f'({type(dock_kwargs)}) for 3nd argument to {hook_name} '
+                f'for function {func.__name__!r}. Widget ignored.'
             )
             continue
 
         # Get function name
-        name = dock_kwargs.get('name') or func.__name__.replace('_', ' ')
+        name = str(dock_kwargs.get('name', '')) or func.__name__.replace(
+            '_', ' '
+        )
 
         key = (plugin_name, name)
         if key in function_widgets:
