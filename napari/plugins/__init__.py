@@ -48,7 +48,7 @@ def register_dock_widget(
     from qtpy.QtWidgets import QWidget
 
     plugin_name = hookimpl.plugin_name
-    hook_name = '`napari_experimental_provide_dock_widgets`'
+    hook_name = '`napari_experimental_provide_dock_widget`'
     for arg in args if isinstance(args, list) else [args]:
         if isinstance(arg, tuple):
             if not arg:
@@ -94,7 +94,7 @@ def register_function(
 ):
 
     plugin_name = hookimpl.plugin_name
-    hook_name = '`napari_experimental_provide_functions`'
+    hook_name = '`napari_experimental_provide_function_widget`'
     for arg in args if isinstance(args, list) else [args]:
         if isinstance(arg, tuple):
             if not arg:
@@ -143,12 +143,12 @@ def register_function(
         function_widgets[key] = (func, magic_kwargs, dock_kwargs)
 
 
-plugin_manager.hook.napari_experimental_provide_dock_widgets.call_historic(
+plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
     result_callback=register_dock_widget, with_impl=True
 )
 
 
-plugin_manager.hook.napari_experimental_provide_functions.call_historic(
+plugin_manager.hook.napari_experimental_provide_function_widget.call_historic(
     result_callback=register_function, with_impl=True
 )
 

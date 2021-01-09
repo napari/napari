@@ -330,7 +330,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_functions() -> Union[
+def napari_experimental_provide_function_widget() -> Union[
     MagicFunctionArg, List[MagicFunctionArg]
 ]:
     """Provide functions and args that can be passed to magicgui.
@@ -344,7 +344,7 @@ def napari_experimental_provide_functions() -> Union[
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_dock_widgets() -> Union[
+def napari_experimental_provide_dock_widget() -> Union[
     DockWidgetArg, List[DockWidgetArg]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
