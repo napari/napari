@@ -13,7 +13,7 @@ def func2(x, y):
     pass
 
 
-args = {
+fwidget_args = {
     'single_func': func,
     'func_tuple': (func, {'call_button': True}),
     'full_func_tuple': (func, {'auto_call': True}, {'area': 'right'}),
@@ -28,7 +28,7 @@ args = {
 }
 
 
-@pytest.mark.parametrize('arg', args.values(), ids=args.keys())
+@pytest.mark.parametrize('arg', fwidget_args.values(), ids=fwidget_args.keys())
 def test_function_widget_registration(
     arg, test_plugin_manager, add_implementation, monkeypatch, request, recwarn
 ):
@@ -58,9 +58,4 @@ def test_function_widget_registration(
                 assert registered[(None, 'func2')][0] == func2
 
 
-# def test_dock_widget_registration():
-#     pass
-
-#     plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
-#         result_callback=register_dock_widget, with_impl=True
-#     )
+# test_dock_widget_registration is done in `_qt._tests.test_plugin_widgets`

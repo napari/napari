@@ -63,7 +63,7 @@ def register_dock_widget(
         else:
             _cls, kwargs = (arg, {})
 
-        if not isclass(_cls) and issubclass(_cls, QWidget):
+        if not (isclass(_cls) and issubclass(_cls, QWidget)):
             warn(
                 f'Plugin {plugin_name!r} provided an invalid '
                 f'widget type to {hook_name}: {_cls!r}. Widget ignored.'
