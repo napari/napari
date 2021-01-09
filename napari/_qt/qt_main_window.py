@@ -587,7 +587,7 @@ class Window:
         self.add_dock_widget(
             wdg,
             name=full_name,
-            area=dock_kwargs.get('area', None),
+            area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
 
