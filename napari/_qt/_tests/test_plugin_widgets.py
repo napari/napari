@@ -31,6 +31,9 @@ dwidget_args = {
 }
 
 
+# test_plugin_manager and add_implementation fixtures are
+#     provided by napari_plugin_engine._testsupport
+# monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
 def test_dock_widget_registration(
     arg, test_plugin_manager, add_implementation, monkeypatch, request, recwarn
