@@ -38,6 +38,7 @@ dwidget_args = {
 def test_dock_widget_registration(
     arg, test_plugin_manager, add_implementation, monkeypatch, request, recwarn
 ):
+    """Test that dock widgets get validated and registerd correctly."""
     test_plugin_manager.project_name = 'napari'
     test_plugin_manager.add_hookspecs(hook_specifications)
     hook = test_plugin_manager.hook.napari_experimental_provide_dock_widget
