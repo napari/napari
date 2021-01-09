@@ -405,7 +405,6 @@ class Window:
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
-
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
         pip_install_action = QAction(
@@ -441,14 +440,17 @@ class Window:
                 self._plugin_menus[plugin_name] = menu
                 self._plugin_dock_widget_menu.addMenu(menu)
 
+        # Add a menu item (QAction) for each available plugin widget
         docks = zip(repeat("dock"), plugins.dock_widgets)
         funcs = zip(repeat("func"), plugins.function_widgets)
         for hook_type, key in chain(docks, funcs):
             plugin_name, wdg_name = key
             if plugin_name in self._plugin_menus:
+                # this plugin has a submenu.
                 action = QAction(wdg_name, parent=self._qt_window)
                 self._plugin_menus[plugin_name].addAction(action)
             else:
+                # this plugin only has one widget, add a namespaced menu item
                 full_name = plugins.menu_item_template.format(*key)
                 action = QAction(full_name, parent=self._qt_window)
                 self._plugin_dock_widget_menu.addAction(action)
