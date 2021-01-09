@@ -81,8 +81,6 @@ class Window:
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
         Window menu.
-    dock_widgets : Dict[str, QtViewerDockWidget]
-        Dock widgets that have been added to the viewer.
     """
 
     raw_stylesheet = get_stylesheet()
