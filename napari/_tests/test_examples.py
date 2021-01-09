@@ -36,4 +36,4 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     QTimer.singleShot(10, qapp.quit)
 
     # run the example!
-    assert runpy.run_path(fname)
+    assert runpy.run_path(str(fname))
