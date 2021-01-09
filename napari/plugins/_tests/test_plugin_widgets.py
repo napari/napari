@@ -17,7 +17,8 @@ args = {
     'single_func': func,
     'func_tuple': (func, {'call_button': True}),
     'full_func_tuple': (func, {'auto_call': True}, {'area': 'right'}),
-    'tuple_list': [(func, {'auto_call': True}, {'area': 'right'})],
+    'tuple_list': [(func, {'auto_call': True}), (func2, {})],
+    'tuple_list2': [(func, {'auto_call': True}), func2],
     'bad_func': 1,
     'bad_tuple1': (func, 1),
     'bad_tuple2': (func, {}, 1),
@@ -53,6 +54,8 @@ def test_function_widget_registration(
         else:
             assert registered[(None, 'func')][0] == func
             assert len(recwarn) == 0
+            if 'tuple_list' in request.node.name:
+                assert registered[(None, 'func2')][0] == func2
 
 
 # def test_dock_widget_registration():
