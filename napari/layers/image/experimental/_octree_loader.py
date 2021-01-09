@@ -21,11 +21,11 @@ LOADER = logging.getLogger("napari.loader.futures")
 # for tiles to draw at levels above the ideal how. These tiles give
 # us lots of coverage quickly, so we load and draw then even before
 # the ideal level
-NUM_ANCESTORS_LEVELS = 3
+NUM_ANCESTOR_LEVELS = 3
 
 
 class OctreeLoader:
-    """Load data into OctreeChunks in the octree.
+    """Load data into the OctreeChunks in the octree.
 
     The loader is given drawn_set, the chunks we are currently drawing, and
     ideal_chunks, the chunks which are in view at the desired level of the
@@ -33,8 +33,8 @@ class OctreeLoader:
 
     The ideal level was chosen because its image pixels best match the
     screen pixels. Using higher resolution than that is okay, but it's
-    wasting memory. Using lower resolution is better than nothing, but it's
-    going to be blurrier than the ideal level.
+    wasted time and memory. Using lower resolution is better than nothing,
+    but it's going to be blurrier than the ideal level.
 
     Our get_drawable_chunks() method iterates through the ideal_chunks
     choosing what chunks to load, in what order, and producing the set of
@@ -52,7 +52,7 @@ class OctreeLoader:
 
     As you go up to higher levels from the ideal level, the chunks on those
     levels cover more and more chunks on the ideal level. As you go up
-    levels they cover this number of ideal chunks: 4, 9, 16, 25.
+    levels they cover this number of ideal chunks: 4, 16, 64.
 
     The data from higher levels is blurry compared to the ideal level, but
     getting something "reasonable" on the screen quickly often leads to the
@@ -87,11 +87,11 @@ class OctreeLoader:
     ) -> List[OctreeChunk]:
         """Return the chunks that should be drawn.
 
-        The ideal chunks are within the bounds of the OctreeView, but those
-        chunks may or may not be in memory. We only return chunks which
-        are in memory.
+        The ideal chunks are within the bounds of the OctreeView, but they
+        may or may not be in memory. We only return chunks which are in
+        memory.
 
-        Generally we want to draw the "best available" data. Howevever that
+        Generally we want to draw the "best available" data. However, that
         data might not be at the ideal level. Sometimes we even load chunks
         at a higher level before loading the ideal chunks. To get
         "coverage" quickly.
@@ -285,7 +285,7 @@ class OctreeLoader:
         # because they will provide more coverage. They will cover the
         # ideal chunk plus more.
         ancestors = self._octree.get_ancestors(
-            ideal_chunk, NUM_ANCESTORS_LEVELS, create=True
+            ideal_chunk, NUM_ANCESTOR_LEVELS, create=True
         )
 
         return children + ancestors
