@@ -21,13 +21,16 @@ class Operation(enum.Enum):
 # In this example, because we have already imported napari anyway, it doesn't
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
+# Note: here we use `napari.types.ImageData` as our parameter annotations,
+# which means our function will be passed layer.data instead of 
+# the full layer instance
 def image_arithmetic(
-    layerA: 'napari.layers.Image',
+    layerA: 'napari.types.ImageData',
     operation: Operation,
-    layerB: 'napari.layers.Image',
-) -> 'napari.layers.Image':
+    layerB: 'napari.types.ImageData',
+) -> 'napari.types.ImageData':
     """Adds, subtracts, multiplies, or divides two same-shaped image layers."""
-    return operation.value(layerA.data, layerB.data)
+    return operation.value(layerA, layerB)
 
 
 # We also use the additional `call_button` option to add a button that
