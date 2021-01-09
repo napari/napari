@@ -709,7 +709,7 @@ class Window:
             If widget == 'all', all docked widgets will be removed.
         """
         if widget == 'all':
-            for dw in self._dock_widgets.copy().values():
+            for dw in list(self._dock_widgets.values()):
                 self.remove_dock_widget(dw)
             return
 
