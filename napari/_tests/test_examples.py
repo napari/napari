@@ -17,6 +17,8 @@ examples = [f for f in example_dir.glob("*.py") if f.name not in skip]
 
 @pytest.mark.parametrize("fname", examples, ids=lambda x: Path(x).name)
 def test_examples(qapp, fname, monkeypatch, capsys):
+    """Test that all of our examples are still working without warnings."""
+
     from qtpy.QtCore import QTimer
     from napari._qt.qt_main_window import Window
     from napari._qt.exceptions import ExceptionHandler
