@@ -100,7 +100,7 @@ class Window:
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
-        self.dock_widgets: Dict[str, QtViewerDockWidget] = {}
+        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
         self._plugin_menus: Dict[str, QMenu] = {}
 
         # since we initialize canvas before window, we need to manually connect them again.
@@ -554,7 +554,7 @@ class Window:
             Plugin name and widget name.
         """
         full_name = plugins.menu_item_template.format(*key)
-        if full_name in self.dock_widgets:
+        if full_name in self._dock_widgets:
             warnings.warn(f'Dock widget {key!r} already added')
             return
 
@@ -592,7 +592,7 @@ class Window:
             Plugin name and function name.
         """
         full_name = plugins.menu_item_template.format(*key)
-        if full_name in self.dock_widgets:
+        if full_name in self._dock_widgets:
             warnings.warn(f'Dock widget {key!r} already added')
             return
 
@@ -657,7 +657,7 @@ class Window:
             self.qt_viewer.viewer.layers.events.connect(widget.reset_choices)
 
         # Add dock widget to dictionary
-        self.dock_widgets[dock_widget.name] = dock_widget
+        self._dock_widgets[dock_widget.name] = dock_widget
 
         return dock_widget
 
@@ -711,7 +711,7 @@ class Window:
             If widget == 'all', all docked widgets will be removed.
         """
         if widget == 'all':
-            for dw in self.dock_widgets.copy().values():
+            for dw in self._dock_widgets.copy().values():
                 self.remove_dock_widget(dw)
             return
 
@@ -733,7 +733,7 @@ class Window:
         self.window_menu.removeAction(_dw.toggleViewAction())
 
         # Remove dock widget from dictionary
-        del self.dock_widgets[_dw.name]
+        del self._dock_widgets[_dw.name]
 
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has
