@@ -5,6 +5,7 @@ import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
+from napari.viewer import ViewerModel
 
 
 def test_empty_layers_list():
@@ -586,3 +587,11 @@ def test_ndim():
     # Remove layer
     layers.remove(layer_b)
     assert layers.ndim == 2
+
+
+def test_name_uniqueness():
+    v = ViewerModel()
+    v.add_image(np.random.random((10, 15)), name="Image [1]")
+    v.add_image(np.random.random((10, 15)), name="Image")
+    v.add_image(np.random.random((10, 15)), name="Image")
+    assert [x.name for x in v.layers] == ['Image [1]', 'Image', 'Image [2]']
