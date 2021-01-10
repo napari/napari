@@ -66,7 +66,7 @@ class ChunkCache:
     that will grow in memory usage up to some limit. Then it will free the
     least recently used entries so total usage does not exceed that limit.
 
-    TODO_ASYNC:
+    TODO_OCTREE:
 
     1) For dynamically computed data the cache should be disabled. So
        should the default be off? Or can we detect dynamic computations?

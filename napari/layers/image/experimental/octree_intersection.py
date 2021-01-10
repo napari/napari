@@ -1,4 +1,4 @@
-"""OctreeIntersection class.
+"""OctreeView and OctreeIntersection classes.
 """
 from typing import List, NamedTuple, Tuple
 
@@ -11,6 +11,9 @@ from .octree_util import OctreeDisplayOptions
 
 class OctreeView(NamedTuple):
     """A view into the octree.
+
+    An OctreeView corresponds to a camera which is viewing the image data,
+    plus options as to how we want to render the data.
 
     Attributes
     ----------
@@ -32,6 +35,7 @@ class OctreeView(NamedTuple):
 
         Return
         ------
+        int
             The width in data coordinates.
         """
         return self.corners[1][1] - self.corners[0][1]
@@ -188,8 +192,7 @@ class OctreeIntersection:
         chunks = []  # The chunks in the intersection.
 
         # Get every chunk that is within the rectangular region. These are
-        # all the chunks we might possibly draw, because they are within
-        # the current view.
+        # the chunks we want to draw to depict this region of the data.
         #
         # If we've accessed the chunk recently the existing OctreeChunk
         # will be returned, otherwise a new OctreeChunk is created
