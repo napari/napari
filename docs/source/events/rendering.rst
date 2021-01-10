@@ -317,25 +317,34 @@ the tiled visual's
 Instead operating on ``self.data`` it needs to transform tile's which are newly
 being added to the visual. The color transform similarly needs to be per-tile.
 
-Opacity
-+++++++
+Blending and Opacity
+++++++++++++++++++++
 
 It might be hard to get opacity working correctly for tiles where loads are
-in progress because of how
+in progress. The way
 :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
-works today. The
+works today is the
 :class:`~napari.layers.image.experimental._octree_loader.OctreeLoader`
-potentially passes the visual a number of tiles of different sizes. The
-tiles these are rendered on top of each other from largest (coarsest level)
-to smallest (finest level). We do this so bigger tiles provide "coverage"
-for an area, while the smaller tiles add detail where it has been loaded.
+potentially passes the visual tiles of various sizes, from different levels
+of the Octree. The tiles are rendered on top of each other from largest
+(coarsest level) to smallest (finest level). This is a nice trick so that
+bigger tiles to provide "coverage" for an area, while the smaller tiles add
+detail only where that data has been loaded.
 
-Perhaps there is a small fix for this. But one possible big change is give
-up on the idea that the visual should not reall know about the Octree. We
-can keep :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
-for the generic case, but introduce a new ``OctreeVisual`` that can render
-without these overlaps. Instead it can chop up larger tiles so it renders a
-single tile at every point of the screen.
+However, this breaks blending and opacity. We draw multiple tiles on top of
+each other, so the image is blending with itself. One solution which is
+kind of a big change is keep
+:class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
+for the generic "tiled" case, but introduce a new ``OctreeVisual`` that
+knows about the Octree. It can walk up and down the Octree chopping up
+larger tiles making sure render every point of the screen only once.
+
+Until we do that, we could punt on making things look correct while loads
+are in progress. We could draw non-ideal tiles as highlighted or with a
+special border. Basically announce very clearly "this tile is not showing
+correct final data yet". Aside from blending this would address a common
+complaint with tiled image viewers that you often can't tell if the data is
+still be loaded and thus refined.
 
 Time-series Multiscale
 ++++++++++++++++++++++
