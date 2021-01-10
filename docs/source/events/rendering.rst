@@ -285,6 +285,71 @@ to experiment to figure out the best configuration. And figure out how that
 configuration needs to vary based on latency of the data or other
 considerations.
 
+Future Work: Compatibility with Image class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The focus for initial Octree development was Octree-specific behaviors and
+infrastructure. Loading chunks asynchronously and rendering them as
+individual tiles. A next step is full compatibility with the existing
+:class:`~napari.layers.image.image.Image` class.
+
+The :class:`~napari.layers.image.experimental.octree_image.OctreeImage`
+class is derived from :class:`~napari.layers.image.image.Image`,
+:class:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer`
+is derived from :class:`~napari._vispy.vispy_image_layer.VispyImageLayer`,
+and
+:class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual` is
+derived from the regular Vispy `ImageVisual`. In many cases what is needed
+next is to correctly chain to the base classes or duplicate functionality
+in the derived classes. Generally the change is the new version needs do it
+on a per-tile basis instead of operating on the whole image, which is never
+fully loaded.
+
+Some :class:`~napari.layers.image.image.Image` functionality that needs to
+be duplicated in Octree code:
+
+Contrast Limits and Color Transform
++++++++++++++++++++++++++++++++++++
+
+The contrast limit code in Vispy's ``ImageVisual`` needs to be moved into
+the tiled visual's
+:meth:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual._build_texture`.
+Instead operating on ``self.data`` it needs to transform tile's which are newly
+being added to the visual. The color transform similarly needs to be per-tile.
+
+Opacity
++++++++
+
+It might be hard to get opacity working correctly for tiles where loads are
+in progress because of how
+:class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
+works today. The
+:class:`~napari.layers.image.experimental._octree_loader.OctreeLoader`
+potentially passes the visual a number of tiles of different sizes. The
+tiles these are rendered on top of each other from largest (coarsest level)
+to smallest (finest level). We do this so bigger tiles provide "coverage"
+for an area, while the smaller tiles add detail where it has been loaded.
+
+Perhaps there is a small fix for this. But one possible big change is give
+up on the idea that the visual should not reall know about the Octree. We
+can keep :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
+for the generic case, but introduce a new ``OctreeVisual`` that can render
+without these overlaps. Instead it can chop up larger tiles so it renders a
+single tile at every point of the screen.
+
+Time-series Multiscale
+++++++++++++++++++++++
+
+To make time-series multiscale work at all should not be too hard. We need
+to correctly create a new
+:class:`~napari.layers.image.experimental._octree_slice.OctreeSlice`
+every time the slice changes.
+
+The challenges will probably be getting performance where we want it. For
+starters we probably need to stop create the "extra" downsampled levels,
+described in `Future Work: Extending TextureAtlas2D`. Beyond that we just
+
+
 Future Work: Extending TextureAtlas2D
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 We could improve our
@@ -317,7 +382,7 @@ lead to discrepancies in how things are rendered
 Instead it would be nice if
 :class:`~napari.layers.image.experimental.octree_image.OctreeImage` become
 the only image class. For that to happen though, we need to render small
-images just as efficinetly as we do today, which probably means not
+images just as efficiently as we do today, which probably means not
 breaking them into tiles. To do this our atlas textures need to support
 tiles of various sizes.
 
@@ -347,3 +412,23 @@ is an Octree but two is a tiled or chunked image, which is just a grid of
 tiles. It's TBD how this would look to the user. But instead of a 1500ms
 hang they'd probably see the individuals tiles peppering into the scene.
 And they could interrupt this process by switching slices at any point.
+
+Future Work: Caching
+^^^^^^^^^^^^^^^^^^^^
+
+Basically no work as gone into caching for Octree yet. The focus has just
+been getting it rendering correctly. One caching issue is figuring how to
+combine the ``ChunkCache`` with Dasks's built-in caching. We probably want
+to keep the ``ChunkCache`` for rendering non-Dask arrays? But when using
+Dask, we defer to its cache? We certainly don't want to cache the data in
+both places.
+
+Another issue is whether to cache ``OctreeChunks`` or tiles in the visual,
+beyond just caching the raw data. If re-creating both if fast enough, the
+simpler thing is evict them fully when a chunk falls out of view. And
+re-create them if it comes back in view. Basically keep nothing but what we
+are currently drawing.
+
+However if that's not fast enough, keeping ``OctreeChunks`` in RAM and some
+tiles in VRAM is an option. So if we re-view that area it's faster. This is
+adding complexity, but the performance might be worth it.
