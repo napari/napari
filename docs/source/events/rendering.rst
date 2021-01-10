@@ -5,8 +5,8 @@ Asynchronous Rendering
 
 As discussed in the explanations document on rendering, asynchronous
 rendering is a feature that allows napari to stay usable and responsive
-even when data is loading slowly. The two experimental asynchronous
-rendering features can be enabled using the environment variables
+even when data is loading slowly. There are two experimental asynchronous
+rendering features, they can be enabled using the environment variables
 ``NAPARI_ASYNC`` and ``NAPARI_OCTREE``.
 
 NAPARI_ASYNC
@@ -17,7 +17,7 @@ the existing :class:`~napari.layers.image.image.Image` class. The
 :class:`~napari.layers.image.image.Image` class will no longer call
 ``np.asarray()`` in the GUI thread. We do this so that if ``np.asarray()``
 blocks on IO or a computation, the GUI thread will not block and the
-framerate will not slow down.
+framerate will not suffer.
 
 To avoid blocking the GUI thread the
 :class:`~napari.layers.image.image.Image` class will load chunks using the
@@ -93,8 +93,7 @@ this intentionally to keep the visuals simpler and more general. However,
 the approach has some limitations, and we might later need to create a
 subclass of
 :class:`~napari._vispy.experimental.vispy_tiled_image_visual.TiledImageVisual`
-which is Octree-specific. To get all the octree rendering behaviors we
-want.
+which is Octree-specific, see `Future Work: Extending TextureAtlas2D`_.
 
 The :class:`~napari._vispy.experimental.texture_atlas.TextureAtlas2D` class
 is a subclass of the generic Vispy ``Texture2D`` class. Like ``Texture2D``
@@ -124,10 +123,12 @@ better solution.
 Octree Rendering
 ^^^^^^^^^^^^^^^^
 
-The interface between the visuals and the Octree is the ``OctreeImage``
-method
+The interface between the visuals and the Octree is the
+:class:`~napari.layers.image.experimental.octree_image.OctreeImage` method
 :meth:`~napari.layers.image.experimental.octree_image.OctreeImage.get_drawable_chunks`.
-The method is called by the ``VispyTiledImageLayer`` method
+The method is called by the
+:class:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer`
+method
 :meth:`~napari._vispy.experimental.vispy_tiled_image_layer.VispyTiledImageLayer._update_drawn_chunks`
 every frame so it can update which tiles are drawn.
 :class:`~napari.layers.image.experimental.octree_image.OctreeImage` calls
@@ -143,9 +144,10 @@ current camera position.
 The ideal chunks are the chunks at the preferred level of detail, the level
 of detail that best matches the current canvas resolution. Drawing chunks
 which are more detailed that this will look fine, the graphics card will
-downsample them, but it's not efficient to use higher resolution chunks
-than are needed. Meanwhile drawing chunks that are coarser than the ideal
-level will look blurry, but it's much better than drawing nothing.
+downsample them to the screen resolution, but it's not efficient to use
+higher resolution chunks than are needed. Meanwhile drawing chunks that are
+coarser than the ideal level will look blurry, but it's much better than
+drawing nothing.
 
 The decision about what level of detail to use is made by the
 :class:`~napari.layers.image.experimental._octree_loader.OctreeLoader`
@@ -176,6 +178,10 @@ Levels Above Ideal  Coverage
 2                   16
 3                   64
 ==================  ======
+
+Although data 3 levels above will be quite blurry, it's pretty amazing you
+can load one chunk and it will cover 64 ideal chunks. This is the heart of
+the power of Octrees, Quadtrees or image pyramids.
 
 Octree Configuration File
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -212,30 +218,30 @@ config file format:
 The ``loader_defaults`` key contains settings that will be used by the
 :class:`~napari.components.experimental.chunk._loader.ChunkLoader`.
 
-+-----------------------+-----------------------------------------------------------+
-| Setting               | Description                                               |
-+=======================+===========================================================+
-| ``log_path``          | Write ChunkLoader log file to this path. For debugging.   |
-+-----------------------+-----------------------------------------------------------+
-| ``force_synchronous`` | If ``true`` the ``ChunkLoader`` always load synchronously.|
-+-----------------------+-----------------------------------------------------------+
-| ``num_workers``       | The number of worker threads or processes.                |
-+-----------------------+-----------------------------------------------------------+
-| ``use_processes``     | If ``true`` use worker processes instead of threads.      |
-+-----------------------+-----------------------------------------------------------+
-| ``auto_async_ms``     | Switch to synchronous if loads faster than this.          |
-+-----------------------+-----------------------------------------------------------+
-| ``delay_queue_ms``    | Delay loads by this much time.                            |
-+-----------------------+-----------------------------------------------------------+
-| ``num_workers``       | The number of worker threads or processes.                |
-+-----------------------+-----------------------------------------------------------+
++-----------------------+------------------------------------------------------------+
+| Setting               | Description                                                |
++=======================+============================================================+
+| ``log_path``          | Write ``ChunkLoader`` log file to this path. For debugging.|
++-----------------------+------------------------------------------------------------+
+| ``force_synchronous`` | If ``true`` the ``ChunkLoader`` loads synchronously.       |
++-----------------------+------------------------------------------------------------+
+| ``num_workers``       | The number of worker threads or processes.                 |
++-----------------------+------------------------------------------------------------+
+| ``use_processes``     | If ``true`` use worker processes instead of threads.       |
++-----------------------+------------------------------------------------------------+
+| ``auto_async_ms``     | Switch to synchronous if loads are faster than this.       |
++-----------------------+------------------------------------------------------------+
+| ``delay_queue_ms``    | Delay loads by this much.                                  |
++-----------------------+------------------------------------------------------------+
+| ``num_workers``       | The number of worker threads or processes.                 |
++-----------------------+------------------------------------------------------------+
 
 The ``octree`` key contains these settings:
 
 +-----------------------+-----------------------------------------------------------+
 | Setting               | Description                                               |
 +=======================+===========================================================+
-| ``enabled``           | If ``false` then use the old `Image` class.               |
+| ``enabled``           | If ``false`` then use the old `Image` class.              |
 +-----------------------+-----------------------------------------------------------+
 | ``tile_size``         | Size of render tiles to use for rending.                  |
 +-----------------------+-----------------------------------------------------------+
@@ -246,10 +252,10 @@ The ``octree`` key contains these settings:
 
 The ``loaders`` key lets you define and configure multiple
 :class:`~napari.components.experimental.chunk._pool.LoaderPool` pools. The
-key of each loader is the levels relative to the ideal level. In the above
-example configuration we define two loaders. The first with key "0" is for
+key of each loader is the level relative to the ideal level. In the above
+example configuration we define two loaders. The first with key ``0`` is for
 loading chunks at the ideal level or one above. While the second with key
-"2" will load chunks two above the ideal level or higher.
+``2`` will load chunks two above the ideal level or higher.
 
 Each loader uses the ``loader_defaults`` but you can override the
 ``num_workers``, ``auto_sync_ms`` and ``delay_queue_ms`` values in
@@ -306,11 +312,13 @@ class is derived from :class:`~napari.layers.image.image.Image`, while
 is derived from :class:`~napari._vispy.vispy_image_layer.VispyImageLayer`,
 and
 :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual` is
-derived from the regular Vispy `ImageVisual`. In many cases what is needed
-next is to correctly chain to the base classes or to duplicate
-functionality in the derived classes. Generally the change is the new
-version needs do it on a per-tile basis what before was happing to the
-whole image.
+derived from the regular Vispy ``ImageVisual`` class. To bring full
+:class:`~napari.layers.image.image.Image` capability to
+:class:`~napari.layers.image.experimental.octree_image.OctreeImage` in most
+cases we just need to duplicate what those base classes are doing, but do
+it on a per-tile bases. Since there is no full image for them to operate
+on. This might involve chaining to the base class or it could mean
+duplicating that functionality somehow in the derived class.
 
 Some :class:`~napari.layers.image.image.Image` functionality that needs to
 be duplicated in Octree code:
@@ -344,27 +352,30 @@ kind of a big change is keep
 :class:`~napari._vispy.experimental.tiled_image_visual.TiledImageVisual`
 for the generic "tiled" case, but introduce a new ``OctreeVisual`` that
 knows about the Octree. It can walk up and down the Octree chopping up
-larger tiles making sure render every point of the screen only once.
+larger tiles to make sure we do not render anything on top of anything
+else.
 
 Until we do that, we could punt on making things look correct while loads
-are in progress. We could draw non-ideal tiles as highlighted or with a
-special border. Purposely make them look different and wrong until the data
-is fully loaded. Aside from blending this would address a common complaint
-with tiled image viewers that you often can't tell if the data is still be
-loaded, you can't tell when you are looking at downsampled data, which could
-be a big issue for scientific uses.
+are in progress. We could even highly the fact that a tile has not been
+fully loaded. Purposely make them look different until the data is fully
+loaded. Aside from blending this would address a common complaint with
+tiled image viewers: you often can't tell if the data is still being
+loaded. This could be a big issue for scientific uses, you don't want
+people drawing the wrong conclusions from the data.
 
 Time-series Multiscale
 ++++++++++++++++++++++
 
-To make time-series multiscale work at all should not be too hard. We need
-to correctly create a new
-:class:`~napari.layers.image.experimental._octree_slice.OctreeSlice`
-every time the slice changes.
+To make time-series multiscale work should not be too hard. We just need to
+correctly create a new
+:class:`~napari.layers.image.experimental._octree_slice.OctreeSlice` every
+time the slice changes.
 
-The challenge will probably be getting performance where we want it. For
-starters we probably need to stop create the "extra" downsampled levels,
-described in `Future Work: Extending TextureAtlas2D`_. Beyond that we just
+The challenge will probably be performance. For starters we probably need
+to stop creating the "extra" downsampled levels, as described in `Future
+Work: Extending TextureAtlas2D`_. We need to make sure constructing and
+tearing down the Octree is fast enough, and make sure loads for the
+previous slices are canceled and everything is cleaned up.
 
 
 Future Work: Extending TextureAtlas2D
@@ -386,10 +397,10 @@ coarsest level fits within a single tile.
 
 If we could support multiple tiles sizes and multiple backing textures, we
 could potentially have "interior tiles" which were small, but then allow
-large root tiles. Graphics card handle pretty big textures. A layer that's
-(100000, 100000) obviously needs to be broken into tiles But a layer that's
-(4096, 4096) really does not need to be broken into tiles. That could be a
-single large tile.
+large root tiles. Graphics cards can handle pretty big textures. A layer
+that's (100000, 100000) obviously needs to be broken into tiles, b¡ut a
+layer that's (4096, 4096) really does not need to be broken into tiles.
+That could be a single large tile.
 
 Long term it would be nice if we did not have to support two image classes:
 :class:`~napari.layers.image.image.Image` and
@@ -397,13 +408,14 @@ Long term it would be nice if we did not have to support two image classes:
 Maintaining two code paths and two sets of visuals will become tiresome and
 lead to discrepancies and bugs.
 
-Instead it would be nice if
+Instead, it would be nice if
 :class:`~napari.layers.image.experimental.octree_image.OctreeImage` became
 the only image class. One image class to rule them all. For that to happen,
 though, we need to render small images just as efficiently as the
 :class:`~napari.layers.image.image.Image` class does today. We do not want
-Octree rendering to worsen cases which work well today. The keep today's
-performance we probably need support for variable size tiles.
+Octree rendering to worsen cases which work well today. To keep today's
+performance for smaller images we probably need to add support for variable
+size tiles.
 
 Future Work: Level Zero Only Octrees
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -452,7 +464,7 @@ simpler thing is evict them fully when a chunk falls out of view. And
 re-create them if it comes back in view. It's simplest to keep nothing but
 what we are currently drawing.
 
-However if that's not fast enough, keeping ``OctreeChunks`` in RAM and some
-tiles in VRAM is an option. We could have a MRU cache of each one. So if we
-re-view that area it's faster. This is adding complexity, but the
-performance might be worth it.
+However if that's not fast enough, we could have a MRU cache of
+``OctreeChunks`` and tiles in VRAM, so that reviewing the same data is
+nearly instant. This is adding complexity, but the performance might be
+worth it.
