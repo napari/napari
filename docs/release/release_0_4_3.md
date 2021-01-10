@@ -11,11 +11,11 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-This release is the first release to have direct support for generating widgets from functions using [magicgui](https://napari.org/magicgui/) and the `viewer.window.add_functio_widget` method (#1856). We leverage the newly release `0.2` series of magicgui which seperates out an abstract function and widget API from its Qt backend. 
+This release is the first release to have direct support for generating widgets from functions using [magicgui](https://napari.org/magicgui/) and the `viewer.window.add_function_widget` method (#1856). We leverage the newly released `0.2` series of magicgui which seperates out an abstract function and widget API from its Qt backend. 
 
-In this release we also seperate out more of the Qt functionality from napari making it easier to run headless (#2039, #2055). We also add a `napari.run` method to then launch the napari application (#2056).
+In this release we also seperate out more of the Qt functionality from napari making it easier to run headless (#2039, #2055). We also added a `napari.run` method as an alternative to using the `napari.gui_qt` context manager (#2056).
 
-We've also made good progress on our experimental support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_ASYNC=1` as an environment variable.
+We've also made good progress on our experimental support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/docs/dev/events/rendering.html) for more details on how to use the octree and its current limitations.
 
 
 ## New Features
@@ -68,6 +68,8 @@ We've also made good progress on our experimental support for an octree system f
 - Fix magicwidget.native detection of "empty" widgets (#2046)
 - async-44: Fix Pixel Shift Bug (#2052)
 - Fix missing console widget (#2063)
+- Save app reference in Window init (#2076)
+- Add deprecated parameters for updating theme (#2074)
 
 
 ## API Changes
@@ -80,9 +82,10 @@ We've also made good progress on our experimental support for an octree system f
 ## Deprecations
 - Move interactive from viewer to camera (#2008)
 - Move palette off viewer (#2031)
+- Change/(deprecate) magicgui return type annotation registration (#2079)
 
 
-## Build Tools
+## Build Tools and Support
 - Rename artifact for nightly build releases (#1971)
 - Update latest tag alone with nightly build (#2001)
 - Only raise leaked widgets errors in tests if no other exception was raised (#2043)
@@ -94,6 +97,10 @@ We've also made good progress on our experimental support for an octree system f
 - Fix big sur on GHA and fix failed test template (#2061)
 - Update bundle.py (#2064)
 - Update pre-commit  and add pyupgrade (#2068)
+- Skip perfmon test on python 3.9 on CI (#2073)
+- async-46: Rendering Guide and Code Comments (#2078)
+- Update get-tag action (#2083)
+- Update magicgui examples (#2084)
 
 
 ## 8 authors added to this release (alphabetical)
@@ -102,6 +109,7 @@ We've also made good progress on our experimental support for an octree system f
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Heath Patterson](https://github.com/napari/napari/commits?author=NHPatterson) - @NHPatterson
 - [kir0ul](https://github.com/napari/napari/commits?author=kir0ul) - @kir0ul
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Philip Winston](https://github.com/napari/napari/commits?author=pwinston) - @pwinston
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
