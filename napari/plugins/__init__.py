@@ -16,7 +16,7 @@ from warnings import warn
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
 
-from ..types import AugmentedFunction, DockWidgetArg
+from ..types import AugmentedFunction, AugmentedWidget
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from . import _builtins, hook_specifications
@@ -43,7 +43,7 @@ function_widgets: Dict[Tuple[str, str], Tuple[Callable, dict, dict]] = dict()
 
 
 def register_dock_widget(
-    args: Union[DockWidgetArg, List[DockWidgetArg]],
+    args: Union[AugmentedWidget, List[AugmentedWidget]],
     hookimpl: HookImplementation,
 ):
     from qtpy.QtWidgets import QWidget

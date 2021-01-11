@@ -41,7 +41,7 @@ from napari_plugin_engine import napari_hook_specification
 
 from ..types import (
     AugmentedFunction,
-    DockWidgetArg,
+    AugmentedWidget,
     ReaderFunction,
     WriterFunction,
 )
@@ -345,7 +345,7 @@ def napari_experimental_provide_function_widget() -> Union[
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_dock_widget() -> Union[
-    DockWidgetArg, List[DockWidgetArg]
+    AugmentedWidget, List[AugmentedWidget]
 ]:
     """Provide QWidget classes that can be added to the viewer as dock widgets.
 
