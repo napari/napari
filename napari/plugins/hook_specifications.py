@@ -354,10 +354,13 @@ def napari_experimental_provide_function_widget() -> Union[
 def napari_experimental_provide_dock_widget() -> Union[
     AugmentedWidget, List[AugmentedWidget]
 ]:
-    """Provide QWidget classes that can be added to the viewer as dock widgets.
+    """Provide QWidget classes to be instantiated and docked on the viewer.
 
     Returns
     -------
-    dock_widgets : QWidget class or list of QWidget classes
-        QWidget or tuple QWidget, dict.
+    dock_widget(s) : QWidget class or list of QWidget classes
+        Implementations should return either QWidget classes (one or a list),
+        or tuple(s) containing QWidget classes as well as a dictionary
+        containing keyword arguments for
+        :meth:`napari.qt.Window.add_dock_widget`.
     """
