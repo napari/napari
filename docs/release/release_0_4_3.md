@@ -70,6 +70,7 @@ We've also made good progress on our experimental support for an octree system f
 - Fix missing console widget (#2063)
 - Save app reference in Window init (#2076)
 - Add deprecated parameters for updating theme (#2074)
+- Coerce name before layer is added to layerlist (#2087)
 
 
 ## API Changes
