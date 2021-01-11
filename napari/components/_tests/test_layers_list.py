@@ -5,7 +5,6 @@ import pytest
 
 from napari.components import LayerList
 from napari.layers import Image
-from napari.viewer import ViewerModel
 
 
 def test_empty_layers_list():
