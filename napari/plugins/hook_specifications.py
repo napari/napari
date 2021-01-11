@@ -346,7 +346,8 @@ def napari_experimental_provide_function_widget() -> Union[
         dictionary defining magicgui `configuration options
         <https://napari.org/magicgui/usage/configuration.html#magicgui-options>`_,
         while the third element should provide keyword arguments for
-        :meth:`napari.qt.Window.add_dock_widget`.
+        :meth:`napari.qt.Window.add_dock_widget` (though note that the
+        ``shortcut=`` keyword is not yet supported).
     """
 
 
@@ -362,5 +363,6 @@ def napari_experimental_provide_dock_widget() -> Union[
         Implementations should return either QWidget classes (one or a list),
         or tuple(s) containing QWidget classes as well as a dictionary
         containing keyword arguments for
-        :meth:`napari.qt.Window.add_dock_widget`.
+        :meth:`napari.qt.Window.add_dock_widget` (though note that the
+        ``shortcut=`` keyword is not yet supported).
     """
