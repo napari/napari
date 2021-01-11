@@ -590,8 +590,8 @@ def test_ndim():
 
 
 def test_name_uniqueness():
-    v = ViewerModel()
-    v.add_image(np.random.random((10, 15)), name="Image [1]")
-    v.add_image(np.random.random((10, 15)), name="Image")
-    v.add_image(np.random.random((10, 15)), name="Image")
-    assert [x.name for x in v.layers] == ['Image [1]', 'Image', 'Image [2]']
+    layers = LayerList()
+    layers.append(Image(np.random.random((10, 15)), name="Image [1]"))
+    layers.append(Image(np.random.random((10, 15)), name="Image"))
+    layers.append(Image(np.random.random((10, 15)), name="Image"))
+    assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
