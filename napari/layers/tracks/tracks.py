@@ -350,7 +350,7 @@ class Tracks(Layer):
         # fire events to update shaders
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
         self._update_dims()
 

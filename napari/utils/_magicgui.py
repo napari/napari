@@ -10,7 +10,9 @@ of those custom classes, magicgui will know what to do with it.
 
 """
 import warnings
-from typing import Any, List, Optional, Tuple, Type
+import weakref
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from .. import layers, types
 from ..utils.misc import ensure_list_of_layer_data_tuple
@@ -22,6 +24,10 @@ except ImportError:
 
     def register_type(*args, **kwargs):
         pass
+
+
+if TYPE_CHECKING:
+    from magicgui.widgets._bases import CategoricalWidget
 
 
 def register_types_with_magicgui():
@@ -221,7 +227,7 @@ def get_viewers(gui) -> Tuple[Viewer, ...]:
         return tuple(v for v in globals().values() if isinstance(v, Viewer))
 
 
-def get_layers(gui) -> Tuple[layers.Layer, ...]:
+def get_layers(gui: 'CategoricalWidget') -> List[layers.Layer]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     Parameters
@@ -248,10 +254,10 @@ def get_layers(gui) -> Tuple[layers.Layer, ...]:
     viewer = find_viewer_ancestor(gui.native)
     if not viewer:
         return ()
-    return tuple(x for x in viewer.layers if isinstance(x, gui.annotation))
+    return [x for x in viewer.layers if isinstance(x, gui.annotation)]
 
 
-def get_layers_data(gui) -> Tuple[Tuple[str, Any], ...]:
+def get_layers_data(gui: 'CategoricalWidget') -> List[Tuple[str, Any]]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     As opposed to `get_layers`, this function returns just `layer.data` rather
@@ -280,13 +286,39 @@ def get_layers_data(gui) -> Tuple[Tuple[str, Any], ...]:
 
     """
 
-    lay_type = gui.annotation.__name__.replace("Data", "").title()
-    prior, gui.annotation = gui.annotation, getattr(layers, lay_type)
-    try:
-        layerlist = get_layers(gui)
-    finally:
-        gui.annotation = prior
-    return tuple((f'{x.name} (data)', x.data) for x in layerlist)
+    viewer = find_viewer_ancestor(gui.native)
+    if not viewer:
+        return ()
+
+    layer_type_name = gui.annotation.__name__.replace("Data", "").title()
+    layer_type = getattr(layers, layer_type_name)
+    choices = []
+    for layer in [x for x in viewer.layers if isinstance(x, layer_type)]:
+        choice_key = f'{layer.name} (data)'
+        choices.append((choice_key, layer.data))
+        layer.events.data.connect(_make_choice_data_setter(gui, choice_key))
+
+    return choices
+
+
+@lru_cache
+def _make_choice_data_setter(gui: 'CategoricalWidget', choice_name: str):
+    """Return a function that sets the ``data`` for ``choice_name`` in ``gui``.
+
+    Note, using lru_cache here so that the **same** function object is returned
+    if you call this twice for the same widget/choice_name combination. This is
+    so that when we connect it above in `layer.events.data.connect()`, it will
+    only get connected once (because .connect() will not add a specific callback
+    more than once)
+    """
+    gui_ref = weakref.ref(gui)
+
+    def setter(event):
+        _gui = gui_ref()
+        if _gui is not None:
+            _gui.set_choice(choice_name, event.value)
+
+    return setter
 
 
 def add_layer_to_viewer(

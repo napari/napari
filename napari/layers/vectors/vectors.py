@@ -261,7 +261,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self._dims_displayed)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
