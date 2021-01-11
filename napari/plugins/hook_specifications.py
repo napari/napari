@@ -335,6 +335,10 @@ def napari_experimental_provide_function_widget() -> Union[
 ]:
     """Provide functions and args that can be passed to magicgui.
 
+    This hook specification is marked as experimental as the API or how the
+    returned value is handled may change here more frequently then the
+    rest of the codebase.
+
     Returns
     -------
     function(s) : callable, tuple of callable & dict(s), or list thereof
@@ -356,6 +360,10 @@ def napari_experimental_provide_dock_widget() -> Union[
     AugmentedWidget, List[AugmentedWidget]
 ]:
     """Provide QWidget classes to be instantiated and docked on the viewer.
+
+    This hook specification is marked as experimental as the API or how the
+    returned value is handled may change here more frequently then the
+    rest of the codebase.
 
     Returns
     -------
