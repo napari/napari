@@ -392,8 +392,8 @@ class Window:
         exit_action.setStatusTip('Close napari window')
         exit_action.triggered.connect(self._qt_window.close)
 
-        clear_action = QAction("Clear Menu", self._qt_window)
-        clear_action.setStatusTip('Remove added dock widgets')
+        clear_action = QAction("Remove Dock Widgets", self._qt_window)
+        clear_action.setStatusTip('Remove all dock widgets')
         clear_action.triggered.connect(
             lambda e: self.remove_dock_widget('all')
         )
