@@ -586,3 +586,11 @@ def test_ndim():
     # Remove layer
     layers.remove(layer_b)
     assert layers.ndim == 2
+
+
+def test_name_uniqueness():
+    layers = LayerList()
+    layers.append(Image(np.random.random((10, 15)), name="Image [1]"))
+    layers.append(Image(np.random.random((10, 15)), name="Image"))
+    layers.append(Image(np.random.random((10, 15)), name="Image"))
+    assert [x.name for x in layers] == ['Image [1]', 'Image', 'Image [2]']
