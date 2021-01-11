@@ -337,9 +337,16 @@ def napari_experimental_provide_function_widget() -> Union[
 
     Returns
     -------
-    functions : tuple of callable, dict or list tuple of callable, dict
-        List of 3-tuple, where each tuple has a callable function a dictionary of
-        keyword arguments for magicgui.
+    function(s) : callable, tuple of callable & dict(s), or list thereof
+        Implementations should provide either a single function, or a list of
+        functions. The functions should have Python type annotations so that
+        `magicgui <https://napari.org/magicgui>`_ can generate a widget from
+        them. Each function can be provided as-is or as part of a 2-tuple or 3-tuple
+        with configuration dicts. The second element in the tuple should be a
+        dictionary defining magicgui `configuration options
+        <https://napari.org/magicgui/usage/configuration.html#magicgui-options>`_,
+        while the third element should provide keyword arguments for
+        :meth:`napari.qt.Window.add_dock_widget`.
     """
 
 
