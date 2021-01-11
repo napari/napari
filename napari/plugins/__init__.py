@@ -16,7 +16,7 @@ from warnings import warn
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
 
-from ..types import DockWidgetArg, MagicFunctionArg
+from ..types import AugmentedFunction, DockWidgetArg
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from . import _builtins, hook_specifications
@@ -93,7 +93,7 @@ valid_magic_kwargs = set(signature(magicgui).parameters)
 
 
 def register_function_widget(
-    args: Union[MagicFunctionArg, List[MagicFunctionArg]],
+    args: Union[AugmentedFunction, List[AugmentedFunction]],
     hookimpl: HookImplementation,
 ):
     plugin_name = hookimpl.plugin_name

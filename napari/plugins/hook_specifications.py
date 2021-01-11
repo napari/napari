@@ -40,8 +40,8 @@ from typing import Any, List, Optional, Union
 from napari_plugin_engine import napari_hook_specification
 
 from ..types import (
+    AugmentedFunction,
     DockWidgetArg,
-    MagicFunctionArg,
     ReaderFunction,
     WriterFunction,
 )
@@ -331,7 +331,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_function_widget() -> Union[
-    MagicFunctionArg, List[MagicFunctionArg]
+    AugmentedFunction, List[AugmentedFunction]
 ]:
     """Provide functions and args that can be passed to magicgui.
 
