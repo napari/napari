@@ -67,9 +67,7 @@ class LayerList(EventedList):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
-        self.events.inserting(index=index)
-        self._list.insert(index, new_layer)
-        self.events.inserted(index=index, value=new_layer)
+        super().insert(index, new_layer)
 
     @property
     def selected(self):
