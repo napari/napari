@@ -46,10 +46,10 @@ ExcInfo = Union[
 ]
 
 # Types for GUI HookSpecs
-MagicFunctionArg = Union[
+AugmentedFunction = Union[
     Callable, Tuple[Callable, dict], Tuple[Callable, dict, dict]
 ]
-DockWidgetArg = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
+AugmentedWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
 
 
 # these types are mostly "intentionality" placeholders.  While it's still hard
