@@ -27,7 +27,10 @@ if (
     and sys.version_info[:2] == (3, 7)
     and qtpy.API_NAME == 'PySide2'
 ):
-    pytest.skip("magicgui tests and example tests causing segfault")
+    pytest.skip(
+        "magicgui tests and example tests causing segfault",
+        allow_module_level=True,
+    )
 
 
 # only test the first of each layer type
