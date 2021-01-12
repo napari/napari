@@ -67,18 +67,6 @@ We’re also planning to prioritized the following work in future roadmaps:
 
 - Asynchronous and multiscale support beyond the image layer.
 
-## Lookback at the 0.3 roadmap
-
-Our [0.3 roadmap](ROADMAP_0_3.md) had the following main prioities:
-
-- Make the **data viewing and annotation** capabilities **bug-free and fast**.
-
-- Make a **downloadable application** with reader / writer plugin management.
-
-- Make accessible documentation, tutorials, and demos.
-
-Overall we made good progress towards these priorites. We now provide cross-platform support for downloadable app that you can install reader and writer plugins into. We added support for world coordinates, we reduced the number of bugs, and we've begun begun to support asynchronous rendering and improve performance. We also had some highlights that weren't on our roadmap including contributions from the community like the Tracks layer. We've added more documentation and tutorials, but a redesign of our website is still in progress. For a detailed lookback at the work that was done during the `0.3` series of releases you can look at comments under the individual bullet items in our [0.3 roadmap](ROADMAP_0_3.md) that we have added as we made this roadmap.
-
 ## About this document
 
 This document is meant to be a snapshot of tasks and features that the `napari` team is investing resources in during our 0.4 series of releases starting November 2020. This document should be used to guide napari core developers, encourage and inspire contributors, and provide insights to external developers who are interested in building for the napari ecosystem. It is not meant to limit what is being worked on within napari, and in accordance with our [values](MISSION_AND_VALUES.md#our-values) we remain **community-driven**, responding to feature requests and proposals on our [issue tracker](https://github.com/napari/napari/issues) and making decisions that are driven by our users’ requirements, not by the whims of the core team.
