@@ -301,7 +301,7 @@ def get_layers_data(gui: 'CategoricalWidget') -> List[Tuple[str, Any]]:
     return choices
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def _make_choice_data_setter(gui: 'CategoricalWidget', choice_name: str):
     """Return a function that sets the ``data`` for ``choice_name`` in ``gui``.
 
