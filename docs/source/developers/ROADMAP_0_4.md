@@ -16,9 +16,14 @@ You can read more about how this roadmap builds on and continues the work in our
 
 ## Make the data viewing and annotation capabilities bug-free, fast, and delightful to use
 
-- ...
-
-- **Better support for viewing big datasets**. Currently, napari is fast when viewing on-disk datasets that can be naturally sliced along one axis (e.g. a time series) *and where loading one slice is fast*. However, when the loading is slow, the napari UI itself becomes slow, sometimes to the point of being unusable. We now have experimental support for asyncronous rendering for our images, and are in the process of adding support for an octree to better support multiscale tiled data for both 2D and 3D rendering.
+- **Better support for viewing big datasets**. Currently, napari is fast when
+  viewing on-disk datasets that can be naturally sliced along one axis (e.g. a
+  time series) *and where loading one slice is fast*. However, when the loading
+  is slow, the napari UI itself becomes slow, sometimes to the point of being
+  unusable. We now have experimental, opt-in support for asyncronous rendering
+  for sliced images, as well as for multiscale 2D data. In the 0.4 series of
+  releases, we aim to bring this functionality out of experimental status, as
+  well as extend it to other layer types and multiscale 3D data.
 
 - **Improving the performance of operations on in-memory data**. Even when data is loaded in memory, some operations, such as label and shape painting or slicing along large numbers of points can be slow. We will continue developing our [benchmark suite](https://github.com/napari/napari/blob/master/docs/developers/BENCHMARKS.md) and work to integrate it into our development process. See the [`performance` label](https://github.com/napari/napari/labels/performance) for a current list of issues related to performance.
 
