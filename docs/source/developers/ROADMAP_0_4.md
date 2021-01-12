@@ -36,14 +36,21 @@ You can read more about how this roadmap builds on and continues the work in our
 
 - Improve the **user interface and design** of the viewer to make it easier to use. We have conducted a product heuristics analysis to [identify design and usability issues](https://github.com/napari/product-heuristics-2020), and will now be working during the 0.4 series of releases to implement them. Also see the [`design` label](https://github.com/napari/napari/labels/design) for more information.
 
-## Support **functional and interactive** plugins that allow for image analysis.
+## Support **functional and interactive** plugins that enable complete image analysis workflows.
 
-- Support for functional plugins that take in layers or layer data and operate on them to return new layers or layer data.
+0.4.3 brought experimental support for functional plugins and interactive Qt
+widget plugins. During the 0.4.x series of releases, we aim to work with our
+community to strengthen that support, identify gaps in functionality, and fill
+those gaps, either with new plugin types or by modifying the existing plugin
+architecture to suit developer and user needs. Ideally, before 0.5.0,
+functional and interactive plugins move out of experimental support and become
+permanent features.
 
-- Support for interactive plugins that can provide custom GUI elements or interactivity. For more details see the [`plugins` label](https://github.com/napari/napari/labels/plugins) on our repository.
+For more details, follow the [plugins label on
+GitHub](https://github.com/napari/napari/labels/plugins).
 
 
-## Provide accessible documentation, tutorials, and demos
+## Provide accessible **documentation**, tutorials, and demos
 
 - Improve our website [napari.org](https://napari.org) to provide easy access to all napari related materials, including the [**four types of documentation**](https://www.divio.com/blog/documentation/): learning-oriented tutorials, goal-oriented how-to-guides or galleries, understanding-oriented explanations (including developer resources), and a comprehensive API reference. See [#764](https://github.com/napari/napari/issues/764) and the [`documentation` label](https://github.com/napari/napari/labels/documentation) on the napari repository for more details.
 
