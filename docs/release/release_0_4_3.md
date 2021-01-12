@@ -25,7 +25,7 @@ In this release we also seperate out more of the Qt functionality from napari ma
 
 We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/docs/dev/events/rendering.html) for more details on how to use the octree and its current limitations.
 
-Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_4.html) and a [lookback on our 0.3 roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3.html)!
+Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_4.html) and a [retrospective on our 0.3 roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3_retrospective.html)!
 
 
 ## New Features
