@@ -108,7 +108,7 @@ class Labels(Image):
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
     brush_size : float
-        Size of the paint brush in world coordinates.
+        Size of the paint brush in data coordinates.
     selected_label : int
         Index of selected label. Can be greater than the current maximum label.
     mode : str
@@ -173,6 +173,7 @@ class Labels(Image):
         self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
+        self._show_selected_label = False
 
         if properties is None:
             self._properties = {}
@@ -212,6 +213,7 @@ class Labels(Image):
         self.events.add(
             mode=Event,
             preserve_labels=Event,
+            properties=Event,
             n_dimensional=Event,
             contiguous=Event,
             brush_size=Event,
@@ -241,10 +243,6 @@ class Labels(Image):
         self._update_dims()
         self._set_editable()
 
-        self._dims.events.ndisplay.connect(self._reset_history)
-        self._dims.events.order.connect(self._reset_history)
-        self._dims.events.current_step.connect(self._reset_history)
-
     @property
     def contiguous(self):
         """bool: fill bucket changes only connected pixels of same label."""
@@ -273,7 +271,12 @@ class Labels(Image):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
-        self.cursor_size = self._brush_size
+        # Convert from brush size in data coordinates to
+        # cursor size in world coordinates
+        data2world_scale = np.mean(
+            [self.scale[d] for d in self._dims_displayed]
+        )
+        self.cursor_size = self.brush_size * data2world_scale
         self.status = format_float(self.brush_size)
         self.events.brush_size()
 
@@ -315,6 +318,7 @@ class Labels(Image):
                 label_index = self._map_index(properties)
         self._properties = self._validate_properties(properties)
         self._label_index = label_index
+        self.events.properties()
 
     @property
     def color(self):
@@ -405,7 +409,7 @@ class Labels(Image):
 
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
-        if self._color_mode == LabelColorMode.SELECTED:
+        if self.show_selected_label:
             self.refresh()
 
     @property
@@ -415,8 +419,6 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
-
-        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -424,16 +426,16 @@ class Labels(Image):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (custom_colormap, label_color_index,) = color_dict_to_colormap(
-                self.color
-            )
+            (
+                custom_colormap,
+                label_color_index,
+            ) = color_dict_to_colormap(self.color)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
-        elif color_mode == LabelColorMode.SELECTED:
-            pass
+
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -442,6 +444,16 @@ class Labels(Image):
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
+        self.refresh()
+
+    @property
+    def show_selected_label(self):
+        """Whether to filter displayed labels to only the selected label or not"""
+        return self._show_selected_label
+
+    @show_selected_label.setter
+    def show_selected_label(self, filter):
+        self._show_selected_label = filter
         self.refresh()
 
     @property
@@ -508,6 +520,12 @@ class Labels(Image):
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor = self.brush_shape
+            # Convert from brush size in data coordinates to
+            # cursor size in world coordinates
+            data2world_scale = np.mean(
+                [self.scale[d] for d in self._dims_displayed]
+            )
+            self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
             self.help = (
                 'hold <space> to pan/zoom, '
@@ -524,6 +542,12 @@ class Labels(Image):
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor = self.brush_shape
+            # Convert from brush size in data coordinates to
+            # cursor size in world coordinates
+            data2world_scale = np.mean(
+                [self.scale[d] for d in self._dims_displayed]
+            )
+            self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, drag to erase a label'
             self.mouse_drag_callbacks.append(draw)
@@ -553,7 +577,7 @@ class Labels(Image):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale or self._dims.ndisplay == 3:
+            if self.multiscale or self._ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -578,7 +602,10 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if self._color_mode == LabelColorMode.DIRECT:
+        if (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
@@ -588,34 +615,43 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        elif self._color_mode == LabelColorMode.AUTO:
+        elif (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
-        elif self._color_mode == LabelColorMode.SELECTED:
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             selected = self._selected_label
-            # we were in direct mode previously
-            if self._label_color_index:
-                if selected not in self._label_color_index:
-                    selected = None
-                index = self._label_color_index
-                image = np.where(
-                    raw == selected,
-                    index[selected],
-                    np.where(
-                        raw != self._background_label,
-                        index[None],
-                        index[self._background_label],
-                    ),
-                )
-            else:
-                image = np.where(
-                    raw == selected,
-                    low_discrepancy_image(selected, self._seed),
-                    0,
-                )
+            image = np.where(
+                raw == selected,
+                low_discrepancy_image(selected, self._seed),
+                0,
+            )
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
+            selected = self._selected_label
+            if selected not in self._label_color_index:
+                selected = None
+            index = self._label_color_index
+            image = np.where(
+                raw == selected,
+                index[selected],
+                np.where(
+                    raw != self._background_label,
+                    index[None],
+                    index[self._background_label],
+                ),
+            )
         else:
             raise ValueError("Unsupported Color Mode")
+
         return image
 
     def new_colormap(self):
@@ -704,7 +740,7 @@ class Labels(Image):
         else:
             # work with just the sliced image
             labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self._dims.displayed)
+            slice_coord = tuple(int_coord[d] for d in self._dims_displayed)
 
         matches = labels == old_label
         if self.contiguous:
@@ -743,15 +779,13 @@ class Labels(Image):
         """
         if refresh is True:
             self._save_history()
-        brush_size_dims = [self.brush_size] * self.ndim
-        # Scale the brush size from world coorinates to data coordinates
-        brush_size_dims = np.divide(brush_size_dims, self.scale)
-
-        if not self.n_dimensional and self.ndim > 2:
-            for i in self._dims.not_displayed:
-                brush_size_dims[i] = 1
 
         if self.brush_shape == "square":
+            brush_size_dims = [self.brush_size] * self.ndim
+            if not self.n_dimensional and self.ndim > 2:
+                for i in self._dims_not_displayed:
+                    brush_size_dims[i] = 1
+
             slice_coord = tuple(
                 slice(
                     np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
@@ -770,22 +804,13 @@ class Labels(Image):
             slice_coord = [int(np.round(c)) for c in coord]
             shape = self.data.shape
             if not self.n_dimensional and self.ndim > 2:
-                coord = [coord[i] for i in self._dims.displayed]
-                shape = [shape[i] for i in self._dims.displayed]
+                coord = [coord[i] for i in self._dims_displayed]
+                shape = [shape[i] for i in self._dims_displayed]
 
             sphere_dims = len(coord)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
-            # Note we use the scaled brush size now in data coordinates
-            # We don't support elliptical brushes yet, so for non-isotropic
-            # scaling in the displayed dimensions we approximate with a mean
-            radius = (
-                np.floor(
-                    np.mean([brush_size_dims[d] for d in self._dims.displayed])
-                    / 2
-                )
-                + 0.5
-            )
+            radius = np.floor(self.brush_size / 2) + 0.5
             mask_indices = sphere_indices(radius, sphere_dims)
 
             mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
@@ -801,9 +826,9 @@ class Labels(Image):
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
             if not self.n_dimensional and self.ndim > 2:
-                for j, i in enumerate(self._dims.displayed):
+                for j, i in enumerate(self._dims_displayed):
                     slice_coord[i] = slice_coord_temp[j]
-                for i in self._dims.not_displayed:
+                for i in self._dims_not_displayed:
                     slice_coord[i] = slice_coord[i] * np.ones(
                         mask_indices.shape[0], dtype=int
                     )

@@ -21,17 +21,17 @@ class FakeResponse:
 
 
 txtA = (
-    '<!DOCTYPE html>\n<html>\n  <head>\n  <title>Simple index</title>'
-    '\n </head>\n  <body>\n  <a href="/simple/package1/">package1</a>'
-    '\n  <a href="/simple/package2/">packge2</a>\n   </body>\n</html>'
-).encode()
+    b'<!DOCTYPE html>\n<html>\n  <head>\n  <title>Simple index</title>'
+    b'\n </head>\n  <body>\n  <a href="/simple/package1/">package1</a>'
+    b'\n  <a href="/simple/package2/">packge2</a>\n   </body>\n</html>'
+)
 
 txtB = (
-    '<!DOCTYPE html>\n<html>\n  <head>\n    <title>Links for package'
-    '</title>\n  </head>\n  <body>\n    <h1>Links for package</h1>\n'
-    '<a href="http://pythonhosted.org/package-0.1.0.tar.gz#sha256=7">'
-    'package-0.1.0.tar.gz</a><br/>\n </body>\n</html>'
-).encode()
+    b'<!DOCTYPE html>\n<html>\n  <head>\n    <title>Links for package'
+    b'</title>\n  </head>\n  <body>\n    <h1>Links for package</h1>\n'
+    b'<a href="http://pythonhosted.org/package-0.1.0.tar.gz#sha256=7">'
+    b'package-0.1.0.tar.gz</a><br/>\n </body>\n</html>'
+)
 
 
 @mock.patch(
@@ -49,8 +49,3 @@ def test_get_packages_by_prefix(mock_get):
 def test_get_package_versions(mock_get):
     versions = pypi.get_package_versions('package')
     assert '0.1.0' in versions
-    # Test that we can clear the URL and VERSION CACHE
-    assert 'package' in pypi.VERSION_CACHE
-    pypi.clear_cache()
-    assert pypi.URL_CACHE == {}
-    assert pypi.VERSION_CACHE == {}

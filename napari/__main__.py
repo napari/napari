@@ -15,7 +15,7 @@ from textwrap import wrap
 from typing import Any, Dict, List
 
 from . import __version__, gui_qt, layers, view_path
-from .components.add_layers_mixin import valid_add_kwargs
+from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
 
 
@@ -107,7 +107,9 @@ def _run():
         help="increase output verbosity",
     )
     parser.add_argument(
-        '--version', action='version', version=f'napari version {__version__}',
+        '--version',
+        action='version',
+        version=f'napari version {__version__}',
     )
     parser.add_argument(
         '--info',
@@ -127,7 +129,8 @@ def _run():
         help='concatenate multiple input files into a single stack.',
     )
     parser.add_argument(
-        '--plugin', help='specify plugin name when opening a file',
+        '--plugin',
+        help='specify plugin name when opening a file',
     )
     parser.add_argument(
         '--layer-type',
@@ -224,13 +227,21 @@ def main():
     # See https://github.com/napari/napari/pull/1554 and
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
-    _MACOS_LATEST = sys.platform == "darwin" and StrictVersion(
+    _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
     ) > StrictVersion('19.0.0')
+    _MACOS_AT_LEAST_BIG_SUR = sys.platform == "darwin" and StrictVersion(
+        platform.release()
+    ) > StrictVersion('20.0.0')
+
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
-    if _MACOS_LATEST and _RUNNING_CONDA and not _RUNNING_PYTHONW:
+    # quick fix for Big Sur py3.9
+    if _MACOS_AT_LEAST_BIG_SUR:
+        os.environ['QT_MAC_WANTS_LAYER'] = '1'
+
+    if _MACOS_AT_LEAST_CATALINA and _RUNNING_CONDA and not _RUNNING_PYTHONW:
         python_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
 
         if python_path.exists():

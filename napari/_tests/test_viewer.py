@@ -1,10 +1,9 @@
 import os
-import time
 
 import numpy as np
 import pytest
 
-from napari import Viewer, layers
+from napari import layers
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -45,20 +44,6 @@ def test_viewer(make_test_viewer):
         func(viewer)
 
 
-@pytest.mark.run(order=1)  # provided by pytest-ordering
-def test_no_qt_loop():
-    """Test informative error raised when no Qt event loop exists.
-
-    Logically, this test should go at the top of the file. Howveer, that
-    resulted in tests passing when only this file was run, but failing when
-    other tests involving Qt-bot were run before this file. Putting this test
-    second provides a sanity check that pytest-ordering is correctly doing its
-    magic.
-    """
-    with pytest.raises(RuntimeError):
-        _ = Viewer()
-
-
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
 def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
@@ -79,7 +64,8 @@ def test_add_layer_magic_name(
     # Tests for issue #1709
     viewer = make_test_viewer()  # noqa: F841
     layer = eval_with_filename(
-        "add_layer_by_type(viewer, layer_class, a_unique_name)", "somefile.py",
+        "add_layer_by_type(viewer, layer_class, a_unique_name)",
+        "somefile.py",
     )
     assert layer.name == "a_unique_name"
 
@@ -118,54 +104,16 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
-def test_update(make_test_viewer):
-    data = np.random.random((512, 512))
-    viewer = make_test_viewer()
-    layer = viewer.add_image(data)
-
-    def layer_update(*, update_period, num_updates):
-        # number of times to update
-
-        for k in range(num_updates):
-            time.sleep(update_period)
-
-            dat = np.random.random((512, 512))
-            layer.data = dat
-
-            assert layer.data.all() == dat.all()
-            # if you're looking at this as an example,
-            # it would be best to put a yield statement here...
-            # but we're testing how it handles not having a yield statement
-
-    # NOTE: The closure approach used here has the potential to throw an error:
-    # "RuntimeError: Internal C++ object () already deleted."
-    # if an enclosed object (like the layer here) is deleted in the main thread
-    # and then subsequently called in the other thread.
-    # Previously this error would have been invisible (raised only in the other
-    # thread). But because this can make debugging hard, the new
-    # `create_worker` approach reraises thread errors in the main thread by
-    # default.  To make this test pass, we now need to explicitly use
-    # `_ignore_errors=True`, because the `layer.data = dat` line will throw an
-    # error when called after the main thread is closed.
-    with pytest.warns(DeprecationWarning):
-        viewer.update(
-            layer_update,
-            update_period=0.01,
-            num_updates=100,
-            _ignore_errors=True,
-        )
-
-
 def test_changing_theme(make_test_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_test_viewer()
     viewer.add_points(data=None)
-    assert viewer.palette['folder'] == 'dark'
+    assert viewer.theme == 'dark'
 
     screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
-    assert viewer.palette['folder'] == 'light'
+    assert viewer.theme == 'light'
 
     screenshot_light = viewer.screenshot(canvas_only=False)
     equal = (screenshot_dark == screenshot_light).min(-1)

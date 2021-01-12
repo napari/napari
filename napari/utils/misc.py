@@ -5,6 +5,7 @@ import collections.abc
 import inspect
 import itertools
 import re
+import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar
@@ -17,19 +18,27 @@ ROOT_DIR = path.dirname(path.dirname(__file__))
 try:
     from importlib import metadata as importlib_metadata
 except ImportError:
-    import importlib_metadata  # type: ignore
+    import importlib_metadata  # noqa
 
 
 def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
-    # this assumes the name of the app stays "napari"
+    app_module = sys.modules['__main__'].__package__
     try:
-        return importlib_metadata.metadata("napari").get("App-ID") is not None
+        metadata = importlib_metadata.metadata(app_module)
     except importlib_metadata.PackageNotFoundError:
-        """When bundled in another app. Return false to not conflict with napari bundle"""
         return False
+
+    return 'Briefcase-Version' in metadata
+
+
+def bundle_bin_dir() -> Optional[str]:
+    """Return path to briefcase app_packages/bin if it exists."""
+    bin = path.join(path.dirname(sys.exec_prefix), 'app_packages', 'bin')
+    if path.isdir(bin):
+        return bin
 
 
 def in_jupyter() -> bool:
@@ -55,8 +64,7 @@ def in_ipython() -> bool:
 
 
 def str_to_rgb(arg):
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
-    """
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
     return list(
         map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
     )
@@ -142,7 +150,8 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
     """
-    if obj and is_sequence(obj) and is_iterable(obj[0]):
+
+    if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
             raise ValueError(f"length of {obj} must equal {length}")
         return obj
@@ -163,8 +172,7 @@ def formatdoc(obj):
 
 class StringEnumMeta(EnumMeta):
     def __getitem__(self, item):
-        """ set the item name case to uppercase for name lookup
-        """
+        """set the item name case to uppercase for name lookup"""
         if isinstance(item, str):
             item = item.upper()
 
@@ -180,8 +188,7 @@ class StringEnumMeta(EnumMeta):
         type=None,
         start=1,
     ):
-        """ set the item value case to lowercase for value lookup
-        """
+        """set the item value case to lowercase for value lookup"""
         # simple value lookup
         if names is None:
             if isinstance(value, str):
@@ -210,8 +217,7 @@ class StringEnumMeta(EnumMeta):
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):
-        """ autonaming function assigns each value its own name as a value
-        """
+        """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
     def __str__(self):
@@ -280,7 +286,7 @@ class CallDefault(inspect.Parameter):
             self._default is not inspect._empty
             or kind == inspect._KEYWORD_ONLY
         ):
-            formatted = '{}={}'.format(formatted, formatted)
+            formatted = f'{formatted}={formatted}'
 
         if kind == inspect._VAR_POSITIONAL:
             formatted = '*' + formatted
@@ -310,7 +316,7 @@ class CallSignature(inspect.Signature):
 
         if self.return_annotation is not inspect._empty:
             anno = inspect.formatannotation(self.return_annotation)
-            rendered += ' -> {}'.format(anno)
+            rendered += f' -> {anno}'
 
         return rendered
 
@@ -334,3 +340,23 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def ensure_n_tuple(val, n, fill=0):
+    """Ensure input is a length n tuple.
+
+    Parameters
+    ----------
+    val : iterable
+        Iterable to be forced into length n-tuple.
+    n : int
+        Length of tuple.
+
+    Returns
+    -------
+    tuple
+        Coerced tuple.
+    """
+    assert n > 0, 'n must be greater than 0'
+    tuple_value = tuple(val)
+    return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]

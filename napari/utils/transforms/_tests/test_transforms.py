@@ -162,7 +162,10 @@ def test_scale_translate_rotate_shear_compose():
     coord = [10, 13]
     transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25, shear=[1])
     transform_b = Affine(
-        scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65, shear=[-0.5],
+        scale=[0.3, 1.4],
+        translate=[-2.2, 3],
+        rotate=65,
+        shear=[-0.5],
     )
     transform_c = transform_b.compose(transform_a)
 
@@ -240,3 +243,24 @@ def test_affine_matrix_inverse(dimensionality):
     np.testing.assert_almost_equal(
         transform.inverse.affine_matrix, np.linalg.inv(A)
     )
+
+
+def test_repeat_shear_setting():
+    """Test repeatedly setting shear with a lower triangular matrix."""
+    # Note this test is needed to check lower triangular
+    # decomposition of shear is working
+    mat = np.eye(3)
+    mat[2, 0] = 0.5
+    transform = Affine(shear=mat.copy())
+    # Check shear decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+    # Set shear to same value
+    transform.shear = mat.copy()
+    # Check shear still decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+    # Set shear to same value
+    transform.shear = mat.copy()
+    # Check shear still decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)

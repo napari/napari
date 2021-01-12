@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from napari._tests.utils import good_layer_data
+from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 
@@ -313,7 +313,7 @@ def test_swappable_dims():
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
-    assert viewer.dims.order == [0, 2, 1, 3]
+    assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
         viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
     )
@@ -331,16 +331,18 @@ def test_grid():
     for i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_shape(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
-    viewer.grid_view()
-    assert np.all(viewer.grid_size == (2, 3))
-    assert viewer.grid_stride == 1
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_shape(6) == (2, 3)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -353,17 +355,20 @@ def test_grid():
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
     # return to stack view
-    viewer.stack_view()
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    viewer.grid.enabled = False
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_shape(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
-    # reenter grid view
-    viewer.grid_view(n_column=2, n_row=3, stride=-2)
-    assert np.all(viewer.grid_size == (3, 2))
-    assert viewer.grid_stride == -2
+    # reenter grid view with new stride
+    viewer.grid.stride = -2
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_shape(6) == (2, 2)
+    assert viewer.grid.stride == -2
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -438,6 +443,39 @@ def test_add_layer_from_data_raises():
         )
 
 
+def test_naming():
+    """Test unique naming in LayerList."""
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((10, 10)), name='img')
+    viewer.add_image(np.random.random((10, 10)), name='img')
+
+    assert [lay.name for lay in viewer.layers] == ['img', 'img [1]']
+
+    viewer.layers[1].name = 'chg'
+    assert [lay.name for lay in viewer.layers] == ['img', 'chg']
+
+    viewer.layers[0].name = 'chg'
+    assert [lay.name for lay in viewer.layers] == ['chg [1]', 'chg']
+
+
+def test_selection():
+    """Test only last added is selected."""
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((10, 10)))
+    assert viewer.layers[0].selected is True
+
+    viewer.add_image(np.random.random((10, 10)))
+    assert [lay.selected for lay in viewer.layers] == [False, True]
+
+    viewer.add_image(np.random.random((10, 10)))
+    assert [lay.selected for lay in viewer.layers] == [False] * 2 + [True]
+
+    for lay in viewer.layers:
+        lay.selected = True
+    viewer.add_image(np.random.random((10, 10)))
+    assert [lay.selected for lay in viewer.layers] == [False] * 3 + [True]
+
+
 def test_add_delete_layers():
     """Test adding and deleting layers with different dims."""
     viewer = ViewerModel()
@@ -483,6 +521,37 @@ def test_active_layer():
     assert viewer.active_layer is None
 
 
+def test_active_layer_status_update():
+    """Test status updates from active layer on cursor move."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((5, 5, 10, 15)))
+    viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    viewer.cursor.position = [1, 1, 1, 1, 1]
+    assert viewer.status == viewer.active_layer.status
+
+
+def test_active_layer_cursor_size():
+    """Test cursor size update on active layer."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((10, 10)))
+    # Base layer has a default cursor size of 1
+    assert viewer.cursor.size == 1
+
+    viewer.add_labels(np.random.random((10, 10)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    viewer.layers[1].mode = 'paint'
+    # Labels layer has a default cursor size of 10
+    # due to paintbrush
+    assert viewer.cursor.size == 10
+
+
 def test_sliced_world_extent():
     """Test world extent after adding layers and slicing."""
     np.random.seed(0)
@@ -518,18 +587,97 @@ def test_camera():
     assert viewer.dims.ndim == 3
 
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
-    assert viewer.camera.ndisplay == 3
     assert viewer.camera.center == (4.5, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.center == (0, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
+
+
+def test_update_scale():
+    viewer = ViewerModel()
+    np.random.seed(0)
+    shape = (10, 15, 20)
+    data = np.random.random(shape)
+    viewer.add_image(data)
+    assert viewer.dims.range == tuple((0.0, x - 1.0, 1.0) for x in shape)
+    scale = (3.0, 2.0, 1.0)
+    viewer.layers[0].scale = scale
+    assert viewer.dims.range == tuple(
+        (0.0, (x - 1) * s, s) for x, s in zip(shape, scale)
+    )
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_add_remove_layer_no_callbacks(Layer, data, ndim):
+    """Test all callbacks for layer emmitters removed."""
+    viewer = ViewerModel()
+
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
+
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+    viewer.layers.append(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 1
+
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+
+    viewer.layers.remove(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 0
+
+    # Check that all callbacks have been removed
+    assert len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_add_remove_layer_external_callbacks(Layer, data, ndim):
+    """Test external callbacks for layer emmitters preserved."""
+    viewer = ViewerModel()
+
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
+
+    # Connect a custom callback
+    def my_custom_callback(event):
+        return
+
+    layer.events.connect(my_custom_callback)
+
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 1
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 1
+
+    viewer.layers.append(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 1
+
+    # check that adding a layer created new callbacks
+    assert any(len(em.callbacks) > 0 for em in layer.events.emitters.values())
+
+    viewer.layers.remove(layer)
+    # Check layer added correctly
+    assert len(viewer.layers) == 0
+
+    # Check that all internal callbacks have been removed
+    assert len(layer.events.callbacks) == 1
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 1

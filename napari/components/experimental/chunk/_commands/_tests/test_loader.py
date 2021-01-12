@@ -1,8 +1,10 @@
 import numpy as np
+import pytest
 
 from napari.components.experimental.chunk._commands import LoaderCommands
 
 
+@pytest.mark.async_only
 def test_help(make_test_viewer, capsys):
     """Test loader.help."""
     viewer = make_test_viewer()
@@ -13,6 +15,7 @@ def test_help(make_test_viewer, capsys):
     assert out.count('\n') >= 4
 
 
+@pytest.mark.async_only
 def test_no_layers(make_test_viewer, capsys):
     """Test loader.layers with no layers."""
     viewer = make_test_viewer()
@@ -22,6 +25,7 @@ def test_no_layers(make_test_viewer, capsys):
         assert x in out
 
 
+@pytest.mark.async_only
 def test_one_layer(make_test_viewer, capsys):
     """Test loader.layer with one layer."""
     viewer = make_test_viewer()
@@ -35,6 +39,7 @@ def test_one_layer(make_test_viewer, capsys):
     assert "(10, 15)" in out
 
 
+@pytest.mark.async_only
 def test_many_layers(make_test_viewer, capsys):
     """Test loader.layer with many layers."""
     viewer = make_test_viewer()
@@ -49,6 +54,7 @@ def test_many_layers(make_test_viewer, capsys):
     assert out.count("(10, 15)") == num_images
 
 
+@pytest.mark.async_only
 def test_levels(make_test_viewer, capsys):
     """Test loader.levels."""
     viewer = make_test_viewer()

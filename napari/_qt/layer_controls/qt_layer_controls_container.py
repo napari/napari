@@ -23,6 +23,8 @@ layer_to_controls = {
 if config.async_loading:
     from ...layers.image.experimental.octree_image import OctreeImage
 
+    # The user visible layer controls for OctreeImage layers are identical
+    # to the regular image layer controls, for now.
     layer_to_controls[OctreeImage] = QtImageControls
 
 
@@ -78,9 +80,9 @@ class QtLayerControlsContainer(QStackedWidget):
         self.empty_widget = QFrame()
         self.widgets = {}
         self.addWidget(self.empty_widget)
-        self._display(None)
+        self.setCurrentWidget(self.empty_widget)
 
-        self.viewer.layers.events.added.connect(self._add)
+        self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
 
@@ -92,11 +94,7 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        if event is None:
-            layer = None
-        else:
-            layer = event.item
-
+        layer = event.value
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
@@ -109,9 +107,9 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = create_qt_layer_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
@@ -122,11 +120,11 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        controls.deleteLater()
+        controls.close()
         controls = None
         del self.widgets[layer]

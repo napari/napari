@@ -2,7 +2,7 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
-import os.path
+import os
 import time
 
 from qtpy.QtCore import Qt
@@ -16,24 +16,40 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QShortcut,
-    QStatusBar,
     QWidget,
 )
 
-from ..resources import get_stylesheet
-from ..utils import perf
+from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.theme import template
+from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
+from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
-from .dialogs.qt_plugin_table import QtPluginTable
 from .dialogs.screenshot_dialog import ScreenshotDialog
+from .perf.qt_debug_menu import DebugMenu
+from .qt_event_loop import NAPARI_ICON_PATH, get_app
+from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
-from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+
+
+class _QtMainWindow(QMainWindow):
+    # This was added so that someone can patch
+    # `napari._qt.qt_main_window._QtMainWindow._window_icon`
+    # to their desired window icon
+    _window_icon = NAPARI_ICON_PATH
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.setWindowIcon(QIcon(self._window_icon))
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setUnifiedTitleAndToolBarOnMac(True)
+        center = QWidget(self)
+        center.setLayout(QHBoxLayout())
+        self.setCentralWidget(center)
 
 
 class Window:
@@ -41,7 +57,7 @@ class Window:
 
     Parameters
     ----------
-    qt_viewer : QtViewer
+    viewer : napari.components.ViewerModel
         Contained viewer widget.
 
     Attributes
@@ -62,33 +78,30 @@ class Window:
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, qt_viewer: QtViewer, *, show: bool = True):
+    def __init__(self, viewer, *, show: bool = True):
+        # create QApplication if it doesn't already exist
+        # note: the return value must be retained to prevent garbage collection
+        _ = get_app()
 
-        self.qt_viewer = qt_viewer
-
-        self._qt_window = QMainWindow()
-        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
-        self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
+        # Connect the Viewer and create the Main Window
+        self.qt_viewer = QtViewer(viewer)
+        self._qt_window = _QtMainWindow()
+        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
+        self._qt_center = self._qt_window.centralWidget()
+        self._status_bar = self._qt_window.statusBar()
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
             self._qt_window.windowHandle().screenChanged.connect(
                 self.qt_viewer.canvas._backend.screen_changed
             )
-        self._qt_center = QWidget(self._qt_window)
-
-        self._qt_window.setCentralWidget(self._qt_center)
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
-        self._qt_center.setLayout(QHBoxLayout())
-        self._status_bar = QStatusBar()
-        self._qt_window.setStatusBar(self._status_bar)
 
         self._add_menubar()
-
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
-        self._add_plugins_menu()
+        if not os.getenv("DISABLE_ALL_PLUGINS"):
+            self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -98,7 +111,7 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette()
+        self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
@@ -107,7 +120,7 @@ class Window:
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+        self.qt_viewer.viewer.events.theme.connect(self._update_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -115,9 +128,6 @@ class Window:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
-
-        if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:
             self.show()
@@ -229,6 +239,9 @@ class Window:
                 # Is there a better place to make sure this is done on exit?
                 perf.timers.stop_trace_file()
 
+            _stop_monitor()
+            _shutdown_chunkloader()
+
         exitAction.triggered.connect(handle_exit)
 
         self.file_menu = self.main_menu.addMenu('&File')
@@ -253,10 +266,31 @@ class Window:
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
         toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
+        toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
+        toggle_fullscreen.setShortcut('Ctrl+F')
+        toggle_fullscreen.setStatusTip('Toggle full screen')
+        toggle_fullscreen.triggered.connect(self._toggle_fullscreen)
+        toggle_play = QAction('Toggle Play', self._qt_window)
+        toggle_play.triggered.connect(self._toggle_play)
+        toggle_play.setShortcut('Ctrl+Alt+P')
+        toggle_play.setStatusTip('Toggle Play')
+
         self.view_menu = self.main_menu.addMenu('&View')
+        self.view_menu.addAction(toggle_fullscreen)
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
+        self.view_menu.addAction(toggle_play)
         self.view_menu.addSeparator()
+
+        # Add octree actions.
+        if config.async_octree:
+            toggle_outline = QAction('Toggle Chunk Outlines', self._qt_window)
+            toggle_outline.triggered.connect(
+                self.qt_viewer._toggle_chunk_outlines
+            )
+            toggle_outline.setShortcut('Ctrl+Alt+O')
+            toggle_outline.setStatusTip('Toggle Chunk Outlines')
+            self.view_menu.addAction(toggle_outline)
 
         # Add axes menu
         axes_menu = QMenu('Axes', parent=self._qt_window)
@@ -274,6 +308,13 @@ class Window:
             checked=self.qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        axes_labels_action = QAction(
+            'Labels',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.labels,
+        )
+        axes_labels_action.triggered.connect(self._toggle_axes_labels)
         axes_dashed_action = QAction(
             'Dashed',
             parent=self._qt_window,
@@ -290,6 +331,7 @@ class Window:
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
+        axes_menu.addAction(axes_labels_action)
         axes_menu.addAction(axes_dashed_action)
         axes_menu.addAction(axes_arrows_action)
         self.view_menu.addMenu(axes_menu)
@@ -341,17 +383,10 @@ class Window:
         """Add 'Plugins' menu to app menubar."""
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
-        list_plugins_action = QAction(
-            "List Installed Plugins...", self._qt_window
-        )
-        list_plugins_action.setStatusTip('List installed plugins')
-        list_plugins_action.triggered.connect(self._show_plugin_list)
-        self.plugins_menu.addAction(list_plugins_action)
-
         pip_install_action = QAction(
             "Install/Uninstall Package(s)...", self._qt_window
         )
-        pip_install_action.triggered.connect(self._show_pip_install_dialog)
+        pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
 
         order_plugin_action = QAction("Plugin Call Order...", self._qt_window)
@@ -366,31 +401,25 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
-    def _show_plugin_list(self, plugin_manager=None):
-        """Show dialog with a table of installed plugins and metadata."""
-        QtPluginTable(self._qt_window).exec_()
-
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
         plugin_sorter = QtPluginSorter(parent=self._qt_window)
-        dock_widget = self.add_dock_widget(
-            plugin_sorter, name='Plugin Sorter', area="right"
-        )
-        plugin_sorter.finished.connect(dock_widget.close)
-        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
-        plugin_sorter.finished.connect(dock_widget.deleteLater)
+        if hasattr(self, 'plugin_sorter_widget'):
+            self.plugin_sorter_widget.show()
+        else:
+            self.plugin_sorter_widget = self.add_dock_widget(
+                plugin_sorter, name='Plugin Sorter', area="right"
+            )
 
-    def _show_pip_install_dialog(self):
+    def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
-        from .qt_pip_dialog import QtPipDialog
 
-        dialog = QtPipDialog(self._qt_window)
-        dialog.exec_()
+        self.plugin_dialog = QtPluginDialog(self._qt_window)
+        self.plugin_dialog.exec_()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""
-        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
-        plugin_sorter.exec_()
+        QtPluginErrReporter(parent=self._qt_window).exec_()
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""
@@ -428,11 +457,29 @@ class Window:
     def _toggle_axes_colored(self, state):
         self.qt_viewer.viewer.axes.colored = state
 
+    def _toggle_axes_labels(self, state):
+        self.qt_viewer.viewer.axes.labels = state
+
     def _toggle_axes_dashed(self, state):
         self.qt_viewer.viewer.axes.dashed = state
 
     def _toggle_axes_arrows(self, state):
         self.qt_viewer.viewer.axes.arrows = state
+
+    def _toggle_fullscreen(self, event):
+        """Toggle fullscreen mode."""
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+        else:
+            self._qt_window.showFullScreen()
+
+    def _toggle_play(self, state):
+        """Toggle play."""
+        if self.qt_viewer.dims.is_playing:
+            self.qt_viewer.dims.stop()
+        else:
+            axis = self.qt_viewer.viewer.dims.last_used or 0
+            self.qt_viewer.dims.play(axis)
 
     def add_dock_widget(
         self,
@@ -476,6 +523,13 @@ class Window:
             shortcut=shortcut,
         )
         self._add_viewer_dock_widget(dock_widget)
+
+        if hasattr(widget, 'reset_choices'):
+            # Keep the dropdown menus in the widget in sync with the layer model
+            # if widget has a `reset_choices`, which is true for all magicgui
+            # `CategoricalWidget`s
+            self.qt_viewer.viewer.layers.events.connect(widget.reset_choices)
+
         return dock_widget
 
     def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
@@ -486,7 +540,6 @@ class Window:
         dock_widget : QtViewerDockWidget
             `dock_widget` will be added to the main window.
         """
-        dock_widget.setParent(self._qt_window)
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
@@ -495,8 +548,12 @@ class Window:
             action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
 
-    def remove_dock_widget(self, widget):
+    def remove_dock_widget(self, widget: QWidget):
         """Removes specified dock widget.
+
+        If a QDockWidget is not provided, the existing QDockWidgets will be
+        searched for one whose inner widget (``.widget()``) is the provided
+        ``widget``.
 
         Parameters
         ----------
@@ -506,8 +563,75 @@ class Window:
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
                 self._qt_window.removeDockWidget(dw)
+            return
+
+        if not isinstance(widget, QDockWidget):
+            for dw in self._qt_window.findChildren(QDockWidget):
+                if dw.widget() is widget:
+                    _dw: QDockWidget = dw
+                    break
+            else:
+                raise LookupError(
+                    f"Could not find a dock widget containing: {widget}"
+                )
         else:
-            self._qt_window.removeDockWidget(widget)
+            _dw = widget
+
+        if _dw.widget():
+            _dw.widget().setParent(None)
+        self._qt_window.removeDockWidget(_dw)
+        self.window_menu.removeAction(_dw.toggleViewAction())
+        # Deleting the dock widget means any references to it will no longer
+        # work but it's not really useful anyway, since the inner widget has
+        # been removed. and anyway: people should be using add_dock_widget
+        # rather than directly using _add_viewer_dock_widget
+        _dw.deleteLater()
+
+    def add_function_widget(
+        self,
+        function,
+        *,
+        magic_kwargs=None,
+        name: str = '',
+        area: str = 'bottom',
+        allowed_areas=None,
+        shortcut=None,
+    ):
+        """Turn a function into a dock widget via magicgui.
+
+        Parameters
+        ----------
+        function : callable
+            Function that you want to add.
+        magic_kwargs : dict, optional
+            Keyword arguments to :func:`magicgui.magicgui` that
+            can be used to specify widget.
+        name : str, optional
+            Name of dock widget to appear in window menu.
+        area : str
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
+        allowed_areas : list[str], optional
+            Areas, relative to main window, that the widget is allowed dock.
+            Each item in list must be in {'left', 'right', 'top', 'bottom'}
+            By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
+
+        Returns
+        -------
+        dock_widget : QtViewerDockWidget
+            `dock_widget` that can pass viewer events.
+        """
+        from magicgui import magicgui
+
+        return self.add_dock_widget(
+            magicgui(function, **magic_kwargs or {}),
+            name=name or function.__name__.replace('_', ' '),
+            area=area,
+            allowed_areas=allowed_areas,
+            shortcut=shortcut,
+        )
 
     def resize(self, width, height):
         """Resize the window.
@@ -547,22 +671,22 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, event=None):
-        """Update widget color palette."""
+    def _update_theme(self, event=None):
+        """Update widget color theme."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = self.qt_viewer.viewer.palette
+        theme = get_theme(self.qt_viewer.viewer.theme)
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
                 'color: {{ text }}; }',
-                **palette,
+                **theme,
             )
         )
         self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **palette)
+            template('QWidget { background: {{ background }}; }', **theme)
         )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
+        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -572,7 +696,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._status_bar.showMessage(event.text)
+        self._status_bar.showMessage(event.value)
 
     def _title_changed(self, event):
         """Update window title.
@@ -582,7 +706,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._qt_window.setWindowTitle(event.text)
+        self._qt_window.setWindowTitle(event.value)
 
     def _help_changed(self, event):
         """Update help message on status bar.
@@ -592,7 +716,7 @@ class Window:
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        self._help.setText(event.text)
+        self._help.setText(event.value)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
@@ -643,3 +767,19 @@ class Window:
         self.qt_viewer.close()
         self._qt_window.close()
         del self._qt_window
+
+
+def _stop_monitor() -> None:
+    """Stop the monitor service if we were using it."""
+    if config.monitor:
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()
+
+
+def _shutdown_chunkloader() -> None:
+    """Shutdown the ChunkLoader."""
+    if config.async_loading:
+        from ..components.experimental.chunk import chunk_loader
+
+        chunk_loader.shutdown()

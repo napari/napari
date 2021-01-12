@@ -142,7 +142,7 @@ class EventedList(TypedMutableSequence[_T]):
         elif type(key) in self._lookup:
             return [(self, self.index(key))]
 
-        valid = set([int, slice]).union(set(self._lookup))
+        valid = {int, slice}.union(set(self._lookup))
         raise TypeError(f"Deletion index must be {valid!r}, got {type(key)}")
 
     def __delitem__(self, key: Index):

@@ -79,3 +79,11 @@ def test_transform_chain_expanded(Transform):
     new_coord_2 = transform_chain_a(coord)
     new_coord_1 = transform_chain_expandded(coord)
     npt.assert_allclose(new_coord_1, new_coord_2)
+
+
+def test_base_transform_init_is_called():
+    # TransformChain() was not calling Transform.__init__() at one point.
+    # So below would fail with AttributeError: 'TransformChain' object has
+    # no attribute 'name'.
+    chain = TransformChain()
+    assert chain.name is None

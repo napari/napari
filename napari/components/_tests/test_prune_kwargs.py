@@ -1,6 +1,6 @@
 import pytest
 
-from napari.components.add_layers_mixin import prune_kwargs
+from napari.components.viewer_model import prune_kwargs
 
 TEST_KWARGS = {
     'scale': (0.75, 1),

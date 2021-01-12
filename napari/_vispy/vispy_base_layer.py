@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from functools import lru_cache
 
 import numpy as np
-from vispy.app import Canvas
-from vispy.gloo import gl
 from vispy.visuals.transforms import MatrixTransform
+
+from ..utils.events import disconnect_events
+from .utils_gl import get_max_texture_sizes
 
 
 class VispyBaseLayer(ABC):
@@ -34,6 +34,7 @@ class VispyBaseLayer(ABC):
     MAX_TEXTURE_SIZE_3D : int
         Max texture size allowed by the vispy canvas during 2D rendering.
 
+
     Extended Summary
     ----------------
     _master_transform : vispy.visuals.transforms.MatrixTransform
@@ -42,16 +43,18 @@ class VispyBaseLayer(ABC):
 
     def __init__(self, layer, node):
         super().__init__()
+        self.events = None  # Some derived classes have events.
 
         self.layer = layer
         self._array_like = False
         self.node = node
 
-        MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
-        self.MAX_TEXTURE_SIZE_2D = MAX_TEXTURE_SIZE_2D
-        self.MAX_TEXTURE_SIZE_3D = MAX_TEXTURE_SIZE_3D
+        (
+            self.MAX_TEXTURE_SIZE_2D,
+            self.MAX_TEXTURE_SIZE_3D,
+        ) = get_max_texture_sizes()
 
-        self.layer.events.refresh.connect(lambda e: self.node.update())
+        self.layer.events.refresh.connect(self._on_refresh_change)
         self.layer.events.set_data.connect(self._on_data_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
@@ -102,6 +105,9 @@ class VispyBaseLayer(ABC):
     def _on_data_change(self, event=None):
         raise NotImplementedError()
 
+    def _on_refresh_change(self, event=None):
+        self.node.update()
+
     def _on_visible_change(self, event=None):
         self.node.visible = self.layer.visible
 
@@ -114,7 +120,7 @@ class VispyBaseLayer(ABC):
 
     def _on_matrix_change(self, event=None):
         transform = self.layer._transforms.simplified.set_slice(
-            self.layer._dims.displayed
+            self.layer._dims_displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
         # by reversing the axes order and flipping the linear
@@ -127,14 +133,14 @@ class VispyBaseLayer(ABC):
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         affine_matrix[-1, : len(translate)] = translate
 
-        if self._array_like and self.layer._dims.ndisplay == 2:
+        if self._array_like and self.layer._ndisplay == 2:
             # Perform pixel offset to shift origin from top left corner
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
             offset_matrix = (
                 self.layer._transforms['data2world']
-                .set_slice(self.layer._dims.displayed)
+                .set_slice(self.layer._dims_displayed)
                 .linear_matrix
             )
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
@@ -151,30 +157,17 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
 
+    def _on_poll(self, event=None):
+        """Called when camera moves, before we are drawn.
 
-@lru_cache()
-def get_max_texture_sizes():
-    """Get maximum texture sizes for 2D and 3D rendering.
+        Optionally called for some period once the camera stops, so the
+        visual can finish up what it was doing, such as loading data into
+        VRAM or animating itself.
+        """
+        pass
 
-    Returns
-    -------
-    MAX_TEXTURE_SIZE_2D : int or None
-        Max texture size allowed by the vispy canvas during 2D rendering.
-    MAX_TEXTURE_SIZE_3D : int or None
-        Max texture size allowed by the vispy canvas during 2D rendering.
-    """
-    # A canvas must be created to access gl values
-    c = Canvas(show=False)
-    try:
-        MAX_TEXTURE_SIZE_2D = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
-    finally:
-        c.close()
-    if MAX_TEXTURE_SIZE_2D == ():
-        MAX_TEXTURE_SIZE_2D = None
-    # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so hard coding
-    # MAX_TEXTURE_SIZE_3D = gl.glGetParameter(gl.GL_MAX_3D_TEXTURE_SIZE)
-    # if MAX_TEXTURE_SIZE_3D == ():
-    #    MAX_TEXTURE_SIZE_3D = None
-    MAX_TEXTURE_SIZE_3D = 2048
-
-    return MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.events, self)
+        self.node.transforms = MatrixTransform()
+        self.node.parent = None

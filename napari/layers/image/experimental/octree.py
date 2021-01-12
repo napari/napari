@@ -1,292 +1,16 @@
 """Octree class.
 """
-from typing import List, Tuple
+import logging
+import math
+from typing import List, Optional
 
-import numpy as np
-from scipy import ndimage as ndi
-
-from ....types import ArrayLike
 from ....utils.perf import block_timer
-
-TileArray = List[List[np.ndarray]]
-Levels = List[TileArray]
-
-
-class ChunkData:
-    """One chunk of the full image.
-
-    A chunk is a 2D tile or a 3D sub-volume.
-
-    Parameters
-    ----------
-    data : ArrayLike
-        The data to draw for this chunk.
-    pos : Tuple[float, float]
-        The x, y coordinates of the chunk.
-    size : float
-        The size of the chunk, the chunk is square/cubic.
-    """
-
-    def __init__(
-        self,
-        data: ArrayLike,
-        pos: Tuple[float, float],
-        scale: Tuple[float, float],
-    ):
-        self.data = data
-        self.pos = pos
-        self.scale = scale
-
-
-def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
-    """
-    Return an NxM array of (tile_size, tile_size) ndarrays except the edge
-    tiles might be smaller if the array did not divide evenly.
-
-    TODO_OCTREE: slices_from_chunks from dask.array.core possibly does
-    the same thing, if we are going to use this in production.
-
-    Parameters
-    ----------
-    array : np.ndarray
-        The array to create tiles out of.
-    tiles_size : int
-        Edge length of the square tiles.
-    """
-    if array.ndim != 3:
-        raise ValueError(f"Unexpected array dimension {array.ndim}")
-    (rows, cols, _) = array.shape
-
-    tiles = []
-
-    print(f"_create_tiles array={array.shape} tile_size={tile_size}")
-
-    row = 0
-    while row < rows:
-        row_tiles = []
-        col = 0
-        while col < cols:
-            tile = array[row : row + tile_size, col : col + tile_size, :]
-            row_tiles.append(tile)
-            col += tile_size
-        tiles.append(row_tiles)
-        row += tile_size
-
-    return tiles
-
-
-def _get_tile(tiles: TileArray, row, col):
-    try:
-        return tiles[row][col]
-    except IndexError:
-        return None
-
-
-def _none(items):
-    return all(x is None for x in items)
-
-
-def _combine_tiles(*tiles: np.ndarray) -> np.ndarray:
-    """Combine 1-4 tiles into a single tile.
-
-    Parameters
-    ----------
-    tiles
-        The 4 child tiles, some might be None.
-    """
-    if len(tiles) != 4:
-        raise ValueError("Must have 4 values")
-
-    if tiles[0] is None:
-        raise ValueError("Position 0 cannot be None")
-
-    # The layout of the children is:
-    # 0 1
-    # 2 3
-    if _none(tiles[1:4]):
-        # 0 X
-        # X X
-        return tiles[0]
-    elif _none(tiles[2:4]):
-        # 0 1
-        # X X
-        return np.hstack(tiles[0:2])
-    elif _none((tiles[1], tiles[3])):
-        # 0 X
-        # 2 X
-        return np.vstack((tiles[0], tiles[2]))
-    else:
-        # 0 1
-        # 2 3
-        row1 = np.hstack(tiles[0:2])
-        row2 = np.hstack(tiles[2:4])
-        return np.vstack((row1, row2))
-
-
-def _create_downsampled_tile(*tiles: np.ndarray) -> np.ndarray:
-    """Create one parent tile from four child tiles.
-
-    Parameters
-    ----------
-    tiles
-        The 4 child tiles, some could be None.
-    """
-    # Combine 1-4 tiles together.
-    combined_tile = _combine_tiles(*tiles)
-
-    # Down sample by half.
-    return ndi.zoom(combined_tile, [0.5, 0.5, 1])
-
-
-def _create_coarser_level(tiles: TileArray) -> TileArray:
-    """Return a level that is one level coarser.
-
-    Combine each 2x2 group of tiles into one downsampled tile.
-
-    Parameters
-    ----------
-    tiles : TileArray
-        The tiles to combine.
-
-    Returns
-    -------
-    TileArray
-        The coarser level of tiles.
-    """
-
-    level = []
-
-    for row in range(0, len(tiles), 2):
-        row_tiles = []
-        for col in range(0, len(tiles[row]), 2):
-            # The layout of the children is:
-            # 0 1
-            # 2 3
-            group = (
-                _get_tile(tiles, row, col),
-                _get_tile(tiles, row, col + 1),
-                _get_tile(tiles, row + 1, col),
-                _get_tile(tiles, row + 1, col + 1),
-            )
-            tile = _create_downsampled_tile(*group)
-            row_tiles.append(tile)
-        level.append(row_tiles)
-
-    return level
-
-
-class OctreeInfo:
-    def __init__(self, base_shape, tile_size: int):
-        self.base_shape = base_shape
-        self.tile_size = tile_size
-
-
-class OctreeLevel:
-    """One level of the octree.
-
-    A level contains a 2D or 3D array of tiles.
-    """
-
-    def __init__(self, info: OctreeInfo, level_index: int, tiles: TileArray):
-        self.info = info
-        self.level_index = level_index
-        self.tiles = tiles
-
-        self.scale = 2 ** self.level_index
-        self.num_rows = len(self.tiles)
-        self.num_cols = len(self.tiles[0])
-
-    def print_info(self):
-        """Print information about this level."""
-        nrows = len(self.tiles)
-        ncols = len(self.tiles[0])
-        print(f"level={self.level_index} dim={nrows}x{ncols}")
-
-    def draw_mini_map(self, row_range: range, col_range: range):
-        """Draw mini-map with X's for which tiles we are drawing."""
-
-        def _within(value, value_range):
-            return value >= value_range.start and value < value_range.stop
-
-        for row in range(0, self.num_rows):
-            for col in range(0, self.num_cols):
-                if _within(row, row_range) and _within(col, col_range):
-                    marker = "X"
-                else:
-                    marker = "."
-                print(marker, end='')
-
-            print("")
-
-    def get_chunks(self, data_corners) -> List[ChunkData]:
-        """Return chunks that are within this rectangular region of the data.
-
-        Parameters
-        ----------
-        data_corners
-            Return chunks within this rectangular region.
-        """
-        chunks = []
-
-        # TODO_OCTREE: generalize with data_corner indices we need to use.
-        data_rows = [data_corners[0][1], data_corners[1][1]]
-        data_cols = [data_corners[0][2], data_corners[1][2]]
-
-        row_range = self.row_range(data_rows)
-        col_range = self.column_range(data_cols)
-
-        self.draw_mini_map(row_range, col_range)
-
-        scale = self.scale
-        scale_vec = [scale, scale]
-
-        tile_size = self.info.tile_size
-
-        # Iterate over every tile in the rectangular region.
-        data = None
-        y = row_range.start * tile_size
-        for row in row_range:
-            x = col_range.start * tile_size
-            for col in col_range:
-
-                data = self.tiles[row][col]
-                pos = [x, y]
-
-                if 0 not in data.shape:
-                    chunks.append(ChunkData(data, pos, scale_vec))
-
-                x += data.shape[1] * scale
-            y += data.shape[0] * scale
-
-        return chunks
-
-    def tile_range(self, span, num_tiles):
-        """Return tiles indices needed to draw the span."""
-
-        def _clamp(val, min_val, max_val):
-            return max(min(val, max_val), min_val)
-
-        tile_size = self.info.tile_size
-
-        tiles = [span[0] / tile_size, span[1] / tile_size]
-        new_min = _clamp(tiles[0], 0, num_tiles - 1)
-        new_max = _clamp(tiles[1], 0, num_tiles - 1)
-        clamped = [new_min, new_max + 1]
-
-        span_int = [int(x) for x in clamped]
-        return range(*span_int)
-
-    def row_range(self, span):
-        """Return row indices which span image coordinates [y0..y1]."""
-        return self.tile_range(span, self.num_rows)
-
-    def column_range(self, span):
-        """Return column indices which span image coordinates [x0..x1]."""
-        return self.tile_range(span, self.num_cols)
-
-
-def _one_tile(tiles: TileArray) -> bool:
-    return len(tiles) == 1 and len(tiles[0]) == 1
+from .octree_chunk import OctreeChunk, OctreeLocation
+from .octree_level import OctreeLevel, log_levels
+from .octree_tile_builder import create_downsampled_levels
+from .octree_util import OctreeMetadata
+
+LOGGER = logging.getLogger("napari.octree")
 
 
 class Octree:
@@ -314,50 +38,357 @@ class Octree:
 
     Parameters
     ----------
-    base_shape : Tuple[int, int]
-        The shape of the full base image.
-    levels : Levels
-        All the levels of the tree.
+    slice_id : int:
+        The id of the slice this octree is in.
+    data
+        The underlying multi-scale data.
+    meta : OctreeMetadata
+        The base shape and other information.
     """
 
-    def __init__(self, base_shape: Tuple[int, int], levels: Levels):
-        self.base_shape = base_shape
+    def __init__(self, slice_id: int, data, meta: OctreeMetadata):
+        self.slice_id = slice_id
+        self.data = data
+        self.meta = meta
+
+        _check_downscale_ratio(self.data)  # We expect a ratio of 2.
+
         self.levels = [
-            OctreeLevel(base_shape, i, level)
-            for (i, level) in enumerate(levels)
+            OctreeLevel(slice_id, data[i], meta, i) for i in range(len(data))
         ]
-        self.num_levels = len(self.levels)
+
+        if not self.levels:
+            # Probably we will allow empty trees, but for now raise:
+            raise ValueError(
+                f"Data of shape {data.shape} resulted " "no octree levels?"
+            )
+
+        LOGGER.info("Multiscale data has %d levels.", len(self.levels))
+
+        # If root level contains more than one tile, add extra levels
+        # until the root does consist of a single tile. We have to do this
+        # because we cannot draw tiles larger than the standard size right now.
+        if self.levels[-1].info.num_tiles > 1:
+            self.levels.extend(self._get_extra_levels())
+
+        LOGGER.info("Octree now has %d total levels:", len(self.levels))
+        log_levels(self.levels)
+
+        # Now the root should definitely contain only a single tile.
+        assert self.levels[-1].info.num_tiles == 1
+
+        # This is now the total number of levels, including the extra ones.
+        self.num_levels = len(self.data)
+
+    def get_level(self, level_index: int) -> OctreeLevel:
+        """Get the given OctreeLevel.
+
+        Parameters
+        ----------
+        level_index : int
+            Get the OctreeLevel with this index.
+
+        Return
+        ------
+        OctreeLevel
+            The requested level.
+        """
+        try:
+            return self.levels[level_index]
+        except IndexError as exc:
+            raise IndexError(
+                f"Level {level_index} is not in range(0, {len(self.levels)})"
+            ) from exc
+
+    def get_chunk_at_location(
+        self, location: OctreeLocation, create: bool = False
+    ) -> None:
+        """Get chunk get this location, create if needed if create=True.
+
+        Parameters
+        ----------
+        location : OctreeLocation
+            Get chunk at this location.
+        create : bool
+            If True create the chunk if it doesn't exist.
+        """
+        return self.get_chunk(
+            location.level_index, location.row, location.col, create=create
+        )
+
+    def get_chunk(
+        self, level_index: int, row: int, col: int, create=False
+    ) -> Optional[OctreeChunk]:
+        """Get chunk at this location, create if needed if create=True
+
+        Parameters
+        ----------
+        level_index : int
+            Get chunk from this level.
+        row : int
+            Get chunk at this row.
+        col : int
+            Get chunk at this col.
+        """
+        level: OctreeLevel = self.get_level(level_index)
+        return level.get_chunk(row, col, create=create)
+
+    def get_parent(
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
+    ) -> Optional[OctreeChunk]:
+        """Return the parent of this octree_chunk.
+
+        If the chunk at the root level, then this always return None.
+        Otherwise it returns the parent if it exists, or if create=True
+        it creates the parent and returns it.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the parent of this chunk.
+
+        Return
+        ------
+        Optional[OctreeChunk]
+            The parent of the chunk if there was one or we created it.
+        """
+        return self.get_ancestors(octree_chunk, 1, create=create)
+
+    def get_ancestors(
+        self, octree_chunk: OctreeChunk, num_levels: int, create=False
+    ) -> List[OctreeChunk]:
+        """Return the num_levels nearest ancestors.
+
+        If create=False only returns the ancestors if they exist. If
+        create=True it will create the ancestors as needed.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the nearest ancestors of this chunk.
+
+        Return
+        ------
+        List[OctreeChunk]
+            Up to num_level nearest ancestors of the given chunk. Sorted so the
+            most-distant ancestor comes first.
+        """
+        ancestors = []
+        location = octree_chunk.location
+
+        # Starting point, we look up from here.
+        level_index = location.level_index
+        row, col = location.row, location.col
+
+        stop_level = min(self.num_levels - 1, level_index + num_levels)
+
+        # Search up one level at a time.
+        while level_index < stop_level:
+
+            # Get the next level up. Coords are halved each level.
+            level_index += 1
+            row, col = int(row / 2), int(col / 2)
+
+            # Get chunk at this location.
+            ancestor = self.get_chunk(level_index, row, col, create=create)
+            assert ancestor  # Since create=True
+            ancestors.append(ancestor)
+
+        # Reverse to provide the most distant ancestor first.
+        return list(reversed(ancestors))
+
+    def get_children(
+        self,
+        octree_chunk: OctreeChunk,
+        create: bool = False,
+        in_memory: bool = True,
+    ) -> List[OctreeChunk]:
+        """Return the children of this octree_chunk.
+
+        If create is False then we only return children that exist, so we will
+        return between 0 and 4 children. If create is True then we will create
+        any children that don't exist. If octree_chunk is in level 0 then
+        we will always return 0 children.
+
+        Parameters
+        ----------
+        octree_chunk : OctreeChunk
+            Return the children of this chunk.
+
+        Return
+        ------
+        List[OctreeChunk]
+            The children of the given chunk.
+        """
+        location = octree_chunk.location
+
+        if location.level_index == 0:
+            return []  # This is the base level so no children.
+
+        child_level_index: int = location.level_index - 1
+        child_level: OctreeLevel = self.levels[child_level_index]
+
+        row, col = location.row * 2, location.col * 2
+
+        children = [
+            child_level.get_chunk(row, col, create=create),
+            child_level.get_chunk(row, col + 1, create=create),
+            child_level.get_chunk(row + 1, col, create=create),
+            child_level.get_chunk(row + 1, col + 1, create=create),
+        ]
+
+        # Keep non-None children, and if requested in-memory ones.
+        def keep_chunk(octree_chunk) -> bool:
+            return octree_chunk is not None and (
+                not in_memory or octree_chunk.in_memory
+            )
+
+        return list(filter(keep_chunk, children))
+
+    def _get_extra_levels(self) -> List[OctreeLevel]:
+        """Compute the extra levels and return them.
+
+        Return
+        ------
+        List[OctreeLevel]
+            The extra levels.
+        """
+        with block_timer("_create_extra_levels") as timer:
+            extra_levels = self._create_extra_levels(self.slice_id)
+
+        LOGGER.info(
+            "Created %d additional levels in %.3fms",
+            len(extra_levels),
+            timer.duration_ms,
+        )
+
+        return extra_levels
+
+    def _create_extra_levels(self, slice_id: int) -> List[OctreeLevel]:
+        """Add additional levels to the octree.
+
+        Keep adding levels until we each a root level where the image
+        data fits inside a single tile.
+
+        Parameters
+        -----------
+        slice_id : int
+            The id of the slice this octree is in.
+        tile_size : int
+            Keep creating levels until one fits with a tile of this size.
+
+        Return
+        ------
+        List[OctreeLevels]
+            The new downsampled levels we created.
+
+        Notes
+        -----
+        If we created this octree data, the root/highest level would
+        consist of a single tile. However, if we are reading someone
+        else's multiscale data, they did not know our tile size. Or they
+        might not have imagined someone using tiled rendering at all.
+        So their root level might be pretty large. We've seen root
+        levels larger than 8000x8000 pixels.
+
+        It would be nice in this case if our root level could use a
+        really large tile size as a special case. So small tiles for most
+        levels, but then one big tile as the root.
+
+        However, today our TiledImageVisual can't handle that. It can't
+        handle a mix of tile sizes, and TextureAtlas2D can't even
+        allocate multiple textures!
+
+        So for now, we compute/downsample additional levels ourselves and
+        add them to the data. We do this until we reach a level that does
+        fit within a single tile.
+
+        For example for that 8000x8000 pixel root level, if we are using
+        256x256 tiles we'll keep adding levels until we get to a level
+        that fits within 256x256.
+
+        Unfortunately, we can't be sure our downsampling approach will
+        match the rest of the data. The levels we add might be more/less
+        blurry than the original ones, or have different downsampling
+        artifacts. That's probably okay because these are low-resolution
+        levels, but still it would be better to show their root level
+        verbatim on a single large tiles.
+
+        Also, this is slow due to the downsampling, but also slow due to
+        having to load the full root level into memory. If we had a root
+        level that was tile sized, then we could load that very quickly.
+        That issue does not go away even if we have a special large-size
+        root tile. For best performance multiscale data should be built
+        down to a very small root tile, the extra storage is negligible.
+        """
+
+        # Create additional data levels so that the root level
+        # consists of only a single tile, using our standard/only
+        # tile size.
+        tile_size = self.meta.tile_size
+        new_levels = create_downsampled_levels(
+            self.data[-1], len(self.data), tile_size
+        )
+
+        # Add the data.
+        self.data.extend(new_levels)
+
+        # Return an OctreeLevel for each new data level.
+        num_current = len(self.levels)
+        return [
+            OctreeLevel(
+                slice_id,
+                new_data,
+                self.meta,
+                num_current + index,
+            )
+            for index, new_data in enumerate(new_levels)
+        ]
 
     def print_info(self):
         """Print information about our tiles."""
         for level in self.levels:
             level.print_info()
 
-    @classmethod
-    def from_image(cls, image: np.ndarray, tile_size: int):
-        """Create octree from given single image.
 
-        Parameters
-        ----------
-        image : ndarray
-            Create the octree for this single image.
-        """
-        info = OctreeInfo(image.shape, tile_size)
+def _check_downscale_ratio(data) -> None:
+    """Raise exception if downscale ratio is not 2.
 
-        with block_timer("create_tiles", print_time=True):
-            tiles = _create_tiles(image, info.tile_size)
-        levels = [tiles]
+    For now we only support downscale ratios of 2. We could support other
+    ratios, but the assumption that each octree level is half the size of
+    the previous one is baked in pretty deeply right now.
 
-        # Keep combining tiles until there is one root tile.
-        while not _one_tile(levels[-1]):
-            with block_timer("_create_coarser_level", print_time=True):
-                next_level = _create_coarser_level(levels[-1])
-            levels.append(next_level)
+    Raises
+    ------
+    ValueError
+        If downscale ratio is not 2.
+    """
+    if not isinstance(data, list) or len(data) < 2:
+        return  # There aren't even two levels.
 
-        # _print_levels(levels)
+    # _dump_levels(data)
 
-        return Octree(info, levels)
+    ratio = math.sqrt(data[0].size / data[1].size)
+
+    # Really should be exact, but it will most likely be off by a ton
+    # if its off, so allow a small fudge factor.
+    if not math.isclose(ratio, 2, rel_tol=0.01):
+        raise ValueError(
+            f"Multiscale data has downsampling ratio of {ratio}, expected 2."
+        )
 
 
-if __name__ == "__main__":
-    tree = Octree()
+def _dump_levels(data) -> None:
+    """Print the levels and the size of the levels."""
+    last_size = None
+    for level in data:
+        if last_size is not None:
+            downscale = math.sqrt(last_size / level.size)
+            print(
+                f"size={level.size} shape={level.shape} downscale={downscale}"
+            )
+        else:
+            print(f"size={level.size} shape={level.shape} base level")
+        last_size = level.size

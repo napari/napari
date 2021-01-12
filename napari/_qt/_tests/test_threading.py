@@ -176,8 +176,7 @@ def test_thread_worker_in_main_thread():
 # note: pytest-cov cannot check coverage of code run in the other thread.
 # this is just for the sake of coverage
 def test_thread_generator_worker_in_main_thread():
-    """Test basic threadworker on a generator in the main thread with methods.
-    """
+    """Test basic threadworker on a generator in the main thread with methods."""
 
     def func():
         i = 0

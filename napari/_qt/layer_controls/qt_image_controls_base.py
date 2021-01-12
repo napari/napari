@@ -4,11 +4,12 @@ from functools import partial
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QComboBox, QLabel, QPushButton, QSlider
+from qtpy.QtWidgets import QLabel, QPushButton, QSlider
 
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
+from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
 
 
@@ -44,10 +45,12 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
 
-        comboBox = QComboBox(self)
+        comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
@@ -75,7 +78,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setValue(100)
         sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
-        self.gamma_slider_update()
+        self._on_gamma_change()
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
@@ -120,7 +123,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_clims_change(self, event=None):
+    def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
@@ -162,7 +165,10 @@ class QtBaseImageControls(QtLayerControls):
         # Note that QImage expects the image width followed by height
         cbar = self.layer.colormap.colorbar
         image = QImage(
-            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
+            cbar,
+            cbar.shape[1],
+            cbar.shape[0],
+            QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
@@ -177,7 +183,7 @@ class QtBaseImageControls(QtLayerControls):
         """
         self.layer.gamma = value / 100
 
-    def gamma_slider_update(self, event=None):
+    def _on_gamma_change(self, event=None):
         """Receive the layer model gamma change event and update the slider.
 
         Parameters

@@ -45,8 +45,7 @@ class PerfTimers:
     """
 
     def __init__(self):
-        """Create PerfTimers.
-        """
+        """Create PerfTimers."""
         # Maps a timer name to one Stat object.
         self.timers: Dict[str, Stat] = {}
 
@@ -105,8 +104,7 @@ class PerfTimers:
         self.add_event(PerfEvent(name, now, now, phase="C", **kwargs))
 
     def clear(self):
-        """Clear all timers.
-        """
+        """Clear all timers."""
         # After the GUI displays timing information it clears the timers
         # so that we start accumulating fresh information.
         self.timers.clear()
@@ -122,8 +120,7 @@ class PerfTimers:
         self.trace_file = PerfTraceFile(path)
 
     def stop_trace_file(self) -> None:
-        """Stop recording a trace file.
-        """
+        """Stop recording a trace file."""
         if self.trace_file is not None:
             self.trace_file.close()
             self.trace_file = None
@@ -177,10 +174,10 @@ def block_timer(
     if timers:
         timers.add_event(event)
     if print_time:
-        print(f"{name} {event.duration_ms}ms")
+        print(f"{name} {event.duration_ms:.3f}ms")
 
 
-if USE_PERFMON:
+def _create_timer():
     # The one global instance
     timers = PerfTimers()
 
@@ -215,6 +212,11 @@ if USE_PERFMON:
         """
         timers.add_counter_event(name, **kwargs)
 
+    return timers, perf_timer, add_instant_event, add_counter_event
+
+
+if USE_PERFMON:
+    timers, perf_timer, add_instant_event, add_counter_event = _create_timer()
 
 else:
     # Make sure no one accesses the timers when they are disabled.
