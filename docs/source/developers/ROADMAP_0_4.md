@@ -41,7 +41,7 @@ You can read more about how this roadmap builds on and continues the work in our
 
 - Improve the **user interface and design** of the viewer to make it easier to use. We have conducted a product heuristics analysis to [identify design and usability issues](https://github.com/napari/product-heuristics-2020), and will now be working during the 0.4 series of releases to implement them. Also see the [`design` label](https://github.com/napari/napari/labels/design) for more information.
 
-## Support **functional and interactive** plugins that enable complete image analysis workflows.
+## Support functional and interactive plugins that enable complete image analysis workflows.
 
 0.4.3 brought experimental support for functional plugins and interactive Qt
 widget plugins. During the 0.4.x series of releases, we aim to work with our
@@ -55,7 +55,7 @@ For more details, follow the [plugins label on
 GitHub](https://github.com/napari/napari/labels/plugins).
 
 
-## Provide accessible **documentation**, tutorials, and demos
+## Provide accessible documentation, tutorials, and demos
 
 - Improve our website [napari.org](https://napari.org) to provide easy access to all napari related materials, including the [**four types of documentation**](https://www.divio.com/blog/documentation/): learning-oriented tutorials, goal-oriented how-to-guides or galleries, understanding-oriented explanations (including developer resources), and a comprehensive API reference. See [#764](https://github.com/napari/napari/issues/764) and the [`documentation` label](https://github.com/napari/napari/labels/documentation) on the napari repository for more details.
 
