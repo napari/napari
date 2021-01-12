@@ -11,15 +11,26 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-This release is the first release to have direct support for generating widgets from functions using [magicgui](https://napari.org/magicgui/) and the `viewer.window.add_function_widget` method (#1856). We leverage the newly released `0.2` series of magicgui which seperates out an abstract function and widget API from its Qt backend. 
+In this release we've added two new analysis and GUI focused [hook specifications](https://napari.org/docs/dev/plugins/hook_specifications.html) for our plugin developers (#2080).
+
+The first one `napari_experimental_provide_function_widget` allows you to provide a function or list of functions that we
+will turn into a GUI element using using [magicgui](https://napari.org/magicgui/). This hook spec leverages the newly added and the `viewer.window.add_function_widget` method (#1856) and the newly recently released `0.2` series of magicgui which seperates out an abstract function and widget API from its Qt backend. These functions can take in and return napari layer, allowing you to
+provide analysis functionality to napari without having to write GUI code.
+
+The second one `napari_experimental_provide_dock_widget` allows you to provide a QWidget or list of QWidgets that we will instantiate with access to the napari viewer and add to the GUI. This hook spec leverages our `viewer.window.add_dock_widget` method, and allows you to provide highly customized GUI elements that could include additional plots or interactivity.
+
+Both of these hook specs are marked as `experimental` as we're likely to evolve the API here in response to user needs, and we're excited to get early feedback from plugin developers on them.
 
 In this release we also seperate out more of the Qt functionality from napari making it easier to run headless (#2039, #2055). We also added a `napari.run` method as an alternative to using the `napari.gui_qt` context manager (#2056).
 
-We've also made good progress on our experimental support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/docs/dev/events/rendering.html) for more details on how to use the octree and its current limitations.
+We've also made good progress on our `experimental` support for an octree system for rendering large 2D multiscale images. You can try this functionality setting `NAPARI_OCTREE=1` as an environment variable. See our [asynchronous rendering guide](https://napari.org/docs/dev/events/rendering.html) for more details on how to use the octree and its current limitations.
+
+Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_4.html) and a [lookback on our 0.3 roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3.html)!
 
 
 ## New Features
 - Add support for function widgets (#1856)
+- Gui hookspecs (#2080)
 
 
 ## Improvements
@@ -71,7 +82,7 @@ We've also made good progress on our experimental support for an octree system f
 - Save app reference in Window init (#2076)
 - Add deprecated parameters for updating theme (#2074)
 - Coerce name before layer is added to layerlist (#2087)
-
+- Fix stale data in magicgui `*Data` parameters (#2088)
 
 ## API Changes
 - Drop layer.shape (#1990)
@@ -87,6 +98,7 @@ We've also made good progress on our experimental support for an octree system f
 
 
 ## Build Tools and Support
+- 0.4 roadmap (#1906)
 - Rename artifact for nightly build releases (#1971)
 - Update latest tag alone with nightly build (#2001)
 - Only raise leaked widgets errors in tests if no other exception was raised (#2043)
@@ -102,6 +114,7 @@ We've also made good progress on our experimental support for an octree system f
 - async-46: Rendering Guide and Code Comments (#2078)
 - Update get-tag action (#2083)
 - Update magicgui examples (#2084)
+- Add examples tests (#2085)
 
 
 ## 8 authors added to this release (alphabetical)
