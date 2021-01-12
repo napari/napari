@@ -29,6 +29,13 @@ You can read more about how this roadmap builds on and continues the work in our
 
 - Add **physical coordinates**. We now have a world coordinate system and transforms that can move between data coordinates, world coordinates, and the canvas where things are rendered; however, we still don't have a concept of phyiscal units. See [#1701](https://github.com/napari/napari/issues/1701) for additional discussion.
 
+- Support for persistent settings
+  [#1183](https://github.com/napari/napari/pull/1183) to allow **saving of
+  preferences** between launches of the viewer. This is particularly important
+  because it allows us to give all users early access to experimental features,
+  helping us to test those features and more quickly bring them to the viewer
+  by default.
+
 - Add **linked multi-canvas support** ([#760](https://github.com/napari/napari/issues/760)) to allow orthogonal views, or linked views of two datasets, for example to select keypoints for image alignment, or simultaneous 2D slices with 3D rendering.
 
 - Add **layer groups** [#970](https://github.com/napari/napari/issues/970), which allow operating on many layers simultaneously making the viewer easier to use for multispectral or multimodal data, or, in the context of multiple canvases, where one wants to assign different groups to different canvases.
@@ -42,8 +49,6 @@ You can read more about how this roadmap builds on and continues the work in our
   [#1875](https://github.com/napari/napari/issues/1875).
 
 - Improved **error handling and bug reporting**, see [#1090](https://github.com/napari/napari/issues/1090) for details.
-
-- Support for persistent settings [#1183](https://github.com/napari/napari/pull/1183) to allow **saving of preferences** between launches of the viewer.
 
 - Improve the **user interface and design** of the viewer to make it easier to use. We have conducted a product heuristics analysis to [identify design and usability issues](https://github.com/napari/product-heuristics-2020), and will now be working during the 0.4 series of releases to implement them. Also see the [`design` label](https://github.com/napari/napari/labels/design) for more information.
 
