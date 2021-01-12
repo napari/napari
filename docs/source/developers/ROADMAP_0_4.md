@@ -33,7 +33,13 @@ You can read more about how this roadmap builds on and continues the work in our
 
 - Add **layer groups** [#970](https://github.com/napari/napari/issues/970), which allow operating on many layers simultaneously making the viewer easier to use for multispectral or multimodal data, or, in the context of multiple canvases, where one wants to assign different groups to different canvases.
 
-- Complete **serialization of the viewer** [#851](https://github.com/napari/napari/pull/851) to enable sharing the entire viewer state, see [#1875](https://github.com/napari/napari/issues/1875) too.
+- Complete **serialization of the viewer**
+  [#851](https://github.com/napari/napari/pull/851) to enable sharing the
+  entire viewer state. This low-level feature will open the door to a lot of
+  functionality, including the viewing of remote datasets, "deep linking", i.e.
+  links that allow opening of napari viewing a specific dataset with specific
+  view settings, easy creation of sophisticated animations, and more. See also
+  [#1875](https://github.com/napari/napari/issues/1875).
 
 - Improved **error handling and bug reporting**, see [#1090](https://github.com/napari/napari/issues/1090) for details.
 
