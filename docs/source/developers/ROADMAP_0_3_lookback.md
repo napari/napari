@@ -1,6 +1,10 @@
-# Roadmap
+# Roadmap retrospective
 
-## For 0.3.* series of releases - April 2020
+Periodically, the napari team produces roadmaps to clarify priorities in the coming months of development. When a new roadmap is introduced, we will retrospectively examine how well actual development tracked with the appropriate roadmap.
+
+Below, we examine our 0.3.x roadmap (reproduced in its entirety) and compare it to what we achieved in the corresponding 6 months (in inline quote blocks).
+
+## For 0.3.* series of releases - April 2020-Nov 2020
 
 The napari roadmap captures current development priorities within the project and should serve as a guide for napari core developers, to encourage and inspire contributors, and to provide insights to external developers who are interested in building for the napari ecosystem. For more details on what this document is and is not, see the [about this document section](#about-this-document).
 
