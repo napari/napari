@@ -530,7 +530,7 @@ class Points(Layer):
                 self.text.add(self.current_properties, adding)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property

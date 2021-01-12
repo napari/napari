@@ -1,7 +1,7 @@
-"""Octree utility classes.
+"""OctreeDisplayOptions, NormalNoise and OctreeMetadata classes.
 """
 from dataclasses import dataclass
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 
 import numpy as np
 
@@ -71,13 +71,6 @@ class OctreeDisplayOptions:
     track_view: bool = True
 
 
-class TestImageSettings(NamedTuple):
-    """Settings for a test image we are creating."""
-
-    base_shape: Tuple[int, int]
-    tile_size: int
-
-
 class NormalNoise(NamedTuple):
     """Noise with a normal distribution."""
 
@@ -108,7 +101,7 @@ class NormalNoise(NamedTuple):
 
 
 class OctreeMetadata(NamedTuple):
-    """Configuration for a tiled image.
+    """Metadata for an Octree.
 
     Attributes
     ----------
@@ -149,6 +142,6 @@ class OctreeMetadata(NamedTuple):
     def aspect_ratio(self):
         """Return the width:height aspect ratio of the base image.
 
-        For example HDTV resolution is 16:9 which is 1.77.
+        For example HDTV resolution is 16:9 which has aspect ration 1.77.
         """
         return self.base_shape[1] / self.base_shape[0]

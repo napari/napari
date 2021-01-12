@@ -12,15 +12,15 @@ from napari._qt.perf import qt_event_tracing
 from napari._qt.utils import delete_qapp
 from napari.utils import perf
 
-if (
-    sys.platform.startswith('linux')
-    and os.getenv('CI', '0') != '0'
-    and qtpy.API_NAME == "PySide2"
+if os.getenv('CI', '0') != '0' and (
+    sys.version_info >= (3, 9)
+    or (sys.platform.startswith('linux') and qtpy.API_NAME == "PySide2")
 ):
     # this test is covered by other platforms, and also seems to work locally
     # on linux
     pytest.skip(
-        "Perfmon segfaults on linux CI with pyside2", allow_module_level=True
+        "Perfmon segfaults on linux CI with pyside2 or python 3.9",
+        allow_module_level=True,
     )
 
 

@@ -332,7 +332,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     def _get_ndim(self):

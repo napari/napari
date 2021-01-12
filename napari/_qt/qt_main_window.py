@@ -80,7 +80,8 @@ class Window:
 
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        get_app()
+        # note: the return value must be retained to prevent garbage collection
+        _ = get_app()
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
@@ -527,7 +528,10 @@ class Window:
             # Keep the dropdown menus in the widget in sync with the layer model
             # if widget has a `reset_choices`, which is true for all magicgui
             # `CategoricalWidget`s
-            self.qt_viewer.viewer.layers.events.connect(widget.reset_choices)
+            layers_events = self.qt_viewer.viewer.layers.events
+            layers_events.inserted.connect(widget.reset_choices)
+            layers_events.removed.connect(widget.reset_choices)
+            layers_events.reordered.connect(widget.reset_choices)
 
         return dock_widget
 
