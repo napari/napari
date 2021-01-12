@@ -24,6 +24,10 @@ class Widg3(QWidget):
         super().__init__()
 
 
+def magicfunc(viewer: 'napari.Viewer'):
+    return viewer
+
+
 dwidget_args = {
     'single_class': Widg1,
     'class_tuple': (Widg1, {'area': 'right'}),
@@ -69,10 +73,6 @@ def test_dock_widget_registration(
                 assert registered[(None, 'Widg2')][0] == Widg2
 
 
-def magicfunc(viewer: 'napari.Viewer'):
-    return viewer
-
-
 @pytest.fixture
 def test_plugin_widgets(monkeypatch):
     """A smattering of example registered dock widgets and function widgets."""
@@ -96,6 +96,7 @@ def test_plugin_widgets(monkeypatch):
 
 
 def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
+    """Test the plugin widgets get added to the window menu correctly."""
     viewer = make_test_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     assert len(actions) == 3
@@ -113,6 +114,7 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
 
 
 def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
+    """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_test_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
@@ -144,6 +146,7 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
+    """Test that we can create magicgui widgets, and they get the viewer."""
     viewer = make_test_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
@@ -165,6 +168,7 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
 
 
 def test_clear_all_plugin_widgets(test_plugin_widgets, make_test_viewer):
+    """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
     viewer = make_test_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     actions[1].trigger()
