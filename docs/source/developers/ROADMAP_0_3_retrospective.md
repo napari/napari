@@ -95,6 +95,8 @@ We’re also planning or working on the following more advanced features, which 
 
 - Support for generating animations [#780](https://github.com/napari/napari/pull/780). This feature will be supported after we have the ability to serialize the viewer state [#851](https://github.com/napari/napari/pull/851).
 
+    > We have moved development of the animation functionality to a standalone plugin. Currently under active development at https://github.com/sofroniewn/napari-animation.
+
 - Draggable and resizable layers [#299](https://github.com/napari/napari/issues/299) and [#989](https://github.com/napari/napari/pull/989). This feature will be supported after we have added support for world coordinates [project board 10](https://github.com/napari/napari/projects/10) and rotations to our transform model.
 
 - Linked 1D plots such as histograms, timeseries, or z-profiles [#823](https://github.com/napari/napari/pull/823) and [#675](https://github.com/napari/napari/pull/675).

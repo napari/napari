@@ -30,8 +30,6 @@ You can read more about how this roadmap builds on and continues the work in our
 
 - Complete **serialization of the viewer** [#851](https://github.com/napari/napari/pull/851) to enable sharing the entire viewer state, see [#1875](https://github.com/napari/napari/issues/1875) too.
 
-- Support for generating **animations** [#780](https://github.com/napari/napari/pull/780).
-
 - Improved **error handling and bug reporting**, see [#1090](https://github.com/napari/napari/issues/1090) for details.
 
 - Support for persistent settings [#1183](https://github.com/napari/napari/pull/1183) to allow **saving of preferences** between launches of the viewer.
