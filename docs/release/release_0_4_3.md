@@ -118,7 +118,7 @@ can still provide keymappings, but no longer handles keymappings from other obje
 - Update get-tag action (#2083)
 - Update magicgui examples (#2084)
 - Add examples tests (#2085)
-
+- Skip testing examples on CI (#2094)
 
 ## 8 authors added to this release (alphabetical)
 
