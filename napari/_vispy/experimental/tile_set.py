@@ -27,7 +27,7 @@ class TileData(NamedTuple):
 class TileSet:
     """The tiles we are drawing.
 
-    Fast test for membership in both directions: dict and a set.
+    Maintain a dict and a set for fast membership tests in both directions.
 
     Attributes
     ----------
@@ -83,7 +83,7 @@ class TileSet:
 
     @property
     def chunk_set(self) -> Set[OctreeChunk]:
-        """Return the set of chunks we drawing.
+        """The set of chunks we drawing.
 
         Return
         ------
@@ -94,39 +94,39 @@ class TileSet:
 
     @property
     def chunks(self) -> List[OctreeChunk]:
-        """Return all the chunks we are tracking.
+        """The chunks we are tracking.
 
         Return
         ------
         List[OctreeChunk]
-            All the chunks in the set.
+            The chunks we are tracking.
         """
         return [tile_data.octree_chunk for tile_data in self._tiles.values()]
 
     @property
     def tile_data(self) -> List[TileData]:
-        """Return the data for all tiles in the set, unsorted.
+        """The data for all tiles in the set unsorted.
 
         Return
         ------
         List[TileData]
-            Data for all the tiles in the set sorted back to front.
+            The data for all the tiles in the set unsorted.
         """
         return self._tiles.values()
 
     @property
     def tile_data_sorted(self) -> List[TileData]:
-        """Return the data for all tiles in the set, sorted back to front.
+        """The data for all tiles in the set, sorted back to front.
 
-        We return tiles from higher octree levels first. These are the
-        larger coarser tiles. These are "the background" while smaller
-        higher resolution tiles are drawn in front. So we show the "best
-        available" data in all locations.
+        Sorted so tiles from higher octree levels are first. These are the
+        larger and coarser tiles. We draw these "in the background" while
+        smaller higher resolution tiles are drawn in front. This sorting
+        allows us to show the "best available" data in all locations.
 
         Return
         ------
         List[TileData]
-            Data for all the tiles in the set sorted back to front.
+            The data for all the tiles in the set sorted back to front.
         """
         return sorted(
             self._tiles.values(),

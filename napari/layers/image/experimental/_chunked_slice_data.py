@@ -1,4 +1,6 @@
 """ChunkedSliceData class.
+
+This is for pre-Octree Image class only.
 """
 import logging
 from typing import Optional

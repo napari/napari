@@ -545,9 +545,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         """
         layer = event.value
 
-        # Coerce name into being unique and connect event to ensure uniqueness
-        layer.name = self.layers._coerce_name(layer.name, layer)
-
         # Connect individual layer events to viewer events
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)

@@ -18,7 +18,7 @@ import napari
 # napari object type without actually importing or depending on napari.
 def gaussian_blur(
     layer: 'napari.layers.Image', sigma: float = 1.0, mode="nearest"
-) -> 'napari.layers.Image':
+) -> 'napari.types.ImageData':
     """Apply a gaussian blur to ``layer``."""
     if layer:
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
