@@ -191,3 +191,25 @@ def test_magicgui_add_layer_data_tuple_list(make_test_viewer):
     assert len(viewer.layers) == 2
     assert isinstance(viewer.layers[0], Image)
     assert isinstance(viewer.layers[1], Labels)
+
+
+def test_magicgui_data_updated(make_test_viewer):
+    """Test that magic data parameters stay up to date."""
+    viewer = make_test_viewer()
+
+    _returns = []  # the value of x returned from func
+
+    @magicgui(auto_call=True)
+    def func(x: types.PointsData):
+        _returns.append(x)
+
+    viewer.window.add_dock_widget(func)
+    points = viewer.add_points(None)
+    # func will have been called with an empty points
+    np.testing.assert_allclose(_returns[-1], np.empty((0, 2)))
+    points.add((10, 10))
+    # func will have been called with 1 data including 1 point
+    np.testing.assert_allclose(_returns[-1], np.array([[10, 10]]))
+    points.add((15, 15))
+    # func will have been called with 1 data including 2 points
+    np.testing.assert_allclose(_returns[-1], np.array([[10, 10], [15, 15]]))

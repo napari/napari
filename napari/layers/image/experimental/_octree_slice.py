@@ -22,12 +22,14 @@ LOGGER = logging.getLogger("napari.octree.slice")
 
 
 class OctreeSlice:
-    """View a slice of an multiscale image using an octree.
+    """A viewed slice of a multiscale image using an octree.
 
     Parameters
     ----------
     data
         The multi-scale data.
+    layer_ref : LayerRef
+        Reference to the layer containing the slice.
     meta : OctreeMetadata
         The base shape and other info.
     image_converter : Callable[[ArrayLike], ArrayLike]
@@ -62,16 +64,21 @@ class OctreeSlice:
 
     @property
     def loaded(self) -> bool:
-        """Return True if the data has been loaded.
+        """True if the data has been loaded.
 
         Because octree multiscale is async, we say we are loaded up front even
         though none of our chunks/tiles might be loaded yet.
+
+        Return
+        ------
+        bool
+            True if the data as been loaded.
         """
         return self.data is not None
 
     @property
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:
-        """Return information about the current octree level.
+        """Information about the current octree level.
 
         Return
         ------
@@ -91,7 +98,12 @@ class OctreeSlice:
             ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
-        """Return this view's intersection with the octree.
+        """Return the given view's intersection with the octree.
+
+        The OctreeIntersection primarily contains the set of tiles at
+        some level that need to be drawn to depict view. The "ideal level"
+        is generally chosen automatically based on the screen resolution
+        described by the OctreeView.
 
         Parameters
         ----------
@@ -101,13 +113,13 @@ class OctreeSlice:
         Return
         ------
         OctreeIntersection
-            The view's intersection with the octree.
+            The given view's intersection with the octree.
         """
         level = self._get_auto_level(view)
         return OctreeIntersection(level, view)
 
     def _get_auto_level(self, view: OctreeView) -> OctreeLevel:
-        """Get the automatically selected octree level for this view.
+        """Return the automatically selected octree level for this view.
 
         Parameters
         ----------
@@ -126,7 +138,7 @@ class OctreeSlice:
         return self._octree.levels[index]
 
     def _get_auto_level_index(self, view: OctreeView) -> int:
-        """Get the automatically selected octree level index for this view.
+        """Return the automatically selected octree level index for this view.
 
         Parameters
         ----------
@@ -144,9 +156,9 @@ class OctreeSlice:
 
         # Find the right level automatically. Choose a level where the texels
         # in the octree tiles are around the same size as screen pixels.
-        # We can do this smarter in the future, maybe have some hysterisis
+        # We can do this smarter in the future, maybe have some hysteresis
         # so you don't "pop" to the next level as easily, so there is some
-        # fudge factor or dead zone.
+        # sort of dead zone between levels?
         ratio = view.data_width / view.canvas[0]
 
         if ratio <= 1:
@@ -175,9 +187,9 @@ class OctreeSlice:
         return level.get_chunk(location.row, location.col, create=False)
 
     def on_chunk_loaded(self, request: ChunkRequest) -> bool:
-        """An asynchronous ChunkRequest was loaded.
+        """Called when an asynchronous ChunkRequest was loaded.
 
-        Override Image.on_chunk_loaded() fully.
+        This overrides Image.on_chunk_loaded() fully.
 
         Parameters
         ----------
@@ -187,7 +199,7 @@ class OctreeSlice:
         Return
         ------
         bool
-            This chunk's data was added to the octree.
+            True if the chunk's data was added to the octree.
         """
         location = request.location
 
@@ -207,7 +219,7 @@ class OctreeSlice:
             # This location in the octree does not contain an OctreeChunk.
             # That's unexpected, because locations are turned into
             # OctreeChunk's when a load is initiated. So this is an error,
-            # but log it and keep going, maybe some transient weirdness.
+            # but log it and keep going, maybe some transient weirdness?
             LOGGER.error(
                 "on_chunk_loaded: missing OctreeChunk: %s",
                 octree_chunk,

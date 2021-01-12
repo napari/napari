@@ -15,8 +15,8 @@ def get_data_id(data) -> int:
 
     Parameters
     ----------
-    layer
-        The layer to get the data_id from.
+    data
+        Get the data_id for this data.
 
     Notes
     -----
@@ -32,17 +32,15 @@ def get_data_id(data) -> int:
 
 
 class ImageLocation(ChunkLocation):
-    """The key for a layer and its important properties.
+    """The hashable location of a chunk within an image layer.
 
     Attributes
     ----------
-    layer_id : int
-        The id of the layer making the request.
     data_id : int
         The id of the data in the layer.
     data_level : int
         The level in the data (for multi-scale).
-    indices : Tuple[Optional[slice], ...]
+    indices
         The indices of the slice.
     """
 
@@ -63,7 +61,14 @@ class ImageLocation(ChunkLocation):
             and self._same_indices(other)
         )
 
-    def _same_indices(self, other):
+    def _same_indices(self, other) -> bool:
+        """Return True if this location has same indices as the other location.
+
+        Return
+        ------
+        bool
+            True if indices are the same.
+        """
         # TODO_OCTREE: Why is this sometimes ndarray and sometimes not?
         # We should normalize when the ImageLocation is constructed?
         if isinstance(self.indices, np.ndarray):
@@ -71,6 +76,13 @@ class ImageLocation(ChunkLocation):
         return self.indices == other.indices
 
     def __hash__(self) -> int:
+        """Return has of this location.
+
+        Return
+        ------
+        int
+            The hash of the location.
+        """
         return hash(
             (
                 self.layer_ref.layer_id,

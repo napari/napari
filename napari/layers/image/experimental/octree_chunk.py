@@ -1,4 +1,4 @@
-"""OctreeLocation and OctreeChunk classes.
+"""OctreeChunkGeom, OctreeLocation and OctreeChunk classes.
 """
 import logging
 from typing import List, NamedTuple
@@ -23,6 +23,8 @@ class OctreeLocation(ChunkLocation):
 
     Parameters
     ----------
+    layer_ref : LayerRef
+        Referen to the layer this location is in.
     slice_id : int
         The id of the OctreeSlice we are in.
     level_index : int
