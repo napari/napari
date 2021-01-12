@@ -39,7 +39,12 @@ from typing import Any, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import ReaderFunction, WriterFunction
+from ..types import (
+    AugmentedFunction,
+    AugmentedWidget,
+    ReaderFunction,
+    WriterFunction,
+)
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -316,4 +321,56 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
     path : str or None
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
+    """
+
+
+# -------------------------------------------------------------------------- #
+#                                 GUI Hooks                                  #
+# -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_function_widget() -> Union[
+    AugmentedFunction, List[AugmentedFunction]
+]:
+    """Provide functions and args that can be passed to magicgui.
+
+    This hook specification is marked as experimental as the API or how the
+    returned value is handled may change here more frequently then the
+    rest of the codebase.
+
+    Returns
+    -------
+    function(s) : callable, tuple of callable & dict(s), or list thereof
+        Implementations should provide either a single function, or a list of
+        functions. The functions should have Python type annotations so that
+        `magicgui <https://napari.org/magicgui>`_ can generate a widget from
+        them. Each function can be provided as-is or as part of a 2-tuple or 3-tuple
+        with configuration dicts. The second element in the tuple should be a
+        dictionary defining magicgui `configuration options
+        <https://napari.org/magicgui/usage/configuration.html#magicgui-options>`_,
+        while the third element should provide keyword arguments for
+        :meth:`napari.qt.Window.add_dock_widget` (though note that the
+        ``shortcut=`` keyword is not yet supported).
+    """
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_dock_widget() -> Union[
+    AugmentedWidget, List[AugmentedWidget]
+]:
+    """Provide QWidget classes to be instantiated and docked on the viewer.
+
+    This hook specification is marked as experimental as the API or how the
+    returned value is handled may change here more frequently then the
+    rest of the codebase.
+
+    Returns
+    -------
+    dock_widget(s) : QWidget class or list of QWidget classes
+        Implementations should return either QWidget classes (one or a list),
+        or tuple(s) containing QWidget classes as well as a dictionary
+        containing keyword arguments for
+        :meth:`napari.qt.Window.add_dock_widget` (though note that the
+        ``shortcut=`` keyword is not yet supported).
     """

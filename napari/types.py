@@ -19,6 +19,9 @@ if TYPE_CHECKING:
     import zarr
 
 
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
 # Ultimately, this should come from https://github.com/napari/image-types
@@ -41,6 +44,13 @@ ExcInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
     Tuple[None, None, None],
 ]
+
+# Types for GUI HookSpecs
+AugmentedFunction = Union[
+    Callable, Tuple[Callable, dict], Tuple[Callable, dict, dict]
+]
+AugmentedWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
+
 
 # these types are mostly "intentionality" placeholders.  While it's still hard
 # to use actual types to define what is acceptable data for a given layer,
