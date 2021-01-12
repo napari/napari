@@ -35,7 +35,6 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 
 ## Improvements
 - Use evented dataclass for dims (#1917)
-- Replace layer dims with private named tuple (#1919)
 - Add information about screen resolution (#1957)
 - Add asdict and update to evented dataclass (#1966)
 - async-30: ChunkLoader Stats (#1972)
@@ -56,7 +55,6 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - async-42: New LoaderPool and remove ChunkKey (#2025)
 - Two small path improvements (#2030)
 - Cleanup dockwidget removal (#2036)
-- Prepare for evented viewer (#2038)
 - Add a MousemapProvider (#2040)
 - Cleanup warnings in tests (#2041)
 - async-43: New LoaderPoolGroup (#2049)
@@ -84,17 +82,22 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - Coerce name before layer is added to layerlist (#2087)
 - Fix stale data in magicgui `*Data` parameters (#2088)
 
+
 ## API Changes
-- Drop layer.shape (#1990)
-- Drop image layer.shape (#2002)
-- Move keymap handling off viewer (#2003)
-- Drop scale, axes background color, connect directly to viewer (#2037)
+- The ``axis`` parameter is no longer present on the ``current_step``, ``range``, or ``axis_labels`` events. Instead a single event is emitted whenever the tuple changes (#1917)
+- The deprecated public layer dims has been removed in 0.4.2 and the private ``layer._dims`` is now a NamedTuple (#1919)
+- The deprecated ``layer.shape`` arrtibute has been removed. Instead you should use the ``layer.extent.data`` and ``layer.extent.world attributes`` to get the extent of the data in data or world coordinates (#1990, #2002)
+- Keymap handling has been moved off the ``Viewer`` and ``Viewer.keymap_providers`` has been removed. The ``Viewer`` itself
+can still provide keymappings, but no longer handles keymappings from other objects like the layers. (#2003)
+- Drop scale background color and axes background color. These colors are now determined by defaults or the canvas background color. (#2037)
+- ``event.text`` was renamed ``event.value`` for the events emitted when changing ``Viewer.status``, ``Viewer.title``,
+``Viewer.help``, and ``event.item`` was renamed ``event.value`` for the event emitted when changing ``Viewer.active_layer`` (#2038)
 
 
 ## Deprecations
-- Move interactive from viewer to camera (#2008)
-- Move palette off viewer (#2031)
-- Change/(deprecate) magicgui return type annotation registration (#2079)
+- The ``Viewer.interactive`` parameter has been deprecated, instead you should use ``Viewer.camera.interactive`` (#2008)
+- The ``Viewer.palette`` attribute has been deprecated. To access the palette you can get it using ``napari.utils.theme.register_theme`` dictionary using the ``viewer.theme`` as the key (#2031)
+- Annotating a magicgui function with a return type of ``napari.layers.Layer`` is deprecated. To indicate that your function returns a layer data tuple, please use a return annotation of ``napari.types.LayerDataTuple`` or ``List[napari.types.LayerDataTuple]``(#2079)
 
 
 ## Build Tools and Support
