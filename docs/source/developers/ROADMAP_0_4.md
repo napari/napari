@@ -25,6 +25,18 @@ involving multithreaded computing, which can sometimes crash napari in
 unpredictable ways. We therefore want to continue building napari with this
 goal in mind, and specifically by tackling the following:
 
+- **Clean up and refactor much of our code**. As we added more and more
+  features in the 0.3 series of releases, a lot of the code has grown unwieldy
+  and complex. We want to simplify the structure of the code to make developing
+  in napari a fun and friendly experience for new contributors. We launched
+  0.4.0 with the [evented
+  dataclass](https://github.com/napari/napari/issues/1475) model, and are
+  moving for an [even simpler model with
+  pydantic](https://github.com/napari/napari/issues/2009). Additionally, we
+  will simplify the entire architecture of our models to make the flow of code
+  execution and data transfer easier to follow everywhere (see e.g.
+  [#1353](https://github.com/napari/napari/issues/1353)).
+
 - **Better support for viewing big datasets**. Currently, napari is fast when
   viewing on-disk datasets that can be naturally sliced along one axis (e.g. a
   time series) *and where loading one slice is fast*. However, when the loading
