@@ -81,6 +81,7 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - Add deprecated parameters for updating theme (#2074)
 - Coerce name before layer is added to layerlist (#2087)
 - Fix stale data in magicgui `*Data` parameters (#2088)
+- Make dock widgets non-tabbed (#2096)
 
 
 ## API Changes
