@@ -89,7 +89,11 @@ def register_dock_widget(
         dock_widgets[key] = (_cls, kwargs)
 
 
-valid_magic_kwargs = set(signature(magicgui).parameters)
+magicgui_sig = {
+    name
+    for name, p in signature(magicgui).parameters.items()
+    if p.kind is p.KEYWORD_ONLY
+}
 
 
 def register_function_widget(
@@ -133,11 +137,14 @@ def register_function_widget(
             )
             continue
 
-        if set(magic_kwargs) - valid_magic_kwargs:
+        valid_magic_kwargs = set(signature(func).parameters) | magicgui_sig
+        extra_kwargs = set(magic_kwargs) - valid_magic_kwargs
+        if extra_kwargs:
             warn(
                 f'Plugin {plugin_name!r} provided invalid magicgui kwargs '
                 f'to {hook_name} for function {func.__name__!r}: '
-                f'{set(magic_kwargs) - valid_magic_kwargs}. Widget ignored.'
+                f'{extra_kwargs}. Valid kwargs are {valid_magic_kwargs}.'
+                'Widget ignored.'
             )
             continue
 

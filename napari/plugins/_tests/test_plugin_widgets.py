@@ -25,6 +25,7 @@ fwidget_args = {
     'bad_tuple3': (func, 1, {}),
     'bad_double_tuple': ((func, {}), (func2, {})),
     'bad_magic_kwargs': (func, {"non_magicgui_kwarg": True}),
+    'good_magic_kwargs': (func, {'call_button': True, "x": {'max': 200}}),
 }
 
 
