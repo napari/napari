@@ -281,6 +281,12 @@ class Window:
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
         toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
+        toggle_canvas_color = QAction('Toggle canvas color', self._qt_window)
+        toggle_canvas_color.setShortcut('Ctrl+Shift+B')
+        toggle_canvas_color.setStatusTip('Toggle canvas color')
+        toggle_canvas_color.triggered.connect(
+            self.qt_viewer.viewer._toggle_canvas_color
+        )
         toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
         toggle_fullscreen.setShortcut('Ctrl+F')
         toggle_fullscreen.setStatusTip('Toggle full screen')
@@ -294,6 +300,7 @@ class Window:
         self.view_menu.addAction(toggle_fullscreen)
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
+        self.view_menu.addAction(toggle_canvas_color)
         self.view_menu.addAction(toggle_play)
         self.view_menu.addSeparator()
 

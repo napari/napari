@@ -181,10 +181,12 @@ class QtViewer(QSplitter):
         }
 
         self._update_theme()
+        self._update_canvas_color()
         self._on_active_layer_change()
 
         self.viewer.events.active_layer.connect(self._on_active_layer_change)
         self.viewer.events.theme.connect(self._update_theme)
+        self.viewer.events.canvas_color.connect(self._update_canvas_color)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -543,7 +545,9 @@ class QtViewer(QSplitter):
         if self._console is not None:
             self.console._update_theme(theme, themed_stylesheet)
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = theme['canvas']
+
+    def _update_canvas_color(self, event=None):
+        self.canvas.bgcolor = self.viewer.canvas_color
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.

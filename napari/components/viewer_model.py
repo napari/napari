@@ -32,6 +32,7 @@ from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
 DEFAULT_THEME = 'dark'
+DEFAULT_CANVAS_BACKGROUND = 'black'
 
 
 class ViewerModel(KeymapProvider, MousemapProvider):
@@ -74,6 +75,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             active_layer=Event,
             theme=Event,
             layers_change=Event,
+            canvas_color=Event,
         )
 
         self.dims = Dims(
@@ -90,6 +92,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         self._help = ''
         self._title = title
         self._theme = DEFAULT_THEME
+        self._canvas_color = DEFAULT_CANVAS_BACKGROUND
 
         self._active_layer = None
         self.grid = GridCanvas()
@@ -148,6 +151,18 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             f"Palette not found among existing themes; "
             f"options are {available_themes()}."
         )
+
+    @property
+    def canvas_color(self):
+        """rurn canvas background"""
+        return self._canvas_color
+
+    @canvas_color.setter
+    def canvas_color(self, color):
+        if self._canvas_color == color:
+            return
+        self._canvas_color = color
+        self.events.canvas_color(value=self.theme)
 
     @property
     def theme(self):
@@ -378,6 +393,13 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         theme_names = available_themes()
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
+
+    def _toggle_canvas_color(self):
+        """Switch to next theme in list of themes"""
+        if self.canvas_color == "black":
+            self.canvas_color = "white"
+        else:
+            self.canvas_color = "black"
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
