@@ -705,8 +705,8 @@ class Points(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            maxs = np.max(self.data, axis=0) + self._current_size
-            mins = np.min(self.data, axis=0) - self._current_size
+            maxs = np.max(self.data + self.size, axis=0)
+            mins = np.min(self.data - self.size, axis=0)
             extrema = np.vstack([mins, maxs])
         return extrema
 

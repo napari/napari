@@ -1486,8 +1486,8 @@ def test_interaction_box():
 def test_world_data_extent():
     """Test extent after applying transforms."""
     data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
-    min_val = (-2, -5, 0)
-    max_val = (7, 30, 15)
+    min_val = (-12, -15, -10)
+    max_val = (17, 40, 25)
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

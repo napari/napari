@@ -307,6 +307,8 @@ def test_swappable_dims():
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
     labels_name = viewer.add_labels(labels_data).name
+    for i in range(labels_data.ndim):
+        viewer.dims.set_point(i, 0)
     assert np.all(
         viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
     )
