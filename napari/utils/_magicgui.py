@@ -15,6 +15,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from .. import layers, types
+from ..components.viewer_model import _normalize_layer_data
 from ..utils.misc import ensure_list_of_layer_data_tuple
 from ..viewer import Viewer
 
@@ -117,7 +118,26 @@ def add_layer_data_to_viewer(gui, result, return_type):
     except KeyError:
         layer_type = return_type.__name__.replace("Data", "").lower()
         adder = getattr(viewer, f'add_{layer_type}')
-        adder(data=result, name=gui.result_name)
+        layer = adder(data=result, name=gui.result_name)
+        layer._source = gui
+        add_napari_layers_getter(gui)
+
+
+def add_napari_layers_getter(gui):
+    if hasattr(gui, 'napari_layers'):
+        return
+
+    def _get_gui_layers():
+        viewer = find_viewer_ancestor(gui)
+        if not viewer:
+            return
+        return tuple(
+            layer
+            for layer in viewer.layers
+            if getattr(layer, '_source', None) is gui
+        )
+
+    gui.napari_layers = _get_gui_layers
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
@@ -169,25 +189,35 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
             'napari.types.LayerDataTuple did not return LayerData tuple(s)'
         )
 
-    for layer_datum in result:
-        # if the layer data has a meta dict with a 'name' key in it...
-        if (
-            len(layer_datum) > 1
-            and isinstance(layer_datum[1], dict)
-            and layer_datum[1].get("name")
-        ):
-            # then try to update the viewer layer with that name.
+    add_napari_layers_getter(gui)
+    for n, layer_datum in enumerate(result):
+        data, meta, layer_type = _normalize_layer_data(layer_datum)
+        layer_name = meta.get("name")
+        if not layer_name:
+            layer_name = gui.result_name + (f" [{n}]" if n else '')
+
+        _id = meta.pop('id', None)
+        layer = None
+        if _id:
             try:
-                layer = viewer.layers[layer_datum[1].get('name')]
-                layer.data = layer_datum[0]
-                for k, v in layer_datum[1].items():
-                    setattr(layer, k, v)
-                continue
-            except KeyError:  # layer not in the viewer
+                layer = next(lay for lay in viewer.layers if id(lay) == _id)
+            except StopIteration:
                 pass
-        # otherwise create a new layer from the layer data
-        layer = viewer._add_layer_from_data(*layer_datum)
-        layer._source = gui
+        # then try to update the viewer layer with that name.
+        try:
+            layer = layer or viewer.layers[layer_name]
+            layer.data = data
+            for k, v in meta.items():
+                setattr(layer, k, v)
+        except KeyError:  # layer not in the viewer
+            # otherwise create a new layer from the layer data
+            meta['name'] = layer_name
+            layer = viewer._add_layer_from_data(data, meta, layer_type)
+            if isinstance(layer, list):
+                for x in layer:
+                    x._source = gui
+            else:
+                layer._source = gui
 
 
 def find_viewer_ancestor(widget) -> Optional[Viewer]:
@@ -392,4 +422,6 @@ def add_layer_to_viewer(
         return
 
     # After 0.4.3 a return type of a Layer subclass should return a layer.
-    viewer.add_layer(result)
+    layer = viewer.add_layer(result)
+    layer._source = gui
+    add_napari_layers_getter(gui)

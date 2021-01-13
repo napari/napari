@@ -225,3 +225,23 @@ def test_magicgui_data_updated(make_test_viewer):
     points.add((15, 15))
     # func will have been called with 1 data including 2 points
     np.testing.assert_allclose(_returns[-1], np.array([[10, 10], [15, 15]]))
+
+
+def test_magicgui_can_change_layer_name(make_test_viewer):
+    viewer = make_test_viewer()
+
+    @magicgui
+    def func() -> types.LayerDataTuple:
+        layers = func.napari_layers() if hasattr(func, 'napari_layers') else ()
+        first_id = id(layers[0]) if layers else None
+        name = 'second' if layers else 'first'
+        return (np.random.rand(10, 10), {'id': first_id, 'name': name})
+
+    viewer.window.add_dock_widget(func)
+    assert not viewer.layers
+    func()
+    assert viewer.layers[0].name == 'first'
+    func()
+    assert viewer.layers[0].name == 'second'
+    func()
+    assert viewer.layers[0].name == 'second'
