@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from magicgui import magicgui
 
-from napari import types
+from napari import Viewer, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer, Points
 from napari.utils.misc import all_subclasses
@@ -225,3 +225,18 @@ def test_magicgui_data_updated(make_test_viewer):
     points.add((15, 15))
     # func will have been called with 1 data including 2 points
     np.testing.assert_allclose(_returns[-1], np.array([[10, 10], [15, 15]]))
+
+
+def test_magicgui_get_viewer(make_test_viewer):
+    """Test that annotating with napari.Viewer gets the Viewer"""
+    viewer = make_test_viewer()
+
+    @magicgui
+    def func(v: Viewer):
+        return v
+
+    assert func() is None
+    viewer.window.add_dock_widget(func)
+    assert func() is viewer
+    # no widget should be shown
+    assert not func.v.visible

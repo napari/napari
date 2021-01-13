@@ -62,6 +62,8 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - Create QApplication on demand in viewer.Window, add napari.run function (#2056)
 - Remove global app logic from Window init (#2065)
 - async-45: Docs and Cleanup (#2067)
+- Better bound magicgui viewer (#2100)
+
 
 ## Bug Fixes
 - Fix append and remove from layerlist (#1955)

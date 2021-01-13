@@ -57,7 +57,7 @@ def register_types_with_magicgui():
     register_type(
         layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
     )
-    register_type(Viewer, choices=get_viewers)
+    register_type(Viewer, bind=find_viewer_ancestor)
     register_type(
         types.LayerDataTuple,
         return_callback=add_layer_data_tuples_to_viewer,
@@ -214,17 +214,6 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
             return parent.qt_viewer.viewer
         parent = parent.parent()
     return None
-
-
-def get_viewers(gui) -> Tuple[Viewer, ...]:
-    """Return the viewer that the magicwidget is in, or a list of all Viewers."""
-    viewer = find_viewer_ancestor(gui)
-    if viewer:
-        return (viewer,)
-    else:
-        # until we maintain a list of instantiated viewers, this might be the
-        # only option
-        return tuple(v for v in globals().values() if isinstance(v, Viewer))
 
 
 def get_layers(gui: 'CategoricalWidget') -> List[layers.Layer]:
