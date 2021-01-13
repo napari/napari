@@ -665,7 +665,7 @@ class Window:
         return dock_widget
 
     def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, tabify=True
+        self, dock_widget: QtViewerDockWidget, tabify=False
     ):
         """Add a QtViewerDockWidget to the main window
 
