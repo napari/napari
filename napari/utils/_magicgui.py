@@ -76,6 +76,28 @@ def register_types_with_magicgui():
         )
 
 
+def _add_napari_layers_getter(gui):
+    """Add a `napari_layers` function to `gui`.
+
+    When called, `widget.napari_layers()` will return a tuple containing all of
+    the *existing* layers created by this widget that are in the layer list.
+    """
+    if hasattr(gui, 'napari_layers'):
+        return
+
+    def _get_gui_layers():
+        viewer = find_viewer_ancestor(gui)
+        if not viewer:
+            return
+        return tuple(
+            layer
+            for layer in viewer.layers
+            if getattr(layer, '_source', None) is gui
+        )
+
+    gui.napari_layers = _get_gui_layers
+
+
 def add_layer_data_to_viewer(gui, result, return_type):
     """Show a magicgui result in the viewer.
 
@@ -120,24 +142,7 @@ def add_layer_data_to_viewer(gui, result, return_type):
         adder = getattr(viewer, f'add_{layer_type}')
         layer = adder(data=result, name=gui.result_name)
         layer._source = gui
-        add_napari_layers_getter(gui)
-
-
-def add_napari_layers_getter(gui):
-    if hasattr(gui, 'napari_layers'):
-        return
-
-    def _get_gui_layers():
-        viewer = find_viewer_ancestor(gui)
-        if not viewer:
-            return
-        return tuple(
-            layer
-            for layer in viewer.layers
-            if getattr(layer, '_source', None) is gui
-        )
-
-    gui.napari_layers = _get_gui_layers
+        _add_napari_layers_getter(gui)
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
@@ -189,7 +194,7 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
             'napari.types.LayerDataTuple did not return LayerData tuple(s)'
         )
 
-    add_napari_layers_getter(gui)
+    _add_napari_layers_getter(gui)
     for n, layer_datum in enumerate(result):
         data, meta, layer_type = _normalize_layer_data(layer_datum)
         layer_name = meta.get("name")
@@ -424,4 +429,4 @@ def add_layer_to_viewer(
     # After 0.4.3 a return type of a Layer subclass should return a layer.
     layer = viewer.add_layer(result)
     layer._source = gui
-    add_napari_layers_getter(gui)
+    _add_napari_layers_getter(gui)
