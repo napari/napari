@@ -82,6 +82,8 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - Coerce name before layer is added to layerlist (#2087)
 - Fix stale data in magicgui `*Data` parameters (#2088)
 - Make dock widgets non-tabbed (#2096)
+- Fix overly strict magic kwargs (#2099)
+- Undo calling pyrcc with python sys.executable (#2102)
 
 
 ## API Changes
