@@ -136,6 +136,17 @@ def test_changing_theme(make_test_viewer):
         viewer.theme = 'nonexistent_theme'
 
 
+def test_canvas_color_change(make_test_viewer):
+    viewer = make_test_viewer()
+    assert viewer.canvas_color == "black"
+    screenshot_black = viewer.screenshot()
+    assert np.all(screenshot_black[..., :3] == 0)
+    viewer.canvas_color = "white"
+    assert viewer.canvas_color == "white"
+    screenshot_black = viewer.screenshot()
+    assert np.all(screenshot_black[..., :3] == 255)
+
+
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
