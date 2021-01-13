@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pytest
+from qtpy.QtCore import QPoint
 
 from napari import layers
 from napari._tests.utils import (
@@ -117,6 +118,16 @@ def test_changing_theme(make_test_viewer):
 
     screenshot_light = viewer.screenshot(canvas_only=False)
     equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # As canvas is main part of window (about 60%) so its area must be masked in these comparison.
+    size = viewer.window.qt_viewer.canvas.native.size()
+    coord = viewer.window.qt_viewer.canvas.native.mapTo(
+        viewer.window._qt_window, QPoint(0, 0)
+    )
+    equal[
+        coord.y() : coord.y() + size.height(),
+        coord.x() : coord.x() + size.width(),
+    ] = False
 
     # more than 99.5% of the pixels have changed
     assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
