@@ -1,10 +1,10 @@
-from pathlib import Path
-import napari
-import pytest
+import os
 import runpy
+from pathlib import Path
 
-# import os
+import pytest
 
+import napari
 
 # not testing these examples
 skip = [
@@ -21,8 +21,9 @@ examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
 
 @pytest.fixture
 def qapp():
-    from napari._qt.qt_event_loop import get_app
     from qtpy.QtCore import QTimer
+
+    from napari._qt.qt_event_loop import get_app
 
     # it's important that we use get_app so that it connects to the
     # app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -35,14 +36,14 @@ def qapp():
     yield app
 
 
-# @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
-@pytest.mark.skipif(bool(not examples), reason="Examples directory not found.")
+@pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
+@pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
-    from napari._qt.qt_main_window import Window
     from napari._qt.exceptions import ExceptionHandler
+    from napari._qt.qt_main_window import Window
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
