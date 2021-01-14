@@ -562,7 +562,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        data_extent = self._extent_data
+        return self._get_extent_world(self._extent_data)
+
+    def _get_extent_world(self, data_extent):
+        """Range of layer in world coordinates base on provided data_extent
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
         D = data_extent.shape[1]
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
@@ -579,9 +587,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
+        data = self._extent_data
         return Extent(
-            data=self._extent_data,
-            world=self._extent_world,
+            data=data,
+            world=self._get_extent_world(data),
             step=abs(self.scale),
         )
 
