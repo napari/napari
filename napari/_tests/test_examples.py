@@ -2,7 +2,7 @@ from pathlib import Path
 import napari
 import pytest
 import runpy
-# import os
+import os
 
 
 # not testing these examples
@@ -34,7 +34,7 @@ def qapp():
 
 # @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
 # @pytest.mark.skipif(not examples, reason="Examples directory not found.")
-@pytest.mark.parametrize("fname", examples, ids=lambda x: Path(x).name)
+@pytest.mark.parametrize("fname", examples, ids=lambda x: os.path.basename(x))
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
