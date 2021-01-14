@@ -1,13 +1,10 @@
-from pathlib import Path
-import napari
-import pytest
-import runpy
 import os
+import runpy
+from pathlib import Path
 
-if os.getenv("CI"):
-    pytest.skip(
-        "Need to debug segfaults before re-enabling.", allow_module_level=True
-    )
+import pytest
+
+import napari
 
 # not testing these examples
 skip = [
@@ -16,14 +13,17 @@ skip = [
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
 ]
-example_dir = Path(napari.__file__).parent.parent / 'examples'
-examples = [f for f in example_dir.glob("*.py") if f.name not in skip]
+EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
+# using f.name here and re-joining at `run_path()` for test key presentation
+# (works even if the examples list is empty, as opposed to using an ids lambda)
+examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
 
 
 @pytest.fixture
 def qapp():
-    from napari._qt.qt_event_loop import get_app
     from qtpy.QtCore import QTimer
+
+    from napari._qt.qt_event_loop import get_app
 
     # it's important that we use get_app so that it connects to the
     # app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -36,12 +36,14 @@ def qapp():
     yield app
 
 
-@pytest.mark.parametrize("fname", examples, ids=lambda x: Path(x).name)
+@pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
+@pytest.mark.skipif(not examples, reason="No examples were found.")
+@pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
-    from napari._qt.qt_main_window import Window
     from napari._qt.exceptions import ExceptionHandler
+    from napari._qt.qt_main_window import Window
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
@@ -53,4 +55,4 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(ExceptionHandler, 'handle', raise_errors)
 
     # run the example!
-    assert runpy.run_path(str(fname))
+    assert runpy.run_path(str(EXAMPLE_DIR / fname))

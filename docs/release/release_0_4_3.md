@@ -127,6 +127,7 @@ can still provide keymappings, but no longer handles keymappings from other obje
 - Skip testing examples on CI (#2094)
 - Fix roadmap headings in docs (#2097)
 - Add PR 2106 to 0.4.3 release notes (#2107)
+- Fix `pytest --pyargs napari` test on pip install. Add CI test (#2109)
 
 
 ## 9 authors added to this release (alphabetical)
