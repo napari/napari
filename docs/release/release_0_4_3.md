@@ -63,6 +63,7 @@ Finally we've added our [0.4 series roadmap](https://napari.org/docs/dev/develop
 - Remove global app logic from Window init (#2065)
 - async-45: Docs and Cleanup (#2067)
 - Better bound magicgui viewer (#2100)
+- reduce call of _extent_data in layer (#2106)
 
 
 ## Bug Fixes
