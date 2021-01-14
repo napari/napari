@@ -352,6 +352,20 @@ def napari_experimental_provide_function_widget() -> Union[
         while the third element should provide keyword arguments for
         :meth:`napari.qt.Window.add_dock_widget` (though note that the
         ``shortcut=`` keyword is not yet supported).
+        
+    Examples
+    --------
+    >>> from magicgui import magicgui
+    >>> from napari_plugin_engine import napari_hook_implementation
+    >>> 
+    >>> @magicgui
+    >>> def my_function(input_image : 'napari.types.ImageData', factor : float = 1):
+    >>>     result_image = input_image * factor
+    >>>     return result_image
+    >>> 
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_function_widget():
+    >>>     return my_function
     """
 
 
@@ -373,4 +387,19 @@ def napari_experimental_provide_dock_widget() -> Union[
         containing keyword arguments for
         :meth:`napari.qt.Window.add_dock_widget` (though note that the
         ``shortcut=`` keyword is not yet supported).
+        
+    Examples
+    --------
+    >>> from qtpy.QtWidgets import QWidget
+    >>> from napari_plugin_engine import napari_hook_implementation
+    >>> 
+    >>> class MyWidget(QWidget):
+    >>>     def __init__(self, napari_viewer):
+    >>>         self.viewer = napari_viewer
+    >>>         super().__init__()
+    >>>         # ... add Qt GUI elements accessing the viewer here
+    >>> 
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_dock_widget():
+    >>>     return MyWidget    
     """
