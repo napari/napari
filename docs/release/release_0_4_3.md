@@ -126,13 +126,15 @@ can still provide keymappings, but no longer handles keymappings from other obje
 - Add examples tests (#2085)
 - Skip testing examples on CI (#2094)
 - Fix roadmap headings in docs (#2097)
+- Add PR 2106 to 0.4.3 release notes (#2107)
 
 
-## 8 authors added to this release (alphabetical)
+## 9 authors added to this release (alphabetical)
 
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Heath Patterson](https://github.com/napari/napari/commits?author=NHPatterson) - @NHPatterson
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [kir0ul](https://github.com/napari/napari/commits?author=kir0ul) - @kir0ul
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
