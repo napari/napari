@@ -149,4 +149,4 @@ jobs:
           pip install pytest-xvfb
           # pip install this git sha directly from github
           pip install pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
-          pytest --pyargs napari
+          pytest --pyargs napari -v --color=yes
