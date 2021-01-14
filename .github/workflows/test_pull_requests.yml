@@ -129,7 +129,7 @@ jobs:
         uses: codecov/codecov-action@v1
 
   test_pip_install:
-    name: Test pip install
+    name: ubuntu-latest 3.8 pip install
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python 3.8
