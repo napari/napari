@@ -165,7 +165,7 @@ jobs:
           update_existing: true
 
   test_pip_install:
-    name: ubuntu-18.04 3.8 pip install
+    name: ubuntu-latest 3.8 pip install
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python 3.8
