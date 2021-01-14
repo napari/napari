@@ -2,7 +2,8 @@ from pathlib import Path
 import napari
 import pytest
 import runpy
-import os
+
+# import os
 
 
 # not testing these examples
@@ -12,8 +13,10 @@ skip = [
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
 ]
-example_dir = Path(napari.__file__).parent.parent / 'examples'
-examples = [str(f) for f in example_dir.glob("*.py") if f.name not in skip]
+EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
+# using f.name here and re-joining at `run_path()` for test key presentation
+# (works even if the examples list is empty, as opposed to using an ids lambda)
+examples = [f.name for f in EXAMPLE_DIR.glob("*.py") if f.name not in skip]
 
 
 @pytest.fixture
@@ -33,8 +36,8 @@ def qapp():
 
 
 # @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
-# @pytest.mark.skipif(not examples, reason="Examples directory not found.")
-@pytest.mark.parametrize("fname", examples, ids=lambda x: os.path.basename(x))
+@pytest.mark.skipif(bool(not examples), reason="Examples directory not found.")
+@pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
@@ -51,4 +54,4 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(ExceptionHandler, 'handle', raise_errors)
 
     # run the example!
-    assert runpy.run_path(fname)
+    assert runpy.run_path(str(EXAMPLE_DIR / fname))
