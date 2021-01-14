@@ -159,7 +159,7 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: "[test-bot] Comprehensive tests failing"
+          TITLE: '[test-bot] Comprehensive tests failing'
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
