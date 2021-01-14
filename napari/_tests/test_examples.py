@@ -2,12 +2,8 @@ from pathlib import Path
 import napari
 import pytest
 import runpy
-import os
+# import os
 
-if os.getenv("CI"):
-    pytest.skip(
-        "Need to debug segfaults before re-enabling.", allow_module_level=True
-    )
 
 # not testing these examples
 skip = [
@@ -17,7 +13,7 @@ skip = [
     'live_tiffs_generator.py',
 ]
 example_dir = Path(napari.__file__).parent.parent / 'examples'
-examples = [f for f in example_dir.glob("*.py") if f.name not in skip]
+examples = [str(f) for f in example_dir.glob("*.py") if f.name not in skip]
 
 
 @pytest.fixture
@@ -36,6 +32,8 @@ def qapp():
     yield app
 
 
+# @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
+# @pytest.mark.skipif(not examples, reason="Examples directory not found.")
 @pytest.mark.parametrize("fname", examples, ids=lambda x: Path(x).name)
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
@@ -53,4 +51,4 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     monkeypatch.setattr(ExceptionHandler, 'handle', raise_errors)
 
     # run the example!
-    assert runpy.run_path(str(fname))
+    assert runpy.run_path(fname)
