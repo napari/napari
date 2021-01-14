@@ -130,7 +130,7 @@ jobs:
       - name: Install tox-conda
         if: runner.os == 'macOS' && matrix.python == '3.9'
         # see https://github.com/napari/napari/pull/2061
-        # can use tox-conda after https://github.com/tox-dev/tox-conda/pull/59 merges 
+        # can use tox-conda after https://github.com/tox-dev/tox-conda/pull/59 merges
         run: pip install git+https://github.com/tlambert-forks/tox-conda.git
 
       # here we pass off control of environment creation and running of tests to tox
@@ -161,7 +161,30 @@ jobs:
           PYTHON: ${{ matrix.python }}
           BACKEND: ${{ matrix.toxenv }}
           RUN_ID: ${{ github.run_id }}
-          TITLE: '[test-bot] Comprehensive tests failing'
+          TITLE: "[test-bot] Comprehensive tests failing"
         with:
           filename: .github/TEST_FAIL_TEMPLATE.md
           update_existing: true
+
+  test_pip_install:
+    name: Test pip install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Linux libraries
+        run: |
+          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+
+      - name: Test
+        run: |
+          pip install --upgrade pip
+          pip install pytest-xvfb
+          # pip install this git sha directly from github
+          pip install pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pytest --pyargs napari -v --color=yes
