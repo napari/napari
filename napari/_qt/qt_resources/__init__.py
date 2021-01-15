@@ -83,6 +83,9 @@ def import_resources(
         Path to the python resource file. File is already imported under `napari._qt_resources name`.
         Copy this file to make the SVGs and other resources available in bundled application.
 
+    loader : Callable[[], module]
+        Module loader
+
     Raises
     ------
     PermissionError
