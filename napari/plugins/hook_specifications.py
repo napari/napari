@@ -352,6 +352,20 @@ def napari_experimental_provide_function_widget() -> Union[
         while the third element should provide keyword arguments for
         :meth:`napari.qt.Window.add_dock_widget` (though note that the
         ``shortcut=`` keyword is not yet supported).
+
+    Examples
+    --------
+    >>> from napari.types import ImageData, LayerDataTuple
+    >>>
+    >>> def my_function(image : ImageData) -> LayerDataTuple:
+    >>>     # process the image
+    >>>     result = -image
+    >>>     # return it + some layer properties
+    >>>     return result, {'colormap':'turbo'}
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_function_widget():
+    >>>     return my_function
     """
 
 
@@ -373,4 +387,31 @@ def napari_experimental_provide_dock_widget() -> Union[
         containing keyword arguments for
         :meth:`napari.qt.Window.add_dock_widget` (though note that the
         ``shortcut=`` keyword is not yet supported).
+
+    Examples
+    --------
+    >>> from qtpy.QtWidgets import QWidget
+    >>> from napari_plugin_engine import napari_hook_implementation
+    >>>
+    >>> class MyWidget(QWidget):
+    >>>     def __init__(self, napari_viewer):
+    >>>         self.viewer = napari_viewer
+    >>>         super().__init__()
+    >>>
+    >>>         # initialize layout
+    >>>         layout = QGridLayout()
+    >>>
+    >>>         # add a button
+    >>>         btn = QPushButton('Click me!', self)
+    >>>         def trigger():
+    >>>             print("napari has", len(napari_viewer.layers), "layers")
+    >>>         btn.clicked.connect(trigger)
+    >>>         layout.addWidget(btn)
+    >>>
+    >>>         # activate layout
+    >>>         self.setLayout(layout)
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_dock_widget():
+    >>>     return MyWidget
     """
