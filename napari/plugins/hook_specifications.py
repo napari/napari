@@ -355,13 +355,13 @@ def napari_experimental_provide_function_widget() -> Union[
         
     Examples
     --------
-    >>> from magicgui import magicgui
-    >>> from napari_plugin_engine import napari_hook_implementation
+    >>> from napari.types import ImageData, LayerDataTuple
     >>> 
-    >>> @magicgui
-    >>> def my_function(input_image : 'napari.types.ImageData', factor : float = 1):
-    >>>     result_image = input_image * factor
-    >>>     return result_image
+    >>> def my_function(image : ImageData) -> LayerDataTuple:
+    >>>     # process the image
+    >>>     result = -image
+    >>>     # return it + some layer properties
+    >>>     return result, {'colormap':'turbo'}
     >>> 
     >>> @napari_hook_implementation
     >>> def napari_experimental_provide_function_widget():
@@ -397,7 +397,19 @@ def napari_experimental_provide_dock_widget() -> Union[
     >>>     def __init__(self, napari_viewer):
     >>>         self.viewer = napari_viewer
     >>>         super().__init__()
-    >>>         # ... add Qt GUI elements accessing the viewer here
+    >>> 
+    >>>         # initialize layout
+    >>>         layout = QGridLayout()
+    >>> 
+    >>>         # add a button
+    >>>         btn = QPushButton('Click me!', self)
+    >>>         def trigger():
+    >>>             print("napari has", len(napari_viewer.layers), "layers")
+    >>>         btn.clicked.connect(trigger)
+    >>>         layout.addWidget(btn)
+    >>> 
+    >>>         # activate layout
+    >>>         self.setLayout(layout)
     >>> 
     >>> @napari_hook_implementation
     >>> def napari_experimental_provide_dock_widget():
