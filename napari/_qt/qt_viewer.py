@@ -287,16 +287,19 @@ class QtViewer(QSplitter):
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
-            from .widgets.qt_console import QtConsole
+            try:
+                from napari_animation import QtConsole
 
-            self.console = QtConsole({'viewer': self.viewer})
+                self.console = QtConsole(self.viewer)
+            except ImportError:
+                self._console = None
         return self._console
 
     @console.setter
     def console(self, console):
         self._console = console
-        self.dockConsole.setWidget(console)
-        self._update_theme()
+        if console is not None:
+            self.dockConsole.setWidget(console)
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -540,8 +543,6 @@ class QtViewer(QSplitter):
         # template and apply the primary stylesheet
         theme = get_theme(self.viewer.theme)
         themed_stylesheet = template(self.raw_stylesheet, **theme)
-        if self._console is not None:
-            self.console._update_theme(theme, themed_stylesheet)
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = theme['canvas']
 
