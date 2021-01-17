@@ -406,6 +406,7 @@ def test_event_group_depr():
 
 
 def test_array_like_setitem():
+    """Test that EventedList.__setitem__ works for array-like items"""
     array = np.array((10, 10))
     evented_list = EventedList([array])
     evented_list[0] = array
