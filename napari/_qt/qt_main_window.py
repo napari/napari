@@ -29,7 +29,6 @@ from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.theme import get_theme, template
-from ..viewer import Viewer
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -553,6 +552,7 @@ class Window:
         key : 2-tuple of str
             Plugin name and widget name.
         """
+        from ..viewer import Viewer
         full_name = plugins.menu_item_template.format(*key)
         if full_name in self._dock_widgets:
             warnings.warn(f'Dock widget {key!r} already added')
