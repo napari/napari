@@ -5,7 +5,6 @@ from typing import List
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
-from pkg_resources import parse_version
 from qtpy.QtCore import QProcess, QProcessEnvironment, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
@@ -268,6 +267,8 @@ class QPluginList(QListWidget):
 
     @Slot(ProjectInfo)
     def tag_outdated(self, project_info: ProjectInfo):
+        from pkg_resources import parse_version
+
         for item in self.findItems(project_info.name, Qt.MatchFixedString):
             current = item.version
             latest = project_info.version
