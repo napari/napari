@@ -288,7 +288,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             try:
-                from napari_animation import QtConsole
+                from napari_console import QtConsole
 
                 self.console = QtConsole(self.viewer)
             except ImportError:
