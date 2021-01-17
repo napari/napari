@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
@@ -38,6 +38,18 @@ from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
 # TODO: add error icon and handle pip install errors
+
+if TYPE_CHECKING:
+    import packaging.version
+
+
+def parse_version(v) -> 'packaging.version._BaseVersion':
+    import packaging.version
+
+    try:
+        return packaging.version.Version(v)
+    except packaging.version.InvalidVersion:
+        return packaging.version.LegacyVersion(v)
 
 
 # TODO: add queue to handle clicks when already processing
@@ -267,8 +279,6 @@ class QPluginList(QListWidget):
 
     @Slot(ProjectInfo)
     def tag_outdated(self, project_info: ProjectInfo):
-        from pkg_resources import parse_version
-
         for item in self.findItems(project_info.name, Qt.MatchFixedString):
             current = item.version
             latest = project_info.version
