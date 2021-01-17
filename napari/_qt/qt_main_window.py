@@ -553,6 +553,7 @@ class Window:
             Plugin name and widget name.
         """
         from ..viewer import Viewer
+
         full_name = plugins.menu_item_template.format(*key)
         if full_name in self._dock_widgets:
             warnings.warn(f'Dock widget {key!r} already added')
