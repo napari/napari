@@ -107,7 +107,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def __setitem__(self, key, value):
         old = self._list[key]
-        if value == old:
+        if value is old:
             return
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
