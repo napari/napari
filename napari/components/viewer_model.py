@@ -480,7 +480,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         warnings.warn(
             (
                 "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
+                " Instead you should use the viewer.grid.enabled = True to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
             ),
