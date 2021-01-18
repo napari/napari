@@ -1,0 +1,35 @@
+# Table of content
+# Learn more at https://jupyterbook.org/customize/toc.html
+#
+- file: index
+
+- file: guides/index
+  sections:
+    - file: guides/event_loop
+    - file: guides/threading
+    - file: guides/perfmon
+    - file: guides/rendering
+
+- file: plugins/index
+  sections:
+    - file: plugins/for_napari_developers
+    - file: plugins/for_plugin_developers
+    - file: plugins/hook_specifications
+
+- file: developers/index
+  sections:
+    - file: developers/benchmarks
+    - file: developers/code_of_conduct
+    - file: developers/code_of_conduct_reporting
+    - file: developers/contributing
+    - file: developers/core_dev_guide
+    - file: developers/governance
+    - file: developers/mission_and_values
+    - file: developers/release
+    - file: developers/roadmap_0_3
+    - file: developers/roadmap_0_3_retrospective
+    - file: developers/roadmap_0_4
+    - file: developers/testing
+
+- file: api
+

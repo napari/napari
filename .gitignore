@@ -131,3 +131,6 @@ linux/
 windows/
 
 napari/_version.py
+
+docs/_autosummary
+docs/_build
