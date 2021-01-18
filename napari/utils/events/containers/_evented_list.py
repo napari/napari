@@ -107,7 +107,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def __setitem__(self, key, value):
         old = self._list[key]
-        if value == old:
+        if value is old:  # https://github.com/napari/napari/pull/2120
             return
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
