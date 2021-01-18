@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
@@ -31,25 +31,13 @@ from ...plugins.pypi import (
     normalized_name,
 )
 from ...utils._appdirs import user_plugin_dir, user_site_packages
-from ...utils.misc import running_as_bundled_app
+from ...utils.misc import parse_version, running_as_bundled_app
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
 # TODO: add error icon and handle pip install errors
-
-if TYPE_CHECKING:
-    import packaging.version
-
-
-def parse_version(v) -> 'packaging.version._BaseVersion':
-    import packaging.version
-
-    try:
-        return packaging.version.Version(v)
-    except packaging.version.InvalidVersion:
-        return packaging.version.LegacyVersion(v)
 
 
 # TODO: add queue to handle clicks when already processing
