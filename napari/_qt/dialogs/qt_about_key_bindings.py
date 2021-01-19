@@ -64,7 +64,7 @@ class QtAboutKeyBindings(QDialog):
         # Can switch to a normal dict when our minimum Python is 3.7
         self.key_bindings_strs = OrderedDict()
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
-        theme = get_theme(self.qt_viewer.viewer.theme)
+        theme = get_theme(self.viewer.theme)
         col = theme['secondary']
         layers = [
             napari.layers.Image,
@@ -125,7 +125,7 @@ class QtAboutKeyBindings(QDialog):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method, by default None.
         """
-        theme = get_theme(self.qt_viewer.viewer.theme)
+        theme = get_theme(self.viewer.theme)
         col = theme['secondary']
         # Add class and instance viewer key bindings
         text = get_key_bindings_summary(self.viewer.active_keymap, col=col)
