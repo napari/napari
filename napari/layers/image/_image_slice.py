@@ -82,7 +82,7 @@ class ImageSlice:
         ----------
         image : ArrayLike
             Set this as the main image.
-        thumbnail : ArrayLike
+        thumbnail_source : ArrayLike
             Derive the thumbnail from this image.
         """
         # Single scale images don't have a separate thumbnail so we just
