@@ -109,8 +109,8 @@ class OctreeLevel:
         create : bool
             If True, create the OctreeChunk if it does not exist.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[OctreeChunk]
             The OctreeChunk if one existed or we just created it.
         """
@@ -142,8 +142,8 @@ class OctreeLevel:
         col : int
             The column in the level.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeChunk
             The newly created chunk.
         """
@@ -188,8 +188,8 @@ class OctreeLevel:
         col : int
             The column coordinate.
 
-        Return
-        ------
+        Returns
+        -------
         ArrayLike
             The data at this location.
         """
