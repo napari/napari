@@ -23,7 +23,7 @@ class QtAboutKeyBindings(QDialog):
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
 
-    key_map_handler: napari.utils.key_bindings.KeyMapHandler
+    key_map_handler : napari.utils.key_bindings.KeyMapHandler
         Handler for key mapping and calling functionality.
 
     Attributes
