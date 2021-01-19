@@ -573,7 +573,9 @@ class QtViewer(QSplitter):
         )
 
     def show_key_bindings_dialog(self, event=None):
-        dialog = QtAboutKeyBindings(self.viewer, parent=self)
+        dialog = QtAboutKeyBindings(
+            self.viewer, self._key_map_handler, parent=self
+        )
         dialog.show()
 
     def _map_canvas2world(self, position):

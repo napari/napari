@@ -47,7 +47,7 @@ class QtAboutKeyBindings(QDialog):
 
     ALL_ACTIVE_KEYBINDINGS = 'All active key bindings'
 
-    def __init__(self, viewer, parent=None):
+    def __init__(self, viewer, key_map_handler, parent=None):
         super().__init__(parent=parent)
 
         self.viewer = viewer
@@ -64,6 +64,7 @@ class QtAboutKeyBindings(QDialog):
         # Can switch to a normal dict when our minimum Python is 3.7
         self.key_bindings_strs = OrderedDict()
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
+        self.key_map_handler = key_map_handler
         theme = get_theme(self.viewer.theme)
         col = theme['secondary']
         layers = [
@@ -128,8 +129,9 @@ class QtAboutKeyBindings(QDialog):
         theme = get_theme(self.viewer.theme)
         col = theme['secondary']
         # Add class and instance viewer key bindings
-        text = get_key_bindings_summary(self.viewer.active_keymap, col=col)
-
+        text = get_key_bindings_summary(
+            self.key_map_handler.active_keymap, col=col
+        )
         # Update layer speficic key bindings if all active are displayed
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
