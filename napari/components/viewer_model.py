@@ -1,17 +1,26 @@
+from __future__ import annotations
+
 import inspect
 import itertools
 import os
 import warnings
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import numpy as np
 
 from .. import layers
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..plugins.io import read_data_with_plugins
-from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
@@ -32,6 +41,9 @@ from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
 DEFAULT_THEME = 'dark'
+
+if TYPE_CHECKING:
+    from ..types import FullLayerData, LayerData
 
 
 class ViewerModel(KeymapProvider, MousemapProvider):
@@ -940,6 +952,8 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
+        from ..plugins.io import read_data_with_plugins
+
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
         # glean layer names from filename. These will be used as *fallback*
