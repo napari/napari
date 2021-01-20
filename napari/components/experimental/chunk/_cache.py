@@ -66,7 +66,7 @@ class ChunkCache:
     that will grow in memory usage up to some limit. Then it will free the
     least recently used entries so total usage does not exceed that limit.
 
-    TODO_ASYNC:
+    TODO_OCTREE:
 
     1) For dynamically computed data the cache should be disabled. So
        should the default be off? Or can we detect dynamic computations?
@@ -99,8 +99,8 @@ class ChunkCache:
         if not self.enabled:
             LOGGER.debug("ChunkCache.add_chunk: cache is disabled")
             return
-        LOGGER.debug("add_chunk: %s", request.key.location)
-        self.chunks[request.key.key] = request.chunks
+        LOGGER.debug("add_chunk: %s", request.location)
+        self.chunks[request.location] = request.chunks
 
     def get_chunks(self, request: ChunkRequest) -> Optional[ChunkArrays]:
         """Return the cached data for this request if it was cached.
@@ -119,10 +119,10 @@ class ChunkCache:
             LOGGER.info("ChunkCache.get_chunk: disabled")
             return None
 
-        data = self.chunks.get(request.key.key)
+        data = self.chunks.get(request.location)
         LOGGER.info(
             "get_chunk: %s %s",
-            request.key.location,
+            request.location,
             "found" if data is not None else "not found",
         )
-        return
+        return data

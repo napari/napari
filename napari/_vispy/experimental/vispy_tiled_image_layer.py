@@ -1,8 +1,6 @@
 """VispyTiledImageLayer class.
 
-A tiled image that uses TiledImageVisual and TextureAtlas2D so that adding
-and removing tiles is faster than if we created a separate ImageVisual for
-each tile.
+A tiled image layer that uses TiledImageVisual and TextureAtlas2D.
 """
 import logging
 from dataclasses import dataclass
@@ -53,7 +51,7 @@ class VispyTiledImageLayer(VispyImageLayer):
     Tiles are rendered using TiledImageVisual which uses a TextureAtlas2D,
     see those classes for more details.
 
-    History
+    Notes
     -------
 
     An early tiled visual we had created a new ImageVisual for each tile.
@@ -97,7 +95,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     @property
     def num_tiles(self) -> int:
-        """Return the number of tiles currently being drawn.
+        """The number of tiles currently being drawn.
 
         Return
         ------
@@ -127,12 +125,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         # This might be overly dynamic, but for now if we see there's a new
         # tile shape we nuke our texture atlas and start over with the new
         # shape.
-        #
-        # We added this because the QtTestImage GUI currently set the tile
-        # shape after the layer is created. Thus potentially changing the
-        # same on the fly. But this "on the fly change" might come in handy
-        # and it was not hard to implement, but we could probably drop it
-        # if it becomes a pain.
         tile_shape = self.layer.tile_shape
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
@@ -186,9 +178,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         if stats.created > 0 or stats.deleted > 0:
             LOGGER.debug(
-                f"tiles: {stats.start} -> {stats.final} "
-                f"create: {stats.created} delete: {stats.deleted} "
-                f"time: {elapsed.duration_ms:.3f}ms"
+                "tiles: %d -> %d create: %d delete: %d time: %.3fms",
+                stats.start,
+                stats.final,
+                stats.created,
+                stats.deleted,
+                elapsed.duration_ms,
             )
 
         return stats.remaining

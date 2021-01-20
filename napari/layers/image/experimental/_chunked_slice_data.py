@@ -1,17 +1,15 @@
 """ChunkedSliceData class.
+
+This is for pre-Octree Image class only.
 """
 import logging
 from typing import Optional
 
-from ....components.experimental.chunk import (
-    ChunkKey,
-    ChunkRequest,
-    LayerRef,
-    chunk_loader,
-)
+from ....components.experimental.chunk import ChunkRequest, chunk_loader
 from ....types import ArrayLike
 from ...base import Layer
 from .._image_slice_data import ImageSliceData
+from ._image_location import ImageLocation
 
 LOGGER = logging.getLogger("napari.loader")
 
@@ -56,13 +54,8 @@ class ChunkedSliceData(ImageSliceData):
         self.request = request
         self.thumbnail_image = None
 
-    def load_chunks(self, key: ChunkKey) -> bool:
+    def load_chunks(self) -> bool:
         """Load this slice data's chunks sync or async.
-
-        Parameters
-        ----------
-        key : ChunkKey
-            The key for the chunks we are going to load.
 
         Return
         ------
@@ -76,12 +69,21 @@ class ChunkedSliceData(ImageSliceData):
         if self.thumbnail_source is not None:
             chunks['thumbnail_source'] = self.thumbnail_source
 
-        # Create the ChunkRequest and load it with the ChunkLoader.
-        layer_ref = LayerRef.create_from_layer(self.layer, self.indices)
-        self.request = chunk_loader.create_request(layer_ref, key, chunks)
+        def _should_cancel(chunk_request: ChunkRequest) -> bool:
+            """Cancel any requests for this same data_id.
 
-        LOGGER.debug("ChunkedSliceData calling chunk_loader.load_chunk")
-        satisfied_request, _future = chunk_loader.load_chunk(self.request)
+            The must be requests for other slices, but we only ever show
+            one slice at a time, so they are stale.
+            """
+            return chunk_request.location.data_id == id(self.image)
+
+        # Cancel loads for any other data_id/slice besides this one.
+        chunk_loader.cancel_requests(_should_cancel)
+
+        # Create the request and load it.
+        location = ImageLocation(self.layer, self.indices)
+        self.request = ChunkRequest(location, chunks)
+        satisfied_request = chunk_loader.load_request(self.request)
 
         if satisfied_request is None:
             return False  # Load was async.
@@ -104,7 +106,7 @@ class ChunkedSliceData(ImageSliceData):
         request : ChunkRequest
             The request that was loaded.
         """
-        indices = request.key.layer_key.indices
+        indices = request.location.indices
         image = request.chunks.get('image')
         thumbnail_slice = request.chunks.get('thumbnail_slice')
         return cls(layer, indices, image, thumbnail_slice, request)

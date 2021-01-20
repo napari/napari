@@ -83,9 +83,12 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # set the width of the track tails
         self.node._subvisuals[0].set_data(
-            width=self.layer.tail_width, color=self.layer.track_colors,
+            width=self.layer.tail_width,
+            color=self.layer.track_colors,
         )
-        self.node._subvisuals[2].set_data(width=self.layer.tail_width,)
+        self.node._subvisuals[2].set_data(
+            width=self.layer.tail_width,
+        )
 
     def _on_tracks_change(self, event=None):
         """Update the shader when the track data changes."""

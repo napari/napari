@@ -277,16 +277,14 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _new_empty_slice(self):
-        """Initialize the current slice to an empty image.
-        """
+        """Initialize the current slice to an empty image."""
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
         self._empty = True
 
     def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded.
-        """
+        """Get empty image to use as the default before data is loaded."""
         if self.rgb:
             return np.zeros((1,) * self._ndisplay + (3,))
         else:
@@ -334,7 +332,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     def _get_ndim(self):

@@ -427,9 +427,10 @@ class Labels(Image):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (custom_colormap, label_color_index,) = color_dict_to_colormap(
-                self.color
-            )
+            (
+                custom_colormap,
+                label_color_index,
+            ) = color_dict_to_colormap(self.color)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
@@ -448,8 +449,7 @@ class Labels(Image):
 
     @property
     def show_selected_label(self):
-        """Whether to filter displayed labels to only the selected label or not
-        """
+        """Whether to filter displayed labels to only the selected label or not"""
         return self._show_selected_label
 
     @show_selected_label.setter

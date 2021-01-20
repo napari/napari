@@ -1,4 +1,4 @@
-"""OctreeIntersection class.
+"""OctreeView and OctreeIntersection classes.
 """
 from typing import List, NamedTuple, Tuple
 
@@ -11,6 +11,9 @@ from .octree_util import OctreeDisplayOptions
 
 class OctreeView(NamedTuple):
     """A view into the octree.
+
+    An OctreeView corresponds to a camera which is viewing the image data,
+    plus options as to how we want to render the data.
 
     Attributes
     ----------
@@ -32,6 +35,7 @@ class OctreeView(NamedTuple):
 
         Return
         ------
+        int
             The width in data coordinates.
         """
         return self.corners[1][1] - self.corners[0][1]
@@ -89,7 +93,7 @@ class OctreeIntersection:
         # are just one variable each? Use numpy more.
         rows, cols = view.corners[:, 0], view.corners[:, 1]
 
-        base = level_info.slice_config.base_shape
+        base = level_info.meta.base_shape
 
         self.normalized_range = np.array(
             [np.clip(rows / base[0], 0, 1), np.clip(cols / base[1], 0, 1)]
@@ -117,7 +121,7 @@ class OctreeIntersection:
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
 
-        tile_size = self.level.info.slice_config.tile_size
+        tile_size = self.level.info.meta.tile_size
 
         span_tiles = [span[0] / tile_size, span[1] / tile_size]
         clamped = [
@@ -188,8 +192,7 @@ class OctreeIntersection:
         chunks = []  # The chunks in the intersection.
 
         # Get every chunk that is within the rectangular region. These are
-        # all the chunks we might possibly draw, because they are within
-        # the current view.
+        # the chunks we want to draw to depict this region of the data.
         #
         # If we've accessed the chunk recently the existing OctreeChunk
         # will be returned, otherwise a new OctreeChunk is created
@@ -235,14 +238,14 @@ class OctreeIntersection:
             The file config.
         """
         # TODO_OCTREE: Need to cleanup and re-name and organize
-        # OctreeLevelInfo and SliceConfig attrbiutes. Messy.
+        # OctreeLevelInfo and OctreeMetadata attrbiutes. Messy.
         level = self.level
         image_shape = level.info.image_shape
         shape_in_tiles = level.info.shape_in_tiles
 
-        slice_config = level.info.slice_config
-        base_shape = slice_config.base_shape
-        tile_size = slice_config.tile_size
+        meta = level.info.meta
+        base_shape = meta.base_shape
+        tile_size = meta.tile_size
 
         return {
             "base_shape": base_shape,

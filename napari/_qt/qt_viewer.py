@@ -10,7 +10,6 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
-from ..resources import get_stylesheet
 from ..utils import config, perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
@@ -20,11 +19,12 @@ from ..utils.interactions import (
     mouse_wheel_callbacks,
 )
 from ..utils.io import imsave
-from ..utils.key_bindings import components_to_key_combo
-from ..utils.theme import template
+from ..utils.key_bindings import KeymapHandler
+from ..utils.theme import get_theme, template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
-from .tracing.qt_performance import QtPerformance
+from .perf.qt_performance import QtPerformance
+from .qt_resources import get_stylesheet
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
@@ -104,6 +104,9 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
+        self._key_map_handler = KeymapHandler()
+        self._key_map_handler.keymap_providers = [self.viewer]
+        self._active_layer = None
         self._console = None
 
         layerList = QWidget()
@@ -177,12 +180,14 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_palette()
+        self._update_theme()
+        self._on_active_layer_change()
 
+        self.viewer.events.active_layer.connect(self._on_active_layer_change)
+        self.viewer.events.theme.connect(self._update_theme)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
-        self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -228,8 +233,8 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
         self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self.on_key_press)
-        self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self._key_map_handler.on_key_press)
+        self.canvas.connect(self._key_map_handler.on_key_release)
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
@@ -244,15 +249,12 @@ class QtViewer(QSplitter):
         """
 
         self.axes = VispyAxesVisual(
-            self.viewer.axes,
-            self.viewer.camera,
-            self.viewer.dims,
+            self.viewer,
             parent=self.view.scene,
             order=1e6,
         )
         self.scale_bar = VispyScaleBarVisual(
-            self.viewer.scale_bar,
-            self.viewer.camera,
+            self.viewer,
             parent=self.view,
             order=1e6 + 1,
         )
@@ -266,12 +268,11 @@ class QtViewer(QSplitter):
             self.viewer.events.layers_change.connect(
                 self.welcome._on_visible_change
             )
-            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.viewer.events.theme.connect(self.welcome._on_theme_change)
             self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
-        """Create the dock widget that shows performance metrics.
-        """
+        """Create the dock widget that shows performance metrics."""
         if perf.USE_PERFMON:
             return QtViewerDockWidget(
                 self,
@@ -284,8 +285,7 @@ class QtViewer(QSplitter):
 
     @property
     def console(self):
-        """QtConsole: iPython console terminal integrated into the napari GUI.
-        """
+        """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
             from .widgets.qt_console import QtConsole
 
@@ -295,8 +295,8 @@ class QtViewer(QSplitter):
     @console.setter
     def console(self, console):
         self._console = console
-        self.dockConsole.widget = console
-        self._update_palette()
+        self.dockConsole.setWidget(console)
+        self._update_theme()
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -310,6 +310,24 @@ class QtViewer(QSplitter):
             self.controls.setMaximumWidth(700)
         else:
             self.controls.setMaximumWidth(220)
+
+    def _on_active_layer_change(self, event=None):
+        """When active layer changes change keymap handler.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        active_layer = self.viewer.active_layer
+
+        if self._active_layer in self._key_map_handler.keymap_providers:
+            self._key_map_handler.keymap_providers.remove(self._active_layer)
+
+        if active_layer is not None:
+            self._key_map_handler.keymap_providers.insert(0, active_layer)
+
+        self._active_layer = active_layer
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -395,7 +413,7 @@ class QtViewer(QSplitter):
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise IOError("Nothing to save")
+            raise OSError("Nothing to save")
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
@@ -410,7 +428,7 @@ class QtViewer(QSplitter):
                     [str(x.message.args[0]) for x in wa]
                 )
             if not saved:
-                raise IOError(
+                raise OSError(
                     f"File {filename} save failed.\n{error_messages}"
                 )
 
@@ -517,18 +535,15 @@ class QtViewer(QSplitter):
 
         self.canvas.native.setCursor(q_cursor)
 
-    def _update_palette(self, event=None):
+    def _update_theme(self, event=None):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
-        themed_stylesheet = template(
-            self.raw_stylesheet, **self.viewer.palette
-        )
+        theme = get_theme(self.viewer.theme)
+        themed_stylesheet = template(self.raw_stylesheet, **theme)
         if self._console is not None:
-            self.console._update_palette(
-                self.viewer.palette, themed_stylesheet
-            )
+            self.console._update_theme(theme, themed_stylesheet)
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.canvas.bgcolor = theme['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
@@ -543,6 +558,9 @@ class QtViewer(QSplitter):
         self.dockConsole.setVisible(viz)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
+
+        if viz:
+            self.dockConsole.raise_()
 
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()
@@ -677,44 +695,6 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             mouse_release_callbacks(layer, event)
-
-    def on_key_press(self, event):
-        """Called whenever key pressed in canvas.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if (
-            event.native is not None
-            and event.native.isAutoRepeat()
-            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
-        ) or event.key is None:
-            # pass if no key is present or if key is held down, unless the
-            # key being held down is one of the navigation keys
-            # this helps for scrolling, etc.
-            return
-
-        combo = components_to_key_combo(event.key.name, event.modifiers)
-        self.viewer.press_key(combo)
-
-    def on_key_release(self, event):
-        """Called whenever key released in canvas.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if event.key is None or (
-            # on linux press down is treated as multiple press and release
-            event.native is not None
-            and event.native.isAutoRepeat()
-        ):
-            return
-        combo = components_to_key_combo(event.key.name, event.modifiers)
-        self.viewer.release_key(combo)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.

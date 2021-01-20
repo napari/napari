@@ -1,11 +1,11 @@
 import os
+import sys
 import warnings
 from functools import partial
 from typing import List
 
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.components import LayerList
@@ -43,9 +43,6 @@ def pytest_addoption(parser):
         Show viewers during tests, they are hidden by default. Showing viewers
         decreases test speed by around 20%.
 
-    --perfmon-only
-        Run only perfmon test.
-
     --aysnc_only
         Run only asynchronous tests, not sync ones.
 
@@ -53,22 +50,12 @@ def pytest_addoption(parser):
     -----
     Due to the placement of this conftest.py file, you must specifically name
     the napari folder such as "pytest napari --show-viewer"
-
-    For --perfmon-only must also enable perfmon with env var:
-    NAPARI_PERFMON=1 pytest napari --perfmon-only
     """
     parser.addoption(
         "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
-    )
-
-    parser.addoption(
-        "--perfmon-only",
-        action="store_true",
-        default=False,
-        help="run only perfmon tests",
     )
 
     parser.addoption(
@@ -82,8 +69,18 @@ def pytest_addoption(parser):
 @pytest.fixture
 def qtbot(qtbot):
     """A modified qtbot fixture that makes sure no widgets have been leaked."""
+    from qtpy.QtWidgets import QApplication
+
     initial = QApplication.topLevelWidgets()
+    prior_exception = getattr(sys, 'last_value', None)
+
     yield qtbot
+
+    # if an exception was raised during the test, we should just quit now and
+    # skip looking for leaked widgets.
+    if getattr(sys, 'last_value', None) is not prior_exception:
+        return
+
     QApplication.processEvents()
     leaks = set(QApplication.topLevelWidgets()).difference(initial)
     # still not sure how to clean up some of the remaining vispy
@@ -369,17 +366,6 @@ def skip_async_only(request):
         pytest.skip("not running with --async_only")
 
 
-@pytest.fixture(autouse=True)
-def perfmon_only(request):
-    """If flag is set, only run the perfmon tests."""
-    perfmon_flag = request.config.getoption("--perfmon-only")
-    perfmon_test = request.node.get_closest_marker('perfmon')
-    if perfmon_flag and not perfmon_test:
-        pytest.skip("running with --perfmon-only")
-    if not perfmon_flag and perfmon_test:
-        pytest.skip("not running with --perfmon-only")
-
-
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
@@ -392,3 +378,14 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
     @pytest.hookimpl(tryfirst=True)
     def pytest_internalerror(excinfo):
         raise excinfo.value
+
+
+def pytest_collection_modifyitems(session, config, items):
+
+    put_at_end = ('test_trace_on_start',)
+    at_end = []
+    for i, item in enumerate(items):
+        if item.name in put_at_end:
+            at_end.append(items.pop(i))
+
+    items.extend([x for _, x in sorted(zip(put_at_end, at_end))])

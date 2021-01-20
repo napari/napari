@@ -1,7 +1,7 @@
 """OctreeImage class.
 
 An eventual replacement for Image that combines single-scale and
-chunked/tiled multi-scale into one implementation.
+chunked (tiled) multi-scale into one implementation.
 """
 import logging
 from typing import List, Set
@@ -11,29 +11,29 @@ import numpy as np
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
 from ..image import Image
-from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
-from .octree_chunk import OctreeChunk, OctreeChunkKey
+from ._octree_slice import OctreeSlice, OctreeView
+from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import OctreeDisplayOptions, SliceConfig
+from .octree_util import OctreeDisplayOptions, OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree.image")
 
 
 class OctreeImage(Image):
-    """OctreeImage layer.
+    """Image layer rendered using an octree.
 
     Experimental variant of Image that renders using an octree. For 2D
     images the octree is really just a quadtree. For 3D volumes it will be
-    a real octree. This class is intended to eventually fully replace the
+    a real octree. This class is intended to eventually replace the
     existing Image class.
 
-    Background
-    ----------
+    Notes
+    -----
     The original Image class handled single-scale and multi-scale images,
     but they were handled quite differently. And its multi-scale did not
-    use chunks or tiles. It worked well locally, but was basically unusable
-    for remote or high latency data.
+    use chunks or tiles. It worked well on local data, but was basically
+    unusable for remote or high latency data.
 
     OctreeImage always uses chunk/tiles. Today those tiles are always
     "small". However, as a special case, if an image is smaller than the
@@ -56,14 +56,9 @@ class OctreeImage(Image):
     _view : OctreeView
         Describes a view frustum which implies what portion of the OctreeImage
         needs to be draw.
-    _slice : OctreeMultiscaleSlice
-        When _set_view_slice() is called we create a OctreeMultiscaleSlice()
+    _slice : OctreeSlice
+        When _set_view_slice() is called we create a OctreeSlice()
         that's looking at some specific slice of the data.
-
-        While the Image._slice was the data that was drawn on the screen,
-        an OctreeMultiscaleSlice contains a full Octree. The OctreeImage
-        visuals (VispyTiledImageLayer and TiledImageVisual) draw only
-        the portion for OctreeImage which is visible in the OctreeView.
     _display : OctreeDisplayOptions
         Settings for how we draw the octree, such as tile size.
     """
@@ -71,7 +66,7 @@ class OctreeImage(Image):
     def __init__(self, *args, **kwargs):
 
         self._view: OctreeView = None
-        self._slice: OctreeMultiscaleSlice = None
+        self._slice: OctreeSlice = None
         self._intersection: OctreeIntersection = None
         self._display = OctreeDisplayOptions()
 
@@ -83,7 +78,7 @@ class OctreeImage(Image):
         self.events.add(octree_level=Event, tile_size=Event)
 
         # TODO_OCTREE: this is hack that we assign OctreeDisplayOptions
-        # this event after super().__init__(). Will cleanup soon.
+        # this event after super().__init__(). Needs to be cleaned up.
         self._display.loaded_event = self.events.loaded
 
     def _get_value(self):
@@ -160,8 +155,6 @@ class OctreeImage(Image):
         tuple
             The shape of a single tile.
         """
-        # TODO_OCTREE: Must be an easier way to get this shape based on
-        # information already stored in Image class?
         if self.multiscale:
             init_shape = self.data[0].shape
         else:
@@ -176,21 +169,21 @@ class OctreeImage(Image):
         return tile_shape
 
     @property
-    def slice_config(self) -> SliceConfig:
-        """Return information about the current octree.
+    def meta(self) -> OctreeMetadata:
+        """Information about the current octree.
 
         Return
         ------
-        SliceConfig
-            Configuration information.
+        OctreeMetadata
+            Octree dimensions and other info.
         """
         if self._slice is None:
             return None
-        return self._slice.slice_config
+        return self._slice.meta
 
     @property
     def octree_level_info(self) -> OctreeLevelInfo:
-        """Return information about the current level of the current octree.
+        """Information about the current level of the current octree.
 
         Returns
         -------
@@ -264,7 +257,7 @@ class OctreeImage(Image):
         """
 
     def get_drawable_chunks(
-        self, drawn_set: Set[OctreeChunkKey]
+        self, drawn_set: Set[OctreeChunk]
     ) -> List[OctreeChunk]:
         """Get the chunks in the current slice which are drawable.
 
@@ -281,24 +274,13 @@ class OctreeImage(Image):
         You won't see any "extra" resolution at all. The card can do this
         super fast, so the issue not such much speed as it is RAM and VRAM.
 
-        For example, suppose we want to draw 40 ideal chunks at level N,
-        and the chunks are (256, 256, 3) with dtype uint8. That's around
-        8MB.
-
-        If instead we draw lower levels than the ideal, the number of
-        chunks and storage goes up quickly:
-
-        Level (N - 1) is 160 chunks = 32M
-        Level (N - 2) is 640 chunks = 126M
-        Level (N - 3) is 2560 chunks = 503M
-
         In the opposite direction, drawing chunks from a higher, the number
         of chunks and storage goes down quickly. The only issue there is
         visual quality, the imagery might look blurry.
 
         Parameters
         -----------
-        drawn_chunk_set : Set[OctreeChunkKey]
+        drawn_chunk_set : Set[OctreeChunk]
             The chunks that are currently being drawn by the visual.
 
         Return
@@ -327,14 +309,14 @@ class OctreeImage(Image):
         # and in VRAM. When all loading is done, we will draw all the ideal
         # chunks.
         ideal_chunks = self._intersection.get_chunks(create=True)
-        level_index = self._intersection.level.info.level_index
+        ideal_level = self._intersection.level.info.level_index
 
         # log_chunks("ideal_chunks", ideal_chunks)
 
         # If we are seting the data level level automatically, then update
         # our level to match what was chosen for the intersection.
         if self._view.auto_level:
-            self._data_level = level_index
+            self._data_level = ideal_level
 
         # The loader will initiate loads on any ideal chunks which are not
         # yet in memory. And it will return the chunks we should draw. The
@@ -342,7 +324,9 @@ class OctreeImage(Image):
         # memory, but they also might be chunks from higher or lower levels
         # in the octree. In general we try to draw "cover the view" with
         # the "best available" data.
-        return self._slice.loader.get_drawable_chunks(drawn_set, ideal_chunks)
+        return self._slice.loader.get_drawable_chunks(
+            drawn_set, ideal_chunks, ideal_level
+        )
 
     def _update_draw(
         self, scale_factor, corner_pixels, shape_threshold
@@ -411,7 +395,7 @@ class OctreeImage(Image):
             )
         )
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Set the view given the indices to slice with.
 
         This replaces Image._set_view_slice() entirely. The hope is eventually
@@ -435,21 +419,23 @@ class OctreeImage(Image):
         base_shape = self.data[0].shape
         base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
-        slice_config = SliceConfig(
-            base_shape_2d, len(self.data), self._display.tile_size
+        layer_ref = LayerRef.from_layer(self)
+
+        meta = OctreeMetadata(
+            layer_ref, base_shape_2d, len(self.data), self._display.tile_size
         )
 
-        # OctreeMultiscaleSlice wants all the levels, but only the dimensions
+        # OctreeSlice wants all the levels, but only the dimensions
         # of each level that we are currently viewing.
         slice_data = [level_data[indices] for level_data in self.data]
-
-        # Create _layer_ref that matches the current indices and slice.
-        indices = self._get_slice_indices()
-        layer_ref = LayerRef.create_from_layer(self, indices)
+        layer_ref = LayerRef.from_layer(self)
 
         # Create the slice, it will create the actual Octree.
-        self._slice = OctreeMultiscaleSlice(
-            slice_data, layer_ref, slice_config, self._raw_to_displayed,
+        self._slice = OctreeSlice(
+            slice_data,
+            layer_ref,
+            meta,
+            self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:
@@ -475,7 +461,7 @@ class OctreeImage(Image):
             "on_chunk_loaded: load=%.3fms elapsed=%.3fms location = %s",
             request.load_ms,
             request.elapsed_ms,
-            request.key.location,
+            request.location,
         )
 
         # Pass it to the slice, it will insert the newly loaded data into

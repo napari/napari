@@ -37,33 +37,33 @@ def test_empty_points():
 
 
 def test_empty_points_with_properties():
-    """ Test instantiating an empty Points layer with properties
+    """Test instantiating an empty Points layer with properties
 
     See: https://github.com/napari/napari/pull/1069
     """
     properties = {
         'label': np.array(['label1', 'label2']),
-        'cont_prop': np.array([0], dtype=np.float),
+        'cont_prop': np.array([0], dtype=float),
     }
     pts = Points(properties=properties)
     current_props = {k: v[0] for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
     # verify the property datatype is correct
-    assert pts.properties['cont_prop'].dtype == np.float
+    assert pts.properties['cont_prop'].dtype == float
 
     # add two points and verify the default property was applied
     pts.add([10, 10])
     pts.add([20, 20])
     props = {
         'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=np.float),
+        'cont_prop': np.array([0, 0], dtype=float),
     }
     np.testing.assert_equal(pts.properties, props)
 
 
 def test_empty_points_with_properties_list():
-    """ Test instantiating an empty Points layer with properties
+    """Test instantiating an empty Points layer with properties
     stored in a list
 
     See: https://github.com/napari/napari/pull/1069
@@ -78,16 +78,17 @@ def test_empty_points_with_properties_list():
     pts.add([20, 20])
     props = {
         'label': np.array(['label1', 'label1']),
-        'cont_prop': np.array([0, 0], dtype=np.float),
+        'cont_prop': np.array([0, 0], dtype=float),
     }
     np.testing.assert_equal(pts.properties, props)
 
 
 def test_empty_layer_with_face_colormap():
-    """ Test creating an empty layer where the face color is a colormap
+    """Test creating an empty layer where the face color is a colormap
+
     See: https://github.com/napari/napari/pull/1069
     """
-    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
         properties=default_properties,
         face_color='point_type',
@@ -103,7 +104,7 @@ def test_empty_layer_with_face_colormap():
 
 @pytest.mark.parametrize('attribute', ['face', 'edge'])
 def test_empty_layer_with_colormap(attribute):
-    """ Test creating an empty layer where the face/edge color is a colormap
+    """Test creating an empty layer where the face/edge color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
     default_properties = {'point_type': np.array([1.5], dtype=np.float)}
@@ -761,7 +762,7 @@ def test_switch_color_mode(attribute):
     setattr(layer, f'{attribute}_color_mode', 'cycle')
     setattr(layer, f'{attribute}_color', 'point_type')
     color = getattr(layer, f'{attribute}_color')
-    layer_color = transform_color(color_cycle * int((shape[0] / 2)))
+    layer_color = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(color, layer_color)
 
     # switch back to direct, edge_colors shouldn't change
@@ -876,7 +877,8 @@ def test_color_direct(attribute: str):
     layer_color = getattr(layer, f'{attribute}_color')
     assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
-        layer_color, np.vstack((color_array[1], color_array[3:])),
+        layer_color,
+        np.vstack((color_array[1], color_array[3:])),
     )
 
 
@@ -887,7 +889,8 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 @pytest.mark.parametrize(
-    "color_cycle", [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
+    "color_cycle",
+    [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
@@ -917,7 +920,8 @@ def test_color_cycle(attribute, color_cycle):
     layer_color = getattr(layer, f'{attribute}_color')
     assert len(layer_color) == shape[0] + 1
     np.testing.assert_allclose(
-        layer_color, np.vstack((color_array, transform_color('red'))),
+        layer_color,
+        np.vstack((color_array, transform_color('red'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -974,7 +978,7 @@ def test_color_cycle_dict(attribute):
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
-    """ Test adding a point to an empty layer when edge/face color is a color cycle
+    """Test adding a point to an empty layer when edge/face color is a color cycle
 
     See: https://github.com/napari/napari/pull/1069
     """
@@ -1015,7 +1019,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_value_color_cycle(attribute):
-    """ Test that adding values to properties used to set a color cycle
+    """Test that adding values to properties used to set a color cycle
     and then calling Points.refresh_colors() performs the update and adds the
     new value to the face/edge_color_cycle_map.
 
@@ -1062,7 +1066,7 @@ def test_color_colormap(attribute):
     assert layer.properties == properties
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
-    color_array = transform_color(['black', 'white'] * int((shape[0] / 2)))
+    color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.all(attribute_color == color_array)
 
@@ -1078,7 +1082,8 @@ def test_color_colormap(attribute):
     attribute_color = getattr(layer, f'{attribute}_color')
     assert len(attribute_color) == shape[0] + 1
     np.testing.assert_allclose(
-        attribute_color, np.vstack((color_array, transform_color('black'))),
+        attribute_color,
+        np.vstack((color_array, transform_color('black'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -1090,7 +1095,11 @@ def test_color_colormap(attribute):
     np.testing.assert_allclose(
         attribute_color,
         np.vstack(
-            (color_array[1], color_array[3:], transform_color('black'),)
+            (
+                color_array[1],
+                color_array[3:],
+                transform_color('black'),
+            )
         ),
     )
 

@@ -1,4 +1,4 @@
-"""OctreeMultiscaleSlice class.
+"""OctreeSlice class.
 
 For viewing one slice of a multiscale image using an octree.
 """
@@ -11,31 +11,33 @@ import numpy as np
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....types import ArrayLike
 from .._image_view import ImageView
-from ._octree_chunk_loader import OctreeChunkLoader
+from ._octree_loader import OctreeLoader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
-from .octree_util import SliceConfig
+from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree.slice")
 
 
-class OctreeMultiscaleSlice:
-    """View a slice of an multiscale image using an octree.
+class OctreeSlice:
+    """A viewed slice of a multiscale image using an octree.
 
     Parameters
     ----------
     data
         The multi-scale data.
-    slice_config : SliceConfig
+    layer_ref : LayerRef
+        Reference to the layer containing the slice.
+    meta : OctreeMetadata
         The base shape and other info.
     image_converter : Callable[[ArrayLike], ArrayLike]
         For converting to displaying data.
 
     Attributes
     ----------
-    loader : OctreeChunkLoader
+    loader : OctreeLoader
         Uses the napari ChunkLoader to load OctreeChunks.
 
     """
@@ -44,18 +46,16 @@ class OctreeMultiscaleSlice:
         self,
         data,
         layer_ref: LayerRef,
-        slice_config: SliceConfig,
+        meta: OctreeMetadata,
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
-        self._slice_config = slice_config
+        self._meta = meta
 
         slice_id = id(self)
-        self._octree = Octree(slice_id, data, slice_config)
+        self._octree = Octree(slice_id, data, meta)
 
-        self.loader: OctreeChunkLoader = OctreeChunkLoader(
-            self._octree, layer_ref
-        )
+        self.loader: OctreeLoader = OctreeLoader(self._octree, layer_ref)
 
         thumbnail_image = np.zeros(
             (64, 64, 3)
@@ -64,16 +64,21 @@ class OctreeMultiscaleSlice:
 
     @property
     def loaded(self) -> bool:
-        """Return True if the data has been loaded.
+        """True if the data has been loaded.
 
         Because octree multiscale is async, we say we are loaded up front even
         though none of our chunks/tiles might be loaded yet.
+
+        Return
+        ------
+        bool
+            True if the data as been loaded.
         """
         return self.data is not None
 
     @property
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:
-        """Return information about the current octree level.
+        """Information about the current octree level.
 
         Return
         ------
@@ -93,7 +98,12 @@ class OctreeMultiscaleSlice:
             ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
-        """Return this view's intersection with the octree.
+        """Return the given view's intersection with the octree.
+
+        The OctreeIntersection primarily contains the set of tiles at
+        some level that need to be drawn to depict view. The "ideal level"
+        is generally chosen automatically based on the screen resolution
+        described by the OctreeView.
 
         Parameters
         ----------
@@ -103,13 +113,13 @@ class OctreeMultiscaleSlice:
         Return
         ------
         OctreeIntersection
-            The view's intersection with the octree.
+            The given view's intersection with the octree.
         """
         level = self._get_auto_level(view)
         return OctreeIntersection(level, view)
 
     def _get_auto_level(self, view: OctreeView) -> OctreeLevel:
-        """Get the automatically selected octree level for this view.
+        """Return the automatically selected octree level for this view.
 
         Parameters
         ----------
@@ -128,7 +138,7 @@ class OctreeMultiscaleSlice:
         return self._octree.levels[index]
 
     def _get_auto_level_index(self, view: OctreeView) -> int:
-        """Get the automatically selected octree level index for this view.
+        """Return the automatically selected octree level index for this view.
 
         Parameters
         ----------
@@ -146,9 +156,9 @@ class OctreeMultiscaleSlice:
 
         # Find the right level automatically. Choose a level where the texels
         # in the octree tiles are around the same size as screen pixels.
-        # We can do this smarter in the future, maybe have some hysterisis
+        # We can do this smarter in the future, maybe have some hysteresis
         # so you don't "pop" to the next level as easily, so there is some
-        # fudge factor or dead zone.
+        # sort of dead zone between levels?
         ratio = view.data_width / view.canvas[0]
 
         if ratio <= 1:
@@ -177,9 +187,9 @@ class OctreeMultiscaleSlice:
         return level.get_chunk(location.row, location.col, create=False)
 
     def on_chunk_loaded(self, request: ChunkRequest) -> bool:
-        """An asynchronous ChunkRequest was loaded.
+        """Called when an asynchronous ChunkRequest was loaded.
 
-        Override Image.on_chunk_loaded() fully.
+        This overrides Image.on_chunk_loaded() fully.
 
         Parameters
         ----------
@@ -189,15 +199,17 @@ class OctreeMultiscaleSlice:
         Return
         ------
         bool
-            This chunk's data was added to the octree.
+            True if the chunk's data was added to the octree.
         """
-        location = request.key.location
+        location = request.location
+
         if location.slice_id != id(self):
             # There was probably a load in progress when the slice was changed.
             # The original load finished, but we are now showing a new slice.
             # Don't consider it error, just ignore the chunk.
             LOGGER.debug(
-                "on_chunk_loaded: wrong slice_id: %s", location,
+                "on_chunk_loaded: wrong slice_id: %s",
+                location,
             )
             return False  # Do not add the chunk.
 
@@ -207,9 +219,10 @@ class OctreeMultiscaleSlice:
             # This location in the octree does not contain an OctreeChunk.
             # That's unexpected, because locations are turned into
             # OctreeChunk's when a load is initiated. So this is an error,
-            # but log it and keep going, maybe some transient weirdness.
+            # but log it and keep going, maybe some transient weirdness?
             LOGGER.error(
-                "on_chunk_loaded: missing OctreeChunk: %s", octree_chunk,
+                "on_chunk_loaded: missing OctreeChunk: %s",
+                octree_chunk,
             )
             return False  # Did not add the chunk.
 
@@ -227,8 +240,5 @@ class OctreeMultiscaleSlice:
         # Setting data should mean:
         assert octree_chunk.in_memory
         assert not octree_chunk.needs_load
-
-        # Tell the loader. It will delete the future.
-        self.loader.on_chunk_loaded(octree_chunk)
 
         return True  # Chunk was added.

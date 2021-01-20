@@ -23,7 +23,13 @@ class Rectangle(Shape):
     """
 
     def __init__(
-        self, data, *, edge_width=1, z_index=0, dims_order=None, ndisplay=2,
+        self,
+        data,
+        *,
+        edge_width=1,
+        z_index=0,
+        dims_order=None,
+        ndisplay=2,
     ):
 
         super().__init__(
@@ -39,8 +45,7 @@ class Rectangle(Shape):
 
     @property
     def data(self):
-        """(4, D) array: rectangle vertices.
-        """
+        """(4, D) array: rectangle vertices."""
         return self._data
 
     @data.setter

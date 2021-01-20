@@ -10,9 +10,12 @@ import sys
 from subprocess import SubprocessError, check_call
 from typing import Dict, List, Tuple
 
-from ..utils.theme import palettes as _palettes
+import napari.resources
 
-RESOURCES_DIR = os.path.abspath(os.path.dirname(__file__))
+from ...utils.misc import bundle_bin_dir
+from ...utils.theme import _themes
+
+RESOURCES_DIR = os.path.abspath(os.path.dirname(napari.resources.__file__))
 SVGPATH = os.path.join(RESOURCES_DIR, 'icons')
 
 svg_tag_open = re.compile(r'(<svg[^>]*>)')
@@ -21,7 +24,7 @@ svg_tag_open = re.compile(r'(<svg[^>]*>)')
 def themify_icons(
     dest_dir: str,
     svg_path: str = SVGPATH,
-    palettes: Dict[str, Dict[str, str]] = _palettes,
+    themes: Dict[str, Dict[str, str]] = _themes,
     color_lookup: Dict[str, str] = None,
 ) -> List[str]:
     """Create a new "themed" SVG file, for every SVG file in ``svg_path``.
@@ -34,10 +37,10 @@ def themify_icons(
     svg_path : str, optional
         The folder to look in for SVG files, by default will search in a folder
         named ``icons`` in the same directory as this file.
-    palettes : dict, optional
+    themes : dict, optional
         A mapping of ``theme_name: theme_dict``, where ``theme_dict`` is a
-        mapping of color classes to rgb strings. By default will uses palettes
-        from :const:`napari.resources.utils.theme.palettes`.
+        mapping of color classes to rgb strings. By default will uses themes
+        from :const:`napari.resources.utils.theme.themes`.
     color_lookup : dict, optional
         A mapping of icon name to color class.  If the icon name is not in the
         color_lookup, it's color class will be ``"icon"``.
@@ -73,15 +76,15 @@ def themify_icons(
     </style>"""
 
     files = []
-    for theme_name, palette in palettes.items():
-        palette_dir = os.path.join(dest_dir, theme_name)
-        os.makedirs(palette_dir, exist_ok=True)
+    for theme_name, theme in themes.items():
+        theme_dir = os.path.join(dest_dir, theme_name)
+        os.makedirs(theme_dir, exist_ok=True)
         for icon_name in icon_names:
             svg_name = icon_name + '.svg'
-            new_file = os.path.join(palette_dir, svg_name)
+            new_file = os.path.join(theme_dir, svg_name)
             color = color_lookup.get(icon_name, 'icon')
-            css = svg_style_insert.replace('{{ color }}', palette[color])
-            with open(os.path.join(SVGPATH, svg_name), 'r') as fr:
+            css = svg_style_insert.replace('{{ color }}', theme[color])
+            with open(os.path.join(SVGPATH, svg_name)) as fr:
                 contents = fr.read()
             with open(new_file, 'w') as fw:
                 # use regex to find the svg tag and insert css right after
@@ -161,6 +164,10 @@ def _find_rcc_or_raise() -> str:
     paths = [python_dir, os.environ.get("PATH", '')]
     if os.name == 'nt':
         paths.insert(0, os.path.join(python_dir, 'Scripts'))
+    # inject bundle binary path if it exists
+    bundle_bin = bundle_bin_dir()
+    if bundle_bin:
+        paths.insert(0, bundle_bin)
     path = os.pathsep.join(paths)
 
     for bin_name in ('pyrcc5', 'pyside2-rcc'):
@@ -223,7 +230,7 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
         except SubprocessError:
             pass
     # make sure we import from qtpy
-    with open(out_path, "rt") as fin:
+    with open(out_path) as fin:
         data = fin.read()
         data = data.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
     with open(out_path, "wt") as fin:

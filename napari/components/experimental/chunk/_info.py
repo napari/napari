@@ -1,4 +1,4 @@
-"""LoadType, LoadStats and LayerInfo.
+"""LoadCounts, LoadType, LoadInfo, LoadStats and LayerInfo.
 """
 import logging
 import time
@@ -6,9 +6,8 @@ from enum import Enum
 
 from ....components.experimental.monitor import monitor
 from ....layers.base import Layer
-from ....utils.config import octree_config
-from ._request import ChunkRequest
-from ._utils import LayerRef, StatWindow
+from ._request import ChunkRequest, LayerRef
+from ._utils import StatWindow
 
 LOGGER = logging.getLogger("napari.loader")
 
@@ -180,13 +179,13 @@ class LayerInfo:
     We store a weak reference because we do not want an in-progress request
     to prevent a layer from being deleted. Meanwhile, once a request has
     finished, we can de-reference the weakref to make sure the layer was
-    note deleted during the load process.
+    not deleted during the load process.
     """
 
-    def __init__(self, layer_ref: LayerRef):
+    def __init__(self, layer_ref: LayerRef, auto_sync_ms):
         self.layer_ref = layer_ref
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = octree_config['loader']['auto_sync_ms']
+        self.auto_sync_ms = auto_sync_ms
 
         self.stats = LoadStats()
 
@@ -198,9 +197,9 @@ class LayerInfo:
         layer : Layer
             The layer for this ChunkRequest.
         """
-        layer = self.layer_ref.weak_ref()
+        layer = self.layer_ref.layer
         if layer is None:
-            layer_id = self.layer_ref.layer_key.layer_id
+            layer_id = self.layer_ref.layer_id
             LOGGER.debug("LayerInfo.get_layer: layer %d was deleted", layer_id)
         return layer
 

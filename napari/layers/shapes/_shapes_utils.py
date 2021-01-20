@@ -821,7 +821,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         binormal = binormals[i]
 
         # Add a vertex for each point on the circle
-        v = np.arange(tube_points, dtype=np.float) / tube_points * 2 * np.pi
+        v = np.arange(tube_points, dtype=float) / tube_points * 2 * np.pi
         cx = -1.0 * np.cos(v)
         cy = np.sin(v)
         grid[i] = pos

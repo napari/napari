@@ -5,7 +5,7 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'  # accept all tags of the format vX.X.X
 
-name: Build & Publish Docs
+name: Publish Docs
 
 jobs:
   build:
@@ -30,7 +30,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[all]"
-          python -m pip install -r requirements/docs.txt
+          python -m pip install -r docs/requirements.txt
         working-directory: main
       - name: Build Docs
         run: make docs
@@ -43,7 +43,7 @@ jobs:
           path: docs
           token: ${{ secrets.DOCS_GITHUB_TOKEN }}
       - name: Get tag if is a release
-        uses: olegtarasov/get-tag@v2
+        uses: olegtarasov/get-tag@v2.1
         with:
           tagRegex: "v(.*)"  # remove the leading v
         continue-on-error: true  # sets $GIT_TAG_NAME when successful

@@ -350,7 +350,7 @@ class Tracks(Layer):
         # fire events to update shaders
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
         self._update_dims()
 
@@ -370,7 +370,7 @@ class Tracks(Layer):
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by} not present in"
+                    f"Previous color_by key {self._color_by!r} not present in"
                     " new properties. Falling back to track_id"
                 ),
                 UserWarning,

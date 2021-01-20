@@ -323,7 +323,9 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
             self.events.add(**e_fields)
         else:
             self.events = EmitterGroup(
-                source=self, auto_connect=False, **e_fields,
+                source=self,
+                auto_connect=False,
+                **e_fields,
             )
         # call original __post_init__
         if orig_post_init is not None:
@@ -397,7 +399,9 @@ def _try_coerce(func, name, value):
     return value
 
 
-def parse_annotated_types(cls: Type,) -> Dict[str, TypeGetSet]:
+def parse_annotated_types(
+    cls: Type,
+) -> Dict[str, TypeGetSet]:
     """Return a dict of field names and their types.
 
     If any type annotations are instances of ``Property``, then their

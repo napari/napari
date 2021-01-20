@@ -10,8 +10,7 @@ from napari import layers, utils, viewer
 
 
 def test_dask_array_creates_cache():
-    """Test that adding a dask array creates a dask cache and turns of fusion.
-    """
+    """Test that adding a dask array creates a dask cache and turns of fusion."""
     # by default we have no dask_cache and task fusion is active
     original = dask.config.get("optimization.fuse.active", None)
 
@@ -77,7 +76,7 @@ def delayed_dask_stack():
     # see https://napari.org/tutorials/applications/dask.html for details
     _list = [get_array() for fn in range(20)]
     output['stack'] = da.stack(
-        [da.from_delayed(i, shape=(10, 10, 10), dtype=np.float) for i in _list]
+        [da.from_delayed(i, shape=(10, 10, 10), dtype=float) for i in _list]
     )
     assert output['stack'].shape == (20, 10, 10, 10)
     return output
