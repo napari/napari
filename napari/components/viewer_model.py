@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import inspect
 import itertools
 import os
@@ -1074,7 +1072,7 @@ def _get_image_class() -> layers.Image:
     return layers.Image
 
 
-def _normalize_layer_data(data: LayerData) -> FullLayerData:
+def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1115,11 +1113,11 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
 
 def _unify_data_and_user_kwargs(
-    data: LayerData,
+    data: 'LayerData',
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> FullLayerData:
+) -> 'FullLayerData':
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:
