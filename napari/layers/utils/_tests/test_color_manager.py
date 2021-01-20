@@ -97,6 +97,12 @@ def test_color_cycle(color_cycle):
         np.vstack((color_array[1], color_array[3:], transform_color('red'))),
     )
 
+    # update the colormap
+    cm.categorical_colormap = ['black', 'white']
+
+    # the first color should now be black
+    np.testing.assert_allclose(cm.values[0], [0, 0, 0, 1])
+
 
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
@@ -135,20 +141,19 @@ def test_continuous_colormap():
     )
 
     # adjust the clims
-    cm.continuous_contrast_limits = (0, 3)
-    original_prop_values = properties['point_type']
-    updated_properties = {
-        'point_type': np.hstack(
-            (original_prop_values[1], original_prop_values[3:], [0])
-        )
-    }
-    cm.refresh_colors(
-        properties=updated_properties, update_color_mapping=False
-    )
+    cm.contrast_limits = (0, 3)
     updated_colors = cm.values
     np.testing.assert_allclose(updated_colors[-2], [0.5, 0.5, 0.5, 1])
 
+    # first verify that prop value 0 is colored black
+    current_colors = cm.values
+    np.testing.assert_allclose(current_colors[-1], [0, 0, 0, 1])
+
     # change the colormap
-    new_colormap = 'viridis'
+    new_colormap = 'gray_r'
     cm.continuous_colormap = new_colormap
     assert cm.continuous_colormap.name == new_colormap
+
+    # the props valued 0 should now be white
+    updated_colors = cm.values
+    np.testing.assert_allclose(updated_colors[-1], [1, 1, 1, 1])

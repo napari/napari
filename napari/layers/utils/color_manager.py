@@ -1,3 +1,4 @@
+from collections import namedtuple
 from dataclasses import InitVar
 from typing import Optional, Tuple, Union
 
@@ -14,6 +15,8 @@ from ...utils.events.dataclass import Property, evented_dataclass
 from ._color_manager_constants import ColorMode
 from ._color_manager_utils import is_color_mapped
 from .layer_utils import guess_continuous, map_property
+
+ColorProperties = namedtuple('ColorProperties', 'name values')
 
 
 def coerce_categorical_colormap(colormap) -> CategoricalColormap:
@@ -47,6 +50,9 @@ def coerce_categorical_colormap(colormap) -> CategoricalColormap:
     return CategoricalColormap(
         colormap=colormap, fallback_color=fallback_color
     )
+
+
+# def coerce_colormanager_args():
 
 
 @evented_dataclass
@@ -91,7 +97,7 @@ class ColorManager:
     mode: Property[ColorMode, str, None] = ColorMode.DIRECT
     color_property: str = ''
     continuous_colormap: Property[Colormap, None, ensure_colormap] = 'viridis'
-    continuous_contrast_limits: Optional[Tuple[float, float]] = None
+    contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: Property[
         CategoricalColormap, None, coerce_categorical_colormap
     ] = np.array([[0, 0, 0, 1]])
@@ -120,6 +126,7 @@ class ColorManager:
         """
         if n_colors > 0:
             self._current_color = self.values[-1]
+            self._current_property_value = None
         elif n_colors == 0 and properties:
             if self._mode == ColorMode.DIRECT:
                 curr_color = transform_color_with_defaults(
@@ -128,12 +135,17 @@ class ColorManager:
                     elem_name='color',
                     default="white",
                 )
+                self._current_property_value = None
             elif self._mode == ColorMode.CYCLE:
-                prop_value = properties[self.color_property][0]
-                curr_color = self.categorical_colormap.map(prop_value)
+                self._current_property_value = self.color_properties.values[0]
+                curr_color = self.categorical_colormap.map(
+                    self._current_property_value
+                )
             elif self._mode == ColorMode.COLORMAP:
-                prop_value = properties[self.color_property][0]
-                curr_color = self.continuous_colormap.map(prop_value)
+                self._current_property_value = self.color_properties.values[0]
+                curr_color = self.continuous_colormap.map(
+                    self._current_property_value
+                )
             self._current_color = curr_color
         else:
             self._current_color = transform_single_color(colors)
@@ -151,11 +163,14 @@ class ColorManager:
             The total number of colors that should be created.
         """
         if is_color_mapped(color, properties):
-            if guess_continuous(properties[color]):
+            self.color_properties = ColorProperties(
+                name=color, values=properties[color]
+            )
+            if guess_continuous(self.color_properties.values):
                 self._mode = ColorMode.COLORMAP
             else:
                 self._mode = ColorMode.CYCLE
-            self._color_property = color
+
             if n_colors == 0:
                 self.values = np.empty((0, 4))
             else:
@@ -174,6 +189,7 @@ class ColorManager:
                     n_colors, transformed_color
                 )
                 self.values = colors
+            self.color_properties = None
             self._color_mode = ColorMode.DIRECT
 
     def add(self, color: Optional[ColorType] = None, n_colors: int = 1):
@@ -187,12 +203,23 @@ class ColorManager:
         n_colors : int
             The number of colors to add. The default value is 1.
         """
-        if color is None:
-            new_color = self.current_color
-        else:
-            if self._mode == ColorMode.DIRECT:
+        if self._mode == ColorMode.DIRECT:
+            if color is None:
+                new_color = self.current_color
+            else:
                 new_color = color
-            elif self._mode == ColorMode.CYCLE:
+
+        else:
+            # add the new value color_properties
+            color_property_name = self.color_properties.name
+            new_color_property_values = np.concatenate(
+                (self.color_properties.values, np.repeat(color, n_colors)),
+                axis=0,
+            )
+            self.color_properties = ColorProperties(
+                name=color_property_name, values=new_color_property_values
+            )
+            if self._mode == ColorMode.CYCLE:
                 if isinstance(color, str):
                     color = [color]
                 new_color = self.categorical_colormap.map(color)
@@ -221,14 +248,25 @@ class ColorManager:
         if len(selected_indices) > 0:
             self._values = np.delete(self.values, selected_indices, axis=0)
 
+            # remove the color_properties
+            color_property_name = self.color_properties.name
+            new_color_property_values = np.delete(
+                self.color_properties.values, selected_indices
+            )
+            self.color_properties = ColorProperties(
+                name=color_property_name, values=new_color_property_values
+            )
+
     def refresh_colors(
-        self, properties: dict, update_color_mapping: bool = False
+        self,
+        properties: Optional[dict] = None,
+        update_color_mapping: bool = False,
     ):
         """Calculate and update face or edge colors if using a cycle or color map
 
         Parameters
         ----------
-        properties : dict
+        properties : Optional[dict]
             The layer properties to map the colors against.
         update_color_mapping : bool
             If set to True, the function will recalculate the color cycle map
@@ -239,31 +277,36 @@ class ColorManager:
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
+        if properties is not None:
+            color_property_name = self.color_properties.name
+            self.color_properties = ColorProperties(
+                name=self.color_properties.name,
+                values=properties[color_property_name],
+            )
         if self._mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
             if self._mode == ColorMode.CYCLE:
-                color_properties = properties[self.color_property]
+                color_properties = self.color_properties.values
                 colors = self.categorical_colormap.map(color_properties)
 
             elif self._mode == ColorMode.COLORMAP:
-                color_properties = properties[self.color_property]
+                color_properties = self.color_properties.values
                 if len(color_properties) > 0:
-                    if (
-                        update_color_mapping
-                        or self.continuous_contrast_limits is None
-                    ):
+                    if update_color_mapping or self.contrast_limits is None:
                         colors, contrast_limits = map_property(
                             prop=color_properties,
                             colormap=self.continuous_colormap,
                         )
-                        self.continuous_contrast_limits = contrast_limits
+                        self.contrast_limits = contrast_limits
                     else:
                         colors, _ = map_property(
                             prop=color_properties,
                             colormap=self.continuous_colormap,
-                            contrast_limits=self.continuous_contrast_limits,
+                            contrast_limits=self.contrast_limits,
                         )
                 else:
                     colors = np.empty((0, 4))
+                    self.color_properties = None
+
             if len(colors) == 0:
                 colors = np.empty((0, 4))
             self.values = colors
@@ -278,11 +321,29 @@ class ColorManager:
         current_properties : dict
             The new value of current_properties.
         """
+        color_property_name = self.color_properties.name
         if self._mode == ColorMode.CYCLE:
-            new_prop_values = current_properties[self.color_property]
+            new_prop_values = current_properties[color_property_name]
+            self._current_property_value = new_prop_values
             new_color = self.categorical_colormap.map(new_prop_values)
             self.current_color = new_color
         if self._mode == ColorMode.COLORMAP:
-            new_prop_values = current_properties[self.color_property]
+            new_prop_values = current_properties[color_property_name]
+            self._current_property_value = new_prop_values
             new_color = self.continuous_colormap.map(new_prop_values)
             self.current_color = new_color
+
+    def _on_continuous_colormap_set(self, value):
+        self.refresh_colors()
+
+        return False
+
+    def _on_contrast_limits_set(self, value):
+        self.refresh_colors()
+
+        return False
+
+    def _on_categorical_colormap_set(self, value):
+        self.refresh_colors()
+
+        return False

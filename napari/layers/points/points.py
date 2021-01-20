@@ -730,13 +730,13 @@ class Points(Layer):
         """ None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
-        return self._edge_color.continuous_contrast_limits
+        return self._edge_color.contrast_limits
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._edge_color.continuous_contrast_limits = contrast_limits
+        self._edge_color.contrast_limits = contrast_limits
 
     @property
     def current_edge_color(self) -> str:
@@ -821,13 +821,13 @@ class Points(Layer):
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
-        return self._face_color.continuous_contrast_limits
+        return self._face_color.contrast_limits
 
     @face_contrast_limits.setter
     def face_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._face_color.continuous_contrast_limits = contrast_limits
+        self._face_color.contrast_limits = contrast_limits
 
     @property
     def current_face_color(self) -> str:
