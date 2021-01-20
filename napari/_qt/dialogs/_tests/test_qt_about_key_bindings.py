@@ -18,3 +18,16 @@ def test_about_key_bindings_dialog(make_test_viewer):
         # Could test to make sure text has been updated, but `toHtml` does not
         # return the same str that is provided to `setHtml`, so this could get
         # messy...
+
+
+def test_show_key_bindings_dialog(make_test_viewer, monkeypatch):
+    """Test creating dialog with method of qt_viewer."""
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
+    # check that dialog does not exist yet
+    assert not view.findChild(QtAboutKeyBindings)
+    # turn off showing the dialog for test
+    monkeypatch.setattr(QtAboutKeyBindings, 'show', lambda *a: None)
+    # create the dialog and make sure that it now exists
+    view.show_key_bindings_dialog()
+    assert isinstance(view.findChild(QtAboutKeyBindings), QtAboutKeyBindings)
