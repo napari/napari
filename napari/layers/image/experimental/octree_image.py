@@ -279,8 +279,8 @@ class OctreeImage(Image):
         visual quality, the imagery might look blurry.
 
         Parameters
-        -----------
-        drawn_chunk_set : Set[OctreeChunk]
+        ----------
+        drawn_set : Set[OctreeChunk]
             The chunks that are currently being drawn by the visual.
 
         Returns

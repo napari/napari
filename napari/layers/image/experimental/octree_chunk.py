@@ -195,7 +195,7 @@ def log_chunks(
     ----------
     label : str
         Prefix the log message with this label.
-    chunk : List[OctreeChunk]
+    chunks : List[OctreeChunk]
         The chunks to log.
     location : Optional[OctreeLocation]
         Append the log message with this location.
