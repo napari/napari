@@ -226,6 +226,22 @@ def test_affine_matrix_compose(dimensionality):
 
 
 @pytest.mark.parametrize('dimensionality', [2, 3])
+def test_numpy_array_protocol(dimensionality):
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1] = np.random.random((N, N + 1))
+    transform = Affine(affine_matrix=A)
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+    np.testing.assert_almost_equal(np.asarray(transform), A)
+
+    coords = np.random.random((20, N + 1)) * 20
+    coords[:, -1] = 1
+    np.testing.assert_almost_equal(
+        (transform @ coords.T).T[:, :-1], transform(coords[:, :-1])
+    )
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
 def test_affine_matrix_inverse(dimensionality):
     np.random.seed(0)
     N = dimensionality
