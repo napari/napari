@@ -12,8 +12,8 @@ from ....utils.config import octree_config
 def _get_tile_size() -> int:
     """Return the default tile size.
 
-    Return
-    ------
+    Returns
+    -------
     int
         The default tile size.
     """
@@ -46,8 +46,8 @@ class OctreeDisplayOptions:
     def show_grid(self) -> bool:
         """True if we are drawing a grid on top of the tiles.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if we are drawing a grid on top of the tiles.
         """
@@ -81,8 +81,8 @@ class NormalNoise(NamedTuple):
     def is_zero(self) -> bool:
         """Return True if there is no noise at all.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if there is no noise at all.
         """
@@ -92,8 +92,8 @@ class NormalNoise(NamedTuple):
     def get_value(self) -> float:
         """Get a random value.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The random value.
         """
