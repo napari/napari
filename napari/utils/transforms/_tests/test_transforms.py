@@ -240,6 +240,7 @@ def test_numpy_array_protocol(dimensionality):
         (transform @ coords.T).T[:, :-1], transform(coords[:, :-1])
     )
 
+
 @pytest.mark.parametrize('dimensionality', [2, 3])
 def test_affine_matrix_inverse(dimensionality):
     np.random.seed(0)
