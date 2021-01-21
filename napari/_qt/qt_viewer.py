@@ -330,6 +330,10 @@ class QtViewer(QSplitter):
 
         self._active_layer = active_layer
 
+        # If a QtAboutKeyBindings exists, update its text.
+        if self._key_bindings_dialog is not None:
+            self._key_bindings_dialog.update_active_layer()
+
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
 

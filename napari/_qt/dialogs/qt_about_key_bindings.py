@@ -99,7 +99,6 @@ class QtAboutKeyBindings(QDialog):
         self.layout.addLayout(layer_type_layout)
         self.layout.addWidget(self.textEditBox, 1)
 
-        self.viewer.events.active_layer.connect(self.update_active_layer)
         self.viewer.events.theme.connect(self.update_active_layer)
         self.update_active_layer()
 
