@@ -3,15 +3,22 @@ import itertools
 import os
 import warnings
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import numpy as np
 
 from .. import layers
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..plugins.io import read_data_with_plugins
-from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
@@ -32,6 +39,9 @@ from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
 DEFAULT_THEME = 'dark'
+
+if TYPE_CHECKING:
+    from ..types import FullLayerData, LayerData
 
 
 class ViewerModel(KeymapProvider, MousemapProvider):
@@ -480,7 +490,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         warnings.warn(
             (
                 "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
+                " Instead you should use the viewer.grid.enabled = True to turn on the grid view,"
                 " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
                 " grid respectively."
             ),
@@ -940,6 +950,8 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
+        from ..plugins.io import read_data_with_plugins
+
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
         # glean layer names from filename. These will be used as *fallback*
@@ -1060,7 +1072,7 @@ def _get_image_class() -> layers.Image:
     return layers.Image
 
 
-def _normalize_layer_data(data: LayerData) -> FullLayerData:
+def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1101,11 +1113,11 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
 
 def _unify_data_and_user_kwargs(
-    data: LayerData,
+    data: 'LayerData',
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> FullLayerData:
+) -> 'FullLayerData':
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:

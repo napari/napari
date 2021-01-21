@@ -147,8 +147,8 @@ class OctreeChunk:
     def in_memory(self) -> bool:
         """Return True if the data is fully in memory.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if data is fully in memory.
         """
@@ -161,9 +161,9 @@ class OctreeChunk:
         An unloaded chunk's data might be a Dask or similar deferred array.
         A loaded chunk's data is always an ndarray.
 
-        Return
-        ------
-            True if the chunk needs to be loaded.
+        Returns
+        -------
+        True if the chunk needs to be loaded.
         """
         return not self.in_memory and not self.loading
 
@@ -195,7 +195,7 @@ def log_chunks(
     ----------
     label : str
         Prefix the log message with this label.
-    chunk : List[OctreeChunk]
+    chunks : List[OctreeChunk]
         The chunks to log.
     location : Optional[OctreeLocation]
         Append the log message with this location.

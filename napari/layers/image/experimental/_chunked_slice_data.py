@@ -57,8 +57,8 @@ class ChunkedSliceData(ImageSliceData):
     def load_chunks(self) -> bool:
         """Load this slice data's chunks sync or async.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if chunks were loaded synchronously.
         """

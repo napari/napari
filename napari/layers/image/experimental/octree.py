@@ -90,8 +90,8 @@ class Octree:
         level_index : int
             Get the OctreeLevel with this index.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeLevel
             The requested level.
         """
@@ -151,8 +151,8 @@ class Octree:
         octree_chunk : OctreeChunk
             Return the parent of this chunk.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[OctreeChunk]
             The parent of the chunk if there was one or we created it.
         """
@@ -171,8 +171,8 @@ class Octree:
         octree_chunk : OctreeChunk
             Return the nearest ancestors of this chunk.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             Up to num_level nearest ancestors of the given chunk. Sorted so the
             most-distant ancestor comes first.
@@ -219,8 +219,8 @@ class Octree:
         octree_chunk : OctreeChunk
             Return the children of this chunk.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The children of the given chunk.
         """
@@ -252,8 +252,8 @@ class Octree:
     def _get_extra_levels(self) -> List[OctreeLevel]:
         """Compute the extra levels and return them.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeLevel]
             The extra levels.
         """
@@ -281,8 +281,8 @@ class Octree:
         tile_size : int
             Keep creating levels until one fits with a tile of this size.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeLevels]
             The new downsampled levels we created.
 

@@ -69,8 +69,8 @@ class OctreeSlice:
         Because octree multiscale is async, we say we are loaded up front even
         though none of our chunks/tiles might be loaded yet.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the data as been loaded.
         """
@@ -80,8 +80,8 @@ class OctreeSlice:
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:
         """Information about the current octree level.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[OctreeLevelInfo]
             Information about current octree level, if there is one.
         """
@@ -110,8 +110,8 @@ class OctreeSlice:
         view : OctreeView
             Intersect this view with the octree.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeIntersection
             The given view's intersection with the octree.
         """
@@ -126,8 +126,8 @@ class OctreeSlice:
         view : OctreeView
             Get the OctreeLevel for this view.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeLevel
             The automatically chosen OctreeLevel.
         """
@@ -145,8 +145,8 @@ class OctreeSlice:
         view : OctreeView
             Get the octree level index for this view.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The automatically chosen octree level index.
         """
@@ -178,8 +178,8 @@ class OctreeSlice:
         location : OctreeLocation
             Return the chunk at this location.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeChunk
             The returned chunk.
         """
@@ -196,8 +196,8 @@ class OctreeSlice:
         request : ChunkRequest
             The request for the chunk that was loaded.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the chunk's data was added to the octree.
         """

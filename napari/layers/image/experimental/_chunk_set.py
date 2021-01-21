@@ -22,8 +22,8 @@ class ChunkSet:
     def __len__(self) -> int:
         """Return the size of the size.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The size of the set.
         """
@@ -32,8 +32,8 @@ class ChunkSet:
     def __contains__(self, chunk: OctreeChunk) -> bool:
         """Return true if the set contains this chunk.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the set contains the given chunk.
         """
@@ -54,8 +54,8 @@ class ChunkSet:
     def chunks(self) -> List[OctreeChunk]:
         """Get all the chunks in the set.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             All the chunks in the set.
         """
@@ -64,8 +64,8 @@ class ChunkSet:
     def has_location(self, location: OctreeLocation) -> bool:
         """Return True if the set contains this location.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the set contains this location.
         """

@@ -639,7 +639,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         Parameters
         ----------
-        request : ChunkRequest
+        data : ChunkRequest
             The request that was satisfied/loaded.
         sync : bool
             If True the chunk was loaded synchronously.
