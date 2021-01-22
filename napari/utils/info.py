@@ -70,9 +70,13 @@ def sys_info(as_html=False):
     text = (
         f"<b>napari</b>: {napari.__version__}<br>"
         f"<b>Platform</b>: {platform.platform()}<br>"
-        f"<b>System</b>: {_sys_name()}<br>"
-        f"<b>Python</b>: {sys_version}<br>"
     )
+
+    __sys_name = _sys_name()
+    if __sys_name:
+        text += f"<b>System</b>: {__sys_name}<br>"
+
+    text += f"<b>Python</b>: {sys_version}<br>"
 
     try:
         from qtpy import API_NAME, PYQT_VERSION, PYSIDE_VERSION, QtCore
