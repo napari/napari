@@ -179,31 +179,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         self.events.theme(value=self.theme)
 
     @property
-    def grid_size(self):
-        """tuple: Size of grid."""
-        warnings.warn(
-            (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.shape"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.grid.shape
-
-    @grid_size.setter
-    def grid_size(self, grid_size):
-        warnings.warn(
-            (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.shape"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.shape = grid_size
-
-    @property
     def grid_stride(self):
         """int: Number of layers in each grid square."""
         warnings.warn(
