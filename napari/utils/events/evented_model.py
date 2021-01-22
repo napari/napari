@@ -2,7 +2,7 @@ from typing import ClassVar, Dict, Set
 
 from pydantic import BaseModel, PrivateAttr
 
-from ..custom_types import JSON_ENCODERS
+from .custom_types import JSON_ENCODERS
 from .dataclass import _type_to_compare, is_equal
 from .event import EmitterGroup
 

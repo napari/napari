@@ -18,8 +18,6 @@ class Array(np.ndarray):
             shape = tuple()
 
         result = np.array(val, dtype=dtype, copy=False, ndmin=len(shape))
-        if shape and len(shape) != len(result.shape):  # ndmin guarantees this
-            raise ValueError('Shape mismatch')
 
         if any(
             (shape[i] != -1 and shape[i] != result.shape[i])
