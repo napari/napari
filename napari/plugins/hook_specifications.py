@@ -381,7 +381,7 @@ def napari_experimental_provide_dock_widget() -> Union[
 
     Returns
     -------
-    resul : callable or tuple or list of callables or list of tuples
+    result : callable or tuple or list of callables or list of tuples
         A "callable" in this context is a classe or functions that, when
         called, returns an instance of either a
         :class:`~qtpy.QtWidgets.QWidget` or a
