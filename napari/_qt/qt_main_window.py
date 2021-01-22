@@ -564,6 +564,9 @@ class Window:
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
         for param in inspect.signature(Widget.__init__).parameters.values():
+            if param.name == 'napari_viewer':
+                kwargs['napari_viewer'] = self.qt_viewer.viewer
+                break
             if param.annotation in ('napari.viewer.Viewer', Viewer):
                 kwargs[param.name] = self.qt_viewer.viewer
                 break
