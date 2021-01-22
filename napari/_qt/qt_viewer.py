@@ -294,7 +294,7 @@ class QtViewer(QSplitter):
             except ImportError:
                 warnings.warn(
                     'napari-console not found. It can be installed with'
-                    'pip install napari_console'
+                    ' "pip install napari_console"'
                 )
                 self._console = None
         return self._console
