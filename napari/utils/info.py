@@ -1,7 +1,59 @@
+import os
 import platform
+import subprocess
 import sys
 
 import napari
+
+
+def _linux_sys_name():
+    """
+    Try to discover linux system name base on /etc/os-release file or lsb_release command output
+    https://www.freedesktop.org/software/systemd/man/os-release.html
+    """
+    if os.path.exists("/etc/os-release"):
+        with open("/etc/os-release") as f_p:
+            data = {}
+            for line in f_p:
+                field, value = line.split("=")
+                data[field.strip()] = value.strip().strip('"')
+        if "PRETTY_NAME" in data:
+            return data["PRETTY_NAME"]
+        if "NAME" in data:
+            if "VERSION" in data:
+                return f'{data["NAME"]} {data["VERSION"]}'
+            if "VERSION_ID" in data:
+                return f'{data["NAME"]} {data["VERSION_ID"]}'
+            return f'{data["NAME"]} (no version)'
+
+    try:
+        res = subprocess.run(
+            ["lsb_release", "-d"], check=True, capture_output=True
+        )
+        return res.stdout.decode().split(":")[1].strip()
+    except subprocess.CalledProcessError:
+        pass
+    return ""
+
+
+def _sys_name():
+    try:
+        if sys.platform == "linux":
+            return _linux_sys_name()
+        if sys.platform == "darwin":
+            try:
+                res = subprocess.run(
+                    ["sw_vers", "-productVersion"],
+                    check=True,
+                    capture_output=True,
+                )
+                return f"MacOS {res.stdout.decode().strip()}"
+            except subprocess.CalledProcessError:
+                pass
+        print("c")
+    except Exception:
+        pass
+    return ""
 
 
 def sys_info(as_html=False):
@@ -18,6 +70,7 @@ def sys_info(as_html=False):
     text = (
         f"<b>napari</b>: {napari.__version__}<br>"
         f"<b>Platform</b>: {platform.platform()}<br>"
+        f"<b>System</b>: {_sys_name()}<br>"
         f"<b>Python</b>: {sys_version}<br>"
     )
 
