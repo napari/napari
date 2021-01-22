@@ -1,4 +1,4 @@
-from napari.utils._pydantic import EventedModel
+from napari.utils.events import EventedModel
 
 
 def test_creating_evented_model():
