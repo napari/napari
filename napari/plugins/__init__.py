@@ -26,6 +26,7 @@ if sys.platform.startswith('linux') and running_as_bundled_app():
 
 
 if TYPE_CHECKING:
+    from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
 
@@ -38,7 +39,10 @@ with plugin_manager.discovery_blocked():
     plugin_manager.register(_builtins, name='builtins')
 
 
-dock_widgets: Dict[Tuple[str, str], Tuple[Type['QWidget'], dict]] = dict()
+dock_widgets: Dict[
+    Tuple[str, str],
+    Tuple[Callable[..., Union['FunctionGui', 'QWidget']], dict],
+] = dict()
 function_widgets: Dict[Tuple[str, str], Tuple[Callable, dict, dict]] = dict()
 
 
@@ -63,10 +67,10 @@ def register_dock_widget(
         else:
             _cls, kwargs = (arg, {})
 
-        if not (isclass(_cls) and issubclass(_cls, QWidget)):
+        if not callable(_cls):
             warn(
-                f'Plugin {plugin_name!r} provided an invalid '
-                f'widget type to {hook_name}: {_cls!r}. Widget ignored.'
+                f'Plugin {plugin_name!r} provided a non-callable object '
+                f'(widget) to {hook_name}: {_cls!r}. Widget ignored.'
             )
             continue
 
