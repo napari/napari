@@ -53,7 +53,7 @@ WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
 AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
 
 
-# these types are mostly "intentionality" placeholders.  While ƒit's still hard
+# these types are mostly "intentionality" placeholders.  While it's still hard
 # to use actual types to define what is acceptable data for a given layer,
 # these types let us point to a concrete namespace to indicate "this data is
 # intended to be (and is capable of) being turned into X layer type".
