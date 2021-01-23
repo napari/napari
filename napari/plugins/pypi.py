@@ -141,9 +141,8 @@ def ensure_repo_is_napari_plugin(
 
     Parameters
     ----------
-    name : str
-        full repo name on github (e.g. "napari/napari")
-    branch : str
+    info : tuple
+        2-tuple containing full repo name on github (e.g. "napari/napari"), and
         branch to query (e.g. "master")
 
     Returns
