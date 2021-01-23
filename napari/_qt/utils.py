@@ -11,7 +11,6 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -176,17 +175,9 @@ def combine_widgets(
         return widgets
     elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
         container = QWidget()
-        container.layout = QVBoxLayout() if vertical else QHBoxLayout()
-        container.setLayout(container.layout)
+        container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
         for widget in widgets:
-            container.layout.addWidget(widget)
-        # if this is a vertical layout, and none of the widgets declare a size
-        # policy of "expanding", add our own stretch.
-        if vertical and not any(
-            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
-            for w in widgets
-        ):
-            container.layout.addStretch()
+            container.layout().addWidget(widget)
         return container
     else:
         raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')

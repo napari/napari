@@ -46,13 +46,13 @@ def test_add_dock_widget_from_list(make_test_viewer):
         [widg, widg2], name='test', area='right'
     )
     assert viewer.window._qt_window.findChild(QDockWidget, 'test')
-    assert isinstance(dwidg.widget().layout, QVBoxLayout)
+    assert isinstance(dwidg.widget().layout(), QVBoxLayout)
 
     dwidg = viewer.window.add_dock_widget(
         [widg, widg2], name='test2', area='bottom'
     )
     assert viewer.window._qt_window.findChild(QDockWidget, 'test2')
-    assert isinstance(dwidg.widget().layout, QHBoxLayout)
+    assert isinstance(dwidg.widget().layout(), QHBoxLayout)
 
 
 def test_add_dock_widget_raises(make_test_viewer):
