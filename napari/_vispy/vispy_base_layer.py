@@ -45,7 +45,9 @@ class VispyBaseLayer(ABC):
         super().__init__()
         self.events = None  # Some derived classes have events.
 
-        self.layer = layer
+        import weakref
+
+        self._layer = weakref.ref(layer)
         self._array_like = False
         self.node = node
 
@@ -64,6 +66,10 @@ class VispyBaseLayer(ABC):
         self.layer.events.rotate.connect(self._on_matrix_change)
         self.layer.events.shear.connect(self._on_matrix_change)
         self.layer.events.affine.connect(self._on_matrix_change)
+
+    @property
+    def layer(self):
+        return self._layer()
 
     @property
     def _master_transform(self):

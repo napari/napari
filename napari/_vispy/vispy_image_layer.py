@@ -91,7 +91,8 @@ class VispyImageLayer(VispyBaseLayer):
             # Do nothing if we are not yet loaded. Calling astype below could
             # be very expensive. Lets not do it until our data has been loaded.
             return
-
+        if self.layer._data_view is None:
+            return
         self._set_node_data(self.node, self.layer._data_view)
 
     def _set_node_data(self, node, data):

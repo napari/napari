@@ -30,7 +30,9 @@ class QtLayerControls(QFrame):
     def __init__(self, layer):
         super().__init__()
 
-        self.layer = layer
+        import weakref
+
+        self._layer = weakref.ref(layer)
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
@@ -63,6 +65,10 @@ class QtLayerControls(QFrame):
         blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
+
+    @property
+    def layer(self):
+        return self._layer()
 
     def changeOpacity(self, value):
         """Change opacity value on the layer model.

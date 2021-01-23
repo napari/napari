@@ -1,5 +1,7 @@
 """ImageView class.
 """
+import weakref
+
 from ...types import ArrayLike, Callable
 
 
@@ -39,7 +41,7 @@ class ImageView:
     @property
     def view(self):
         """The viewable image."""
-        return self._view
+        return self._view()
 
     @view.setter
     def view(self, view_image: ArrayLike):
@@ -50,13 +52,13 @@ class ImageView:
         view_image : ArrayLike
             The viewable and raw images are set to this.
         """
-        self._view = view_image
-        self._raw = view_image
+        self._view = weakref.ref(view_image)
+        self._raw = weakref.ref(view_image)
 
     @property
     def raw(self):
         """The raw image."""
-        return self._raw
+        return self._raw()
 
     @raw.setter
     def raw(self, raw_image: ArrayLike):
@@ -67,7 +69,7 @@ class ImageView:
         raw_image : ArrayLike
             The raw image to set.
         """
-        self._raw = raw_image
+        self._raw = weakref.ref(raw_image)
 
         # Update the view image based on this new raw image.
-        self._view = self.image_converter(raw_image)
+        self._view = weakref.ref(self.image_converter(raw_image))

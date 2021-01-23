@@ -370,7 +370,7 @@ class QtViewer(QSplitter):
 
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(self.viewer.layers) - 1
-        self.layer_to_visual[layer] = vispy_layer
+        self.layer_to_visual[id(layer)] = vispy_layer
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent.
@@ -381,7 +381,7 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         layer = event.value
-        vispy_layer = self.layer_to_visual[layer]
+        vispy_layer = self.layer_to_visual[id(layer)]
         vispy_layer.close()
         del vispy_layer
         self._reorder_layers(None)
@@ -395,7 +395,7 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self.layer_to_visual[layer]
+            vispy_layer = self.layer_to_visual[id(layer)]
             vispy_layer.order = i
         self.canvas._draw_order.clear()
         self.canvas.update()

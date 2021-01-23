@@ -98,7 +98,7 @@ class QtLayerControlsContainer(QStackedWidget):
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            controls = self.widgets[layer]
+            controls = self.widgets[id(layer)]
             self.setCurrentWidget(controls)
 
     def _add(self, event):
@@ -112,7 +112,7 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = create_qt_layer_controls(layer)
         self.addWidget(controls)
-        self.widgets[layer] = controls
+        self.widgets[id(layer)] = controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -123,8 +123,8 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.value`.
         """
         layer = event.value
-        controls = self.widgets[layer]
+        controls = self.widgets[id(layer)]
         self.removeWidget(controls)
         controls.close()
         controls = None
-        del self.widgets[layer]
+        del self.widgets[id(layer)]

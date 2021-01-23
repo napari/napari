@@ -474,7 +474,10 @@ class QtColorBox(QWidget):
     def __init__(self, layer):
         super().__init__()
 
-        self.layer = layer
+        # didn't help
+        import weakref
+
+        self._layer = weakref.ref(layer)
         self.layer.events.selected_label.connect(
             self._on_selected_label_change
         )
@@ -486,6 +489,10 @@ class QtColorBox(QWidget):
         self.setFixedWidth(self._height)
         self.setFixedHeight(self._height)
         self.setToolTip('Selected label color')
+
+    @property
+    def layer(self):
+        return self._layer()
 
     def _on_selected_label_change(self, event):
         """Receive layer model label selection change event & update colorbox.
