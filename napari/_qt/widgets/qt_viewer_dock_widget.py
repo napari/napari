@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -79,8 +80,21 @@ class QtViewerDockWidget(QDockWidget):
         self.setMinimumWidth(50)
         self.setObjectName(name)
 
-        widget = combine_widgets(widget, vertical=area in {'left', 'right'})
+        is_vertical = area in {'left', 'right'}
+        widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
+        if is_vertical:
+            # add vertical stretch to the bottom of a vertical layout only
+            # if there is not already a widget that wants vertical space
+            # (like a textedit or something)
+            wlayout = widget.layout()
+            exp = QSizePolicy.Expanding
+            if hasattr(wlayout, 'addStretch') and all(
+                wlayout.itemAt(i).widget().sizePolicy().verticalPolicy() < exp
+                for i in range(wlayout.count())
+                if wlayout.itemAt(i).widget()
+            ):
+                wlayout.addStretch()
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
