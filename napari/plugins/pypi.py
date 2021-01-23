@@ -2,7 +2,6 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
-import configparser
 import json
 import os
 import re
@@ -10,7 +9,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
 from typing import Dict, Generator, List, NamedTuple, Optional, Tuple
-from urllib import error, request
+from urllib import error, parse, request
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 
@@ -59,6 +58,23 @@ def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
 
 
 @lru_cache(maxsize=128)
+def get_packages_by_classifier(classifier: str) -> List[str]:
+    """Search for packages declaring ``classifier`` on PyPI
+
+    Yields
+    -------
+    name : str
+        name of all packages at pypi that declare ``classifier``
+    """
+
+    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}"
+    with request.urlopen(url) as response:
+        html = response.read().decode()
+
+    return re.findall('class="package-snippet__name">(.+)</span>', html)
+
+
+@lru_cache(maxsize=128)
 def get_package_versions(name: str) -> List[str]:
     """Get available versions of a package on pypi
 
@@ -84,7 +100,8 @@ def get_napari_plugin_repos_from_github() -> List[dict]:
     with request.urlopen(
         'https://api.github.com/search/repositories?q="napari+plugin"+in:readme'
     ) as response:
-        return json.loads(response.read().decode()).get("items")
+        data = json.loads(response.read().decode())
+        return list(data.get("items"))
 
 
 @lru_cache(maxsize=128)
@@ -112,22 +129,22 @@ def ensure_published_at_pypi(
     )
 
 
-def ensure_repo_is_napari_plugin(repo_info: dict) -> Optional[ProjectInfo]:
+@lru_cache(maxsize=128)
+def ensure_repo_is_napari_plugin(
+    info: Tuple[str, str]
+) -> Optional[ProjectInfo]:
     """Return ProjectInfo of published napari plugin or None.
 
     This function looks for a setup.py or setup.cfg file in the default branch
     of the repo, then looks for a "napari.plugins" in the entry_points section.
     As such, it will only currently find projects that use setuptools.
 
-    NOTE: this is a hack because we don't have a trove classifier on PyPI (and
-    may not be able to get one)
-
     Parameters
     ----------
-    repo_info : dict
-        info as returned from the github API (or
-        ``get_napari_plugin_repos_from_github``)
-        see: https://developer.github.com/v3/repos/
+    name : str
+        full repo name on github (e.g. "napari/napari")
+    branch : str
+        branch to query (e.g. "master")
 
     Returns
     -------
@@ -135,13 +152,8 @@ def ensure_repo_is_napari_plugin(repo_info: dict) -> Optional[ProjectInfo]:
         named tuple with project info or None
 
     """
-    # assume repos starting with napari are following naming convention
-    if repo_info['name'].lower().startswith("napari"):
-        return ensure_published_at_pypi(repo_info['name'])
-
     # otherwise... we have to look for the entry_point
-    raw_url = 'https://raw.githubusercontent.com/{}/{}/'
-    base = raw_url.format(repo_info['full_name'], repo_info['default_branch'])
+    base = 'https://raw.githubusercontent.com/{}/{}/'.format(*info)
 
     # first check setup.py
     try:
@@ -161,6 +173,8 @@ def ensure_repo_is_napari_plugin(repo_info: dict) -> Optional[ProjectInfo]:
 
     # then check setup.cfg
     try:
+        import configparser
+
         with request.urlopen(base + "setup.cfg") as resp:
             text = resp.read().decode()
         parser = configparser.ConfigParser()
@@ -185,12 +199,16 @@ def iter_napari_plugin_info(
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [
             executor.submit(ensure_published_at_pypi, name)
-            for name in get_packages_by_prefix("napari-")
+            for name in get_packages_by_classifier("Framework :: napari")
             if name not in skip
         ]
+
         futures.extend(
             [
-                executor.submit(ensure_repo_is_napari_plugin, repo_info)
+                executor.submit(
+                    ensure_repo_is_napari_plugin,
+                    (repo_info['full_name'], repo_info['default_branch']),
+                )
                 for repo_info in get_napari_plugin_repos_from_github()
                 if repo_info['name'] not in skip  # repo may not have pkg name
             ]
