@@ -681,3 +681,19 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 1
+
+
+def test_memleak():
+    import gc
+    import weakref
+
+    viewer = ViewerModel()
+
+    layer_ref = weakref.ref(viewer.add_image(np.random.rand(1024, 1024)))
+    data_ref = weakref.ref(layer_ref().data)
+    assert layer_ref() is not None
+    assert data_ref() is not None
+    viewer.layers.pop(0)
+    gc.collect()
+    assert layer_ref() is None
+    assert data_ref() is None
