@@ -85,11 +85,7 @@ def test_plugin_widgets(monkeypatch):
         m.setattr(plugins, "dock_widgets", dock_widgets)
 
         function_widgets = {
-            ("TestP3", "magic"): (
-                magicfunc,
-                {'call_button': True},
-                {'area': 'right'},
-            ),
+            ("TestP3", "magic"): magicfunc,
         }
         m.setattr(plugins, "function_widgets", function_widgets)
         yield
@@ -157,7 +153,7 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
     dw = viewer.window._dock_widgets['TestP3: magic']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
-    assert isinstance(magic_widget, magicgui.FunctionGui)
+    assert isinstance(magic_widget, magicgui.widgets.FunctionGui)
     # This magicgui widget uses the parameter annotation to receive a viewer
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it
