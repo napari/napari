@@ -1,6 +1,3 @@
-import numpy as np
-
-from ..utils.colormaps.standardize_color import transform_single_color
 from ..utils.events.dataclass import Property, evented_dataclass
 from ._viewer_constants import Position
 
@@ -33,6 +30,3 @@ class ScaleBar:
     colored: bool = False
     ticks: bool = True
     position: Property[Position, str, Position] = Position.BOTTOM_RIGHT
-    background_color: Property[
-        np.ndarray, None, transform_single_color
-    ] = np.array([1, 1, 1, 1])

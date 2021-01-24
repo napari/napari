@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from vispy.visuals.transforms import MatrixTransform
 
+from ..utils.events import disconnect_events
 from .utils_gl import get_max_texture_sizes
 
 
@@ -42,6 +43,7 @@ class VispyBaseLayer(ABC):
 
     def __init__(self, layer, node):
         super().__init__()
+        self.events = None  # Some derived classes have events.
 
         self.layer = layer
         self._array_like = False
@@ -52,7 +54,7 @@ class VispyBaseLayer(ABC):
             self.MAX_TEXTURE_SIZE_3D,
         ) = get_max_texture_sizes()
 
-        self.layer.events.refresh.connect(lambda e: self.node.update())
+        self.layer.events.refresh.connect(self._on_refresh_change)
         self.layer.events.set_data.connect(self._on_data_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
@@ -102,6 +104,9 @@ class VispyBaseLayer(ABC):
     @abstractmethod
     def _on_data_change(self, event=None):
         raise NotImplementedError()
+
+    def _on_refresh_change(self, event=None):
+        self.node.update()
 
     def _on_visible_change(self, event=None):
         self.node.visible = self.layer.visible
@@ -160,3 +165,9 @@ class VispyBaseLayer(ABC):
         VRAM or animating itself.
         """
         pass
+
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.events, self)
+        self.node.transforms = MatrixTransform()
+        self.node.parent = None

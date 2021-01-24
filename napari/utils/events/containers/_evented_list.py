@@ -107,7 +107,7 @@ class EventedList(TypedMutableSequence[_T]):
 
     def __setitem__(self, key, value):
         old = self._list[key]
-        if value == old:
+        if value is old:  # https://github.com/napari/napari/pull/2120
             return
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
@@ -142,7 +142,7 @@ class EventedList(TypedMutableSequence[_T]):
         elif type(key) in self._lookup:
             return [(self, self.index(key))]
 
-        valid = set([int, slice]).union(set(self._lookup))
+        valid = {int, slice}.union(set(self._lookup))
         raise TypeError(f"Deletion index must be {valid!r}, got {type(key)}")
 
     def __delitem__(self, key: Index):
@@ -170,9 +170,8 @@ class EventedList(TypedMutableSequence[_T]):
             dest_index -= 1
 
         self.events.moving(index=src_index, dest_index=dest_index)
-        with self.events.blocker_all():
-            item = self.pop(src_index)
-            self.insert(dest_index, item)
+        item = self._list.pop(src_index)
+        self._list.insert(dest_index, item)
         self.events.moved(index=src_index, dest_index=dest_index, value=item)
         self.events.reordered(value=self)
         return True
@@ -227,11 +226,11 @@ class EventedList(TypedMutableSequence[_T]):
         dest_index -= len([i for i in to_move if i < dest_index])
 
         self.events.moving(index=to_move, new_index=dest_index)
-        with self.events.blocker_all():
-            items = [self[i] for i in to_move]
-            for i in sorted(to_move, reverse=True):
-                del self[i]
-            self[dest_index:dest_index] = items
+        items = [self[i] for i in to_move]
+        for i in sorted(to_move, reverse=True):
+            self._list.pop(i)
+        for item in items[::-1]:
+            self._list.insert(dest_index, item)
         self.events.moved(index=to_move, new_index=dest_index, value=items)
         self.events.reordered(value=self)
         return len(to_move)

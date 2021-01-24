@@ -3,12 +3,21 @@
 Poll visuals or other objects so they can do things even when the
 mouse/camera are not moving. Usually for just a short period of time.
 """
+import time
+from typing import Optional
+
 from qtpy.QtCore import QEvent, QObject, QTimer
 
-from ...components.camera import Camera
 from ...utils.events import EmitterGroup
 
+# When running a timer we use this interval.
 POLL_INTERVAL_MS = 16.666  # About 60HZ
+
+# If called more often than this we ignore it. Our _on_camera() method can
+# be called multiple times in on frame. It can get called because the
+# "center" changed and then the "zoom" changed even if it was really from
+# the same camera movement.
+IGNORE_INTERVAL_MS = 10
 
 
 class QtPoll(QObject):
@@ -37,52 +46,53 @@ class QtPoll(QObject):
         The viewer's main camera.
     """
 
-    def __init__(self, parent: QObject, camera: Camera):
+    def __init__(self, parent: QObject):
         super().__init__(parent)
 
         self.events = EmitterGroup(source=self, auto_connect=True, poll=None)
-        camera.events.connect(self._on_camera)
 
         self.timer = QTimer()
         self.timer.setInterval(POLL_INTERVAL_MS)
         self.timer.timeout.connect(self._on_timer)
+        self._interval = IntervalTimer()
 
-    def _on_camera(self, _event) -> None:
+    def on_camera(self, _event) -> None:
         """Called when camera view changes at all."""
-        # Poll right away. If the timer is running, it's generally starved
-        # out by the mouse button being down. Not sure why. If we end up
-        # "double polling" it *should* be harmless. However, if we don't
-        # poll then everything is frozen. So better to poll.
-        self._poll()
+        self.wake_up()
 
-        # Start the timer so that we will keep polling even if the camera
-        # doesn't move again. Although the mouse movement is starving out
-        # the timer right now, we need the timer going so we keep polling
-        # even if the mouse stops.
-        self.timer.start()
+    def wake_up(self, _event=None) -> None:
+        """Wake up QtPoll so it starts polling."""
+        # Start the timer so that we start polling. We used to poll once
+        # right away here, but it led to crashes. Because we polled during
+        # a paintGL event?
+        if not self.timer.isActive():
+            self.timer.start()
 
     def _on_timer(self) -> None:
-        """Called when the timer is running."""
-        # The timer is running which means someone we are polling still has
-        # work to do.
+        """Called when the timer is running.
+
+        The timer is running which means someone we are polling still has
+        work to do.
+        """
         self._poll()
 
     def _poll(self) -> None:
-        """Poll everyone listening to our event."""
+        """Called on camera move or with the timer."""
+        # Listeners might include visuals and the monitor.
         event = self.events.poll()
 
+        # Listeners will "handle" the event if they need more polling. If
+        # no one needs polling, then we can stop the timer.
         if not event.handled:
-            # No one needed polling, so stop the timer. No polling will
-            # happen until the camera moves again.
             self.timer.stop()
             return
 
-        # Someone handled the event. They need to be polled even if the
-        # camera stops moving. So start the timer. They can finish their
-        # work and continue to be drawn even while the camera is stopped.
-        self.timer.start()
+        # Someone handled the event, so they want to be polled even if
+        # the mouse doesn't move. So start the timer if needed.
+        if not self.timer.isActive():
+            self.timer.start()
 
-    def closeEvent(self, event: QEvent) -> None:
+    def closeEvent(self, _event: QEvent) -> None:
         """Cleanup and close.
 
         Parameters
@@ -92,3 +102,18 @@ class QtPoll(QObject):
         """
         self.timer.stop()
         self.deleteLater()
+
+
+class IntervalTimer:
+    """Time the interval between subsequent calls to our elapsed property."""
+
+    def __init__(self):
+        self._last: Optional[float] = None
+
+    @property
+    def elapsed_ms(self) -> float:
+        """The elapsed time since the last call to this property."""
+        now = time.time()
+        elapsed_seconds = 0 if self._last is None else now - self._last
+        self._last = now
+        return elapsed_seconds * 1000

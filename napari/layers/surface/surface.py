@@ -192,7 +192,7 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.refresh()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -206,7 +206,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertex_values = vertex_values
 
         self.refresh()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -220,7 +220,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.faces = faces
 
         self.refresh()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     def _get_ndim(self):

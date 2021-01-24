@@ -260,7 +260,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self._dims_displayed)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -596,7 +596,7 @@ class Vectors(Layer):
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
         return self._edge_contrast_limits

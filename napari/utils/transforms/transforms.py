@@ -298,7 +298,10 @@ class Affine(Transform):
     def __init__(
         self,
         scale=(1.0, 1.0),
-        translate=(0.0, 0.0,),
+        translate=(
+            0.0,
+            0.0,
+        ),
         *,
         rotate=None,
         shear=None,
@@ -427,6 +430,10 @@ class Affine(Transform):
         """Set the affine matrix for the transform."""
         self.linear_matrix = affine_matrix[:-1, :-1]
         self.translate = affine_matrix[:-1, -1]
+
+    def __array__(self, *args, **kwargs):
+        """NumPy __array__ protocol to get the affine transform matrix."""
+        return self.affine_matrix
 
     @property
     def inverse(self) -> 'Affine':

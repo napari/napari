@@ -1,15 +1,14 @@
 import os
+import sys
 import warnings
 from functools import partial
 from typing import List
 
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.components import LayerList
-from napari.experimental import chunk_loader, synchronous_loading
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
@@ -18,6 +17,7 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
+from napari.utils.config import async_loading
 
 try:
     from skimage.data import image_fetcher
@@ -43,9 +43,6 @@ def pytest_addoption(parser):
         Show viewers during tests, they are hidden by default. Showing viewers
         decreases test speed by around 20%.
 
-    --perfmon-only
-        Run only perfmon test.
-
     --aysnc_only
         Run only asynchronous tests, not sync ones.
 
@@ -53,22 +50,12 @@ def pytest_addoption(parser):
     -----
     Due to the placement of this conftest.py file, you must specifically name
     the napari folder such as "pytest napari --show-viewer"
-
-    For --perfmon-only must also enable perfmon with env var:
-    NAPARI_PERFMON=1 pytest napari --perfmon-only
     """
     parser.addoption(
         "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
-    )
-
-    parser.addoption(
-        "--perfmon-only",
-        action="store_true",
-        default=False,
-        help="run only perfmon tests",
     )
 
     parser.addoption(
@@ -82,8 +69,18 @@ def pytest_addoption(parser):
 @pytest.fixture
 def qtbot(qtbot):
     """A modified qtbot fixture that makes sure no widgets have been leaked."""
+    from qtpy.QtWidgets import QApplication
+
     initial = QApplication.topLevelWidgets()
+    prior_exception = getattr(sys, 'last_value', None)
+
     yield qtbot
+
+    # if an exception was raised during the test, we should just quit now and
+    # skip looking for leaked widgets.
+    if getattr(sys, 'last_value', None) is not prior_exception:
+        return
+
     QApplication.processEvents()
     leaks = set(QApplication.topLevelWidgets()).difference(initial)
     # still not sure how to clean up some of the remaining vispy
@@ -327,30 +324,46 @@ def configure_loading(request):
     """Configure async/async loading."""
     async_mode = request.config.getoption("--async_only")
     if async_mode:
+        # Late import so we don't import experimental code unless using it.
+        from napari.components.experimental.chunk import synchronous_loading
+
         with synchronous_loading(False):
             yield
     else:
         yield  # Sync so do nothing.
 
 
+def _is_async_mode() -> bool:
+    """Return True if we are currently loading chunks asynchronously
+
+    Returns
+    -------
+    bool
+        True if we are currently loading chunks asynchronously.
+    """
+    if not async_loading:
+        return False  # Not enabled at all.
+    else:
+        # Late import so we don't import experimental code unless using it.
+        from napari.components.experimental.chunk import chunk_loader
+
+        return not chunk_loader.force_synchronous
+
+
 @pytest.fixture(autouse=True)
 def skip_sync_only(request):
-    """Skip tests depending on our sync/async settings."""
-    async_mode = not chunk_loader.force_synchronous
-    sync_only_test = request.node.get_closest_marker('sync_only')
-    if async_mode and sync_only_test:
+    """Skip async_only tests if running async."""
+    sync_only = request.node.get_closest_marker('sync_only')
+    if _is_async_mode() and sync_only:
         pytest.skip("running with --async_only")
 
 
 @pytest.fixture(autouse=True)
-def perfmon_only(request):
-    """If flag is set, only run the perfmon tests."""
-    perfmon_flag = request.config.getoption("--perfmon-only")
-    perfmon_test = request.node.get_closest_marker('perfmon')
-    if perfmon_flag and not perfmon_test:
-        pytest.skip("running with --perfmon-only")
-    if not perfmon_flag and perfmon_test:
-        pytest.skip("not running with --perfmon-only")
+def skip_async_only(request):
+    """Skip async_only tests if running sync."""
+    async_only = request.node.get_closest_marker('async_only')
+    if not _is_async_mode() and async_only:
+        pytest.skip("not running with --async_only")
 
 
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
@@ -365,3 +378,14 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
     @pytest.hookimpl(tryfirst=True)
     def pytest_internalerror(excinfo):
         raise excinfo.value
+
+
+def pytest_collection_modifyitems(session, config, items):
+
+    put_at_end = ('test_trace_on_start',)
+    at_end = []
+    for i, item in enumerate(items):
+        if item.name in put_at_end:
+            at_end.append(items.pop(i))
+
+    items.extend([x for _, x in sorted(zip(put_at_end, at_end))])

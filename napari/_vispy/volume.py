@@ -103,8 +103,7 @@ class Volume(BaseVolume):
 
     @property
     def threshold(self):
-        """The threshold value to apply for the isosurface render method.
-        """
+        """The threshold value to apply for the isosurface render method."""
         return self._threshold
 
     @threshold.setter
@@ -116,8 +115,7 @@ class Volume(BaseVolume):
 
     @property
     def attenuation(self):
-        """The attenuation value to apply for the attenuated mip render method.
-        """
+        """The attenuation value to apply for the attenuated mip render method."""
         return self._attenuation
 
     @attenuation.setter

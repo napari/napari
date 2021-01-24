@@ -8,10 +8,13 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import Optional, Sequence, Type, TypeVar
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import packaging.version
+
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
 
@@ -19,6 +22,16 @@ try:
     from importlib import metadata as importlib_metadata
 except ImportError:
     import importlib_metadata  # noqa
+
+
+def parse_version(v) -> 'packaging.version._BaseVersion':
+    """Parse a version string and return a packaging.version.Version obj."""
+    import packaging.version
+
+    try:
+        return packaging.version.Version(v)
+    except packaging.version.InvalidVersion:
+        return packaging.version.LegacyVersion(v)
 
 
 def running_as_bundled_app() -> bool:
@@ -32,6 +45,13 @@ def running_as_bundled_app() -> bool:
         return False
 
     return 'Briefcase-Version' in metadata
+
+
+def bundle_bin_dir() -> Optional[str]:
+    """Return path to briefcase app_packages/bin if it exists."""
+    bin = path.join(path.dirname(sys.exec_prefix), 'app_packages', 'bin')
+    if path.isdir(bin):
+        return bin
 
 
 def in_jupyter() -> bool:
@@ -57,8 +77,7 @@ def in_ipython() -> bool:
 
 
 def str_to_rgb(arg):
-    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
-    """
+    """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z]."""
     return list(
         map(int, re.match(r'rgb\((\d+),\s*(\d+),\s*(\d+)\)', arg).groups())
     )
@@ -144,7 +163,8 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
     """
-    if obj and is_sequence(obj) and is_iterable(obj[0]):
+
+    if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
             raise ValueError(f"length of {obj} must equal {length}")
         return obj
@@ -165,8 +185,7 @@ def formatdoc(obj):
 
 class StringEnumMeta(EnumMeta):
     def __getitem__(self, item):
-        """ set the item name case to uppercase for name lookup
-        """
+        """set the item name case to uppercase for name lookup"""
         if isinstance(item, str):
             item = item.upper()
 
@@ -182,8 +201,7 @@ class StringEnumMeta(EnumMeta):
         type=None,
         start=1,
     ):
-        """ set the item value case to lowercase for value lookup
-        """
+        """set the item value case to lowercase for value lookup"""
         # simple value lookup
         if names is None:
             if isinstance(value, str):
@@ -212,8 +230,7 @@ class StringEnumMeta(EnumMeta):
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
     def _generate_next_value_(name, start, count, last_values):
-        """ autonaming function assigns each value its own name as a value
-        """
+        """autonaming function assigns each value its own name as a value"""
         return name.lower()
 
     def __str__(self):
@@ -258,6 +275,8 @@ def abspath_or_url(relpath: T) -> T:
         An absolute path, or list or tuple of absolute paths (same type as
         input).
     """
+    from urllib.parse import urlparse
+
     if isinstance(relpath, (tuple, list)):
         return type(relpath)(abspath_or_url(p) for p in relpath)
 
@@ -282,7 +301,7 @@ class CallDefault(inspect.Parameter):
             self._default is not inspect._empty
             or kind == inspect._KEYWORD_ONLY
         ):
-            formatted = '{}={}'.format(formatted, formatted)
+            formatted = f'{formatted}={formatted}'
 
         if kind == inspect._VAR_POSITIONAL:
             formatted = '*' + formatted
@@ -312,7 +331,7 @@ class CallSignature(inspect.Signature):
 
         if self.return_annotation is not inspect._empty:
             anno = inspect.formatannotation(self.return_annotation)
-            rendered += ' -> {}'.format(anno)
+            rendered += f' -> {anno}'
 
         return rendered
 
@@ -356,3 +375,18 @@ def ensure_n_tuple(val, n, fill=0):
     assert n > 0, 'n must be greater than 0'
     tuple_value = tuple(val)
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+
+
+def ensure_layer_data_tuple(val):
+    if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
+        raise TypeError(f'Not a valid layer data tuple: {val!r}')
+    return val
+
+
+def ensure_list_of_layer_data_tuple(val):
+    if isinstance(val, list) and len(val):
+        try:
+            return [ensure_layer_data_tuple(v) for v in val]
+        except TypeError:
+            pass
+    raise TypeError('Not a valid list of layer data tuples!')

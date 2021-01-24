@@ -107,7 +107,9 @@ def _run():
         help="increase output verbosity",
     )
     parser.add_argument(
-        '--version', action='version', version=f'napari version {__version__}',
+        '--version',
+        action='version',
+        version=f'napari version {__version__}',
     )
     parser.add_argument(
         '--info',
@@ -127,7 +129,8 @@ def _run():
         help='concatenate multiple input files into a single stack.',
     )
     parser.add_argument(
-        '--plugin', help='specify plugin name when opening a file',
+        '--plugin',
+        help='specify plugin name when opening a file',
     )
     parser.add_argument(
         '--layer-type',

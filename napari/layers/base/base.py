@@ -10,6 +10,7 @@ from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
+from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import genetate_layer_status
 from ...utils.transforms import Affine, TransformChain
@@ -22,7 +23,7 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
-class Layer(KeymapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 
     Parameters
@@ -119,8 +120,6 @@ class Layer(KeymapProvider, ABC):
         level.
     position : tuple
         Cursor position in world coordinates.
-    shape : tuple of int
-        Size of the data in the layer.
     ndim : int
         Dimensionality of the layer.
     selected : bool
@@ -223,18 +222,17 @@ class Layer(KeymapProvider, ABC):
             )
         elif isinstance(affine, np.ndarray) or isinstance(affine, list):
             data2world_transform = Affine(
-                affine_matrix=np.array(affine), name='data2world',
+                affine_matrix=np.array(affine),
+                name='data2world',
             )
         elif isinstance(affine, Affine):
             affine.name = 'data2world'
             data2world_transform = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine, '
-                    f'ndarray, or None. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine, '
+                f'ndarray, or None. Got {type(affine)}'
             )
 
         self._transforms = TransformChain(
@@ -283,12 +281,6 @@ class Layer(KeymapProvider, ABC):
         )
         self.name = name
 
-        self.mouse_move_callbacks = []
-        self.mouse_drag_callbacks = []
-        self.mouse_wheel_callbacks = []
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
-
     def __str__(self):
         """Return self.name."""
         return self.name
@@ -326,8 +318,7 @@ class Layer(KeymapProvider, ABC):
 
     @property
     def opacity(self):
-        """float: Opacity value between 0.0 and 1.0.
-        """
+        """float: Opacity value between 0.0 and 1.0."""
         return self._opacity
 
     @opacity.setter
@@ -451,11 +442,9 @@ class Layer(KeymapProvider, ABC):
             self._transforms['data2world'] = affine
         else:
             raise TypeError(
-                (
-                    'affine input not recognized. '
-                    'must be either napari.utils.transforms.Affine '
-                    f'or ndarray. Got {type(affine)}'
-                )
+                'affine input not recognized. '
+                'must be either napari.utils.transforms.Affine '
+                f'or ndarray. Got {type(affine)}'
             )
         self._update_dims()
         self.events.affine()
@@ -572,7 +561,15 @@ class Layer(KeymapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        data_extent = self._extent_data
+        return self._get_extent_world(self._extent_data)
+
+    def _get_extent_world(self, data_extent):
+        """Range of layer in world coordinates base on provided data_extent
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
         D = data_extent.shape[1]
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
@@ -589,9 +586,10 @@ class Layer(KeymapProvider, ABC):
     @property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
+        data = self._extent_data
         return Extent(
-            data=self._extent_data,
-            world=self._extent_world,
+            data=data,
+            world=self._get_extent_world(data),
             step=abs(self.scale),
         )
 
@@ -626,36 +624,15 @@ class Layer(KeymapProvider, ABC):
 
         world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         data_pts = slice_inv_transform(world_pts)
-        # A round is taken to convert these values to slicing integers
-        data_pts = np.round(data_pts).astype(int)
+        if not hasattr(self, "_round_index") or self._round_index:
+            # A round is taken to convert these values to slicing integers
+            data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self._dims_not_displayed):
             indices[ax] = data_pts[i]
 
         return tuple(indices)
-
-    @property
-    def shape(self):
-        """Size of layer in world coordinates (compatibility).
-
-        Returns
-        -------
-        shape : tuple
-        """
-        warnings.warn(
-            (
-                "The shape attribute is deprecated and will be removed in version 0.4.3."
-                " Instead you should use the extent.data and extent.world attributes"
-                " to get the extent of the data in data or world coordinates."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        extent = self._extent_world
-        # Rounding is for backwards compatibility reasons.
-        return tuple(np.round(extent[1] - extent[0]).astype(int))
 
     @abstractmethod
     def _get_ndim(self):
@@ -867,6 +844,8 @@ class Layer(KeymapProvider, ABC):
             nd = min(self.ndim, ndisplay)
             for i in order[-nd:]:
                 point[i] = slice(None)
+        else:
+            point = list(point)
 
         # If no slide data has changed, then do nothing
         if (
@@ -956,8 +935,7 @@ class Layer(KeymapProvider, ABC):
         pass
 
     def refresh(self, event=None):
-        """Refresh all layer data based on current view slice.
-        """
+        """Refresh all layer data based on current view slice."""
         if self.visible:
             self.set_view_slice()
             self.events.set_data()
