@@ -31,9 +31,7 @@ if TYPE_CHECKING:
 
 
 # the main plugin manager instance for the `napari` plugin namespace.
-plugin_manager = PluginManager(
-    'napari', discover_entry_point='napari.plugin', discover_prefix='napari_'
-)
+plugin_manager = PluginManager('napari', discover_entry_point='napari.plugin')
 with plugin_manager.discovery_blocked():
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
@@ -93,7 +91,7 @@ def register_dock_widget(
         dock_widgets[key] = (_cls, kwargs)
 
 
-magicgui_sig = {
+_magicgui_sig = {
     name
     for name, p in signature(magicgui).parameters.items()
     if p.kind is p.KEYWORD_ONLY
@@ -141,7 +139,7 @@ def register_function_widget(
             )
             continue
 
-        valid_magic_kwargs = set(signature(func).parameters) | magicgui_sig
+        valid_magic_kwargs = set(signature(func).parameters) | _magicgui_sig
         extra_kwargs = set(magic_kwargs) - valid_magic_kwargs
         if extra_kwargs:
             warn(
@@ -175,14 +173,15 @@ def register_function_widget(
         function_widgets[key] = (func, magic_kwargs, dock_kwargs)
 
 
-plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
-    result_callback=register_dock_widget, with_impl=True
-)
+def discover_dock_widgets():
+    """Trigger discovery of dock_widgets plugins"""
+    dw_hook = plugin_manager.hook.napari_experimental_provide_dock_widget
+    dw_hook.call_historic(result_callback=register_dock_widget, with_impl=True)
+    fw_hook = plugin_manager.hook.napari_experimental_provide_function_widget
+    fw_hook.call_historic(
+        result_callback=register_function_widget, with_impl=True
+    )
 
-
-plugin_manager.hook.napari_experimental_provide_function_widget.call_historic(
-    result_callback=register_function_widget, with_impl=True
-)
 
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
