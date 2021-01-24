@@ -19,7 +19,6 @@ fwidget_args = {
     'bad_func_tuple': (func, {'call_button': True}),
     'bad_full_func_tuple': (func, {'auto_call': True}, {'area': 'right'}),
     'bad_tuple_list': [(func, {'auto_call': True}), (func2, {})],
-    'bad_tuple_list2': [(func, {'auto_call': True}), func2],
     'bad_func': 1,
     'bad_tuple1': (func, 1),
     'bad_tuple2': (func, {}, 1),
@@ -54,14 +53,14 @@ def test_function_widget_registration(
         hook.call_historic(
             result_callback=plugins.register_function_widget, with_impl=True
         )
-        if '[bad_' in request.node.name:
+        if 'bad_' in request.node.name:
             assert not registered
             assert len(recwarn) == 1
         else:
-            assert registered[(None, 'func')][0] == func
+            assert registered[(None, 'func')] == func
             assert len(recwarn) == 0
-            if 'tuple_list' in request.node.name:
-                assert registered[(None, 'func2')][0] == func2
+            if 'list_func' in request.node.name:
+                assert registered[(None, 'func2')] == func2
 
 
 # test_dock_widget_registration is done in `_qt._tests.test_plugin_widgets`
