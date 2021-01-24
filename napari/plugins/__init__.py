@@ -26,19 +26,21 @@ if sys.platform.startswith('linux') and running_as_bundled_app():
 
 
 if TYPE_CHECKING:
+    from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
 
 # the main plugin manager instance for the `napari` plugin namespace.
-plugin_manager = PluginManager(
-    'napari', discover_entry_point='napari.plugin', discover_prefix='napari_'
-)
+plugin_manager = PluginManager('napari', discover_entry_point='napari.plugin')
 with plugin_manager.discovery_blocked():
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
 
 
-dock_widgets: Dict[Tuple[str, str], Tuple[Type['QWidget'], dict]] = dict()
+dock_widgets: Dict[
+    Tuple[str, str],
+    Tuple[Callable[..., Union['FunctionGui', 'QWidget']], dict],
+] = dict()
 function_widgets: Dict[Tuple[str, str], Callable] = dict()
 
 
@@ -63,10 +65,10 @@ def register_dock_widget(
         else:
             _cls, kwargs = (arg, {})
 
-        if not (isclass(_cls) and issubclass(_cls, QWidget)):
+        if not callable(_cls):
             warn(
-                f'Plugin {plugin_name!r} provided an invalid '
-                f'widget type to {hook_name}: {_cls!r}. Widget ignored.'
+                f'Plugin {plugin_name!r} provided a non-callable object '
+                f'(widget) to {hook_name}: {_cls!r}. Widget ignored.'
             )
             continue
 
@@ -89,7 +91,7 @@ def register_dock_widget(
         dock_widgets[key] = (_cls, kwargs)
 
 
-magicgui_sig = {
+_magicgui_sig = {
     name
     for name, p in signature(magicgui).parameters.items()
     if p.kind is p.KEYWORD_ONLY
@@ -129,14 +131,15 @@ def register_function_widget(
         function_widgets[key] = func
 
 
-plugin_manager.hook.napari_experimental_provide_dock_widget.call_historic(
-    result_callback=register_dock_widget, with_impl=True
-)
+def discover_dock_widgets():
+    """Trigger discovery of dock_widgets plugins"""
+    dw_hook = plugin_manager.hook.napari_experimental_provide_dock_widget
+    dw_hook.call_historic(result_callback=register_dock_widget, with_impl=True)
+    fw_hook = plugin_manager.hook.napari_experimental_provide_function_widget
+    fw_hook.call_historic(
+        result_callback=register_function_widget, with_impl=True
+    )
 
-
-plugin_manager.hook.napari_experimental_provide_function_widget.call_historic(
-    result_callback=register_function_widget, with_impl=True
-)
 
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'

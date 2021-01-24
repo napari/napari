@@ -362,7 +362,7 @@ def napari_experimental_provide_function_widget() -> Union[
 def napari_experimental_provide_dock_widget() -> Union[
     AugmentedWidget, List[AugmentedWidget]
 ]:
-    """Provide QWidget classes to be instantiated and docked on the viewer.
+    """Provide functions that return widgets to be docked in the viewer.
 
     This hook specification is marked as experimental as the API or how the
     returned value is handled may change here more frequently then the
@@ -370,37 +370,61 @@ def napari_experimental_provide_dock_widget() -> Union[
 
     Returns
     -------
-    dock_widget(s) : QWidget class or list of QWidget classes
-        Implementations should return either QWidget classes (one or a list),
-        or tuple(s) containing QWidget classes as well as a dictionary
-        containing keyword arguments for
-        :meth:`napari.qt.Window.add_dock_widget` (though note that the
-        ``shortcut=`` keyword is not yet supported).
+    result : callable or tuple or list of callables or list of tuples
+        A "callable" in this context is a class or function that, when
+        called, returns an instance of either a
+        :class:`~qtpy.QtWidgets.QWidget` or a
+        :class:`~magicgui.widgets.FunctionGui`.
+
+        Implementations of this hook specification must return a callable, or a
+        tuple of ``(callable, dict)``, where the dict contains keyword
+        arguments for :meth:`napari.qt.Window.add_dock_widget`. (note, however,
+        that ``shortcut=`` keyword is not yet supported).
+
+        Implementations may also return a list, in which each item must be a
+        callable or ``(callable, dict)`` tuple.
 
     Examples
     --------
+    An example with a QtWidget:
+
     >>> from qtpy.QtWidgets import QWidget
     >>> from napari_plugin_engine import napari_hook_implementation
     >>>
     >>> class MyWidget(QWidget):
-    >>>     def __init__(self, napari_viewer):
-    >>>         self.viewer = napari_viewer
-    >>>         super().__init__()
-    >>>
-    >>>         # initialize layout
-    >>>         layout = QGridLayout()
-    >>>
-    >>>         # add a button
-    >>>         btn = QPushButton('Click me!', self)
-    >>>         def trigger():
-    >>>             print("napari has", len(napari_viewer.layers), "layers")
-    >>>         btn.clicked.connect(trigger)
-    >>>         layout.addWidget(btn)
-    >>>
-    >>>         # activate layout
-    >>>         self.setLayout(layout)
+    ...     def __init__(self, napari_viewer):
+    ...         self.viewer = napari_viewer
+    ...         super().__init__()
+    ...
+    ...         # initialize layout
+    ...         layout = QGridLayout()
+    ...
+    ...         # add a button
+    ...         btn = QPushButton('Click me!', self)
+    ...         def trigger():
+    ...             print("napari has", len(napari_viewer.layers), "layers")
+    ...         btn.clicked.connect(trigger)
+    ...         layout.addWidget(btn)
+    ...
+    ...         # activate layout
+    ...         self.setLayout(layout)
     >>>
     >>> @napari_hook_implementation
     >>> def napari_experimental_provide_dock_widget():
-    >>>     return MyWidget
+    ...     return MyWidget
+
+    An example using magicgui:
+
+    >>> from magicgui import magic_factory
+    >>> from napari_plugin_engine import napari_hook_implementation
+    >>>
+    >>> @magic_factory(auto_call=True, threshold={'max': 2 ** 16})
+    >>> def threshold(
+    ...     data: 'napari.types.ImageData', threshold: int
+    ... ) -> 'napari.types.LabelsData':
+    ...     return (data > threshold).astype(int)
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_dock_widget():
+    ...     return threshold
     """

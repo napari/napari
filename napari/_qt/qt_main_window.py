@@ -428,6 +428,9 @@ class Window:
             'Add Dock Widget', self._qt_window
         )
 
+        if not plugins.dock_widgets:
+            plugins.discover_dock_widgets()
+
         # Get names of all plugins providing dock widgets or functions
         plugin_widgets = chain(plugins.dock_widgets, plugins.function_widgets)
         plugin_counts = Counter(plug_name for plug_name, _ in plugin_widgets)
