@@ -731,7 +731,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """str: displayed in status bar bottom left."""
         warnings.warn(
             (
-                "The status attribute is deprecated and will be removed in version 0.4.5."
+                "The status attribute is deprecated and will be removed in version 0.4.6."
                 " Instead you should use the get_status method with the position where you"
                 " want to get the status from."
             ),
@@ -905,7 +905,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             if position is None:
                 warnings.warn(
                     (
-                        "The position argument of get_value will no longer be optional after 0.4.5."
+                        "The position argument of get_value will no longer be optional in 0.4.6."
                         " Instead you should provide the position where you want to get the value."
                     ),
                     category=FutureWarning,
@@ -1053,7 +1053,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         warnings.warn(
             (
-                "The get_message method is deprecated and will be removed in version 0.4.5."
+                "The get_message method is deprecated and will be removed in version 0.4.6."
                 " Instead you should use the get_status method with the position where you"
                 " want to get the status from."
             ),
