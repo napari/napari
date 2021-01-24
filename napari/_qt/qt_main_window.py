@@ -597,15 +597,14 @@ class Window:
             warnings.warn(f'Dock widget {key!r} already added')
             return
 
-        func, magic_kwargs, dock_kwargs = plugins.function_widgets[key]
+        func = plugins.function_widgets[key]
 
         # Add function widget
         self.add_function_widget(
             func,
-            magic_kwargs=magic_kwargs,
             name=plugins.menu_item_template.format(*key),
-            area=dock_kwargs.get('area', None),
-            allowed_areas=dock_kwargs.get('allowed_areas', None),
+            area=None,
+            allowed_areas=None,
         )
 
     def add_dock_widget(
@@ -749,7 +748,6 @@ class Window:
         self,
         function,
         *,
-        magic_kwargs=None,
         name: str = '',
         area=None,
         allowed_areas=None,
@@ -757,13 +755,13 @@ class Window:
     ):
         """Turn a function into a dock widget via magicgui.
 
+        Each function is autocalled when ever a parameter is changed
+        or can be explicitly run.
+
         Parameters
         ----------
         function : callable
             Function that you want to add.
-        magic_kwargs : dict, optional
-            Keyword arguments to :func:`magicgui.magicgui` that
-            can be used to specify widget.
         name : str, optional
             Name of dock widget to appear in window menu.
         area : str, optional
@@ -785,6 +783,7 @@ class Window:
         """
         from magicgui import magicgui
 
+        magic_kwargs = {'call_button': "run", 'auto_call': True}
         widget = magicgui(function, **magic_kwargs or {})
 
         if area is None:

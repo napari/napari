@@ -46,9 +46,6 @@ ExcInfo = Union[
 ]
 
 # Types for GUI HookSpecs
-AugmentedFunction = Union[
-    Callable, Tuple[Callable, dict], Tuple[Callable, dict, dict]
-]
 AugmentedWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
 
 

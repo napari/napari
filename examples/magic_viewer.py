@@ -11,8 +11,6 @@ def my_function(viewer: napari.Viewer):
 
 viewer = napari.Viewer()
 # Add our magic function to napari
-viewer.window.add_function_widget(
-    my_function, magic_kwargs={'call_button': 'Print'}
-)
+viewer.window.add_function_widget(my_function)
 
 napari.run()

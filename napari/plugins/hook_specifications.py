@@ -35,16 +35,11 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import (
-    AugmentedFunction,
-    AugmentedWidget,
-    ReaderFunction,
-    WriterFunction,
-)
+from ..types import AugmentedWidget, ReaderFunction, WriterFunction
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -331,9 +326,9 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 @napari_hook_specification(historic=True)
 def napari_experimental_provide_function_widget() -> Union[
-    AugmentedFunction, List[AugmentedFunction]
+    Callable, List[Callable]
 ]:
-    """Provide functions and args that can be passed to magicgui.
+    """Provide function(s) that can be passed to magicgui.
 
     This hook specification is marked as experimental as the API or how the
     returned value is handled may change here more frequently then the
@@ -341,17 +336,11 @@ def napari_experimental_provide_function_widget() -> Union[
 
     Returns
     -------
-    function(s) : callable, tuple of callable & dict(s), or list thereof
+    function(s) : callable or list of callable
         Implementations should provide either a single function, or a list of
         functions. The functions should have Python type annotations so that
         `magicgui <https://napari.org/magicgui>`_ can generate a widget from
-        them. Each function can be provided as-is or as part of a 2-tuple or 3-tuple
-        with configuration dicts. The second element in the tuple should be a
-        dictionary defining magicgui `configuration options
-        <https://napari.org/magicgui/usage/configuration.html#magicgui-options>`_,
-        while the third element should provide keyword arguments for
-        :meth:`napari.qt.Window.add_dock_widget` (though note that the
-        ``shortcut=`` keyword is not yet supported).
+        them.
 
     Examples
     --------

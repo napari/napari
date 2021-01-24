@@ -15,17 +15,18 @@ def func2(x, y):
 
 fwidget_args = {
     'single_func': func,
-    'func_tuple': (func, {'call_button': True}),
-    'full_func_tuple': (func, {'auto_call': True}, {'area': 'right'}),
-    'tuple_list': [(func, {'auto_call': True}), (func2, {})],
-    'tuple_list2': [(func, {'auto_call': True}), func2],
+    'list_func': [func, func2],
+    'bad_func_tuple': (func, {'call_button': True}),
+    'bad_full_func_tuple': (func, {'auto_call': True}, {'area': 'right'}),
+    'bad_tuple_list': [(func, {'auto_call': True}), (func2, {})],
+    'bad_tuple_list2': [(func, {'auto_call': True}), func2],
     'bad_func': 1,
     'bad_tuple1': (func, 1),
     'bad_tuple2': (func, {}, 1),
     'bad_tuple3': (func, 1, {}),
     'bad_double_tuple': ((func, {}), (func2, {})),
     'bad_magic_kwargs': (func, {"non_magicgui_kwarg": True}),
-    'good_magic_kwargs': (func, {'call_button': True, "x": {'max': 200}}),
+    'bad_good_magic_kwargs': (func, {'call_button': True, "x": {'max': 200}}),
 }
 
 

@@ -7,7 +7,7 @@ It demonstrates:
 import skimage.data
 import skimage.filters
 import napari
-
+from typing_extensions import Annotated
 
 # Define our gaussian_blur function.
 # Note that we can use forward references for the napari type annotations.
@@ -16,21 +16,16 @@ import napari
 # In this example, because we have already imported napari anyway, it doesn't
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
+# We also use the `Annotated` type to pass additional information that can be used
+# to aid widget generation.
 def gaussian_blur(
-    layer: 'napari.layers.Image', sigma: float = 1.0, mode="nearest"
+    layer: 'napari.layers.Image',
+    sigma: Annotated[float, {"widget_type": "FloatSlider", "max": 6}] = 1.0,
+    mode: Annotated[str, {"choices": ["reflect", "constant", "nearest", "mirror", "wrap"]}]="nearest",
 ) -> 'napari.types.ImageData':
     """Apply a gaussian blur to ``layer``."""
     if layer:
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
-
-
-# Define our magic. The function will be automatically called when the
-# input values are changed
-magic = {
-    'auto_call': True,
-    'sigma': {"widget_type": "FloatSlider", "max": 6},
-    'mode': {"choices": ["reflect", "constant", "nearest", "mirror", "wrap"]},
-}
 
 
 with napari.gui_qt():
@@ -40,4 +35,4 @@ with napari.gui_qt():
     viewer.add_image(skimage.data.grass().astype("float"), name="grass")
 
     # Add our magic function to napari
-    viewer.window.add_function_widget(gaussian_blur, magic_kwargs=magic)
+    viewer.window.add_function_widget(gaussian_blur)
