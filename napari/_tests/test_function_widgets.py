@@ -16,10 +16,7 @@ def test_add_function_widget(make_test_viewer):
         """Add two layers."""
         return layerA.data + layerB.data
 
-    # Define magicgui keyword arguments
-    magic = {'call_button': "execute"}
-
-    dwidg = viewer.window.add_function_widget(image_sum, magic_kwargs=magic)
+    dwidg = viewer.window.add_function_widget(image_sum)
     assert dwidg.name == 'image sum'
     assert viewer.window._qt_window.findChild(QDockWidget, 'image sum')
 
