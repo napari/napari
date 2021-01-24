@@ -14,7 +14,8 @@ def test_add_function_widget(make_test_viewer):
         layerA: napari.layers.Image, layerB: napari.layers.Image
     ) -> napari.layers.Image:
         """Add two layers."""
-        return layerA.data + layerB.data
+        if layerA is not None and layerB is not None:
+            return napari.layers.Image(layerA.data + layerB.data)
 
     dwidg = viewer.window.add_function_widget(image_sum)
     assert dwidg.name == 'image sum'
@@ -24,4 +25,4 @@ def test_add_function_widget(make_test_viewer):
     _magic_widget = dwidg.widget()._magic_widget
     assert _magic_widget.layerA.choices == ()
     layer = viewer.add_image(np.random.rand(10, 10))
-    assert _magic_widget.layerA.choices == (layer,)
+    assert layer in _magic_widget.layerA.choices
