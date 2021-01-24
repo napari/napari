@@ -1357,7 +1357,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.cursor = 'pointing'
-            self.interactive = False
+            self.interactive = True
             self.help = 'hold <space> to pan/zoom'
             self.selected_data = set()
             self._set_highlight()
