@@ -456,7 +456,9 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
-            self.status = self.active_layer.get_status(self.cursor.position)
+            self.status = self.active_layer.get_status(
+                self.cursor.position, world=True
+            )
             self.help = self.active_layer.help
 
     def _on_grid_change(self, event):
