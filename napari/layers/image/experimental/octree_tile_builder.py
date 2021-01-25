@@ -65,8 +65,8 @@ def create_downsampled_levels(
     image : np.darray
         The full image to create levels from.
 
-    Return
-    ------
+    Returns
+    -------
     List[np.ndarray]
         A list of levels where levels[0] is the first downsampled level.
     """

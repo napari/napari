@@ -64,8 +64,8 @@ class ImageLocation(ChunkLocation):
     def _same_indices(self, other) -> bool:
         """Return True if this location has same indices as the other location.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if indices are the same.
         """
@@ -78,8 +78,8 @@ class ImageLocation(ChunkLocation):
     def __hash__(self) -> int:
         """Return has of this location.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The hash of the location.
         """

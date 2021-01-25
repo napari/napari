@@ -337,7 +337,6 @@ def test_changing_modes():
 
     layer.mode = 'add'
     assert layer.mode == 'add'
-    assert layer.interactive is False
 
     layer.mode = 'select'
     assert layer.mode == 'select'

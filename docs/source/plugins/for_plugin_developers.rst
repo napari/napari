@@ -197,29 +197,12 @@ Step 3: Make your plugin discoverable
 -------------------------------------
 
 Packages and modules installed in the same environment as ``napari`` may make
-themselves "discoverable" to napari using one of two common conventions
-outlined in the `Python Packaging Authority guide
-<https://packaging.python.org/guides/creating-and-discovering-plugins/>`_.
-
-Using naming convention
-^^^^^^^^^^^^^^^^^^^^^^^
-
-``napari`` will look for *hook implementations* (i.e. functions decorated with
-the ``HookImplementationMarker("napari")`` decorator) in all top-level modules
-in ``sys.path`` that begin with the name ``napari_`` (e.g.
-"``napari_myplugin``").
-
-One potential benefit of using discovery by naming convention is that it will
-allow ``napari`` to query the PyPi API to search for potential plugins.
-
-.. _entry-point-discovery:
-
-Using package metadata
-^^^^^^^^^^^^^^^^^^^^^^
+themselves "discoverable" to napari using package metadata, as outlined in the
+`Python Packaging Authority guide
+<https://packaging.python.org/guides/creating-and-discovering-plugins/#using-package-metadata>`_.
 
 By providing an ``entry_points`` argument with the key ``napari.plugin`` to
-``setup()`` in ``setup.py``, plugins can register themselves for discovery
-(even if their names do not begin with "``napari_``").
+``setup()`` in ``setup.py``, plugins can register themselves for discovery.
 
 For example if you have a package named ``mypackage`` with a submodule
 ``napari_plugin`` where you have decorated one or more napari hook
@@ -238,11 +221,6 @@ implementations, then if you include in ``setup.py``:
 ... then napari will search the ``mypackage.napari_plugin`` module for
 functions decorated with the ``HookImplementationMarker("napari")`` decorator
 and register them the plugin name ``"plugin_name"``.
-
-One benefit of using this approach is that if you already have an existing
-pip-installable package, you can extend support for ``napari`` without having
-to rename your package, simply by identifying the module in your package that
-has the hook implementations.
 
 A user would then be able to use ``napari``, extended with your package's
 functionality by simply installing your package along with napari:
@@ -263,9 +241,16 @@ and it can then be installed with a simple `pip install mypackage`.
 If you used the :ref:`plugin-cookiecutter-template`, you can also `setup automated deployments
 <https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments>`_.
 
+Be sure to use the `'Framework :: napari'`
+[classifier](https://pypi.org/classifiers/) in your `setup.py` file, which will
+allow your package to be [easily searched on
+PyPI](https://pypi.org/search/?c=Framework+%3A%3A+napari) as offering
+functionality for napari.
+
 If you are using Github, add the `"napari-plugin" topic
 <https://github.com/topics/napari-plugin>`_ to your repo so other developers can
 see your work.
+
 
 When you are ready for users, announce your plugin on the `Image.sc Forum
 <https://forum.image.sc/tag/napari>`_.
@@ -302,7 +287,7 @@ read the `Priism/MRC/Deltavision image file format
 For a more thorough plugin see `napari-aicsimageio
 <https://github.com/AllenCellModeling/napari-aicsimageio>`_, one of the first
 community plugins developed for napari.  This plugin takes advantage of
-:ref:`entry_point discovery <entry-point-discovery>` to offer multiple
+:ref:`entry_point discovery <plugin-discovery>` to offer multiple
 readers for both in-memory and lazy-loading of image files.
 
 More examples of plugins can be found on the `"napari-plugin" Github topic

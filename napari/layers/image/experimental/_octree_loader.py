@@ -121,8 +121,8 @@ class OctreeLoader:
         ideal_chunks : List[OctreeChunk]
             The chunks which are visible to the current view.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The chunks that should be drawn.
         """
@@ -184,8 +184,8 @@ class OctreeLoader:
         "inside" a single pixel of the root tile. So it's just providing a
         background color at that point.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             Any extra chunks we should draw.
         """
@@ -222,8 +222,8 @@ class OctreeLoader:
         drawn_set : Set[OctreeChunk]
             The chunks which the visual is currently drawing.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The chunks that should be drawn to cover this one ideal chunk.
         """
@@ -268,8 +268,8 @@ class OctreeLoader:
         ideal_chunk : OctreeChunk
             Get children and parents of this chunk.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeNode]
             Parents and children we should load and/or draw.
         """

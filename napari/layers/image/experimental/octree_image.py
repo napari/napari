@@ -124,8 +124,8 @@ class OctreeImage(Image):
     def tile_size(self) -> int:
         """Return the edge length of single tile, for example 256.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The edge length of a single tile.
         """
@@ -150,8 +150,8 @@ class OctreeImage(Image):
     def tile_shape(self) -> tuple:
         """Return the shape of a single tile, for example 256x256x3.
 
-        Return
-        ------
+        Returns
+        -------
         tuple
             The shape of a single tile.
         """
@@ -172,8 +172,8 @@ class OctreeImage(Image):
     def meta(self) -> OctreeMetadata:
         """Information about the current octree.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeMetadata
             Octree dimensions and other info.
         """
@@ -233,8 +233,8 @@ class OctreeImage(Image):
     def num_octree_levels(self) -> int:
         """Return the total number of octree levels.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of octree levels.
         """
@@ -279,12 +279,12 @@ class OctreeImage(Image):
         visual quality, the imagery might look blurry.
 
         Parameters
-        -----------
-        drawn_chunk_set : Set[OctreeChunk]
+        ----------
+        drawn_set : Set[OctreeChunk]
             The chunks that are currently being drawn by the visual.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The drawable chunks.
         """
@@ -374,8 +374,8 @@ class OctreeImage(Image):
     def _outside_data_range(self, indices) -> bool:
         """Return True if requested slice is outside of data range.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if requested slice is outside data range.
         """

@@ -289,8 +289,8 @@ def configure_loading(request):
 def _is_async_mode() -> bool:
     """Return True if we are currently loading chunks asynchronously
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if we are currently loading chunks asynchronously.
     """

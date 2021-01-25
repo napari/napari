@@ -34,7 +34,7 @@ def split_channels(
     data : array or list of array
     channel_axis : int
         Axis to split the image along.
-    kwargs: dict
+    kwargs : dict
         Keyword arguments will override the default image meta keys
         returned in each layer data tuple.
 

@@ -17,10 +17,9 @@ import numpy as np
 if TYPE_CHECKING:
     import dask.array
     import zarr
-
-
-if TYPE_CHECKING:
+    from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
+
 
 # This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
@@ -49,7 +48,9 @@ ExcInfo = Union[
 AugmentedFunction = Union[
     Callable, Tuple[Callable, dict], Tuple[Callable, dict, dict]
 ]
-AugmentedWidget = Union[Type['QWidget'], Tuple[Type['QWidget'], dict]]
+
+WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
+AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
 
 
 # these types are mostly "intentionality" placeholders.  While it's still hard
