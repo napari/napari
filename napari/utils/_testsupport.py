@@ -31,7 +31,7 @@ def _strict_qtbot(qtbot):
 
 
 @pytest.fixture(scope="function")
-def make_test_viewer(_strict_qtbot, request):
+def make_napari_viewer(_strict_qtbot, request):
     """A fixture function that creates a napari viewer for use in testing.
 
     This uses a strict qtbot variant that asserts that no widgets are left over
@@ -39,8 +39,8 @@ def make_test_viewer(_strict_qtbot, request):
 
     Examples
     --------
-    >>> def test_adding_shapes(make_test_viewer):
-    ...     viewer = make_test_viewer()
+    >>> def test_adding_shapes(make_napari_viewer):
+    ...     viewer = make_napari_viewer()
     ...     viewer.add_shapes()
     ...     assert len(viewer.layers) == 1
     """

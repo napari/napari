@@ -5,9 +5,9 @@ from napari.components.experimental.chunk._commands import LoaderCommands
 
 
 @pytest.mark.async_only
-def test_help(make_test_viewer, capsys):
+def test_help(make_napari_viewer, capsys):
     """Test loader.help."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     loader = loader = viewer.experimental.cmds.loader
 
     loader.help
@@ -16,9 +16,9 @@ def test_help(make_test_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_no_layers(make_test_viewer, capsys):
+def test_no_layers(make_napari_viewer, capsys):
     """Test loader.layers with no layers."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     LoaderCommands(viewer.layers).layers
     out, _ = capsys.readouterr()
     for x in ["ID", "NAME", "LAYER"]:  # Just check a few.
@@ -26,9 +26,9 @@ def test_no_layers(make_test_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_one_layer(make_test_viewer, capsys):
+def test_one_layer(make_napari_viewer, capsys):
     """Test loader.layer with one layer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     loader = viewer.experimental.cmds.loader
 
     data = np.random.random((10, 15))
@@ -40,9 +40,9 @@ def test_one_layer(make_test_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_many_layers(make_test_viewer, capsys):
+def test_many_layers(make_napari_viewer, capsys):
     """Test loader.layer with many layers."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     loader = viewer.experimental.cmds.loader
 
     num_images = 10
@@ -55,9 +55,9 @@ def test_many_layers(make_test_viewer, capsys):
 
 
 @pytest.mark.async_only
-def test_levels(make_test_viewer, capsys):
+def test_levels(make_napari_viewer, capsys):
     """Test loader.levels."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     loader = viewer.experimental.cmds.loader
 
     data = np.random.random((10, 15))
