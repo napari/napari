@@ -52,4 +52,4 @@ def test_downsample_value(make_napari_viewer, shape):
 
     for test_point, expected_value in zip(test_points, expected_values):
         viewer.cursor.position = test_point
-        assert layer.get_value() == expected_value
+        assert layer.get_value(layer.coordinates) == expected_value

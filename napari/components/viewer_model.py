@@ -361,13 +361,11 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 break
 
         if active_layer is None:
-            self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
             self.active_layer = None
         else:
-            self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
@@ -408,7 +406,9 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
-            self.status = self.active_layer.status
+            self.status = self.active_layer.get_status(
+                self.cursor.position, world=True
+            )
             self.help = self.active_layer.help
 
     def _on_grid_change(self, event):

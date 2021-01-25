@@ -79,7 +79,7 @@ class QtViewerImageSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.viewer.layers[0].get_value()
+        self.viewer.layers[0].get_value((0,) * 2)
 
 
 class QtViewerSingleImageSuite:
@@ -118,7 +118,7 @@ class QtViewerSingleImageSuite:
 
     def time_get_value(self):
         """Time to get current value."""
-        self.viewer.layers[0].get_value()
+        self.viewer.layers[0].get_value((0,) * 3)
 
     def time_ndisplay(self):
         """Time to enter 3D rendering."""
@@ -161,7 +161,7 @@ class QtViewerSingleInvisbleImageSuite:
 
     def time_get_value(self):
         """Time to get current value."""
-        self.viewer.layers[0].get_value()
+        self.viewer.layers[0].get_value((0,) * 3)
 
     def time_ndisplay(self):
         """Time to enter 3D rendering."""
