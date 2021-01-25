@@ -3,9 +3,9 @@ import numpy as np
 from napari._qt.dialogs.qt_about_key_bindings import QtAboutKeyBindings
 
 
-def test_about_key_bindings_dialog(make_test_viewer):
+def test_about_key_bindings_dialog(make_napari_viewer):
     """Test creating QtAboutKeyBindings dialog window and its methods."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
     key_bindings_dialog = QtAboutKeyBindings(viewer, view._key_map_handler)
     assert key_bindings_dialog.viewer == viewer
@@ -22,9 +22,9 @@ def test_about_key_bindings_dialog(make_test_viewer):
         # messy...
 
 
-def test_show_key_bindings_dialog(make_test_viewer, monkeypatch):
+def test_show_key_bindings_dialog(make_napari_viewer, monkeypatch):
     """Test creating dialog with method of qt_viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
     # check that dialog does not exist yet
     assert not view.findChild(QtAboutKeyBindings)
@@ -35,9 +35,9 @@ def test_show_key_bindings_dialog(make_test_viewer, monkeypatch):
     assert isinstance(view.findChild(QtAboutKeyBindings), QtAboutKeyBindings)
 
 
-def test_updating_with_layer_change(make_test_viewer, monkeypatch):
+def test_updating_with_layer_change(make_napari_viewer, monkeypatch):
     """Test that the dialog text updates when the active layer is changed."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
     # turn off showing the dialog for test
     monkeypatch.setattr(QtAboutKeyBindings, 'show', lambda *a: None)

@@ -14,9 +14,9 @@ skip_local_popups = pytest.mark.skipif(
 )
 
 
-def test_multiscale(make_test_viewer):
+def test_multiscale(make_napari_viewer):
     """Test rendering of multiscale data."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     np.random.seed(0)
@@ -52,9 +52,9 @@ def test_multiscale(make_test_viewer):
     assert value[1] is None
 
 
-def test_3D_multiscale_image(make_test_viewer):
+def test_3D_multiscale_image(make_napari_viewer):
     """Test rendering of 3D multiscale image uses lowest resolution."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     data = [np.random.random((128,) * 3), np.random.random((64,) * 3)]
     viewer.add_image(data)
@@ -71,9 +71,9 @@ def test_3D_multiscale_image(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_screenshot(make_test_viewer):
+def test_multiscale_screenshot(make_napari_viewer):
     """Test rendering of multiscale data with screenshot."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
@@ -99,9 +99,9 @@ def test_multiscale_screenshot(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_multiscale_screenshot_zoomed(make_test_viewer):
+def test_multiscale_screenshot_zoomed(make_napari_viewer):
     """Test rendering of multiscale data with screenshot after zoom."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     view = viewer.window.qt_viewer
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
@@ -134,9 +134,9 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_image_screenshot_zoomed(make_test_viewer):
+def test_image_screenshot_zoomed(make_napari_viewer):
     """Test rendering of image data with screenshot after zoom."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     view = viewer.window.qt_viewer
 
     data = np.ones((4000, 3000))
@@ -165,10 +165,10 @@ def test_image_screenshot_zoomed(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_5D_multiscale(make_test_viewer):
+def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]

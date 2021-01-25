@@ -95,9 +95,9 @@ def test_plugin_widgets(monkeypatch):
         yield
 
 
-def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
+def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     """Test the plugin widgets get added to the window menu correctly."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     assert len(actions) == 3
     expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
@@ -113,9 +113,9 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
     assert not actions[2].menu()
 
 
-def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
+def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
     # trigger the 'TestP2: Widg3' action
@@ -145,9 +145,9 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
         action.trigger()
 
 
-def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
+def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create magicgui widgets, and they get the viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
     # trigger the 'TestP3: magic' action
@@ -167,9 +167,9 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
         actions[2].trigger()
 
 
-def test_clear_all_plugin_widgets(test_plugin_widgets, make_test_viewer):
+def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()
