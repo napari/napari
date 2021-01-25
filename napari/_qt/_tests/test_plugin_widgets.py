@@ -1,4 +1,3 @@
-import magicgui
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
@@ -147,6 +146,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create magicgui widgets, and they get the viewer."""
+    import magicgui
+
     viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
@@ -157,7 +158,7 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     dw = viewer.window._dock_widgets['TestP3: magic']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
-    assert isinstance(magic_widget, magicgui.FunctionGui)
+    assert isinstance(magic_widget, magicgui.widgets.FunctionGui)
     # This magicgui widget uses the parameter annotation to receive a viewer
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it
