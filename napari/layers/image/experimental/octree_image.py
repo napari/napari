@@ -81,8 +81,8 @@ class OctreeImage(Image):
         # this event after super().__init__(). Needs to be cleaned up.
         self._display.loaded_event = self.events.loaded
 
-    def _get_value(self):
-        """Override Image._get_value()."""
+    def _get_value(self, position):
+        """Override Image._get_value(position)."""
         return (0, (0, 0))  # TODO_OCTREE: need to implement this.
 
     @property

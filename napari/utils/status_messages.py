@@ -40,7 +40,7 @@ def status_format(value):
         return str(value)
 
 
-def genetate_layer_status(name, position, value):
+def generate_layer_status(name, position, value):
     """Generate a status message based on the coordinates and value
 
     Parameters

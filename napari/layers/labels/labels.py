@@ -10,7 +10,6 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ...utils.status_messages import genetate_layer_status
 from ..image import Image
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -856,27 +855,27 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position):
-        """Generate a status message based on location in world coordinates.
+    def get_status(self, position=None, world=False):
+        """Status message of the data at a coordinate position.
 
         Parameters
         ----------
-        position : tuple, list, 1D array
-            Position in world coorindates. If longer then the
-            number of dimensions of the layer, the later
-            dimensions will be used.
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
         Returns
         -------
         msg : string
             String containing a message that can be used as a status update.
         """
-        data_position = self._world_to_data(position)
-        value = self.get_value(data_position)
-        msg = genetate_layer_status(self.name, data_position, value)
+        msg = super().get_status(position, world=world)
 
         # if this labels layer has properties
         if self._label_index and self._properties:
+            value = self.get_value(position, world=world)
             # if the cursor is not outside the image or on the background
             if value is not None:
                 if self.multiscale:

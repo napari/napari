@@ -12,7 +12,7 @@ from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
-from ...utils.status_messages import genetate_layer_status
+from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
@@ -885,7 +885,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         raise NotImplementedError()
 
-    def get_value(self, position=None, world=False):
+    def get_value(self, position=None, *, world=False):
         """Value of the data at a position.
 
         Parameters
@@ -1024,24 +1024,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         coordinates = self.coordinates
         return [coordinates[i] for i in self._dims_displayed]
 
-    def get_status(self, position):
-        """Generate a status message based on location in world coordinates.
+    def get_status(self, position=None, *, world=False):
+        """Status message of the data at a coordinate position.
 
         Parameters
         ----------
-        position : tuple, list, 1D array
-            Position in world coorindates. If longer then the
-            number of dimensions of the layer, the later
-            dimensions will be used.
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
         Returns
         -------
         msg : string
             String containing a message that can be used as a status update.
         """
-        data_position = self._world_to_data(position)
-        value = self.get_value(data_position)
-        return genetate_layer_status(self.name, data_position, value)
+        value = self.get_value(position, world=world)
+        return generate_layer_status(self.name, position, value)
 
     def get_message(self):
         """Generate a status message based on the coordinates and value
@@ -1060,7 +1060,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             category=FutureWarning,
             stacklevel=2,
         )
-        return genetate_layer_status(self.name, self.coordinates, self._value)
+        return generate_layer_status(self.name, self.coordinates, self._value)
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.
