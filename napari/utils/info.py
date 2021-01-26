@@ -5,14 +5,16 @@ import sys
 
 import napari
 
+OS_RELEASE_PATH = "/etc/os-release"
+
 
 def _linux_sys_name():
     """
     Try to discover linux system name base on /etc/os-release file or lsb_release command output
     https://www.freedesktop.org/software/systemd/man/os-release.html
     """
-    if os.path.exists("/etc/os-release"):
-        with open("/etc/os-release") as f_p:
+    if os.path.exists(OS_RELEASE_PATH):
+        with open(OS_RELEASE_PATH) as f_p:
             data = {}
             for line in f_p:
                 field, value = line.split("=")
@@ -28,15 +30,26 @@ def _linux_sys_name():
 
     try:
         res = subprocess.run(
-            ["lsb_release", "-d"], check=True, capture_output=True
+            ["lsb_release", "-d", "-r"], check=True, capture_output=True
         )
-        return res.stdout.decode().split(":")[1].strip()
+        text = res.stdout.decode()
+        data = {}
+        for line in text.split("\n"):
+            key, val = line.split(":")
+            data[key.strip()] = val.strip()
+        version_str = data["Description"]
+        if not version_str.endswith(data["Release"]):
+            version_str += " " + data["Release"]
+        return version_str
     except subprocess.CalledProcessError:
         pass
     return ""
 
 
 def _sys_name():
+    """
+    Discover MacOS or Linux Human readable information. For Linux provide information about distribution.
+    """
     try:
         if sys.platform == "linux":
             return _linux_sys_name()
