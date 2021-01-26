@@ -35,7 +35,8 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, FunctionType, List, Optional, Union
+from types import FunctionType
+from typing import Any, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 

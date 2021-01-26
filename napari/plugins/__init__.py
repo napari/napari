@@ -1,11 +1,11 @@
 import os
 import sys
 from inspect import isclass, signature
+from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Callable,
     Dict,
-    FunctionType,
     List,
     Sequence,
     Tuple,
