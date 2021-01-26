@@ -788,7 +788,6 @@ class Window:
 
         magic_kwargs = {
             'call_button': "run",
-            'auto_call': True,
             'layout': 'vertical',
         }
         widget = magicgui(function, **magic_kwargs or {})

@@ -35,7 +35,7 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, FunctionType, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -325,8 +325,8 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_function_widget() -> Union[
-    Callable, List[Callable]
+def napari_experimental_provide_function() -> Union[
+    FunctionType, List[FunctionType]
 ]:
     """Provide function(s) that can be passed to magicgui.
 
@@ -336,7 +336,7 @@ def napari_experimental_provide_function_widget() -> Union[
 
     Returns
     -------
-    function(s) : callable or list of callable
+    function(s) : FunctionType or list of FunctionType
         Implementations should provide either a single function, or a list of
         functions. The functions should have Python type annotations so that
         `magicgui <https://napari.org/magicgui>`_ can generate a widget from
@@ -353,7 +353,7 @@ def napari_experimental_provide_function_widget() -> Union[
     >>>     return result, {'colormap':'turbo'}
     >>>
     >>> @napari_hook_implementation
-    >>> def napari_experimental_provide_function_widget():
+    >>> def napari_experimental_provide_function():
     >>>     return my_function
     """
 

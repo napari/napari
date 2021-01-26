@@ -34,3 +34,13 @@ from ``Layer.data``, and a ``meta`` dict that will correspond to the layer's
 .. autofunction:: napari_write_shapes
 .. autofunction:: napari_write_surface
 .. autofunction:: napari_write_vectors
+
+Analysis hooks
+--------------
+
+.. autofunction:: napari_expertimental_provide_function
+
+GUI hooks
+---------
+
+.. autofunction:: napari_expertimental_provide_dock_widget

@@ -5,6 +5,7 @@ from typing import (
     TYPE_CHECKING,
     Callable,
     Dict,
+    FunctionType,
     List,
     Sequence,
     Tuple,
@@ -103,9 +104,9 @@ def register_function_widget(
     hookimpl: HookImplementation,
 ):
     plugin_name = hookimpl.plugin_name
-    hook_name = '`napari_experimental_provide_function_widget`'
+    hook_name = '`napari_experimental_provide_function`'
     for func in args if isinstance(args, list) else [args]:
-        if not callable(func):
+        if not isinstance(func, FunctionType):
             msg = (
                 f'Plugin {plugin_name!r} provided a non-callable type to '
                 f'{hook_name}: {type(func)!r}. Function widget ignored.'
@@ -135,7 +136,7 @@ def discover_dock_widgets():
     """Trigger discovery of dock_widgets plugins"""
     dw_hook = plugin_manager.hook.napari_experimental_provide_dock_widget
     dw_hook.call_historic(result_callback=register_dock_widget, with_impl=True)
-    fw_hook = plugin_manager.hook.napari_experimental_provide_function_widget
+    fw_hook = plugin_manager.hook.napari_experimental_provide_function
     fw_hook.call_historic(
         result_callback=register_function_widget, with_impl=True
     )

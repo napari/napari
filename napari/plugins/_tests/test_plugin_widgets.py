@@ -39,17 +39,17 @@ def test_function_widget_registration(
     """Test that function widgets get validated and registerd correctly."""
     test_plugin_manager.project_name = 'napari'
     test_plugin_manager.add_hookspecs(hook_specifications)
-    hook = test_plugin_manager.hook.napari_experimental_provide_function_widget
+    hook = test_plugin_manager.hook.napari_experimental_provide_function
 
     with monkeypatch.context() as m:
         registered = {}
         m.setattr(plugins, "function_widgets", registered)
 
         @napari_hook_implementation
-        def napari_experimental_provide_function_widget():
+        def napari_experimental_provide_function():
             return arg
 
-        add_implementation(napari_experimental_provide_function_widget)
+        add_implementation(napari_experimental_provide_function)
         hook.call_historic(
             result_callback=plugins.register_function_widget, with_impl=True
         )

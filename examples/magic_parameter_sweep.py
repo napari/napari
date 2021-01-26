@@ -16,8 +16,10 @@ from typing_extensions import Annotated
 # In this example, because we have already imported napari anyway, it doesn't
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
-# We also use the `Annotated` type to pass additional information that can be used
-# to aid widget generation.
+# We also use the `Annotated` type to pass an additional dictionary that can be used
+# to aid widget generation. The keys of the dictionary are keyword arguments to
+# the corresponding magicgui widget type. For more informaiton see
+# https://napari.org/magicgui/api/widgets.html.
 def gaussian_blur(
     layer: 'napari.layers.Image',
     sigma: Annotated[float, {"widget_type": "FloatSlider", "max": 6}] = 1.0,
