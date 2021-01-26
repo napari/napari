@@ -20,6 +20,7 @@ from .utils import _magicgui, sys_info
 _magicgui.register_types_with_magicgui()
 
 from ._event_loop import gui_qt, run
+from .notifications import notification_manager
 from .plugins.io import save_layers
 from .view_layers import (  # type: ignore
     view_image,

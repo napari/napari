@@ -55,6 +55,17 @@ class QtLayerButtons(QFrame):
             lambda: self.viewer._new_labels(),
         )
 
+        def raise_():
+            raise ValueError("clicked")
+
+        def warn_():
+            import warnings
+
+            warnings.warn("warn!")
+
+        self.newPointsButton.clicked.connect(raise_)
+        self.newShapesButton.clicked.connect(warn_)
+
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.newPointsButton)

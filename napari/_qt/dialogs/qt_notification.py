@@ -1,6 +1,6 @@
-from enum import auto
-from typing import Callable, Optional, Sequence, Tuple, Union
+from typing import Callable, Optional, Sequence, Tuple
 
+from PyQt5.QtWidgets import QTextEdit
 from qtpy.QtCore import (
     QEasingCurve,
     QPoint,
@@ -23,27 +23,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.misc import StringEnum
 from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
-
-
-class NotificationSeverity(StringEnum):
-    """Severity levels for the notification dialog.  Along with icons for each."""
-
-    ERROR = auto()
-    WARNING = auto()
-    INFO = auto()
-    NONE = auto()
-
-    def as_icon(self):
-        return {
-            self.ERROR: "ⓧ",
-            self.WARNING: "⚠️",
-            self.INFO: "ⓘ",
-            self.NONE: "",
-        }[self]
 
 
 class NapariNotification(QDialog):
@@ -79,17 +61,20 @@ class NapariNotification(QDialog):
     DISMISS_AFTER = 4000
     MIN_WIDTH = 400
 
+    message: MultilineElidedLabel
+    source_label: QLabel
+    severity_icon: QLabel
+
     def __init__(
         self,
         message: str,
-        severity: Union[
-            str, NotificationSeverity
-        ] = NotificationSeverity.WARNING,
+        severity: str = 'WARNING',
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
         """[summary]"""
         super().__init__(None)
+
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
         for wdg in QApplication.topLevelWidgets():
@@ -108,6 +93,8 @@ class NapariNotification(QDialog):
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setup_buttons(actions)
         self.setMouseTracking(True)
+
+        from ...notifications import NotificationSeverity
 
         self.severity_icon.setText(NotificationSeverity(severity).as_icon())
         self.message.setText(message)
@@ -271,7 +258,6 @@ class NapariNotification(QDialog):
     def setup_buttons(self, actions: ActionSequence = ()):
         """Add buttons to the dialog.
 
-
         Parameters
         ----------
         actions : tuple, optional
@@ -283,9 +269,12 @@ class NapariNotification(QDialog):
         """
         if isinstance(actions, dict):
             actions = list(actions.items())
+        if not actions:
+            pass
+
         for text, callback in actions:
             btn = QPushButton(text)
-            btn.clicked.connect(callback)
+            btn.clicked.connect(lambda: callback(self))
             btn.clicked.connect(self.close)
             self.row2.addWidget(btn)
         if actions:
@@ -302,17 +291,42 @@ class NapariNotification(QDialog):
         )
 
     @classmethod
-    def from_exception(cls, exception: BaseException) -> 'NapariNotification':
-        """Create a NapariNotifcation dialog from an exception object."""
-        # TODO: this method could be used to recognize various exception
-        # subclasses and populate the dialog accordingly.
-        extra_msg = (
-            "\nYou can start napari with NAPARI_CATCH_ERRORS=0 or "
-            "NAPARI_EXIT_ON_ERROR=1 to find more about this error"
+    def from_notification(cls, notification):
+        from ...notifications import ErrorNotification
+
+        actions = notification.actions
+
+        if not actions and isinstance(notification, ErrorNotification):
+            # TODO: this should be moved
+            from napari.plugins.exceptions import get_tb_formatter
+
+            exc = notification.exception
+
+            def show_tb(parent):
+                tbdialog = QDialog(parent=parent.parent())
+                tbdialog.setModal(True)
+                tbdialog.setLayout(QVBoxLayout())
+
+                format_exc_info = get_tb_formatter()
+                info = (exc.__class__, exc, exc.__traceback__)
+                text = QTextEdit()
+                text.setHtml(format_exc_info(info, as_html=True))
+                text.setReadOnly(True)
+                tbdialog.layout().addWidget(text)
+                tbdialog.show()
+
+            actions = [('traceback', show_tb)]
+
+        dialog = cls(
+            message=notification.message,
+            severity=notification.severity,
+            source=notification.source,
+            actions=actions,
         )
 
-        msg = getattr(exception, 'message', str(exception)) + extra_msg
-        severity = getattr(exception, 'severity', 'WARNING')
-        source = None
-        actions = getattr(exception, 'actions', ())
-        return cls(msg, severity, source, actions)
+        return dialog
+
+    @staticmethod
+    def show_notification(notification):
+        dialog = NapariNotification.from_notification(notification)
+        dialog.show()

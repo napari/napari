@@ -7,7 +7,7 @@ from typing import Optional, Type
 
 from qtpy.QtCore import QObject, Signal
 
-from .dialogs.qt_error_notification import NapariNotification
+from .dialogs.qt_notification import NapariNotification
 
 
 def _set_true(var) -> bool:

@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QApplication, QSplashScreen
 from napari import __version__
 
 from ..utils.perf import perf_config
-from .exceptions import ExceptionHandler
+from .dialogs.qt_notification import NapariNotification
 from .qthreading import wait_for_workers_to_quit
 
 NAPARI_ICON_PATH = os.path.join(
@@ -127,6 +127,13 @@ def get_app(
         app.setWindowIcon(QIcon(kwargs.get('icon')))
         set_app_id(kwargs.get('app_id'))
 
+        if os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False'):
+            from napari.notifications import notification_manager
+
+            notification_manager.notification_ready.connect(
+                NapariNotification.show_notification
+            )
+
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
@@ -171,14 +178,11 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
         splash_widget.show()
         app._splash_widget = splash_widget
 
-    # instantiate the exception handler
-    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
-    sys.excepthook = exception_handler.handle
-
     try:
         yield app
     except Exception:
-        exception_handler.handle(*sys.exc_info())
+        pass
+        # exception_handler.handle(*sys.exc_info())
 
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
