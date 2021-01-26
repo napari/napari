@@ -786,7 +786,11 @@ class Window:
         """
         from magicgui import magicgui
 
-        magic_kwargs = {'call_button': "run", 'auto_call': True}
+        magic_kwargs = {
+            'call_button': "run",
+            'auto_call': True,
+            'layout': 'vertical',
+        }
         widget = magicgui(function, **magic_kwargs or {})
 
         if area is None:
