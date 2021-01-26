@@ -448,11 +448,11 @@ QtPluginErrReporter > QTextEdit {
 
 /* ------------ Notifications ------------ */
 
-NapariNotification > QWidget {
+NapariQtNotification > QWidget {
   background: none;
 }
 
-NapariNotification::hover{
+NapariQtNotification::hover{
   background: {{ lighten(background, 5) }};
 }
 
@@ -462,23 +462,23 @@ MultilineElidedLabel{
   font-size: 12px;
 }
 
-NapariNotification #expand_button {
+NapariQtNotification #expand_button {
   background: none;
   padding: 0px;
   margin: 0px;
   max-width: 20px;
 }
 
-NapariNotification[expanded="false"] #expand_button {
+NapariQtNotification[expanded="false"] #expand_button {
   image: url(":/themes/{{ folder }}/chevron_up.svg");
 }
 
-NapariNotification[expanded="true"] #expand_button {
+NapariQtNotification[expanded="true"] #expand_button {
   image: url(":/themes/{{ folder }}/chevron_down.svg");
 }
 
 
-NapariNotification #close_button {
+NapariQtNotification #close_button {
   background: none;
   image: url(":/themes/{{ folder }}/delete_shape.svg");
   padding: 0px;
@@ -486,12 +486,12 @@ NapariNotification #close_button {
   max-width: 20px;
 }
 
-NapariNotification #source_label {
+NapariQtNotification #source_label {
   color: {{ primary }};
   font-size: 11px;
 }
 
-NapariNotification #severity_icon {
+NapariQtNotification #severity_icon {
   padding: 0;
   margin: 0 0 -3px 0;
   min-width: 20px;

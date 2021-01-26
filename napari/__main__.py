@@ -253,7 +253,6 @@ def _run():
             layer_type=args.layer_type,
             **kwargs,
         )
-
         run(gui_exceptions=True)
 
 

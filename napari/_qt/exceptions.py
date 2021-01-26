@@ -7,7 +7,9 @@ from typing import Optional, Type
 
 from qtpy.QtCore import QObject, Signal
 
-from .dialogs.qt_error_notification import NapariNotification
+from napari.utils.notifications import notification_manager
+
+from .dialogs.qt_notification import NapariQtNotification
 
 
 def _set_true(var) -> bool:
@@ -43,7 +45,7 @@ class ExceptionHandler(QObject):
     """
 
     error = Signal(tuple)
-    message: Optional[NapariNotification] = None
+    message: Optional[NapariQtNotification] = None
 
     def __init__(self, parent=None, *, gui_exceptions=True):
         super().__init__(parent)
@@ -85,7 +87,7 @@ class ExceptionHandler(QObject):
             print("Closed by KeyboardInterrupt", file=sys.stderr)
             sys.exit(1)
         if self.gui_exceptions:
-            self._show_error_dialog(value)
+            notification_manager.receive_error(etype, value, tb)
         else:
             text = "".join(traceback.format_exception(etype, value, tb))
             logging.error("Unhandled exception:\n%s", text)
@@ -93,7 +95,3 @@ class ExceptionHandler(QObject):
 
         if self.exit_on_error:
             sys.exit(1)
-
-    def _show_error_dialog(self, exception: BaseException):
-        self.message = NapariNotification.from_exception(exception)
-        self.message.show()

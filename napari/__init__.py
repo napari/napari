@@ -15,6 +15,7 @@ from scipy import stats  # noqa: F401
 
 # register napari object types with magicgui if it is installed
 from .utils import _magicgui, sys_info
+from .utils.notifications import notification_manager
 
 # This must come before .plugins
 _magicgui.register_types_with_magicgui()

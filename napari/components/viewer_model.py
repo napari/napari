@@ -733,7 +733,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     _path, kwargs, plugin=plugin, layer_type=layer_type
                 )
             )
-
         return added
 
     def _add_layers_with_plugins(

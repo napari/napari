@@ -1,5 +1,6 @@
-from enum import auto
-from typing import Callable, Optional, Sequence, Tuple, Union
+from __future__ import annotations
+
+from typing import Callable, Optional, Sequence, Tuple
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -23,30 +24,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.misc import StringEnum
+from ...utils.notifications import NotificationSeverity
 from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
-class NotificationSeverity(StringEnum):
-    """Severity levels for the notification dialog.  Along with icons for each."""
-
-    ERROR = auto()
-    WARNING = auto()
-    INFO = auto()
-    NONE = auto()
-
-    def as_icon(self):
-        return {
-            self.ERROR: "ⓧ",
-            self.WARNING: "⚠️",
-            self.INFO: "ⓘ",
-            self.NONE: "",
-        }[self]
-
-
-class NapariNotification(QDialog):
+class NapariQtNotification(QDialog):
     """Notification dialog frame, appears at the bottom right of the canvas.
 
     By default, only the first line of the notification is shown, and the text
@@ -79,17 +63,20 @@ class NapariNotification(QDialog):
     DISMISS_AFTER = 4000
     MIN_WIDTH = 400
 
+    message: MultilineElidedLabel
+    source_label: QLabel
+    severity_icon: QLabel
+
     def __init__(
         self,
         message: str,
-        severity: Union[
-            str, NotificationSeverity
-        ] = NotificationSeverity.WARNING,
+        severity: str = 'WARNING',
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
         """[summary]"""
         super().__init__(None)
+
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
         for wdg in QApplication.topLevelWidgets():
@@ -150,9 +137,10 @@ class NapariNotification(QDialog):
         super().show()
         self.slide_in()
         self.timer = QTimer()
-        self.timer.setInterval(self.DISMISS_AFTER)
-        self.timer.setSingleShot(True)
-        self.timer.timeout.connect(self.close)
+        if self.DISMISS_AFTER > 0:
+            self.timer.setInterval(self.DISMISS_AFTER)
+            self.timer.setSingleShot(True)
+            self.timer.timeout.connect(self.close)
         self.timer.start()
 
     def mouseMoveEvent(self, event):
@@ -282,9 +270,21 @@ class NapariNotification(QDialog):
         """
         if isinstance(actions, dict):
             actions = list(actions.items())
+
         for text, callback in actions:
             btn = QPushButton(text)
-            btn.clicked.connect(callback)
+
+            def call_back_with_self(callback, self):
+                """
+                we need a higher order function this to capture the reference to self.
+                """
+
+                def _inner():
+                    return callback(self)
+
+                return _inner
+
+            btn.clicked.connect(call_back_with_self(callback, self))
             btn.clicked.connect(self.close)
             self.row2.addWidget(btn)
         if actions:
@@ -301,7 +301,7 @@ class NapariNotification(QDialog):
         )
 
     @classmethod
-    def from_exception(cls, exception: BaseException) -> 'NapariNotification':
+    def from_exception(cls, exception: BaseException) -> NapariQtNotification:
         """Create a NapariNotifcation dialog from an exception object."""
         # TODO: this method could be used to recognize various exception
         # subclasses and populate the dialog accordingly.
@@ -309,9 +309,16 @@ class NapariNotification(QDialog):
             "\nYou can start napari with NAPARI_CATCH_ERRORS=0 or "
             "NAPARI_EXIT_ON_ERROR=1 to find more about this error"
         )
-
         msg = getattr(exception, 'message', str(exception)) + extra_msg
         severity = getattr(exception, 'severity', 'WARNING')
         source = None
         actions = getattr(exception, 'actions', ())
         return cls(msg, severity, source, actions)
+
+    @classmethod
+    def from_notification(cls, notification):
+        return cls(
+            message=notification.message,
+            severity=notification.severity,
+            source=notification.source,
+        )
