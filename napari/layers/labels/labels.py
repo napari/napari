@@ -106,6 +106,8 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
+    countour : bool
+        If `True`, displays contours of labels instead of shaded regions
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -219,11 +221,13 @@ class Labels(Image):
             selected_label=Event,
             color_mode=Event,
             brush_shape=Event,
+            countour=Event,
         )
 
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
+        self._countour = False
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
@@ -261,6 +265,29 @@ class Labels(Image):
     def n_dimensional(self, n_dimensional):
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
+
+    @property
+    def countour(self):
+        """bool: displays contours of labels instead of shaded regions."""
+        return self._countour
+
+    @countour.setter
+    def countour(self, countour, refresh=True):
+        self._countour = countour
+        self.events.countour()
+
+        if refresh is True:
+            self._save_history()
+
+        if countour:
+            self.data = np.logical_xor(
+                self.data, ndi.binary_erosion(self.data)
+            )
+        else:
+            self.data = ndi.binary_fill_holes(self.data)
+
+        if refresh is True:
+            self.refresh()
 
     @property
     def brush_size(self):
