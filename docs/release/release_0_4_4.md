@@ -46,6 +46,7 @@ create analysis pipelines in napari (#2158).
 - QtAboutKeyBindings patch (#2132)
 - Fix too-late registration of napari types in magicgui (#2139)
 - Fix magicgui.FunctionGui deprecation warning (#2164)
+- Fix show/ hide of plugin widgets (#2173)
 
 
 ## API Changes
