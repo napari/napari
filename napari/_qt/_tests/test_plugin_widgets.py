@@ -121,9 +121,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(dw.widget(), Widg3)
     # This widget uses the parameter annotation method to receive a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        actions[1].trigger()
+    # Add twice is ok, only does a show
+    actions[1].trigger()
 
     # trigger the 'TestP1 > Widg2' action (it's in a submenu)
     action = actions[0].menu().actions()[1]
@@ -135,9 +134,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(dw.widget(), Widg2)
     # This widget uses parameter *name* "napari_viewer" to get a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        action.trigger()
+    # Add twice is ok, only does a show
+    action.trigger()
 
 
 def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
@@ -163,9 +161,8 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it
     assert isinstance(magic_widget(), napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        actions[2].trigger()
+    # Add twice is ok, only does a show
+    actions[2].trigger()
 
 
 def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
