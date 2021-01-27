@@ -46,9 +46,23 @@ create analysis pipelines in napari (#2158).
 
 
 ## API Changes
-- Drop items to be removed in 0.4.4 (#2144)
-- No naming convention, delay dock_widget discovery (#2152)
-- Drop magic_kwargs, dock_kwargs from provide_function_widget (#2158)
+- `viewer.grid_view()` has been removed, use `viewer.grid.enabled = True`
+  instead (#2144)
+- `viewer.stack_view()` has been removed, use `viewer.grid.enabled = False`
+  instead (#2144)
+- `viewer.grid_size` has been removed, use `viewer.grid.shape` instead (#2144)
+- `viewer.grid_stride` has been removed, use `viewer.grid.stride` instead
+  (#2144)
+- Plugins are no longer discovered by naming convention alone; to appear as an
+  installed plugin in napari, make sure you use the `napari.plugin`
+  entrypoint in your setup.py or setup.cfg. To appear as a listed plugin on
+  PyPI, be sure to use the `Framework :: napari` trove classifier. (#2152)
+- The `napari_experimental_provide_function_widget` plugin hook
+  specification has been removed. Plugin developers should use
+  `napari_experimental_provide_function` instead for functional
+  (layers/layer data in -> layers/layer data out) plugins, and
+  `napari_experimental_provide_dock_widget` for more elaborate plugins
+  that require custom widgets. (#2158)
 
 
 ## Deprecations
