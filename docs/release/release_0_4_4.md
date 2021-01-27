@@ -11,13 +11,19 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-This release is a quick follow on from our `0.4.3` release and contains some nice improvements to the GUI and 
-analysis function hookspecs we experimentally added in that release. We've expanded the API of the
-`napari_experimental_provide_dock_widget` to accept new `magic_factory` decorated functions and callables that
-return widgets, making it easier for developers who want to use magicgui and not have to write their own qt 
-widgets (#2143). At the same time we renamed `napari_experimental_provide_function_widget` to 
-`napari_experimental_provide_function` and reduced its API to only accepting a function or list of functions
-to make it even easier to build up an analysis function interface (#2158).
+This release is a quick follow on from our `0.4.3` release and contains some
+nice improvements to the GUI and analysis function hookspecs we experimentally
+added in that release. We've expanded the API of the
+`napari_experimental_provide_dock_widget` to accept new `magic_factory`-
+decorated functions (available in magicgui 0.2.6+), or any callable that
+returns one or more widgets, making it easier for developers who want to use
+magicgui and not have to write their own qt widgets (#2143).
+
+We have also renamed `napari_experimental_provide_function_widget` to
+`napari_experimental_provide_function` and reduced its API to receive only a
+function or list of functions. napari will then take care to generate an
+appropriate user interface for that function. This will make it even easier to
+create analysis pipelines in napari (#2158).
 
 
 ## Improvements
@@ -32,6 +38,9 @@ to make it even easier to build up an analysis function interface (#2158).
 - Add compress=1 to tifffile imsave call (#2157)
 - Add informations on what to do on error in GUI (#2165)
 
+## Documentation
+- Better documentation of API changes in 0.4.4 release notes (#2171)
+- Add new function and dock widget hook specifications to documentation (#2158)
 
 ## Bug Fixes
 - QtAboutKeyBindings patch (#2132)
@@ -40,13 +49,32 @@ to make it even easier to build up an analysis function interface (#2158).
 
 
 ## API Changes
-- Drop items to be removed in 0.4.4 (#2144)
-- No naming convention, delay dock_widget discovery (#2152)
-- Drop magic_kwargs, dock_kwargs from provide_function_widget (#2158)
+- `viewer.grid_view()` has been removed, use `viewer.grid.enabled = True`
+  instead (#2144)
+- `viewer.stack_view()` has been removed, use `viewer.grid.enabled = False`
+  instead (#2144)
+- `viewer.grid_size` has been removed, use `viewer.grid.shape` instead (#2144)
+- `viewer.grid_stride` has been removed, use `viewer.grid.stride` instead
+  (#2144)
+- Plugins are no longer discovered by naming convention alone; to appear as an
+  installed plugin in napari, make sure you use the `napari.plugin`
+  entrypoint in your setup.py or setup.cfg. To appear as a listed plugin on
+  PyPI, be sure to use the `Framework :: napari` trove classifier. (#2152)
+- The `napari_experimental_provide_function_widget` plugin hook
+  specification has been removed. Plugin developers should use
+  `napari_experimental_provide_function` instead for functional
+  (layers/layer data in -> layers/layer data out) plugins, and
+  `napari_experimental_provide_dock_widget` for more elaborate plugins
+  that require custom widgets. (#2158)
 
 
 ## Deprecations
-- Deprecate layer.status (#1985)
+- `layer.status` is deprecated, to be removed in 0.4.6. Users should instead
+  use `layer.get_status(position)`. (#1985)
+- The position argument to `layer.get_value()` is no longer optional, and will
+  be required after 0.4.6. (#1985)
+- `layer.get_message()` is deprecated, to be removed in 0.4.6. Users should use
+  `layer.get_status(position)` instead. (#1985)
 
 
 ## Build Tools and Support
