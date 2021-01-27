@@ -66,7 +66,12 @@ create analysis pipelines in napari (#2158).
 
 
 ## Deprecations
-- Deprecate layer.status (#1985)
+- `layer.status` is deprecated, to be removed in 0.4.6. Users should instead
+  use `layer.get_status(position)`. (#1985)
+- The position argument to `layer.get_value()` is no longer optional, and will
+  be required after 0.4.6. (#1985)
+- `layer.get_message()` is deprecated, to be removed in 0.4.6. Users should use
+  `layer.get_status(position)` instead. (#1985)
 
 
 ## Build Tools and Support
