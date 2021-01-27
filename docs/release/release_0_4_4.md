@@ -15,7 +15,7 @@ This release is a quick follow on from our `0.4.3` release and contains some
 nice improvements to the GUI and analysis function hookspecs we experimentally
 added in that release. We've expanded the API of the
 `napari_experimental_provide_dock_widget` to accept new `magic_factory`-
-decorated functions (available in magicgui 0.2.7+), or any callable that
+decorated functions (available in magicgui 0.2.6+), or any callable that
 returns one or more widgets, making it easier for developers who want to use
 magicgui and not have to write their own qt widgets (#2143).
 
