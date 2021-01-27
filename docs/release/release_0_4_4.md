@@ -38,6 +38,9 @@ create analysis pipelines in napari (#2158).
 - Add compress=1 to tifffile imsave call (#2157)
 - Add informations on what to do on error in GUI (#2165)
 
+## Documentation
+- Better documentation of API changes in 0.4.4 release notes (#2171)
+- Add new function and dock widget hook specifications to documentation (#2158)
 
 ## Bug Fixes
 - QtAboutKeyBindings patch (#2132)
