@@ -759,9 +759,6 @@ class Window:
     ):
         """Turn a function into a dock widget via magicgui.
 
-        Each function is autocalled when ever a parameter is changed
-        or can be explicitly run.
-
         Parameters
         ----------
         function : callable
