@@ -11,13 +11,19 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-This release is a quick follow on from our `0.4.3` release and contains some nice improvements to the GUI and 
-analysis function hookspecs we experimentally added in that release. We've expanded the API of the
-`napari_experimental_provide_dock_widget` to accept new `magic_factory` decorated functions and callables that
-return widgets, making it easier for developers who want to use magicgui and not have to write their own qt 
-widgets (#2143). At the same time we renamed `napari_experimental_provide_function_widget` to 
-`napari_experimental_provide_function` and reduced its API to only accepting a function or list of functions
-to make it even easier to build up an analysis function interface (#2158).
+This release is a quick follow on from our `0.4.3` release and contains some
+nice improvements to the GUI and analysis function hookspecs we experimentally
+added in that release. We've expanded the API of the
+`napari_experimental_provide_dock_widget` to accept new `magic_factory`-
+decorated functions (available in magicgui 0.2.7+), or any callable that
+returns one or more widgets, making it easier for developers who want to use
+magicgui and not have to write their own qt widgets (#2143).
+
+We have also renamed `napari_experimental_provide_function_widget` to
+`napari_experimental_provide_function` and reduced its API to receive only a
+function or list of functions. napari will then take care to generate an
+appropriate user interface for that function. This will make it even easier to
+create analysis pipelines in napari (#2158).
 
 
 ## Improvements
