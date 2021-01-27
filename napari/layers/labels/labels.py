@@ -106,7 +106,7 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
-    countour : bool
+    contour : bool
         If `True`, displays contours of labels instead of shaded regions
     brush_size : float
         Size of the paint brush in data coordinates.
@@ -221,13 +221,13 @@ class Labels(Image):
             selected_label=Event,
             color_mode=Event,
             brush_shape=Event,
-            countour=Event,
+            contour=Event,
         )
 
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
-        self._countour = False
+        self._contour = False
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
@@ -267,19 +267,19 @@ class Labels(Image):
         self.events.n_dimensional()
 
     @property
-    def countour(self):
+    def contour(self):
         """bool: displays contours of labels instead of shaded regions."""
-        return self._countour
+        return self._contour
 
-    @countour.setter
-    def countour(self, countour, refresh=True):
-        self._countour = countour
-        self.events.countour()
+    @contour.setter
+    def contour(self, contour, refresh=True):
+        self._contour = contour
+        self.events.contour()
 
         if refresh is True:
             self._save_history()
 
-        if countour:
+        if contour:
             self.data = np.logical_xor(
                 self.data, ndi.binary_erosion(self.data)
             )

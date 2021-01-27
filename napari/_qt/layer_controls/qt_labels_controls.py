@@ -115,10 +115,10 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dimensional_change()
 
-        countour_cb = QCheckBox()
-        countour_cb.setToolTip('display countours of labels')
-        countour_cb.stateChanged.connect(self.toggle_countours)
-        self.countourCheckBox = countour_cb
+        contour_cb = QCheckBox()
+        contour_cb.setToolTip('display contours of labels')
+        contour_cb.stateChanged.connect(self.toggle_contours)
+        self.contourCheckBox = contour_cb
         self._on_n_dimensional_change()
 
         preserve_labels_cb = QCheckBox()
@@ -231,7 +231,7 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel('show selected:'), 8, 2, 1, 1)
         self.grid_layout.addWidget(self.selectedColorCheckbox, 8, 3, 1, 1)
         self.grid_layout.addWidget(QLabel('contour:'), 9, 0, 1, 1)
-        self.grid_layout.addWidget(self.countourCheckBox, 9, 1, 1, 1)
+        self.grid_layout.addWidget(self.contourCheckBox, 9, 1, 1, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -322,11 +322,11 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
-    def toggle_countours(self, state):
+    def toggle_contours(self, state):
         if state == Qt.Checked:
-            self.layer.countour = True
+            self.layer.contour = True
         else:
-            self.layer.countour = False
+            self.layer.contour = False
 
     def change_preserve_labels(self, state):
         """Toggle preserve_labels state of label layer.
