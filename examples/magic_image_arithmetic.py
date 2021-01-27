@@ -30,12 +30,8 @@ def image_arithmetic(
     layerB: 'napari.types.ImageData',
 ) -> 'napari.types.ImageData':
     """Adds, subtracts, multiplies, or divides two same-shaped image layers."""
-    return operation.value(layerA, layerB)
-
-
-# We also use the additional `call_button` option to add a button that
-# will trigger function execution.
-magic = {'call_button': "execute"}
+    if layerA is not None and layerB is not None:
+        return operation.value(layerA, layerB)
 
 
 with napari.gui_qt():
@@ -45,4 +41,4 @@ with napari.gui_qt():
     viewer.add_image(np.random.rand(20, 20), name="Layer 2")
 
     # Add our magic function to napari
-    viewer.window.add_function_widget(image_arithmetic, magic_kwargs=magic)
+    viewer.window.add_function_widget(image_arithmetic)

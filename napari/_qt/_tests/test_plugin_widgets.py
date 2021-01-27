@@ -84,11 +84,7 @@ def test_plugin_widgets(monkeypatch):
         m.setattr(plugins, "dock_widgets", dock_widgets)
 
         function_widgets = {
-            ("TestP3", "magic"): (
-                magicfunc,
-                {'call_button': True},
-                {'area': 'right'},
-            ),
+            ("TestP3", "magic"): magicfunc,
         }
         m.setattr(plugins, "function_widgets", function_widgets)
         yield

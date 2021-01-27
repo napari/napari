@@ -600,15 +600,14 @@ class Window:
             warnings.warn(f'Dock widget {key!r} already added')
             return
 
-        func, magic_kwargs, dock_kwargs = plugins.function_widgets[key]
+        func = plugins.function_widgets[key]
 
         # Add function widget
         self.add_function_widget(
             func,
-            magic_kwargs=magic_kwargs,
             name=plugins.menu_item_template.format(*key),
-            area=dock_kwargs.get('area', None),
-            allowed_areas=dock_kwargs.get('allowed_areas', None),
+            area=None,
+            allowed_areas=None,
         )
 
     def add_dock_widget(
@@ -787,6 +786,13 @@ class Window:
             `dock_widget` that can pass viewer events.
         """
         from magicgui import magicgui
+
+        if magic_kwargs is None:
+            magic_kwargs = {
+                'auto_call': False,
+                'call_button': "run",
+                'layout': 'vertical',
+            }
 
         widget = magicgui(function, **magic_kwargs or {})
 
