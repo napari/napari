@@ -37,6 +37,7 @@ to make it even easier to build up an analysis function interface (#2158).
 - QtAboutKeyBindings patch (#2132)
 - Fix too-late registration of napari types in magicgui (#2139)
 - Fix magicgui.FunctionGui deprecation warning (#2164)
+- Fix show/ hide of plugin widgets (#2172)
 
 
 ## API Changes
