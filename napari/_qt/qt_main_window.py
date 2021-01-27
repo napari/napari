@@ -5,7 +5,6 @@ wrap.
 import inspect
 import os
 import time
-import warnings
 from collections import Counter
 from itertools import chain, repeat
 from typing import Dict
@@ -559,7 +558,7 @@ class Window:
 
         full_name = plugins.menu_item_template.format(*key)
         if full_name in self._dock_widgets:
-            warnings.warn(f'Dock widget {key!r} already added')
+            self._dock_widgets[full_name].show()
             return
 
         Widget, dock_kwargs = plugins.dock_widgets[key]
@@ -597,7 +596,7 @@ class Window:
         """
         full_name = plugins.menu_item_template.format(*key)
         if full_name in self._dock_widgets:
-            warnings.warn(f'Dock widget {key!r} already added')
+            self._dock_widgets[full_name].show()
             return
 
         func = plugins.function_widgets[key]
