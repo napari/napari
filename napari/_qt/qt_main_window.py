@@ -766,6 +766,9 @@ class Window:
         ----------
         function : callable
             Function that you want to add.
+        magic_kwargs : dict, optional
+            Keyword arguments to :func:`magicgui.magicgui` that
+            can be used to specify widget.
         name : str, optional
             Name of dock widget to appear in window menu.
         area : str, optional
