@@ -38,9 +38,9 @@ from ``Layer.data``, and a ``meta`` dict that will correspond to the layer's
 Analysis hooks
 --------------
 
-.. autofunction:: napari_expertimental_provide_function
+.. autofunction:: napari_experimental_provide_function
 
 GUI hooks
 ---------
 
-.. autofunction:: napari_expertimental_provide_dock_widget
+.. autofunction:: napari_experimental_provide_dock_widget
