@@ -288,6 +288,7 @@ class QPluginList(QListWidget):
 class QtPluginDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._search_github = False
         self.installer = Installer()
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
@@ -344,7 +345,9 @@ class QtPluginDialog(QDialog):
         # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
         # fetch available plugins
-        self.worker = create_worker(iter_napari_plugin_info)
+        self.worker = create_worker(
+            iter_napari_plugin_info, search_github=self._search_github
+        )
 
         def _handle_yield(project_info):
             if project_info.name in already_installed:
@@ -400,10 +403,13 @@ class QtPluginDialog(QDialog):
         mov.start()
         self.show_status_btn = QPushButton("Show Status", self)
         self.show_status_btn.setFixedWidth(100)
+        self.search_github_btn = QPushButton("Show Github Plugins", self)
+        self.search_github_btn.setFixedWidth(150)
         self.show_sorter_btn = QPushButton("<< Show Sorter", self)
         self.close_btn = QPushButton("Close", self)
         self.close_btn.clicked.connect(self.reject)
         buttonBox.addWidget(self.show_status_btn)
+        buttonBox.addWidget(self.search_github_btn)
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addStretch()
@@ -415,6 +421,10 @@ class QtPluginDialog(QDialog):
         self.show_status_btn.setCheckable(True)
         self.show_status_btn.setChecked(False)
         self.show_status_btn.toggled.connect(self._toggle_status)
+
+        self.search_github_btn.setCheckable(True)
+        self.search_github_btn.setChecked(self._search_github)
+        self.search_github_btn.toggled.connect(self._toggle_search_github)
 
         self.show_sorter_btn.setCheckable(True)
         self.show_sorter_btn.setChecked(False)
@@ -438,6 +448,15 @@ class QtPluginDialog(QDialog):
         else:
             self.show_status_btn.setText("Show Status")
             self.stdout_text.hide()
+
+    def _toggle_search_github(self, search_github):
+        if search_github:
+            self.search_github_btn.setText("Hide Github Plugins")
+            self._search_github = True
+        else:
+            self.search_github_btn.setText("Show Github Plugins")
+            self._search_github = False
+        self.refresh()
 
 
 if __name__ == "__main__":

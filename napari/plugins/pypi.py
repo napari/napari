@@ -98,7 +98,7 @@ def get_package_versions(name: str) -> List[str]:
 def get_napari_plugin_repos_from_github() -> List[dict]:
     """Return GitHub API hits for repos with "napari plugin" in the README."""
     with request.urlopen(
-        'https://api.github.com/search/repositories?q="napari+plugin"+in:readme'
+        'https://api.github.com/search/repositories?q=topic:napari-plugin'
     ) as response:
         data = json.loads(response.read().decode())
         return list(data.get("items"))
@@ -187,6 +187,7 @@ def ensure_repo_is_napari_plugin(
 
 def iter_napari_plugin_info(
     skip={'napari-plugin-engine'},
+    search_github=True,
 ) -> Generator[ProjectInfo, None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins.
 
@@ -202,16 +203,18 @@ def iter_napari_plugin_info(
             if name not in skip
         ]
 
-        futures.extend(
-            [
-                executor.submit(
-                    ensure_repo_is_napari_plugin,
-                    (repo_info['full_name'], repo_info['default_branch']),
-                )
-                for repo_info in get_napari_plugin_repos_from_github()
-                if repo_info['name'] not in skip  # repo may not have pkg name
-            ]
-        )
+        if search_github:
+            futures.extend(
+                [
+                    executor.submit(
+                        ensure_repo_is_napari_plugin,
+                        (repo_info['full_name'], repo_info['default_branch']),
+                    )
+                    for repo_info in get_napari_plugin_repos_from_github()
+                    if repo_info['name']
+                    not in skip  # repo may not have pkg name
+                ]
+            )
         for future in as_completed(futures):
             info = future.result()
             if info and info not in already_yielded:

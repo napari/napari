@@ -249,8 +249,12 @@ functionality for napari.
 
 If you are using Github, add the `"napari-plugin" topic
 <https://github.com/topics/napari-plugin>`_ to your repo so other developers can
-see your work.
-
+see your work, if the repo is setup correctly in setup.py as a napari plugin, it would
+also show up in napari plugin installation menu when user open napari. However, though
+currently napari users would be able to see github repos tagged with the
+`"napari-plugin" topic <https://github.com/topics/napari-plugin>`_, we could
+deprecate github repo matching in the future to only support matching via PyPI with
+`'Framework :: napari'` [classifier] to unify practices of tagging plugin packages
 
 When you are ready for users, announce your plugin on the `Image.sc Forum
 <https://forum.image.sc/tag/napari>`_.
