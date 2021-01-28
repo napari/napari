@@ -10,7 +10,6 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..image import Image
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -277,7 +276,6 @@ class Labels(Image):
             [self.scale[d] for d in self._dims_displayed]
         )
         self.cursor_size = self.brush_size * data2world_scale
-        self.status = format_float(self.brush_size)
         self.events.brush_size()
 
     @property
@@ -426,9 +424,10 @@ class Labels(Image):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (custom_colormap, label_color_index,) = color_dict_to_colormap(
-                self.color
-            )
+            (
+                custom_colormap,
+                label_color_index,
+            ) = color_dict_to_colormap(self.color)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
@@ -447,8 +446,7 @@ class Labels(Image):
 
     @property
     def show_selected_label(self):
-        """Whether to filter displayed labels to only the selected label or not
-        """
+        """Whether to filter displayed labels to only the selected label or not"""
         return self._show_selected_label
 
     @show_selected_label.setter
@@ -554,7 +552,6 @@ class Labels(Image):
         else:
             raise ValueError("Mode not recognized")
 
-        self.status = str(mode)
         self._mode = mode
 
         self.events.mode(mode=mode)
@@ -858,18 +855,35 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
-    def get_message(self):
-        msg = super().get_message()
+    def get_status(self, position=None, world=False):
+        """Status message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+        msg = super().get_status(position, world=world)
+
         # if this labels layer has properties
         if self._label_index and self._properties:
+            value = self.get_value(position, world=world)
             # if the cursor is not outside the image or on the background
-            if self._value is not None:
+            if value is not None:
                 if self.multiscale:
-                    value = self._value[1]
+                    label_value = value[1]
                 else:
-                    value = self._value
-                if value in self._label_index:
-                    idx = self._label_index[value]
+                    label_value = value
+                if label_value in self._label_index:
+                    idx = self._label_index[label_value]
                     for k, v in self._properties.items():
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'

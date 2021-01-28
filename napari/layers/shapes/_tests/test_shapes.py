@@ -830,7 +830,7 @@ def test_switch_color_mode(attribute):
     setattr(layer, f'{attribute}_color_mode', 'cycle')
     setattr(layer, f'{attribute}_color', 'shape_type')
     color = getattr(layer, f'{attribute}_color')
-    layer_color = transform_color(color_cycle * int((shape[0] / 2)))
+    layer_color = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(color, layer_color)
 
     # switch back to direct, edge_colors shouldn't change
@@ -889,7 +889,8 @@ def test_color_direct(attribute: str):
     layer_color = getattr(layer, f'{attribute}_color')
     assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
-        layer_color, np.vstack((color_array[1], color_array[3:])),
+        layer_color,
+        np.vstack((color_array[1], color_array[3:])),
     )
 
     # set the color directly
@@ -919,7 +920,8 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 @pytest.mark.parametrize(
-    "color_cycle", [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
+    "color_cycle",
+    [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
@@ -949,7 +951,8 @@ def test_color_cycle(attribute, color_cycle):
     layer_color = getattr(layer, f'{attribute}_color')
     assert len(layer_color) == shape[0] + 1
     np.testing.assert_allclose(
-        layer_color, np.vstack((color_array, transform_color('red'))),
+        layer_color,
+        np.vstack((color_array, transform_color('red'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -984,7 +987,7 @@ def test_color_cycle(attribute, color_cycle):
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
-    """ Test adding a shape to an empty layer when edge/face color is a color cycle
+    """Test adding a shape to an empty layer when edge/face color is a color cycle
 
     See: https://github.com/napari/napari/pull/1069
     """
@@ -1027,7 +1030,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_value_color_cycle(attribute):
-    """ Test that adding values to properties used to set a color cycle
+    """Test that adding values to properties used to set a color cycle
     and then calling Shapes.refresh_colors() performs the update and adds the
     new value to the face/edge_color_cycle_map.
     """
@@ -1071,7 +1074,7 @@ def test_color_colormap(attribute):
     assert layer.properties == properties
     color_mode = getattr(layer, f'{attribute}_color_mode')
     assert color_mode == 'colormap'
-    color_array = transform_color(['black', 'white'] * int((shape[0] / 2)))
+    color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     attribute_color = getattr(layer, f'{attribute}_color')
     assert np.all(attribute_color == color_array)
 
@@ -1087,7 +1090,8 @@ def test_color_colormap(attribute):
     attribute_color = getattr(layer, f'{attribute}_color')
     assert len(attribute_color) == shape[0] + 1
     np.testing.assert_allclose(
-        attribute_color, np.vstack((color_array, transform_color('black'))),
+        attribute_color,
+        np.vstack((color_array, transform_color('black'))),
     )
 
     # Check removing data adjusts colors correctly
@@ -1099,7 +1103,11 @@ def test_color_colormap(attribute):
     np.testing.assert_allclose(
         attribute_color,
         np.vstack(
-            (color_array[1], color_array[3:], transform_color('black'),)
+            (
+                color_array[1],
+                color_array[3:],
+                transform_color('black'),
+            )
         ),
     )
 
@@ -1340,17 +1348,17 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     layer = Shapes(data)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0)
     assert value == (9, None)
 
     layer.mode = 'select'
     layer.selected_data = {9}
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert value == (9, 7)
 
     layer = Shapes(data + 5)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert value == (None, None)
 
 
@@ -1360,7 +1368,7 @@ def test_message():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str
 
 

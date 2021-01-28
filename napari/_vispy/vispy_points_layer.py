@@ -2,6 +2,7 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Text
 
 from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events import disconnect_events
 from ._text_utils import update_text
 from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer
@@ -101,11 +102,14 @@ class VispyPointsLayer(VispyBaseLayer):
                 width = self._highlight_width
 
             self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1], color=self._highlight_color, width=width,
+                pos=pos[:, ::-1],
+                color=self._highlight_color,
+                width=width,
             )
         else:
             self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._ndisplay)), width=0,
+                pos=np.zeros((1, self.layer._ndisplay)),
+                width=0,
             )
 
         self.node.update()
@@ -158,3 +162,8 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(self.layer.text.blending)
         self.node.update()
+
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.text.events, self)
+        super().close()

@@ -2,7 +2,6 @@
 """
 import types
 import warnings
-from copy import copy
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -10,7 +9,6 @@ from scipy import ndimage as ndi
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -278,16 +276,14 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _new_empty_slice(self):
-        """Initialize the current slice to an empty image.
-        """
+        """Initialize the current slice to an empty image."""
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
         self._empty = True
 
     def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded.
-        """
+        """Get empty image to use as the default before data is loaded."""
         if self.rgb:
             return np.zeros((1,) * self._ndisplay + (3,))
         else:
@@ -335,7 +331,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     def _get_ndim(self):
@@ -392,7 +388,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
-        self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
@@ -404,7 +399,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @attenuation.setter
     def attenuation(self, value):
-        self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
@@ -483,31 +477,6 @@ class Image(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
-
-    @property
-    def shape(self):
-        """Size of layer in world coordinates (compatibility).
-
-        Returns
-        -------
-        shape : tuple
-        """
-        warnings.warn(
-            (
-                "The shape attribute is deprecated and will be removed in version 0.4.3."
-                " Instead you should use the extent.data and extent.world attributes"
-                " to get the extent of the data in data or world coordinates."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        extent = copy(self._extent_data)
-        extent[1] = extent[1] + 1
-        extent = self._transforms['data2world'](extent)
-
-        # Rounding is for backwards compatibility reasons.
-        return tuple(np.round(extent[1] - extent[0]).astype(int))
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -667,7 +636,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         Parameters
         ----------
-        request : ChunkRequest
+        data : ChunkRequest
             The request that was satisfied/loaded.
         sync : bool
             If True the chunk was loaded synchronously.
@@ -763,21 +732,25 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
         value : tuple
-            Value of the data at the coord.
+            Value of the data.
         """
         if self.multiscale:
             # for multiscale data map the coordinate from the data back to
             # the tile
-            coord = self._transforms['tile2data'].inverse(self.coordinates)
+            coord = self._transforms['tile2data'].inverse(position)
         else:
-            coord = self.coordinates
+            coord = position
 
         coord = np.round(coord).astype(int)
 

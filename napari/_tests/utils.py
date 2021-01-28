@@ -110,12 +110,12 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     # Flip dims order displayed
     dims_order = list(range(ndim))
     viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    assert viewer.dims.order == tuple(dims_order)
 
     # Flip dims order including non-displayed
     dims_order[0], dims_order[-1] = dims_order[-1], dims_order[0]
     viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    assert viewer.dims.order == tuple(dims_order)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
@@ -144,7 +144,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
     vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
-        disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
+        disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D
         # values of visual layer
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 

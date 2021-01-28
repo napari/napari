@@ -1,15 +1,74 @@
-"""Octree utility classes.
+"""OctreeDisplayOptions, NormalNoise and OctreeMetadata classes.
 """
-from typing import NamedTuple, Tuple
+from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 
+from ....components.experimental.chunk import LayerRef
+from ....utils.config import octree_config
 
-class TestImageSettings(NamedTuple):
-    """Settings for a test image we are creating."""
 
-    base_shape: Tuple[int, int]
-    tile_size: int
+def _get_tile_size() -> int:
+    """Return the default tile size.
+
+    Returns
+    -------
+    int
+        The default tile size.
+    """
+    return octree_config['octree']['tile_size'] if octree_config else 256
+
+
+@dataclass
+class OctreeDisplayOptions:
+    """Options for how to display the octree.
+
+    Attributes
+    -----------
+    tile_size : int
+        The size of the display tiles, for example 256.
+    freeze_level : bool
+        If True we do not automatically pick the right data level.
+    track_view : bool
+        If True the displayed tiles track the view, the normal mode.
+    show_grid : bool
+        If True draw a grid around the tiles for debugging or demos.
+    """
+
+    def __init__(self):
+        self._show_grid = True
+
+        # TODO_OCTREE we set this after __init__ which is messy.
+        self.loaded_event = None
+
+    @property
+    def show_grid(self) -> bool:
+        """True if we are drawing a grid on top of the tiles.
+
+        Returns
+        -------
+        bool
+            True if we are drawing a grid on top of the tiles.
+        """
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, show: bool) -> None:
+        """Set whether we should draw a grid on top of the tiles.
+
+        Parameters
+        ----------
+        show : bool
+            True if we should draw a grid on top of the tiles.
+        """
+        if self._show_grid != show:
+            self._show_grid = show
+            self.loaded_event()  # redraw
+
+    tile_size: int = _get_tile_size()
+    freeze_level: bool = False
+    track_view: bool = True
 
 
 class NormalNoise(NamedTuple):
@@ -22,8 +81,8 @@ class NormalNoise(NamedTuple):
     def is_zero(self) -> bool:
         """Return True if there is no noise at all.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if there is no noise at all.
         """
@@ -33,16 +92,16 @@ class NormalNoise(NamedTuple):
     def get_value(self) -> float:
         """Get a random value.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The random value.
         """
         return np.random.normal(self.mean, self.std_dev)
 
 
-class SliceConfig(NamedTuple):
-    """Configuration for a tiled image.
+class OctreeMetadata(NamedTuple):
+    """Metadata for an Octree.
 
     Attributes
     ----------
@@ -56,7 +115,7 @@ class SliceConfig(NamedTuple):
 
     Notes
     -----
-    This SliceConfig.tile_size will be used by the OctreeLevels in the tree
+    This OctreeMetadata.tile_size will be used by the OctreeLevels in the tree
     in general. But the highest level OctreeLevel might use a larger size
     so that it can consist of a single chunk.
 
@@ -74,15 +133,15 @@ class SliceConfig(NamedTuple):
     own tile size.
     """
 
+    layer_ref: LayerRef
     base_shape: np.ndarray
     num_levels: int
     tile_size: int
-    delay_ms: NormalNoise = NormalNoise()
 
     @property
     def aspect_ratio(self):
         """Return the width:height aspect ratio of the base image.
 
-        For example HDTV resolution is 16:9 which is 1.77.
+        For example HDTV resolution is 16:9 which has aspect ration 1.77.
         """
         return self.base_shape[1] / self.base_shape[0]

@@ -45,8 +45,10 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
 
         comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
@@ -76,7 +78,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setValue(100)
         sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
-        self.gamma_slider_update()
+        self._on_gamma_change()
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
@@ -121,7 +123,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_clims_change(self, event=None):
+    def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
@@ -163,7 +165,10 @@ class QtBaseImageControls(QtLayerControls):
         # Note that QImage expects the image width followed by height
         cbar = self.layer.colormap.colorbar
         image = QImage(
-            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
+            cbar,
+            cbar.shape[1],
+            cbar.shape[0],
+            QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
@@ -178,7 +183,7 @@ class QtBaseImageControls(QtLayerControls):
         """
         self.layer.gamma = value / 100
 
-    def gamma_slider_update(self, event=None):
+    def _on_gamma_change(self, event=None):
         """Receive the layer model gamma change event and update the slider.
 
         Parameters
@@ -188,9 +193,6 @@ class QtBaseImageControls(QtLayerControls):
         """
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(int(self.layer.gamma * 100))
-
-    def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._contrast_limits_msg
 
     def closeEvent(self, event):
         self.deleteLater()

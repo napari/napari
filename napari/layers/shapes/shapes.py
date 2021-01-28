@@ -15,7 +15,6 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
     ColorType,
@@ -543,7 +542,7 @@ class Shapes(Layer):
         self.text.add(self.current_properties, n_new_shapes)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -633,7 +632,6 @@ class Shapes(Layer):
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_edge_width(i, edge_width)
-        self.status = format_float(self.current_edge_width)
         self.events.edge_width()
 
     @property
@@ -735,7 +733,7 @@ class Shapes(Layer):
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
         return self._edge_contrast_limits
@@ -831,7 +829,7 @@ class Shapes(Layer):
     def _set_color_mode(
         self, color_mode: Union[ColorMode, str], attribute: str
     ):
-        """ Set the face_color_mode or edge_color_mode property
+        """Set the face_color_mode or edge_color_mode property
 
         Parameters
         ----------
@@ -878,7 +876,7 @@ class Shapes(Layer):
             self.refresh_colors()
 
     def _set_color_cycle(self, color_cycle: np.ndarray, attribute: str):
-        """ Set the face_color_cycle or edge_color_cycle property
+        """Set the face_color_cycle or edge_color_cycle property
 
         Parameters
         ----------
@@ -943,12 +941,7 @@ class Shapes(Layer):
                     self.current_edge_color = edge_color
 
             edge_width = list(
-                set(
-                    [
-                        self._data_view.shapes[i].edge_width
-                        for i in selected_data
-                    ]
-                )
+                {self._data_view.shapes[i].edge_width for i in selected_data}
             )
             if len(edge_width) == 1:
                 edge_width = edge_width[0]
@@ -966,7 +959,7 @@ class Shapes(Layer):
                     self.current_properties = properties
 
     def _set_color(self, color, attribute: str):
-        """ Set the face_color or edge_color property
+        """Set the face_color or edge_color property
 
         Parameters
         ----------
@@ -1051,7 +1044,7 @@ class Shapes(Layer):
                 color_event()
 
     def _initialize_color(self, color, attribute: str, n_shapes: int):
-        """ Get the face/edge colors the Shapes layer will be initialized with
+        """Get the face/edge colors the Shapes layer will be initialized with
 
         Parameters
         ----------
@@ -1144,7 +1137,9 @@ class Shapes(Layer):
                             transform_color(next(color_cycle))
                         )
                     setattr(
-                        self, f'{attribute}_color_cycle_map', color_cycle_map,
+                        self,
+                        f'{attribute}_color_cycle_map',
+                        color_cycle_map,
                     )
             colors = np.array([color_cycle_map[x] for x in color_properties])
             if len(colors) == 0:
@@ -1162,7 +1157,9 @@ class Shapes(Layer):
                         prop=color_properties, colormap=colormap
                     )
                     setattr(
-                        self, f'{attribute}_contrast_limits', contrast_limits,
+                        self,
+                        f'{attribute}_contrast_limits',
+                        contrast_limits,
                     )
                 else:
 
@@ -1397,7 +1394,6 @@ class Shapes(Layer):
         else:
             raise ValueError("Mode not recognized")
 
-        self.status = str(mode)
         self._mode = mode
 
         draw_modes = [
@@ -2157,10 +2153,13 @@ class Shapes(Layer):
 
         return data_full
 
-    def _get_value(self):
-        """Determine if any shape at given coord using triangle meshes.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
 
-        Getting value is not supported yet for 3D meshes
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
@@ -2177,7 +2176,7 @@ class Shapes(Layer):
         if self._is_moving:
             return self._moving_value
 
-        coord = self.displayed_coordinates
+        coord = [position[i] for i in self._dims_displayed]
 
         # Check selected shapes
         value = None

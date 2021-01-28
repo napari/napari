@@ -13,7 +13,6 @@ from ...utils.colormaps.standardize_color import (
     transform_color,
 )
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
     ColorType,
@@ -379,6 +378,7 @@ class Points(Layer):
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
+        self._round_index = False
 
         with self.block_update_properties():
             self._edge_color_property = ''
@@ -529,7 +529,7 @@ class Points(Layer):
                 self.text.add(self.current_properties, adding)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -773,7 +773,6 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
-        self.status = format_float(self.current_size)
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -783,7 +782,6 @@ class Points(Layer):
     @edge_width.setter
     def edge_width(self, edge_width: Union[None, float]) -> None:
         self._edge_width = edge_width
-        self.status = format_float(self.edge_width)
         self.events.edge_width()
 
     @property
@@ -823,7 +821,7 @@ class Points(Layer):
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
         return self._edge_contrast_limits
@@ -958,7 +956,7 @@ class Points(Layer):
     def _set_color_mode(
         self, color_mode: Union[ColorMode, str], attribute: str
     ):
-        """ Set the face_color_mode or edge_color_mode property
+        """Set the face_color_mode or edge_color_mode property
 
         Parameters
         ----------
@@ -1005,7 +1003,7 @@ class Points(Layer):
             self.refresh_colors()
 
     def _set_color(self, color: ColorType, attribute: str):
-        """ Set the face_color or edge_color property
+        """Set the face_color or edge_color property
 
         Parameters
         ----------
@@ -1042,7 +1040,7 @@ class Points(Layer):
             color_event()
 
     def _set_color_cycle(self, color_cycle: np.ndarray, attribute: str):
-        """ Set the face_color_cycle or edge_color_cycle property
+        """Set the face_color_cycle or edge_color_cycle property
 
         Parameters
         ----------
@@ -1282,9 +1280,7 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_face_color = face_color
 
-        size = list(
-            set([self.size[i, self._dims_displayed].mean() for i in index])
-        )
+        size = list({self.size[i, self._dims_displayed].mean() for i in index})
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -1358,7 +1354,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.cursor = 'pointing'
-            self.interactive = False
+            self.interactive = True
             self.help = 'hold <space> to pan/zoom'
             self.selected_data = set()
             self._set_highlight()
@@ -1380,7 +1376,6 @@ class Points(Layer):
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
             self._selected_data_stored = set()
 
-        self.status = str(mode)
         self._mode = mode
         self._set_highlight()
 
@@ -1520,26 +1515,32 @@ class Points(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, scale
             else:
-                data = self.data[:, not_disp].astype('int')
+                data = self.data[:, not_disp]
                 matches = np.all(data == indices[not_disp], axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
         else:
             return [], []
 
-    def _get_value(self) -> Union[None, int]:
-        """Determine if points at current coordinates.
+    def _get_value(self, position) -> Union[None, int]:
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        selection : int or None
+        value : int or None
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
         view_data = self._view_data
         if len(view_data) > 0:
+            displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
-            distances = abs(view_data - self.displayed_coordinates)
+            distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,

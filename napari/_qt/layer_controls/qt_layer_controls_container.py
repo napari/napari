@@ -80,7 +80,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.empty_widget = QFrame()
         self.widgets = {}
         self.addWidget(self.empty_widget)
-        self._display(None)
+        self.setCurrentWidget(self.empty_widget)
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
@@ -94,11 +94,7 @@ class QtLayerControlsContainer(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        if event is None:
-            layer = None
-        else:
-            layer = event.item
-
+        layer = event.value
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
@@ -129,6 +125,6 @@ class QtLayerControlsContainer(QStackedWidget):
         layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
-        controls.deleteLater()
+        controls.close()
         controls = None
         del self.widgets[layer]

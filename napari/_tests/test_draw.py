@@ -8,9 +8,9 @@ import pytest
     sys.platform.startswith('win') or sys.platform.startswith('linux'),
     reason='Currently fails on certain CI due to error on canvas draw.',
 )
-def test_canvas_drawing(make_test_viewer):
+def test_canvas_drawing(make_napari_viewer):
     """Test drawing before and after adding and then deleting a layer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     assert len(viewer.layers) == 0

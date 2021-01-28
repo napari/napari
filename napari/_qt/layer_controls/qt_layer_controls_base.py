@@ -2,6 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
 from ...layers.base._base_constants import Blending
+from ...utils.events import disconnect_events
 
 
 class QtLayerControls(QFrame):
@@ -30,8 +31,11 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.blending.connect(self._on_blending_change)
-        layer.events.opacity.connect(self._on_opacity_change)
+        self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.opacity.connect(self._on_opacity_change)
+
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -106,3 +110,12 @@ class QtLayerControls(QFrame):
                 self.layer.blending, Qt.MatchFixedString
             )
             self.blendComboBox.setCurrentIndex(index)
+
+    def close(self):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        for child in self.children():
+            close_method = getattr(child, 'close', None)
+            if close_method is not None:
+                close_method()
+        super().close()

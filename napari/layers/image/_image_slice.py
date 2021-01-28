@@ -11,14 +11,14 @@ from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 
 def _create_loader_class() -> ImageLoader:
     """Return correct ImageLoader for sync or async.
 
-    Return
-    ------
+    Returns
+    -------
     ImageLoader
         Return ImageLoader for sync or ChunkImageLoader for async.
     """
@@ -82,7 +82,7 @@ class ImageSlice:
         ----------
         image : ArrayLike
             Set this as the main image.
-        thumbnail : ArrayLike
+        thumbnail_source : ArrayLike
             Derive the thumbnail from this image.
         """
         # Single scale images don't have a separate thumbnail so we just
@@ -94,7 +94,13 @@ class ImageSlice:
             image = np.clip(image, 0, 1)
             thumbnail_source = np.clip(thumbnail_source, 0, 1)
         self.image.raw = image
-        self.thumbnail.raw = thumbnail_source
+
+        # save a computation of view image if thumbnail and image is equal
+        if thumbnail_source is image:
+            self.thumbnail._raw = self.image._raw
+            self.thumbnail._view = self.image._view
+        else:
+            self.thumbnail.raw = thumbnail_source
 
     def load(self, data: ImageSliceData) -> bool:
         """Load this data into the slice.
@@ -104,8 +110,8 @@ class ImageSlice:
         data : ImageSliceData
             The data to load into this slice.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             Return True if load was synchronous.
         """
@@ -120,8 +126,8 @@ class ImageSlice:
         data : ImageSliceData
             The newly loaded data we want to show.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the data was used, False if was for the wrong slice.
         """

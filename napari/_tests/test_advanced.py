@@ -1,17 +1,15 @@
 import numpy as np
 import pytest
 
-from napari.layers import Image
 
-
-def test_4D_5D_images(make_test_viewer):
+def test_4D_5D_images(make_napari_viewer):
     """Test adding 4D followed by 5D image layers to the viewer.
 
     Initially only 2 sliders should be present, then a third slider should be
     created.
     """
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     # add 4D image data
@@ -33,10 +31,10 @@ def test_4D_5D_images(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
-def test_5D_image_3D_rendering(make_test_viewer):
+def test_5D_image_3D_rendering(make_napari_viewer):
     """Test 3D rendering of a 5D image."""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     # add 4D image data
@@ -57,12 +55,12 @@ def test_5D_image_3D_rendering(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 2
 
 
-def test_change_image_dims(make_test_viewer):
+def test_change_image_dims(make_napari_viewer):
     """Test changing the dims and shape of an image layer in place and checking
     the numbers of sliders and their ranges changes appropriately.
     """
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     # add 3D image data
@@ -99,14 +97,14 @@ def test_change_image_dims(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 1
 
 
-def test_range_one_image(make_test_viewer):
+def test_range_one_image(make_napari_viewer):
     """Test adding an image with a range one dimensions.
 
     There should be no slider shown for the axis corresponding to the range
     one dimension.
     """
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     # add 5D image data with range one dimensions
@@ -129,14 +127,14 @@ def test_range_one_image(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
-def test_range_one_images_and_points(make_test_viewer):
+def test_range_one_images_and_points(make_napari_viewer):
     """Test adding images with range one dimensions and points.
 
     Initially no sliders should be present as the images have range one
     dimensions. On adding the points the sliders should be displayed.
     """
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     # add 5D image data with range one dimensions
@@ -160,9 +158,9 @@ def test_range_one_images_and_points(make_test_viewer):
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
-def test_update_console(make_test_viewer):
+def test_update_console(make_napari_viewer):
     """Test updating the console with local variables."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     # Check viewer in console
@@ -179,9 +177,9 @@ def test_update_console(make_test_viewer):
     assert view.console.shell.user_ns['b'] == b
 
 
-def test_changing_display_surface(make_test_viewer):
+def test_changing_display_surface(make_napari_viewer):
     """Test adding 3D surface and changing its display."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     np.random.seed(0)
@@ -220,9 +218,9 @@ def test_changing_display_surface(make_test_viewer):
         viewer.dims.set_point(0, s)
 
 
-def test_labels_undo_redo(make_test_viewer):
+def test_labels_undo_redo(make_napari_viewer):
     """Test undoing/redoing on the labels layer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     data = np.zeros((50, 50), dtype=np.uint8)
     data[:5, :5] = 1
@@ -261,40 +259,3 @@ def test_labels_undo_redo(make_test_viewer):
     # cannot undo as limit exceeded
     labels.undo()
     assert np.array_equal(l2, labels.data)
-
-
-def test_adding_removing_layer(make_test_viewer):
-    """Test adding and removing a layer."""
-    np.random.seed(0)
-    viewer = make_test_viewer()
-
-    # Create layer
-    data = np.random.random((2, 6, 30, 40))
-    layer = Image(data)
-
-    # Check that no internal callbacks have been registered
-    len(layer.events.callbacks) == 0
-    for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
-
-    # Add layer
-    viewer.layers.append(layer)
-    assert np.all(viewer.layers[0].data == data)
-    assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 4
-
-    # Remove layer, viewer resets
-    layer = viewer.layers[0]
-    viewer.layers.remove(layer)
-    assert len(viewer.layers) == 0
-    assert viewer.dims.ndim == 2
-
-    # Check that no other internal callbacks have been registered
-    assert len(layer.events.callbacks) == 0
-    for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 0
-
-    # re-add layer
-    viewer.layers.append(layer)
-    assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 4

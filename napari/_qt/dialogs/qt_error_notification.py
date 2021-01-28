@@ -30,8 +30,7 @@ ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
 class NotificationSeverity(StringEnum):
-    """Severity levels for the notification dialog.  Along with icons for each.
-    """
+    """Severity levels for the notification dialog.  Along with icons for each."""
 
     ERROR = auto()
     WARNING = auto()
@@ -89,10 +88,7 @@ class NapariNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        """[summary]
-
-
-        """
+        """[summary]"""
         super().__init__(None)
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
@@ -310,7 +306,12 @@ class NapariNotification(QDialog):
         """Create a NapariNotifcation dialog from an exception object."""
         # TODO: this method could be used to recognize various exception
         # subclasses and populate the dialog accordingly.
-        msg = getattr(exception, 'message', str(exception))
+        extra_msg = (
+            "\nYou can start napari with NAPARI_CATCH_ERRORS=0 or "
+            "NAPARI_EXIT_ON_ERROR=1 to find more about this error"
+        )
+
+        msg = getattr(exception, 'message', str(exception)) + extra_msg
         severity = getattr(exception, 'severity', 'WARNING')
         source = None
         actions = getattr(exception, 'actions', ())

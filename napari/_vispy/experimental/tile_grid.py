@@ -1,6 +1,6 @@
 """TileGrid class.
 
-Tile grid is a grid draw around/between the tiles for debugging.
+A grid drawn around/between the tiles for debugging and demos.
 """
 from typing import List
 
@@ -10,7 +10,7 @@ from vispy.scene.visuals import Line
 
 from ...layers.image.experimental import OctreeChunk
 
-# Draw with lines of this width and color.
+# Grid lines drawn with this width and color.
 GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
 
@@ -18,7 +18,7 @@ GRID_COLOR = (1, 0, 0, 1)
 LINE_VISUAL_ORDER = 10
 
 
-# Outline for 'segments' point, each pair is one line segment.
+# Outline for 'segments' points, each pair is one line segment.
 _OUTLINE = np.array(
     [[0, 0], [1, 0], [1, 0], [1, 1], [1, 1], [0, 1], [0, 1], [0, 0]],
     dtype=np.float32,
@@ -42,13 +42,9 @@ def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
     """
     geom = chunk.geom
     x, y = geom.pos
-    h, w = chunk.data.shape[:2]
-    w *= geom.scale[1]
-    h *= geom.scale[0]
+    w, h = geom.size
 
-    outline = _OUTLINE.copy()
-
-    # Modify in place.
+    outline = _OUTLINE.copy()  # Copy and modify in place.
     outline[:, :2] *= (w, h)
     outline[:, :2] += (x, y)
 
@@ -58,7 +54,8 @@ def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
 class TileGrid:
     """A grid to show the outline of all the tiles.
 
-    Created for debugging although could be shown for real as well.
+    Created for debugging and demos, but we might show for real in certain
+    situations, like while the tiles are loading?
 
     Attributes
     ----------
@@ -91,7 +88,6 @@ class TileGrid:
         chunks : List[ImageChunks]
             Add a grid that outlines these chunks.
         """
-        # TODO_OCTREE: create in one go without vstack?
         verts = np.zeros((0, 2), dtype=np.float32)
         for octree_chunk in chunks:
             chunk_verts = _chunk_outline(octree_chunk)

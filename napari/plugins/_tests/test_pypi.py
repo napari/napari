@@ -21,17 +21,17 @@ class FakeResponse:
 
 
 txtA = (
-    '<!DOCTYPE html>\n<html>\n  <head>\n  <title>Simple index</title>'
-    '\n </head>\n  <body>\n  <a href="/simple/package1/">package1</a>'
-    '\n  <a href="/simple/package2/">packge2</a>\n   </body>\n</html>'
-).encode()
+    b'<!DOCTYPE html>\n<html>\n  <head>\n  <title>Simple index</title>'
+    b'\n </head>\n  <body>\n  <a href="/simple/package1/">package1</a>'
+    b'\n  <a href="/simple/package2/">packge2</a>\n   </body>\n</html>'
+)
 
 txtB = (
-    '<!DOCTYPE html>\n<html>\n  <head>\n    <title>Links for package'
-    '</title>\n  </head>\n  <body>\n    <h1>Links for package</h1>\n'
-    '<a href="http://pythonhosted.org/package-0.1.0.tar.gz#sha256=7">'
-    'package-0.1.0.tar.gz</a><br/>\n </body>\n</html>'
-).encode()
+    b'<!DOCTYPE html>\n<html>\n  <head>\n    <title>Links for package'
+    b'</title>\n  </head>\n  <body>\n    <h1>Links for package</h1>\n'
+    b'<a href="http://pythonhosted.org/package-0.1.0.tar.gz#sha256=7">'
+    b'package-0.1.0.tar.gz</a><br/>\n </body>\n</html>'
+)
 
 
 @mock.patch(

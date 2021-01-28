@@ -79,6 +79,7 @@ def test_changing_focus(qtbot):
     assert view.dims.last_used is None
 
     view.dims.ndim = 5
+    view.dims.last_used = 2
     assert view.dims.last_used == 2
     view.dims._focus_down()
     assert view.dims.last_used == 1
@@ -294,8 +295,8 @@ def test_play_button(qtbot):
         mock_popup.assert_called_once()
 
 
-def test_slice_labels(make_test_viewer):
-    viewer = make_test_viewer()
+def test_slice_labels(make_napari_viewer):
+    viewer = make_napari_viewer()
     np.random.seed(0)
     data = np.random.random((20, 10, 10))
     viewer.add_image(data)

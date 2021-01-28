@@ -1,5 +1,3 @@
-from . import __version__
-from ._qt import Window
 from .components import ViewerModel
 from .utils import config
 
@@ -23,20 +21,13 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    # set _napari_app_id to False to avoid overwriting dock icon on windows
-    # set _napari_app_id to custom string to prevent grouping different base viewer
-    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
-
-    # set _napari_global_logo to control if napari logo should be set as application logo
-    _napari_global_logo = True
-
     def __init__(
         self,
         *,
         title='napari',
         ndisplay=2,
-        order=None,
-        axis_labels=None,
+        order=(),
+        axis_labels=(),
         show=True,
     ):
         super().__init__(
@@ -45,6 +36,10 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
+        # having this import here makes all of Qt imported lazily, upon
+        # instantiating the first Viewer.
+        from .window import Window
+
         self.window = Window(self, show=show)
 
     def update_console(self, variables):
@@ -95,6 +90,9 @@ class Viewer(ViewerModel):
 
     def close(self):
         """Close the viewer window."""
+        # Remove all the layers from the viewer
+        self.layers.clear()
+        # Close the main window
         self.window.close()
 
         if config.async_loading:

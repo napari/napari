@@ -1,8 +1,8 @@
 import inspect
 import operator
-from dataclasses import asdict, field
+from dataclasses import InitVar, asdict, field
 from functools import partial
-from typing import ClassVar, List
+from typing import ClassVar, List, Optional
 from unittest.mock import Mock
 
 import dask.array as da
@@ -309,7 +309,8 @@ def test_is_equal_warnings():
 
     with pytest.warns(UserWarning, match="Comparison method failed*"):
         assert not is_equal(
-            {1: np.ones(2), 2: np.zeros(2)}, {1: np.ones(2), 2: np.zeros(2)},
+            {1: np.ones(2), 2: np.zeros(2)},
+            {1: np.ones(2), 2: np.zeros(2)},
         )
 
 
@@ -384,3 +385,27 @@ def test_values_updated_array():
     with pytest.warns(UserWarning, match="Comparison method failed*"):
         obj1.b = np.array([2, 2])
     assert count["b"] == 1
+
+
+def test_init_var_warning():
+    with pytest.warns(None) as record:
+
+        @evented_dataclass
+        class T:
+            colors: InitVar[str] = 'black'
+
+    assert len(record) == 0
+
+
+def test_optional_numpy_warning():
+    with pytest.warns(None) as record:
+
+        @evented_dataclass
+        class T:
+            colors: Optional[np.ndarray]
+
+        t = T(None)
+
+        t.colors = np.arange(3)
+
+    assert len(record) == 0

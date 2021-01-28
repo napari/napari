@@ -86,7 +86,17 @@ def select(layer, cursor):
 def add(layer, cursor):
     """Add a new point at the clicked position."""
     # on press
-    layer.add(layer.coordinates)
+    dragged = False
+    yield
+
+    # on move
+    while event.type == 'mouse_move':
+        dragged = True
+        yield
+
+    # on release
+    if not dragged:
+        layer.add(layer.coordinates)
 
 
 def highlight(layer, cursor):

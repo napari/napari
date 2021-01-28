@@ -9,7 +9,6 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ._track_utils import TrackManager
 
@@ -237,10 +236,22 @@ class Tracks(Layer):
 
         return
 
-    def _get_value(self) -> int:
-        """ use a kd-tree to lookup the ID of the nearest tree """
-        coords = np.array(self.coordinates)
-        return self._manager.get_value(coords)
+    def _get_value(self, position) -> int:
+        """Value of the data at a position in data coordinates.
+
+        Use a kd-tree to lookup the ID of the nearest tree.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
+
+        Returns
+        -------
+        value : int or None
+            Index of track that is at the current coordinate if any.
+        """
+        return self._manager.get_value(np.array(position))
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -350,7 +361,7 @@ class Tracks(Layer):
         # fire events to update shaders
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
         self._update_dims()
 
@@ -370,7 +381,7 @@ class Tracks(Layer):
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by} not present in"
+                    f"Previous color_by key {self._color_by!r} not present in"
                     " new properties. Falling back to track_id"
                 ),
                 UserWarning,
@@ -401,7 +412,6 @@ class Tracks(Layer):
     def tail_width(self, tail_width: Union[int, float]):
         self._tail_width = tail_width
         self.events.tail_width()
-        self.status = format_float(self.tail_width)
 
     @property
     def tail_length(self) -> Union[int, float]:
@@ -412,7 +422,6 @@ class Tracks(Layer):
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
         self.events.tail_length()
-        self.status = format_float(self.tail_length)
 
     @property
     def display_id(self) -> bool:
