@@ -498,8 +498,8 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         Parameters
         ----------
-        event : :class:`napari.layers.Layer`
-            Layer to add.
+        event :  napari.utils.event.Event
+            Event which will remove a layer.
 
         Returns
         -------
