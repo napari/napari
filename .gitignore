@@ -132,5 +132,6 @@ windows/
 
 napari/_version.py
 
-docs/_autosummary
+docs/api/*
+!docs/api/index.rst
 docs/_build
