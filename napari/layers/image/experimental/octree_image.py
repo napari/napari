@@ -1,7 +1,7 @@
 """OctreeImage class.
 
 An eventual replacement for Image that combines single-scale and
-chunked/tiled multi-scale into one implementation.
+chunked (tiled) multi-scale into one implementation.
 """
 import logging
 from typing import List, Set
@@ -21,19 +21,19 @@ LOGGER = logging.getLogger("napari.octree.image")
 
 
 class OctreeImage(Image):
-    """OctreeImage layer.
+    """Image layer rendered using an octree.
 
     Experimental variant of Image that renders using an octree. For 2D
     images the octree is really just a quadtree. For 3D volumes it will be
-    a real octree. This class is intended to eventually fully replace the
+    a real octree. This class is intended to eventually replace the
     existing Image class.
 
-    Background
-    ----------
+    Notes
+    -----
     The original Image class handled single-scale and multi-scale images,
     but they were handled quite differently. And its multi-scale did not
-    use chunks or tiles. It worked well locally, but was basically unusable
-    for remote or high latency data.
+    use chunks or tiles. It worked well on local data, but was basically
+    unusable for remote or high latency data.
 
     OctreeImage always uses chunk/tiles. Today those tiles are always
     "small". However, as a special case, if an image is smaller than the
@@ -59,11 +59,6 @@ class OctreeImage(Image):
     _slice : OctreeSlice
         When _set_view_slice() is called we create a OctreeSlice()
         that's looking at some specific slice of the data.
-
-        While the Image._slice was the data that was drawn on the screen,
-        an OctreeSlice contains a full Octree. The OctreeImage
-        visuals (VispyTiledImageLayer and TiledImageVisual) draw only
-        the portion for OctreeImage which is visible in the OctreeView.
     _display : OctreeDisplayOptions
         Settings for how we draw the octree, such as tile size.
     """
@@ -83,11 +78,11 @@ class OctreeImage(Image):
         self.events.add(octree_level=Event, tile_size=Event)
 
         # TODO_OCTREE: this is hack that we assign OctreeDisplayOptions
-        # this event after super().__init__(). Will cleanup soon.
+        # this event after super().__init__(). Needs to be cleaned up.
         self._display.loaded_event = self.events.loaded
 
-    def _get_value(self):
-        """Override Image._get_value()."""
+    def _get_value(self, position):
+        """Override Image._get_value(position)."""
         return (0, (0, 0))  # TODO_OCTREE: need to implement this.
 
     @property
@@ -129,8 +124,8 @@ class OctreeImage(Image):
     def tile_size(self) -> int:
         """Return the edge length of single tile, for example 256.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The edge length of a single tile.
         """
@@ -155,13 +150,11 @@ class OctreeImage(Image):
     def tile_shape(self) -> tuple:
         """Return the shape of a single tile, for example 256x256x3.
 
-        Return
-        ------
+        Returns
+        -------
         tuple
             The shape of a single tile.
         """
-        # TODO_OCTREE: Must be an easier way to get this shape based on
-        # information already stored in Image class?
         if self.multiscale:
             init_shape = self.data[0].shape
         else:
@@ -177,10 +170,10 @@ class OctreeImage(Image):
 
     @property
     def meta(self) -> OctreeMetadata:
-        """Return information about the current octree.
+        """Information about the current octree.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeMetadata
             Octree dimensions and other info.
         """
@@ -190,7 +183,7 @@ class OctreeImage(Image):
 
     @property
     def octree_level_info(self) -> OctreeLevelInfo:
-        """Return information about the current level of the current octree.
+        """Information about the current level of the current octree.
 
         Returns
         -------
@@ -240,8 +233,8 @@ class OctreeImage(Image):
     def num_octree_levels(self) -> int:
         """Return the total number of octree levels.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of octree levels.
         """
@@ -281,28 +274,17 @@ class OctreeImage(Image):
         You won't see any "extra" resolution at all. The card can do this
         super fast, so the issue not such much speed as it is RAM and VRAM.
 
-        For example, suppose we want to draw 40 ideal chunks at level N,
-        and the chunks are (256, 256, 3) with dtype uint8. That's around
-        8MB.
-
-        If instead we draw lower levels than the ideal, the number of
-        chunks and storage goes up quickly:
-
-        Level (N - 1) is 160 chunks = 32M
-        Level (N - 2) is 640 chunks = 126M
-        Level (N - 3) is 2560 chunks = 503M
-
         In the opposite direction, drawing chunks from a higher, the number
         of chunks and storage goes down quickly. The only issue there is
         visual quality, the imagery might look blurry.
 
         Parameters
-        -----------
-        drawn_chunk_set : Set[OctreeChunk]
+        ----------
+        drawn_set : Set[OctreeChunk]
             The chunks that are currently being drawn by the visual.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The drawable chunks.
         """
@@ -392,8 +374,8 @@ class OctreeImage(Image):
     def _outside_data_range(self, indices) -> bool:
         """Return True if requested slice is outside of data range.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if requested slice is outside data range.
         """
@@ -413,7 +395,7 @@ class OctreeImage(Image):
             )
         )
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Set the view given the indices to slice with.
 
         This replaces Image._set_view_slice() entirely. The hope is eventually

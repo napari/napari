@@ -13,9 +13,9 @@ from napari._tests.utils import (
 from napari.utils.io import imread
 
 
-def test_qt_viewer(make_test_viewer):
+def test_qt_viewer(make_napari_viewer):
     """Test instantiating viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     assert viewer.title == 'napari'
@@ -31,9 +31,9 @@ def test_qt_viewer(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_qt_viewer_with_console(make_test_viewer):
+def test_qt_viewer_with_console(make_napari_viewer):
     """Test instantiating console from viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
     # Check no console is present before it is requested
     assert view._console is None
@@ -42,9 +42,9 @@ def test_qt_viewer_with_console(make_test_viewer):
     assert view.dockConsole.widget() is view.console
 
 
-def test_qt_viewer_toggle_console(make_test_viewer):
+def test_qt_viewer_toggle_console(make_napari_viewer):
     """Test instantiating console from viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
     # Check no console is present before it is requested
     assert view._console is None
@@ -55,18 +55,18 @@ def test_qt_viewer_toggle_console(make_test_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(make_test_viewer, layer_class, data, ndim):
-    viewer = make_test_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
+def test_add_layer(make_napari_viewer, layer_class, data, ndim):
+    viewer = make_napari_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window.qt_viewer
 
     add_layer_by_type(viewer, layer_class, data)
     check_viewer_functioning(viewer, view, data, ndim)
 
 
-def test_new_labels(make_test_viewer):
+def test_new_labels(make_napari_viewer):
     """Test adding new labels layer."""
     # Add labels to empty viewer
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     viewer._new_labels()
@@ -79,7 +79,7 @@ def test_new_labels(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add labels with image already present
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     np.random.seed(0)
@@ -95,10 +95,10 @@ def test_new_labels(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_new_points(make_test_viewer):
+def test_new_points(make_napari_viewer):
     """Test adding new points layer."""
     # Add labels to empty viewer
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     viewer.add_points()
@@ -111,7 +111,7 @@ def test_new_points(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     np.random.seed(0)
@@ -127,10 +127,10 @@ def test_new_points(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_new_shapes_empty_viewer(make_test_viewer):
+def test_new_shapes_empty_viewer(make_napari_viewer):
     """Test adding new shapes layer."""
     # Add labels to empty viewer
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     viewer.add_shapes()
@@ -143,7 +143,7 @@ def test_new_shapes_empty_viewer(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     np.random.seed(0)
@@ -159,11 +159,11 @@ def test_new_shapes_empty_viewer(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_z_order_adding_removing_images(make_test_viewer):
+def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""
     data = np.ones((10, 10))
 
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     vis = viewer.window.qt_viewer.layer_to_visual
     viewer.add_image(data, colormap='red', name='red')
     viewer.add_image(data, colormap='green', name='green')
@@ -192,9 +192,9 @@ def test_z_order_adding_removing_images(make_test_viewer):
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
-def test_screenshot(make_test_viewer):
+def test_screenshot(make_napari_viewer):
     "Test taking a screenshot"
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     # Add image
@@ -223,9 +223,9 @@ def test_screenshot(make_test_viewer):
 
 
 @pytest.mark.skip("new approach")
-def test_screenshot_dialog(make_test_viewer, tmpdir):
+def test_screenshot_dialog(make_napari_viewer, tmpdir):
     """Test save screenshot functionality."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     # Add image
@@ -268,7 +268,7 @@ def test_screenshot_dialog(make_test_viewer, tmpdir):
 @pytest.mark.parametrize(
     "dtype", ['int8', 'uint8', 'int16', 'uint16', 'float32']
 )
-def test_qt_viewer_data_integrity(make_test_viewer, dtype):
+def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
 
     image = np.random.rand(10, 32, 32)
@@ -276,7 +276,7 @@ def test_qt_viewer_data_integrity(make_test_viewer, dtype):
     image = image.astype(dtype)
     imean = image.mean()
 
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     viewer.add_image(image.copy())
     datamean = viewer.layers[0].data.mean()
@@ -291,8 +291,8 @@ def test_qt_viewer_data_integrity(make_test_viewer, dtype):
     assert datamean == imean
 
 
-def test_slice_labels(make_test_viewer):
-    viewer = make_test_viewer()
+def test_slice_labels(make_napari_viewer):
+    viewer = make_napari_viewer()
     np.random.seed(0)
     data = np.random.random((20, 10, 10))
     viewer.add_image(data)
@@ -312,8 +312,8 @@ def test_slice_labels(make_test_viewer):
     assert viewer.dims.point[0] == 8
 
 
-def test_points_layer_display_correct_slice_on_scale(make_test_viewer):
-    viewer = make_test_viewer()
+def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
+    viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
     viewer.add_image(data, scale=[0.29, 0.26, 0.26])
     pts = viewer.add_points(name='test', size=1, ndim=3)

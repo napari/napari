@@ -17,8 +17,8 @@ LOGGER = logging.getLogger("napari.loader")
 def _create_loader_class() -> ImageLoader:
     """Return correct ImageLoader for sync or async.
 
-    Return
-    ------
+    Returns
+    -------
     ImageLoader
         Return ImageLoader for sync or ChunkImageLoader for async.
     """
@@ -82,7 +82,7 @@ class ImageSlice:
         ----------
         image : ArrayLike
             Set this as the main image.
-        thumbnail : ArrayLike
+        thumbnail_source : ArrayLike
             Derive the thumbnail from this image.
         """
         # Single scale images don't have a separate thumbnail so we just
@@ -110,8 +110,8 @@ class ImageSlice:
         data : ImageSliceData
             The data to load into this slice.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             Return True if load was synchronous.
         """
@@ -126,8 +126,8 @@ class ImageSlice:
         data : ImageSliceData
             The newly loaded data we want to show.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the data was used, False if was for the wrong slice.
         """

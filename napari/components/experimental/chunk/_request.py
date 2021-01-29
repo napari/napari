@@ -1,4 +1,4 @@
-"""ChunkLocation and ChunkRequest classes.
+"""LayerRef, ChunkLocation and ChunkRequest classes.
 """
 import contextlib
 import logging
@@ -18,6 +18,8 @@ SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
 class LayerRef(NamedTuple):
+    """A weakref to a layer and its id."""
+
     layer_id: int
     layer_ref: weakref.ReferenceType
 
@@ -128,7 +130,7 @@ class ChunkRequest:
 
     @property
     def num_chunks(self) -> int:
-        """Return the number of chunks in this request.
+        """The number of chunks in this request.
 
         Return
         ------
@@ -139,7 +141,7 @@ class ChunkRequest:
 
     @property
     def num_bytes(self) -> int:
-        """Return the number of bytes that were loaded.
+        """The number of bytes that were loaded.
 
         Return
         ------
@@ -150,7 +152,7 @@ class ChunkRequest:
 
     @property
     def in_memory(self) -> bool:
-        """Return True if all chunks are ndarrays.
+        """True if all chunks are ndarrays.
 
         Return
         ------

@@ -306,7 +306,12 @@ class NapariNotification(QDialog):
         """Create a NapariNotifcation dialog from an exception object."""
         # TODO: this method could be used to recognize various exception
         # subclasses and populate the dialog accordingly.
-        msg = getattr(exception, 'message', str(exception))
+        extra_msg = (
+            "\nYou can start napari with NAPARI_CATCH_ERRORS=0 or "
+            "NAPARI_EXIT_ON_ERROR=1 to find more about this error"
+        )
+
+        msg = getattr(exception, 'message', str(exception)) + extra_msg
         severity = getattr(exception, 'severity', 'WARNING')
         source = None
         actions = getattr(exception, 'actions', ())

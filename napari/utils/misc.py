@@ -8,10 +8,13 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import Optional, Sequence, Type, TypeVar
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import packaging.version
+
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
 
@@ -19,6 +22,16 @@ try:
     from importlib import metadata as importlib_metadata
 except ImportError:
     import importlib_metadata  # noqa
+
+
+def parse_version(v) -> 'packaging.version._BaseVersion':
+    """Parse a version string and return a packaging.version.Version obj."""
+    import packaging.version
+
+    try:
+        return packaging.version.Version(v)
+    except packaging.version.InvalidVersion:
+        return packaging.version.LegacyVersion(v)
 
 
 def running_as_bundled_app() -> bool:
@@ -262,6 +275,8 @@ def abspath_or_url(relpath: T) -> T:
         An absolute path, or list or tuple of absolute paths (same type as
         input).
     """
+    from urllib.parse import urlparse
+
     if isinstance(relpath, (tuple, list)):
         return type(relpath)(abspath_or_url(p) for p in relpath)
 
@@ -360,3 +375,18 @@ def ensure_n_tuple(val, n, fill=0):
     assert n > 0, 'n must be greater than 0'
     tuple_value = tuple(val)
     return (fill,) * (n - len(tuple_value)) + tuple_value[-n:]
+
+
+def ensure_layer_data_tuple(val):
+    if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
+        raise TypeError(f'Not a valid layer data tuple: {val!r}')
+    return val
+
+
+def ensure_list_of_layer_data_tuple(val):
+    if isinstance(val, list) and len(val):
+        try:
+            return [ensure_layer_data_tuple(v) for v in val]
+        except TypeError:
+            pass
+    raise TypeError('Not a valid list of layer data tuples!')

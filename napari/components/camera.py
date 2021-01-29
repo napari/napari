@@ -2,7 +2,7 @@ from typing import Tuple
 
 from pydantic import validator
 
-from ..utils._pydantic import EventedModel
+from ..utils.events import EventedModel
 from ..utils.misc import ensure_n_tuple
 
 

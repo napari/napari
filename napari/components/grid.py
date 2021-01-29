@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from ..utils._pydantic import EventedModel
+from ..utils.events import EventedModel
 
 
 class GridCanvas(EventedModel):

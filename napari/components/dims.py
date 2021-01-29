@@ -4,7 +4,7 @@ import numpy as np
 from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils._pydantic import EventedModel
+from ..utils.events import EventedModel
 
 
 class Dims(EventedModel):

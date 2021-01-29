@@ -6,7 +6,6 @@ import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
@@ -261,7 +260,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self._dims_displayed)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -359,7 +358,6 @@ class Vectors(Layer):
 
         self.events.edge_width()
         self.refresh()
-        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -381,7 +379,6 @@ class Vectors(Layer):
 
         self.events.length()
         self.refresh()
-        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -719,14 +716,17 @@ class Vectors(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self) -> None:
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        value : int, None
+        value : None
             Value of the data at the coord.
         """
-
         return None

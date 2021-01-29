@@ -323,7 +323,7 @@ def test_value():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0)
     assert layer.data_level == 2
     np.testing.assert_allclose(value, (2, data[2][0, 0]))
@@ -335,7 +335,7 @@ def test_corner_value():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     target_position = (39, 19)
     target_level = 0
     layer.data_level = target_level
@@ -344,14 +344,14 @@ def test_corner_value():
 
     # Test position at corner of image
     layer.position = target_position
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     np.testing.assert_allclose(
         value, (target_level, data[target_level][target_position])
     )
 
     # Test position at outside image
     layer.position = (40, 20)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert value[1] is None
 
 
@@ -361,7 +361,7 @@ def test_message():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str
 
 

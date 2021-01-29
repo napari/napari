@@ -48,7 +48,7 @@ class QtViewerSingleLabelsSuite:
 
     def time_get_value(self):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 2)
 
     def time_raw_to_displayed(self):
         """Time to convert raw to displayed."""

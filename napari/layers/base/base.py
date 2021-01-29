@@ -12,7 +12,7 @@ from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
-from ...utils.status_messages import format_float, status_format
+from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
@@ -330,7 +330,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._opacity = opacity
         self._update_thumbnail()
-        self.status = format_float(self.opacity)
         self.events.opacity()
 
     @property
@@ -473,7 +472,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if self._position == _position:
             return
         self._position = _position
-        self._update_value_and_status()
+        self._value = self.get_value(self.position, world=True)
 
     @property
     def _dims_displayed(self):
@@ -529,7 +528,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndim = ndim
 
         self.refresh()
-        self._update_value_and_status()
+        self._value = self.get_value(self.position, world=True)
 
     @property
     @abstractmethod
@@ -562,7 +561,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         # Get full nD bounding box
-        data_extent = self._extent_data
+        return self._get_extent_world(self._extent_data)
+
+    def _get_extent_world(self, data_extent):
+        """Range of layer in world coordinates base on provided data_extent
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
         D = data_extent.shape[1]
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
@@ -579,9 +586,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
+        data = self._extent_data
         return Extent(
-            data=self._extent_data,
-            world=self._extent_world,
+            data=data,
+            world=self._get_extent_world(data),
             step=abs(self.scale),
         )
 
@@ -721,6 +729,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def status(self):
         """str: displayed in status bar bottom left."""
+        warnings.warn(
+            (
+                "The status attribute is deprecated and will be removed in version 0.4.6."
+                " Instead you should use the get_status method with the position where you"
+                " want to get the status from."
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
         return self._status
 
     @status.setter
@@ -853,19 +870,51 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value(self):
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
+
+        Returns
+        -------
+        value : tuple
+            Value of the data.
+        """
         raise NotImplementedError()
 
-    def get_value(self):
-        """Value of data at current coordinates.
+    def get_value(self, position=None, *, world=False):
+        """Value of the data at a position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
         Returns
         -------
         value : tuple, None
-            Value of the data at the coordinates.
+            Value of the data.
         """
         if self.visible:
-            return self._get_value()
+            if position is None:
+                warnings.warn(
+                    (
+                        "The position argument of get_value will no longer be optional in 0.4.6."
+                        " Instead you should provide the position where you want to get the value."
+                    ),
+                    category=FutureWarning,
+                    stacklevel=2,
+                )
+                position = self.coordinates
+            elif world:
+                position = self._world_to_data(position)
+            return self._get_value(position=tuple(position))
         else:
             return None
 
@@ -891,19 +940,37 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
-            self._update_value_and_status()
+            self._value = self.get_value(self.position, world=True)
             self._set_highlight(force=True)
 
     @property
     def coordinates(self):
         """Cursor position in data coordinates."""
         # Note we ignore the first transform which is tile2data
-        return tuple(self._transforms[1:].simplified.inverse(self.position))
+        return self._world_to_data(self.position)
 
-    def _update_value_and_status(self):
-        """Update value and status message."""
-        self._value = self.get_value()
-        self.status = self.get_message()
+    def _world_to_data(self, position):
+        """Convert from world coordinates to data coordinates.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in world coorindates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+
+        Returns
+        -------
+        tuple
+            Position in data coordinates.
+        """
+        if len(position) >= self.ndim:
+            coords = list(position[-self.ndim :])
+        else:
+            print(position, self.ndim)
+            raise ValueError('Cursor position must be at least')
+
+        return tuple(self._transforms[1:].simplified.inverse(coords))
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
@@ -957,6 +1024,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         coordinates = self.coordinates
         return [coordinates[i] for i in self._dims_displayed]
 
+    def get_status(self, position=None, *, world=False):
+        """Status message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+        value = self.get_value(position, world=world)
+        return generate_layer_status(self.name, position, value)
+
     def get_message(self):
         """Generate a status message based on the coordinates and value
 
@@ -965,21 +1051,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        full_coord = np.round(self.coordinates).astype(int)
-
-        msg = f'{self.name} {full_coord}'
-
-        value = self._value
-        if value is not None:
-            if isinstance(value, tuple) and value != (None, None):
-                # it's a multiscale -> value = (data_level, value)
-                msg += f': {status_format(value[0])}'
-                if value[1] is not None:
-                    msg += f', {status_format(value[1])}'
-            else:
-                # it's either a grayscale or rgb image (scalar or list)
-                msg += f': {status_format(value)}'
-        return msg
+        warnings.warn(
+            (
+                "The get_message method is deprecated and will be removed in version 0.4.6."
+                " Instead you should use the get_status method with the position where you"
+                " want to get the status from."
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return generate_layer_status(self.name, self.coordinates, self._value)
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.

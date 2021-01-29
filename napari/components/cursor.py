@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from ..utils._pydantic import EventedModel
+from ..utils.events import EventedModel
 from ._viewer_constants import CursorStyle
 
 
