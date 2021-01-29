@@ -1,4 +1,3 @@
-import magicgui
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
@@ -85,19 +84,15 @@ def test_plugin_widgets(monkeypatch):
         m.setattr(plugins, "dock_widgets", dock_widgets)
 
         function_widgets = {
-            ("TestP3", "magic"): (
-                magicfunc,
-                {'call_button': True},
-                {'area': 'right'},
-            ),
+            ("TestP3", "magic"): magicfunc,
         }
         m.setattr(plugins, "function_widgets", function_widgets)
         yield
 
 
-def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
+def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     """Test the plugin widgets get added to the window menu correctly."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     assert len(actions) == 3
     expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
@@ -113,9 +108,9 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
     assert not actions[2].menu()
 
 
-def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
+def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
     # trigger the 'TestP2: Widg3' action
@@ -126,9 +121,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
     assert isinstance(dw.widget(), Widg3)
     # This widget uses the parameter annotation method to receive a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        actions[1].trigger()
+    # Add twice is ok, only does a show
+    actions[1].trigger()
 
     # trigger the 'TestP1 > Widg2' action (it's in a submenu)
     action = actions[0].menu().actions()[1]
@@ -140,14 +134,15 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
     assert isinstance(dw.widget(), Widg2)
     # This widget uses parameter *name* "napari_viewer" to get a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        action.trigger()
+    # Add twice is ok, only does a show
+    action.trigger()
 
 
-def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
+def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create magicgui widgets, and they get the viewer."""
-    viewer = make_test_viewer()
+    import magicgui
+
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
     # trigger the 'TestP3: magic' action
@@ -157,19 +152,22 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
     dw = viewer.window._dock_widgets['TestP3: magic']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
-    assert isinstance(magic_widget, magicgui.FunctionGui)
+    FGui = getattr(magicgui.widgets, 'FunctionGui', None)
+    if FGui is None:
+        # pre magicgui 0.2.6
+        FGui = magicgui.FunctionGui
+    assert isinstance(magic_widget, FGui)
     # This magicgui widget uses the parameter annotation to receive a viewer
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it
     assert isinstance(magic_widget(), napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        actions[2].trigger()
+    # Add twice is ok, only does a show
+    actions[2].trigger()
 
 
-def test_clear_all_plugin_widgets(test_plugin_widgets, make_test_viewer):
+def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()

@@ -15,7 +15,6 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
     ColorType,
@@ -633,7 +632,6 @@ class Shapes(Layer):
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_edge_width(i, edge_width)
-        self.status = format_float(self.current_edge_width)
         self.events.edge_width()
 
     @property
@@ -1396,7 +1394,6 @@ class Shapes(Layer):
         else:
             raise ValueError("Mode not recognized")
 
-        self.status = str(mode)
         self._mode = mode
 
         draw_modes = [
@@ -2156,10 +2153,13 @@ class Shapes(Layer):
 
         return data_full
 
-    def _get_value(self):
-        """Determine if any shape at given coord using triangle meshes.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
 
-        Getting value is not supported yet for 3D meshes
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
@@ -2176,7 +2176,7 @@ class Shapes(Layer):
         if self._is_moving:
             return self._moving_value
 
-        coord = self.displayed_coordinates
+        coord = [position[i] for i in self._dims_displayed]
 
         # Check selected shapes
         value = None

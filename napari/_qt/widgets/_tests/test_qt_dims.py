@@ -295,8 +295,8 @@ def test_play_button(qtbot):
         mock_popup.assert_called_once()
 
 
-def test_slice_labels(make_test_viewer):
-    viewer = make_test_viewer()
+def test_slice_labels(make_napari_viewer):
+    viewer = make_napari_viewer()
     np.random.seed(0)
     data = np.random.random((20, 10, 10))
     viewer.add_image(data)

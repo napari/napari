@@ -33,8 +33,8 @@ class ChunkedImageLoader(ImageLoader):
         data : ChunkedSliceData
             The data to load
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if load happened synchronously.
         """
@@ -63,8 +63,8 @@ class ChunkedImageLoader(ImageLoader):
         data : ChunkedSliceData
             Does this data match what we are loading?
 
-        Return
-        ------
+        Returns
+        -------
         bool
             Return True if data matches.
         """

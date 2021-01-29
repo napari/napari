@@ -50,7 +50,7 @@ def qapp():
         qt_event_tracing.perf.perf_timer = original_perf_timer
 
 
-def test_trace_on_start(tmp_path, monkeypatch, make_test_viewer):
+def test_trace_on_start(tmp_path, monkeypatch, make_napari_viewer):
     """Make sure napari can write a perfmon trace file."""
 
     timers, _, _, _ = perf._timers._create_timer()
@@ -60,7 +60,7 @@ def test_trace_on_start(tmp_path, monkeypatch, make_test_viewer):
     trace_path = tmp_path / "trace.json"
     timers.start_trace_file(trace_path)
 
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     data = np.random.random((10, 15))
     viewer.add_image(data)
     viewer.close()

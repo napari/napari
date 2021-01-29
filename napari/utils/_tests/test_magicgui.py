@@ -43,12 +43,12 @@ for cls in all_subclasses(Layer):
         pass
 
 
-def test_magicgui_returns_image(make_test_viewer):
+def test_magicgui_returns_image(make_napari_viewer):
     """make sure a magicgui function returning Image adds an Image.
 
     This is deprecated and now emits a warning
     """
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     @magicgui
     def add_image() -> Image:
@@ -68,12 +68,12 @@ def test_magicgui_returns_image(make_test_viewer):
     assert isinstance(viewer.layers[0], Image)
 
 
-def test_magicgui_returns_label(make_test_viewer):
+def test_magicgui_returns_label(make_napari_viewer):
     """make sure a magicgui function returning Labels adds a Labels.
 
     This is deprecated and now emits a warning
     """
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     @magicgui
     def add_labels() -> Labels:
@@ -92,12 +92,12 @@ def test_magicgui_returns_label(make_test_viewer):
     bool(os.environ.get('CI') and sys.platform == "darwin"),
     reason="segfault on mac CI",
 )
-def test_magicgui_returns_layer_tuple(make_test_viewer):
+def test_magicgui_returns_layer_tuple(make_napari_viewer):
     """make sure a magicgui function returning Layer adds the right type.
 
     This is deprecated and now emits a warning
     """
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     @magicgui
     def add_layer() -> Layer:
@@ -116,13 +116,13 @@ def test_magicgui_returns_layer_tuple(make_test_viewer):
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
-def test_magicgui_add_data(make_test_viewer, LayerType, data, ndim):
+def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating with napari.types.<layer_type>Data works.
 
     It expects a raw data format (like a numpy array) and will add a layer
     of the corresponding type to the viewer.
     """
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     dtype = getattr(types, f'{LayerType.__name__}Data')
 
     @magicgui
@@ -138,14 +138,14 @@ def test_magicgui_add_data(make_test_viewer, LayerType, data, ndim):
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
-def test_magicgui_get_data(make_test_viewer, LayerType, data, ndim):
+def test_magicgui_get_data(make_napari_viewer, LayerType, data, ndim):
     """Test that annotating parameters with napari.types.<layer_type>Data.
 
     This will provide the same dropdown menu appearance as when annotating
     a parameter with napari.layers.<layer_type>... but the function will
     receive `layer.data` rather than `layer`
     """
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     dtype = getattr(types, f'{LayerType.__name__}Data')
 
     @magicgui
@@ -160,8 +160,8 @@ def test_magicgui_get_data(make_test_viewer, LayerType, data, ndim):
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
-def test_magicgui_add_layer(make_test_viewer, LayerType, data, ndim):
-    viewer = make_test_viewer()
+def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
+    viewer = make_napari_viewer()
 
     @magicgui
     def add_layer() -> LayerType:
@@ -173,8 +173,8 @@ def test_magicgui_add_layer(make_test_viewer, LayerType, data, ndim):
     assert isinstance(viewer.layers[0], LayerType)
 
 
-def test_magicgui_add_layer_data_tuple(make_test_viewer):
-    viewer = make_test_viewer()
+def test_magicgui_add_layer_data_tuple(make_napari_viewer):
+    viewer = make_napari_viewer()
 
     @magicgui
     def add_layer() -> types.LayerDataTuple:
@@ -189,8 +189,8 @@ def test_magicgui_add_layer_data_tuple(make_test_viewer):
     assert isinstance(viewer.layers[0], Labels)
 
 
-def test_magicgui_add_layer_data_tuple_list(make_test_viewer):
-    viewer = make_test_viewer()
+def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
+    viewer = make_napari_viewer()
 
     @magicgui
     def add_layer() -> List[types.LayerDataTuple]:
@@ -205,9 +205,9 @@ def test_magicgui_add_layer_data_tuple_list(make_test_viewer):
     assert isinstance(viewer.layers[1], Labels)
 
 
-def test_magicgui_data_updated(make_test_viewer):
+def test_magicgui_data_updated(make_napari_viewer):
     """Test that magic data parameters stay up to date."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     _returns = []  # the value of x returned from func
 
@@ -227,9 +227,9 @@ def test_magicgui_data_updated(make_test_viewer):
     np.testing.assert_allclose(_returns[-1], np.array([[10, 10], [15, 15]]))
 
 
-def test_magicgui_get_viewer(make_test_viewer):
+def test_magicgui_get_viewer(make_napari_viewer):
     """Test that annotating with napari.Viewer gets the Viewer"""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     @magicgui
     def func(v: Viewer):

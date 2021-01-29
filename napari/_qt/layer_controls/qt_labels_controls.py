@@ -144,10 +144,10 @@ class QtLabelsControls(QtLayerControls):
             checked=True,
         )
         self.pick_button = QtModeRadioButton(
-            layer, 'picker', Mode.PICK, tooltip='Pick mode'
+            layer, 'picker', Mode.PICK, tooltip='Pick mode (L)'
         )
         self.paint_button = QtModeRadioButton(
-            layer, 'paint', Mode.PAINT, tooltip='Paint mode'
+            layer, 'paint', Mode.PAINT, tooltip='Paint mode (P)'
         )
         btn = 'Cmd' if sys.platform == 'darwin' else 'Ctrl'
         self.fill_button = QtModeRadioButton(
@@ -227,18 +227,6 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
-
-    def mouseMoveEvent(self, event):
-        """On mouse move, set layer status equal to the current selected mode.
-
-        Available mode options are: PAN_ZOOM, PICKER, PAINT, ERASE or FILL
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
         """Receive layer model mode change event and update checkbox ticks.

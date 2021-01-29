@@ -1,6 +1,7 @@
 from collections.abc import MutableSequence
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 
 from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
@@ -402,3 +403,10 @@ def test_event_group_depr():
         assert events["b"] == events["a"]
     with pytest.raises(KeyError):
         events["c"].connect()
+
+
+def test_array_like_setitem():
+    """Test that EventedList.__setitem__ works for array-like items"""
+    array = np.array((10, 10))
+    evented_list = EventedList([array])
+    evented_list[0] = array

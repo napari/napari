@@ -20,7 +20,7 @@ def profile_lines(image, shape_layer):
     msg = ('profile means: ['
             + ', '.join([f'{d:.2f}' for d in profile_data])
             + ']')
-    shape_layer.status = msg
+    print(msg)
 
 
 with napari.gui_qt():

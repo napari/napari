@@ -5,7 +5,6 @@ wrap.
 import inspect
 import os
 import time
-import warnings
 from collections import Counter
 from itertools import chain, repeat
 from typing import Dict
@@ -428,6 +427,9 @@ class Window:
             'Add Dock Widget', self._qt_window
         )
 
+        if not plugins.dock_widgets:
+            plugins.discover_dock_widgets()
+
         # Get names of all plugins providing dock widgets or functions
         plugin_widgets = chain(plugins.dock_widgets, plugins.function_widgets)
         plugin_counts = Counter(plug_name for plug_name, _ in plugin_widgets)
@@ -556,7 +558,7 @@ class Window:
 
         full_name = plugins.menu_item_template.format(*key)
         if full_name in self._dock_widgets:
-            warnings.warn(f'Dock widget {key!r} already added')
+            self._dock_widgets[full_name].show()
             return
 
         Widget, dock_kwargs = plugins.dock_widgets[key]
@@ -594,18 +596,17 @@ class Window:
         """
         full_name = plugins.menu_item_template.format(*key)
         if full_name in self._dock_widgets:
-            warnings.warn(f'Dock widget {key!r} already added')
+            self._dock_widgets[full_name].show()
             return
 
-        func, magic_kwargs, dock_kwargs = plugins.function_widgets[key]
+        func = plugins.function_widgets[key]
 
         # Add function widget
         self.add_function_widget(
             func,
-            magic_kwargs=magic_kwargs,
             name=plugins.menu_item_template.format(*key),
-            area=dock_kwargs.get('area', None),
-            allowed_areas=dock_kwargs.get('allowed_areas', None),
+            area=None,
+            allowed_areas=None,
         )
 
     def add_dock_widget(
@@ -784,6 +785,13 @@ class Window:
             `dock_widget` that can pass viewer events.
         """
         from magicgui import magicgui
+
+        if magic_kwargs is None:
+            magic_kwargs = {
+                'auto_call': False,
+                'call_button': "run",
+                'layout': 'vertical',
+            }
 
         widget = magicgui(function, **magic_kwargs or {})
 

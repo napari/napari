@@ -8,10 +8,13 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import Optional, Sequence, Type, TypeVar
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import packaging.version
+
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
 
@@ -19,6 +22,16 @@ try:
     from importlib import metadata as importlib_metadata
 except ImportError:
     import importlib_metadata  # noqa
+
+
+def parse_version(v) -> 'packaging.version._BaseVersion':
+    """Parse a version string and return a packaging.version.Version obj."""
+    import packaging.version
+
+    try:
+        return packaging.version.Version(v)
+    except packaging.version.InvalidVersion:
+        return packaging.version.LegacyVersion(v)
 
 
 def running_as_bundled_app() -> bool:
@@ -262,6 +275,8 @@ def abspath_or_url(relpath: T) -> T:
         An absolute path, or list or tuple of absolute paths (same type as
         input).
     """
+    from urllib.parse import urlparse
+
     if isinstance(relpath, (tuple, list)):
         return type(relpath)(abspath_or_url(p) for p in relpath)
 

@@ -3,15 +3,22 @@ import itertools
 import os
 import warnings
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import numpy as np
 
 from .. import layers
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..plugins.io import read_data_with_plugins
-from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
@@ -33,6 +40,9 @@ from .scale_bar import ScaleBar
 
 DEFAULT_THEME = 'dark'
 
+if TYPE_CHECKING:
+    from ..types import FullLayerData, LayerData
+
 
 class ViewerModel(KeymapProvider, MousemapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -48,7 +58,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
-    axis_labels = list of str
+    axis_labels : list of str
         Dimension names.
 
     Attributes
@@ -167,56 +177,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 f"options are {available_themes()}."
             )
         self.events.theme(value=self.theme)
-
-    @property
-    def grid_size(self):
-        """tuple: Size of grid."""
-        warnings.warn(
-            (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.shape"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.grid.shape
-
-    @grid_size.setter
-    def grid_size(self, grid_size):
-        warnings.warn(
-            (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.shape"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.shape = grid_size
-
-    @property
-    def grid_stride(self):
-        """int: Number of layers in each grid square."""
-        warnings.warn(
-            (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.stride"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.grid.stride
-
-    @grid_stride.setter
-    def grid_stride(self, grid_stride):
-        warnings.warn(
-            (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.stride"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.stride = grid_stride
 
     @property
     def status(self):
@@ -401,13 +361,11 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 break
 
         if active_layer is None:
-            self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
             self.active_layer = None
         else:
-            self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
@@ -448,7 +406,9 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
-            self.status = self.active_layer.status
+            self.status = self.active_layer.get_status(
+                self.cursor.position, world=True
+            )
             self.help = self.active_layer.help
 
     def _on_grid_change(self, event):
@@ -458,54 +418,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
             self._subplot(layer, (i_row, i_column), extent)
-
-    def grid_view(self, n_row=None, n_column=None, stride=1):
-        """Arrange the current layers is a 2D grid.
-
-        Default behaviour is to make a square 2D grid.
-
-        Parameters
-        ----------
-        n_row : int, optional
-            Number of rows in the grid.
-        n_column : int, optional
-            Number of column in the grid.
-        stride : int, optional
-            Number of layers to place in each grid square before moving on to
-            the next square. The default ordering is to place the most visible
-            layer in the top left corner of the grid. A negative stride will
-            cause the order in which the layers are placed in the grid to be
-            reversed.
-        """
-        warnings.warn(
-            (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use the viewer.grid.enabled = True to turn on the grid view,"
-                " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
-                " grid respectively."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.stride = stride
-        if n_row is None:
-            n_row = -1
-        if n_column is None:
-            n_column = -1
-        self.grid.shape = (n_row, n_column)
-        self.grid.enabled = True
-
-    def stack_view(self):
-        """Arrange the current layers in a stack."""
-        warnings.warn(
-            (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.enabled = False
 
     def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
@@ -940,6 +852,8 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
+        from ..plugins.io import read_data_with_plugins
+
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
         # glean layer names from filename. These will be used as *fallback*
@@ -1060,7 +974,7 @@ def _get_image_class() -> layers.Image:
     return layers.Image
 
 
-def _normalize_layer_data(data: LayerData) -> FullLayerData:
+def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1101,11 +1015,11 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
 
 def _unify_data_and_user_kwargs(
-    data: LayerData,
+    data: 'LayerData',
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> FullLayerData:
+) -> 'FullLayerData':
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:

@@ -33,8 +33,8 @@ class OctreeView(NamedTuple):
     def data_width(self) -> int:
         """The width between the corners, in data coordinates.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The width in data coordinates.
         """
@@ -44,8 +44,8 @@ class OctreeView(NamedTuple):
     def auto_level(self) -> bool:
         """True if the octree level should be selected automatically.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the octree level should be selected automatically.
         """
@@ -142,8 +142,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [y0..y1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -158,8 +158,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [x0..x1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -213,8 +213,8 @@ class OctreeIntersection:
     def tile_state(self) -> dict:
         """Return tile state, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The tile state.
         """
@@ -232,8 +232,8 @@ class OctreeIntersection:
     def tile_config(self) -> dict:
         """Return tile config, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The file config.
         """
