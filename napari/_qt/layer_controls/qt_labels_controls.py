@@ -144,10 +144,10 @@ class QtLabelsControls(QtLayerControls):
             checked=True,
         )
         self.pick_button = QtModeRadioButton(
-            layer, 'picker', Mode.PICK, tooltip='Pick mode'
+            layer, 'picker', Mode.PICK, tooltip='Pick mode (L)'
         )
         self.paint_button = QtModeRadioButton(
-            layer, 'paint', Mode.PAINT, tooltip='Paint mode'
+            layer, 'paint', Mode.PAINT, tooltip='Paint mode (P)'
         )
         btn = 'Cmd' if sys.platform == 'darwin' else 'Ctrl'
         self.fill_button = QtModeRadioButton(
