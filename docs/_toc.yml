@@ -38,4 +38,6 @@
     - file: explanations/rendering
 
 - file: api/index
+  sections:
+    - file: api/napari
 
