@@ -14,7 +14,7 @@
       :recursive:
    {% for item in modules %}
       {{ item }}
-    {%- endfor %}
+   {%- endfor %}
    {% endif %}
    {% endif %}
    {% endblock %}
