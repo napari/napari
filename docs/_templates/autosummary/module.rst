@@ -1,27 +1,30 @@
 {{ fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
-  
+
+   {% block modules %}
+   {% if modules %}
+   {% set nameparts = fullname.split('.') %}
+   {% if nameparts|length < 2 %}
+
+   .. rubric:: Modules
+
+   .. autosummary::
+      :toctree:
+      :recursive:
+   {% for item in modules %}
+      {{ item }}
+    {%- endfor %}
+   {% endif %}
+   {% endif %}
+   {% endblock %}
+
    {% block attributes %}
    {% if attributes %}
    .. rubric:: Module Attributes
 
-   .. autosummary::
-      :toctree:
    {% for item in attributes %}
-      {{ item }}
-   {%- endfor %}
-   {% endif %}
-   {% endblock %}
-
-   {% block functions %}
-   {% if functions %}
-   .. rubric:: {{ _('Functions') }}
-
-   .. autosummary::
-      :toctree:
-   {% for item in functions %}
-      {{ item }}
+   .. autoattribute:: {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
@@ -38,6 +41,16 @@
    {% endif %}
    {% endblock %}
 
+   {% block functions %}
+   {% if functions %}
+   .. rubric:: {{ _('Functions') }}
+
+   {% for item in functions %}
+   .. autofunction:: {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
    {% block exceptions %}
    {% if exceptions %}
    .. rubric:: {{ _('Exceptions') }}
@@ -49,20 +62,3 @@
    {%- endfor %}
    {% endif %}
    {% endblock %}
-
-{% block modules %}
-{% if modules %}
-{% set nameparts = fullname.split('.') %}
-{% if nameparts|length < 2 %}
-
-.. rubric:: Modules
-
-.. autosummary::
-   :toctree:
-   :recursive:
-{% for item in modules %}
-   {{ item }}
-{%- endfor %}
-{% endif %}
-{% endif %}
-{% endblock %}
