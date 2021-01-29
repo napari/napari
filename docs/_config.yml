@@ -33,6 +33,7 @@ sphinx:
 
   config:
     autosummary_generate: True
+    autosummary_imported_members: True
     html_theme: furo
     templates_path:
         - '_templates'

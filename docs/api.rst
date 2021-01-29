@@ -6,7 +6,7 @@ API Reference
 Information on specific functions, classes, and methods.
 
 .. autosummary::
-   :toctree: _autosummary
+   :toctree: api
    :recursive:
 
    napari

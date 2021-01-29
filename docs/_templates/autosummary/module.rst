@@ -52,6 +52,9 @@
 
 {% block modules %}
 {% if modules %}
+{% set nameparts = fullname.split('.') %}
+{% if nameparts|length < 2 %}
+
 .. rubric:: Modules
 
 .. autosummary::
@@ -60,5 +63,6 @@
 {% for item in modules %}
    {{ item }}
 {%- endfor %}
+{% endif %}
 {% endif %}
 {% endblock %}
