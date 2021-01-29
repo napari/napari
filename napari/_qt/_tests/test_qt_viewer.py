@@ -291,27 +291,6 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     assert datamean == imean
 
 
-def test_slice_labels(make_napari_viewer):
-    viewer = make_napari_viewer()
-    np.random.seed(0)
-    data = np.random.random((20, 10, 10))
-    viewer.add_image(data)
-    view = viewer.window.qt_viewer
-
-    # make sure the totslice_label is showing the correct number
-    assert int(view.dims.slider_widgets[0].totslice_label.text()) == 19
-
-    # make sure setting the dims.point updates the slice label
-    label_edit = view.dims.slider_widgets[0].curslice_label
-    viewer.dims.set_point(0, 15)
-    assert int(label_edit.text()) == 15
-
-    # make sure setting the current slice label updates the model
-    label_edit.setText(str(8))
-    label_edit.editingFinished.emit()
-    assert viewer.dims.point[0] == 8
-
-
 def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
