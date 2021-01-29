@@ -293,24 +293,3 @@ def test_play_button(qtbot):
     with patch.object(button.popup, 'show_above_mouse') as mock_popup:
         qtbot.mouseClick(button, Qt.RightButton)
         mock_popup.assert_called_once()
-
-
-def test_slice_labels(make_napari_viewer):
-    viewer = make_napari_viewer()
-    np.random.seed(0)
-    data = np.random.random((20, 10, 10))
-    viewer.add_image(data)
-    view = viewer.window.qt_viewer
-
-    # make sure the totslice_label is showing the correct number
-    assert int(view.dims.slider_widgets[0].totslice_label.text()) == 19
-
-    # make sure setting the dims.point updates the slice label
-    label_edit = view.dims.slider_widgets[0].curslice_label
-    viewer.dims.set_point(0, 15)
-    assert int(label_edit.text()) == 15
-
-    # make sure setting the current slice label updates the model
-    label_edit.setText(str(8))
-    label_edit.editingFinished.emit()
-    assert viewer.dims.point[0] == 8
