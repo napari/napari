@@ -23,3 +23,8 @@ repos:
     - id: pyupgrade
       args: ["--py37-plus"]
       exclude: _vendor|vendored|examples
+-   repo: https://github.com/Carreau/velin
+    rev: 0.0.7
+    hooks:
+    - id: velin
+      exclude: _vendor|vendored|examples
