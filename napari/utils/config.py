@@ -8,8 +8,8 @@ from ._octree import get_octree_config
 def _set(env_var: str) -> bool:
     """Return True if the env variable is set and non-zero.
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if the env var was set to a non-zero value.
     """

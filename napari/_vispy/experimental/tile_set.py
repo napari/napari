@@ -44,8 +44,8 @@ class TileSet:
     def __len__(self) -> int:
         """Return the number of tiles in the set.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles in the set.
         """
@@ -85,8 +85,8 @@ class TileSet:
     def chunk_set(self) -> Set[OctreeChunk]:
         """The set of chunks we drawing.
 
-        Return
-        ------
+        Returns
+        -------
         Set[OctreeChunk]
             The set of chunks we are drawing.
         """
@@ -96,8 +96,8 @@ class TileSet:
     def chunks(self) -> List[OctreeChunk]:
         """The chunks we are tracking.
 
-        Return
-        ------
+        Returns
+        -------
         List[OctreeChunk]
             The chunks we are tracking.
         """
@@ -107,8 +107,8 @@ class TileSet:
     def tile_data(self) -> List[TileData]:
         """The data for all tiles in the set unsorted.
 
-        Return
-        ------
+        Returns
+        -------
         List[TileData]
             The data for all the tiles in the set unsorted.
         """
@@ -123,8 +123,8 @@ class TileSet:
         smaller higher resolution tiles are drawn in front. This sorting
         allows us to show the "best available" data in all locations.
 
-        Return
-        ------
+        Returns
+        -------
         List[TileData]
             The data for all the tiles in the set sorted back to front.
         """
@@ -142,8 +142,8 @@ class TileSet:
         octree_chunk : OctreeChunk
             Check if this chunk is in the set.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the set contains this chunk data.
         """

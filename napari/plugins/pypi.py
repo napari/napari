@@ -62,7 +62,7 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
     """Search for packages declaring ``classifier`` on PyPI
 
     Yields
-    -------
+    ------
     name : str
         name of all packages at pypi that declare ``classifier``
     """

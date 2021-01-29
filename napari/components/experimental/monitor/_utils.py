@@ -18,8 +18,8 @@ class NumpyJSONEncoder(json.JSONEncoder):
 def numpy_dumps(data: dict) -> str:
     """Return data as a JSON string.
 
-    Return
-    ------
+    Returns
+    -------
     str
         The JSON string.
     """
@@ -34,8 +34,8 @@ def base64_encoded_json(data: dict) -> str:
     data : dict
         The data to write as JSON then base64 encode.
 
-    Return
-    ------
+    Returns
+    -------
     str
         The base64 encoded JSON string.
     """

@@ -498,7 +498,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         Parameters
         ----------
-        layer : :class:`napari.layers.Layer`
+        event : :class:`napari.layers.Layer`
             Layer to add.
 
         Returns
@@ -645,7 +645,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             A vector of shear values for an upper triangular n-D shear matrix.
             If a list then must have same length as the axis that is being
             expanded as channels.
-        affine: n-D array or napari.utils.transforms.Affine
+        affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
             the final column is a lenght N translation vector and a 1 or a napari
