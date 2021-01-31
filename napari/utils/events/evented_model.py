@@ -15,8 +15,6 @@ class EventedModel(BaseModel):
     __equality_checks__: Dict = PrivateAttr(default_factory=dict)
     __slots__: ClassVar[Set[str]] = {"__weakref__"}
 
-    _event_emission_needed = False
-
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
     class Config:
@@ -73,7 +71,6 @@ class EventedModel(BaseModel):
         if not self.__equality_checks__.get(name, is_equal)(after, before):
             # emit event
             getattr(self.events, name)(value=after)
-            self._event_emission_needed = True
 
     # expose the private EmitterGroup publically
     @property
@@ -107,11 +104,9 @@ class EventedModel(BaseModel):
         if not isinstance(values, dict):
             raise ValueError(f"Unsupported update from {type(values)}")
 
-        self._event_emission_needed = False
-
-        with self.events.blocker():
+        with self.events.blocker() as block:
             for key, value in values.items():
                 setattr(self, key, value)
 
-        if self._event_emission_needed:
+        if block.count:
             self.events(Event(self))
