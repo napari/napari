@@ -105,4 +105,4 @@ class EventedModel(BaseModel):
             raise ValueError(f"Unsupported update from {type(values)}")
 
         for key, value in values.items():
-            self.key = value
+            setattr(self, key, value)

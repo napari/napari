@@ -123,7 +123,7 @@ def test_values_updated():
     user2 = User(id=1, name='K')
 
     assert user1.dict() == {'id': 0, 'name': 'A'}
-    assert user2.dict() == {'id': 0, 'name': 'K'}
+    assert user2.dict() == {'id': 1, 'name': 'K'}
 
-    user1.update(user2.dict())
-    assert user1.dict() == {'id': 0, 'name': 'K'}
+    user1.update(user2)
+    assert user1.dict() == {'id': 1, 'name': 'K'}
