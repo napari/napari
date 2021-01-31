@@ -967,8 +967,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if len(position) >= self.ndim:
             coords = list(position[-self.ndim :])
         else:
-            print(position, self.ndim)
-            raise ValueError('Cursor position must be at least')
+            coords = [0] * (self.ndim - len(position)) + list(position)
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
