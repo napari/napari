@@ -5,7 +5,7 @@ from pydantic import BaseModel, PrivateAttr
 
 from .custom_types import JSON_ENCODERS
 from .dataclass import _type_to_compare, is_equal
-from .event import EmitterGroup
+from .event import EmitterGroup, Event
 
 
 class EventedModel(BaseModel):
@@ -14,6 +14,8 @@ class EventedModel(BaseModel):
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
     __equality_checks__: Dict = PrivateAttr(default_factory=dict)
     __slots__: ClassVar[Set[str]] = {"__weakref__"}
+
+    _event_emission_needed = False
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
@@ -71,6 +73,7 @@ class EventedModel(BaseModel):
         if not self.__equality_checks__.get(name, is_equal)(after, before):
             # emit event
             getattr(self.events, name)(value=after)
+            self._event_emission_needed = True
 
     # expose the private EmitterGroup publically
     @property
@@ -104,5 +107,11 @@ class EventedModel(BaseModel):
         if not isinstance(values, dict):
             raise ValueError(f"Unsupported update from {type(values)}")
 
-        for key, value in values.items():
-            setattr(self, key, value)
+        self._event_emission_needed = False
+
+        with self.events.blocker():
+            for key, value in values.items():
+                setattr(self, key, value)
+
+        if self._event_emission_needed:
+            self.events(Event(self))

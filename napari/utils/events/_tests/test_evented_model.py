@@ -122,8 +122,31 @@ def test_values_updated():
     user1 = User(id=0)
     user2 = User(id=1, name='K')
 
+    # Add mocks
+    user1_events = Mock(user1.events)
+    user1.events.connect(user1_events)
+    user1.events.id = Mock(user1.events.id)
+    user2.events.id = Mock(user2.events.id)
+
+    # Check user1 and user2 dicts
     assert user1.dict() == {'id': 0, 'name': 'A'}
     assert user2.dict() == {'id': 1, 'name': 'K'}
 
+    # Update user1 from user2
     user1.update(user2)
     assert user1.dict() == {'id': 1, 'name': 'K'}
+
+    user1.events.id.assert_called_with(value=1)
+    user2.events.id.assert_not_called()
+    assert user1_events.call_count == 1
+    user1.events.id.reset_mock()
+    user2.events.id.reset_mock()
+    user1_events.reset_mock()
+
+    # Update user1 from user2 again, no event emission expected
+    user1.update(user2)
+    assert user1.dict() == {'id': 1, 'name': 'K'}
+
+    user1.events.id.assert_not_called()
+    user2.events.id.assert_not_called()
+    assert user1_events.call_count == 0
