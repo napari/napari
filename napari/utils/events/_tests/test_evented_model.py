@@ -101,3 +101,29 @@ def test_evented_model_with_array():
     # try changing shape to something impossible to correctly reshape
     with pytest.raises(ValueError):
         model.shaped2_values = [1]
+
+
+def test_values_updated():
+    class User(EventedModel):
+        """Demo evented model.
+
+        Parameters
+        ----------
+        id : int
+            User id.
+        name : str, optional
+            User name.
+        """
+
+        id: int
+        name: str = 'A'
+        age: ClassVar[int] = 100
+
+    user1 = User(id=0)
+    user2 = User(id=1, name='K')
+
+    assert user1.dict() == {'id': 0, 'name': 'A'}
+    assert user2.dict() == {'id': 0, 'name': 'K'}
+
+    user1.update(user2.dict())
+    assert user1.dict() == {'id': 0, 'name': 'K'}

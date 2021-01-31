@@ -1,3 +1,4 @@
+import warnings
 from typing import ClassVar, Dict, Set
 
 from pydantic import BaseModel, PrivateAttr
@@ -75,3 +76,33 @@ class EventedModel(BaseModel):
     @property
     def events(self):
         return self._events
+
+    def asdict(self):
+        """Convert a model to a dictionary."""
+        warnings.warn(
+            (
+                "The `asdict` method has been renamed `dict` and is now deprecated. It will be"
+                " removed in 0.4.7"
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self.dict()
+
+    def update(self, values):
+        """Update a model in place.
+
+        Parameters
+        ----------
+        values : dict, napari.utils.events.EventedModel
+            Values to update the model with. If an EventedModel is passed it is first
+            converted to a dictionary. The keys of this dictionary must be found as
+            attributes on the current model.
+        """
+        if isinstance(values, self.__class__):
+            values = values.dict()
+        if not isinstance(values, dict):
+            raise ValueError(f"Unsupported update from {type(values)}")
+
+        for key, value in values.items():
+            self.key = value
