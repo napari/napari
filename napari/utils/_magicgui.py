@@ -9,10 +9,9 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
-import warnings
 import weakref
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 from .. import layers, types
 from ..utils.misc import ensure_list_of_layer_data_tuple
@@ -310,9 +309,7 @@ def _make_choice_data_setter(gui: 'CategoricalWidget', choice_name: str):
     return setter
 
 
-def add_layer_to_viewer(
-    gui, result: Any, return_type: Type[layers.Layer]
-) -> None:
+def add_layer_to_viewer(gui, result: Any) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
@@ -322,8 +319,6 @@ def add_layer_to_viewer(
         dock widget.
     result : Any
         The result of the function call.
-    return_type : type
-        The return annotation that was used in the decorated function.
 
     Examples
     --------
@@ -336,49 +331,8 @@ def add_layer_to_viewer(
     if result is None:
         return
 
-    # This is the pre 0.4.3 API, warn user and pass to the correct function.
-    if not isinstance(result, layers.Layer):
-        import textwrap
-
-        if return_type == layers.Layer:
-            msg = (
-                'Annotating a magicgui function with a return type of '
-                '`napari.layers.Layer` is deprecated.  To indicate that your '
-                'function returns a layer data tuple, please use a return '
-                'annotation of `napari.types.LayerDataTuple` or '
-                '`List[napari.types.LayerDataTuple]`\n'
-                'This will raise an exception in napari v0.4.5'
-            )
-            msg = "\n" + "\n".join(textwrap.wrap(msg, width=70))
-            warnings.warn(msg)
-            return add_layer_data_tuples_to_viewer(
-                gui, result, types.LayerDataTuple
-            )
-
-        # it's a layer subclass
-        msg = (
-            'As of napari 0.4.3 magicgui functions with a return annotation of '
-            "a napari layer type (such as 'napari.layers.Image') must now "
-            f"return an actual layer instance, rather than {type(result)}. To "
-            "have a plain array object converted to a napari layer, please "
-            "use a return annotation of napari.types.<layer_name>Data, (with "
-            "the corresponding layer name.  For example, the following "
-            "would add an image layer to the viewer:"
-        )
-        msg = "\n" + "\n".join(textwrap.wrap(msg, width=70))
-        msg += (
-            "\n\n@magicgui\n"
-            "def func(nx: int, ny: int) -> napari.types.ImageData:\n"
-            "    return np.random.rand(ny, nx)\n\n"
-            "This will raise an exception in napari v0.4.5"
-        )
-        warnings.warn(msg)
-        data_type = getattr(types, f'{return_type.__name__.title()}Data')
-        return add_layer_data_to_viewer(gui, result, data_type)
-
     viewer = find_viewer_ancestor(gui)
     if not viewer:
         return
 
-    # After 0.4.3 a return type of a Layer subclass should return a layer.
     viewer.add_layer(result)
