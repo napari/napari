@@ -47,6 +47,9 @@ class Colormap(EventedModel):
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[float, (-1,)] = None
 
+    def __init__(self, colors, **data):
+        super().__init__(colors=colors, **data)
+
     # validators
     @validator('colors', pre=True)
     def _ensure_color_array(cls, v):

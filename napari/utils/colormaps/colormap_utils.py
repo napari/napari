@@ -42,7 +42,7 @@ SIMPLE_COLORMAPS = {
 }
 
 # dictionay for bop colormap objects
-BOP_COLORMAPS = {k: Colormap(colors=v, name=k) for k, v in bopd.items()}
+BOP_COLORMAPS = {k: Colormap(v, name=k) for k, v in bopd.items()}
 
 
 def _all_rgb():
@@ -188,7 +188,7 @@ def color_dict_to_colormap(colors):
     """
 
     control_colors = np.unique(list(colors.values()), axis=0)
-    colormap = Colormap(colors=control_colors)
+    colormap = Colormap(control_colors)
     control2index = {
         tuple(ctrl): i / (len(control_colors) - 1)
         for i, ctrl in enumerate(control_colors)

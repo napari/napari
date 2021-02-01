@@ -6,7 +6,7 @@ from napari.utils.colormaps import Colormap
 def test_linear_colormap():
     """Test a linear colormap."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    cmap = Colormap(colors=colors, name='testing')
+    cmap = Colormap(colors, name='testing')
 
     assert cmap.name == 'testing'
     assert cmap.interpolation == 'linear'
@@ -18,7 +18,7 @@ def test_linear_colormap():
 def test_linear_colormap_with_control_points():
     """Test a linear colormap with control points."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    cmap = Colormap(colors=colors, name='testing', controls=[0, 0.75, 1])
+    cmap = Colormap(colors, name='testing', controls=[0, 0.75, 1])
 
     assert cmap.name == 'testing'
     assert cmap.interpolation == 'linear'
@@ -30,7 +30,7 @@ def test_linear_colormap_with_control_points():
 def test_binned_colormap():
     """Test a binned colormap."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    cmap = Colormap(colors=colors, name='testing', interpolation='zero')
+    cmap = Colormap(colors, name='testing', interpolation='zero')
 
     assert cmap.name == 'testing'
     assert cmap.interpolation == 'zero'

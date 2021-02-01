@@ -55,7 +55,7 @@ def test_can_accept_vispy_colormaps():
 def test_can_accept_napari_colormaps():
     """Test that we can accept napari colormaps."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    napari_cmap = Colormap(colors=colors)
+    napari_cmap = Colormap(colors)
     cmap = ensure_colormap(napari_cmap)
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors)
@@ -74,7 +74,7 @@ def test_can_accept_vispy_colormap_name_tuple():
 def test_can_accept_napari_colormap_name_tuple():
     """Test that we can accept napari colormap named type."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    napari_cmap = Colormap(colors=colors)
+    napari_cmap = Colormap(colors)
     cmap = ensure_colormap(('special_name', napari_cmap))
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors)
@@ -106,8 +106,8 @@ def test_can_accept_napari_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary"""
     colors_a = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     colors_b = np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 0, 1, 1]])
-    napari_cmap_a = Colormap(colors=colors_a)
-    napari_cmap_b = Colormap(colors=colors_b)
+    napari_cmap_a = Colormap(colors_a)
+    napari_cmap_b = Colormap(colors_b)
     cmap = ensure_colormap({'a': napari_cmap_a, 'b': napari_cmap_b})
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors_a)
