@@ -99,7 +99,7 @@ class EventedModel(BaseModel):
             converted to a dictionary. The keys of this dictionary must be found as
             attributes on the current model.
         """
-        if isinstance(values, self.__class__) and hasattr(values, 'dict'):
+        if isinstance(values, self.__class__):
             values = values.dict()
         if not isinstance(values, dict):
             raise ValueError(f"Unsupported update from {type(values)}")
