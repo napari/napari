@@ -11,7 +11,7 @@ of those custom classes, magicgui will know what to do with it.
 """
 import weakref
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from .. import layers, types
 from ..utils.misc import ensure_list_of_layer_data_tuple
@@ -309,7 +309,9 @@ def _make_choice_data_setter(gui: 'CategoricalWidget', choice_name: str):
     return setter
 
 
-def add_layer_to_viewer(gui, result: Any) -> None:
+def add_layer_to_viewer(
+    gui, result: Any, return_type: Type[layers.Layer]
+) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
@@ -319,6 +321,8 @@ def add_layer_to_viewer(gui, result: Any) -> None:
         dock widget.
     result : Any
         The result of the function call.
+    return_type : type
+        The return annotation that was used in the decorated function.
 
     Examples
     --------
