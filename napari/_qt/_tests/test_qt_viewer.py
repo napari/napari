@@ -301,24 +301,3 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     layer = viewer.layers[1]
     indices, scale = layer._slice_data(layer._slice_indices)
     np.testing.assert_equal(indices, [0])
-
-
-def test_slice_labels(make_napari_viewer):
-    viewer = make_napari_viewer()
-    np.random.seed(0)
-    data = np.random.random((20, 10, 10))
-    viewer.add_image(data)
-    view = viewer.window.qt_viewer
-
-    # make sure the totslice_label is showing the correct number
-    assert int(view.dims.slider_widgets[0].totslice_label.text()) == 19
-
-    # make sure setting the dims.point updates the slice label
-    label_edit = view.dims.slider_widgets[0].curslice_label
-    viewer.dims.set_point(0, 15)
-    assert int(label_edit.text()) == 15
-
-    # make sure setting the current slice label updates the model
-    label_edit.setText(str(8))
-    label_edit.editingFinished.emit()
-    assert viewer.dims.point[0] == 8
