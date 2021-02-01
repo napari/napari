@@ -14,17 +14,14 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ..base import Layer
+from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
 from ._points_constants import SYMBOL_ALIAS, ColorMode, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select

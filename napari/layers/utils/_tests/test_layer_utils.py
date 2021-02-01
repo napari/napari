@@ -3,10 +3,10 @@ import pandas as pd
 import pytest
 from dask import array as da
 
+from napari.layers.utils.color_manager_utils import guess_continuous
 from napari.layers.utils.layer_utils import (
     calc_data_range,
     dataframe_to_properties,
-    guess_continuous,
     segment_normal,
 )
 
