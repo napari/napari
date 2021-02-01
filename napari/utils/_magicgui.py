@@ -102,7 +102,6 @@ def add_layer_data_to_viewer(gui, result, return_type):
     ... def make_layer() -> napari.types.ImageData:
     ...     return np.random.rand(256, 256)
 
-
     """
 
     if result is None:

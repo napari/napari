@@ -35,8 +35,8 @@ DEFAULT_OCTREE_CONFIG = {
 def _get_async_config() -> Optional[dict]:
     """Get configuration implied by NAPARI_ASYNC.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[dict]
         The async config to use or None if async not specified.
     """
@@ -59,8 +59,8 @@ def _get_async_config() -> Optional[dict]:
 def get_octree_config() -> dict:
     """Return the config data from the user's file or the default data.
 
-    Return
-    ------
+    Returns
+    -------
     dict
         The config data we should use.
     """

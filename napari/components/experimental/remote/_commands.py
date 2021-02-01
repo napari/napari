@@ -56,7 +56,7 @@ class RemoteCommands:
 
         Parameters
         ----------
-        command : dict
+        event : dict
             The remote command.
         """
         command = event.command

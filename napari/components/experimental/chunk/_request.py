@@ -108,8 +108,8 @@ class ChunkRequest:
     def elapsed_ms(self) -> float:
         """The total time elapsed since the request was created.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The total time elapsed since the chunk was created.
         """
@@ -119,8 +119,8 @@ class ChunkRequest:
     def load_ms(self) -> float:
         """The total time it took to load all chunks.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The total time it took to return all chunks.
         """
@@ -132,8 +132,8 @@ class ChunkRequest:
     def num_chunks(self) -> int:
         """The number of chunks in this request.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks in this request.
         """
@@ -143,8 +143,8 @@ class ChunkRequest:
     def num_bytes(self) -> int:
         """The number of bytes that were loaded.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of bytes that were loaded.
         """
@@ -154,8 +154,8 @@ class ChunkRequest:
     def in_memory(self) -> bool:
         """True if all chunks are ndarrays.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if all chunks are ndarrays.
         """

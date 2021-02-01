@@ -32,7 +32,7 @@ with napari.gui_qt():
 
     def append(delayed_image):
         """Appends the image to viewer.
-        
+
         Parameters
         ----------
         delayed_image : dask.delayed function object
