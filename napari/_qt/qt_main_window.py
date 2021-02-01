@@ -9,7 +9,7 @@ from collections import Counter
 from itertools import chain, repeat
 from typing import Dict
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -27,16 +27,19 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
+from ..utils.theme import get_theme, template
 from ..utils.translations import translator
+from ..utils.settings._manager import SETTINGS
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
+from .qt_preferences import PreferencesDialog
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
-from .utils import QImg2array
+from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
@@ -109,6 +112,8 @@ class Window:
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
+        self._maximized_flag = False
+        self._preferences_dialog_size = QSize()
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
@@ -131,6 +136,7 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
+        self.qt_viewer.viewer.theme = SETTINGS.get("application", "theme")
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -156,6 +162,14 @@ class Window:
 
         if show:
             self.show()
+
+            # if SETTINGS.get("application", "first_time"):
+            #     SETTINGS.set("application", "first_time", False)
+            # else:
+            #     try:
+            #         self._set_window_settings(*self._load_window_settings())
+            #     except Exception:
+            #         pass
 
     def __getattr__(self, name):
         if name == 'raw_stylesheet':
@@ -240,6 +254,10 @@ class Window:
             lambda: self.qt_viewer._save_layers_dialog(selected=False)
         )
 
+        open_preferences = QAction('Preferences...', self._qt_window)
+        open_preferences.setShortcut('Ctrl-,')
+        open_preferences.triggered.connect(self.show_preferences)
+
         screenshot = QAction('Save Screenshot...', self._qt_window)
         screenshot.setShortcut('Alt+S')
         screenshot.setStatusTip(
@@ -270,6 +288,7 @@ class Window:
         self.file_menu.addSeparator()
         self.file_menu.addAction(save_selected_layers)
         self.file_menu.addAction(save_all_layers)
+        self.file_menu.addAction(open_preferences)
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
@@ -284,7 +303,7 @@ class Window:
         toggle_theme = QAction('Toggle Theme', self._qt_window)
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
-        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
+        toggle_theme.triggered.connect(self._toggle_theme)
         toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
         toggle_fullscreen.setShortcut('Ctrl+F')
         toggle_fullscreen.setStatusTip('Toggle full screen')
@@ -874,10 +893,31 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
+    def _toggle_theme(self):
+        self.qt_viewer.viewer._toggle_theme()
+        SETTINGS.set("application", "theme", self.qt_viewer.viewer.theme)
+        self._update_theme()
+
     def _update_theme(self, event=None):
         """Update widget color theme."""
         theme_name = self.qt_viewer.viewer.theme
         self._qt_window.setStyleSheet(get_stylesheet(theme_name))
+
+        # set window styles which don't use the primary stylesheet
+        # FIXME: this is a problem with the stylesheet not using properties
+        # theme = get_theme(self.qt_viewer.viewer.theme)
+        theme = get_theme(SETTINGS.get("application", "theme"))
+        self._status_bar.setStyleSheet(
+            template(
+                'QStatusBar { background: {{ background }}; '
+                'color: {{ text }}; }',
+                **theme,
+            )
+        )
+        self._qt_center.setStyleSheet(
+            template('QWidget { background: {{ background }}; }', **theme)
+        )
+        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -944,3 +984,162 @@ class Window:
             self.qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
+
+    def show_preferences(self):
+        """Show the preferences dialog."""
+        dlg = PreferencesDialog(parent=self._qt_window)
+        dlg.sig_resized.connect(self._update_preferences_dialog_size)
+
+        palette = self.qt_viewer.viewer.palette
+        dlg.setStyleSheet(template("", **palette))
+        dlg.resize(self._preferences_dialog_size)
+        dlg.exec_()
+
+    def _load_window_settings(self):
+        """
+        Load window layout settings from configuration.
+        """
+        window_size = SETTINGS.get("application", "window_size")
+        state = SETTINGS.get("application", "window_state")
+        preferences_dialog_size = SETTINGS.get(
+            "application", "preferences_size"
+        )
+
+        position = SETTINGS.get("application", "window_position")
+
+        # It's necessary to verify if the window/position value is valid with the current screen.
+        width = position[0]
+        height = position[1]
+        screen_shape = QApplication.desktop().geometry()
+        current_width = screen_shape.width()
+        current_height = screen_shape.height()
+        if current_width < width or current_height < height:
+            position = (self._qt_window.x(), self._qt_window.y())
+
+        is_maximized = SETTINGS.get("application", "window_maximized")
+        is_fullscreen = SETTINGS.get("application", "window_fullscreen")
+        return (
+            state,
+            window_size,
+            preferences_dialog_size,
+            position,
+            is_maximized,
+            is_fullscreen,
+        )
+
+    def _get_window_settings(self):
+        """
+        Return current window settings.
+
+        Symmetric to the 'set_window_settings' setter.
+        """
+        window_size = (self._qt_window.width(), self._qt_window.height())
+        is_fullscreen = self._qt_window.isFullScreen()
+
+        if is_fullscreen:
+            is_maximized = self._maximized_flag
+        else:
+            is_maximized = self._qt_window.isMaximized()
+
+        window_position = (self._qt_window.x(), self._qt_window.y())
+        preferences_dialog_size = (
+            self._preferences_dialog_size.width(),
+            self._preferences_dialog_size.height(),
+        )
+        window_state = qbytearray_to_str(self._qt_window.saveState())
+        return (
+            window_state,
+            window_size,
+            preferences_dialog_size,
+            window_position,
+            is_maximized,
+            is_fullscreen,
+        )
+
+    def _set_window_settings(
+        self,
+        hexstate,
+        window_size,
+        preferences_dialog_size,
+        position,
+        is_maximized,
+        is_fullscreen,
+    ):
+        """
+        Set window settings.
+
+        Symmetric to the 'get_window_settings' accessor.
+        """
+        self._qt_window.setUpdatesEnabled(False)
+        window_size = QSize(window_size[0], window_size[1])
+        self._preferences_dialog_size = QSize(
+            preferences_dialog_size[0], preferences_dialog_size[1]
+        )
+
+        window_position = QPoint(position[0], position[1])
+        self._qt_window.setWindowState(Qt.WindowNoState)
+        self._qt_window.resize(window_size)
+        self._qt_window.move(window_position)
+
+        # Window layout
+        if hexstate:
+            self._qt_window.restoreState(str_to_qbytearray(hexstate))
+
+        if is_fullscreen:
+            self._qt_window.setWindowState(Qt.WindowFullScreen)
+
+        if is_fullscreen:
+            self._maximized_flag = is_maximized
+        elif is_maximized:
+            self._qt_window.setWindowState(Qt.WindowMaximized)
+
+        self._qt_window.setUpdatesEnabled(True)
+
+    def _save_current_window_settings(self):
+        """"""
+        (
+            state,
+            window_size,
+            preferences_dialog_size,
+            position,
+            is_maximized,
+            is_fullscreen,
+        ) = self._get_window_settings()
+
+        SETTINGS.set('application', 'window_size', window_size)
+        SETTINGS.set('application', 'window_maximized', is_maximized)
+        SETTINGS.set('application', 'window_fullscreen', is_fullscreen)
+        SETTINGS.set('application', 'window_position', position)
+        SETTINGS.set(
+            'application',
+            'window_state',
+            state,
+        )
+        SETTINGS.set(
+            'application',
+            'preferences_size',
+            preferences_dialog_size,
+        )
+        SETTINGS.set(
+            'application', 'window_statusbar', not self._status_bar.isHidden()
+        )
+
+    def _update_preferences_dialog_size(self, event):
+        """Save preferences dialog size."""
+        self._preferences_dialog_size = event.size()
+
+
+def _stop_monitor() -> None:
+    """Stop the monitor service if we were using it."""
+    if config.monitor:
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()
+
+
+def _shutdown_chunkloader() -> None:
+    """Shutdown the ChunkLoader."""
+    if config.async_loading:
+        from ..components.experimental.chunk import chunk_loader
+
+        chunk_loader.shutdown()

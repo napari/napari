@@ -4,7 +4,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QByteArray, QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -17,6 +17,20 @@ from qtpy.QtWidgets import (
 )
 
 from ..utils.misc import is_sequence
+
+QBYTE_FLAG = "!QBYTE_"
+
+
+def is_qbyte(string):
+    return isinstance(string, str) and string.startswith(QBYTE_FLAG)
+
+
+def qbytearray_to_str(qbyte):
+    return QBYTE_FLAG + qbyte.toBase64().data().decode()
+
+
+def str_to_qbytearray(string):
+    return QByteArray.fromBase64(string.lstrip(QBYTE_FLAG).encode())
 
 
 def QImg2array(img):
