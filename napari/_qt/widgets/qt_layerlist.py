@@ -34,8 +34,8 @@ def _create_chunk_receiver(parent: QObject) -> 'Optional[QtChunkReceiver]':
     parent : QObject
         Parent of the chunk receiver.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[QtChunkReceiver]
         The QtChunkReceiver instance to use.
     """

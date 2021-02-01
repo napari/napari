@@ -35,8 +35,8 @@ def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
     chunk : OctreeChunk
         Create outline of this chunk.
 
-    Return
-    ------
+    Returns
+    -------
     np.ndarray
         The verts for the outline.
     """
@@ -70,8 +70,8 @@ class TileGrid:
     def _create_line(self) -> Line:
         """Create the Line visual for the grid.
 
-        Return
-        ------
+        Returns
+        -------
         Line
             The new Line visual.
         """

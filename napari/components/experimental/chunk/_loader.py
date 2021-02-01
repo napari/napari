@@ -61,8 +61,8 @@ class ChunkLoader:
         layer_id : int
             The the LayerInfo for this layer.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[LayerInfo]
             The LayerInfo if the layer has one.
         """
@@ -129,8 +129,8 @@ class ChunkLoader:
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """
@@ -146,8 +146,8 @@ class ChunkLoader:
         request : ChunkRequest
             The request to load.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if we loaded it.
         """
@@ -201,7 +201,7 @@ class ChunkLoader:
 
         Parameters
         ----------
-        future : Future
+        request : Future
             The future that finished or was cancelled.
 
         Notes
@@ -342,7 +342,7 @@ def _setup_logging(config: dict) -> None:
 
     Parameters
     ----------
-    octree_config : dict
+    config : dict
         The configuration data.
     """
     try:

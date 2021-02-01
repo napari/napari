@@ -828,8 +828,8 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
     camera : Camera
         Camera that the QtPoll object will listen to.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[QtPoll]
         The new QtPoll instance, if we need one.
     """
