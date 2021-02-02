@@ -40,7 +40,7 @@ def test_categorical_colormap_cycle():
     assert cmap.colormap == {}
 
     # the values used to create the color cycle can be accessed via fallback colro
-    np.testing.assert_almost_equal(cmap.fallback_color, color_cycle)
+    np.testing.assert_almost_equal(cmap.fallback_color.values, color_cycle)
 
     # map 2 colors, verify their colors are returned in order
     colors = cmap.map(['hi', 'hello'])

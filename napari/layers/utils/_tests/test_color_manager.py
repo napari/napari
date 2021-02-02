@@ -99,3 +99,57 @@ def test_continuous_colormap():
     # the props valued 0 should now be white
     updated_colors = cm.colors
     np.testing.assert_allclose(updated_colors[-1], [1, 1, 1, 1])
+
+
+color_cycle_str = ['red', 'blue']
+color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
+color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
+
+
+@pytest.mark.parametrize(
+    "color_cycle",
+    [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
+)
+def test_color_cycle(color_cycle):
+    """Test setting color with a color cycle list"""
+    # create Points using list color cycle
+    n_colors = 10
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
+    cm = ColorManager(
+        mode='cycle',
+        n_colors=n_colors,
+        color_properties=properties,
+        categorical_colormap=color_cycle,
+    )
+    color_mode = cm.mode
+    assert color_mode == 'cycle'
+    color_array = transform_color(
+        list(islice(cycle(color_cycle), 0, n_colors))
+    )
+    np.testing.assert_allclose(cm.colors, color_array)
+
+    # Add 2 color elements and test their color
+    cm.add('A', n_colors=2)
+    cm_colors = cm.colors
+    assert len(cm_colors) == n_colors + 2
+    np.testing.assert_allclose(
+        cm_colors,
+        np.vstack(
+            (color_array, transform_color('red'), transform_color('red'))
+        ),
+    )
+
+    # Check removing data adjusts colors correctly
+    cm.remove({0, 2, 11})
+    cm_colors_2 = cm.colors
+    assert len(cm_colors_2) == (n_colors - 1)
+    np.testing.assert_allclose(
+        cm_colors_2,
+        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
+    )
+
+    # update the colormap
+    cm.categorical_colormap = ['black', 'white']
+
+    # the first color should now be black
+    np.testing.assert_allclose(cm.colors[0], [0, 0, 0, 1])
