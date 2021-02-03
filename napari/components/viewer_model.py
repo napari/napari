@@ -211,7 +211,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        layers : list of napari.Layer, optional
+        layers : list of napari.layers.Layer, optional
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
@@ -312,7 +312,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        layer : napari.Layer
+        layer : napari.layers.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
@@ -340,7 +340,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        event : :class:`napari.Layer`
+        event : :class:`napari.layers.Layer`
             Layer to add.
         """
         layer = event.value
@@ -391,7 +391,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Returns
         -------
-        layer : :class:`napari.Layer` or list
+        layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
         layer = event.value
@@ -413,12 +413,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        layer : :class:`napari.Layer`
+        layer : :class:`napari.layers.Layer`
             Layer to add.
 
         Returns
         -------
-        layer : :class:`napari.Layer` or list
+        layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
         # Adding additional functionality inside `add_layer`
