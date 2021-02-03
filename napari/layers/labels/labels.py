@@ -175,6 +175,7 @@ class Labels(Image):
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
+        self._contour = False
 
         if properties is None:
             self._properties = {}
@@ -227,7 +228,6 @@ class Labels(Image):
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
-        self._contour = False
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
@@ -279,12 +279,7 @@ class Labels(Image):
         if refresh is True:
             self._save_history()
 
-        if contour:
-            self.data = np.logical_xor(
-                self.data, ndi.binary_erosion(self.data)
-            )
-        else:
-            self.data = ndi.binary_fill_holes(self.data)
+        self._raw_to_displayed(self.data)
 
         if refresh is True:
             self.refresh()
@@ -675,6 +670,9 @@ class Labels(Image):
             )
         else:
             raise ValueError("Unsupported Color Mode")
+
+        if self.contour:
+            image = np.logical_xor(image, ndi.binary_erosion(image))
 
         return image
 
