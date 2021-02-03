@@ -130,7 +130,7 @@ class QtDims(QWidget):
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
-                self.dims.last_used = None
+                self.dims.last_used = 0
                 widget.hide()
             else:
                 # Non displayed dimensions correspond to displayed sliders
@@ -245,7 +245,7 @@ class QtDims(QWidget):
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
-        self.dims.last_used = None
+        self.dims.last_used = 0
 
     def play(
         self,
