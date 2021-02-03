@@ -153,7 +153,7 @@ class ChunkLoaderLayers:
 
         Parameters
         ----------
-        layer_id : int
+        index : int
             The layer id (from view.cmd.layers).
         layer : Layer
             The layer itself.

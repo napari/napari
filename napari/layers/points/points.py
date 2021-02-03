@@ -13,7 +13,6 @@ from ...utils.colormaps.standardize_color import (
     transform_color,
 )
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
     ColorType,
@@ -108,7 +107,7 @@ class Points(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -530,7 +529,7 @@ class Points(Layer):
                 self.text.add(self.current_properties, adding)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -774,7 +773,6 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
-        self.status = format_float(self.current_size)
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -784,7 +782,6 @@ class Points(Layer):
     @edge_width.setter
     def edge_width(self, edge_width: Union[None, float]) -> None:
         self._edge_width = edge_width
-        self.status = format_float(self.edge_width)
         self.events.edge_width()
 
     @property
@@ -1357,7 +1354,7 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.cursor = 'pointing'
-            self.interactive = False
+            self.interactive = True
             self.help = 'hold <space> to pan/zoom'
             self.selected_data = set()
             self._set_highlight()
@@ -1379,7 +1376,6 @@ class Points(Layer):
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
             self._selected_data_stored = set()
 
-        self.status = str(mode)
         self._mode = mode
         self._set_highlight()
 
@@ -1526,19 +1522,25 @@ class Points(Layer):
         else:
             return [], []
 
-    def _get_value(self) -> Union[None, int]:
-        """Determine if points at current coordinates.
+    def _get_value(self, position) -> Union[None, int]:
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        selection : int or None
+        value : int or None
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
         view_data = self._view_data
         if len(view_data) > 0:
+            displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
-            distances = abs(view_data - self.displayed_coordinates)
+            distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,

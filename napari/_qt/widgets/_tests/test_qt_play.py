@@ -98,9 +98,9 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(make_test_viewer):
+def view(make_napari_viewer):
     """basic viewer with data that we will use a few times"""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))

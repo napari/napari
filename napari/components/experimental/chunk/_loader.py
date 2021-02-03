@@ -1,8 +1,8 @@
 """ChunkLoader class.
 
-Loads chunks synchronously or asynchronously using worker threads or
+Loads chunks synchronously, or asynchronously using worker threads or
 processes. A chunk could be an OctreeChunk or it could be a pre-Octree
-array from a single or multi-scale image.
+array from the Image class, time-series or multi-scale.
 """
 import logging
 from concurrent.futures import Future
@@ -61,8 +61,8 @@ class ChunkLoader:
         layer_id : int
             The the LayerInfo for this layer.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[LayerInfo]
             The LayerInfo if the layer has one.
         """
@@ -129,8 +129,8 @@ class ChunkLoader:
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """
@@ -146,8 +146,8 @@ class ChunkLoader:
         request : ChunkRequest
             The request to load.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if we loaded it.
         """
@@ -187,8 +187,8 @@ class ChunkLoader:
         # If it's been loading "fast" then load synchronously. There's no
         # point is loading async if it loads really fast.
 
-        # TODO_OCTREE: disable this in a nice way for octree. It made sense
-        # for single-scale time series, but not for octree.
+        # TODO_OCTREE: we no longer do auto-sync, this would be need to be
+        # implement in a nice way for octree?
         # if info.loads_fast:
         #    return True
 
@@ -201,15 +201,15 @@ class ChunkLoader:
 
         Parameters
         ----------
-        future : Future
+        request : Future
             The future that finished or was cancelled.
 
         Notes
         -----
         This method MAY be called in a worker thread. The
-        concurrent.futures documentation very intentionally does not
-        specify which thread the future's done callback will be called in,
-        only that it will be called in some thread in the current process.
+        concurrent.futures documentation intentionally does not specify
+        which thread the future's done callback will be called in, only
+        that it will be called in some thread in the current process.
         """
         LOGGER.debug(
             "_done: load=%.3fms elapsed=%.3fms %s",
@@ -331,8 +331,8 @@ def wait_for_async():
 def _setup_logging(config: dict) -> None:
     """Setup logging.
 
-    String Formatting
-    -----------------
+    Notes
+    -----
     It's recommended to use the oldest style of string formatting with
     logging. With f-strings you'd pay the price of formatting the string
     even if the log statement is disabled due to the log level, etc. In our
@@ -342,18 +342,18 @@ def _setup_logging(config: dict) -> None:
 
     Parameters
     ----------
-    octree_config : dict
+    config : dict
         The configuration data.
     """
     try:
-        log_path = config['loader']['log_path']
+        log_path = config['loader_defaults']['log_path']
         if log_path is not None:
             _log_to_file("napari.loader", log_path)
     except KeyError:
         pass
 
     try:
-        log_path = config['loader']['log_path']
+        log_path = config['octree']['log_path']
         if log_path is not None:
             _log_to_file("napari.octree", log_path)
     except KeyError:

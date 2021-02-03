@@ -200,9 +200,9 @@ def is_equal(v1, v2):
 
     Parameters
     ----------
-    v1: Any
+    v1 : Any
         first value
-    v2: Any
+    v2 : Any
         second value
 
     Returns
@@ -234,7 +234,7 @@ def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
 
     Parameters
     ----------
-    type_: type
+    type_ : type
     type to examine
 
     Returns

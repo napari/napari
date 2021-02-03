@@ -247,31 +247,31 @@ def naturaldate(value):
 
 def _quotient_and_remainder(value, divisor, unit, minimum_unit, suppress):
     """Divide `value` by `divisor` returning the quotient and
-       the remainder as follows:
+    the remainder as follows:
 
-       If `unit` is `minimum_unit`, makes the quotient a float number
-       and the remainder will be zero. The rational is that if unit
-       is the unit of the quotient, we cannot
-       represent the remainder because it would require a unit smaller
-       than the minimum_unit.
+    If `unit` is `minimum_unit`, makes the quotient a float number
+    and the remainder will be zero. The rational is that if unit
+    is the unit of the quotient, we cannot
+    represent the remainder because it would require a unit smaller
+    than the minimum_unit.
 
-       >>> from humanize.time import _quotient_and_remainder, Unit
-       >>> _quotient_and_remainder(36, 24, Unit.DAYS, Unit.DAYS, [])
-       (1.5, 0)
+    >>> from humanize.time import _quotient_and_remainder, Unit
+    >>> _quotient_and_remainder(36, 24, Unit.DAYS, Unit.DAYS, [])
+    (1.5, 0)
 
-       If unit is in suppress, the quotient will be zero and the
-       remainder will be the initial value. The idea is that if we
-       cannot use unit, we are forced to use a lower unit so we cannot
-       do the division.
+    If unit is in suppress, the quotient will be zero and the
+    remainder will be the initial value. The idea is that if we
+    cannot use unit, we are forced to use a lower unit so we cannot
+    do the division.
 
-       >>> _quotient_and_remainder(36, 24, Unit.DAYS, Unit.HOURS, [Unit.DAYS])
-       (0, 36)
+    >>> _quotient_and_remainder(36, 24, Unit.DAYS, Unit.HOURS, [Unit.DAYS])
+    (0, 36)
 
-       In other case return quotient and remainder as `divmod` would
-       do it.
+    In other case return quotient and remainder as `divmod` would
+    do it.
 
-       >>> _quotient_and_remainder(36, 24, Unit.DAYS, Unit.HOURS, [])
-       (1, 12)
+    >>> _quotient_and_remainder(36, 24, Unit.DAYS, Unit.HOURS, [])
+    (1, 12)
 
     """
 
@@ -286,27 +286,27 @@ def _quotient_and_remainder(value, divisor, unit, minimum_unit, suppress):
 def _carry(value1, value2, ratio, unit, min_unit, suppress):
     """Return a tuple with two values as follows:
 
-       If the unit is in suppress multiplies value1
-       by ratio and add it to value2 (carry to right).
-       The idea is that if we cannot represent value1 we need
-       to represent it in a lower unit.
+    If the unit is in suppress multiplies value1
+    by ratio and add it to value2 (carry to right).
+    The idea is that if we cannot represent value1 we need
+    to represent it in a lower unit.
 
-       >>> from humanize.time import _carry, Unit
-       >>> _carry(2, 6, 24, Unit.DAYS, Unit.SECONDS, [Unit.DAYS])
-       (0, 54)
+    >>> from humanize.time import _carry, Unit
+    >>> _carry(2, 6, 24, Unit.DAYS, Unit.SECONDS, [Unit.DAYS])
+    (0, 54)
 
-       If the unit is the minimum unit, value2 is divided
-       by ratio and added to value1 (carry to left).
-       We assume that value2 has a lower unit so we need to
-       carry it to value1.
+    If the unit is the minimum unit, value2 is divided
+    by ratio and added to value1 (carry to left).
+    We assume that value2 has a lower unit so we need to
+    carry it to value1.
 
-        >>> _carry(2, 6, 24, Unit.DAYS, Unit.DAYS, [])
-        (2.25, 0)
+     >>> _carry(2, 6, 24, Unit.DAYS, Unit.DAYS, [])
+     (2.25, 0)
 
-       Otherwise, just return the same input:
+    Otherwise, just return the same input:
 
-       >>> _carry(2, 6, 24, Unit.DAYS, Unit.SECONDS, [])
-       (2, 6)
+    >>> _carry(2, 6, 24, Unit.DAYS, Unit.SECONDS, [])
+    (2, 6)
     """
     if unit == min_unit:
         return (value1 + value2 / ratio, 0)
@@ -319,20 +319,20 @@ def _carry(value1, value2, ratio, unit, min_unit, suppress):
 def _suitable_minimum_unit(min_unit, suppress):
     """Return a minimum unit suitable that is not suppressed.
 
-       If not suppressed, return the same unit:
+    If not suppressed, return the same unit:
 
-       >>> from humanize.time import _suitable_minimum_unit, Unit
-       >>> _suitable_minimum_unit(Unit.HOURS, [])
-       <Unit.HOURS: 4>
+    >>> from humanize.time import _suitable_minimum_unit, Unit
+    >>> _suitable_minimum_unit(Unit.HOURS, [])
+    <Unit.HOURS: 4>
 
-       But if suppressed, find a unit greather than the original one
-       that is not suppressed:
+    But if suppressed, find a unit greather than the original one
+    that is not suppressed:
 
-       >>> _suitable_minimum_unit(Unit.HOURS, [Unit.HOURS])
-       <Unit.DAYS: 5>
+    >>> _suitable_minimum_unit(Unit.HOURS, [Unit.HOURS])
+    <Unit.DAYS: 5>
 
-       >>> _suitable_minimum_unit(Unit.HOURS, [Unit.HOURS, Unit.DAYS])
-       <Unit.MONTHS: 6>
+    >>> _suitable_minimum_unit(Unit.HOURS, [Unit.HOURS, Unit.DAYS])
+    <Unit.MONTHS: 6>
     """
     if min_unit in suppress:
         for unit in Unit:
@@ -348,11 +348,11 @@ def _suitable_minimum_unit(min_unit, suppress):
 
 def _suppress_lower_units(min_unit, suppress):
     """Extend the suppressed units (if any) with all the units that are
-       lower than the minimum unit.
+    lower than the minimum unit.
 
-       >>> from humanize.time import _suppress_lower_units, Unit
-       >>> list(sorted(_suppress_lower_units(Unit.SECONDS, [Unit.DAYS])))
-       [<Unit.MICROSECONDS: 0>, <Unit.MILLISECONDS: 1>, <Unit.DAYS: 5>]
+    >>> from humanize.time import _suppress_lower_units, Unit
+    >>> list(sorted(_suppress_lower_units(Unit.SECONDS, [Unit.DAYS])))
+    [<Unit.MICROSECONDS: 0>, <Unit.MILLISECONDS: 1>, <Unit.DAYS: 5>]
     """
     suppress = set(suppress)
     for u in Unit:

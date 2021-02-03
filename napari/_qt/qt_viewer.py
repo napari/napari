@@ -106,6 +106,7 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
+        self._key_bindings_dialog = None
         self._active_layer = None
         self._console = None
 
@@ -328,6 +329,10 @@ class QtViewer(QSplitter):
             self._key_map_handler.keymap_providers.insert(0, active_layer)
 
         self._active_layer = active_layer
+
+        # If a QtAboutKeyBindings exists, update its text.
+        if self._key_bindings_dialog is not None:
+            self._key_bindings_dialog.update_active_layer()
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -559,6 +564,9 @@ class QtViewer(QSplitter):
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
 
+        if viz:
+            self.dockConsole.raise_()
+
         self.viewerButtons.consoleButton.setProperty(
             'expanded', self.dockConsole.isVisible()
         )
@@ -570,8 +578,15 @@ class QtViewer(QSplitter):
         )
 
     def show_key_bindings_dialog(self, event=None):
-        dialog = QtAboutKeyBindings(self.viewer, parent=self)
-        dialog.show()
+        if self._key_bindings_dialog is None:
+            self._key_bindings_dialog = QtAboutKeyBindings(
+                self.viewer, self._key_map_handler, parent=self
+            )
+        # make sure the dialog is shown
+        self._key_bindings_dialog.show()
+        # make sure the the dialog gets focus
+        self._key_bindings_dialog.raise_()  # for macOS
+        self._key_bindings_dialog.activateWindow()  # for Windows
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
@@ -813,8 +828,8 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
     camera : Camera
         Camera that the QtPoll object will listen to.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[QtPoll]
         The new QtPoll instance, if we need one.
     """

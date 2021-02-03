@@ -5,7 +5,6 @@ from typing import List
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
-from pkg_resources import parse_version
 from qtpy.QtCore import QProcess, QProcessEnvironment, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
@@ -32,7 +31,7 @@ from ...plugins.pypi import (
     normalized_name,
 )
 from ...utils._appdirs import user_plugin_dir, user_site_packages
-from ...utils.misc import running_as_bundled_app
+from ...utils.misc import parse_version, running_as_bundled_app
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter

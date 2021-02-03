@@ -1,4 +1,4 @@
-"""ChunkLocation and ChunkRequest classes.
+"""LayerRef, ChunkLocation and ChunkRequest classes.
 """
 import contextlib
 import logging
@@ -18,6 +18,8 @@ SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
 class LayerRef(NamedTuple):
+    """A weakref to a layer and its id."""
+
     layer_id: int
     layer_ref: weakref.ReferenceType
 
@@ -106,8 +108,8 @@ class ChunkRequest:
     def elapsed_ms(self) -> float:
         """The total time elapsed since the request was created.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The total time elapsed since the chunk was created.
         """
@@ -117,8 +119,8 @@ class ChunkRequest:
     def load_ms(self) -> float:
         """The total time it took to load all chunks.
 
-        Return
-        ------
+        Returns
+        -------
         float
             The total time it took to return all chunks.
         """
@@ -128,10 +130,10 @@ class ChunkRequest:
 
     @property
     def num_chunks(self) -> int:
-        """Return the number of chunks in this request.
+        """The number of chunks in this request.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks in this request.
         """
@@ -139,10 +141,10 @@ class ChunkRequest:
 
     @property
     def num_bytes(self) -> int:
-        """Return the number of bytes that were loaded.
+        """The number of bytes that were loaded.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of bytes that were loaded.
         """
@@ -150,10 +152,10 @@ class ChunkRequest:
 
     @property
     def in_memory(self) -> bool:
-        """Return True if all chunks are ndarrays.
+        """True if all chunks are ndarrays.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if all chunks are ndarrays.
         """

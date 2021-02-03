@@ -1,4 +1,5 @@
 import os
+from threading import Lock
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -41,7 +42,7 @@ SIMPLE_COLORMAPS = {
 }
 
 # dictionay for bop colormap objects
-BOP_COLORMAPS = {k: Colormap(colors=v, name=k) for k, v in bopd.items()}
+BOP_COLORMAPS = {k: Colormap(v, name=k) for k, v in bopd.items()}
 
 
 def _all_rgb():
@@ -187,7 +188,7 @@ def color_dict_to_colormap(colors):
     """
 
     control_colors = np.unique(list(colors.values()), axis=0)
-    colormap = Colormap(colors=control_colors)
+    colormap = Colormap(control_colors)
     control2index = {
         tuple(ctrl): i / (len(control_colors) - 1)
         for i, ctrl in enumerate(control_colors)
@@ -346,6 +347,8 @@ ALL_COLORMAPS.update(BOP_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
+# lock to allow update of AVAILABLE_COLORMAPS in threads
+AVAILABLE_COLORMAPS_LOCK = Lock()
 
 # curated colormap sets
 # these are selected to look good or at least reasonable when using additive
@@ -406,95 +409,98 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     TypeError
         If ``colormap`` is not a ``str``, ``dict``, ``tuple``, or ``Colormap``
     """
-    if isinstance(colormap, str):
-        name = colormap
-        if name not in AVAILABLE_COLORMAPS:
-            cmap = vispy_or_mpl_colormap(name)  # raises KeyError if not found
+    with AVAILABLE_COLORMAPS_LOCK:
+        if isinstance(colormap, str):
+            name = colormap
+            if name not in AVAILABLE_COLORMAPS:
+                cmap = vispy_or_mpl_colormap(
+                    name
+                )  # raises KeyError if not found
+                AVAILABLE_COLORMAPS[name] = cmap
+        elif isinstance(colormap, Colormap):
+            AVAILABLE_COLORMAPS[colormap.name] = colormap
+            name = colormap.name
+        elif isinstance(colormap, VispyColormap):
+            # if a vispy colormap instance is provided, make sure we don't already
+            # know about it before adding a new unnamed colormap
+            name = None
+            for key, val in AVAILABLE_COLORMAPS.items():
+                if colormap == val:
+                    name = key
+                    break
+            if not name:
+                name = increment_unnamed_colormap(AVAILABLE_COLORMAPS)
+            # Convert from vispy colormap
+            cmap = convert_vispy_colormap(colormap, name=name)
             AVAILABLE_COLORMAPS[name] = cmap
-    elif isinstance(colormap, Colormap):
-        AVAILABLE_COLORMAPS[colormap.name] = colormap
-        name = colormap.name
-    elif isinstance(colormap, VispyColormap):
-        # if a vispy colormap instance is provided, make sure we don't already
-        # know about it before adding a new unnamed colormap
-        name = None
-        for key, val in AVAILABLE_COLORMAPS.items():
-            if colormap == val:
-                name = key
-                break
-        if not name:
-            name = increment_unnamed_colormap(AVAILABLE_COLORMAPS)
-        # Convert from vispy colormap
-        cmap = convert_vispy_colormap(colormap, name=name)
-        AVAILABLE_COLORMAPS[name] = cmap
 
-    elif isinstance(colormap, tuple):
-        if not (
-            len(colormap) == 2
-            and (
-                isinstance(colormap[1], VispyColormap)
-                or isinstance(colormap[1], Colormap)
-            )
-            and isinstance(colormap[0], str)
-        ):
-            raise TypeError(
-                "When providing a tuple as a colormap argument, the first "
-                "element must be a string and the second a Colormap instance"
-            )
-        name, cmap = colormap
-        # Convert from vispy colormap
-        if isinstance(cmap, VispyColormap):
-            cmap = convert_vispy_colormap(cmap, name=name)
-        else:
-            cmap.name = name
-        AVAILABLE_COLORMAPS[name] = cmap
-
-    elif isinstance(colormap, dict):
-        if 'colors' in colormap and not (
-            isinstance(colormap['colors'], VispyColormap)
-            or isinstance(colormap['colors'], Colormap)
-        ):
-            cmap = Colormap(**colormap)
-            name = cmap.name
+        elif isinstance(colormap, tuple):
+            if not (
+                len(colormap) == 2
+                and (
+                    isinstance(colormap[1], VispyColormap)
+                    or isinstance(colormap[1], Colormap)
+                )
+                and isinstance(colormap[0], str)
+            ):
+                raise TypeError(
+                    "When providing a tuple as a colormap argument, the first "
+                    "element must be a string and the second a Colormap instance"
+                )
+            name, cmap = colormap
+            # Convert from vispy colormap
+            if isinstance(cmap, VispyColormap):
+                cmap = convert_vispy_colormap(cmap, name=name)
+            else:
+                cmap.name = name
             AVAILABLE_COLORMAPS[name] = cmap
-        elif not all(
-            (isinstance(i, VispyColormap) or isinstance(i, Colormap))
-            for i in colormap.values()
-        ):
-            raise TypeError(
-                "When providing a dict as a colormap, "
-                "all values must be Colormap instances"
-            )
-        else:
-            # Convert from vispy colormaps
-            for key, cmap in colormap.items():
-                # Convert from vispy colormap
-                if isinstance(cmap, VispyColormap):
-                    cmap = convert_vispy_colormap(cmap, name=key)
-                else:
-                    cmap.name = key
-                name = key
-                colormap[name] = cmap
-            AVAILABLE_COLORMAPS.update(colormap)
-            if len(colormap) == 1:
-                name = list(colormap)[0]  # first key in dict
-            elif len(colormap) > 1:
-                name = list(colormap.keys())[0]
-                import warnings
 
-                warnings.warn(
-                    "only the first item in a colormap dict is used as an argument"
+        elif isinstance(colormap, dict):
+            if 'colors' in colormap and not (
+                isinstance(colormap['colors'], VispyColormap)
+                or isinstance(colormap['colors'], Colormap)
+            ):
+                cmap = Colormap(**colormap)
+                name = cmap.name
+                AVAILABLE_COLORMAPS[name] = cmap
+            elif not all(
+                (isinstance(i, VispyColormap) or isinstance(i, Colormap))
+                for i in colormap.values()
+            ):
+                raise TypeError(
+                    "When providing a dict as a colormap, "
+                    "all values must be Colormap instances"
                 )
             else:
-                raise ValueError(
-                    "Received an empty dict as a colormap argument."
-                )
-    else:
-        raise TypeError(
-            f'invalid type for colormap: {type(colormap)}. '
-            'Must be a {str, tuple, dict, napari.utils.Colormap, '
-            'vispy.colors.Colormap}'
-        )
+                # Convert from vispy colormaps
+                for key, cmap in colormap.items():
+                    # Convert from vispy colormap
+                    if isinstance(cmap, VispyColormap):
+                        cmap = convert_vispy_colormap(cmap, name=key)
+                    else:
+                        cmap.name = key
+                    name = key
+                    colormap[name] = cmap
+                AVAILABLE_COLORMAPS.update(colormap)
+                if len(colormap) == 1:
+                    name = list(colormap)[0]  # first key in dict
+                elif len(colormap) > 1:
+                    name = list(colormap.keys())[0]
+                    import warnings
+
+                    warnings.warn(
+                        "only the first item in a colormap dict is used as an argument"
+                    )
+                else:
+                    raise ValueError(
+                        "Received an empty dict as a colormap argument."
+                    )
+        else:
+            raise TypeError(
+                f'invalid type for colormap: {type(colormap)}. '
+                'Must be a {str, tuple, dict, napari.utils.Colormap, '
+                'vispy.colors.Colormap}'
+            )
 
     return AVAILABLE_COLORMAPS[name]
 

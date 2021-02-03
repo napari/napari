@@ -12,15 +12,15 @@ from napari._qt.perf import qt_event_tracing
 from napari._qt.utils import delete_qapp
 from napari.utils import perf
 
-if (
-    sys.platform.startswith('linux')
-    and os.getenv('CI', '0') != '0'
-    and qtpy.API_NAME == "PySide2"
+if os.getenv('CI', '0') != '0' and (
+    sys.version_info >= (3, 9)
+    or (sys.platform.startswith('linux') and qtpy.API_NAME == "PySide2")
 ):
     # this test is covered by other platforms, and also seems to work locally
     # on linux
     pytest.skip(
-        "Perfmon segfaults on linux CI with pyside2", allow_module_level=True
+        "Perfmon segfaults on linux CI with pyside2 or python 3.9",
+        allow_module_level=True,
     )
 
 
@@ -50,7 +50,7 @@ def qapp():
         qt_event_tracing.perf.perf_timer = original_perf_timer
 
 
-def test_trace_on_start(tmp_path, monkeypatch, make_test_viewer):
+def test_trace_on_start(tmp_path, monkeypatch, make_napari_viewer):
     """Make sure napari can write a perfmon trace file."""
 
     timers, _, _, _ = perf._timers._create_timer()
@@ -60,7 +60,7 @@ def test_trace_on_start(tmp_path, monkeypatch, make_test_viewer):
     trace_path = tmp_path / "trace.json"
     timers.start_trace_file(trace_path)
 
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     data = np.random.random((10, 15))
     viewer.add_image(data)
     viewer.close()

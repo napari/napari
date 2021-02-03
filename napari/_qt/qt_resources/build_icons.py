@@ -225,7 +225,7 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
     #     napari-pyqt5
     for name in _find_rcc_or_raise():
         try:
-            check_call([sys.executable, name, '-o', out_path, qrc_path])
+            check_call([name, '-o', out_path, qrc_path])
             break
         except SubprocessError:
             pass

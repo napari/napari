@@ -101,6 +101,40 @@ def test_add_point(create_known_points_layer, Event):
     np.testing.assert_allclose(layer.data[-1], known_non_point)
 
 
+def test_drag_in_add_mode(create_known_points_layer, Event):
+    """Drag in add mode and make sure no point is added."""
+    layer, n_points, known_non_point = create_known_points_layer
+
+    # Add point at location where non exists
+    layer.mode = 'add'
+    layer.interactive = True
+    layer.position = known_non_point
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(type='mouse_press', is_dragging=False, modifiers=[])
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_point_end = [40, 60]
+    layer.position = known_non_point_end
+
+    # Simulate drag end
+    event = ReadOnlyWrapper(
+        Event(type='mouse_move', is_dragging=True, modifiers=[])
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=False, modifiers=[])
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that no new point has been added
+    assert len(layer.data) == n_points
+
+
 def test_select_point(create_known_points_layer, Event):
     """Select a point by clicking on one in select mode."""
     layer, n_points, _ = create_known_points_layer

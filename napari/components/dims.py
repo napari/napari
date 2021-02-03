@@ -4,7 +4,7 @@ import numpy as np
 from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
-from ..utils._pydantic import EventedModel
+from ..utils.events import EventedModel
 
 
 class Dims(EventedModel):
@@ -84,8 +84,16 @@ class Dims(EventedModel):
 
     @root_validator
     def _check_dims(cls, values):
+        """Check the consitency of dimensionaity for all attributes
+
+        Parameters
+        ----------
+        values : dict
+            Values dictionary to update dims model with.
+        """
         ndim = values['ndim']
 
+        # Check the range tuple has same number of elements as ndim
         if len(values['range']) < ndim:
             values['range'] = ((0, 2, 1),) * (
                 ndim - len(values['range'])
@@ -93,6 +101,7 @@ class Dims(EventedModel):
         elif len(values['range']) > ndim:
             values['range'] = values['range'][-ndim:]
 
+        # Check the current step tuple has same number of elements as ndim
         if len(values['current_step']) < ndim:
             values['current_step'] = (0,) * (
                 ndim - len(values['current_step'])
@@ -100,6 +109,7 @@ class Dims(EventedModel):
         elif len(values['current_step']) > ndim:
             values['current_step'] = values['current_step'][-ndim:]
 
+        # Check the order tuple has same number of elements as ndim
         if len(values['order']) < ndim:
             values['order'] = tuple(
                 range(ndim - len(values['order']))
@@ -109,11 +119,13 @@ class Dims(EventedModel):
                 values['order'][-ndim:]
             )
 
+        # Check the order is a permutation of 0, ..., ndim - 1
         if not set(values['order']) == set(range(ndim)):
             raise ValueError(
                 f"Invalid ordering {values['order']} for {ndim} dimensions"
             )
 
+        # Check the axis labels tuple has same number of elements as ndim
         if len(values['axis_labels']) < ndim:
             # Append new "default" labels to existing ones
             if values['axis_labels'] == tuple(

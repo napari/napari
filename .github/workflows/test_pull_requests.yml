@@ -127,3 +127,26 @@ jobs:
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'
         uses: codecov/codecov-action@v1
+
+  test_pip_install:
+    name: ubuntu-latest 3.8 pip install
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install Linux libraries
+        run: |
+          sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
+            libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
+
+      - name: Test
+        run: |
+          pip install --upgrade pip
+          pip install pytest-xvfb
+          # pip install this git sha directly from github
+          pip install pip install git+git://github.com/${{ github.repository }}.git@${{ github.sha }}#egg=napari[all,testing]
+          pytest --pyargs napari -v --color=yes

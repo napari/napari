@@ -1,4 +1,4 @@
-"""OctreeIntersection class.
+"""OctreeView and OctreeIntersection classes.
 """
 from typing import List, NamedTuple, Tuple
 
@@ -11,6 +11,9 @@ from .octree_util import OctreeDisplayOptions
 
 class OctreeView(NamedTuple):
     """A view into the octree.
+
+    An OctreeView corresponds to a camera which is viewing the image data,
+    plus options as to how we want to render the data.
 
     Attributes
     ----------
@@ -30,8 +33,9 @@ class OctreeView(NamedTuple):
     def data_width(self) -> int:
         """The width between the corners, in data coordinates.
 
-        Return
-        ------
+        Returns
+        -------
+        int
             The width in data coordinates.
         """
         return self.corners[1][1] - self.corners[0][1]
@@ -40,8 +44,8 @@ class OctreeView(NamedTuple):
     def auto_level(self) -> bool:
         """True if the octree level should be selected automatically.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the octree level should be selected automatically.
         """
@@ -138,8 +142,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [y0..y1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -154,8 +158,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [x0..x1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -188,8 +192,7 @@ class OctreeIntersection:
         chunks = []  # The chunks in the intersection.
 
         # Get every chunk that is within the rectangular region. These are
-        # all the chunks we might possibly draw, because they are within
-        # the current view.
+        # the chunks we want to draw to depict this region of the data.
         #
         # If we've accessed the chunk recently the existing OctreeChunk
         # will be returned, otherwise a new OctreeChunk is created
@@ -210,8 +213,8 @@ class OctreeIntersection:
     def tile_state(self) -> dict:
         """Return tile state, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The tile state.
         """
@@ -229,8 +232,8 @@ class OctreeIntersection:
     def tile_config(self) -> dict:
         """Return tile config, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The file config.
         """

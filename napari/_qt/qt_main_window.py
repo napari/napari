@@ -2,8 +2,12 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import inspect
 import os
 import time
+from collections import Counter
+from itertools import chain, repeat
+from typing import Dict
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -19,6 +23,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -80,7 +85,8 @@ class Window:
 
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        get_app()
+        # note: the return value must be retained to prevent garbage collection
+        _ = get_app()
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
@@ -88,6 +94,10 @@ class Window:
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
+
+        # Dictionary holding dock widgets
+        self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
+        self._plugin_menus: Dict[str, QMenu] = {}
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
@@ -99,8 +109,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
-        if not os.getenv("DISABLE_ALL_PLUGINS"):
-            self._add_plugins_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -112,9 +121,14 @@ class Window:
 
         self._update_theme()
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerControls, tabify=False
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, tabify=False
+        )
+        self.window_menu.addSeparator()
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -375,8 +389,17 @@ class Window:
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
         exit_action.triggered.connect(self._qt_window.close)
+
+        clear_action = QAction("Remove Dock Widgets", self._qt_window)
+        clear_action.setStatusTip('Remove all dock widgets')
+        clear_action.triggered.connect(
+            lambda e: self.remove_dock_widget('all')
+        )
+
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+        self.window_menu.addAction(clear_action)
+        self.window_menu.addSeparator()
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
@@ -399,6 +422,49 @@ class Window:
         )
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
+
+        self._plugin_dock_widget_menu = QMenu(
+            'Add Dock Widget', self._qt_window
+        )
+
+        if not plugins.dock_widgets:
+            plugins.discover_dock_widgets()
+
+        # Get names of all plugins providing dock widgets or functions
+        plugin_widgets = chain(plugins.dock_widgets, plugins.function_widgets)
+        plugin_counts = Counter(plug_name for plug_name, _ in plugin_widgets)
+
+        # Add submenu for each plugin with more than 1 item
+        for plugin_name, count in plugin_counts.items():
+            if count > 1:
+                menu = QMenu(plugin_name, self._qt_window)
+                self._plugin_menus[plugin_name] = menu
+                self._plugin_dock_widget_menu.addMenu(menu)
+
+        # Add a menu item (QAction) for each available plugin widget
+        docks = zip(repeat("dock"), plugins.dock_widgets)
+        funcs = zip(repeat("func"), plugins.function_widgets)
+        for hook_type, key in chain(docks, funcs):
+            plugin_name, wdg_name = key
+            if plugin_name in self._plugin_menus:
+                # this plugin has a submenu.
+                action = QAction(wdg_name, parent=self._qt_window)
+                self._plugin_menus[plugin_name].addAction(action)
+            else:
+                # this plugin only has one widget, add a namespaced menu item
+                full_name = plugins.menu_item_template.format(*key)
+                action = QAction(full_name, parent=self._qt_window)
+                self._plugin_dock_widget_menu.addAction(action)
+
+            def _add_widget(*args, key=key, hook_type=hook_type):
+                if hook_type == 'dock':
+                    self._add_plugin_dock_widget(key)
+                else:
+                    self._add_plugin_function_widget(key)
+
+            action.triggered.connect(_add_widget)
+
+        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -480,6 +546,69 @@ class Window:
             axis = self.qt_viewer.viewer.dims.last_used or 0
             self.qt_viewer.dims.play(axis)
 
+    def _add_plugin_dock_widget(self, key):
+        """Add plugin dock widget if not already added.
+
+        Parameters
+        ----------
+        key : 2-tuple of str
+            Plugin name and widget name.
+        """
+        from ..viewer import Viewer
+
+        full_name = plugins.menu_item_template.format(*key)
+        if full_name in self._dock_widgets:
+            self._dock_widgets[full_name].show()
+            return
+
+        Widget, dock_kwargs = plugins.dock_widgets[key]
+
+        # if the signature is looking a for a napari viewer, pass it.
+        kwargs = {}
+        for param in inspect.signature(Widget.__init__).parameters.values():
+            if param.name == 'napari_viewer':
+                kwargs['napari_viewer'] = self.qt_viewer.viewer
+                break
+            if param.annotation in ('napari.viewer.Viewer', Viewer):
+                kwargs[param.name] = self.qt_viewer.viewer
+                break
+            # cannot look for param.kind == param.VAR_KEYWORD because
+            # QWidget allows **kwargs but errs on unknown keyword arguments
+
+        # instantiate the widget
+        wdg = Widget(**kwargs)
+
+        # Add dock widget
+        self.add_dock_widget(
+            wdg,
+            name=plugins.menu_item_template.format(*key),
+            area=dock_kwargs.get('area', 'right'),
+            allowed_areas=dock_kwargs.get('allowed_areas', None),
+        )
+
+    def _add_plugin_function_widget(self, key):
+        """Add plugin function widget if not already added.
+
+        Parameters
+        ----------
+        key : 2-tuple of str
+            Plugin name and function name.
+        """
+        full_name = plugins.menu_item_template.format(*key)
+        if full_name in self._dock_widgets:
+            self._dock_widgets[full_name].show()
+            return
+
+        func = plugins.function_widgets[key]
+
+        # Add function widget
+        self.add_function_widget(
+            func,
+            name=plugins.menu_item_template.format(*key),
+            area=None,
+            allowed_areas=None,
+        )
+
     def add_dock_widget(
         self,
         widget: QWidget,
@@ -527,19 +656,46 @@ class Window:
             # Keep the dropdown menus in the widget in sync with the layer model
             # if widget has a `reset_choices`, which is true for all magicgui
             # `CategoricalWidget`s
-            self.qt_viewer.viewer.layers.events.connect(widget.reset_choices)
+            layers_events = self.qt_viewer.viewer.layers.events
+            layers_events.inserted.connect(widget.reset_choices)
+            layers_events.removed.connect(widget.reset_choices)
+            layers_events.reordered.connect(widget.reset_choices)
+
+        # Add dock widget to dictionary
+        self._dock_widgets[dock_widget.name] = dock_widget
 
         return dock_widget
 
-    def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
+    def _add_viewer_dock_widget(
+        self, dock_widget: QtViewerDockWidget, tabify=False
+    ):
         """Add a QtViewerDockWidget to the main window
+
+        If other widgets already present in area then will tabify.
 
         Parameters
         ----------
         dock_widget : QtViewerDockWidget
             `dock_widget` will be added to the main window.
+        tabify : bool
+            Flag to tabify dockwidget or not.
         """
+        # Find if any othe dock widgets are currently in area
+        current_dws_in_area = []
+        for dw in self._qt_window.findChildren(QDockWidget):
+            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area:
+                current_dws_in_area.append(dw)
+
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
+
+        # If another dock widget present in area then tabify
+        if len(current_dws_in_area) > 0 and tabify:
+            self._qt_window.tabifyDockWidget(
+                current_dws_in_area[-1], dock_widget
+            )
+            dock_widget.show()
+            dock_widget.raise_()
+
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
@@ -560,8 +716,8 @@ class Window:
             If widget == 'all', all docked widgets will be removed.
         """
         if widget == 'all':
-            for dw in self._qt_window.findChildren(QDockWidget):
-                self._qt_window.removeDockWidget(dw)
+            for dw in list(self._dock_widgets.values()):
+                self.remove_dock_widget(dw)
             return
 
         if not isinstance(widget, QDockWidget):
@@ -580,6 +736,10 @@ class Window:
             _dw.widget().setParent(None)
         self._qt_window.removeDockWidget(_dw)
         self.window_menu.removeAction(_dw.toggleViewAction())
+
+        # Remove dock widget from dictionary
+        del self._dock_widgets[_dw.name]
+
         # Deleting the dock widget means any references to it will no longer
         # work but it's not really useful anyway, since the inner widget has
         # been removed. and anyway: people should be using add_dock_widget
@@ -592,7 +752,7 @@ class Window:
         *,
         magic_kwargs=None,
         name: str = '',
-        area: str = 'bottom',
+        area=None,
         allowed_areas=None,
         shortcut=None,
     ):
@@ -607,13 +767,15 @@ class Window:
             can be used to specify widget.
         name : str, optional
             Name of dock widget to appear in window menu.
-        area : str
+        area : str, optional
             Side of the main window to which the new dock widget will be added.
-            Must be in {'left', 'right', 'top', 'bottom'}
+            Must be in {'left', 'right', 'top', 'bottom'}. If not provided the
+            default will be determined by the widget.layout, with 'vertical'
+            layouts appearing on the right, otherwise on the bottom.
         allowed_areas : list[str], optional
             Areas, relative to main window, that the widget is allowed dock.
             Each item in list must be in {'left', 'right', 'top', 'bottom'}
-            By default, all areas are allowed.
+            By default, only provided areas is allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
 
@@ -624,8 +786,26 @@ class Window:
         """
         from magicgui import magicgui
 
+        if magic_kwargs is None:
+            magic_kwargs = {
+                'auto_call': False,
+                'call_button': "run",
+                'layout': 'vertical',
+            }
+
+        widget = magicgui(function, **magic_kwargs or {})
+
+        if area is None:
+            if str(widget.layout) == 'vertical':
+                area = 'right'
+            else:
+                area = 'bottom'
+
+        if allowed_areas is None:
+            allowed_areas = [area]
+
         return self.add_dock_widget(
-            magicgui(function, **magic_kwargs or {}),
+            widget,
             name=name or function.__name__.replace('_', ' '),
             area=area,
             allowed_areas=allowed_areas,

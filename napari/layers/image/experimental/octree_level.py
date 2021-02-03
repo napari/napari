@@ -1,8 +1,8 @@
-"""OctreeLevel and OctreeLevelInfo classes.
+"""OctreeLevelInfo and OctreeLevel classes.
 """
 import logging
 import math
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -16,14 +16,14 @@ LOGGER = logging.getLogger("napari.octree")
 class OctreeLevelInfo:
     """Information about one level of the octree.
 
+    This should be a NamedTuple.
+
     Parameters
     ----------
     meta : OctreeMetadata
         Information about the entire octree.
     level_index : int
         The index of this level within the whole tree.
-    shape_in_tiles : Tuple[int, int]
-        The (height, width) dimensions of this level in terms of tiles.
     """
 
     def __init__(self, meta: OctreeMetadata, level_index: int):
@@ -51,9 +51,14 @@ class OctreeLevelInfo:
 class OctreeLevel:
     """One level of the octree.
 
-    A level contains a 2D array of tiles.
+    An OctreeLevel is "sparse" in that it only contains a dict of
+    OctreeChunks for the portion of the octree that is currently being
+    rendered. So even if the full level contains hundreds of millions of
+    chunks, this class only contains a few dozens OctreeChunks.
 
-    Soon might also contain a 3D array of sub-volumes.
+    This was necessary because even having a null reference for every
+    OctreeChunk in a level would use too much space and be too slow to
+    construct.
 
     Parameters
     ----------
@@ -65,6 +70,13 @@ class OctreeLevel:
         The base image shape and other details.
     level_index : int
         Index of this specific level (0 is full resolution).
+
+    Attributes
+    ----------
+    info : OctreeLevelInfo
+        Metadata about this level.
+    _tiles : Dict[tuple, OctreeChunk]
+        Maps (row, col) tuple to the OctreeChunk at that location.
     """
 
     def __init__(
@@ -78,7 +90,7 @@ class OctreeLevel:
         self.data = data
 
         self.info = OctreeLevelInfo(meta, level_index)
-        self._tiles = {}
+        self._tiles: Dict[tuple, OctreeChunk] = {}
 
     def get_chunk(
         self, row: int, col: int, create=False
@@ -97,8 +109,8 @@ class OctreeLevel:
         create : bool
             If True, create the OctreeChunk if it does not exist.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[OctreeChunk]
             The OctreeChunk if one existed or we just created it.
         """
@@ -110,8 +122,8 @@ class OctreeLevel:
 
         rows, cols = self.info.shape_in_tiles
         if row < 0 or row >= rows or col < 0 or col >= cols:
-            # Chunk coordinates not in the level. Not an exception because
-            # callers might be trying to get children just out of bounds,
+            # The coordinates are not in the level. Not an exception because
+            # callers might be trying to get children just over the edge
             # for non-power-of-two base images.
             return None
 
@@ -130,8 +142,8 @@ class OctreeLevel:
         col : int
             The column in the level.
 
-        Return
-        ------
+        Returns
+        -------
         OctreeChunk
             The newly created chunk.
         """
@@ -155,9 +167,9 @@ class OctreeLevel:
 
         data = self._get_data(row, col)
 
-        # Geom is used by the visual for rendering this chunk, size
-        # it based on the base image pixels, not based on the data
-        # in this level, so it's exact.
+        # Create OctreeChunkGeom used by the visual for rendering this
+        # chunk. Size it based on the base image pixels, not based on the
+        # data in this level, so it's exact.
         base = np.array(meta.base_shape[::-1], dtype=np.float)
         remain = base - pos
         size = np.minimum(remain, [scaled_size, scaled_size])
@@ -167,6 +179,20 @@ class OctreeLevel:
         return OctreeChunk(data, location, geom)
 
     def _get_data(self, row: int, col: int) -> ArrayLike:
+        """Get the chunk's data at this location.
+
+        Parameters
+        ----------
+        row : int
+            The row coordinate.
+        col : int
+            The column coordinate.
+
+        Returns
+        -------
+        ArrayLike
+            The data at this location.
+        """
 
         tile_size = self.info.meta.tile_size
 
@@ -178,9 +204,7 @@ class OctreeLevel:
         if self.data.ndim == 3:
             array_slice += (slice(None),)  # Add the colors.
 
-        data = self.data[array_slice]
-
-        return data
+        return self.data[array_slice]
 
 
 def log_levels(levels: List[OctreeLevel], start_level: int = 0) -> None:

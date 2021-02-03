@@ -3,7 +3,8 @@ from enum import Enum
 import numpy as np
 from pydantic import validator
 
-from .._pydantic import Array, EventedModel
+from ..events import EventedModel
+from ..events.custom_types import Array
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 
@@ -45,6 +46,9 @@ class Colormap(EventedModel):
     name: str = 'custom'
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[float, (-1,)] = None
+
+    def __init__(self, colors, **data):
+        super().__init__(colors=colors, **data)
 
     # validators
     @validator('colors', pre=True)
