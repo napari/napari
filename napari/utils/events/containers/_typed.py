@@ -47,16 +47,6 @@ class TypedMutableSequence(MutableSequence[_T]):
         whos attribute ``.name`` equals ``'frank'``.
     """
 
-    # required for inspect.sigature to be correct...
-    def __new__(
-        cls,
-        data=(),
-        *,
-        basetype=(),
-        lookup=dict(),
-    ):
-        return object.__new__(cls)
-
     def __init__(
         self,
         data: Iterable[_T] = (),
@@ -168,9 +158,11 @@ class TypedMutableSequence(MutableSequence[_T]):
         return e
 
     def __newlike__(self, iterable: Iterable[_T]):
-        return self.__class__(
-            iterable, basetype=self._basetypes, lookup=self._lookup
-        )
+        new = self.__class__(iterable)
+        # seperating this allows subclasses to omit these from their `__init__`
+        new._basetypes = self._basetypes
+        new._lookup = self._lookup.copy()
+        return new
 
     def copy(self) -> 'TypedMutableSequence[_T]':
         """Return a shallow copy of the list."""
