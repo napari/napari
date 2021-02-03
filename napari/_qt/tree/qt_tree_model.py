@@ -241,7 +241,7 @@ class QtNodeTreeModel(QAbstractItemModel):
             raise TypeError(
                 "root node must be an instance of napari.utils.tree.Group"
             )
-        current_root: Group | None = getattr(self, "_root")
+        current_root: Group | None = getattr(self, "_root", None)
         if root is current_root:
             return
         elif current_root is not None:
