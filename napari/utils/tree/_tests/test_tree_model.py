@@ -61,12 +61,15 @@ def test_node_indexing(tree):
     assert g1.index_in_parent() == 1
     g1_1 = g1[1]
     assert g1_1.name == 'g2'
+    assert g1_1 is tree[1, 1]  # nested index variant
+
     assert g1_1.index_from_root() == (1, 1)
     assert g1_1.index_in_parent() == 1
     g1_1_0 = g1_1[0]
     assert g1_1_0.index_from_root() == (1, 1, 0)
     assert g1_1_0.index_in_parent() == 0
     assert g1_1_0.name == '3'
+    assert g1_1_0 is tree[1, 1, 0]  # nested index variant
 
     g1_1_0.emancipate()
     assert g1_1_0.index_from_root() == ()
@@ -159,3 +162,21 @@ def test_deletion(tree):
     del g1[1::2]
     assert n1.parent is g1  # the g1 tree is still intact
     assert [x.name for x in g1.traverse()] == ['g1', '2', '5', '7']
+
+
+def test_nested_deletion(tree):
+    """Test that we can delete nested indices from the root."""
+    # a tree is a NestedEventedList, so we can use nested_indices
+    node5 = tree[1, 2]
+    assert node5.name == '5'
+    del tree[1, 2]
+    assert node5 not in tree
+
+    # nested indices may also be slices
+    g2 = tree[1, 1]
+    node4 = g2[1]
+    assert node4 in tree
+    del tree[1, 1, :]  # delete all members of g2 inside of tree
+    assert node4 not in tree  # node4 is gone
+    assert g2 == []
+    assert g2 in tree  # the group itself remains in the tree

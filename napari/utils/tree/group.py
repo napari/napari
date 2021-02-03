@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Generator, Iterable
 
 from ..events import NestableEventedList
+from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
 
 
@@ -11,8 +12,8 @@ class Group(NestableEventedList[Node], Node):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, children, basetype=Node)
 
-    def __delitem__(self, key: int | slice):
-        if isinstance(key, int):
+    def __delitem__(self, key: MaybeNestedIndex):
+        if isinstance(key, (int, tuple)):
             self[key].parent = None
         else:
             for item in self[key]:
@@ -44,11 +45,11 @@ class Group(NestableEventedList[Node], Node):
         lines = [self.name]
 
         for n, child in enumerate(self):
-            space, bul = (
+            spacer, bul = (
                 ("   ", "└──") if n == len(self) - 1 else ("  │", "├──")
             )
             child_tree = child._render()
             lines.append(f"  {bul}" + child_tree.pop(0))
-            lines.extend([space + lay for lay in child_tree])
+            lines.extend([spacer + lay for lay in child_tree])
 
         return lines
