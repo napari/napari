@@ -53,6 +53,8 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
     This is the primary "**reader plugin**" function.  It accepts a path or
     list of paths, and returns a list of data to be added to the ``Viewer``.
+    The function may return an empty list to indicate that the file was read
+    successfully, but did not contain any data.
 
     The main place this hook is used is in :func:`Viewer.open()
     <napari.components.viewer_model.ViewerModel.open>`, via the

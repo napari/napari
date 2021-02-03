@@ -24,9 +24,9 @@ def read_data_with_plugins(
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
-    while catching any plugin exceptions, storing them for later retrievial,
-    providing useful error messages, and relooping until either layer data is
-    returned, or no valid readers are found.
+    while catching any plugin exceptions, storing them for later retrieval,
+    providing useful error messages, and re-looping until either a read
+    operation was successful, or no valid readers are found.
 
     Exceptions will be caught and stored as PluginErrors
     (in plugins.exceptions.PLUGIN_ERRORS)
@@ -51,7 +51,7 @@ def read_data_with_plugins(
         ``LayerData`` is a list tuples, where each tuple is one of
         ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
 
-        If no reader plugins are (or they all error), returns ``None``
+        If no reader plugins were found (or they all failed), returns ``None``
 
     Raises
     ------
@@ -70,7 +70,7 @@ def read_data_with_plugins(
         reader = hook_caller._call_plugin(plugin, path=path)
         if not callable(reader):
             raise ValueError(f'Plugin {plugin!r} does not support file {path}')
-        return reader(path) or []
+        return reader(path)
 
     errors: List[PluginCallError] = []
     path = abspath_or_url(path)
@@ -86,7 +86,7 @@ def read_data_with_plugins(
             break
         try:
             layer_data = reader(path)  # try to read data
-            if layer_data:
+            if layer_data is not None:
                 break
         except Exception as exc:
             # collect the error and log it, but don't raise it.
@@ -96,8 +96,8 @@ def read_data_with_plugins(
         # don't try this impl again
         skip_impls.append(result.implementation)
 
-    if not layer_data:
-        # if layer_data is empty, it means no plugin could read path
+    if layer_data is None:
+        # if layer_data is None, it means no plugin could read path
         # we just want to provide some useful feedback, which includes
         # whether or not paths were passed to plugins as a list.
         if isinstance(path, (tuple, list)):
@@ -114,7 +114,7 @@ def read_data_with_plugins(
         err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
         logger.error(err_msg)
 
-    return layer_data or []
+    return layer_data
 
 
 def save_layers(
