@@ -7,6 +7,7 @@ from typing import cast
 from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
 
+from ...utils.events import disconnect_events
 from ...utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,8 @@ class QtNodeTreeModel(QAbstractItemModel):
         - `Simple Tree Model Example
           <https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html>`_
     """
+
+    _root: Group
 
     def __init__(self, root: Group, parent: QWidget = None):
         super().__init__(parent)
@@ -218,7 +221,10 @@ class QtNodeTreeModel(QAbstractItemModel):
         When the parent is valid it means that rowCount is returning the number of
         children of parent.
         """
-        return len(self.getItem(parent))
+        try:
+            return len(self.getItem(parent))  # type:ignore
+        except TypeError:
+            return 0
 
     def supportedDropActions(self) -> Qt.DropActions:
         """Returns the drop actions supported by this model.
@@ -231,6 +237,16 @@ class QtNodeTreeModel(QAbstractItemModel):
     # ########## New methods added for our model ##################
 
     def setRoot(self, root: Group):
+        if not isinstance(root, Group):
+            raise TypeError(
+                "root node must be an instance of napari.utils.tree.Group"
+            )
+        current_root: Group | None = getattr(self, "_root")
+        if root is current_root:
+            return
+        elif current_root is not None:
+            disconnect_events(self._root.events, self)
+
         self._root = root
         self._root.events.removing.connect(self._on_begin_removing)
         self._root.events.removed.connect(self._on_end_remove)
