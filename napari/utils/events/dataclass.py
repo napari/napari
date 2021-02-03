@@ -258,7 +258,10 @@ def _type_to_compare(type_) -> Optional[Callable[[Any, Any], bool]]:
     ):
         type_ = _args[0]
     if not inspect.isclass(type_):
-        if not getattr(type_, "__module__", None) == "typing":
+        if not getattr(type_, "__module__", None) in [
+            "typing",
+            "typing_extensions",
+        ]:
             warnings.warn(f"Bug in type recognition {type_}")
         return
     if issubclass(type_, np.ndarray):

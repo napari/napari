@@ -87,7 +87,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
     if hasattr(colormap, '_controls'):
         controls = colormap._controls
     else:
-        controls = np.zeros((0, 4))
+        controls = np.zeros((0,))
 
     # Not all vispy colormaps have an `interpolation`
     # but if they do, we want to use it
@@ -188,7 +188,7 @@ def color_dict_to_colormap(colors):
     """
 
     control_colors = np.unique(list(colors.values()), axis=0)
-    colormap = Colormap(colors=control_colors)
+    colormap = Colormap(control_colors)
     control2index = {
         tuple(ctrl): i / (len(control_colors) - 1)
         for i, ctrl in enumerate(control_colors)
@@ -503,3 +503,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             )
 
     return AVAILABLE_COLORMAPS[name]
+
+
+def make_default_color_array():
+    return np.array([0, 0, 0, 1])
