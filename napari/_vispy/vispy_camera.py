@@ -73,7 +73,7 @@ class VispyCamera:
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
         if self._view.camera == self._3D_camera:
-            center = tuple(self.view.camera.center)
+            center = tuple(self._view.camera.center)
         else:
             # in 2D, we arbitrarily choose 0.0 as the center in z
             center = tuple(self._view.camera.center[:2]) + (0.0,)
