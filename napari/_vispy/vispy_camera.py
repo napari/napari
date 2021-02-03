@@ -73,14 +73,12 @@ class VispyCamera:
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
         if self._view.camera == self._3D_camera:
-            center = self._view.camera.center
+            center = tuple(self.view.camera.center)
         else:
-            center = self._view.camera.center[:2]
-
-        # Switch from VisPy ordering to NumPy ordering
-        center = tuple(center[::-1])
-        if len(center) == 2:
-            center = (0.0,) + center
+            # in 2D, we arbitrarily choose 0.0 as the center in z
+            center = tuple(self._view.camera.center[:2]) + (0.0,)
+        # switch from VisPy xyz ordering to NumPy prc ordering
+        center = center[::-1]
         return center
 
     @center.setter

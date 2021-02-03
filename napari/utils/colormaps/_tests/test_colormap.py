@@ -43,7 +43,7 @@ def test_binned_colormap_with_control_points():
     """Test a binned with control points."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     cmap = Colormap(
-        colors=colors,
+        colors,
         name='testing',
         interpolation='zero',
         controls=[0, 0.2, 0.3, 1],
