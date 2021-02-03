@@ -3,7 +3,10 @@ from itertools import cycle, islice
 import numpy as np
 import pytest
 
-from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_manager import (
+    ColorManager,
+    initialize_color_manager,
+)
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -153,3 +156,71 @@ def test_color_cycle(color_cycle):
 
     # the first color should now be black
     np.testing.assert_allclose(cm.colors[0], [0, 0, 0, 1])
+
+
+@pytest.mark.parametrize('n_colors', [0, 1, 5])
+def test_init_color_manager_direct(n_colors):
+    color_manager = initialize_color_manager(
+        n_colors=n_colors,
+        colors='red',
+        mode='direct',
+        continuous_colormap='viridis',
+        contrast_limits=None,
+        categorical_colormap=[[0, 0, 0, 1], [1, 1, 1, 1]],
+        properties={},
+    )
+
+    assert len(color_manager.colors) == n_colors
+    assert color_manager.mode == 'direct'
+    np.testing.assert_array_almost_equal(
+        color_manager.current_color, [1, 0, 0, 1]
+    )
+    if n_colors > 0:
+        expected_colors = np.tile([1, 0, 0, 1], (n_colors, 1))
+        np.testing.assert_array_almost_equal(
+            color_manager.colors, expected_colors
+        )
+
+
+def test_init_color_manager_cycle():
+    n_colors = 10
+    color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
+    color_manager = initialize_color_manager(
+        n_colors=n_colors,
+        colors='point_type',
+        mode='cycle',
+        continuous_colormap='viridis',
+        contrast_limits=None,
+        categorical_colormap=color_cycle,
+        properties=properties,
+    )
+
+    assert len(color_manager.colors) == n_colors
+    assert color_manager.mode == 'cycle'
+    color_array = transform_color(
+        list(islice(cycle(color_cycle), 0, n_colors))
+    )
+    np.testing.assert_allclose(color_manager.colors, color_array)
+
+
+def test_init_color_manager_colormap():
+    n_colors = 10
+    color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
+    properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
+    color_manager = initialize_color_manager(
+        n_colors=n_colors,
+        colors='point_type',
+        mode='direct',
+        continuous_colormap='gray',
+        contrast_limits=None,
+        categorical_colormap=color_cycle,
+        properties=properties,
+    )
+
+    assert len(color_manager.colors) == n_colors
+    assert color_manager.mode == 'colormap'
+    color_array = transform_color(['black', 'white'] * int(n_colors / 2))
+    colors = color_manager.colors.copy()
+    np.testing.assert_allclose(colors, color_array)
+    assert color_manager.current_color == properties['point_type'][-1]

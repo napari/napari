@@ -1,5 +1,6 @@
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -10,13 +11,14 @@ from ...utils.colormaps.colormap_utils import ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ._color_manager_constants import ColorMode
-from .color_manager_utils import map_property
+from .color_manager_utils import guess_continuous, is_color_mapped
 from .color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
     transform_color,
     transform_color_with_defaults,
 )
+from .layer_utils import map_property
 
 
 @dataclass
@@ -194,6 +196,17 @@ class ColorManager(EventedModel):
             else:
                 property_values = values['color_properties'].values
                 values['current_color'] = property_values[-1]
+        if values['current_color'] is None and len(colors) == 0:
+            if color_mode == ColorMode.DIRECT:
+                transformed_color = transform_color_with_defaults(
+                    num_entries=n_colors,
+                    colors=values['colors'],
+                    elem_name="color",
+                    default="white",
+                )
+                values['current_color'] = normalize_and_broadcast_colors(
+                    1, transformed_color
+                )[0]
 
         # set the colors
         values['colors'] = colors
@@ -255,3 +268,63 @@ class ColorManager(EventedModel):
                 self.color_properties = ColorProperties(
                     name=color_property_name, values=new_color_property_values
                 )
+
+
+def initialize_color_manager(
+    n_colors: int,
+    colors: Union[dict, np.ndarray],
+    mode,
+    continuous_colormap,
+    contrast_limits,
+    categorical_colormap,
+    properties: Dict[str, np.ndarray],
+    current_color: Optional[np.ndarray] = None,
+    default_color_cycle: np.ndarray = np.array([0, 0, 0, 1]),
+) -> ColorManager:
+    """Initialize a ColorManager argument from layer kwargs. This is a convenience
+    function to coerce possible inputs into ColorManager kwargs
+
+    """
+    if isinstance(colors, dict):
+        # if the kwargs are passed as a dictionary, unpack them
+        color_values = colors.get('colors', None)
+        current_color = colors.get('current_color', None)
+        mode = colors.get('mode', None)
+        color_properties = colors.get('color_properties', None)
+        continuous_colormap = colors.get('continuous_colormap', None)
+        contrast_limits = colors.get('contrast_limits', None)
+        categorical_colormap = colors.get('categorical_colormap', None)
+        n_colors = colors.get('n_colors', None)
+    else:
+        color_values = colors
+
+    if categorical_colormap is None:
+        categorical_colormap = deepcopy(default_color_cycle)
+
+    color_kwargs = {
+        'categorical_colormap': categorical_colormap,
+        'continuous_colormap': continuous_colormap,
+        'contrast_limits': contrast_limits,
+        'current_color': current_color,
+        'n_colors': n_colors,
+    }
+
+    if is_color_mapped(color_values, properties):
+        color_properties = ColorProperties(
+            name=color_values, values=properties[color_values]
+        )
+        if guess_continuous(color_properties.values):
+            mode = ColorMode.COLORMAP
+        else:
+            mode = ColorMode.CYCLE
+
+        color_kwargs.update(
+            {'mode': mode, 'color_properties': color_properties}
+        )
+
+    else:
+        color_kwargs.update({'mode': ColorMode.DIRECT, 'colors': colors})
+
+    color_manager = ColorManager(**color_kwargs)
+
+    return color_manager
