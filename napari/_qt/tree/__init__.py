@@ -1,4 +1,4 @@
-from ._tree_model import QtNodeTreeModel
-from ._tree_view import QtLayerTreeView, QtNodeTreeView
+from .qt_tree_model import QtNodeTreeModel
+from .qt_tree_view import QtNodeTreeView
 
-__all__ = ['QtNodeTreeModel', 'QtLayerTreeView', 'QtNodeTreeView']
+__all__ = ['QtNodeTreeModel', 'QtNodeTreeView']
