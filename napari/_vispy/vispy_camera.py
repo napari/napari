@@ -5,22 +5,35 @@ from .quaternion import quaternion2euler
 
 
 class PZ(PanZoomCamera):
+    """
+    This is a subclass of the PanZoom Camera which change the handling of the mouse and touch event.
+    It attempts to attach 2 finger scroll to panning in various directions,
+    and attach pinch to zoom to and away from the center of the pinch.
+
+    The events should likely be routed to the VizpyCamera object below; but
+    currently are not; we should find how to do that in vizpy.
+
+    """
+
     def viewbox_mouse_event(self, event):
-        # print('VME:', event.type, getattr(event, 'pos'))
         if event.type == 'pinch':
             center = self._scene_transform.imap(event.pos)
-            # z = event.total_scale_factor
-            event.handled = True
+            # QT and hopefully soon vispy should have a total_scale_factor;
+            # which is the cumulative change of the pinch and avoid rounding error.
+            # we should find a way to use that.
+            # ## z = event.total_scale_factor
             self.zoom(
                 (1 + self.zoom_factor) ** ((1 - event.scale) * 600), center
             )
-        # event.handled = True
+            event.handled = True
         elif event.type == 'mouse_wheel':
+            # This should likely have a preference attached to it and have a
+            # panning/zooming speed that depends on the zoom factor.
             delta = event.mouse_event.delta
             self.pan((delta[0] * -50, delta[1] * -50))
             event.handled = True
-
-        return super().viewbox_mouse_event(event)
+        else:
+            return super().viewbox_mouse_event(event)
 
 
 class VispyCamera:
