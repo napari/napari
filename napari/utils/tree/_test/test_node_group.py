@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 import pytest
 
 from napari.utils.tree import Group, Node
@@ -27,8 +29,6 @@ def tree():
 
 
 def test_tree_str(tree):
-    from textwrap import dedent
-
     expected = dedent(
         """
         root
@@ -45,6 +45,34 @@ def test_tree_str(tree):
           └──8"""
     ).strip()
     assert str(tree) == expected
+
+
+def test_node_indexing(tree):
+    """Test that nodes know their index relative to parent and root."""
+    root: Group = tree
+    assert root.is_group()
+    assert not root[0].is_group()
+
+    assert root.index_from_root() == ()
+    assert root.index_in_parent() == 0
+    g1 = root[1]
+    assert g1.index_from_root() == (1,)
+    assert g1.index_in_parent() == 1
+    g11 = g1[1]
+    assert g11.index_from_root() == (1, 1)
+    assert g11.index_in_parent() == 1
+    g110 = g11[0]
+    assert g110.index_from_root() == (1, 1, 0)
+    assert g110.index_in_parent() == 0
+    assert g110.name == '2'
+
+    g110.emancipate()
+    assert g110.index_from_root() == ()
+    assert g110.index_in_parent() == 0
+
+    with pytest.raises(IndexError) as e:
+        g110.emancipate()
+    assert "Cannot emancipate orphaned Node" in str(e)
 
 
 def test_traverse(tree):
@@ -77,28 +105,3 @@ def test_deletion(tree):
     # we can also delete slices, including extended slices
     del g1[1::2]
     assert [x.name for x in g1.traverse()] == ['g1', '1', '4', 'tip']
-
-
-def test_node_indexing(tree):
-    """Test that nodes know their index relative to parent and root."""
-    root: Group = tree
-    assert root.index_from_root() == ()
-    assert root.index_in_parent() == 0
-    g1 = root[1]
-    assert g1.index_from_root() == (1,)
-    assert g1.index_in_parent() == 1
-    g11 = g1[1]
-    assert g11.index_from_root() == (1, 1)
-    assert g11.index_in_parent() == 1
-    g110 = g11[0]
-    assert g110.index_from_root() == (1, 1, 0)
-    assert g110.index_in_parent() == 0
-    assert g110.name == '2'
-
-    g110.emancipate()
-    assert g110.index_from_root() == ()
-    assert g110.index_in_parent() == 0
-
-    with pytest.raises(IndexError) as e:
-        g110.emancipate()
-    assert "Cannot emancipate orphaned Node" in str(e)
