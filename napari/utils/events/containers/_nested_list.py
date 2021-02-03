@@ -12,10 +12,11 @@ from ._evented_list import _T, EventedList, Index
 logger = logging.getLogger(__name__)
 
 NestedIndex = Tuple[Index, ...]
+MaybeNestedIndex = Union[Index, NestedIndex]
 ParentIndex = NewType('ParentIndex', Tuple[int, ...])
 
 
-def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
+def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
     """Return index as a tuple of ints or slices.
 
     Parameters
@@ -40,14 +41,12 @@ def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
     raise TypeError(f"Invalid nested index: {index}. Must be an int or tuple")
 
 
-def split_nested_index(
-    index: Union[NestedIndex, Index]
-) -> Tuple[ParentIndex, Index]:
+def split_nested_index(index: MaybeNestedIndex) -> Tuple[ParentIndex, Index]:
     """Given a nested index, return (nested_parent_index, row).
 
     Parameters
     ----------
-    index : Union[NestedIndex, Index]
+    index : MaybeNestedIndex
         An index as an int, tuple, or slice
 
     Returns
@@ -142,9 +141,7 @@ class NestableEventedList(EventedList[_T]):
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(  # noqa: F811
-        self, key: ParentIndex
-    ) -> 'NestableEventedList[_T]':
+    def __getitem__(self, key: ParentIndex) -> 'NestableEventedList[_T]':
         ...  # pragma: no cover
 
     @overload
@@ -152,16 +149,16 @@ class NestableEventedList(EventedList[_T]):
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(  # noqa: F811
+    def __getitem__(
         self, key: NestedIndex
     ) -> Union[_T, 'NestableEventedList[_T]']:
         ...  # pragma: no cover
 
-    def __getitem__(self, key):  # noqa: F811
+    def __getitem__(self, key: MaybeNestedIndex):
         if isinstance(key, tuple):
             item: NestableEventedList[_T] = self
             for idx in key:
-                item = item[idx]
+                item = item[idx]  # type: ignore
             return item
         return super().__getitem__(key)
 
@@ -170,10 +167,10 @@ class NestableEventedList(EventedList[_T]):
         ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[_T]):  # noqa: F811
+    def __setitem__(self, key: slice, value: Iterable[_T]):
         ...  # pragma: no cover
 
-    def __setitem__(self, key, value):  # noqa: F811
+    def __setitem__(self, key: MaybeNestedIndex, value):
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
         # clobber object of specialized classes being inserted into the list
         # (for instance, subclasses of NestableEventedList)
@@ -187,26 +184,24 @@ class NestableEventedList(EventedList[_T]):
         self._connect_child_emitters(value)
         super().__setitem__(key, value)
 
-    @overload
     def _delitem_indices(
-        self, key: Index
+        self, key: MaybeNestedIndex
     ) -> Iterable[Tuple[EventedList[_T], int]]:
-        ...  # pragma: no cover
-
-    @overload
-    def _delitem_indices(  # noqa: F811
-        self, key: NestedIndex
-    ) -> Iterable[Tuple[EventedList[_T], Index]]:
-        ...  # pragma: no cover
-
-    def _delitem_indices(self, key):  # noqa: F811
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
-            return [(cast(NestableEventedList[_T], self[parent_i]), index)]
+            if isinstance(index, slice):
+                indices = sorted(
+                    range(*index.indices(len(parent_i))), reverse=True
+                )
+            else:
+                indices = [index]
+            return [
+                (cast(NestableEventedList[_T], self[parent_i]), i)
+                for i in indices
+            ]
         return super()._delitem_indices(key)
 
     def __delitem__(self, key):
-        # delete from the end
         for parent, index in self._delitem_indices(key):
             self._disconnect_child_emitters(parent[index])
         super().__delitem__(key)
