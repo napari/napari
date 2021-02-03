@@ -273,11 +273,11 @@ class ColorManager(EventedModel):
 def initialize_color_manager(
     n_colors: int,
     colors: Union[dict, np.ndarray],
-    mode,
     continuous_colormap,
     contrast_limits,
     categorical_colormap,
     properties: Dict[str, np.ndarray],
+    mode: Optional[Union[ColorMode, str]] = None,
     current_color: Optional[np.ndarray] = None,
     default_color_cycle: np.ndarray = np.array([0, 0, 0, 1]),
 ) -> ColorManager:
@@ -313,10 +313,11 @@ def initialize_color_manager(
         color_properties = ColorProperties(
             name=color_values, values=properties[color_values]
         )
-        if guess_continuous(color_properties.values):
-            mode = ColorMode.COLORMAP
-        else:
-            mode = ColorMode.CYCLE
+        if mode is None:
+            if guess_continuous(color_properties.values):
+                mode = ColorMode.COLORMAP
+            else:
+                mode = ColorMode.CYCLE
 
         color_kwargs.update(
             {'mode': mode, 'color_properties': color_properties}

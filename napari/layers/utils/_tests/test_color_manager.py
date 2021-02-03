@@ -211,7 +211,7 @@ def test_init_color_manager_colormap():
     color_manager = initialize_color_manager(
         n_colors=n_colors,
         colors='point_type',
-        mode='direct',
+        mode='colormap',
         continuous_colormap='gray',
         contrast_limits=None,
         categorical_colormap=color_cycle,
