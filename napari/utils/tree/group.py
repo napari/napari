@@ -7,7 +7,7 @@ from .node import Node
 
 
 class Group(NestableEventedList[Node], Node):
-    def __init__(self, children: Iterable[Node] = None, name: str = "Group"):
+    def __init__(self, children: Iterable[Node] = (), name: str = "Group"):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, children, basetype=Node)
 
@@ -26,11 +26,18 @@ class Group(NestableEventedList[Node], Node):
     def is_group(self) -> bool:
         return True
 
-    def traverse(self) -> Generator[Node, None, None]:
+    def __contains__(self, other):
+        for item in self.traverse():
+            if item is other:
+                return True
+        return False
+
+    def traverse(self, leaves_only=False) -> Generator[Node, None, None]:
         "Recursively traverse all nodes and leaves of the Group tree."
-        yield self
+        if not leaves_only:
+            yield self
         for child in self:
-            yield from child.traverse()
+            yield from child.traverse(leaves_only)
 
     def _render(self) -> list[str]:
         """Recursively return list of strings that can render ascii tree."""

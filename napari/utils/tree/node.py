@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 if TYPE_CHECKING:
     from .group import Group
@@ -28,7 +28,7 @@ class Node:
             item = item.parent
         return tuple(indices)
 
-    def traverse(self):
+    def traverse(self, leaves_only=False) -> Generator[Node, None, None]:
         yield self
 
     def __str__(self):
