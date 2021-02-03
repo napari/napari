@@ -37,12 +37,12 @@ class VispyCanvas(SceneCanvas):
         #        #import traceback
         #        #traceback.print_stack()
         if event.type == 'pinch':
-            print(f"{event.type=}")
-            print(f"{event.pos=}")
-            print(f"{event.last_pos=}")
-            print(f"{event.scale=}")
-            print(f"{event.last_scale=}")
-            print(f"{event.rotation=}")
+            print(f"event.type={event.type}")
+            print(f"event.pos={event.pos}")
+            print(f"event.last_post={event.last_pos}")
+            print(f"event.scale={event.scale}")
+            print(f"event.last_scale={event.last_scale}")
+            print(f"event.rotation={event.rotation}")
         elif event.type == 'begin':
             pass
         elif event.type == 'end':
