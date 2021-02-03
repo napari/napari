@@ -36,20 +36,35 @@ class VispyCanvas(SceneCanvas):
     def _process_touch_event(self, event):
         #        #import traceback
         #        #traceback.print_stack()
+        # print('PTE', event.type)
         if event.type == 'pinch':
-            print(f"event.type={event.type}")
-            print(f"event.pos={event.pos}")
-            print(f"event.last_post={event.last_pos}")
-            print(f"event.scale={event.scale}")
-            print(f"event.last_scale={event.last_scale}")
-            print(f"event.rotation={event.rotation}")
+            pass
+            # print(f"event.type={event.type}")
+            # print(f"event.pos={event.pos}")
+            # print(f"event.last_post={event.last_pos}")
+            # print(f"event.scale={event.scale}")
+            # print(f"event.last_scale={event.last_scale}")
+            # print(f"event.rotation={event.rotation}")
         elif event.type == 'begin':
             pass
         elif event.type == 'end':
             pass
+        self._process_mouse_event(event)
+        if event.type != 'pinch':
+            return
+        if not event.handled:
+            # print(event.type, 'not handled')
+            picked = self.visual_at(event.pos)
+            if picked:
+                # print('PICKED:', picked)
+                picked.events.mouse_wheel(event)
+        # print(event.type, event.handled)
 
     def _process_mouse_event(self, event):
         """Ignore mouse wheel events which have modifiers."""
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
+        # print('PME', event.type)
+        # if hasattr(event, 'pos'):
+        #    print(event.pos)
         super()._process_mouse_event(event)

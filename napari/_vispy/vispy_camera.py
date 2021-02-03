@@ -4,6 +4,25 @@ from vispy.scene import ArcballCamera, PanZoomCamera
 from .quaternion import quaternion2euler
 
 
+class PZ(PanZoomCamera):
+    def viewbox_mouse_event(self, event):
+        # print('VME:', event.type, getattr(event, 'pos'))
+        if event.type == 'pinch':
+            center = self._scene_transform.imap(event.pos)
+            # z = event.total_scale_factor
+            event.handled = True
+            self.zoom(
+                (1 + self.zoom_factor) ** ((1 - event.scale) * 600), center
+            )
+        # event.handled = True
+        elif event.type == 'mouse_wheel':
+            delta = event.mouse_event.delta
+            self.pan((delta[0] * -50, delta[1] * -50))
+            event.handled = True
+
+        return super().viewbox_mouse_event(event)
+
+
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
 
@@ -23,7 +42,7 @@ class VispyCamera:
         self._dims = dims
 
         # Create 2D camera
-        self._2D_camera = PanZoomCamera(aspect=1)
+        self._2D_camera = PZ(aspect=1)
         # flip y-axis to have correct alignment
         self._2D_camera.flip = (0, 1, 0)
         self._2D_camera.viewbox_key_event = viewbox_key_event

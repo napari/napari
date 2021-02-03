@@ -50,6 +50,7 @@ def mouse_wheel_callbacks(obj, event):
     # iterate through drag callback functions
     for mouse_wheel_func in obj.mouse_wheel_callbacks:
         # execute function to run press event code
+        # print('calling', mouse_wheel_func)
         gen = mouse_wheel_func(obj, event)
         # if function returns a generator then try to iterate it
         if inspect.isgenerator(gen):

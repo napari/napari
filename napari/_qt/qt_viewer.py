@@ -200,8 +200,10 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
-
+        # is that the things with events ?
         self.view = self.canvas.central_widget.add_view()
+        # print(self.view.camera)
+
         self.camera = VispyCamera(
             self.view, self.viewer.camera, self.viewer.dims
         )
@@ -243,14 +245,15 @@ class QtViewer(QSplitter):
 
     def on_touch(self, evt):
         if evt.type == 'pinch':
-            print(
-                'QT pinch',
-                evt.total_rotation_angle,
-                evt.total_scale_factor,
-                evt.rotation,
-                evt.scale,
-                evt.pos,
-            )
+            pass
+            # print(
+            #    'QT pinch',
+            #    evt.total_rotation_angle,
+            #    evt.total_scale_factor,
+            #    evt.rotation,
+            #    evt.scale,
+            #    evt.pos,
+            # )
 
     def _add_visuals(self, welcome: bool) -> None:
         """Add visuals for axes, scale bar, and welcome text.
