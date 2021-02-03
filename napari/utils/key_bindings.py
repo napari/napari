@@ -39,7 +39,6 @@ from collections import ChainMap
 
 from vispy.util import keys
 
-
 SPECIAL_KEYS = [
     keys.SHIFT,
     keys.CONTROL,
@@ -341,7 +340,7 @@ def _bind_keymap(keymap, instance):
 
 
 class KeymapHandler:
-    """Mix-in to add key handling functionality.
+    """Handle key mapping and calling functionality.
 
     Attributes
     ----------
@@ -361,7 +360,10 @@ class KeymapHandler:
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
-            maps.append(_bind_keymap(parent.class_keymap, parent))
+            # For parent and superclasses add inherited keybindings
+            for cls in parent.__class__.__mro__:
+                if hasattr(cls, 'class_keymap'):
+                    maps.append(_bind_keymap(cls.class_keymap, parent))
 
         return ChainMap(*maps)
 
@@ -431,3 +433,41 @@ class KeymapHandler:
             next(self._key_release_generators[key])  # call function
         except (KeyError, StopIteration):
             pass
+
+    def on_key_press(self, event):
+        """Callback that whenever key pressed in canvas.
+
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key press event that triggered this method.
+        """
+        if (
+            event.native is not None
+            and event.native.isAutoRepeat()
+            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
+        ) or event.key is None:
+            # pass if no key is present or if key is held down, unless the
+            # key being held down is one of the navigation keys
+            # this helps for scrolling, etc.
+            return
+
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.press_key(combo)
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key release event that triggered this method.
+        """
+        if event.key is None or (
+            # on linux press down is treated as multiple press and release
+            event.native is not None
+            and event.native.isAutoRepeat()
+        ):
+            return
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.release_key(combo)

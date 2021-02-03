@@ -1,8 +1,9 @@
 """Dask cache utilities.
 """
-from contextlib import contextmanager
-from typing import Callable, ContextManager, Optional
 import warnings
+from contextlib import contextmanager
+from distutils.version import LooseVersion
+from typing import Callable, ContextManager, Optional
 
 import dask
 import dask.array as da
@@ -12,7 +13,7 @@ from .. import utils
 
 
 def create_dask_cache(
-    nbytes: Optional[int] = None, mem_fraction: float = 0.5
+    nbytes: Optional[int] = None, mem_fraction: float = 0.1
 ) -> Cache:
     """Create a dask cache at utils.dask_cache if one doesn't already exist.
 
@@ -26,7 +27,7 @@ def create_dask_cache(
         autodetermined using ``mem_fraction``.
     mem_fraction : float, optional
         The fraction (from 0 to 1) of total memory to use for the dask cache.
-        by default, 50% of total memory is used.
+        by default, 10% of total memory is used.
 
     Returns
     -------
@@ -72,8 +73,8 @@ def resize_dask_cache(
     dask_cache : dask.cache.Cache
         An instance of a Dask Cache
 
-    Example
-    -------
+    Examples
+    --------
     >>> from napari.utils import resize_dask_cache
     >>> cache = resize_dask_cache()  # use 50% of total memory by default
 
@@ -158,8 +159,8 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     ContextManager
         A context manager that can be used to optimize dask indexing
 
-    Example
-    -------
+    Examples
+    --------
     >>> data = dask.array.ones((10,10,10))
     >>> optimized_slicing = configure_dask(data)
     >>> with optimized_slicing():
@@ -167,8 +168,7 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     """
     if _is_dask_data(data):
         create_dask_cache()  # creates one if it doesn't exist
-        dask_version = tuple(map(int, dask.__version__.split(".")))
-        if dask_version < (2, 15, 0):
+        if dask.__version__ < LooseVersion('2.15.0'):
             warnings.warn(
                 'For best performance with Dask arrays in napari, please '
                 'upgrade Dask to v2.15.0 or later. Current version is '

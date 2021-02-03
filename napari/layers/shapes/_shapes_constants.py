@@ -1,8 +1,8 @@
-from enum import auto
 import sys
+from enum import auto
 
 from ...utils.misc import StringEnum
-from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 
 
 class Mode(StringEnum):
@@ -52,8 +52,7 @@ class ColorMode(StringEnum):
 
 
 class Box:
-    """Box: Constants associated with the vertices of the interaction box
-    """
+    """Box: Constants associated with the vertices of the interaction box"""
 
     WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]

@@ -3,16 +3,17 @@ from functools import lru_cache
 from typing import Sequence, Union
 
 import numpy as np
-from qtpy import API_NAME
+import qtpy
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
+    QApplication,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
 )
 
 from ..utils.misc import is_sequence
@@ -41,7 +42,7 @@ def QImg2array(img):
     # As vispy doesn't use qtpy we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if API_NAME == 'PySide2':
+    if qtpy.API_NAME == 'PySide2':
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)
@@ -74,6 +75,7 @@ def disable_with_opacity(obj, widget_list, disabled):
 @lru_cache(maxsize=64)
 def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
@@ -81,6 +83,21 @@ def square_pixmap(size):
     painter.drawRect(0, 0, size - 1, size - 1)
     painter.setPen(Qt.black)
     painter.drawRect(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
+
+
+@lru_cache(maxsize=64)
+def circle_pixmap(size: int):
+    """Create a white/black hollow circle pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setPen(Qt.white)
+    painter.drawEllipse(0, 0, size - 1, size - 1)
+    painter.setPen(Qt.black)
+    painter.drawEllipse(1, 1, size - 3, size - 3)
     painter.end()
     return pixmap
 
@@ -104,8 +121,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     QDrag
         A QDrag instance with a pixmap of the currently selected item.
 
-    Example
-    -------
+    Examples
+    --------
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)
@@ -151,7 +168,11 @@ def combine_widgets(
     TypeError
         If ``widgets`` is neither a ``QWidget`` or a sequence of ``QWidgets``.
     """
-    if isinstance(widgets, QWidget):
+    if isinstance(getattr(widgets, 'native', None), QWidget):
+        # compatibility with magicgui v0.2.0 which no longer uses QWidgets
+        # directly. Like vispy, the backend widget is at widget.native
+        return widgets.native  # type: ignore
+    elif isinstance(widgets, QWidget):
         return widgets
     elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
         container = QWidget()
@@ -169,3 +190,23 @@ def combine_widgets(
         return container
     else:
         raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+
+
+def delete_qapp(app):
+    """Delete a QApplication
+
+    Parameters
+    ----------
+    app : qtpy.QApplication
+    """
+    try:
+        # Pyside2
+        from shiboken2 import delete
+    except ImportError:
+        # PyQt5
+        from sip import delete
+
+    delete(app)
+    # calling a second time is necessary on PySide2...
+    # see: https://bugreports.qt.io/browse/PYSIDE-1470
+    QApplication.instance()

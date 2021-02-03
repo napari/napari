@@ -1,19 +1,15 @@
 import inspect
 
-from .misc import camel_to_snake, callsignature
-
+from .misc import callsignature, camel_to_snake
 
 template = """def {name}(self, {signature}):
     layer = {cls_name}({call_args})
-    self.add_layer(layer)
+    self.layers.append(layer)
     return layer
 """
 
 
 def create_func(cls, name=None, doc=None):
-    module = inspect.getmodule(cls)
-
-    module_name = module.__name__
     cls_name = cls.__name__
     sig = inspect.signature(cls)
     call_args = callsignature(cls)
@@ -33,10 +29,10 @@ def create_func(cls, name=None, doc=None):
             doc = doc[cutoff:]
 
         n = 'n' if cls_name[0].lower() in 'aeiou' else ''
-        doc = f'Adds a{n} {cls_name} layer to the viewer. ' + doc
+        doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc
         doc += '\n\nReturns\n-------\n'
-        doc += f'layer : {module_name}.{cls_name}'
-        doc += '\n\tAdded layer.'
+        doc += f'layer : :class:`napari.layers.{cls_name}`'
+        doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
         doc = doc.expandtabs(4)
 
     src = template.format(

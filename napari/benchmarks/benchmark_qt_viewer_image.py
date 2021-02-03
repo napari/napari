@@ -3,8 +3,9 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
-import napari
 from qtpy.QtWidgets import QApplication
+
+import napari
 
 
 class QtViewerViewImageSuite:
@@ -78,7 +79,7 @@ class QtViewerImageSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.viewer.layers[0].get_value()
+        self.viewer.layers[0].get_value((0,) * 2)
 
 
 class QtViewerSingleImageSuite:
@@ -117,7 +118,7 @@ class QtViewerSingleImageSuite:
 
     def time_get_value(self):
         """Time to get current value."""
-        self.viewer.layers[0].get_value()
+        self.viewer.layers[0].get_value((0,) * 3)
 
     def time_ndisplay(self):
         """Time to enter 3D rendering."""
@@ -125,7 +126,7 @@ class QtViewerSingleImageSuite:
 
 
 class QtViewerSingleInvisbleImageSuite:
-    """Benchmarks for a invisble single image layer in the viewer."""
+    """Benchmarks for a invisible single image layer in the viewer."""
 
     def setup(self):
         _ = QApplication.instance() or QApplication([])
@@ -160,8 +161,62 @@ class QtViewerSingleInvisbleImageSuite:
 
     def time_get_value(self):
         """Time to get current value."""
-        self.viewer.layers[0].get_value()
+        self.viewer.layers[0].get_value((0,) * 3)
 
     def time_ndisplay(self):
         """Time to enter 3D rendering."""
         self.viewer.dims.ndisplay = 3
+
+
+class QtImageRenderingSuite:
+    """Benchmarks for a single image layer in the viewer."""
+
+    params = [2 ** i for i in range(4, 13)]
+
+    def setup(self, n):
+        _ = QApplication.instance() or QApplication([])
+        np.random.seed(0)
+        self.data = np.random.random((n, n)) * 2 ** 12
+        self.viewer = napari.view_image(self.data, ndisplay=2)
+
+    def teardown(self, n):
+        self.viewer.close()
+
+    def time_change_contrast(self, n):
+        """Time to change contrast limits."""
+        self.viewer.layers[0].contrast_limits = (250, 3000)
+        self.viewer.layers[0].contrast_limits = (300, 2900)
+        self.viewer.layers[0].contrast_limits = (350, 2800)
+
+    def time_change_gamma(self, n):
+        """Time to change gamma."""
+        self.viewer.layers[0].gamma = 0.5
+        self.viewer.layers[0].gamma = 0.8
+        self.viewer.layers[0].gamma = 1.3
+
+
+class QtVolumeRenderingSuite:
+    """Benchmarks for a single image layer in the viewer."""
+
+    params = [2 ** i for i in range(4, 10)]
+
+    def setup(self, n):
+        _ = QApplication.instance() or QApplication([])
+        np.random.seed(0)
+        self.data = np.random.random((n, n, n)) * 2 ** 12
+        self.viewer = napari.view_image(self.data, ndisplay=3)
+
+    def teardown(self, n):
+        self.viewer.close()
+
+    def time_change_contrast(self, n):
+        """Time to change contrast limits."""
+        self.viewer.layers[0].contrast_limits = (250, 3000)
+        self.viewer.layers[0].contrast_limits = (300, 2900)
+        self.viewer.layers[0].contrast_limits = (350, 2800)
+
+    def time_change_gamma(self, n):
+        """Time to change gamma."""
+        self.viewer.layers[0].gamma = 0.5
+        self.viewer.layers[0].gamma = 0.8
+        self.viewer.layers[0].gamma = 1.3

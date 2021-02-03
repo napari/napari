@@ -1,11 +1,13 @@
-import pytest
-import numpy as np
 import collections
+
+import numpy as np
+import pytest
+
 from napari.layers import Points
 from napari.utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
 )
 
@@ -31,7 +33,7 @@ def create_known_points_layer():
 
     Returns
     -------
-    layer : napar.layers.Points
+    layer : napari.layers.Points
         Points layer.
     n_points : int
         Number of points in the points layer
@@ -97,6 +99,40 @@ def test_add_point(create_known_points_layer, Event):
     # Check new point added at coordinates location
     assert len(layer.data) == n_points + 1
     np.testing.assert_allclose(layer.data[-1], known_non_point)
+
+
+def test_drag_in_add_mode(create_known_points_layer, Event):
+    """Drag in add mode and make sure no point is added."""
+    layer, n_points, known_non_point = create_known_points_layer
+
+    # Add point at location where non exists
+    layer.mode = 'add'
+    layer.interactive = True
+    layer.position = known_non_point
+
+    # Simulate click
+    event = ReadOnlyWrapper(
+        Event(type='mouse_press', is_dragging=False, modifiers=[])
+    )
+    mouse_press_callbacks(layer, event)
+
+    known_non_point_end = [40, 60]
+    layer.position = known_non_point_end
+
+    # Simulate drag end
+    event = ReadOnlyWrapper(
+        Event(type='mouse_move', is_dragging=True, modifiers=[])
+    )
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=False, modifiers=[])
+    )
+    mouse_release_callbacks(layer, event)
+
+    # Check that no new point has been added
+    assert len(layer.data) == n_points
 
 
 def test_select_point(create_known_points_layer, Event):

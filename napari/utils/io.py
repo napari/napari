@@ -4,12 +4,12 @@ import re
 from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-from ..types import FullLayerData
 
 import numpy as np
 from dask import array as da
 from dask import delayed
 
+from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 
 
@@ -27,7 +27,7 @@ def imsave(filename: str, data: np.ndarray):
     if ext in [".tif", ".tiff"]:
         import tifffile
 
-        tifffile.imsave(filename, data)
+        tifffile.imsave(filename, data, compress=1)
     else:
         import imageio
 
@@ -38,7 +38,7 @@ def imsave_extensions() -> Tuple[str, ...]:
     """Valid extensions of files that imsave can write to.
 
     Returns
-    ----------
+    -------
     tuple
         Valid extensions of files that imsave can write to.
     """
@@ -102,7 +102,7 @@ def imread(filename: str) -> np.ndarray:
     """
     filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
-    if ext in [".tif", ".tiff", ".lsm"]:
+    if ext.lower() in [".tif", ".tiff", ".lsm"]:
         import tifffile
 
         return tifffile.imread(filename)
@@ -144,7 +144,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     The files are assumed to all have the same shape.
 
     Parameters
-    -------
+    ----------
     filenames : list
         List of filenames or directories to be opened.
         A list of `pathlib.Path` objects and a single filename or `Path` object
@@ -174,9 +174,8 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     # replace folders with their contents
     filenames_expanded = []
     for filename in filenames:
-        ext = os.path.splitext(filename)[-1]
         # zarr files are folders, but should be read as 1 file
-        if os.path.isdir(filename) and not ext == '.zarr':
+        if os.path.isdir(filename) and not guess_zarr_path(filename):
             dir_contents = sorted(
                 glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
             )
@@ -200,8 +199,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     images = []
     shape = None
     for filename in filenames_expanded:
-        ext = os.path.splitext(filename)[-1]
-        if ext == '.zarr':
+        if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
             if shape is None:
                 shape = zarr_shape
@@ -242,11 +240,33 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     return image
 
 
+def guess_zarr_path(path):
+    """Guess whether string path is part of a zarr hierarchy.
+
+    Parameters
+    ----------
+    path : str
+        Path to a file or directory.
+
+    Returns
+    -------
+    bool
+        Whether path is for zarr.
+    >>> guess_zarr_path('dataset.zarr')
+    True
+    >>> guess_zarr_path('dataset.zarr/path/to/array')
+    True
+    >>> guess_zarr_path('dataset.zarr/component.png')
+    True
+    """
+    return any(part.endswith(".zarr") for part in Path(path).parts)
+
+
 def read_zarr_dataset(path):
     """Read a zarr dataset, including an array or a group of arrays.
 
     Parameters
-    --------
+    ----------
     path : str
         Path to directory ending in '.zarr'. Path can contain either an array
         or a group of arrays in the case of multiscale data.
@@ -291,7 +311,10 @@ def write_csv(
     """
     with open(filename, mode='w', newline='') as csvfile:
         writer = csv.writer(
-            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+            csvfile,
+            delimiter=',',
+            quotechar='"',
+            quoting=csv.QUOTE_MINIMAL,
         )
         if column_names is not None:
             writer.writerow(column_names)
@@ -315,11 +338,11 @@ def guess_layer_type_from_column_names(
         Layer type if recognized, otherwise None.
     """
 
-    if set(
-        ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
-    ).issubset(column_names):
+    if {'index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1'}.issubset(
+        column_names
+    ):
         return 'shapes'
-    elif set(['axis-0', 'axis-1']).issubset(column_names):
+    elif {'axis-0', 'axis-1'}.issubset(column_names):
         return 'points'
     else:
         return None

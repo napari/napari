@@ -9,11 +9,12 @@ from ..utils.misc import all_subclasses
 from .base import Layer
 from .image import Image
 from .labels import Labels
+from .layergroup import LayerGroup
 from .points import Points
 from .shapes import Shapes
 from .surface import Surface
+from .tracks import Tracks
 from .vectors import Vectors
-from .layergroup import LayerGroup
 
 NAMES = {subclass.__name__.lower() for subclass in all_subclasses(Layer)}
 del all_subclasses

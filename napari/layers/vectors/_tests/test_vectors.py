@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -49,7 +50,7 @@ def test_empty_vectors_with_properties():
     """Test instantiating Vectors layer with empty coordinate-like 2D data."""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    properties = {'angle': np.array([0.5], dtype=np.float)}
+    properties = {'angle': np.array([0.5], dtype=float)}
     layer = Vectors(data, properties=properties)
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
@@ -59,11 +60,10 @@ def test_empty_vectors_with_properties():
 
 
 def test_empty_layer_with_edge_colormap():
-    """ Test creating an empty layer where the edge color is a colormap
-    """
+    """Test creating an empty layer where the edge color is a colormap"""
     shape = (0, 2, 2)
     data = np.empty(shape)
-    default_properties = {'angle': np.array([1.5], dtype=np.float)}
+    default_properties = {'angle': np.array([1.5], dtype=float)}
     layer = Vectors(
         data=data,
         properties=default_properties,
@@ -79,13 +79,14 @@ def test_empty_layer_with_edge_colormap():
 
 
 def test_empty_layer_with_edge_color_cycle():
-    """ Test creating an empty layer where the edge color is a color cycle
-    """
+    """Test creating an empty layer where the edge color is a color cycle"""
     shape = (0, 2, 2)
     data = np.empty(shape)
     default_properties = {'vector_type': np.array(['A'])}
     layer = Vectors(
-        data=data, properties=default_properties, edge_color='vector_type',
+        data=data,
+        properties=default_properties,
+        edge_color='vector_type',
     )
 
     assert layer.edge_color_mode == 'cycle'
@@ -119,6 +120,7 @@ def test_random_3D_vectors_image():
     assert layer._view_data.shape[2] == 2
 
 
+@pytest.mark.filterwarnings("ignore:Passing `np.nan`:DeprecationWarning:numpy")
 def test_empty_3D_vectors():
     """Test instantiating Vectors layer with empty coordinate-like 3D data."""
     shape = (0, 2, 3)
@@ -214,7 +216,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
@@ -328,7 +330,7 @@ def test_edge_color_cycle():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'vector_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     color_cycle = ['red', 'blue']
     layer = Vectors(
         data,
@@ -337,7 +339,7 @@ def test_edge_color_cycle():
         edge_color_cycle=color_cycle,
     )
     np.testing.assert_equal(layer.properties, properties)
-    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)
 
 
@@ -347,15 +349,16 @@ def test_edge_color_colormap():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'angle': np.array([0, 1.5] * int((shape[0] / 2)))}
+    properties = {'angle': np.array([0, 1.5] * int(shape[0] / 2))}
     layer = Vectors(
-        data, properties=properties, edge_color='angle', edge_colormap='gray',
+        data,
+        properties=properties,
+        edge_color='angle',
+        edge_colormap='gray',
     )
     assert layer.properties == properties
     assert layer.edge_color_mode == 'colormap'
-    edge_color_array = transform_color(
-        ['black', 'white'] * int((shape[0] / 2))
-    )
+    edge_color_array = transform_color(['black', 'white'] * int(shape[0] / 2))
     assert np.all(layer.edge_color == edge_color_array)
 
     # change the color cycle - edge_color should not change
@@ -370,11 +373,11 @@ def test_edge_color_colormap():
     # change the colormap
     new_colormap = 'viridis'
     layer.edge_colormap = new_colormap
-    assert layer.edge_colormap[1] == get_colormap(new_colormap)
+    assert layer.edge_colormap.name == new_colormap
 
     # test adding a colormap with a vispy Colormap object
     layer.edge_colormap = get_colormap('gray')
-    assert 'unnamed colormap' in layer.edge_colormap[0]
+    assert 'unnamed colormap' in layer.edge_colormap.name
 
 
 def test_edge_color_map_non_numeric_property():
@@ -385,7 +388,7 @@ def test_edge_color_map_non_numeric_property():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'vector_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     color_cycle = ['red', 'blue']
     initial_color = [0, 1, 0, 1]
     layer = Vectors(
@@ -407,6 +410,7 @@ def test_edge_color_map_non_numeric_property():
         layer.edge_color_mode = 'colormap'
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparis:FutureWarning:numpy")
 def test_switching_edge_color_mode():
     """Test transitioning between all color modes"""
     np.random.seed(0)
@@ -415,7 +419,7 @@ def test_switching_edge_color_mode():
     data[:, 0, :] = 20 * data[:, 0, :]
     properties = {
         'magnitude': np.arange(shape[0]),
-        'vector_type': np.array(['A', 'B'] * int((shape[0] / 2))),
+        'vector_type': np.array(['A', 'B'] * int(shape[0] / 2)),
     }
     color_cycle = ['red', 'blue']
     initial_color = [0, 1, 0, 1]
@@ -446,7 +450,7 @@ def test_switching_edge_color_mode():
     # switch to color cycle
     layer.edge_color_mode = 'cycle'
     layer.edge_color = 'vector_type'
-    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    edge_color_array = transform_color(color_cycle * int(shape[0] / 2))
     np.testing.assert_allclose(layer.edge_color, edge_color_array)
 
     # switch back to direct, edge_colors shouldn't change
@@ -521,7 +525,7 @@ def test_value():
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0)
     assert value is None
 
@@ -532,5 +536,16 @@ def test_message():
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    # data input format is start position, then length.
+    data = [[(7, -5, -3), (1, -1, 2)], [(0, 0, 0), (4, 30, 12)]]
+    min_val = (0, -6, -3)
+    max_val = (8, 30, 12)
+    layer = Vectors(np.array(data))
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

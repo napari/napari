@@ -1,11 +1,13 @@
+import collections
+
 import numpy as np
 import pytest
-import collections
+
 from napari.layers import Shapes
 from napari.utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
 )
 
@@ -31,7 +33,7 @@ def create_known_shapes_layer():
 
     Returns
     -------
-    layer : napar.layers.Shapes
+    layer : napari.layers.Shapes
         Shapes layer.
     n_shapes : int
         Number of shapes in the shapes layer

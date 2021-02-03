@@ -1,6 +1,7 @@
 import numpy as np
-from .shape import Shape
+
 from .._shapes_utils import create_box
+from .shape import Shape
 
 
 class Line(Shape):
@@ -20,7 +21,13 @@ class Line(Shape):
     """
 
     def __init__(
-        self, data, *, edge_width=1, z_index=0, dims_order=None, ndisplay=2,
+        self,
+        data,
+        *,
+        edge_width=1,
+        z_index=0,
+        dims_order=None,
+        ndisplay=2,
     ):
 
         super().__init__(
@@ -35,8 +42,7 @@ class Line(Shape):
 
     @property
     def data(self):
-        """(2, D) array: line vertices.
-        """
+        """(2, D) array: line vertices."""
         return self._data
 
     @data.setter

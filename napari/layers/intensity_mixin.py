@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..utils.colormaps import ensure_colormap_tuple, make_colorbar
+from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event
 from ..utils.status_messages import format_float
 from ..utils.validators import validate_n_seq
@@ -45,16 +45,12 @@ class IntensityVisualizationMixin:
 
     @property
     def colormap(self):
-        """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
-        """
-        return self._colormap_name, self._cmap
+        """napari.utils.Colormap: colormap for luminance images."""
+        return self._colormap
 
     @colormap.setter
     def colormap(self, colormap):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._colormap_name = name
-        self._cmap = cmap
-        self._colorbar = make_colorbar(self._cmap)
+        self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
 
@@ -76,7 +72,6 @@ class IntensityVisualizationMixin:
             + ', '
             + format_float(contrast_limits[1])
         )
-        self.status = self._contrast_limits_msg
         self._contrast_limits = contrast_limits
         # make sure range slider is big enough to fit range
         newrange = list(self.contrast_limits_range)
@@ -121,7 +116,6 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
         self.events.gamma()

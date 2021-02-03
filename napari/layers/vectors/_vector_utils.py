@@ -1,5 +1,7 @@
-import numpy as np
 from copy import copy
+
+import numpy as np
+
 from ..utils.layer_utils import segment_normal
 
 
@@ -16,7 +18,7 @@ def vectors_to_coordinates(vectors):
         projections at each pixel.
 
     Returns
-    ----------
+    -------
     coords : (N, 2, D) array
         A list of N vectors with start point and projections of the vector
         in D dimensions.
@@ -47,7 +49,7 @@ def convert_image_to_coordinates(vectors):
         projections at each pixel.
 
     Returns
-    ----------
+    -------
     coords : (N, 2, D) array
         A list of N vectors with start point and projections of the vector
         in D dimensions.
@@ -82,7 +84,7 @@ def generate_vector_meshes(vectors, width, length):
         length multiplier of the line to be drawn
 
     Returns
-    ----------
+    -------
     vertices : (4N, D) array
         Vertices of all triangles for the lines
     triangles : (2N, 3) array
@@ -120,7 +122,7 @@ def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
         orthogonal vector for segment calculation in 3D.
 
     Returns
-    ----------
+    -------
     vertices : (4N, D) array
         Vertices of all triangles for the lines
     triangles : (2N, 3) array

@@ -5,6 +5,7 @@ from skimage.util import img_as_ubyte
 from napari.layers.utils.layer_utils import convert_to_uint8
 
 
+@pytest.mark.filterwarnings("ignore:Downcasting uint:UserWarning:skimage")
 @pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.uint32, np.uint64])
 def test_uint(dtype):
     data = np.arange(50, dtype=dtype)
@@ -15,6 +16,7 @@ def test_uint(dtype):
     assert np.all(img_as_ubyte(data_scaled) == convert_to_uint8(data_scaled))
 
 
+@pytest.mark.filterwarnings("ignore:Downcasting int:UserWarning:skimage")
 @pytest.mark.parametrize("dtype", [np.int8, np.int16, np.int32, np.int64])
 def test_int(dtype):
     data = np.arange(50, dtype=dtype)
@@ -30,7 +32,7 @@ def test_int(dtype):
     )
 
 
-@pytest.mark.parametrize("dtype", [np.float64, np.float32, np.float])
+@pytest.mark.parametrize("dtype", [np.float64, np.float32, float])
 def test_float(dtype):
     data = np.linspace(0, 0.5, 128, dtype=dtype, endpoint=False)
     res = np.arange(128, dtype=np.uint8)
@@ -44,7 +46,7 @@ def test_float(dtype):
 
 
 def test_bool():
-    data = np.zeros((10, 10), dtype=np.bool)
+    data = np.zeros((10, 10), dtype=bool)
     data[2:-2, 2:-2] = 1
     converted = convert_to_uint8(data)
     assert converted.dtype == np.uint8

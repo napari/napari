@@ -1,7 +1,8 @@
-from vispy.scene.visuals import Mesh
-from vispy.color import Colormap
-from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from vispy.color import Colormap as VispyColormap
+from vispy.scene.visuals import Mesh
+
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -32,15 +33,15 @@ class VispySurfaceLayer(VispyBaseLayer):
             faces = None
             vertex_values = np.array([0])
         else:
-            # Offseting so pixels now centered
-            vertices = self.layer._data_view[:, ::-1] + 0.5
+            # Offsetting so pixels now centered
+            vertices = self.layer._data_view[:, ::-1]
             faces = self.layer._view_faces
             vertex_values = self.layer._view_vertex_values
 
         if (
             vertices is not None
-            and self.layer.dims.ndisplay == 3
-            and self.layer.dims.ndim == 2
+            and self.layer._ndisplay == 3
+            and self.layer.ndim == 2
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
         self.node.set_data(
@@ -48,16 +49,19 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.node.update()
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
     def _on_colormap_change(self, event=None):
-        cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
             # points from 0-1
-            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
-        if self.layer.dims.ndisplay == 3:
+            colors = self.layer.colormap.map(
+                np.linspace(0, 1, 256) ** self.layer.gamma
+            )
+            cmap = VispyColormap(colors)
+        else:
+            cmap = VispyColormap(*self.layer.colormap)
+        if self.layer._ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
             )

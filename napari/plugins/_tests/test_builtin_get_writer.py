@@ -1,15 +1,15 @@
 import os
 
 import pytest
+from napari_plugin_engine import PluginCallError
 
+from napari.plugins import hook_specifications
 from napari.plugins._builtins import (
     napari_get_writer,
     napari_write_image,
     napari_write_points,
     write_layer_data_with_plugins,
 )
-from napari_plugin_engine import PluginCallError
-from napari.plugins import hook_specifications
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
@@ -42,7 +42,7 @@ def test_get_writer_succeeds(
         assert os.path.isfile(os.path.join(path, f))
 
     assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+    assert set(os.listdir(tmpdir)) == {'layers_folder'}
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py

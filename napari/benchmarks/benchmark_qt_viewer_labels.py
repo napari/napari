@@ -2,10 +2,12 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
-import numpy as np
-import napari
-from qtpy.QtWidgets import QApplication
 import collections
+
+import numpy as np
+from qtpy.QtWidgets import QApplication
+
+import napari
 
 
 class QtViewerSingleLabelsSuite:
@@ -46,7 +48,7 @@ class QtViewerSingleLabelsSuite:
 
     def time_get_value(self):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 2)
 
     def time_raw_to_displayed(self):
         """Time to convert raw to displayed."""

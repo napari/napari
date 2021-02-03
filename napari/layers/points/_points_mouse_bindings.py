@@ -86,7 +86,17 @@ def select(layer, event):
 def add(layer, event):
     """Add a new point at the clicked position."""
     # on press
-    layer.add(layer.coordinates)
+    dragged = False
+    yield
+
+    # on move
+    while event.type == 'mouse_move':
+        dragged = True
+        yield
+
+    # on release
+    if not dragged:
+        layer.add(layer.coordinates)
 
 
 def highlight(layer, event):
@@ -97,8 +107,8 @@ def highlight(layer, event):
 def _toggle_selected(selected_data, value):
     """Add or remove value from the selected data set.
 
-    Paramerters
-    -----------
+    Parameters
+    ----------
     selected_data : set
         Set of selected data points to be modified.
     value : int

@@ -1,6 +1,7 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import re
+import warnings
 from ast import literal_eval
 
 try:
@@ -12,7 +13,19 @@ except Exception:
     use_gradients = False
 
 
-palettes = {
+def __getattr__(attr):
+    if attr == "palettes":
+        warnings.warn(
+            "palette is deprecated and will be removed after version 0.4.6."
+            " Please use get_theme and register_theme instead",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return _themes
+    raise AttributeError
+
+
+_themes = {
     'dark': {
         'folder': 'dark',
         'background': 'rgb(38, 41, 48)',
@@ -48,6 +61,7 @@ palettes = {
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
+opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
 def darken(color: str, percentage=10):
@@ -72,6 +86,13 @@ def lighten(color: str, percentage=10):
     return f'rgb({red}, {green}, {blue})'
 
 
+def opacity(color: str, value=255):
+    if color.startswith('rgb('):
+        color = literal_eval(color.lstrip('rgb(').rstrip(')'))
+    red, green, blue = color
+    return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
+
+
 def gradient(stops, horizontal=True):
     if not use_gradients:
         return stops[-1]
@@ -87,23 +108,76 @@ def gradient(stops, horizontal=True):
     return grad
 
 
-def template(css, **palette):
+def template(css, **theme):
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
-        return darken(palette[color], percentage)
+        return darken(theme[color], percentage)
 
     def lighten_match(matchobj):
         color, percentage = matchobj.groups()
-        return lighten(palette[color], percentage)
+        return lighten(theme[color], percentage)
+
+    def opacity_match(matchobj):
+        color, percentage = matchobj.groups()
+        return opacity(theme[color], percentage)
 
     def gradient_match(matchobj):
         horizontal = matchobj.groups()[1] == 'h'
         stops = [i.strip() for i in matchobj.groups()[1].split('-')]
         return gradient(stops, horizontal)
 
-    for k, v in palette.items():
+    for k, v in theme.items():
         css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
+        css = opacity_pattern.sub(opacity_match, css)
         css = css.replace('{{ %s }}' % k, v)
     return css
+
+
+def get_theme(name):
+    """Get a theme based on its name
+
+    Parameters
+    ----------
+    name : str
+        Name of requested theme.
+
+    Returns
+    -------
+    theme: dict of str: str
+        Theme mapping elements to colors. A copy is created
+        so that manipulating this theme can be done without
+        side effects.
+    """
+    if name in _themes:
+        theme = _themes[name]
+        return theme.copy()
+    else:
+        raise ValueError(
+            f"Unrecognized theme {name}. Availabe themes are {available_themes()}"
+        )
+
+
+def register_theme(name, theme):
+    """Get a theme based on its name
+
+    Parameters
+    ----------
+    name : str
+        Name of requested theme.
+    theme : dict of str: str
+        Theme mapping elements to colors.
+    """
+    _themes[name] = theme
+
+
+def available_themes():
+    """List available themes
+
+    Returns
+    -------
+    list of str
+        Names of available themes.
+    """
+    return list(_themes)

@@ -3,12 +3,13 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
+
+from napari.components import ViewerModel
+from napari.plugins.io import read_data_with_plugins
 from napari.utils import io
 
-from napari.plugins.io import read_data_with_plugins
 
-
-def test_builtin_reader_plugin(make_test_viewer):
+def test_builtin_reader_plugin():
     """Test the builtin reader plugin reads a temporary file."""
 
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
@@ -22,13 +23,13 @@ def test_builtin_reader_plugin(make_test_viewer):
         assert isinstance(layer_data[0], tuple)
         assert np.allclose(data, layer_data[0][0])
 
-        viewer = make_test_viewer()
+        viewer = ViewerModel()
         viewer.open(tmp.name, plugin='builtins')
 
         assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_csv(make_test_viewer, tmpdir):
+def test_builtin_reader_plugin_csv(tmpdir):
     """Test the builtin reader plugin reads a temporary file."""
     tmp = os.path.join(tmpdir, 'test.csv')
     column_names = ['index', 'axis-0', 'axis-1']
@@ -44,13 +45,13 @@ def test_builtin_reader_plugin_csv(make_test_viewer, tmpdir):
     assert layer_data[0][2] == 'points'
     assert np.allclose(data, layer_data[0][0])
 
-    viewer = make_test_viewer()
+    viewer = ViewerModel()
     viewer.open(tmp, plugin='builtins')
 
     assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_stacks(make_test_viewer):
+def test_builtin_reader_plugin_stacks():
     """Test the builtin reader plugin reads multiple files as a stack."""
     data = np.random.rand(5, 20, 20)
     tmps = []
@@ -60,7 +61,7 @@ def test_builtin_reader_plugin_stacks(make_test_viewer):
         tmp.seek(0)
         tmps.append(tmp)
 
-    viewer = make_test_viewer()
+    viewer = ViewerModel()
     # open should take both strings and Path object, so we make one of the
     # pathnames a Path object
     names = [tmp.name for tmp in tmps]

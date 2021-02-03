@@ -9,6 +9,23 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
 
+[tool.briefcase]
+project_name = "napari"
+bundle = "com.napari"
+author = "napari"
+url = "https://napari.org/"
+license = "BSD license"
+# version populated in bundle.py
+version = "0.0.1"
+
+[tool.briefcase.app.napari]
+formal_name = "napari"
+description = "napari: a multi-dimensional image viewer"
+sources = ['napari']
+icon = "resources/icon"
+# populated in bundle.py
+requires = []
+
 [tool.black]
 target-version = ['py36', 'py37', 'py38']
 skip-string-normalization = true
@@ -28,17 +45,45 @@ exclude = '''
     | dist
     | examples
     | vendored
+    | _vendor
   )/
   | napari/resources/qt.py
+  | tools/minreq.py
 )
 '''
 
 [tool.check-manifest]
 ignore = [
+  "bundle.py",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
+  "tools/minreq.py",
+  "tox.ini",
+]
+
+[tool.isort]
+profile = "black"
+line_length = 79
+skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
+
+[tool.pytest.ini_options]
+# These follow standard library warnings filters syntax.  See more here:
+# https://docs.python.org/3/library/warnings.html#describing-warning-filters
+filterwarnings = [
+  # turn warnings from napari into errors, unless explicitly allowed below
+  "error:::napari\\.",
+  "default:::napari.+vendored.+",  # just print warnings inside vendored modules
+  "ignore::DeprecationWarning:ipykernel",
+  "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client",
+  "ignore:pythonw executable not found:UserWarning:",
+  "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
+  "ignore:For best performance with Dask arrays in napari:UserWarning:",
+]
+markers = [
+    "sync_only: Test should only be run synchronously",
+    "async_only: Test should only be run asynchronously"
 ]

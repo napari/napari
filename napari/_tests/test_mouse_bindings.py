@@ -1,13 +1,13 @@
-import numpy as np
-from unittest.mock import Mock
 import os
+from unittest.mock import Mock
+
+import numpy as np
 
 
-def test_viewer_mouse_bindings(make_test_viewer):
-    """Test adding mouse bindings to the viewer
-    """
+def test_viewer_mouse_bindings(make_napari_viewer):
+    """Test adding mouse bindings to the viewer"""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     if os.getenv("CI"):
@@ -77,11 +77,10 @@ def test_viewer_mouse_bindings(make_test_viewer):
     mock_move.method.assert_not_called()
 
 
-def test_layer_mouse_bindings(make_test_viewer):
-    """Test adding mouse bindings to a layer that is selected
-    """
+def test_layer_mouse_bindings(make_napari_viewer):
+    """Test adding mouse bindings to a layer that is selected"""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     if os.getenv("CI"):
@@ -96,8 +95,8 @@ def test_layer_mouse_bindings(make_test_viewer):
     mock_move = Mock()
 
     @layer.mouse_drag_callbacks.append
-    def drag_callback(l, event):
-        assert layer == l
+    def drag_callback(_layer, event):
+        assert layer == _layer
         # on press
         mock_press.method()
 
@@ -112,8 +111,8 @@ def test_layer_mouse_bindings(make_test_viewer):
         mock_release.method()
 
     @layer.mouse_move_callbacks.append
-    def move_callback(l, event):
-        assert layer == l
+    def move_callback(_layer, event):
+        assert layer == _layer
         # on press
         mock_move.method()
 
@@ -153,11 +152,10 @@ def test_layer_mouse_bindings(make_test_viewer):
     mock_move.method.assert_not_called()
 
 
-def test_unselected_layer_mouse_bindings(make_test_viewer):
-    """Test adding mouse bindings to a layer that is not selected
-    """
+def test_unselected_layer_mouse_bindings(make_napari_viewer):
+    """Test adding mouse bindings to a layer that is not selected"""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     if os.getenv("CI"):
@@ -172,8 +170,8 @@ def test_unselected_layer_mouse_bindings(make_test_viewer):
     mock_move = Mock()
 
     @layer.mouse_drag_callbacks.append
-    def drag_callback(l, event):
-        assert layer == l
+    def drag_callback(_layer, event):
+        assert layer == _layer
         # on press
         mock_press.method()
 
@@ -188,8 +186,8 @@ def test_unselected_layer_mouse_bindings(make_test_viewer):
         mock_release.method()
 
     @layer.mouse_move_callbacks.append
-    def move_callback(l, event):
-        assert layer == l
+    def move_callback(_layer, event):
+        assert layer == _layer
         # on press
         mock_move.method()
 
