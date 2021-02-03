@@ -560,7 +560,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Returns
         -------
-        layer : :class:`napari.Image` or list
+        layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
 
