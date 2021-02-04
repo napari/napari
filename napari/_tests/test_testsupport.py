@@ -1,3 +1,10 @@
+"""
+This module tests our "pytest plugin" made available in
+``napari.utils._testsupport``.  Tests are placed in this folder instead of
+``napari/utils/_tests`` because they use the `make_napari_viewer` fixture
+and will fail without qt.
+"""
+
 import pytest
 
 
