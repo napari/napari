@@ -184,7 +184,14 @@ class ColorManager(EventedModel):
         if color_mode == ColorMode.CYCLE:
             color_properties = values['color_properties'].values
             cmap = values['categorical_colormap']
-            colors = cmap.map(color_properties)
+            if len(color_properties) == 0:
+                colors = np.empty((0, 4))
+                current_prop_value = values['color_properties'].current_value
+                if current_prop_value is not None:
+                    values['current_color'] = cmap.map(current_prop_value)[0]
+            else:
+                colors = cmap.map(color_properties)
+            values['categorical_colormap'] = cmap
 
         elif color_mode == ColorMode.COLORMAP:
             color_properties = values['color_properties'].values
@@ -204,7 +211,9 @@ class ColorManager(EventedModel):
                     )
             else:
                 colors = np.empty((0, 4))
-                values['color_properties'] = None
+                current_prop_value = values['color_properties'].current_value
+                if current_prop_value is not None:
+                    values['current_color'] = cmap.map(current_prop_value)[0]
 
             if len(colors) == 0:
                 colors = np.empty((0, 4))
@@ -248,7 +257,12 @@ class ColorManager(EventedModel):
         values['colors'] = colors
         return values
 
-    def add(self, color: Optional[ColorType] = None, n_colors: int = 1):
+    def add(
+        self,
+        color: Optional[ColorType] = None,
+        n_colors: int = 1,
+        update_clims: bool = False,
+    ):
         """Add colors
         Parameters
         ----------
@@ -257,6 +271,9 @@ class ColorManager(EventedModel):
             The default value is None.
         n_colors : int
             The number of colors to add. The default value is 1.
+        update_clims : bool
+            If in colormap mode, update the contrast limits when adding the new values
+            (i.e., reset the range to 0-new_max_value).
         """
         if self.mode == ColorMode.DIRECT:
             if color is None:
@@ -276,13 +293,21 @@ class ColorManager(EventedModel):
         else:
             # add the new value color_properties
             color_property_name = self.color_properties.name
+            current_value = self.color_properties.current_value
+            if color is None:
+                color = current_value
             new_color_property_values = np.concatenate(
                 (self.color_properties.values, np.repeat(color, n_colors)),
                 axis=0,
             )
             self.color_properties = ColorProperties(
-                name=color_property_name, values=new_color_property_values
+                name=color_property_name,
+                values=new_color_property_values,
+                current_value=current_value,
             )
+
+            if update_clims and self.mode == ColorMode.COLORMAP:
+                self.contrast_limits = None
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Remove the indicated color elements
@@ -398,9 +423,16 @@ def initialize_color_manager(
 
     if color_properties is None:
         if is_color_mapped(color_values, properties):
-            color_properties = ColorProperties(
-                name=color_values, values=properties[color_values]
-            )
+            if n_colors == 0:
+                color_properties = ColorProperties(
+                    name=color_values,
+                    values=np.empty(0),
+                    current_value=properties[color_values][0],
+                )
+            else:
+                color_properties = ColorProperties(
+                    name=color_values, values=properties[color_values]
+                )
             if mode is None:
                 if guess_continuous(color_properties.values):
                     mode = ColorMode.COLORMAP
@@ -412,7 +444,7 @@ def initialize_color_manager(
             )
 
         else:
-            if len(colors) == 0:
+            if len(color_values) == 0:
                 color_kwargs.update({'mode': ColorMode.DIRECT})
             else:
                 color_kwargs.update(
