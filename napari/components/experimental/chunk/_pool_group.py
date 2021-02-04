@@ -35,8 +35,8 @@ class LoaderPoolGroup:
         octree_config : dict
             Octree configuration data.
 
-        Return
-        ------
+        Returns
+        -------
         Dict[int, LoaderPool]
             The loader to use for each priority
         """
@@ -51,8 +51,8 @@ class LoaderPoolGroup:
     def get_loader(self, priority) -> LoaderPool:
         """Return the LoaderPool for the given priority.
 
-        Return
-        ------
+        Returns
+        -------
         LoaderPool
             The LoaderPool for the given priority.
         """
@@ -93,8 +93,8 @@ class LoaderPoolGroup:
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """

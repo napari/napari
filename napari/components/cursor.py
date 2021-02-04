@@ -1,11 +1,10 @@
 from typing import Tuple
 
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.events import EventedModel
 from ._viewer_constants import CursorStyle
 
 
-@evented_dataclass
-class Cursor:
+class Cursor(EventedModel):
     """Cursor object with position and properties of the cursor.
 
     Attributes
@@ -30,7 +29,8 @@ class Cursor:
             * standard: The standard cursor
     """
 
-    position: Property[Tuple, None, tuple] = ()
+    # fields
+    position: Tuple[float, ...] = (1, 1)
     scaled: bool = True
     size: int = 1
-    style: Property[CursorStyle, str, CursorStyle] = CursorStyle.STANDARD
+    style: CursorStyle = CursorStyle.STANDARD

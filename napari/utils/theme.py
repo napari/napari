@@ -143,8 +143,8 @@ def get_theme(name):
     name : str
         Name of requested theme.
 
-    Returns:
-    --------
+    Returns
+    -------
     theme: dict of str: str
         Theme mapping elements to colors. A copy is created
         so that manipulating this theme can be done without
@@ -166,7 +166,7 @@ def register_theme(name, theme):
     ----------
     name : str
         Name of requested theme.
-    theme: dict of str: str
+    theme : dict of str: str
         Theme mapping elements to colors.
     """
     _themes[name] = theme
@@ -175,8 +175,8 @@ def register_theme(name, theme):
 def available_themes():
     """List available themes
 
-    Returns:
-    --------
+    Returns
+    -------
     list of str
         Names of available themes.
     """

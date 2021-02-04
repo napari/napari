@@ -102,7 +102,6 @@ class ChunkedSliceData(ImageSliceData):
         ----------
         layer : Layer
             The layer for this request.
-
         request : ChunkRequest
             The request that was loaded.
         """

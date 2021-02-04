@@ -1,7 +1,6 @@
 import inspect
 import itertools
 import os
-import warnings
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -26,9 +25,7 @@ from ..utils.events import EmitterGroup, Event, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-
-# Private _themes import needed until viewer.palette is dropped
-from ..utils.theme import _themes, available_themes, get_theme
+from ..utils.theme import available_themes
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -126,40 +123,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         return f'napari.Viewer: {self.title}'
 
     @property
-    def palette(self):
-        """Dict[str, str]: Color palette for styling the viewer."""
-        warnings.warn(
-            (
-                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
-                " To access the palette you can call it using napari.utils.theme.register_theme"
-                " using the viewer.theme as the key."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return get_theme(self.theme)
-
-    @palette.setter
-    def palette(self, palette):
-        warnings.warn(
-            (
-                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
-                " To add a new palette you should add it using napari.utils.theme.register_theme"
-                " and then set the viewer.theme attribute."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        for existing_theme_name, existing_theme in _themes.items():
-            if existing_theme == palette:
-                self.theme = existing_theme_name
-                return
-        raise ValueError(
-            f"Palette not found among existing themes; "
-            f"options are {available_themes()}."
-        )
-
-    @property
     def theme(self):
         """string or None : Color theme."""
         return self._theme
@@ -215,31 +178,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             return
         self._title = title
         self.events.title(value=self._title)
-
-    @property
-    def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
-        warnings.warn(
-            (
-                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
-                " Instead you should use viewer.camera.interactive"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.camera.interactive
-
-    @interactive.setter
-    def interactive(self, interactive):
-        warnings.warn(
-            (
-                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
-                " Instead you should use viewer.camera.interactive"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.camera.interactive = interactive
 
     @property
     def active_layer(self):
@@ -384,6 +322,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             self.dims.ndim = ndim
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
+        self.cursor.position = (0,) * self.dims.ndim
         self.events.layers_change()
         self._update_active_layer(event)
 
@@ -498,8 +437,8 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         Parameters
         ----------
-        layer : :class:`napari.layers.Layer`
-            Layer to add.
+        event :  napari.utils.event.Event
+            Event which will remove a layer.
 
         Returns
         -------
@@ -645,7 +584,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             A vector of shear values for an upper triangular n-D shear matrix.
             If a list then must have same length as the axis that is being
             expanded as channels.
-        affine: n-D array or napari.utils.transforms.Affine
+        affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
             the final column is a lenght N translation vector and a 1 or a napari

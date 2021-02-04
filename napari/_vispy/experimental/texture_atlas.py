@@ -41,8 +41,8 @@ def _chunk_verts(octree_chunk: OctreeChunk) -> np.ndarray:
     octree_chunk : OctreeChunk
         Create a quad for this chunk.
 
-    Return
-    ------
+    Returns
+    -------
     np.darray
         The quad vertices.
     """
@@ -185,8 +185,8 @@ class TextureAtlas2D(Texture2D):
     def num_slots_free(self) -> int:
         """The number of available texture slots.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of available texture slots.
         """
@@ -196,8 +196,8 @@ class TextureAtlas2D(Texture2D):
     def num_slots_used(self) -> int:
         """The number of texture slots currently in use.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of texture slots currently in use.
         """
@@ -211,8 +211,8 @@ class TextureAtlas2D(Texture2D):
         tile_index : int
             Return the offset of this tile.
 
-        Return
-        ------
+        Returns
+        -------
         Tuple[int, int]
             The (row, col) offset of this tile in texels.
         """
@@ -239,8 +239,8 @@ class TextureAtlas2D(Texture2D):
         tile_shape : np.ndarray
             The shape of a single tile.
 
-        Return
-        ------
+        Returns
+        -------
         np.ndarray
             A (6, 2) array of texture coordinates.
         """
@@ -258,11 +258,11 @@ class TextureAtlas2D(Texture2D):
 
         Parameters
         ----------
-        data : np.ndarray
+        octree_chunk : np.ndarray
             The image data for this one tile.
 
-        Return
-        ------
+        Returns
+        -------
         Optional[AtlasTile]
             The AtlasTile if the tile was successfully added.
         """
@@ -305,8 +305,8 @@ class TextureAtlas2D(Texture2D):
         data : np.ndarray
             The image data for this tile.
 
-        Return
-        ------
+        Returns
+        -------
         np.ndarray
             The texture coordinates for the tile.
         """
