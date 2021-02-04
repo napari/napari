@@ -254,9 +254,7 @@ class NestableEventedList(EventedList[_T]):
         return dest_index
 
     def move_multiple(
-        self,
-        sources: Sequence[NestedIndex],
-        dest_index: NestedIndex = (0,),
+        self, sources: Sequence[NestedIndex], dest_index: NestedIndex = (0,)
     ) -> int:
         """Move a batch of nested indices, to a single destination.
 
@@ -312,6 +310,8 @@ class NestableEventedList(EventedList[_T]):
             if src_par == dest_par and src_i < dest_i:
                 shift_dest -= 1
 
+        self.events.moving(index=list(sources), new_index=dest_index)
+
         # TODO: add the appropriate moving/moved events
         with self.events.blocker_all():
             # delete the stored items from the list
@@ -321,6 +321,9 @@ class NestableEventedList(EventedList[_T]):
             # insert into the destination
             self[dest_par][dest_i:dest_i] = _store
 
+        self.events.moved(
+            index=list(sources), new_index=dest_index, value=_store
+        )
         self.events.reordered(value=self)
         return moved
 
