@@ -55,8 +55,16 @@ class PreferencesDialog(QtWidgets.QDialog):
         self._list.currentRowChanged.connect(
             lambda index: self._stack.setCurrentIndex(index)
         )
-        self._button_cancel.clicked.connect(lambda: print("cancel"))
-        self._button_ok.clicked.connect(lambda: print("OK"))
+        self._button_cancel.clicked.connect(self.on_click_cancel)
+        self._button_ok.clicked.connect(self.on_click_ok)
+
+    def on_click_ok(self):
+        print('OK')
+        self.close()
+
+    def on_click_cancel(self):
+        print('cancel')
+        self.close()
 
     def add_page(self, schema, ui_schema):
 

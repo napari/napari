@@ -282,16 +282,21 @@ class Window:
         """Edit preferences from the menubar."""
         import json
 
-        with open(
-            # TO DO: change to relative path or point to schema. just using for testing.
-            '/Users/pwadhwa/Documents/repos/napari/napari/_qt/test_schema3.json'
-        ) as f:
-            schema = json.load(f)
-        win = PreferencesDialog(parent=self._qt_window)
-        palette = self.qt_viewer.viewer.palette
-        win.setStyleSheet(template("", **palette))
+        # TO DO: need to put in relative path...
+        schema_dir = (
+            '/Users/pwadhwa/Documents/repos/napari/napari/_qt/ui_json_schemas/'
+        )
 
-        win.add_page(schema, {})
+        win = PreferencesDialog(parent=self._qt_window)
+
+        for f in sorted(os.listdir(schema_dir)):
+            if os.path.isfile(os.path.join(schema_dir, f)):
+                with open(f) as f_tmp:
+                    schema = json.load(f_tmp)
+                win.add_page(schema, {})
+
+        win._list.setCurrentRow(0)
+
         win.exec_()
 
     def _add_view_menu(self):
