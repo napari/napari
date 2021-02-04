@@ -1,6 +1,6 @@
 import warnings
 from logging import getLogger
-from typing import List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
 
 from napari_plugin_engine import (
     HookImplementation,
@@ -60,14 +60,6 @@ def read_data_with_plugins(
     """
     hook_caller = plugin_manager.hook.napari_get_reader
 
-    # this checks for the "null layer" sentinel [(None, )]
-    def is_null_layer_sentinel(_layer_data):
-        if not _layer_data or len(_layer_data) != 1:
-            return False
-        if not _layer_data[0] or len(_layer_data[0]) != 1:
-            return False
-        return _layer_data[0][0] is None
-
     if plugin:
         if plugin not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
@@ -81,7 +73,7 @@ def read_data_with_plugins(
         layer_data = reader(path)
         # if the reader returns a "null layer" sentinel indicating an empty
         # file, return an empty list, otherwise return the result or None
-        if is_null_layer_sentinel(layer_data):
+        if _is_null_layer_sentinel(layer_data):
             return []
         return layer_data or None
 
@@ -129,7 +121,7 @@ def read_data_with_plugins(
 
     # if the reader returns a "null layer" sentinel indicating an empty file,
     # return an empty list, otherwise return the result or None
-    if is_null_layer_sentinel(layer_data):
+    if _is_null_layer_sentinel(layer_data):
         return []
     return layer_data or None
 
@@ -209,6 +201,31 @@ def save_layers(
         )
 
     return written
+
+
+def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
+    """Checks if the layer data returned from a reader function indicates an
+    empty file. The sentinel value used for this is ``[(None,)]``.
+
+    Parameters
+    ----------
+    layer_data: LayerData
+        The layer data returned from a reader function to check
+
+    Returns
+    -------
+    bool
+        True, if the layer_data indicates an empty file, False otherwise
+    """
+    if not layer_data or not isinstance(layer_data, list):
+        return False
+    if len(layer_data) != 1:
+        return False
+    if not layer_data[0] or not isinstance(layer_data[0], tuple):
+        return False
+    if len(layer_data[0]) != 1:
+        return False
+    return layer_data[0][0] is None
 
 
 def _write_multiple_layers_with_plugins(
