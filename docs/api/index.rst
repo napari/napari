@@ -32,6 +32,7 @@ For those wishing to add custom functionality to their project.
 
    napari.plugins
    napari.components
+   napari.utils.perf
 
 
 Starting the Event Loop
@@ -63,4 +64,3 @@ Misc
 .. autosummary::
    napari.save_layers
    napari.sys_info
-
