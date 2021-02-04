@@ -217,15 +217,13 @@ def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
     bool
         True, if the layer_data indicates an empty file, False otherwise
     """
-    if not layer_data or not isinstance(layer_data, list):
-        return False
-    if len(layer_data) != 1:
-        return False
-    if not layer_data[0] or not isinstance(layer_data[0], tuple):
-        return False
-    if len(layer_data[0]) != 1:
-        return False
-    return layer_data[0][0] is None
+    return (
+        isinstance(layer_data, list)
+        and len(layer_data) == 1
+        and isinstance(layer_data[0], tuple)
+        and len(layer_data[0]) == 1
+        and layer_data[0][0] is None
+    )
 
 
 def _write_multiple_layers_with_plugins(
