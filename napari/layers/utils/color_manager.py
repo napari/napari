@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 from pydantic import root_validator, validator
@@ -28,6 +28,7 @@ from .color_transformations import (
 class ColorProperties:
     name: str
     values: np.ndarray
+    current_value: Optional[Any] = None
 
     def __eq__(self, other):
         if isinstance(other, ColorProperties):
@@ -50,17 +51,39 @@ def compare_colormap(cmap_1, cmap_2):
 
 def compare_categorical_colormap(cmap_1, cmap_2):
     # todo: add real equivalence test
-    return False
+    if np.array_equal(
+        cmap_1.fallback_color.values, cmap_2.fallback_color.values
+    ):
+        return True
+    else:
+        return False
 
 
 def compare_color_properties(c_prop_1, c_prop_2):
+    if (c_prop_1 is None) and (c_prop_2 is None):
+        return True
+    elif (c_prop_1 is None) != (c_prop_2 is None):
+        return False
+    else:
+        names_eq = c_prop_1.name == c_prop_2.name
+        values_eq = np.array_equal(c_prop_1.values, c_prop_2.values)
 
-    names_eq = c_prop_1.name == c_prop_2.name
-    values_eq = np.array_equal(c_prop_1.values, c_prop_2.values)
-
-    eq = names_eq & values_eq
+        eq = names_eq & values_eq
 
     return eq
+
+
+def compare_colors(color_1, color_2):
+    return np.allclose(color_1, color_2)
+
+
+def compare_contrast_limits(clim_1, clim_2):
+    if (clim_1 is None) and (clim_2 is None):
+        return True
+    elif (clim_1 is None) != (clim_2 is None):
+        return False
+    else:
+        return np.allclose(clim_1, clim_2)
 
 
 class ColorManager(EventedModel):
@@ -78,6 +101,9 @@ class ColorManager(EventedModel):
         'continuous_colormap': compare_colormap,
         'categorical_colormap': compare_categorical_colormap,
         'color_properties': compare_color_properties,
+        'contrast_limits': compare_contrast_limits,
+        'current_color': compare_colors,
+        'colors': compare_colors,
     }
 
     # validators
@@ -88,6 +114,8 @@ class ColorManager(EventedModel):
 
     @validator('categorical_colormap', pre=True)
     def _coerce_categorical_colormap(cls, v):
+        if isinstance(v, CategoricalColormap):
+            return v
         if isinstance(v, list) or isinstance(v, np.ndarray):
             fallback_color = v
 
@@ -123,26 +151,30 @@ class ColorManager(EventedModel):
         elif isinstance(v, dict):
             if len(v) == 0:
                 color_properties = None
-            elif len(v) == 1:
-                name, values = next(iter(v.items()))
-                color_properties = ColorProperties(name=name, values=values)
             else:
-                raise ValueError(
-                    'color_properties should have 0 or 1 key/value pair'
-                )
+                try:
+                    color_properties = ColorProperties(**v)
+                except ValueError:
+                    print(
+                        'color_properties dictionary should have keys: name, value, and optionally current_value'
+                    )
+                    raise
+
         elif isinstance(v, ColorProperties):
             color_properties = v
         else:
             raise TypeError(
-                'color_properties should be a dict or ColorProperties object'
+                'color_properties should be None, a dict, or ColorProperties object'
             )
 
         return color_properties
 
     @validator('colors', pre=True)
     def _ensure_color_array(cls, v, values):
-
-        return transform_color(v)
+        if len(v) > 0:
+            return transform_color(v)
+        else:
+            return np.empty((0, 4))
 
     @root_validator(skip_on_failure=True)
     def refresh_colors(cls, values):
@@ -194,15 +226,15 @@ class ColorManager(EventedModel):
         # set the current color to the last color/property value
         # if it wasn't already set
         if values['current_color'] is None and len(colors) > 0:
-            if color_mode == ColorMode.DIRECT:
-                values['current_color'] = colors[-1]
-            else:
-                property_values = values['color_properties'].values
-                values['current_color'] = property_values[-1]
+            values['current_color'] = colors[-1]
+            if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+                property_values = values['color_properties']
+                property_values.current_value = property_values.values[-1]
+                values['color_properties'] = property_values
         if values['current_color'] is None and len(colors) == 0:
             if color_mode == ColorMode.DIRECT:
                 transformed_color = transform_color_with_defaults(
-                    num_entries=n_colors,
+                    num_entries=values['n_colors'],
                     colors=values['colors'],
                     elem_name="color",
                     default="white",
@@ -212,6 +244,7 @@ class ColorManager(EventedModel):
                 )[0]
 
         # set the colors
+        values['n_colors'] = len(colors)
         values['colors'] = colors
         return values
 
@@ -272,19 +305,54 @@ class ColorManager(EventedModel):
                     name=color_property_name, values=new_color_property_values
                 )
 
+    def __eq__(self, other):
+        current_color = self.__equality_checks__['current_color'](
+            self.current_color, other.current_color
+        )
+        mode = self.mode == other.mode
+        color_properties = self.__equality_checks__['color_properties'](
+            self.color_properties, other.color_properties
+        )
+        continuous_colormap = self.__equality_checks__['continuous_colormap'](
+            self.continuous_colormap, other.continuous_colormap
+        )
+        contrast_limits = self.__equality_checks__['contrast_limits'](
+            self.contrast_limits, other.contrast_limits
+        )
+        categorical_colormap = self.__equality_checks__[
+            'categorical_colormap'
+        ](self.categorical_colormap, other.categorical_colormap)
+        n_colors = self.n_colors == other.n_colors
+        colors = self.__equality_checks__['colors'](self.colors, other.colors)
+
+        return np.all(
+            [
+                current_color,
+                mode,
+                color_properties,
+                continuous_colormap,
+                contrast_limits,
+                categorical_colormap,
+                n_colors,
+                colors,
+            ]
+        )
+
 
 def initialize_color_manager(
-    n_colors: int,
-    colors: Union[dict, np.ndarray],
-    continuous_colormap,
-    contrast_limits,
-    categorical_colormap,
+    colors: Union[dict, str, np.ndarray],
     properties: Dict[str, np.ndarray],
+    n_colors: Optional[int] = None,
+    continuous_colormap: Optional[Union[str, Colormap]] = None,
+    contrast_limits: Optional[Tuple[float, float]] = None,
+    categorical_colormap: Optional[
+        Union[CategoricalColormap, list, np.ndarray]
+    ] = None,
     mode: Optional[Union[ColorMode, str]] = None,
     current_color: Optional[np.ndarray] = None,
     default_color_cycle: np.ndarray = np.array([0, 0, 0, 1]),
 ) -> ColorManager:
-    """Initialize a ColorManager argument from layer kwargs. This is a convenience
+    """Initialize a ColorManager object from layer kwargs. This is a convenience
     function to coerce possible inputs into ColorManager kwargs
 
     """
@@ -298,8 +366,24 @@ def initialize_color_manager(
         contrast_limits = colors.get('contrast_limits', None)
         categorical_colormap = colors.get('categorical_colormap', None)
         n_colors = colors.get('n_colors', None)
+
+        if isinstance(color_properties, str):
+            # if the color properties were given as a property name,
+            # coerce into ColorProperties
+            try:
+                prop_values = properties[color_properties]
+                prop_name = color_properties
+                color_properties = ColorProperties(
+                    name=prop_name, values=prop_values
+                )
+            except KeyError:
+                print(
+                    'if color_properties is a string, it should be a property name'
+                )
+                raise
     else:
         color_values = colors
+        color_properties = None
 
     if categorical_colormap is None:
         categorical_colormap = deepcopy(default_color_cycle)
@@ -312,22 +396,32 @@ def initialize_color_manager(
         'n_colors': n_colors,
     }
 
-    if is_color_mapped(color_values, properties):
-        color_properties = ColorProperties(
-            name=color_values, values=properties[color_values]
-        )
-        if mode is None:
-            if guess_continuous(color_properties.values):
-                mode = ColorMode.COLORMAP
-            else:
-                mode = ColorMode.CYCLE
+    if color_properties is None:
+        if is_color_mapped(color_values, properties):
+            color_properties = ColorProperties(
+                name=color_values, values=properties[color_values]
+            )
+            if mode is None:
+                if guess_continuous(color_properties.values):
+                    mode = ColorMode.COLORMAP
+                else:
+                    mode = ColorMode.CYCLE
 
+            color_kwargs.update(
+                {'mode': mode, 'color_properties': color_properties}
+            )
+
+        else:
+            if len(colors) == 0:
+                color_kwargs.update({'mode': ColorMode.DIRECT})
+            else:
+                color_kwargs.update(
+                    {'mode': ColorMode.DIRECT, 'colors': color_values}
+                )
+    else:
         color_kwargs.update(
             {'mode': mode, 'color_properties': color_properties}
         )
-
-    else:
-        color_kwargs.update({'mode': ColorMode.DIRECT, 'colors': colors})
 
     color_manager = ColorManager(**color_kwargs)
 

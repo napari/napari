@@ -45,16 +45,22 @@ class CategoricalColormap(EventedModel):
 
     @validator('fallback_color', pre=True)
     def _standardize_colorcycle(cls, v):
-        if isinstance(v, str):
-            v = [v]
-        (transformed_color_cycle, transformed_colors,) = transform_color_cycle(
-            color_cycle=v,
-            elem_name='color_cycle',
-            default="white",
-        )
-        color_cycle = ColorCycle(
-            values=transformed_colors, cycle=transformed_color_cycle
-        )
+        if isinstance(v, ColorCycle):
+            color_cycle = v
+        else:
+            if isinstance(v, str):
+                v = [v]
+            (
+                transformed_color_cycle,
+                transformed_colors,
+            ) = transform_color_cycle(
+                color_cycle=v,
+                elem_name='color_cycle',
+                default="white",
+            )
+            color_cycle = ColorCycle(
+                values=transformed_colors, cycle=transformed_color_cycle
+            )
         return color_cycle
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:

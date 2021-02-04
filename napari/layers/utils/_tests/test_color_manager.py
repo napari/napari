@@ -51,7 +51,10 @@ def test_set_color_direct(color):
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
     n_colors = 10
-    properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
+    properties = {
+        'name': 'point_type',
+        'values': _make_cycled_properties([0, 1.5], n_colors),
+    }
     cm = ColorManager(
         n_colors=n_colors,
         color_properties=properties,
@@ -63,7 +66,7 @@ def test_continuous_colormap():
     color_array = transform_color(['black', 'white'] * int(n_colors / 2))
     colors = cm.colors.copy()
     np.testing.assert_allclose(colors, color_array)
-    assert cm.current_color == properties['point_type'][-1]
+    np.testing.assert_allclose(cm.current_color, [1, 1, 1, 1])
 
     # Add 2 color elements and test their color
     cm.add(0, n_colors=2)
@@ -117,7 +120,10 @@ def test_color_cycle(color_cycle):
     """Test setting color with a color cycle list"""
     # create Points using list color cycle
     n_colors = 10
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
+    properties = {
+        'name': 'point_type',
+        'values': _make_cycled_properties(['A', 'B'], n_colors),
+    }
     cm = ColorManager(
         mode='cycle',
         n_colors=n_colors,
@@ -180,6 +186,10 @@ def test_init_color_manager_direct(n_colors):
         np.testing.assert_array_almost_equal(
             color_manager.colors, expected_colors
         )
+    # test that colormanager state can be saved and loaded
+    cm_dict = color_manager.dict()
+    color_manager_2 = initialize_color_manager(colors=cm_dict, properties={})
+    assert color_manager == color_manager_2
 
 
 def test_init_color_manager_cycle():
@@ -202,6 +212,14 @@ def test_init_color_manager_cycle():
         list(islice(cycle(color_cycle), 0, n_colors))
     )
     np.testing.assert_allclose(color_manager.colors, color_array)
+    assert color_manager.color_properties.current_value == 'B'
+
+    # test that colormanager state can be saved and loaded
+    cm_dict = color_manager.dict()
+    color_manager_2 = initialize_color_manager(
+        colors=cm_dict, properties=properties
+    )
+    assert color_manager == color_manager_2
 
 
 def test_init_color_manager_colormap():
@@ -223,4 +241,12 @@ def test_init_color_manager_colormap():
     color_array = transform_color(['black', 'white'] * int(n_colors / 2))
     colors = color_manager.colors.copy()
     np.testing.assert_allclose(colors, color_array)
-    assert color_manager.current_color == properties['point_type'][-1]
+    np.testing.assert_allclose(color_manager.current_color, [1, 1, 1, 1])
+    assert color_manager.color_properties.current_value == 1.5
+
+    # test that colormanager state can be saved and loaded
+    cm_dict = color_manager.dict()
+    color_manager_2 = initialize_color_manager(
+        colors=cm_dict, properties=properties
+    )
+    assert color_manager == color_manager_2
