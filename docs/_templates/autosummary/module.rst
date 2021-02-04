@@ -17,6 +17,7 @@
    .. rubric:: {{ _('Classes') }}
 
    .. autosummary::
+      :nosignatures:
       :toctree:
    {% for item in classes %}
       {{ item }}
@@ -39,6 +40,7 @@
    .. rubric:: {{ _('Exceptions') }}
 
    .. autosummary::
+      :nosignatures:
       :toctree:
    {% for item in exceptions %}
       {{ item }}
