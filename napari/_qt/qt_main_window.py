@@ -49,12 +49,58 @@ class _QtMainWindow(QMainWindow):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
         self.setCentralWidget(center)
+
+    def _delete_qt_window(self):
+        """Delete our self._qt_window."""
+        # On some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        if self.isFullScreen():
+            self.showNormal()
+            for __ in range(8):
+                time.sleep(0.1)
+                QApplication.processEvents()
+
+        self._qt_viewer.close()
+
+    def _handle_exit(self):
+        """Handle exiting the aplication.
+
+        This will execute when closing via menu or via the close button of the main window.
+        """
+        # if the event loop was started in gui_qt() then the app will be
+        # named 'napari'. Since the Qapp was started by us, just close it.
+        if QApplication.applicationName() == 'napari':
+            QApplication.closeAllWindows()
+            QApplication.quit()
+        # otherwise, something else created the QApp before us (such as
+        # %gui qt IPython magic).  If we quit the app in this case, then
+        # *later* attempts to instantiate a napari viewer won't work until
+        # the event loop is restarted with app.exec_().  So rather than
+        # quit just close all the windows (and clear our app icon).
+        else:
+            QApplication.setWindowIcon(QIcon())
+            self._delete_qt_window()
+
+        if perf.USE_PERFMON:
+            # Write trace file before exit, if we were writing one.
+            # Is there a better place to make sure this is done on exit?
+            perf.timers.stop_trace_file()
+
+        _stop_monitor()
+        _shutdown_chunkloader()
+
+    def closeEvent(self, event):
+        """Override Qt event."""
+        self._handle_exit()
+        event.ignore()
 
 
 class Window:
@@ -91,6 +137,7 @@ class Window:
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
         self._qt_window = _QtMainWindow()
+        self._qt_window._qt_viewer = self.qt_viewer
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
@@ -231,31 +278,7 @@ class Window:
         exitAction = QAction('Exit', self._qt_window)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setMenuRole(QAction.QuitRole)
-
-        def handle_exit():
-            # if the event loop was started in gui_qt() then the app will be
-            # named 'napari'. Since the Qapp was started by us, just close it.
-            if QApplication.applicationName() == 'napari':
-                QApplication.closeAllWindows()
-                QApplication.quit()
-            # otherwise, something else created the QApp before us (such as
-            # %gui qt IPython magic).  If we quit the app in this case, then
-            # *later* attempts to instantiate a napari viewer won't work until
-            # the event loop is restarted with app.exec_().  So rather than
-            # quit just close all the windows (and clear our app icon).
-            else:
-                QApplication.setWindowIcon(QIcon())
-                self.close()
-
-            if perf.USE_PERFMON:
-                # Write trace file before exit, if we were writing one.
-                # Is there a better place to make sure this is done on exit?
-                perf.timers.stop_trace_file()
-
-            _stop_monitor()
-            _shutdown_chunkloader()
-
-        exitAction.triggered.connect(handle_exit)
+        exitAction.triggered.connect(self._qt_window._handle_exit)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
@@ -926,26 +949,12 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-
-        # Someone is closing us twice? Only try to delete self._qt_window
-        # if we still have one.
-        if hasattr(self, '_qt_window'):
-            self._delete_qt_window()
-
-    def _delete_qt_window(self):
-        """Delete our self._qt_window."""
-
-        # On some versions of Darwin, exiting while fullscreen seems to tickle
-        # some bug deep in NSWindow.  This forces the fullscreen keybinding
-        # test to complete its draw cycle, then pop back out of fullscreen.
-        if self._qt_window.isFullScreen():
-            self._qt_window.showNormal()
-            for i in range(8):
-                time.sleep(0.1)
-                QApplication.processEvents()
-        self.qt_viewer.close()
-        self._qt_window.close()
-        del self._qt_window
+        try:
+            if hasattr(self, '_qt_window'):
+                self._qt_window.close()
+                del self._qt_window
+        except AttributeError:
+            pass
 
 
 def _stop_monitor() -> None:
