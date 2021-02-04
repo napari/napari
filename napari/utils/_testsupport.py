@@ -5,6 +5,15 @@ from typing import List
 import pytest
 
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--show-napari-viewer",
+        action="store_true",
+        default=False,
+        help="don't show viewer during tests",
+    )
+
+
 @pytest.fixture
 def _strict_qtbot(qtbot):
     """A modified qtbot fixture that makes sure no widgets have been leaked."""
@@ -50,7 +59,7 @@ def make_napari_viewer(_strict_qtbot, request):
 
     def actual_factory(*model_args, viewer_class=Viewer, **model_kwargs):
         model_kwargs['show'] = model_kwargs.pop(
-            'show', request.config.getoption("--show-viewer")
+            'show', request.config.getoption("--show-napari-viewer")
         )
         viewer = viewer_class(*model_args, **model_kwargs)
         viewers.append(viewer)
