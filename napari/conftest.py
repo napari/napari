@@ -32,6 +32,9 @@ except ImportError:
             return path
 
 
+pytest_plugins = ["pytester"]
+
+
 def pytest_addoption(parser):
     """Add napari specific command line options.
 
