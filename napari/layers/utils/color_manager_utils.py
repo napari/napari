@@ -1,4 +1,8 @@
+from typing import Tuple, Union
+
 import numpy as np
+
+from napari.utils import Colormap
 
 
 def guess_continuous(property: np.ndarray) -> bool:
@@ -41,3 +45,31 @@ def is_color_mapped(color, properties):
         raise ValueError(
             'face_color should be the name of a color, an array of colors, or the name of an property'
         )
+
+
+def map_property(
+    prop: np.ndarray,
+    colormap: Colormap,
+    contrast_limits: Union[None, Tuple[float, float]] = None,
+) -> Tuple[np.ndarray, Tuple[float, float]]:
+    """Apply a colormap to a property
+
+    Parameters
+    ----------
+    prop : np.ndarray
+        The property to be colormapped
+    colormap : napari.utils.Colormap
+        The colormap object to apply to the property
+    contrast_limits : Union[None, Tuple[float, float]]
+        The contrast limits for applying the colormap to the property.
+        If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
+        If None is provided, the contrast limits will be set to (property.min(), property.max()).
+        Default value is None.
+    """
+
+    if contrast_limits is None:
+        contrast_limits = (prop.min(), prop.max())
+    normalized_properties = np.interp(prop, contrast_limits, (0, 1))
+    mapped_properties = colormap.map(normalized_properties)
+
+    return mapped_properties, contrast_limits

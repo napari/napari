@@ -1,9 +1,7 @@
-from typing import Dict, Tuple, Union
+from typing import Dict
 
 import dask
 import numpy as np
-
-from napari.utils import Colormap
 
 
 def calc_data_range(data):
@@ -236,31 +234,3 @@ def compute_multiscale_level_and_corners(
     corners = np.array([np.floor(corners[0]), np.ceil(corners[1])]).astype(int)
 
     return level, corners
-
-
-def map_property(
-    prop: np.ndarray,
-    colormap: Colormap,
-    contrast_limits: Union[None, Tuple[float, float]] = None,
-) -> Tuple[np.ndarray, Tuple[float, float]]:
-    """Apply a colormap to a property
-
-    Parameters
-    ----------
-    prop : np.ndarray
-        The property to be colormapped
-    colormap : napari.utils.Colormap
-        The colormap object to apply to the property
-    contrast_limits : Union[None, Tuple[float, float]]
-        The contrast limits for applying the colormap to the property.
-        If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
-        If None is provided, the contrast limits will be set to (property.min(), property.max()).
-        Default value is None.
-    """
-
-    if contrast_limits is None:
-        contrast_limits = (prop.min(), prop.max())
-    normalized_properties = np.interp(prop, contrast_limits, (0, 1))
-    mapped_properties = colormap.map(normalized_properties)
-
-    return mapped_properties, contrast_limits

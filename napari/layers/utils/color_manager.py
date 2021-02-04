@@ -11,14 +11,17 @@ from ...utils.colormaps.colormap_utils import ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ._color_manager_constants import ColorMode
-from .color_manager_utils import guess_continuous, is_color_mapped
+from .color_manager_utils import (
+    guess_continuous,
+    is_color_mapped,
+    map_property,
+)
 from .color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
     transform_color,
     transform_color_with_defaults,
 )
-from .layer_utils import map_property
 
 
 @dataclass
