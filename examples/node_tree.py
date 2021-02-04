@@ -22,6 +22,6 @@ with gui_qt():
         [Node(name='6'), lg1, Node(name='7'), Node(name='8'), Node(name='9')],
         name="root",
     )
-    tree = QtNodeTreeView(root)
-    model = tree.model()
-    tree.show()
+    view = QtNodeTreeView(root)
+    model = view.model()
+    view.show()
