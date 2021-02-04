@@ -1,7 +1,7 @@
 """
 This module tests our "pytest plugin" made available in
 ``napari.utils._testsupport``.  We leave this file in root so it is not
-included in the sdist.
+included in the sdist OR the wheel.
 """
 
 import pytest
