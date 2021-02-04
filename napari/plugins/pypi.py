@@ -1,6 +1,16 @@
 """
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
+
+Right now there are two matching mechanism: pypi classifier and github topics.
+If the repo is setup correctly in setup.py as a napari plugin, it would
+also show up in napari plugin installation menu when user open napari.
+
+However, though currently napari users would be able to see github repos tagged
+with the "napari-plugin" topic <https://github.com/topics/napari-plugin>,
+we could deprecate github repo matching in the future to only support matching
+via PyPI with 'Framework :: napari' [classifier] to unify practices of
+tagging plugin packages.
 """
 import json
 import os
