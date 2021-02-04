@@ -17,9 +17,9 @@ key/mouse bindings
 """
 
 from enum import Enum
-from typing import List, Set, Tuple
+from typing import List, Tuple
 
-from pydantic import BaseModel, BaseSettings, Field
+from pydantic import BaseSettings, Field
 
 from napari.utils.events.evented_model import EventedModel
 
@@ -41,7 +41,6 @@ class ThemeEnum(str, Enum):
     light = 'light'
 
 
-
 class ApplicationSettings(BaseSettings, EventedModel):
     """Main application settings."""
 
@@ -52,10 +51,13 @@ class ApplicationSettings(BaseSettings, EventedModel):
     highlight_thickness: int = 1
     theme: ThemeEnum = ThemeEnum.dark
     # Startup
+    # TODO: Make that a date time; so if telemetry ever changes, we can know wether user have accepted before/after?
+    # the change , and/or maybe remind them that we are collecting every year or so?
     opt_in_telemetry: bool = Field(
         False, description="Check to enable telemetry measurements"
     )
     first_time: bool = True
+    # Fonts
     font_plain_family: str = None
     font_plain_size: int = None
     font_rich_family: str = None

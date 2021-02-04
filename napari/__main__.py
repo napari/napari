@@ -2,7 +2,6 @@
 napari command line viewer.
 """
 import argparse
-import ast
 import logging
 import os
 import platform

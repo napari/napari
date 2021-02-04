@@ -163,13 +163,13 @@ class Window:
         if show:
             self.show()
 
-            # if SETTINGS.get("application", "first_time"):
-            #     SETTINGS.set("application", "first_time", False)
-            # else:
-            #     try:
-            #         self._set_window_settings(*self._load_window_settings())
-            #     except Exception:
-            #         pass
+            if SETTINGS.application.first_time:
+                SETTINGS.application.first_time = False
+            else:
+                try:
+                    self._set_window_settings(*self._load_window_settings())
+                except Exception:
+                    pass
 
     def __getattr__(self, name):
         if name == 'raw_stylesheet':
@@ -895,7 +895,7 @@ class Window:
 
     def _toggle_theme(self):
         self.qt_viewer.viewer._toggle_theme()
-        SETTINGS.set("application", "theme", self.qt_viewer.viewer.theme)
+        SETTINGS.application.theme = self.qt_viewer.viewer.theme
         self._update_theme()
 
     def _update_theme(self, event=None):
@@ -903,10 +903,13 @@ class Window:
         theme_name = self.qt_viewer.viewer.theme
         self._qt_window.setStyleSheet(get_stylesheet(theme_name))
 
+        if event:
+            SETTINGS.application.theme = event.value
+
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
         # theme = get_theme(self.qt_viewer.viewer.theme)
-        theme = get_theme(SETTINGS.get("application", "theme"))
+        theme = get_theme(SETTINGS.application.theme)
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
@@ -999,32 +1002,28 @@ class Window:
         """
         Load window layout settings from configuration.
         """
-        window_size = SETTINGS.get("application", "window_size")
-        state = SETTINGS.get("application", "window_state")
-        preferences_dialog_size = SETTINGS.get(
-            "application", "preferences_size"
-        )
-
-        position = SETTINGS.get("application", "window_position")
+        window_size = SETTINGS.application.window_size
+        window_state = SETTINGS.application.window_state
+        preferences_dialog_size = SETTINGS.application.preferences_size
+        window_position = SETTINGS.application.window_position
 
         # It's necessary to verify if the window/position value is valid with the current screen.
-        width = position[0]
-        height = position[1]
+        width, height = window_position
         screen_shape = QApplication.desktop().geometry()
         current_width = screen_shape.width()
         current_height = screen_shape.height()
         if current_width < width or current_height < height:
-            position = (self._qt_window.x(), self._qt_window.y())
+            window_position = (self._qt_window.x(), self._qt_window.y())
 
-        is_maximized = SETTINGS.get("application", "window_maximized")
-        is_fullscreen = SETTINGS.get("application", "window_fullscreen")
+        window_maximized = SETTINGS.application.window_maximized
+        window_fullscreen = SETTINGS.application.window_fullscreen
         return (
-            state,
+            window_state,
             window_size,
+            window_position,
+            window_maximized,
+            window_fullscreen,
             preferences_dialog_size,
-            position,
-            is_maximized,
-            is_fullscreen,
         )
 
     def _get_window_settings(self):
@@ -1034,12 +1033,12 @@ class Window:
         Symmetric to the 'set_window_settings' setter.
         """
         window_size = (self._qt_window.width(), self._qt_window.height())
-        is_fullscreen = self._qt_window.isFullScreen()
+        window_fullscreen = self._qt_window.isFullScreen()
 
-        if is_fullscreen:
-            is_maximized = self._maximized_flag
+        if window_fullscreen:
+            window_maximized = self._maximized_flag
         else:
-            is_maximized = self._qt_window.isMaximized()
+            window_maximized = self._qt_window.isMaximized()
 
         window_position = (self._qt_window.x(), self._qt_window.y())
         preferences_dialog_size = (
@@ -1050,20 +1049,20 @@ class Window:
         return (
             window_state,
             window_size,
-            preferences_dialog_size,
             window_position,
-            is_maximized,
-            is_fullscreen,
+            window_maximized,
+            window_fullscreen,
+            preferences_dialog_size,
         )
 
     def _set_window_settings(
         self,
-        hexstate,
+        window_state,
         window_size,
+        window_position,
+        window_maximized,
+        window_fullscreen,
         preferences_dialog_size,
-        position,
-        is_maximized,
-        is_fullscreen,
     ):
         """
         Set window settings.
@@ -1071,58 +1070,48 @@ class Window:
         Symmetric to the 'get_window_settings' accessor.
         """
         self._qt_window.setUpdatesEnabled(False)
-        window_size = QSize(window_size[0], window_size[1])
-        self._preferences_dialog_size = QSize(
-            preferences_dialog_size[0], preferences_dialog_size[1]
-        )
-
-        window_position = QPoint(position[0], position[1])
         self._qt_window.setWindowState(Qt.WindowNoState)
-        self._qt_window.resize(window_size)
-        self._qt_window.move(window_position)
 
-        # Window layout
-        if hexstate:
-            self._qt_window.restoreState(str_to_qbytearray(hexstate))
+        if preferences_dialog_size:
+            self._preferences_dialog_size = QSize(*preferences_dialog_size)
 
-        if is_fullscreen:
+        if window_position:
+            window_position = QPoint(*window_position)
+            self._qt_window.move(window_position)
+
+        if window_size:
+            window_size = QSize(*window_size)
+            self._qt_window.resize(window_size)
+
+        if window_state:
+            self._qt_window.restoreState(str_to_qbytearray(window_state))
+
+        if window_fullscreen:
             self._qt_window.setWindowState(Qt.WindowFullScreen)
-
-        if is_fullscreen:
-            self._maximized_flag = is_maximized
-        elif is_maximized:
+            self._maximized_flag = window_maximized
+        elif window_maximized:
             self._qt_window.setWindowState(Qt.WindowMaximized)
 
         self._qt_window.setUpdatesEnabled(True)
 
     def _save_current_window_settings(self):
-        """"""
+        """Save the current geometry of the main window."""
         (
-            state,
+            window_state,
             window_size,
+            window_position,
+            window_maximized,
+            window_fullscreen,
             preferences_dialog_size,
-            position,
-            is_maximized,
-            is_fullscreen,
         ) = self._get_window_settings()
 
-        SETTINGS.set('application', 'window_size', window_size)
-        SETTINGS.set('application', 'window_maximized', is_maximized)
-        SETTINGS.set('application', 'window_fullscreen', is_fullscreen)
-        SETTINGS.set('application', 'window_position', position)
-        SETTINGS.set(
-            'application',
-            'window_state',
-            state,
-        )
-        SETTINGS.set(
-            'application',
-            'preferences_size',
-            preferences_dialog_size,
-        )
-        SETTINGS.set(
-            'application', 'window_statusbar', not self._status_bar.isHidden()
-        )
+        SETTINGS.application.window_size = window_size
+        SETTINGS.application.window_maximized = window_maximized
+        SETTINGS.application.window_fullscreen = window_fullscreen
+        SETTINGS.application.window_position = window_position
+        SETTINGS.application.window_state = window_state
+        SETTINGS.application.preferences_size = preferences_dialog_size
+        SETTINGS.application.window_statusbar = not self._status_bar.isHidden()
 
     def _update_preferences_dialog_size(self, event):
         """Save preferences dialog size."""
