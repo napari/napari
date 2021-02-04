@@ -34,6 +34,7 @@ from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app
+from .qt_json_builder.preferences_schema import PreferencesDialog
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array
@@ -195,6 +196,12 @@ class Window:
         open_folder.setStatusTip('Open a folder')
         open_folder.triggered.connect(self.qt_viewer._open_folder_dialog)
 
+        # OS X will rename this to Quit and put it in the app menu.
+        preferences = QAction('Preferences', self._qt_window)
+        preferences.setShortcut('Ctrl+Shift+P')
+        preferences.setStatusTip('Open preferences dialog')
+        preferences.triggered.connect(self._open_preferences)
+
         save_selected_layers = QAction(
             'Save Selected Layer(s)...', self._qt_window
         )
@@ -262,12 +269,30 @@ class Window:
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addSeparator()
+        self.file_menu.addAction(preferences)
+        self.file_menu.addSeparator()
         self.file_menu.addAction(save_selected_layers)
         self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(exitAction)
+
+    def _open_preferences(self):
+        """Edit preferences from the menubar."""
+        import json
+
+        with open(
+            # TO DO: change to relative path or point to schema. just using for testing.
+            '/Users/pwadhwa/Documents/repos/napari/napari/_qt/test_schema3.json'
+        ) as f:
+            schema = json.load(f)
+        win = PreferencesDialog(parent=self._qt_window)
+        palette = self.qt_viewer.viewer.palette
+        win.setStyleSheet(template("", **palette))
+
+        win.add_page(schema, {})
+        win.exec_()
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""

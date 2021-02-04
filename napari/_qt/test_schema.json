@@ -1,0 +1,26 @@
+{
+    "type": "object",
+    "title": "",
+    "properties": {
+
+        "Themes": {
+            "type": "string",
+            "enum": [
+                "Light", "Dark"
+            ]
+        },
+
+        "fontSize": {
+            "title": "Font Size",
+            "type": "integer",
+            "minimum": 4,
+            "maximum": 32,
+            "multipleOf": 1
+        },
+
+        "telemetry_option": {
+            "title": "Telemetry",
+            "type": "boolean"
+        }
+    }
+}
