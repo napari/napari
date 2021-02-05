@@ -818,13 +818,11 @@ class Window:
         try:
             self._qt_window.resize(self._qt_window.layout().sizeHint())
             self._qt_window.show()
-        except RuntimeError as e:
-            if "has been deleted" in str(e):
-                raise RuntimeError(
-                    "This viewer has already been closed and deleted. "
-                    "Please create a new one."
-                )
-            raise
+        except (AttributeError, RuntimeError):
+            raise RuntimeError(
+                "This viewer has already been closed and deleted. "
+                "Please create a new one."
+            )
 
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
