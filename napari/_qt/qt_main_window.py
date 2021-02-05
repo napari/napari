@@ -64,9 +64,10 @@ class _QtMainWindow(QMainWindow):
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self.isFullScreen():
             self.showNormal()
-            for __ in range(8):
+            for __ in range(6):
                 time.sleep(0.1)
                 QApplication.processEvents()
+        self.close()
 
     def _handle_exit(self):
         """Handle exiting the aplication.
@@ -85,7 +86,7 @@ class _QtMainWindow(QMainWindow):
         # quit just close all the windows (and clear our app icon).
         else:
             QApplication.setWindowIcon(QIcon())
-            self._delete_qt_window()
+            self.close()
 
         if perf.USE_PERFMON:
             # Write trace file before exit, if we were writing one.
@@ -98,7 +99,7 @@ class _QtMainWindow(QMainWindow):
     def closeEvent(self, event):
         """Override Qt event."""
         self._handle_exit()
-        event.ignore()
+        event.accept()
 
 
 class Window:
