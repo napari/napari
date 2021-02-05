@@ -131,8 +131,7 @@ class Window:
 
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        # note: the return value must be retained to prevent garbage collection
-        _ = get_app()
+        get_app()
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)

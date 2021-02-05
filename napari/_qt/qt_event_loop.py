@@ -4,8 +4,8 @@ from contextlib import contextmanager
 from warnings import warn
 
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QIcon, QPixmap
-from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import QApplication
 
 from napari import __version__
 
@@ -34,6 +34,9 @@ _defaults = {
     'org_domain': 'napari.org',
     'app_id': NAPARI_APP_ID,
 }
+
+
+_app_ref = None
 
 
 def get_app(
@@ -104,7 +107,6 @@ def get_app(
 
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
-        app._existed = True
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
@@ -116,7 +118,8 @@ def get_app(
             app = QApplicationWithTracing(sys.argv)
         else:
             app = QApplication(sys.argv)
-
+        global _app_ref
+        _app_ref = app
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
 
@@ -139,20 +142,7 @@ def get_app(
 
 
 @contextmanager
-def splash_screen(icon_path=NAPARI_ICON_PATH):
-    pm = QPixmap(icon_path).scaled(
-        360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
-    )
-    splash_widget = QSplashScreen(pm)
-    splash_widget.show()
-
-    yield
-
-    splash_widget.close()
-
-
-@contextmanager
-def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
+def gui_qt(*, startup_logo=False, gui_exceptions=True, force=False):
     """Start a Qt event loop in which to run the application.
 
     Parameters
@@ -173,49 +163,33 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
-    splash_widget = None
 
     app = get_app()
+    splash = None
     if startup_logo and app.applicationName() == 'napari':
-        pm = QPixmap(NAPARI_ICON_PATH).scaled(
-            360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        splash_widget = QSplashScreen(pm)
-        splash_widget.show()
-        app._splash_widget = splash_widget
+        from .widgets.qt_splash_screen import NapariSplashScreen
 
-    # instantiate the exception handler
-    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
-    sys.excepthook = exception_handler.handle
+        splash = NapariSplashScreen()
 
-    try:
-        yield app
-    except Exception:
-        exception_handler.handle(*sys.exc_info())
+    yield app
+    if splash:
+        splash.close()
 
-    if splash_widget and startup_logo:
-        splash_widget.close()
-    run(force=force, _func_name='gui_qt')
-
-
-@contextmanager
-def _install_hooks(gui_exceptions=False):
-    """Install ExceptionHandler as sys.excepthook.
-
-    probably temporary until https://github.com/napari/napari/pull/2205
-    """
-    # instantiate the exception handler
-    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
-    orighook, sys.excepthook = sys.excepthook, exception_handler.handle
-    try:
-        yield
-    finally:
-        sys.excepthook = orighook
-        exception_handler.deleteLater()
+    run(force=force, gui_exceptions=True, _func_name='gui_qt')
 
 
 def _ipython_owns_qapp() -> bool:
-    """Return True if IPython %gui qt has created the App."""
+    """Return True if IPython %gui qt has created the App.
+
+    IPython doesn't "annotate" their QApplication in any way (i.e. with
+    applicationName or other metadata).  So this is likely the best way to
+    confirm that %gui qt has been called.
+
+    Using this is also better than checking ``QApp.thread().loopLevel() > 0``,
+    because IPython starts and stops the event loop continuously to accept code
+    at the prompt.  So it will likely "appear" like there is no event loop
+    running, but will still don't need to start one.
+    """
     try:
         from IPython.terminal.pt_inputhooks import qt
 
@@ -254,6 +228,10 @@ def run(
         (To avoid confusion) if no widgets would be shown upon starting the
         event loop.
     """
+    if _ipython_owns_qapp():
+        # If %gui qt has been used, we don't want to block again.
+        return
+
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
@@ -278,8 +256,21 @@ def run(
         )
         return
 
-    if _ipython_owns_qapp():
-        return
-
     with _install_hooks(gui_exceptions):
         app.exec_()
+
+
+@contextmanager
+def _install_hooks(gui_exceptions=True):
+    """Install ExceptionHandler as sys.excepthook.
+
+    probably temporary until https://github.com/napari/napari/pull/2205
+    """
+    # instantiate the exception handler
+    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
+    orighook, sys.excepthook = sys.excepthook, exception_handler.handle
+    try:
+        yield
+    finally:
+        sys.excepthook = orighook
+        exception_handler.deleteLater()
