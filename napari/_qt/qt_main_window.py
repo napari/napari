@@ -941,8 +941,9 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        self._qt_window.close()
-        del self._qt_window
+        if hasattr(self, '_qt_window'):
+            self._qt_window.close()
+            del self._qt_window
 
 
 def _stop_monitor() -> None:
