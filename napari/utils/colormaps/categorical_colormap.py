@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from itertools import cycle
 from typing import Any, Dict, Union
 
 import numpy as np
@@ -8,17 +6,8 @@ from pydantic import validator
 from ...layers.utils.color_transformations import transform_color_cycle
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
+from .categorical_colormap_utils import ColorCycle, compare_color_cycle
 from .standardize_color import transform_color
-
-
-@dataclass
-class ColorCycle:
-    values: np.ndarray
-    cycle: cycle
-
-
-def compare_color_cycle(cycle_1: ColorCycle, cycle_2: ColorCycle) -> bool:
-    return np.array_equal(cycle_1.values, cycle_2.values)
 
 
 class CategoricalColormap(EventedModel):

@@ -1,5 +1,7 @@
 import numpy as np
 
+from ..colormaps.categorical_colormap_utils import ColorCycle
+
 
 class Array(np.ndarray):
     def __class_getitem__(cls, t):
@@ -27,4 +29,7 @@ class Array(np.ndarray):
         return result
 
 
-JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
+JSON_ENCODERS = {
+    np.ndarray: lambda arr: arr.tolist(),
+    ColorCycle: lambda cc: cc.values.tolist(),
+}
