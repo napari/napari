@@ -47,14 +47,14 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, qt_viewer: QtViewer = None, parent=None) -> None:
+    def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
-        self._qt_viewer = qt_viewer
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
     def _delete_qt_window(self):
@@ -64,11 +64,10 @@ class _QtMainWindow(QMainWindow):
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self.isFullScreen():
             self.showNormal()
-            for __ in range(8):
+            for __ in range(6):
                 time.sleep(0.1)
                 QApplication.processEvents()
-        if self._qt_viewer is not None:
-            self._qt_viewer.close()
+        self.close()
 
     def _handle_exit(self):
         """Handle exiting the aplication.
@@ -87,7 +86,7 @@ class _QtMainWindow(QMainWindow):
         # quit just close all the windows (and clear our app icon).
         else:
             QApplication.setWindowIcon(QIcon())
-            self._delete_qt_window()
+            self.close()
 
         if perf.USE_PERFMON:
             # Write trace file before exit, if we were writing one.
@@ -100,7 +99,7 @@ class _QtMainWindow(QMainWindow):
     def closeEvent(self, event):
         """Override Qt event."""
         self._handle_exit()
-        event.ignore()
+        event.accept()
 
 
 class Window:
@@ -134,11 +133,10 @@ class Window:
         get_app()
 
         # Connect the Viewer and create the Main Window
+        self._qt_window = _QtMainWindow()
         self.qt_viewer = QtViewer(viewer)
-        self._qt_window = _QtMainWindow(qt_viewer=self.qt_viewer)
-        self._qt_window._qt_viewer = self.qt_viewer
+        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
-        self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -161,9 +159,6 @@ class Window:
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
-
-        self._qt_center.layout().addWidget(self.qt_viewer)
-        self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
         self._update_theme()
 
@@ -884,9 +879,6 @@ class Window:
                 **theme,
             )
         )
-        self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **theme)
-        )
         self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
     def _status_changed(self, event):
@@ -948,12 +940,9 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        try:
-            if hasattr(self, '_qt_window'):
-                self._qt_window.close()
-                del self._qt_window
-        except AttributeError:
-            pass
+        if hasattr(self, '_qt_window'):
+            self._qt_window.close()
+            del self._qt_window
 
 
 def _stop_monitor() -> None:
