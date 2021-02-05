@@ -19,7 +19,9 @@ class CategoricalColormap(EventedModel):
     fallback_color : ColorCycle
         The color to be used in the case that a value is mapped that is not
         in colormap. This can be given as any ColorType and it will be converted
-        to a cycle. The default value is a cycle of all black.
+        to a ColorCycle. An array of the values contained in the
+        ColorCycle.cycle is stored in ColorCycle.values.
+        The default value is a cycle of all white.
     """
 
     colormap: Dict[Any, Array[float, (4,)]] = {}
