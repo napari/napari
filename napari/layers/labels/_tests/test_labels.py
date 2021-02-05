@@ -384,6 +384,14 @@ def test_contour():
         ),
     )
 
+    layer.contour = False
+    assert layer.contour is False
+
+    # Check it's in the same state as before setting the contour
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(data), layer._data_view
+    )
+
 
 def test_selecting_label():
     """Test selecting label."""
