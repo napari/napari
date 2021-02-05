@@ -1,8 +1,10 @@
 import numpy as np
 
 import napari.layers
+from napari._tests.utils import skip_on_win_ci
 
 
+@skip_on_win_ci
 def test_add_function_widget(make_napari_viewer):
     """Test basic add_function_widget functionality"""
     from qtpy.QtWidgets import QDockWidget

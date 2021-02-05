@@ -1,4 +1,8 @@
+import os
+import sys
+
 import numpy as np
+import pytest
 
 from napari import Viewer
 from napari.layers import (
@@ -179,3 +183,14 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
     translated_extent = np.add(scaled_extent, translate)
     np.testing.assert_almost_equal(layer.extent.data, extent)
     np.testing.assert_almost_equal(layer.extent.world, translated_extent)
+
+
+skip_on_win_ci = pytest.mark.skipif(
+    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
+    reason='Screenshot tests are not supported on windows CI.',
+)
+
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
