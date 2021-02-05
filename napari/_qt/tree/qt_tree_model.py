@@ -282,42 +282,18 @@ class QtNodeTreeModel(QAbstractItemModel):
 
         See Qt documentation: https://doc.qt.io/qt-5/qabstractitemmodel.html#beginMoveRows
         """
-        d0 = self.nestedIndex(event.new_index)
+        src_par, src_idx = self._split_nested_index(event.index)
+        dest_par, dest_idx = self._split_nested_index(event.new_index)
 
-        moving_indices = (
-            event.index if isinstance(event.index, list) else [event.index]
+        logger.debug(
+            f"beginMoveRows({self.getItem(src_par).name}, {src_idx}, "
+            f"{self.getItem(dest_par).name}, {dest_idx})"
         )
 
-        offset = 0
-        for i in moving_indices:
-            idx = self.nestedIndex(i)
-            if idx.parent() == d0.parent() and idx.row() < d0.row():
-                offset += 1
-
-        self._from_to = [
-            (
-                self.nestedIndex(i),
-                self.index(d0.row() + n - offset, 0, d0.parent()),
-            )
-            for n, i in enumerate(moving_indices)
-        ]
-        self.layoutAboutToBeChanged.emit([])
-
-        # src_par, src_idx = self._split_nested_index(event.index)
-        # dest_par, dest_idx = self._split_nested_index(event.new_index)
-
-        # logger.debug(
-        #     f"beginMoveRows({self.getItem(src_par).name}, {src_idx}, "
-        #     f"{self.getItem(dest_par).name}, {dest_idx})"
-        # )
-
-        # self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
+        self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
     def _on_end_move(self, e):
-        self.changePersistentIndexList(*zip(*self._from_to))
-        self.layoutChanged.emit([])
-        self.dataChanged.emit(self.index(0), self.index(4))
-        # self.endMoveRows()
+        self.endMoveRows()
 
     def getItem(self, index: QModelIndex) -> Node:
         """Return ``Node`` object for a given `QModelIndex`.
