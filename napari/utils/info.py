@@ -148,7 +148,7 @@ def sys_info(as_html=False):
 
         screen_list = QGuiApplication.screens()
         for i, screen in enumerate(screen_list, start=1):
-            text += f"  - screen #{i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>"
+            text += f"  - screen {i}: resolution {screen.geometry().width()}x{screen.geometry().height()}, scale {screen.devicePixelRatio()}<br>"
     except Exception as e:
         text += f"  - failed to load screen information {e}"
 
