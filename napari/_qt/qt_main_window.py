@@ -815,8 +815,17 @@ class Window:
 
     def show(self):
         """Resize, show, and bring forward the window."""
-        self._qt_window.resize(self._qt_window.layout().sizeHint())
-        self._qt_window.show()
+        try:
+            self._qt_window.resize(self._qt_window.layout().sizeHint())
+            self._qt_window.show()
+        except RuntimeError as e:
+            if "has been deleted" in str(e):
+                raise RuntimeError(
+                    "This viewer has already been closed and deleted. "
+                    "Please create a new one."
+                )
+            raise
+
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
 
