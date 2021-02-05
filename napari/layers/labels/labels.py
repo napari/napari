@@ -672,7 +672,7 @@ class Labels(Image):
             raise ValueError("Unsupported Color Mode")
 
         if self.contour:
-            image = np.logical_xor(image, ndi.binary_erosion(image))
+            image = np.logical_xor(raw, ndi.binary_erosion(raw))
 
         return image
 

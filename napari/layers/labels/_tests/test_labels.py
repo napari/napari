@@ -349,6 +349,42 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+def test_contour():
+    """Test changing contour."""
+    data = np.array(
+        [
+            [1, 1, 0, 0, 0, 1, 1, 1, 2, 1],
+            [2, 1, 0, 0, 0, 0, 1, 1, 1, 0],
+            [2, 2, 2, 0, 2, 2, 1, 2, 2, 0],
+            [1, 2, 0, 0, 2, 1, 2, 0, 0, 0],
+            [1, 0, 0, 0, 1, 2, 1, 2, 1, 2],
+        ]
+    )
+    layer = Labels(data)
+    assert layer.contour is False
+    np.testing.assert_array_equal(layer.data, data)
+
+    layer.contour = True
+    assert layer.contour is True
+
+    # Check `layer.data` didn't change
+    np.testing.assert_array_equal(layer.data, data)
+
+    # Check what is returned in the view of the data
+    np.testing.assert_array_equal(
+        1 * layer._raw_to_displayed(data),
+        np.array(
+            [
+                [1, 1, 0, 0, 0, 1, 1, 1, 1, 1],
+                [1, 1, 0, 0, 0, 0, 1, 0, 1, 0],
+                [1, 0, 1, 0, 1, 1, 0, 1, 1, 0],
+                [1, 1, 0, 0, 1, 0, 1, 0, 0, 0],
+                [1, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+            ]
+        ),
+    )
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
