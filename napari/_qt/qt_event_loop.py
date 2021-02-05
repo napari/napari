@@ -1,6 +1,7 @@
 import os
 import sys
 from contextlib import contextmanager
+from warnings import warn
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QPixmap
@@ -93,7 +94,6 @@ def get_app(
     app = QApplication.instance()
     if app:
         if set_values:
-            from warnings import warn
 
             warn(
                 "QApplication already existed, these arguments to to 'get_app'"
@@ -139,6 +139,19 @@ def get_app(
 
 
 @contextmanager
+def splash_screen(icon_path=NAPARI_ICON_PATH):
+    pm = QPixmap(icon_path).scaled(
+        360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
+    )
+    splash_widget = QSplashScreen(pm)
+    splash_widget.show()
+
+    yield
+
+    splash_widget.close()
+
+
+@contextmanager
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
 
@@ -180,19 +193,40 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     except Exception:
         exception_handler.handle(*sys.exc_info())
 
-    # if the application already existed before this function was called,
-    # there's no need to start it again.  By avoiding unnecessary calls to
-    # ``app.exec_``, we avoid blocking.
-    # we add 'magicgui' so that anyone using @magicgui *before* calling gui_qt
-    # will also have the application executed. (a bandaid for now?...)
-    # see https://github.com/napari/napari/pull/2016
-    if app.applicationName() in ('napari', 'magicgui'):
-        if splash_widget and startup_logo:
-            splash_widget.close()
-        run(force=force, _func_name='gui_qt')
+    if splash_widget and startup_logo:
+        splash_widget.close()
+    run(force=force, _func_name='gui_qt')
 
 
-def run(*, force=False, _func_name='run'):
+@contextmanager
+def _install_hooks(gui_exceptions=False):
+    """Install ExceptionHandler as sys.excepthook.
+
+    probably temporary until https://github.com/napari/napari/pull/2205
+    """
+    # instantiate the exception handler
+    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
+    orighook, sys.excepthook = sys.excepthook, exception_handler.handle
+    try:
+        yield
+    finally:
+        sys.excepthook = orighook
+        exception_handler.deleteLater()
+
+
+def _ipython_owns_qapp() -> bool:
+    """Return True if IPython %gui qt has created the App."""
+    try:
+        from IPython.terminal.pt_inputhooks import qt
+
+        return qt._appref is not None
+    except (ImportError, AttributeError):
+        return False
+
+
+def run(
+    *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
+):
     """Start the Qt Event Loop
 
     Parameters
@@ -200,6 +234,15 @@ def run(*, force=False, _func_name='run'):
     force : bool, optional
         Force the application event_loop to start, even if there are no top
         level widgets to show.
+    gui_exceptions : bool, optional
+        Whether to show uncaught exceptions in the GUI, by default they will be
+        shown in the console that launched the event loop.
+    max_loop_level : int, optional
+        The maximum allowable "loop level" for the execution thread.  Every
+        time `QApplication.exec_()` is called, Qt enters the event loop,
+        increments app.thread().loopLevel(), and waits until exit() is called.
+        This function will prevent calling `exec_()` if the application already
+        has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is only here to
         provide functions like `gui_qt` a way to inject their name into the
@@ -219,11 +262,24 @@ def run(*, force=False, _func_name='run'):
             'or qtpy.QtWidgets.QApplication([])'
         )
     if not app.topLevelWidgets() and not force:
-        from warnings import warn
-
         warn(
             "Refusing to run a QApplication with no topLevelWidgets. "
             f"To run the app anyway, use `{_func_name}(force=True)`"
         )
         return
-    app.exec_()
+
+    if app.thread().loopLevel() >= max_loop_level:
+        loops = app.thread().loopLevel()
+        s = 's' if loops > 1 else ''
+        warn(
+            f"A QApplication is already running with {loops} event loop{s}."
+            "To enter *another* event loop, use "
+            f"`{_func_name}(max_loop_level={loops + 1})`"
+        )
+        return
+
+    if _ipython_owns_qapp():
+        return
+
+    with _install_hooks(gui_exceptions):
+        app.exec_()
