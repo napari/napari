@@ -33,7 +33,7 @@ from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
-from .qt_event_loop import NAPARI_ICON_PATH, get_app
+from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array
@@ -47,9 +47,8 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, qt_viewer: QtViewer = None, parent=None) -> None:
-        super().__init__(parent=parent)
-        self._qt_viewer = qt_viewer
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -57,50 +56,17 @@ class _QtMainWindow(QMainWindow):
         center.setLayout(QHBoxLayout())
         self.setCentralWidget(center)
 
-    def _delete_qt_window(self):
-        """Delete our self._qt_window."""
-        # On some versions of Darwin, exiting while fullscreen seems to tickle
-        # some bug deep in NSWindow.  This forces the fullscreen keybinding
-        # test to complete its draw cycle, then pop back out of fullscreen.
+    def closeEvent(self, event):
+        """This method will be called when the main window is closing.
+
+        Regardless of whether cmd Q, cmd W, or the close button is used...
+        """
         if self.isFullScreen():
             self.showNormal()
-            for __ in range(8):
+            for i in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
-        if self._qt_viewer is not None:
-            self._qt_viewer.close()
-
-    def _handle_exit(self):
-        """Handle exiting the aplication.
-
-        This will execute when closing via menu or via the close button of the main window.
-        """
-        # if the event loop was started in gui_qt() then the app will be
-        # named 'napari'. Since the Qapp was started by us, just close it.
-        if QApplication.applicationName() == 'napari':
-            QApplication.closeAllWindows()
-            QApplication.quit()
-        # otherwise, something else created the QApp before us (such as
-        # %gui qt IPython magic).  If we quit the app in this case, then
-        # *later* attempts to instantiate a napari viewer won't work until
-        # the event loop is restarted with app.exec_().  So rather than
-        # quit just close all the windows (and clear our app icon).
-        else:
-            QApplication.setWindowIcon(QIcon())
-            self._delete_qt_window()
-
-        if perf.USE_PERFMON:
-            # Write trace file before exit, if we were writing one.
-            # Is there a better place to make sure this is done on exit?
-            perf.timers.stop_trace_file()
-
-        _stop_monitor()
-        _shutdown_chunkloader()
-
-    def closeEvent(self, event):
-        """Override Qt event."""
-        self._handle_exit()
-        event.ignore()
+        event.accept()
 
 
 class Window:
@@ -136,8 +102,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
-        self._qt_window = _QtMainWindow(qt_viewer=self.qt_viewer)
-        self._qt_window._qt_viewer = self.qt_viewer
+        self._qt_window = _QtMainWindow()
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
@@ -275,10 +240,11 @@ class Window:
         screenshot_wv.triggered.connect(self._screenshot_dialog)
 
         # OS X will rename this to Quit and put it in the app menu.
+        # This quits the entire QApplication and all windows that may be open.
         exitAction = QAction('Exit', self._qt_window)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setMenuRole(QAction.QuitRole)
-        exitAction.triggered.connect(self._qt_window._handle_exit)
+        exitAction.triggered.connect(quit_app)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
@@ -408,10 +374,10 @@ class Window:
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
-        exit_action = QAction("Close Window", self._qt_window)
-        exit_action.setShortcut("Ctrl+W")
-        exit_action.setStatusTip('Close napari window')
-        exit_action.triggered.connect(self._qt_window.close)
+        close_action = QAction("Close Window", self._qt_window)
+        close_action.setShortcut("Ctrl+W")
+        close_action.setStatusTip('Close napari window')
+        close_action.triggered.connect(self._qt_window.close)
 
         clear_action = QAction("Remove Dock Widgets", self._qt_window)
         clear_action.setStatusTip('Remove all dock widgets')
@@ -420,7 +386,7 @@ class Window:
         )
 
         self.window_menu = self.main_menu.addMenu('&Window')
-        self.window_menu.addAction(exit_action)
+        self.window_menu.addAction(close_action)
         self.window_menu.addAction(clear_action)
         self.window_menu.addSeparator()
 
@@ -949,25 +915,9 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        try:
-            if hasattr(self, '_qt_window'):
-                self._qt_window.close()
-                del self._qt_window
-        except AttributeError:
-            pass
-
-
-def _stop_monitor() -> None:
-    """Stop the monitor service if we were using it."""
-    if config.monitor:
-        from ..components.experimental.monitor import monitor
-
-        monitor.stop()
-
-
-def _shutdown_chunkloader() -> None:
-    """Shutdown the ChunkLoader."""
-    if config.async_loading:
-        from ..components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
+        # Someone is closing us twice? Only try to delete self._qt_window
+        # if we still have one.
+        if hasattr(self, '_qt_window'):
+            self.qt_viewer.close()
+            self._qt_window.close()
+            del self._qt_window
