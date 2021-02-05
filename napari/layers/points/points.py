@@ -699,6 +699,7 @@ class Points(Layer):
             properties=self.properties,
             current_properties=self.current_properties,
         )
+        self.events.edge_color()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -790,6 +791,7 @@ class Points(Layer):
             properties=self.properties,
             current_properties=self.current_properties,
         )
+        self.events.face_color()
 
     @property
     def face_color_cycle(self) -> np.ndarray:

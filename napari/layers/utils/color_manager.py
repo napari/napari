@@ -369,6 +369,7 @@ class ColorManager(EventedModel):
                         values=current_property_values,
                         current_value=new_current_value,
                     )
+                    self.events.colors()
 
     def update_current_color(
         self, current_color: np.ndarray, update_indices: list = []
@@ -395,36 +396,43 @@ class ColorManager(EventedModel):
             cur_colors[update_indices] = self.current_color
             self.colors = cur_colors
 
-    def __eq__(self, other):
-        current_color = self.__equality_checks__['current_color'](
-            self.current_color, other.current_color
-        )
-        mode = self.mode == other.mode
-        color_properties = self.__equality_checks__['color_properties'](
-            self.color_properties, other.color_properties
-        )
-        continuous_colormap = self.__equality_checks__['continuous_colormap'](
-            self.continuous_colormap, other.continuous_colormap
-        )
-        contrast_limits = self.__equality_checks__['contrast_limits'](
-            self.contrast_limits, other.contrast_limits
-        )
-        categorical_colormap = self.__equality_checks__[
-            'categorical_colormap'
-        ](self.categorical_colormap, other.categorical_colormap)
-        colors = self.__equality_checks__['colors'](self.colors, other.colors)
+            self.events.colors()
 
-        return np.all(
-            [
-                current_color,
-                mode,
-                color_properties,
-                continuous_colormap,
-                contrast_limits,
-                categorical_colormap,
-                colors,
-            ]
-        )
+    def __eq__(self, other):
+        if isinstance(other, ColorManager):
+            current_color = self.__equality_checks__['current_color'](
+                self.current_color, other.current_color
+            )
+            mode = self.mode == other.mode
+            color_properties = self.__equality_checks__['color_properties'](
+                self.color_properties, other.color_properties
+            )
+            continuous_colormap = self.__equality_checks__[
+                'continuous_colormap'
+            ](self.continuous_colormap, other.continuous_colormap)
+            contrast_limits = self.__equality_checks__['contrast_limits'](
+                self.contrast_limits, other.contrast_limits
+            )
+            categorical_colormap = self.__equality_checks__[
+                'categorical_colormap'
+            ](self.categorical_colormap, other.categorical_colormap)
+            colors = self.__equality_checks__['colors'](
+                self.colors, other.colors
+            )
+
+            return np.all(
+                [
+                    current_color,
+                    mode,
+                    color_properties,
+                    continuous_colormap,
+                    contrast_limits,
+                    categorical_colormap,
+                    colors,
+                ]
+            )
+        else:
+            return False
 
 
 def initialize_color_manager(
@@ -543,7 +551,7 @@ def set_color(
     properties: Dict[str, np.ndarray],
     current_properties: Dict[str, np.ndarray],
 ):
-    """Set a color property. This is conventience function
+    """Set a color property. This is convenience function
 
     Parameters
     ----------

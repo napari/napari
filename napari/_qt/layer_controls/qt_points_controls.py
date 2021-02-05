@@ -73,7 +73,13 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.current_edge_color.connect(
             self._on_current_edge_color_change
         )
+        self.layer._edge_color.events.current_color.connect(
+            self._on_current_edge_color_change
+        )
         self.layer.events.current_face_color.connect(
+            self._on_current_face_color_change
+        )
+        self.layer._face_color.events.current_color.connect(
             self._on_current_face_color_change
         )
         self.layer.events.editable.connect(self._on_editable_change)
