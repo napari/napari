@@ -34,6 +34,7 @@ from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app
+from .qt_event_loop import run as run_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array
@@ -841,10 +842,29 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
-    def show(self):
-        """Resize, show, and bring forward the window."""
-        self._qt_window.resize(self._qt_window.layout().sizeHint())
-        self._qt_window.show()
+    def show(self, run=False):
+        """Resize, show, and bring forward the window.
+
+        Parameters
+        ----------
+        run : bool, optional
+            If true, will start an event loop if necessary, by default False
+
+        Raises
+        ------
+        RuntimeError
+            If the viewer.window has already been closed and deleted.
+        """
+        try:
+            self._qt_window.resize(self._qt_window.layout().sizeHint())
+            self._qt_window.show()
+        except RuntimeError as e:
+            if "has been deleted" in str(e):
+                raise RuntimeError(
+                    "This viewer has already been closed and deleted. "
+                    "Please create a new one."
+                )
+
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
 
@@ -861,6 +881,9 @@ class Window:
             app_name == 'napari' or in_jupyter()
         ) and self._qt_window.isActiveWindow():
             self.activate()
+
+        if run:
+            run_app()
 
     def activate(self):
         """Make the viewer the currently active window."""
