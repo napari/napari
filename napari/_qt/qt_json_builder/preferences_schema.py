@@ -13,10 +13,7 @@ def get_preferences_dialog(schema, ui_schema):
     form = builder.create_form(schema, ui_schema)
 
     form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
-    # form.centralWidget().widget.on_changed.connect(
-    #     lambda d: print(dumps(d, indent=4))
-    # )
-    # form.show()
+
     return form
     # app.exec_()
 
