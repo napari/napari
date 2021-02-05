@@ -268,6 +268,39 @@ class NestableEventedList(EventedList[_T]):
     def _nested_move_plan(
         self, sources: Iterable[NestedIndex], dest_index: NestedIndex
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
+        """Prepared indices for a complicated nested multi-move.
+
+        Given a set of possibly-nested ``sources`` from anywhere in the tree,
+        and a single ``dest_index``, this function computes and yields
+        ``(from_index, to_index)`` tuples that can be used sequentially in
+        single move operations.  It keeps track of what has moved where and
+        updates the source and destination indices to reflect the model at each
+        point in the process.
+
+        This is useful for a drag-drop operation with a QtModel/View.
+
+        Parameters
+        ----------
+        sources : Iterable[tuple[int, ...ƒ]]
+            An iterable of tuple[int] that should be moved to ``dest_index``.
+            (Note: currently, the order of ``sources`` will NOT be maintained.)
+        dest_index : Tuple[int]
+            The destination for sources.
+
+        Yields
+        -------
+        Generator[tuple[int, ...], None, None]
+            [description]
+
+        Raises
+        ------
+        ValueError
+            If any source terminal or the destination terminal index is a slice
+        IndexError
+            If any of the sources are the root object: ``()``.
+        NotImplementedError
+            If a slice is provided in the middle of a source index.
+        """
 
         dest_par, dest_i = split_nested_index(dest_index)
         if isinstance(dest_i, slice):
@@ -322,7 +355,16 @@ class NestableEventedList(EventedList[_T]):
     def move_multiple(
         self, sources: Iterable[NestedIndex], dest_index: NestedIndex
     ) -> int:
-        """Move a batch of nested indices, to a single destination."""
+        """Move a batch of nested indices, to a single destination.
+
+        Parameters
+        ----------
+        sources : Iterable[tuple[int, ...ƒ]]
+            An iterable of tuple[int] that should be moved to ``dest_index``.
+            (Note: currently, the order of ``sources`` will NOT be maintained.)
+        dest_index : Tuple[int]
+            The destination for sources.
+        """
         logger.debug(
             f"move_multiple(sources={sources}, dest_index={dest_index})"
         )
