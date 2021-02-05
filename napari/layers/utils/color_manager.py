@@ -152,6 +152,8 @@ class ColorManager(EventedModel):
                 color_properties = None
             else:
                 try:
+                    # ensure the values are a numpy array
+                    v['values'] = np.asarray(v['values'])
                     color_properties = ColorProperties(**v)
                 except ValueError:
                     print(
@@ -174,6 +176,15 @@ class ColorManager(EventedModel):
             return transform_color(v)
         else:
             return np.empty((0, 4))
+
+    @validator('current_color', pre=True)
+    def _coerce_current_color(cls, v):
+        if v is None:
+            return v
+        elif len(v) == 0:
+            return np.emtpy((0, 4))
+        else:
+            return transform_color(v)[0]
 
     @root_validator(skip_on_failure=True)
     def refresh_colors(cls, values):

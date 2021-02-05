@@ -1,3 +1,4 @@
+import json
 from itertools import cycle, islice
 
 import numpy as np
@@ -191,6 +192,14 @@ def test_init_color_manager_direct(n_colors):
     )
     assert color_manager == color_manager_2
 
+    # test json serialization
+    json_str = color_manager.json()
+    cm_json_dict = json.loads(json_str)
+    color_manager_3 = initialize_color_manager(
+        colors=cm_json_dict, n_colors=n_colors, properties={}
+    )
+    assert color_manager == color_manager_3
+
 
 def test_init_color_manager_cycle():
     n_colors = 10
@@ -220,6 +229,14 @@ def test_init_color_manager_cycle():
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
+
+    # test json serialization
+    json_str = color_manager.json()
+    cm_json_dict = json.loads(json_str)
+    color_manager_3 = initialize_color_manager(
+        colors=cm_json_dict, n_colors=n_colors, properties={}
+    )
+    assert color_manager == color_manager_3
 
 
 def test_init_empty_color_manager_cycle():
@@ -287,6 +304,14 @@ def test_init_color_manager_colormap():
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
+
+    # test json serialization
+    json_str = color_manager.json()
+    cm_json_dict = json.loads(json_str)
+    color_manager_3 = initialize_color_manager(
+        colors=cm_json_dict, n_colors=n_colors, properties={}
+    )
+    assert color_manager == color_manager_3
 
 
 def test_init_empty_color_manager_colormap():
