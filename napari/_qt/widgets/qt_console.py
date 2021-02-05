@@ -154,5 +154,8 @@ class QtConsole(RichJupyterWidget):
         if self.kernel_manager is not None and self.kernel_manager.has_kernel:
             self.kernel_manager.shutdown_kernel()
 
+        # RichJupyterWidget doesn't clean these up
+        self._completion_widget.deleteLater()
+        self._call_tip_widget.deleteLater()
         self.deleteLater()
         event.accept()
