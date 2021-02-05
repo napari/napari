@@ -56,26 +56,22 @@ jobs:
           # Windows py38
           - python: 3.8
             platform: windows-latest
-          # Windows py38
-          - python: 3.8
-            platform: windows-latest
-            toxenv: headless-py38-windows
-          # macOS py38
-          - python: 3.8
-            platform: macos-latest
-            backend: pyqt # (only testing pyqt on mac in the interest of speed)
-          # minimum specified requirements
-          - python: 3.7
-            platform: ubuntu-18.04
-            MIN_REQ: 1
-          # test with --async_only
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: async-pyqt-py38-linux
-          # test without any Qt backends
-          - python: 3.8
-            platform: ubuntu-18.04
-            toxenv: headless-py38-linux
+          # # macOS py38
+          # - python: 3.8
+          #   platform: macos-latest
+          #   backend: pyqt # (only testing pyqt on mac in the interest of speed)
+          # # minimum specified requirements
+          # - python: 3.7
+          #   platform: ubuntu-18.04
+          #   MIN_REQ: 1
+          # # test with --async_only
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: async-pyqt-py38-linux
+          # # test without any Qt backends
+          # - python: 3.8
+          #   platform: ubuntu-18.04
+          #   toxenv: headless-py38-linux
 
     steps:
       - uses: actions/checkout@v2
