@@ -2,14 +2,15 @@
 
 see module docstring of evented_list.py for more details
 """
+from __future__ import annotations
+
 import logging
 from collections import defaultdict
 from typing import (
     DefaultDict,
+    Generator,
     Iterable,
-    List,
     NewType,
-    Sequence,
     Tuple,
     Union,
     cast,
@@ -52,7 +53,7 @@ def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
     raise TypeError(f"Invalid nested index: {index}. Must be an int or tuple")
 
 
-def split_nested_index(index: MaybeNestedIndex) -> Tuple[ParentIndex, Index]:
+def split_nested_index(index: MaybeNestedIndex) -> tuple[ParentIndex, Index]:
     """Given a nested index, return (nested_parent_index, row).
 
     Parameters
@@ -134,7 +135,7 @@ class NestableEventedList(EventedList[_T]):
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: Index, old_value: T, value: T)
         emitted when ``index`` is set from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
+    changed <OVERLOAD> (index: slice, old_value: list[_T], value: list[_T])
         emitted when slice ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
@@ -197,7 +198,7 @@ class NestableEventedList(EventedList[_T]):
 
     def _delitem_indices(
         self, key: MaybeNestedIndex
-    ) -> Iterable[Tuple[EventedList[_T], int]]:
+    ) -> Iterable[tuple[EventedList[_T], int]]:
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
             if isinstance(index, slice):
@@ -264,145 +265,79 @@ class NestableEventedList(EventedList[_T]):
                 dest_index += len(destination_group) + 1
         return dest_index
 
-    # def move_multiple(
-    #     self, sources: Sequence[NestedIndex], dest_index: NestedIndex = (0,)
-    # ) -> int:
-    #     """Move a batch of nested indices, to a single destination.
+    def _nested_move_plan(
+        self, sources: Iterable[NestedIndex], dest_index: NestedIndex
+    ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
 
-    #     This handles the complications of changing the removal and insertion
-    #     indices while poping and inserting items from arbitrary nested
-    #     locations in the tree.
+        dest_par, dest_i = split_nested_index(dest_index)
+        if isinstance(dest_i, slice):
+            raise ValueError("Destination index may not be a slice")
+        dest_i = cast(int, self._non_negative_index(dest_par, dest_i))
 
-    #     Parameters
-    #     ----------
-    #     sources : Sequence[NestedIndex]
-    #         A sequence of indices in nested index form.
-    #     dest_index : NestedIndex, optional
-    #         The destination index.  All sources will be inserted before this
-    #         index, by default will insert at the front of the root list.
+        # need to update indices as we pop, so we keep track of the indices
+        # we have previously popped
+        popped: DefaultDict[NestedIndex, list[int]] = defaultdict(list)
+        dumped: list[int] = []
 
-    #     Returns
-    #     -------
-    #     int
-    #         The number of successful move operations completed.
+        # we iterate indices from the end first, so pop() always works
+        for idx in sorted(sources, reverse=True):
+            if idx == ():
+                raise IndexError("Group cannot move itself")
 
-    #     Raises
-    #     ------
-    #     ValueError
-    #         If either the destination index or one of the terminal source
-    #         indices are ``slice``.
-    #     IndexError
-    #         If one of the source indices is this group itself.
-    #     """
-    #     logger.debug(
-    #         f"move_multiple(sources={sources}, dest_index={dest_index})"
-    #     )
-    #     dest_par, dest_i = split_nested_index(dest_index)
-    #     if isinstance(dest_i, slice):
-    #         raise ValueError("Destination index may not be a slice")
-    #     dest_i = self._non_negative_index(dest_par, dest_i)
-    #     dest_i = cast(int, dest_i)
-    #     logger.debug(f"destination: {dest_par}[{dest_i}]")
+            # i.e. we need to increase the (src_par, ...) by 1 for each time
+            # we have previously inserted items in front of the (src_par, ...)
+            if len(idx) > len(dest_par):
+                z = idx[len(dest_par)]
+                _idx: list[Index] = list(idx)
+                if isinstance(_idx[len(dest_par)], slice):
+                    raise NotImplementedError(
+                        "Can't yet deal with slice source indices in multimove"
+                    )
+                _idx[len(dest_par)] += sum(map(lambda x: x <= z, dumped))  # type: ignore
+                idx = tuple(_idx)
 
-    #     moved = 0
+            src_par, src_i = split_nested_index(idx)
+            if isinstance(src_i, slice):
+                raise ValueError("Terminal source index may not be a slice")
+            src_i = cast(int, src_i)
+            if src_i < 0:
+                src_i += len(self[src_par])
 
-    #     _store = []
-    #     shift_dest: int = 0
-    #     # first make an intermediate list of all the objects we're moving
-    #     for idx in sources:
-    #         if idx == ():
-    #             raise IndexError("Group cannot move itself")
-    #         src_par, src_i = split_nested_index(idx)
-    #         if isinstance(src_i, slice):
-    #             raise ValueError("Terminal source index may not be a slice")
-    #         _store.append(self[idx])
-    #         # we need to decrement the destination index by 1 for each time we
-    #         # pull items in front of dest_i from the same parent as the dest
-    #         if src_par == dest_par and src_i < dest_i:
-    #             shift_dest -= 1
+            # we need to decrement the src_i by 1 for each time we have
+            # previously pulled items out from in front of the src_i
+            src_i -= sum(map(lambda x: x <= src_i, popped.get(src_par, [])))
 
-    #     self.events.moving(index=list(sources), new_index=dest_index)
+            # we need to decrement the dest_i by 1 for each time we have
+            # previously pulled items out from in front of the dest_i
+            ddec = sum(map(lambda x: x <= dest_i, popped.get(dest_par, [])))
 
-    #     # TODO: add the appropriate moving/moved events
-    #     with self.events.blocker_all():
-    #         # delete the stored items from the list
-    #         for idx in sorted(sources, reverse=True):
-    #             del self[idx]
-    #         dest_i += shift_dest
-    #         # insert into the destination
-    #         self[dest_par][dest_i:dest_i] = _store
+            # skip noop
+            if src_par == dest_par and src_i == dest_i - ddec:
+                continue
 
-    #     self.events.moved(
-    #         index=list(sources), new_index=dest_index, value=_store
-    #     )
-    #     self.events.reordered(value=self)
-    #     return moved
+            yield src_par + (src_i,), dest_par + (dest_i - ddec,)
+            popped[src_par].append(src_i)
+            dumped.append(dest_i - ddec)
 
     def move_multiple(
-        self,
-        sources: Sequence[NestedIndex],
-        dest_index: NestedIndex,
+        self, sources: Iterable[NestedIndex], dest_index: NestedIndex
     ) -> int:
         """Move a batch of nested indices, to a single destination."""
         logger.debug(
             f"move_multiple(sources={sources}, dest_index={dest_index})"
         )
-        dest_par, dest_i = split_nested_index(dest_index)
-        if isinstance(dest_i, slice):
-            raise ValueError("Destination index may not be a slice")
-        dest_i = cast(int, self._non_negative_index(dest_par, dest_i))
-        logger.debug(f"destination: {dest_par}[{dest_i}]")
 
-        self.events.reordered.block()
-        moved = 0
+        # calling list here makes sure that there are no index errors up front
+        move_plan = list(self._nested_move_plan(sources, dest_index))
+
         # more complicated when moving multiple objects.
         # don't assume index adjacency ... so move one at a time
-        # need to update indices as we pop, so we keep track of the indices
-        # we have previously popped
-        popped: DefaultDict[NestedIndex, List[int]] = defaultdict(list)
-        # we iterate indices from the end first, so pop() always works
+        with self.events.reordered.blocker():
+            for src, dest in move_plan:
+                self.move(src, dest)
 
-        for i, idx in enumerate(sorted(sources, reverse=True)):
-            if idx == ():
-                raise IndexError("Group cannot move itself")
-            src_par, src_i = split_nested_index(idx)
-
-            if isinstance(src_i, slice):
-                raise ValueError("Terminal source index may not be a slice")
-            src_i = cast(int, src_i)
-
-            if src_i < 0:
-                src_i += len(cast(NestableEventedList, self[src_par]))
-
-            # we need to decrement the src_i by 1 for each time we have
-            # previously pulled items out from in front of the src_i
-            src_i -= sum(map(lambda x: x <= src_i, popped.get(src_par, [])))
-            # we need to decrement the dest_i by 1 for each time we have
-            # previously pulled items out from in front of the dest_i
-            ddec = sum(map(lambda x: x <= dest_i, popped.get(dest_par, [])))
-
-            # FIXME:
-            # there is still a bug and a failing test... if we are moving items
-            # from a lower level nested group up to a higher level, and inserting
-            # into a position is higher than the *parent* of that nested group
-            # we have an index error.  ie:
-
-            # i.e. we need to increase the (src_par, ...) by 1 for each time
-            # we have previously inserted items in front of the (src_par, ...)
-
-            # if item is being moved within the same parent,
-            # we need to increase the src_i by 1 for each time we have
-            # previously inserted items in front of the src_i
-            if src_par == dest_par:
-                src_i += (dest_i <= src_i) * i
-                if src_i == dest_i - ddec:
-                    # skip noop
-                    continue
-            moved += self.move(src_par + (src_i,), dest_par + (dest_i - ddec,))
-            popped[src_par].append(src_i)
-        self.events.reordered.unblock()
         self.events.reordered(value=self)
-        return moved
+        return len(move_plan)
 
     def move(
         self,
