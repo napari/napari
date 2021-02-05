@@ -172,20 +172,20 @@ def _run():
         # so remove --plugin from sys.argv to prevent that warningz
         sys.argv.remove('--plugin')
 
+    from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+
+    splash = NapariSplashScreen()
+    splash.close()  # will close once event loop starts
+
     if any(p.endswith('.py') for p in args.paths):
         if len(args.paths) > 1:
             sys.exit(
                 'When providing a python script, only a '
                 'single positional argument may be provided'
             )
-
         runpy.run_path(args.paths[0])
 
     else:
-        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-        splash = NapariSplashScreen()
-        splash.close()
         napari.view_path(
             args.paths,
             stack=args.stack,
