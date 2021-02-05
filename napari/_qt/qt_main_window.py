@@ -54,6 +54,7 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
     def closeEvent(self, event):
@@ -104,10 +105,10 @@ class Window:
         _ = get_app()
 
         # Connect the Viewer and create the Main Window
-        self.qt_viewer = QtViewer(viewer)
         self._qt_window = _QtMainWindow()
+        self.qt_viewer = QtViewer(viewer)
+        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
-        self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -130,9 +131,6 @@ class Window:
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
-
-        self._qt_center.layout().addWidget(self.qt_viewer)
-        self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
         self._update_theme()
 
@@ -860,9 +858,6 @@ class Window:
                 'color: {{ text }}; }',
                 **theme,
             )
-        )
-        self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **theme)
         )
         self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
