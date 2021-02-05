@@ -27,14 +27,14 @@ class CategoricalColormap(EventedModel):
     ----------
     colormap : Dict[Any, np.ndarray]
         The mapping between categorical property values and color.
-    fallback_color : cycle
+    fallback_color : ColorCycle
         The color to be used in the case that a value is mapped that is not
         in colormap. This can be given as any ColorType and it will be converted
         to a cycle. The default value is a cycle of all black.
     """
 
     colormap: Dict[Any, Array[float, (4,)]] = {}
-    fallback_color: ColorCycle = 'black'
+    fallback_color: ColorCycle = 'white'
 
     __equality_checks__ = {'fallback_color': compare_color_cycle}
 

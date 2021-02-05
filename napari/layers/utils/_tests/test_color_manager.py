@@ -33,14 +33,14 @@ def test_color_manager_empty():
     assert cm.mode == 'direct'
 
 
-color_str = 'red'
+color_str = ['red', 'red', 'red']
 color_list = [[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]]
 color_arr = np.asarray(color_list)
 
 
 @pytest.mark.parametrize('color', [color_str, color_list, color_arr])
 def test_set_color_direct(color):
-    cm = ColorManager(colors=color, n_colors=3, mode='direct')
+    cm = ColorManager(colors=color, mode='direct')
     color_mode = cm.mode
     assert color_mode == 'direct'
     expected_colors = np.array([[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]])
@@ -56,7 +56,6 @@ def test_continuous_colormap():
         'values': _make_cycled_properties([0, 1.5], n_colors),
     }
     cm = ColorManager(
-        n_colors=n_colors,
         color_properties=properties,
         continuous_colormap='gray',
         mode='colormap',
@@ -126,7 +125,6 @@ def test_color_cycle(color_cycle):
     }
     cm = ColorManager(
         mode='cycle',
-        n_colors=n_colors,
         color_properties=properties,
         categorical_colormap=color_cycle,
     )
@@ -188,7 +186,9 @@ def test_init_color_manager_direct(n_colors):
         )
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
-    color_manager_2 = initialize_color_manager(colors=cm_dict, properties={})
+    color_manager_2 = initialize_color_manager(
+        colors=cm_dict, n_colors=n_colors, properties={}
+    )
     assert color_manager == color_manager_2
 
 

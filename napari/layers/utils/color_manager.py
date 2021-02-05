@@ -94,8 +94,7 @@ class ColorManager(EventedModel):
     continuous_colormap: Colormap = 'viridis'
     contrast_limits: Optional[Tuple[float, float]] = None
     categorical_colormap: CategoricalColormap = [0, 0, 0, 1]
-    n_colors: Optional[int] = 0
-    colors: Array[float, (-1, 4)] = [0, 0, 0, 1]
+    colors: Array[float, (-1, 4)] = []
 
     __equality_checks__ = {
         'continuous_colormap': compare_colormap,
@@ -133,10 +132,10 @@ class ColorManager(EventedModel):
                 if 'fallback_color' in v:
                     fallback_color = v['fallback_color']
                 else:
-                    fallback_color = 'black'
+                    fallback_color = 'white'
             else:
                 colormap = {k: transform_color(v)[0] for k, v in v.items()}
-                fallback_color = 'black'
+                fallback_color = 'white'
         else:
             raise TypeError('colormap should be an array or dict')
 
@@ -218,19 +217,7 @@ class ColorManager(EventedModel):
             if len(colors) == 0:
                 colors = np.empty((0, 4))
         elif color_mode == ColorMode.DIRECT:
-            n_colors = values['n_colors']
-            if n_colors == 0:
-                colors = np.empty((0, 4))
-            else:
-                transformed_color = transform_color_with_defaults(
-                    num_entries=n_colors,
-                    colors=values['colors'],
-                    elem_name="color",
-                    default="white",
-                )
-                colors = normalize_and_broadcast_colors(
-                    n_colors, transformed_color
-                )
+            colors = values['colors']
 
         # set the current color to the last color/property value
         # if it wasn't already set
@@ -240,20 +227,7 @@ class ColorManager(EventedModel):
                 property_values = values['color_properties']
                 property_values.current_value = property_values.values[-1]
                 values['color_properties'] = property_values
-        if values['current_color'] is None and len(colors) == 0:
-            if color_mode == ColorMode.DIRECT:
-                transformed_color = transform_color_with_defaults(
-                    num_entries=values['n_colors'],
-                    colors=values['colors'],
-                    elem_name="color",
-                    default="white",
-                )
-                values['current_color'] = normalize_and_broadcast_colors(
-                    1, transformed_color
-                )[0]
 
-        # set the colors
-        values['n_colors'] = len(colors)
         values['colors'] = colors
         return values
 
@@ -323,12 +297,103 @@ class ColorManager(EventedModel):
             else:
                 # remove the color_properties
                 color_property_name = self.color_properties.name
+                current_value = self.color_properties.current_value
                 new_color_property_values = np.delete(
                     self.color_properties.values, selected_indices
                 )
                 self.color_properties = ColorProperties(
-                    name=color_property_name, values=new_color_property_values
+                    name=color_property_name,
+                    values=new_color_property_values,
+                    current_value=current_value,
                 )
+
+    def paste(self, colors: np.ndarray, properties: Dict[str, np.ndarray]):
+        """Append colors to the ColorManager. Uses the color values if
+        in direct mode and the properties in colormap or cycle mode.
+
+        This method is for compatibility with the paste functionality
+        in the layers.
+
+        Parameters
+        ----------
+        colors : np.ndarray
+            The (Nx4) color array of color values to add. These values are
+            only used if the color mode is direct.
+        properties : Dict[str, np.ndarray]
+            The property values to add. These are used if the color mode
+            is colormap or cycle.
+        """
+        if self.mode == ColorMode.DIRECT:
+            self.colors = np.concatenate(
+                (self.colors, transform_color(colors))
+            )
+        else:
+            color_property_name = self.color_properties.name
+            current_value = self.color_properties.current_value
+            old_properties = self.color_properties.values
+            values_to_add = properties[color_property_name]
+            new_color_property_values = np.concatenate(
+                (old_properties, values_to_add),
+                axis=0,
+            )
+
+            self.color_properties = ColorProperties(
+                name=color_property_name,
+                values=new_color_property_values,
+                current_value=current_value,
+            )
+
+    def update_current_properties(
+        self, current_properties: Dict[str, np.ndarray]
+    ):
+        """This is updates the current_value of the color_properties when the
+        layer current_properties is updated.
+
+        This is a convenience method that is generally only called by the layer.
+
+        Parameters
+        ----------
+        current_properties : Dict[str, np.ndarray]
+            The new current property values
+        """
+        if self.color_properties is not None:
+            current_property_name = self.color_properties.name
+            current_property_values = self.color_properties.values
+            if current_property_name in current_properties:
+                new_current_value = np.squeeze(
+                    current_properties[current_property_name]
+                )
+                if new_current_value != self.color_properties.current_value:
+                    self.color_properties = ColorProperties(
+                        name=current_property_name,
+                        values=current_property_values,
+                        current_value=new_current_value,
+                    )
+
+    def update_current_color(
+        self, current_color: np.ndarray, update_indices: list = []
+    ):
+        """Update the current color and update the colors if requested.
+
+        This is a convenience method and is generally called by the layer.
+
+        Parameters
+        ----------
+        current_color : np.ndarray
+            The new current color value.
+        update_indices : list
+            The indices of the color elements to update.
+            If the list has length 0, no colors are updated.
+            If the ColorManager is not in DIRECT mode, updating the values
+            will change the mode to DIRECT.
+        """
+        self.current_color = transform_color(current_color)[0]
+
+        if len(update_indices) > 0:
+            self.mode = ColorMode.DIRECT
+            cur_colors = self.colors
+            cur_colors[update_indices] = self.current_color
+            self.colors = cur_colors
 
     def __eq__(self, other):
         current_color = self.__equality_checks__['current_color'](
@@ -347,7 +412,6 @@ class ColorManager(EventedModel):
         categorical_colormap = self.__equality_checks__[
             'categorical_colormap'
         ](self.categorical_colormap, other.categorical_colormap)
-        n_colors = self.n_colors == other.n_colors
         colors = self.__equality_checks__['colors'](self.colors, other.colors)
 
         return np.all(
@@ -358,7 +422,6 @@ class ColorManager(EventedModel):
                 continuous_colormap,
                 contrast_limits,
                 categorical_colormap,
-                n_colors,
                 colors,
             ]
         )
@@ -375,7 +438,7 @@ def initialize_color_manager(
     ] = None,
     mode: Optional[Union[ColorMode, str]] = None,
     current_color: Optional[np.ndarray] = None,
-    default_color_cycle: np.ndarray = np.array([0, 0, 0, 1]),
+    default_color_cycle: np.ndarray = np.array([1, 1, 1, 1]),
 ) -> ColorManager:
     """Initialize a ColorManager object from layer kwargs. This is a convenience
     function to coerce possible inputs into ColorManager kwargs
@@ -390,7 +453,6 @@ def initialize_color_manager(
         continuous_colormap = colors.get('continuous_colormap', None)
         contrast_limits = colors.get('contrast_limits', None)
         categorical_colormap = colors.get('categorical_colormap', None)
-        n_colors = colors.get('n_colors', None)
 
         if isinstance(color_properties, str):
             # if the color properties were given as a property name,
@@ -426,7 +488,7 @@ def initialize_color_manager(
             if n_colors == 0:
                 color_properties = ColorProperties(
                     name=color_values,
-                    values=np.empty(0),
+                    values=np.empty(0, dtype=properties[color_values].dtype),
                     current_value=properties[color_values][0],
                 )
             else:
@@ -444,11 +506,25 @@ def initialize_color_manager(
             )
 
         else:
-            if len(color_values) == 0:
-                color_kwargs.update({'mode': ColorMode.DIRECT})
-            else:
+            # direct mode
+            if n_colors == 0:
+                if current_color is None:
+                    current_color = transform_color(color_values)[0]
                 color_kwargs.update(
-                    {'mode': ColorMode.DIRECT, 'colors': color_values}
+                    {'mode': ColorMode.DIRECT, 'current_color': current_color}
+                )
+            else:
+                transformed_color = transform_color_with_defaults(
+                    num_entries=n_colors,
+                    colors=color_values,
+                    elem_name="colors",
+                    default="white",
+                )
+                colors = normalize_and_broadcast_colors(
+                    n_colors, transformed_color
+                )
+                color_kwargs.update(
+                    {'mode': ColorMode.DIRECT, 'colors': colors}
                 )
     else:
         color_kwargs.update(
@@ -458,3 +534,49 @@ def initialize_color_manager(
     color_manager = ColorManager(**color_kwargs)
 
     return color_manager
+
+
+def set_color(
+    color_manager: ColorManager,
+    color: ColorType,
+    n_colors: int,
+    properties: Dict[str, np.ndarray],
+    current_properties: Dict[str, np.ndarray],
+):
+    """Set a color property. This is conventience function
+
+    Parameters
+    ----------
+    color_manager : ColorManager
+        The ColorManager object on which to set the color
+    color : (N, 4) array or str
+        The value for setting edge or face_color
+    n_colors : int
+        The number of colors that needs to be set. Typically len(data).
+    properties : Dict[str, np.ndarray]
+        The layer property values
+    current_properties : Dict[str, np.ndarray]
+        The layer current property values
+    """
+    # if the provided color is a string, first check if it is a key in the properties.
+    # otherwise, assume it is the name of a color
+    if is_color_mapped(color, properties):
+        color_manager.color_properties = ColorProperties(
+            name=color,
+            values=properties[color],
+            current_value=np.squeeze(current_properties[color]),
+        )
+        if guess_continuous(properties[color]):
+            color_manager.mode = ColorMode.COLORMAP
+        else:
+            color_manager.mode = ColorMode.CYCLE
+    else:
+        transformed_color = transform_color_with_defaults(
+            num_entries=n_colors,
+            colors=color,
+            elem_name="face_color",
+            default="white",
+        )
+        colors = normalize_and_broadcast_colors(n_colors, transformed_color)
+        color_manager.mode = ColorMode.DIRECT
+        color_manager.colors = colors
