@@ -178,22 +178,18 @@ def gui_qt(*, startup_logo=False, gui_exceptions=True, force=False):
     run(force=force, gui_exceptions=True, _func_name='gui_qt')
 
 
-def _ipython_owns_qapp() -> bool:
-    """Return True if IPython %gui qt has created the App.
+def _ipython_has_eventloop() -> bool:
+    """Return True if IPython %gui qt is active.
 
-    IPython doesn't "annotate" their QApplication in any way (i.e. with
-    applicationName or other metadata).  So this is likely the best way to
-    confirm that %gui qt has been called.
-
-    Using this is also better than checking ``QApp.thread().loopLevel() > 0``,
+    Using this is better than checking ``QApp.thread().loopLevel() > 0``,
     because IPython starts and stops the event loop continuously to accept code
     at the prompt.  So it will likely "appear" like there is no event loop
     running, but will still don't need to start one.
     """
     try:
-        from IPython.terminal.pt_inputhooks import qt
+        from IPython import get_ipython
 
-        return qt._appref is not None
+        return get_ipython().active_eventloop == 'qt'
     except (ImportError, AttributeError):
         return False
 
@@ -228,8 +224,8 @@ def run(
         (To avoid confusion) if no widgets would be shown upon starting the
         event loop.
     """
-    if _ipython_owns_qapp():
-        # If %gui qt has been used, we don't want to block again.
+    if _ipython_has_eventloop():
+        # If %gui qt is active, we don't need to block again.
         return
 
     app = QApplication.instance()
