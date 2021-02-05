@@ -87,6 +87,47 @@ def compare_contrast_limits(clim_1, clim_2):
 
 
 class ColorManager(EventedModel):
+    """A class for controlling the display colors for annotations in napari.
+
+    Attributes
+    ----------
+    current_color : Optional[np.ndarray]
+        A (4,) color array for the color of the next items to be added.
+    mode : ColorMode
+        The mode for setting colors.
+
+        ColorMode.DIRECT: colors are set by passing color values to ColorManager.colors
+        ColorMode.COLORMAP: colors are set via the continuous_colormap applied to the
+                            color_properties
+        ColorMode.CYCLE: colors are set vie the categorical_colormap appied to the
+                         color_properties. This should be used for categorical
+                         properties only.
+     color_properties : Optional[ColorProperties]
+        The property values that are used for setting colors in ColorMode.COLORMAP
+        and ColorMode.CYCLE. The ColorProperties dataclass has 3 fields: name,
+        values, and current_value. name (str) is the name of the property being used.
+        values (np.ndarray) is an array containing the property values.
+        current_value contains the value for the next item to be added. color_properties
+        can be set as either a ColorProperties object or a dictionary where the keys are
+        the field values and the values are the field values (i.e., a dictionary that would
+        be valid in ColorProperties(**input_dictionary) ).
+    continuous_colormap : Colormap
+        The napari colormap object used in ColorMode.COLORMAP mode. This can also be set
+        using the name of a known colormap as a string.
+    contrast_limits : Tuple[float, float]
+        The min and max value for the colormap being applied to the color_properties
+        in ColorMonde.COLORMAP mode. Set as a tuple (min, max).
+    categorical_colormap : CategoricalColormap
+        The napari CategoricalColormap object used in ColorMode.CYCLE mode.
+        To set a direct mapping between color_property values and colors,
+        pass a dictionary where the keys are the property values and the
+        values are colors (either string names or (4,) color arrays).
+        To use a color cycle, pass a list or array of colors. You can also
+        pass the CategoricalColormap keyword arguments as a dictionary.
+    colors : np.ndarray
+        The colors in a Nx4 color array, where N is the number of colors.
+    """
+
     # fields
     current_color: Optional[np.ndarray] = None
     mode: ColorMode = ColorMode.DIRECT
