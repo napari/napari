@@ -1,5 +1,4 @@
 import sys
-import warnings
 from typing import List
 
 import pytest
@@ -22,12 +21,12 @@ def _strict_qtbot(qtbot):
 
     QApplication.processEvents()
     leaks = set(QApplication.topLevelWidgets()).difference(initial)
-    # still not sure how to clean up some of the remaining vispy
+    # still not sure how to clean up some of the remaining vispy and qtconsole
     # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-    if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leaks]):
-        raise AssertionError(f'Widgets leaked!: {leaks}')
+    ignored_leaks = {'CanvasBackendDesktop', 'CompletionHtml', 'CallTipWidget'}
+    leaks = {lk for lk in leaks if lk.__class__.__name__ not in ignored_leaks}
     if leaks:
-        warnings.warn(f'Widgets leaked!: {leaks}')
+        raise AssertionError(f'Widgets leaked!: {leaks}')
 
 
 @pytest.fixture(scope="function")

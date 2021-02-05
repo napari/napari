@@ -47,9 +47,8 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, qt_viewer: QtViewer = None, parent=None) -> None:
+    def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
-        self._qt_viewer = qt_viewer
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -67,8 +66,6 @@ class _QtMainWindow(QMainWindow):
             for __ in range(8):
                 time.sleep(0.1)
                 QApplication.processEvents()
-        if self._qt_viewer is not None:
-            self._qt_viewer.close()
 
     def _handle_exit(self):
         """Handle exiting the aplication.
@@ -135,11 +132,9 @@ class Window:
         _ = get_app()
 
         # Connect the Viewer and create the Main Window
+        self._qt_window = _QtMainWindow()
         self.qt_viewer = QtViewer(viewer)
-        self._qt_window = _QtMainWindow(qt_viewer=self.qt_viewer)
-        self._qt_window._qt_viewer = self.qt_viewer
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
-        self._qt_center = self._qt_window.centralWidget()
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -163,9 +158,9 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self._qt_center.layout().addWidget(self.qt_viewer)
-        self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
-
+        _qt_center = self._qt_window.centralWidget()
+        _qt_center.layout().addWidget(self.qt_viewer)
+        _qt_center.layout().setContentsMargins(4, 0, 4, 0)
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -885,9 +880,6 @@ class Window:
                 **theme,
             )
         )
-        self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **theme)
-        )
         self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
 
     def _status_changed(self, event):
@@ -949,12 +941,8 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        try:
-            if hasattr(self, '_qt_window'):
-                self._qt_window.close()
-                del self._qt_window
-        except AttributeError:
-            pass
+        self._qt_window.close()
+        del self._qt_window
 
 
 def _stop_monitor() -> None:
