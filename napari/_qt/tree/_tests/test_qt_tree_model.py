@@ -1,7 +1,8 @@
 import pytest
+from qtpy.QtCore import Qt
 
-from napari._qt.tree import QtNodeTreeModel
-from napari.utils.events._tests.test_evented_list import MULTIMOVE_INDICES
+from napari._qt.tree import QtNodeTreeModel, QtNodeTreeView
+from napari.utils.events._tests.test_evented_list import POS_INDICES
 from napari.utils.tree import Group, Node
 
 
@@ -43,7 +44,7 @@ def _assert_models_synced(model: Group, qt_model: QtNodeTreeModel):
     for item in model.traverse():
         model_idx = qt_model.nestedIndex(item.index_from_root())
         node = qt_model.getItem(model_idx)
-        assert item is node
+        assert item.name == node.name
 
 
 def test_tree_model(qtmodeltester):
@@ -67,14 +68,66 @@ def test_move_single_tree_item(tree_model):
     _assert_models_synced(root, tree_model)
 
 
-@pytest.mark.parametrize('source, dest, _', MULTIMOVE_INDICES)
-def test_nested_move_multiple(source, dest, _):
+@pytest.mark.parametrize('sources, dest, expectation', POS_INDICES)
+def test_nested_move_multiple(sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 
-    It's possible that this is a completely repetive test, since there should
-    only be "one source of truth here" anyway (the python model).
+    This uses mimeData to simulate drag/drop operations.
     """
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
     qt_tree = QtNodeTreeModel(root)
-    root.move_multiple(source, dest)
+    model_indexes = [qt_tree.nestedIndex(i) for i in sources]
+    mime_data = qt_tree.mimeData(model_indexes)
+    dest_mi = qt_tree.nestedIndex(dest)
+    qt_tree.dropMimeData(
+        mime_data,
+        Qt.MoveAction,
+        dest_mi.row(),
+        dest_mi.column(),
+        dest_mi.parent(),
+    )
+    expected = _recursive_make_group(expectation)
+    _assert_models_synced(expected, qt_tree)
+
+
+def test_qt_tree_model_deletion():
+    """Test that we can delete items from a QTreeModel"""
+    root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
+    qt_tree = QtNodeTreeModel(root)
     _assert_models_synced(root, qt_tree)
+    del root[2, 1]
+    e = _recursive_make_group([0, 1, [20, 22], 3, 4])
+    _assert_models_synced(e, qt_tree)
+
+
+def test_qt_tree_model_insertion():
+    """Test that we can append and insert items to a QTreeModel."""
+    root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
+    qt_tree = QtNodeTreeModel(root)
+    _assert_models_synced(root, qt_tree)
+    root[2, 1].append(Node(name='212'))
+    e = _recursive_make_group([0, 1, [20, [210, 211, 212], 22], 3, 4])
+    _assert_models_synced(e, qt_tree)
+
+    root.insert(-2, Node(name='9'))
+    e = _recursive_make_group([0, 1, [20, [210, 211, 212], 22], 9, 3, 4])
+    _assert_models_synced(e, qt_tree)
+
+
+def test_find_nodes():
+    root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
+
+    qt_tree = QtNodeTreeModel(root)
+    _assert_models_synced(root, qt_tree)
+    node = Node(name='212')
+    root[2, 1].append(node)
+    assert qt_tree.findIndex(node).row() == 2
+
+    with pytest.raises(IndexError):
+        qt_tree.findIndex(Node(name='new node'))
+
+
+def test_view_smoketest(qtbot):
+    root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
+    view = QtNodeTreeView(root)
+    qtbot.addWidget(view)
