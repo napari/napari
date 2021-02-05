@@ -45,11 +45,8 @@ with napari.gui_qt():
     def toggle_point_annotation(viewer):
         selected_points = list(points_layer.selected_data)
         if len(selected_points) > 0:
-            good_point = points_layer.properties['good_point']
+            props = points_layer.properties
+            good_point = props['good_point']
             good_point[list(selected_points)] = ~good_point[list(selected_points)]
-            points_layer.properties['good_point'] = good_point
-
-            # we need to manually refresh since we did not use the Points.properties setter
-            # to avoid changing the color map if all points get toggled to the same class,
-            # we set update_colors=False (only re-colors the point using the previously-determined color mapping).
-            points_layer.refresh_colors(update_color_mapping=False)
+            props['good_point'] = good_point
+            points_layer.properties = props
