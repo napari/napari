@@ -61,6 +61,9 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        # On some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
         if self.isFullScreen():
             self.showNormal()
             for i in range(5):
