@@ -49,7 +49,7 @@ def generate_layer_status(name, position, value):
         Name of the layer.
     position : tuple or list
         List of coordinates, say of the cursor.
-    value :  Any
+    value : Any
         The value to be printed.
 
     Returns

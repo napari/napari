@@ -107,8 +107,8 @@ class TiledImageVisual(ImageVisual):
         tile_shape : np.ndarray
             The shape of our tiles such as (256, 256, 4).
 
-        Return
-        ------
+        Returns
+        -------
         TextureAtlas2D
             The newly created texture atlas.
         """
@@ -163,8 +163,8 @@ class TiledImageVisual(ImageVisual):
     def num_tiles(self) -> int:
         """The number tiles currently being drawn.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles currently being drawn.
         """
@@ -187,8 +187,8 @@ class TiledImageVisual(ImageVisual):
         chunks : List[OctreeChunk]
             Chunks that we may or may not already be drawing.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks that still need to be added.
         """
@@ -225,8 +225,8 @@ class TiledImageVisual(ImageVisual):
         octree_chunk : OctreeChunk
             The chunk we are adding.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The newly added chunk's index.
         """
@@ -249,8 +249,8 @@ class TiledImageVisual(ImageVisual):
     def chunk_set(self) -> Set[OctreeChunk]:
         """Return the set of chunks we are drawing.
 
-        Return
-        ------
+        Returns
+        -------
         Set[OctreeChunk]
             The set of chunks we are drawing.
         """

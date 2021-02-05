@@ -97,8 +97,8 @@ class VispyTiledImageLayer(VispyImageLayer):
     def num_tiles(self) -> int:
         """The number of tiles currently being drawn.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles currently being drawn.
         """
@@ -163,10 +163,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         if the camera isn't moving. We expect to be polled and drawn until
         we can finish adding the rest of the drawable chunks.
 
-        Return
-        ------
+        Returns
+        -------
         int
-             The number of chunks that still need to be added.
+            The number of chunks that still need to be added.
         """
         if not self.node.visible:
             return 0
@@ -196,8 +196,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         3) Create tiles for newly drawable chunks, one or more.
         4) Optionally update our grid based on the now drawable chunks.
 
-        Return
-        ------
+        Returns
+        -------
         ChunkStats
             Statistics about the update process.
         """
@@ -254,8 +254,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         drawable_chunks : List[OctreeChunk]
             Chunks we should add, if not already in the tiled image.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks that still need to be added.
         """

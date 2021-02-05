@@ -66,7 +66,7 @@ class Vectors(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari

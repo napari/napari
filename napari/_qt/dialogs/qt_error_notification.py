@@ -271,7 +271,6 @@ class NapariNotification(QDialog):
     def setup_buttons(self, actions: ActionSequence = ()):
         """Add buttons to the dialog.
 
-
         Parameters
         ----------
         actions : tuple, optional

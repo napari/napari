@@ -155,8 +155,8 @@ def block_timer(
     **kwargs : dict
         Additional keyword arguments for the "args" field of the event.
 
-    Example
-    -------
+    Examples
+    --------
     with block_timer("draw") as event:
         draw_stuff()
     print(f"The timer took {event.duration_ms} milliseconds.")

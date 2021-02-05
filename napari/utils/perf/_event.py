@@ -88,7 +88,7 @@ class PerfEvent:
     def update_end_ns(self, end_ns: int) -> None:
         """Update our end_ns with this new end_ns.
 
-        Properties
+        Attributes
         ----------
         end_ns : int
             The new ending time in nanoseconds.
