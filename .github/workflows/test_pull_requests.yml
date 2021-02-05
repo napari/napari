@@ -56,6 +56,10 @@ jobs:
           # Windows py38
           - python: 3.8
             platform: windows-latest
+          # Windows py38
+          - python: 3.8
+            platform: windows-latest
+            toxenv: headless-py38-windows
           # macOS py38
           - python: 3.8
             platform: macos-latest
