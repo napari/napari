@@ -290,9 +290,10 @@ class Window:
         win = PreferencesDialog(parent=self._qt_window)
 
         for f in sorted(os.listdir(schema_dir)):
-            if os.path.isfile(os.path.join(schema_dir, f)):
-                with open(f) as f_tmp:
-                    schema = json.load(f_tmp)
+            f_tmp = os.path.join(schema_dir, f)
+            if os.path.isfile(f_tmp):
+                with open(f_tmp) as f_tmp2:
+                    schema = json.load(f_tmp2)
                 win.add_page(schema, {})
 
         win._list.setCurrentRow(0)
