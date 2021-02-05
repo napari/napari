@@ -47,9 +47,9 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
+    def __init__(self, qt_viewer: QtViewer = None, parent=None) -> None:
+        super().__init__(parent=parent)
+        self._qt_viewer = qt_viewer
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -67,8 +67,8 @@ class _QtMainWindow(QMainWindow):
             for __ in range(8):
                 time.sleep(0.1)
                 QApplication.processEvents()
-
-        self._qt_viewer.close()
+        if self._qt_viewer is not None:
+            self._qt_viewer.close()
 
     def _handle_exit(self):
         """Handle exiting the aplication.
@@ -136,7 +136,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self.qt_viewer = QtViewer(viewer)
-        self._qt_window = _QtMainWindow()
+        self._qt_window = _QtMainWindow(qt_viewer=self.qt_viewer)
         self._qt_window._qt_viewer = self.qt_viewer
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._qt_center = self._qt_window.centralWidget()
