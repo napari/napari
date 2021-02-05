@@ -13,11 +13,11 @@ def test_categorical_colormap_direct():
     color = cmap.map(['hello'])
     np.testing.assert_allclose(color, [[0, 0, 0, 0]])
 
-    # test that the default fallback color (black) is applied
+    # test that the default fallback color (white) is applied
     new_color_0 = cmap.map(['not a key'])
-    np.testing.assert_almost_equal(new_color_0, [[0, 0, 0, 1]])
+    np.testing.assert_almost_equal(new_color_0, [[1, 1, 1, 1]])
     new_cmap = cmap.colormap
-    np.testing.assert_almost_equal(new_cmap['not a key'], [0, 0, 0, 1])
+    np.testing.assert_almost_equal(new_cmap['not a key'], [1, 1, 1, 1])
 
     # set a cycle of fallback colors
     new_fallback_colors = [[1, 0, 0, 1], [0, 1, 0, 1]]
