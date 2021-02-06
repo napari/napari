@@ -172,11 +172,6 @@ def _run():
         # so remove --plugin from sys.argv to prevent that warningz
         sys.argv.remove('--plugin')
 
-    from ._qt.widgets.qt_splash_screen import NapariSplashScreen
-
-    splash = NapariSplashScreen()
-    splash.close()  # will close once event loop starts
-
     if any(p.endswith('.py') for p in args.paths):
         if len(args.paths) > 1:
             sys.exit(
@@ -186,6 +181,12 @@ def _run():
         runpy.run_path(args.paths[0])
 
     else:
+
+        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+
+        splash = NapariSplashScreen()
+        splash.close()  # will close once event loop starts
+
         napari.view_path(
             args.paths,
             stack=args.stack,
