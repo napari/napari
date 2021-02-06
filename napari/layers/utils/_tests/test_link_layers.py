@@ -57,3 +57,36 @@ def test_link_invalid_param():
     with pytest.raises(ValueError) as e:
         experimental_link_layers([l1, l2], ('rendering',))
     assert "Cannot link attributes that are not shared by all layers" in str(e)
+
+
+def test_double_linking_noop():
+    """Test that linking already linked layers is a noop."""
+    l1 = layers.Image(np.random.rand(10, 10))
+    l2 = layers.Image(np.random.rand(10, 10))
+    l3 = layers.Image(np.random.rand(10, 10))
+    # no callbacks to begin with
+    assert len(l1.events.contrast_limits.callbacks) == 0
+
+    # should have two after linking layers
+    experimental_link_layers([l1, l2, l3])
+    assert len(l1.events.contrast_limits.callbacks) == 2
+
+    # should STILL have two after linking layers again
+    experimental_link_layers([l1, l2, l3])
+    assert len(l1.events.contrast_limits.callbacks) == 2
+
+
+def test_removed_linked_target():
+    """Test that linking already linked layers is a noop."""
+    l1 = layers.Image(np.random.rand(10, 10))
+    l2 = layers.Image(np.random.rand(10, 10))
+    l3 = layers.Image(np.random.rand(10, 10))
+    experimental_link_layers([l1, l2, l3])
+
+    l1.opacity = 0.5
+    assert l1.opacity == l2.opacity == l3.opacity == 0.5
+
+    # if we delete layer3 we shouldn't get an error when updating otherlayers
+    del l3
+    l1.opacity = 0.25
+    assert l1.opacity == l2.opacity
