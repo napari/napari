@@ -35,24 +35,14 @@ except ImportError:
 def pytest_addoption(parser):
     """Add napari specific command line options.
 
-    --show-viewer
-        Show viewers during tests, they are hidden by default. Showing viewers
-        decreases test speed by around 20%.
-
     --aysnc_only
         Run only asynchronous tests, not sync ones.
 
     Notes
     -----
     Due to the placement of this conftest.py file, you must specifically name
-    the napari folder such as "pytest napari --show-viewer"
+    the napari folder such as "pytest napari --aysnc_only"
     """
-    parser.addoption(
-        "--show-viewer",
-        action="store_true",
-        default=False,
-        help="don't show viewer during tests",
-    )
 
     parser.addoption(
         "--async_only",
