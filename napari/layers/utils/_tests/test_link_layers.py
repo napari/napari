@@ -2,7 +2,10 @@ import numpy as np
 import pytest
 
 from napari import layers
-from napari.layers.utils import experimental_link_layers
+from napari.layers.utils import (
+    experimental_link_layers,
+    experimental_linked_layers,
+)
 
 BASE_ATTRS = {}
 BASE_ATTRS = {
@@ -90,3 +93,16 @@ def test_removed_linked_target():
     del l3
     l1.opacity = 0.25
     assert l1.opacity == l2.opacity
+
+
+def test_context_manager():
+    """Test that we can temporarily link layers."""
+    l1 = layers.Image(np.random.rand(10, 10))
+    l2 = layers.Image(np.random.rand(10, 10))
+    l3 = layers.Image(np.random.rand(10, 10))
+    assert len(l1.events.gamma.callbacks) == 0
+    with experimental_linked_layers([l1, l2, l3], ('gamma',)):
+        assert len(l1.events.gamma.callbacks) == 2
+        assert len(l1.events.opacity.callbacks) == 0  # it's just gamma
+        del l2  # if we lose a layer in the meantime it should be ok
+    assert len(l1.events.gamma.callbacks) == 0

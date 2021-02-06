@@ -1,23 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
+from contextlib import contextmanager
+from functools import partial
+from typing import TYPE_CHECKING, Callable, Iterable, Tuple
 
 if TYPE_CHECKING:
     from napari.layers import Layer
 
 #: Record of already linked layers... to avoid duplicating callbacks
-#  in the form of (id(layer1), id(layer2), attribute_name)
-_LINKED: set[tuple[int, int, str]] = set()
-
-
-# attributes that make no sense to link, or error on changing
-# we may want to include colormap here, but in most cases, it works fine.
-PROHIBITED = {'thumbnail', 'status', 'name'}
+#  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
+LinkKey = Tuple[int, int, str]
+Unlinker = Callable[[], None]
+_LINKED_LAYERS: dict[LinkKey, Unlinker] = dict()
 
 
 def _get_common_evented_attributes(
     layers: Iterable['Layer'],
-    prohibited: set[str] = PROHIBITED,
+    exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
     with_private=False,
 ) -> set[str]:
     """Get the set of common, non-private evented attributes in ``layers``.
@@ -30,8 +29,9 @@ def _get_common_evented_attributes(
     ----------
     layers : iterable
         A set of layers to evaluate for attribute linking.
-    prohibited : set, optional
-        A set of attributes to exclude, by default PROHIBITED
+    exclude : set, optional
+        Layer attributes that make no sense to link, or may error on changing.
+        {'thumbnail', 'status', 'name', 'data'}
     private : bool, optional
         include private attributes
 
@@ -50,7 +50,7 @@ def _get_common_evented_attributes(
     common_attrs = set.intersection(*(set(dir(lay)) for lay in layers))
     if not with_private:
         common_attrs = {x for x in common_attrs if not x.startswith("_")}
-    common = common_events & common_attrs - prohibited
+    common = common_events & common_attrs - exclude
 
     # lastly, discard any method-only events (we just want attrs)
     for attr in set(common_attrs):
@@ -61,9 +61,9 @@ def _get_common_evented_attributes(
     return common
 
 
-def experimental_link_layers(
+def link_layers(
     layers: Iterable['Layer'], attributes: Iterable[str] = ()
-):
+) -> list[LinkKey]:
     """Link ``attributes`` between all layers in ``layers``.
 
     This essentially performs the following operation:
@@ -95,7 +95,7 @@ def experimental_link_layers(
     --------
     >>> data = np.random.rand(3, 64, 64)
     >>> viewer = napari.view_image(data, channel_axis=0)
-    >>> experimental_link_layers(viewer.layers)
+    >>> link_layers(viewer.layers)
     """
     from itertools import permutations, product
 
@@ -117,10 +117,12 @@ def experimental_link_layers(
         attr_set = valid_attrs
 
     # now, connect requested attributes between all requested layers.
+    links = []
     for (lay1, lay2), attr in product(permutations(layers, 2), attr_set):
 
         key = (id(lay1), id(lay2), attr)
-        if key in _LINKED:
+        # if the layers and attribute are already linked then ignore
+        if key in _LINKED_LAYERS:
             continue
 
         def _make_l2_setter(eq_op, l1=lay1, l2=lay2, attr=attr):
@@ -140,6 +142,27 @@ def experimental_link_layers(
         # get a suitable equality operator for this attribute type
         eq_op = get_equality_operator(getattr(lay1, attr))
         # acually make the connection
-        getattr(lay1.events, attr).connect(_make_l2_setter(eq_op))
+        callback = _make_l2_setter(eq_op)
+        emitter_group = getattr(lay1.events, attr)
+        emitter_group.connect(callback)
+
         # store the connection so that we don't make it again.
-        _LINKED.add(key)
+        # and save an "unlink" function for the key.
+        _LINKED_LAYERS[key] = partial(emitter_group.disconnect, callback)
+        links.append(key)
+    return links
+
+
+def _unlink_keys(keys: list[LinkKey]):
+    """Disconnect layer linkages by keys."""
+    for key in keys:
+        _LINKED_LAYERS.pop(key)()
+
+
+@contextmanager
+def linked_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+    links = link_layers(layers, attributes)
+    try:
+        yield
+    finally:
+        _unlink_keys(links)
