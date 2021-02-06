@@ -71,13 +71,13 @@ def test_node_indexing(tree):
     assert g1_1_0.name == '3'
     assert g1_1_0 is tree[1, 1, 0]  # nested index variant
 
-    g1_1_0.emancipate()
+    g1_1_0.unparent()
     assert g1_1_0.index_from_root() == ()
     assert g1_1_0.index_in_parent() == 0
 
     with pytest.raises(IndexError) as e:
-        g1_1_0.emancipate()
-    assert "Cannot emancipate orphaned Node" in str(e)
+        g1_1_0.unparent()
+    assert "Cannot unparent orphaned Node" in str(e)
 
 
 def test_traverse(tree):
