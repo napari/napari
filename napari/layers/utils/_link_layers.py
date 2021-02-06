@@ -116,7 +116,7 @@ def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
         be unlinked.  If a single layer is provided, it will be unlinked from
         all other layers.
     attributes : Iterable[str], optional
-        The set of attributes to link.  If not provided, all connections
+        The set of attributes to unlink.  If not provided, all connections
         between the provided layers will be unlinked.
     """
     layer_ids = [id(layer) for layer in layers]
