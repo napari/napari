@@ -186,7 +186,7 @@ class QtDimSliderWidget(QWidget):
         nsteps = self.dims.nsteps[self.axis] - 1
         if nsteps == 0:
             displayed_sliders[self.axis] = False
-            self.qt_dims.last_used = None
+            self.qt_dims.last_used = 0
             self.hide()
         else:
             if (

@@ -4,6 +4,7 @@ from .containers._nested_list import NestableEventedList
 from .containers._typed import TypedMutableSequence
 from .dataclass import evented_dataclass
 from .event_utils import disconnect_events
+from .evented_model import EventedModel
 from .types import SupportsEvents
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     'EmitterGroup',
     'Event',
     'EventedList',
+    'EventedModel',
     'EventEmitter',
     'NestableEventedList',
     'SupportsEvents',

@@ -20,7 +20,7 @@ def print_property_table(table: List[Tuple[str, Any]]) -> None:
 
     Parameters
     ----------
-    items
+    table
     """
     heading_width = max(len(x) for x, _ in table)
     for heading, value in table:

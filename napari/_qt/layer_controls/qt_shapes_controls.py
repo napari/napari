@@ -225,16 +225,6 @@ class QtShapesControls(QtLayerControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def mouseMoveEvent(self, event):
-        """On mouse move, update layer mode status.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.layer.status = str(self.layer.mode)
-
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.
 

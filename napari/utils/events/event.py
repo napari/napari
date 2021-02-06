@@ -54,7 +54,7 @@ import inspect
 import traceback
 import warnings
 import weakref
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from typing import Any
 
 from vispy.util.logs import _handle_exception, logger
@@ -234,6 +234,7 @@ class EventEmitter:
 
         # count number of times this emitter is blocked for each callback.
         self._blocked = {None: 0}
+        self._block_counter = Counter()
 
         # used to detect emitter loops
         self.source = source
@@ -491,6 +492,7 @@ class EventEmitter:
         event._push_source(self.source)
         try:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
+                self._block_counter.update([None])
                 return event
 
             rem = []
@@ -505,6 +507,7 @@ class EventEmitter:
                         continue
 
                 if blocked.get(cb, 0) > 0:
+                    self._block_counter.update([cb])
                     continue
 
                 self._invoke_callback(cb, event)
@@ -869,9 +872,16 @@ class EventBlocker:
     def __init__(self, target, callback=None):
         self.target = target
         self.callback = callback
+        self._base_count = target._block_counter.get(callback, 0)
+
+    @property
+    def count(self):
+        n_blocked = self.target._block_counter.get(self.callback, 0)
+        return n_blocked - self._base_count
 
     def __enter__(self):
         self.target.block(self.callback)
+        return self
 
     def __exit__(self, *args):
         self.target.unblock(self.callback)

@@ -24,11 +24,11 @@ skip_local_popups = pytest.mark.skipif(
 
 @skip_on_win_ci
 @skip_local_popups
-def test_z_order_adding_removing_images(make_test_viewer):
+def test_z_order_adding_removing_images(make_napari_viewer):
     """Test z order is correct after adding/ removing images."""
     data = np.ones((10, 10))
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red', name='red')
     viewer.add_image(data, colormap='green', name='green')
     viewer.add_image(data, colormap='blue', name='blue')
@@ -68,11 +68,11 @@ def test_z_order_adding_removing_images(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_z_order_images(make_test_viewer):
+def test_z_order_images(make_napari_viewer):
     """Test changing order of images changes z order in display."""
     data = np.ones((10, 10))
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
     viewer.add_image(data, colormap='blue')
     screenshot = viewer.screenshot(canvas_only=True)
@@ -89,11 +89,11 @@ def test_z_order_images(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_z_order_image_points(make_test_viewer):
+def test_z_order_image_points(make_napari_viewer):
     """Test changing order of image and points changes z order in display."""
     data = np.ones((10, 10))
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
     viewer.add_points([5, 5], face_color='blue', size=10)
     screenshot = viewer.screenshot(canvas_only=True)
@@ -110,11 +110,11 @@ def test_z_order_image_points(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_z_order_images_after_ndisplay(make_test_viewer):
+def test_z_order_images_after_ndisplay(make_napari_viewer):
     """Test z order of images remanins constant after chaning ndisplay."""
     data = np.ones((10, 10))
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
     viewer.add_image(data, colormap='blue')
     screenshot = viewer.screenshot(canvas_only=True)
@@ -139,11 +139,11 @@ def test_z_order_images_after_ndisplay(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_z_order_image_points_after_ndisplay(make_test_viewer):
+def test_z_order_image_points_after_ndisplay(make_napari_viewer):
     """Test z order of image and points remanins constant after chaning ndisplay."""
     data = np.ones((10, 10))
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.add_image(data, colormap='red')
     viewer.add_points([5, 5], face_color='blue', size=10)
     screenshot = viewer.screenshot(canvas_only=True)
@@ -168,9 +168,9 @@ def test_z_order_image_points_after_ndisplay(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_changing_image_colormap(make_test_viewer):
+def test_changing_image_colormap(make_napari_viewer):
     """Test changing colormap changes rendering."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     data = np.ones((20, 20, 20))
     layer = viewer.add_image(data, contrast_limits=[0, 1])
@@ -198,9 +198,9 @@ def test_changing_image_colormap(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_changing_image_gamma(make_test_viewer):
+def test_changing_image_gamma(make_napari_viewer):
     """Test changing gamma changes rendering."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     data = np.ones((20, 20, 20))
     layer = viewer.add_image(data, contrast_limits=[0, 2])
@@ -228,9 +228,9 @@ def test_changing_image_gamma(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_grid_mode(make_test_viewer):
+def test_grid_mode(make_napari_viewer):
     """Test changing gamma changes rendering."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     # Add images
     data = np.ones((6, 15, 15))
@@ -328,12 +328,12 @@ def test_grid_mode(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_changing_image_attenuation(make_test_viewer):
+def test_changing_image_attenuation(make_napari_viewer):
     """Test changing attenuation value changes rendering."""
     data = np.zeros((100, 10, 10))
     data[-1] = 1
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.dims.ndisplay = 3
     viewer.add_image(data, contrast_limits=[0, 1])
     viewer.layers[0].rendering = 'attenuated_mip'
@@ -353,11 +353,11 @@ def test_changing_image_attenuation(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_labels_painting(make_test_viewer):
+def test_labels_painting(make_napari_viewer):
     """Test painting labels updates image."""
     data = np.zeros((100, 100))
 
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
     viewer.add_labels(data)
     layer = viewer.layers[0]
 
@@ -403,9 +403,9 @@ def test_labels_painting(make_test_viewer):
 @pytest.mark.skip("Welcome visual temporarily disabled")
 @skip_on_win_ci
 @skip_local_popups
-def test_welcome(make_test_viewer):
+def test_welcome(make_napari_viewer):
     """Test that something visible on launch."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     # Check something is visible
     screenshot = viewer.screenshot(canvas_only=True)
@@ -427,9 +427,9 @@ def test_welcome(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_axes_visible(make_test_viewer):
+def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True)
@@ -450,9 +450,9 @@ def test_axes_visible(make_test_viewer):
 
 @skip_on_win_ci
 @skip_local_popups
-def test_scale_bar_visible(make_test_viewer):
+def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
-    viewer = make_test_viewer(show=True)
+    viewer = make_napari_viewer(show=True)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True)

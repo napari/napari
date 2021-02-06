@@ -5,9 +5,9 @@ from napari._tests.utils import layer_test_data
 from napari.layers import Image
 
 
-def test_layers_removed_on_close(make_test_viewer):
+def test_layers_removed_on_close(make_napari_viewer):
     """Test layers removed on close."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # add layers
     viewer.add_image(np.random.random((30, 40)))
@@ -19,13 +19,13 @@ def test_layers_removed_on_close(make_test_viewer):
     assert len(viewer.layers) == 0
 
 
-def test_layer_multiple_viewers(make_test_viewer):
+def test_layer_multiple_viewers(make_napari_viewer):
     """Test layer on multiple viewers."""
     # Check that a layer can be added and removed from
     # mutliple viewers. See https://github.com/napari/napari/issues/1503
     # for more detail.
-    viewer_a = make_test_viewer()
-    viewer_b = make_test_viewer()
+    viewer_a = make_napari_viewer()
+    viewer_b = make_napari_viewer()
 
     # create layer
     layer = Image(np.random.random((30, 40)))
@@ -45,10 +45,10 @@ def test_layer_multiple_viewers(make_test_viewer):
     assert layer.opacity == 0.6
 
 
-def test_adding_removing_layer(make_test_viewer):
+def test_adding_removing_layer(make_napari_viewer):
     """Test adding and removing a layer."""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # Create layer
     data = np.random.random((2, 6, 30, 40))
@@ -86,10 +86,10 @@ def test_adding_removing_layer(make_test_viewer):
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
 def test_add_remove_layer_external_callbacks(
-    make_test_viewer, Layer, data, ndim
+    make_napari_viewer, Layer, data, ndim
 ):
     """Test external callbacks for layer emmitters preserved."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     layer = Layer(data)
     # Check layer has been correctly created

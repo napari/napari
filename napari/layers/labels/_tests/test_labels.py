@@ -219,19 +219,19 @@ def test_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value()
-    layer_message = layer.get_message()
+    current_label = layer.get_value(layer.coordinates)
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -254,19 +254,19 @@ def test_multiscale_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value()[1]
-    layer_message = layer.get_message()
+    current_label = layer.get_value(layer.coordinates)[1]
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -525,7 +525,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0)
     assert value == data[0, 0]
 
@@ -535,7 +535,7 @@ def test_message():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str
 
 

@@ -11,10 +11,10 @@ def test_ndim():
     dims = Dims()
     assert dims.ndim == 2
 
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     assert dims.ndim == 4
 
-    dims = Dims(2)
+    dims = Dims(ndim=2)
     assert dims.ndim == 2
 
     dims.ndim = 10
@@ -28,7 +28,7 @@ def test_display():
     """
     Test display setting.
     """
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     assert dims.order == (0, 1, 2, 3)
     assert dims.ndisplay == 2
 
@@ -37,25 +37,25 @@ def test_display():
 
 
 def test_order_with_init():
-    dims = Dims(3, order=(0, 2, 1))
+    dims = Dims(ndim=3, order=(0, 2, 1))
     assert dims.order == (0, 2, 1)
 
 
 def test_labels_with_init():
-    dims = Dims(3, axis_labels=('x', 'y', 'z'))
+    dims = Dims(ndim=3, axis_labels=('x', 'y', 'z'))
     assert dims.axis_labels == ('x', 'y', 'z')
 
 
-def test_wrong_order():
-    dims = Dims(3)
+def test_bad_order():
+    dims = Dims(ndim=3)
     with pytest.raises(ValueError):
-        dims.order = (0, 1)
+        dims.order = (0, 0, 1)
 
 
-def test_wrong_labels():
-    dims = Dims(3)
-    with pytest.raises(ValueError):
-        dims.axis_labels = ('a', 'b')
+def test_pad_bad_labels():
+    dims = Dims(ndim=3)
+    dims.axis_labels = ('a', 'b')
+    assert dims.axis_labels == ('0', 'a', 'b')
 
 
 def test_keyword_only_dims():
@@ -67,7 +67,7 @@ def test_point():
     """
     Test point setting.
     """
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     assert dims.point == (0,) * 4
 
     dims.set_range(3, (0, 5, 1))
@@ -83,7 +83,7 @@ def test_range():
     """
     Tests range setting.
     """
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     assert dims.range == ((0, 2, 1),) * 4
 
     dims.set_range(3, (0, 4, 2))
@@ -91,7 +91,7 @@ def test_range():
 
 
 def test_axis_labels():
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     assert dims.axis_labels == ('0', '1', '2', '3')
 
 
@@ -99,7 +99,7 @@ def test_order_when_changing_ndim():
     """
     Test order of the dims when changing the number of dimensions.
     """
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     dims.set_range(0, (0, 4, 1))
     dims.set_point(0, 2)
 
@@ -119,7 +119,7 @@ def test_order_when_changing_ndim():
 
 
 def test_labels_order_when_changing_dims():
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     dims.ndim = 5
     assert dims.axis_labels == ('0', '1', '2', '3', '4')
 
@@ -203,7 +203,7 @@ def test_roll_skip_dummy_axis_3():
 def test_changing_focus():
     """Test changing focus updates the last_used prop."""
     # too-few dims, should have no sliders to update
-    dims = Dims(2)
+    dims = Dims(ndim=2)
     assert dims.last_used == 0
     dims._focus_down()
     dims._focus_up()

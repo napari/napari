@@ -97,7 +97,7 @@ class QtPoll(QObject):
 
         Parameters
         ----------
-        event : QEvent
+        _event : QEvent
             The close event.
         """
         self.timer.stop()

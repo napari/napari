@@ -2,11 +2,10 @@ from typing import Tuple
 
 import numpy as np
 
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.events import EventedModel
 
 
-@evented_dataclass
-class GridCanvas:
+class GridCanvas(EventedModel):
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
@@ -29,11 +28,12 @@ class GridCanvas:
         all the layers at the appropriate stride.
     """
 
+    # fields
     enabled: bool = False
     stride: int = 1
-    shape: Property[Tuple, None, tuple] = (-1, -1)
+    shape: Tuple[int, int] = (-1, -1)
 
-    def actual_shape(self, nlayers=1):
+    def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
         """Return the actual shape of the grid.
 
         This will return the shape parameter, unless one of the row
@@ -72,7 +72,7 @@ class GridCanvas:
         else:
             return (1, 1)
 
-    def position(self, index, nlayers):
+    def position(self, index: int, nlayers: int) -> Tuple[int, int]:
         """Return the position of a given linear index in grid.
 
         If the grid is not enabled, this will return (0, 0).

@@ -27,8 +27,8 @@ def _load_config(path: str) -> dict:
     path : str
         The path of the JSON file we should load.
 
-    Return
-    ------
+    Returns
+    -------
     dict
         The parsed data from the JSON file.
     """
@@ -45,8 +45,8 @@ def _load_config(path: str) -> dict:
 def _load_monitor_config() -> Optional[dict]:
     """Return the MonitorService config file data, or None.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[dict]
         The parsed config file data or None if no config.
     """
@@ -90,8 +90,8 @@ def _get_monitor_config() -> Optional[dict]:
     3) The NAPARI_MON environment variable is not defined.
     4) The NAPARI_MON config file cannot be found and parsed.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[dict]
         The configuration for the MonitorService.
     """
@@ -152,8 +152,8 @@ class Monitor:
     def start(self) -> bool:
         """Start the monitor service, if it hasn't been started already.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if we started the service or it was already started.
         """

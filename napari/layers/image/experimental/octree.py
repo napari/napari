@@ -275,7 +275,7 @@ class Octree:
         data fits inside a single tile.
 
         Parameters
-        -----------
+        ----------
         slice_id : int
             The id of the slice this octree is in.
         tile_size : int

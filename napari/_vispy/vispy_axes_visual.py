@@ -40,7 +40,7 @@ def make_arrow_head(num_segments, axis):
     ----------
     num_segments : int
         Number of segments in the arrowhead.
-    axis :
+    axis
         Arrowhead direction.
 
     Returns
