@@ -1,6 +1,7 @@
 """
 This module tests our "pytest plugin" made available in
-``napari.utils._testsupport``.
+``napari.utils._testsupport``.  It's here in the top level `_tests` folder
+because it requires qt, and should be omitted from headless tests.
 """
 
 import pytest
