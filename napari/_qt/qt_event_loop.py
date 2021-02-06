@@ -9,6 +9,7 @@ from qtpy.QtWidgets import QApplication
 
 from napari import __version__
 
+from ..utils import config, perf
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 from .qthreading import wait_for_workers_to_quit
@@ -139,6 +140,39 @@ def get_app(
     app.aboutToQuit.connect(wait_for_workers_to_quit)
 
     return app
+
+
+def quit_app():
+    """Close all windows and quit the QApplication if napari started it."""
+    QApplication.closeAllWindows()
+    # if we started the application then the app will be named 'napari'.
+    if QApplication.applicationName() == 'napari':
+        QApplication.quit()
+
+    # otherwise, something else created the QApp before us (such as
+    # %gui qt IPython magic).  If we quit the app in this case, then
+    # *later* attempts to instantiate a napari viewer won't work until
+    # the event loop is restarted with app.exec_().  So rather than
+    # quit just close all the windows (and clear our app icon).
+    else:
+        QApplication.setWindowIcon(QIcon())
+
+    if perf.USE_PERFMON:
+        # Write trace file before exit, if we were writing one.
+        # Is there a better place to make sure this is done on exit?
+        perf.timers.stop_trace_file()
+
+    if config.monitor:
+        # Stop the monitor service if we were using it
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()
+
+    if config.async_loading:
+        # Shutdown the chunkloader
+        from ..components.experimental.chunk import chunk_loader
+
+        chunk_loader.shutdown()
 
 
 @contextmanager
