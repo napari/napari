@@ -47,16 +47,6 @@ def _assert_models_synced(model: Group, qt_model: QtNodeTreeModel):
         assert item.name == node.name
 
 
-def test_tree_model(qtmodeltester):
-    """Basic tests on the qtabstractitem model implementation.
-
-    https://pytest-qt.readthedocs.io/en/latest/modeltester.html
-    """
-    root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
-    model = QtNodeTreeModel(root)
-    qtmodeltester.check(model)
-
-
 def test_move_single_tree_item(tree_model):
     """Test moving a single item."""
     root = tree_model._root
