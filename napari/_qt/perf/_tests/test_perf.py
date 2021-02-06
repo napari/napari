@@ -10,6 +10,7 @@ from qtpy.QtWidgets import QApplication
 
 from napari._qt.perf import qt_event_tracing
 from napari._qt.utils import delete_qapp
+from napari._tests.utils import skip_on_win_ci
 from napari.utils import perf
 
 if os.getenv('CI', '0') != '0' and (
@@ -50,6 +51,7 @@ def qapp():
         qt_event_tracing.perf.perf_timer = original_perf_timer
 
 
+@skip_on_win_ci
 def test_trace_on_start(tmp_path, monkeypatch, make_napari_viewer):
     """Make sure napari can write a perfmon trace file."""
 
