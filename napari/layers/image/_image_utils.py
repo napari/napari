@@ -1,5 +1,7 @@
 """guess_rgb, guess_multiscale, guess_labels.
 """
+import warnings
+
 import numpy as np
 
 
@@ -57,21 +59,24 @@ def guess_multiscale(data):
         # pyramid with only one level, unwrap
         return False, data[0]
     if len(sizes) > 1:
-        consistent = bool(np.all(sizes[:-1] > sizes[1:]))
+        consistent = bool(np.all(sizes[:-1] >= sizes[1:]))
         flat = bool(np.all(sizes == sizes[0]))
         if flat:
             # note: the individual array case should be caught by the first
             # code line in this function, hasattr(ndim) and ndim > 1.
-            raise ValueError(
-                'Input data should be an array-like object, or a sequence of '
-                'arrays of decreasing size. Got arrays of single shape: '
+            # note also: this may be desirable behaviour when we want
+            # different chunking patterns in 2D and 3D view, since 3D only
+            # loads the lowest resolution volume.
+            warnings.warn(
+                'Input data should be an array-like object, or a sequence '
+                'of arrays of decreasing size. Got arrays of single shape: '
                 f'{shapes[0]}'
             )
         if not consistent:
             raise ValueError(
-                'Input data should be an array-like object, or a sequence of '
-                'arrays of decreasing size. Got arrays in incorrect order, '
-                f'shapes: {shapes}'
+                'Input data should be an array-like object, or a sequence '
+                'of arrays of decreasing size. Got arrays in incorrect '
+                f'order, shapes: {shapes}'
             )
         return True, data
     else:
