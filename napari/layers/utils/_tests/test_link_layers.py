@@ -2,9 +2,10 @@ import numpy as np
 import pytest
 
 from napari import layers
-from napari.layers.utils import (
-    experimental_link_layers,
-    experimental_linked_layers,
+from napari.layers.utils._link_layers import (
+    link_layers,
+    linked_layers,
+    unlink_layers,
 )
 
 BASE_ATTRS = {}
@@ -30,7 +31,7 @@ def test_link_image_layers_all_attributes(key, value):
     """Test linking common attributes across layers of similar types."""
     l1 = layers.Image(np.random.rand(10, 10), contrast_limits=(0, 0.8))
     l2 = layers.Image(np.random.rand(10, 10), contrast_limits=(0.1, 0.9))
-    experimental_link_layers([l1, l2])
+    link_layers([l1, l2])
     # linking does (currently) apply to things that were unequal before linking
     assert l1.contrast_limits != l2.contrast_limits
 
@@ -45,7 +46,7 @@ def test_link_different_type_layers_all_attributes(key, value):
     """Test linking common attributes across layers of different types."""
     l1 = layers.Image(np.random.rand(10, 10))
     l2 = layers.Points(None)
-    experimental_link_layers([l1, l2])
+    link_layers([l1, l2])
 
     # once we set either... they will both be changed
     assert getattr(l1, key) != value
@@ -58,33 +59,33 @@ def test_link_invalid_param():
     l1 = layers.Image(np.random.rand(10, 10))
     l2 = layers.Points(None)
     with pytest.raises(ValueError) as e:
-        experimental_link_layers([l1, l2], ('rendering',))
+        link_layers([l1, l2], ('rendering',))
     assert "Cannot link attributes that are not shared by all layers" in str(e)
 
 
 def test_double_linking_noop():
     """Test that linking already linked layers is a noop."""
-    l1 = layers.Image(np.random.rand(10, 10))
-    l2 = layers.Image(np.random.rand(10, 10))
-    l3 = layers.Image(np.random.rand(10, 10))
+    l1 = layers.Points(None)
+    l2 = layers.Points(None)
+    l3 = layers.Points(None)
     # no callbacks to begin with
-    assert len(l1.events.contrast_limits.callbacks) == 0
+    assert len(l1.events.opacity.callbacks) == 0
 
     # should have two after linking layers
-    experimental_link_layers([l1, l2, l3])
-    assert len(l1.events.contrast_limits.callbacks) == 2
+    link_layers([l1, l2, l3])
+    assert len(l1.events.opacity.callbacks) == 2
 
     # should STILL have two after linking layers again
-    experimental_link_layers([l1, l2, l3])
-    assert len(l1.events.contrast_limits.callbacks) == 2
+    link_layers([l1, l2, l3])
+    assert len(l1.events.opacity.callbacks) == 2
 
 
 def test_removed_linked_target():
     """Test that linking already linked layers is a noop."""
-    l1 = layers.Image(np.random.rand(10, 10))
-    l2 = layers.Image(np.random.rand(10, 10))
-    l3 = layers.Image(np.random.rand(10, 10))
-    experimental_link_layers([l1, l2, l3])
+    l1 = layers.Points(None)
+    l2 = layers.Points(None)
+    l3 = layers.Points(None)
+    link_layers([l1, l2, l3])
 
     l1.opacity = 0.5
     assert l1.opacity == l2.opacity == l3.opacity == 0.5
@@ -97,12 +98,37 @@ def test_removed_linked_target():
 
 def test_context_manager():
     """Test that we can temporarily link layers."""
-    l1 = layers.Image(np.random.rand(10, 10))
-    l2 = layers.Image(np.random.rand(10, 10))
-    l3 = layers.Image(np.random.rand(10, 10))
-    assert len(l1.events.gamma.callbacks) == 0
-    with experimental_linked_layers([l1, l2, l3], ('gamma',)):
-        assert len(l1.events.gamma.callbacks) == 2
-        assert len(l1.events.opacity.callbacks) == 0  # it's just gamma
+    l1 = layers.Points(None)
+    l2 = layers.Points(None)
+    l3 = layers.Points(None)
+    assert len(l1.events.opacity.callbacks) == 0
+    with linked_layers([l1, l2, l3], ('opacity',)):
+        assert len(l1.events.opacity.callbacks) == 2
+        assert len(l1.events.blending.callbacks) == 0  # it's just opacity
         del l2  # if we lose a layer in the meantime it should be ok
-    assert len(l1.events.gamma.callbacks) == 0
+    assert len(l1.events.opacity.callbacks) == 0
+
+
+def test_unlink_layers():
+    """Test that we can unlink layers."""
+    l1 = layers.Points(None)
+    l2 = layers.Points(None)
+    l3 = layers.Points(None)
+
+    link_layers([l1, l2, l3])
+    assert len(l1.events.opacity.callbacks) == 2
+    unlink_layers([l1, l2], ('opacity',))  # just unlink opacity on l1/l2
+
+    assert len(l1.events.opacity.callbacks) == 1
+    assert len(l2.events.opacity.callbacks) == 1
+    # l3 is still connected to them both
+    assert len(l3.events.opacity.callbacks) == 2
+    # blending was untouched
+    assert len(l1.events.blending.callbacks) == 2
+    assert len(l2.events.blending.callbacks) == 2
+    assert len(l3.events.blending.callbacks) == 2
+
+    unlink_layers([l1, l2, l3])  # unlink everything
+    assert len(l1.events.blending.callbacks) == 0
+    assert len(l2.events.blending.callbacks) == 0
+    assert len(l3.events.blending.callbacks) == 0

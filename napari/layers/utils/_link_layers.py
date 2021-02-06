@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from functools import partial
+from itertools import combinations, permutations, product
 from typing import TYPE_CHECKING, Callable, Iterable, Tuple
 
 if TYPE_CHECKING:
@@ -12,6 +13,126 @@ if TYPE_CHECKING:
 LinkKey = Tuple[int, int, str]
 Unlinker = Callable[[], None]
 _LINKED_LAYERS: dict[LinkKey, Unlinker] = dict()
+
+
+def link_layers(
+    layers: Iterable['Layer'], attributes: Iterable[str] = ()
+) -> list[LinkKey]:
+    """Link ``attributes`` between all layers in ``layers``.
+
+    This essentially performs the following operation:
+
+    .. code-block:: python
+
+       for lay1, lay2 in permutations(layers, 2):
+           for attr in attributes:
+              lay1.events.<attr>.connect(_set_lay2_<attr>)
+
+    Recursion is prevented by checking for value equality prior to setting.
+
+    Parameters
+    ----------
+    layers : Iterable[napari.layers.Layer]
+        The set of layers to link
+    attributes : Iterable[str], optional
+        The set of attributes to link.  If not provided (the default),
+        *all*, event-providing attributes that are common to all ``layers``
+        will be linked.
+
+    Raises
+    ------
+    ValueError
+        If any of the attributes provided are not valid "event-emitting"
+        attributes, or are not shared by all of the layers provided.
+
+    Examples
+    --------
+    >>> data = np.random.rand(3, 64, 64)
+    >>> viewer = napari.view_image(data, channel_axis=0)
+    >>> link_layers(viewer.layers)
+    """
+
+    from ...utils.misc import get_equality_operator
+
+    valid_attrs = _get_common_evented_attributes(layers)
+
+    # now, ensure that the attributes requested are valid
+    attr_set = set(attributes)
+    if attributes:
+        extra = attr_set - valid_attrs
+        if extra:
+            raise ValueError(
+                "Cannot link attributes that are not shared by all "
+                f"layers: {extra}. Allowable attrs include:\n{valid_attrs}"
+            )
+    else:
+        # if no attributes are specified, ALL valid attributes are linked.
+        attr_set = valid_attrs
+
+    # now, connect requested attributes between all requested layers.
+    links = []
+    for (lay1, lay2), attr in product(permutations(layers, 2), attr_set):
+
+        key = _link_key(lay1, lay2, attr)
+        # if the layers and attribute are already linked then ignore
+        if key in _LINKED_LAYERS:
+            continue
+
+        def _make_l2_setter(eq_op, l1=lay1, l2=lay2, attr=attr):
+            # where `eq_op` is an "equality checking function" that is suitable
+            # for the attribute object type.  (see ``get_equality_operator``)
+
+            def setter(event=None):
+                new_val = getattr(l1, attr)
+                # this line is the important part for avoiding recursion
+                if not eq_op(getattr(l2, attr), new_val):
+                    setattr(l2, attr, new_val)
+
+            setter.__doc__ = f"Set {attr!r} on {lay2} to that of {lay1}"
+            setter.__qualname__ = f"set_{attr}_on_layer_{id(lay2)}"
+            return setter
+
+        # get a suitable equality operator for this attribute type
+        eq_op = get_equality_operator(getattr(lay1, attr))
+        # acually make the connection
+        callback = _make_l2_setter(eq_op)
+        emitter_group = getattr(lay1.events, attr)
+        emitter_group.connect(callback)
+
+        # store the connection so that we don't make it again.
+        # and save an "unlink" function for the key.
+        _LINKED_LAYERS[key] = partial(emitter_group.disconnect, callback)
+        links.append(key)
+    return links
+
+
+def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+    """Unlink previously linked ``attributes`` between all layers in ``layers``.
+
+    Parameters
+    ----------
+    layers : Iterable[napari.layers.Layer]
+        The set of layers to unlink
+    attributes : Iterable[str], optional
+        The set of attributes to link.  If not provided, all connections
+        between the provided layers will be unlinked.
+    """
+    layer_ids = map(id, layers)
+    layer_combos = {frozenset(i) for i in combinations(layer_ids, 2)}
+    keys = (k for k in list(_LINKED_LAYERS) if set(k[:2]) in layer_combos)
+    if attributes:
+        keys = (k for k in keys if k[2] in attributes)
+    _unlink_keys(keys)
+
+
+@contextmanager
+def linked_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+    """Context manager that temporarily links ``attributes`` on ``layers``."""
+    links = link_layers(layers, attributes)
+    try:
+        yield
+    finally:
+        _unlink_keys(links)
 
 
 def _get_common_evented_attributes(
@@ -61,108 +182,14 @@ def _get_common_evented_attributes(
     return common
 
 
-def link_layers(
-    layers: Iterable['Layer'], attributes: Iterable[str] = ()
-) -> list[LinkKey]:
-    """Link ``attributes`` between all layers in ``layers``.
-
-    This essentially performs the following operation:
-
-    .. code-block:: python
-
-       for lay1, lay2 in permutations(layers, 2):
-           for attr in attributes:
-              lay1.events.<attr>.connect(_set_lay2_<attr>)
-
-    Recursion is prevented by checking for value equality prior to setting.
-
-    Parameters
-    ----------
-    layers : Iterable[napari.layers.Layer]
-        The set of layers to link
-    attributes : Iterable[str], optional
-        The set of attributes to link.  If not provided (the default),
-        *all*, event-providing attributes that are common to all ``layers``
-        will be linked.
-
-    Raises
-    ------
-    ValueError
-        If any of the attributes provided are not valid "event-emitting"
-        attributes, or are not shared by all of the layers provided.
-
-    Examples
-    --------
-    >>> data = np.random.rand(3, 64, 64)
-    >>> viewer = napari.view_image(data, channel_axis=0)
-    >>> link_layers(viewer.layers)
-    """
-    from itertools import permutations, product
-
-    from ...utils.misc import get_equality_operator
-
-    valid_attrs = _get_common_evented_attributes(layers)
-
-    # now, ensure that the attributes requested are valid
-    attr_set = set(attributes)
-    if attributes:
-        extra = attr_set - valid_attrs
-        if extra:
-            raise ValueError(
-                "Cannot link attributes that are not shared by all "
-                f"layers: {extra}. Allowable attrs include:\n{valid_attrs}"
-            )
-    else:
-        # if no attributes are specified, ALL valid attributes are linked.
-        attr_set = valid_attrs
-
-    # now, connect requested attributes between all requested layers.
-    links = []
-    for (lay1, lay2), attr in product(permutations(layers, 2), attr_set):
-
-        key = (id(lay1), id(lay2), attr)
-        # if the layers and attribute are already linked then ignore
-        if key in _LINKED_LAYERS:
-            continue
-
-        def _make_l2_setter(eq_op, l1=lay1, l2=lay2, attr=attr):
-            # where `eq_op` is an "equality checking function" that is suitable
-            # for the attribute object type.  (see ``get_equality_operator``)
-
-            def setter(event=None):
-                new_val = getattr(l1, attr)
-                # this line is the important part for avoiding recursion
-                if not eq_op(getattr(l2, attr), new_val):
-                    setattr(l2, attr, new_val)
-
-            setter.__doc__ = f"Set {attr!r} on {lay2} to that of {lay1}"
-            setter.__qualname__ = f"set_{attr}_on_layer_{id(lay2)}"
-            return setter
-
-        # get a suitable equality operator for this attribute type
-        eq_op = get_equality_operator(getattr(lay1, attr))
-        # acually make the connection
-        callback = _make_l2_setter(eq_op)
-        emitter_group = getattr(lay1.events, attr)
-        emitter_group.connect(callback)
-
-        # store the connection so that we don't make it again.
-        # and save an "unlink" function for the key.
-        _LINKED_LAYERS[key] = partial(emitter_group.disconnect, callback)
-        links.append(key)
-    return links
+def _link_key(lay1: 'Layer', lay2: 'Layer', attr: str) -> LinkKey:
+    """Generate a "link key" for these layers and attribute."""
+    return (id(lay1), id(lay2), attr)
 
 
-def _unlink_keys(keys: list[LinkKey]):
+def _unlink_keys(keys: Iterable[LinkKey]):
     """Disconnect layer linkages by keys."""
     for key in keys:
-        _LINKED_LAYERS.pop(key)()
-
-
-@contextmanager
-def linked_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
-    links = link_layers(layers, attributes)
-    try:
-        yield
-    finally:
-        _unlink_keys(links)
+        disconnecter = _LINKED_LAYERS.pop(key, None)
+        if disconnecter:
+            disconnecter()
