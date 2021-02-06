@@ -8,7 +8,15 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 import numpy as np
 
@@ -390,3 +398,56 @@ def ensure_list_of_layer_data_tuple(val):
         except TypeError:
             pass
     raise TypeError('Not a valid list of layer data tuples!')
+
+
+def get_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
+    """Return a function that can check equality between ``obj`` and another.
+
+    Rather than always using ``==`` (i.e. ``operator.eq``), this function
+    returns operators that are aware of object types: mostly "array types with
+    more than one element" whose truth value is ambiguous.
+
+    Parameters
+    ----------
+    obj : Any
+        An object whose equality with another object you want to check.
+
+    Returns
+    -------
+    operator : Callable[[Any, Any], bool]
+        An operation that can be called as ``operator(obj, other)`` to check
+        equality between objects of type ``type(obj)``.
+
+    Examples
+    --------
+
+    """
+    import operator
+
+    import numpy as np
+
+    if isinstance(obj, np.ndarray):
+        return np.array_equal
+
+    import dask.array as da
+
+    if isinstance(obj, da.Array):
+        return operator.is_
+
+    try:
+        import zarr
+
+        if isinstance(obj, zarr.core.Array):
+            return operator.is_
+    except ImportError:
+        pass
+
+    try:
+        import xarray as xr
+
+        if isinstance(obj, xr.DataArray):
+            return np.array_equal
+    except ImportError:
+        pass
+
+    return operator.eq
