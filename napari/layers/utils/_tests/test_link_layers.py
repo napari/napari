@@ -132,3 +132,25 @@ def test_unlink_layers():
     assert len(l1.events.blending.callbacks) == 0
     assert len(l2.events.blending.callbacks) == 0
     assert len(l3.events.blending.callbacks) == 0
+
+
+def test_unlink_single_layer():
+    """Test that we can unlink a single layer from all others."""
+    l1 = layers.Points(None)
+    l2 = layers.Points(None)
+    l3 = layers.Points(None)
+
+    link_layers([l1, l2, l3])
+    assert len(l1.events.opacity.callbacks) == 2
+    unlink_layers([l1], ('opacity',))  # just unlink L1 opacicity from others
+    assert len(l1.events.opacity.callbacks) == 0
+    assert len(l2.events.opacity.callbacks) == 1
+    assert len(l3.events.opacity.callbacks) == 1
+
+    # blending was untouched
+    assert len(l1.events.blending.callbacks) == 2
+    assert len(l2.events.blending.callbacks) == 2
+    assert len(l3.events.blending.callbacks) == 2
+
+    unlink_layers([l1])  # completely unlink L1 from everything
+    assert not l1.events.blending.callbacks

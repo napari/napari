@@ -112,14 +112,22 @@ def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
     Parameters
     ----------
     layers : Iterable[napari.layers.Layer]
-        The set of layers to unlink
+        The list of layers to unlink.  All combinations of layers provided will
+        be unlinked.  If a single layer is provided, it will be unlinked from
+        all other layers.
     attributes : Iterable[str], optional
         The set of attributes to link.  If not provided, all connections
         between the provided layers will be unlinked.
     """
-    layer_ids = map(id, layers)
-    layer_combos = {frozenset(i) for i in combinations(layer_ids, 2)}
-    keys = (k for k in list(_LINKED_LAYERS) if set(k[:2]) in layer_combos)
+    layer_ids = [id(layer) for layer in layers]
+    if not layer_ids:
+        raise ValueError("Must provide at least one layer to unlink")
+    elif len(layer_ids) == 1:
+        layer_id = layer_ids[0]
+        keys = (k for k in list(_LINKED_LAYERS) if layer_id in k[:2])
+    else:
+        layer_combos = {frozenset(i) for i in combinations(layer_ids, 2)}
+        keys = (k for k in list(_LINKED_LAYERS) if set(k[:2]) in layer_combos)
     if attributes:
         keys = (k for k in keys if k[2] in attributes)
     _unlink_keys(keys)
