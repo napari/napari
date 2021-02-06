@@ -37,6 +37,7 @@ _defaults = {
 }
 
 
+# store reference to QApplication to prevent garbage collection
 _app_ref = None
 
 
@@ -119,11 +120,12 @@ def get_app(
             app = QApplicationWithTracing(sys.argv)
         else:
             app = QApplication(sys.argv)
-        global _app_ref
-        _app_ref = app
-        # if this is the first time the Qt app is being instantiated, we set
-        # the name, so that we know whether to raise_ in Window.show()
 
+        global _app_ref
+        _app_ref = app  # prevent garbage collection
+
+        # if this is the first time the Qt app is being instantiated, we set
+        # the name and metadata
         app.setApplicationName(kwargs.get('app_name'))
         app.setApplicationVersion(kwargs.get('app_version'))
         app.setOrganizationName(kwargs.get('org_name'))
