@@ -181,7 +181,7 @@ def quit_app():
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
 
-    NOTE: This method will soon be deprecated. See ``run()`` instead.
+    NOTE: This method will soon be deprecated. Please use ``napari.run()`` instead.
 
     Parameters
     ----------
