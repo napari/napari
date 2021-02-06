@@ -3,8 +3,8 @@ import pytest
 
 from napari import layers
 from napari.layers.utils._link_layers import (
+    layers_linked,
     link_layers,
-    linked_layers,
     unlink_layers,
 )
 
@@ -102,7 +102,7 @@ def test_context_manager():
     l2 = layers.Points(None)
     l3 = layers.Points(None)
     assert len(l1.events.opacity.callbacks) == 0
-    with linked_layers([l1, l2, l3], ('opacity',)):
+    with layers_linked([l1, l2, l3], ('opacity',)):
         assert len(l1.events.opacity.callbacks) == 2
         assert len(l1.events.blending.callbacks) == 0  # it's just opacity
         del l2  # if we lose a layer in the meantime it should be ok

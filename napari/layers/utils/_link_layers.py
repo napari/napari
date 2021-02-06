@@ -134,7 +134,7 @@ def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
 
 
 @contextmanager
-def linked_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+def layers_linked(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
     """Context manager that temporarily links ``attributes`` on ``layers``."""
     links = link_layers(layers, attributes)
     try:

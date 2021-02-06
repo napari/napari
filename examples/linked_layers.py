@@ -19,7 +19,7 @@ link_layers(viewer.layers, ('contrast_limits', 'gamma'))
 # unlinking may be done with napari.experimental.unlink_layers
 
 # this may also be done in a context manager:
-# with napari.experimental.linked_layers([layers]):
+# with napari.experimental.layers_linked([layers]):
 #     ...
 
 
