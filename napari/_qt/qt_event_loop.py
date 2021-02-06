@@ -178,8 +178,10 @@ def quit_app():
 
 
 @contextmanager
-def gui_qt(*, startup_logo=False, gui_exceptions=True, force=False):
+def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
+
+    NOTE: This method will soon be deprecated. See ``run()`` instead.
 
     Parameters
     ----------
@@ -206,12 +208,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=True, force=False):
         from .widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
-
-    yield app
-    if splash:
         splash.close()
 
-    run(force=force, gui_exceptions=True, _func_name='gui_qt')
+    yield app
+    run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
 
 def _ipython_has_eventloop() -> bool:

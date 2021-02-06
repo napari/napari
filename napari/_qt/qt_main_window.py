@@ -840,11 +840,11 @@ class Window:
         self.qt_viewer.dims._resize_axis_labels()
 
         # We want to bring the viewer to the front when
-        # A) it is our own (gui_qt) event loop OR we are running in jupyter
+        # A) it is our own event loop OR we are running in jupyter
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # get_app(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
