@@ -70,11 +70,11 @@ def test_guess_multiscale_strip_single_scale():
 
 
 def test_guess_multiscale_non_array_list():
-    """Check that non-decreasing list input raises ValueError"""
+    """Check that non-decreasing list input warns"""
     data = [
         np.empty((10, 15, 6)),
     ] * 2  # noqa: E231
-    with pytest.raises(ValueError):
+    with pytest.warns(UserWarning):
         _, _ = guess_multiscale(data)
 
 
