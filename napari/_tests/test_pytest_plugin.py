@@ -1,10 +1,11 @@
 """
 This module tests our "pytest plugin" made available in
-``napari.utils._testsupport``.  We leave this file in root so it is not
-included in the sdist OR the wheel.
+``napari.utils._testsupport``.
 """
 
 import pytest
+
+pytest_plugins = "pytester"
 
 
 @pytest.mark.filterwarnings("ignore:`type` argument to addoption()::")

@@ -71,7 +71,6 @@ line_length = 79
 skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 
 [tool.pytest.ini_options]
-addopts = "-p pytester"
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
 filterwarnings = [
