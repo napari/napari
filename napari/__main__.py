@@ -15,9 +15,8 @@ from textwrap import wrap
 from typing import Any, Dict, List
 
 import napari
-
-from .components.viewer_model import valid_add_kwargs
-from .utils import citation_text, sys_info
+from napari.components.viewer_model import valid_add_kwargs
+from napari.utils import citation_text, sys_info
 
 
 class InfoAction(argparse.Action):
@@ -182,7 +181,7 @@ def _run():
 
     else:
 
-        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
