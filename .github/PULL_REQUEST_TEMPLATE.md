@@ -1,6 +1,8 @@
 # Description
 <!-- What does this pull request (PR) do? Why is it necessary? -->
 <!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an image, or an animation "An image is worth a thousando words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create animations -->
 
 ## Type of change
 <!-- Please delete options that are not relevant. -->
