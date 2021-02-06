@@ -448,3 +448,22 @@ class NestableEventedList(EventedList[_T]):
                     f'TypedList expecting type {_types!r}'
                 )
         return e
+
+    def _iter_indices(self, start=0, stop=None, root=(), deep=False):
+        """Iter indices from start to stop.
+
+        Depth first traversal of the tree
+        """
+        if deep:
+            for i in range(start, len(self) if stop is None else stop):
+                if isinstance(self[i], NestableEventedList):
+                    yield from self[i]._iter_indices(
+                        root=root + (i,), deep=deep
+                    )
+                else:
+                    if root:
+                        yield root + (i,)
+                    else:
+                        yield i
+        else:
+            yield from super()._iter_indices(start, stop)
