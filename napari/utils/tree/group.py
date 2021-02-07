@@ -8,6 +8,28 @@ from .node import Node
 
 
 class Group(NestableEventedList[Node], Node):
+    """An object that contain other objects in a composite Tree pattern.
+
+    The ``Group`` (aka composite) is an element that has sub-elements:
+    which may be ``Nodes`` or other ``Groups``.  By inheriting from
+    :class:`NestableEventedList`, ``Groups`` have basic python list-like
+    behavior and emit events when modified.  The main additions in this class
+    is that when objects are added to a ``Group``, they are assigned a
+    ``.parent`` attribute pointing to the group, which is removed upon
+    deletion from the group.
+
+    For additional background on the composite design pattern, see:
+    https://refactoring.guru/design-patterns/composite
+
+    Parameters
+    ----------
+    children : Iterable[Node], optional
+        Items to initialize the Group, by default ().  All items must be
+        instances of ``Node``.
+    name : str, optional
+        A name/id for this group, by default "Group"
+    """
+
     def __init__(self, children: Iterable[Node] = (), name: str = "Group"):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, children, basetype=Node)
@@ -25,9 +47,11 @@ class Group(NestableEventedList[Node], Node):
         super().insert(index, value)
 
     def is_group(self) -> bool:
+        """Return True, indicating that this ``Node`` is a ``Group``."""
         return True
 
     def __contains__(self, other):
+        """Return true if ``other`` appears anywhere under this group."""
         for item in self.traverse():
             if item is other:
                 return True
