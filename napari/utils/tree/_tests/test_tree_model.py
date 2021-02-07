@@ -107,7 +107,8 @@ def test_traverse(tree):
 def test_slicing(tree):
     """Indexing into a group returns a group instance."""
     assert tree.is_group()
-    slc = tree[::-2]
+    slc = tree[::-2]  # take every other item, starting from the end
+    assert [x.name for x in slc] == ['9', 'g1']
     assert slc.is_group()
     expected = ['Group', '9', 'g1', '2', 'g2', '3', '4', '5', '6', '7']
     assert [x.name for x in slc.traverse()] == expected
