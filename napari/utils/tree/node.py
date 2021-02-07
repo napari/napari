@@ -36,7 +36,10 @@ class Node:
         return "\n".join(self._render())
 
     def _render(self) -> list[str]:
-        """Recursively return list of strings that can render ascii tree."""
+        """Return list of strings that can render ascii tree.
+
+        For ``Node``, we just return the name of this specific node.
+        """
         return [self.name]
 
     def unparent(self):
