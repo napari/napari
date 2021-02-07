@@ -2,7 +2,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from napari.utils import Colormap
+from ...utils.colormaps import Colormap
 
 
 def guess_continuous(property: np.ndarray) -> bool:
