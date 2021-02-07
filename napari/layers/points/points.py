@@ -924,6 +924,22 @@ class Points(Layer):
                 )
             color_manager.mode = color_mode
 
+    def refresh_colors(self, update_color_mapping: bool = False):
+        """Calculate and update face and edge colors if using a cycle or color map
+        Parameters
+        ----------
+        update_color_mapping : bool
+            If set to True, the function will recalculate the color cycle map
+            or colormap (whichever is being used). If set to False, the function
+            will use the current color cycle map or color map. For example, if you
+            are adding/modifying points and want them to be colored with the same
+            mapping as the other points (i.e., the new points shouldn't affect
+            the color cycle map or colormap), set update_color_mapping=False.
+            Default value is False.
+        """
+        self._edge_color.refresh_colors(self.properties, update_color_mapping)
+        self._face_color.refresh_colors(self.properties, update_color_mapping)
+
     def _get_state(self):
         """Get dictionary of layer state.
 

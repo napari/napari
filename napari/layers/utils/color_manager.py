@@ -228,7 +228,7 @@ class ColorManager(EventedModel):
             return transform_color(v)[0]
 
     @root_validator(skip_on_failure=True)
-    def refresh_colors(cls, values):
+    def _validate_colors(cls, values):
 
         color_mode = values['mode']
 
@@ -282,6 +282,38 @@ class ColorManager(EventedModel):
 
         values['colors'] = colors
         return values
+
+    def refresh_colors(
+        self,
+        properties: Dict[str, np.ndarray],
+        update_color_mapping: bool = False,
+    ):
+        """Calculate and update colors if using a cycle or color map
+        Parameters
+        ----------
+        properties : Dict[str, np.ndarray]
+           The layer properties to use to update the colors.
+        update_color_mapping : bool
+           If set to True, the function will recalculate the color cycle map
+           or colormap (whichever is being used). If set to False, the function
+           will use the current color cycle map or color map. For example, if you
+           are adding/modifying points and want them to be colored with the same
+           mapping as the other points (i.e., the new points shouldn't affect
+           the color cycle map or colormap), set update_color_mapping=False.
+           Default value is False.
+        """
+        if self.mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+            property_name = self.color_properties.name
+            current_value = self.color_properties.current_value
+            property_values = properties[property_name]
+            self.color_properties = ColorProperties(
+                name=property_name,
+                values=property_values,
+                current_value=current_value,
+            )
+
+            if update_color_mapping is True:
+                self.contrast_limits = None
 
     def add(
         self,
