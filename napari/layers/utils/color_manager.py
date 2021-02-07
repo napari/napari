@@ -453,7 +453,6 @@ class ColorManager(EventedModel):
                         values=current_property_values,
                         current_value=new_current_value,
                     )
-                    self.events.colors()
 
     def update_current_color(
         self, current_color: np.ndarray, update_indices: list = []
@@ -473,14 +472,11 @@ class ColorManager(EventedModel):
             will change the mode to DIRECT.
         """
         self.current_color = transform_color(current_color)[0]
-
         if len(update_indices) > 0:
             self.mode = ColorMode.DIRECT
             cur_colors = self.colors
             cur_colors[update_indices] = self.current_color
             self.colors = cur_colors
-
-            self.events.colors()
 
     def __eq__(self, other):
         if isinstance(other, ColorManager):
