@@ -934,9 +934,6 @@ def test_color_cycle(attribute, color_cycle):
         np.vstack((color_array[1], color_array[3:], transform_color('red'))),
     )
 
-    # refresh colors
-    # layer.refresh_colors(update_color_mapping=True)
-
     # test adding a point with a new property value
     layer.selected_data = {}
     current_properties = layer.current_properties
@@ -1038,7 +1035,6 @@ def test_adding_value_color_cycle(attribute):
     point_types[0] = 'C'
     props['point_type'] = point_types
     layer.properties = props
-    # layer.refresh_colors(update_color_mapping=False)
 
     color_manager = getattr(layer, f'_{attribute}_color')
     color_cycle_map = color_manager.categorical_colormap.colormap
@@ -1102,7 +1098,6 @@ def test_color_colormap(attribute):
 
     # adjust the clims
     setattr(layer, f'{attribute}_contrast_limits', (0, 3))
-    # layer.refresh_colors(update_color_mapping=False)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color[-2], [0.5, 0.5, 0.5, 1])
 
