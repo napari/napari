@@ -11,6 +11,7 @@ from .standardize_color import transform_color
 
 class ColormapInterpolationMode(str, Enum):
     """INTERPOLATION: Interpolation mode for colormaps.
+
     Selects an interpolation mode for the colormap.
             * linear: colors are defined by linear interpolation between
               colors of neighboring controls points.
@@ -24,6 +25,7 @@ class ColormapInterpolationMode(str, Enum):
 
 class Colormap(EventedModel):
     """Colormap that relates intensity values to colors.
+
     Attributes
     ----------
     colors : array, shape (N, 4)
