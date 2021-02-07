@@ -12,6 +12,7 @@ from .standardize_color import transform_color
 
 class CategoricalColormap(EventedModel):
     """Colormap that relates categorical values to colors.
+
     Parameters
     ----------
     colormap : Dict[Any, np.ndarray]
