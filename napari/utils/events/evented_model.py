@@ -1,11 +1,11 @@
 import operator
 import warnings
-from typing import ClassVar, Dict, Set
+from typing import Any, Callable, ClassVar, Dict, Set
 
 from pydantic import BaseModel, PrivateAttr
 from pydantic.main import ModelMetaclass
 
-from ...utils.misc import EqOperator, pick_equality_operator
+from ...utils.misc import pick_equality_operator
 from .custom_types import JSON_ENCODERS
 from .event import EmitterGroup, Event
 
@@ -38,7 +38,7 @@ class EventedModel(BaseModel, metaclass=EqualityMetaclass):
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
 
-    __eq_operators__: ClassVar[Dict[str, EqOperator]]
+    __eq_operators__: ClassVar[Dict[str, Callable[[Any, Any], bool]]]
     __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
     # pydantic BaseModel configuration.  see:

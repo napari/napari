@@ -400,10 +400,7 @@ def ensure_list_of_layer_data_tuple(val):
     raise TypeError('Not a valid list of layer data tuples!')
 
 
-EqOperator = Callable[[Any, Any], bool]
-
-
-def pick_equality_operator(obj: Any) -> EqOperator:
+def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     """Return a function that can check equality between ``obj`` and another.
 
     Rather than always using ``==`` (i.e. ``operator.eq``), this function
@@ -426,21 +423,20 @@ def pick_equality_operator(obj: Any) -> EqOperator:
     """
     import operator
 
-    if not inspect.isclass(obj):
-        obj = type(obj)
+    type_ = type(obj) if not inspect.isclass(obj) else obj
 
-    if issubclass(obj, np.ndarray):
+    if issubclass(type_, np.ndarray):
         return np.array_equal
 
     import dask.array
 
-    if issubclass(obj, dask.array.Array):
+    if issubclass(type_, dask.array.Array):
         return operator.is_
 
     try:
         import zarr.core
 
-        if issubclass(obj, zarr.core.Array):
+        if issubclass(type_, zarr.core.Array):
             return operator.is_
     except ImportError:
         pass
@@ -448,7 +444,7 @@ def pick_equality_operator(obj: Any) -> EqOperator:
     try:
         import xarray.core.dataarray
 
-        if issubclass(obj, xarray.core.dataarray.DataArray):
+        if issubclass(type_, xarray.core.dataarray.DataArray):
             return np.array_equal
     except ImportError:
         pass
