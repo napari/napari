@@ -221,7 +221,7 @@ def _ipython_has_eventloop() -> bool:
     Using this is better than checking ``QApp.thread().loopLevel() > 0``,
     because IPython starts and stops the event loop continuously to accept code
     at the prompt.  So it will likely "appear" like there is no event loop
-    running, but will still don't need to start one.
+    running, but we still don't need to start one.
     """
     try:
         from IPython import get_ipython
