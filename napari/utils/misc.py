@@ -8,7 +8,15 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 import numpy as np
 
@@ -390,3 +398,59 @@ def ensure_list_of_layer_data_tuple(val):
         except TypeError:
             pass
     raise TypeError('Not a valid list of layer data tuples!')
+
+
+EqOperator = Callable[[Any, Any], bool]
+
+
+def pick_equality_operator(obj: Any) -> EqOperator:
+    """Return a function that can check equality between ``obj`` and another.
+
+    Rather than always using ``==`` (i.e. ``operator.eq``), this function
+    returns operators that are aware of object types: mostly "array types with
+    more than one element" whose truth value is ambiguous.
+
+    This function works for both classes (types) and instances.  If an instance
+    is passed, it will be first cast to a type with type(obj).
+
+    Parameters
+    ----------
+    obj : Any
+        An object whose equality with another object you want to check.
+
+    Returns
+    -------
+    operator : Callable[[Any, Any], bool]
+        An operation that can be called as ``operator(obj, other)`` to check
+        equality between objects of type ``type(obj)``.
+    """
+    import operator
+
+    if not inspect.isclass(obj):
+        obj = type(obj)
+
+    if issubclass(obj, np.ndarray):
+        return np.array_equal
+
+    import dask.array
+
+    if issubclass(obj, dask.array.Array):
+        return operator.is_
+
+    try:
+        import zarr.core
+
+        if issubclass(obj, zarr.core.Array):
+            return operator.is_
+    except ImportError:
+        pass
+
+    try:
+        import xarray.core.dataarray
+
+        if issubclass(obj, xarray.core.dataarray.DataArray):
+            return np.array_equal
+    except ImportError:
+        pass
+
+    return operator.eq

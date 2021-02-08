@@ -1,19 +1,32 @@
+import operator
 import warnings
 from typing import ClassVar, Dict, Set
 
 from pydantic import BaseModel, PrivateAttr
+from pydantic.main import ModelMetaclass
 
+from ...utils.misc import EqOperator, pick_equality_operator
 from .custom_types import JSON_ENCODERS
-from .dataclass import _type_to_compare, is_equal
 from .event import EmitterGroup, Event
 
 
-class EventedModel(BaseModel):
+class EqualityMetaclass(ModelMetaclass):
+    def __new__(mcs, name, bases, namespace, **kwargs):
+        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        cls.__eq_operators__ = {
+            n: pick_equality_operator(f.type_)
+            for n, f in cls.__fields__.items()
+        }
+        return cls
+
+
+class EventedModel(BaseModel, metaclass=EqualityMetaclass):
 
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
-    __equality_checks__: Dict = PrivateAttr(default_factory=dict)
-    __slots__: ClassVar[Set[str]] = {"__weakref__"}
+
+    __eq_operators__: ClassVar[Dict[str, EqOperator]]
+    __slots__: ClassVar[Set[str]] = {"__weakref__"}  # type: ignore
 
     # pydantic BaseModel configuration.  see:
     # https://pydantic-docs.helpmanual.io/usage/model_config/
@@ -44,16 +57,6 @@ class EventedModel(BaseModel):
         self._events.source = self
         self._events.add(**dict.fromkeys(self.__fields__))
 
-        # create dict with compare functions for fields which cannot be compared
-        # using standard equal operator, like numpy arrays.
-        compare_dict = {
-            field.name: _type_to_compare(field.type_)
-            for field in self.__fields__.values()
-            if _type_to_compare(field.type_) is not None
-        }
-
-        self.__equality_checks__.update(compare_dict)
-
     def __setattr__(self, name, value):
         if name not in getattr(self, 'events', {}):
             # fallback to default behavior
@@ -68,9 +71,9 @@ class EventedModel(BaseModel):
 
         # if different we emit the event with new value
         after = getattr(self, name)
-        if not self.__equality_checks__.get(name, is_equal)(after, before):
-            # emit event
-            getattr(self.events, name)(value=after)
+        are_equal = self.__eq_operators__.get(name, operator.eq)
+        if not are_equal(after, before):
+            getattr(self.events, name)(value=after)  # emit event
 
     # expose the private EmitterGroup publically
     @property
@@ -81,8 +84,8 @@ class EventedModel(BaseModel):
         """Convert a model to a dictionary."""
         warnings.warn(
             (
-                "The `asdict` method has been renamed `dict` and is now deprecated. It will be"
-                " removed in 0.4.7"
+                "The `asdict` method has been renamed `dict` and is now "
+                "deprecated. It will be removed in 0.4.7"
             ),
             category=FutureWarning,
             stacklevel=2,
@@ -95,9 +98,9 @@ class EventedModel(BaseModel):
         Parameters
         ----------
         values : dict, napari.utils.events.EventedModel
-            Values to update the model with. If an EventedModel is passed it is first
-            converted to a dictionary. The keys of this dictionary must be found as
-            attributes on the current model.
+            Values to update the model with. If an EventedModel is passed it is
+            first converted to a dictionary. The keys of this dictionary must
+            be found as attributes on the current model.
         """
         if isinstance(values, self.__class__):
             values = values.dict()
@@ -110,3 +113,15 @@ class EventedModel(BaseModel):
 
         if block.count:
             self.events(Event(self))
+
+    def __eq__(self, other) -> bool:
+
+        if isinstance(other, EventedModel):
+            for f_name, eq in self.__eq_operators__.items():
+                if f_name not in other.__eq_operators__:
+                    return False
+                if not eq(getattr(self, f_name), getattr(other, f_name)):
+                    return False
+            return True
+        else:
+            return self.dict() == other
