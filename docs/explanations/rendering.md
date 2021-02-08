@@ -17,17 +17,14 @@ smooth. If 60Hz cannot be achieved, however, it's important that napari
 render as fast as possible. The user experience degrades rapidly as the
 framerate gets slower:
 
-```eval_rst
-========== ============= =================
-Framerate  Milliseconds  User Experience
-========== ============= =================
-60Hz       16.7          Great
-30Hz       33.3          Good
-20Hz       50            Acceptable
-10Hz       100           Bad
-5Hz        200           Unusable
-========== ============= =================
-```
+| Framerate | Milliseconds | User Experience |
+| --------: | -----------: | :-------------- |
+| 60Hz      | 16.7         | Great           |
+| 30Hz      | 33.3         | Good            |
+| 20Hz      | 50           | Acceptable      |
+| 10Hz      | 100          | Bad             |
+| 5Hz       | 200          | Unusable        |
+
 The issue is not just aesthetic. Manipulating user interface elements like
 sliders becomes almost impossible if the framerate is really slow. This
 creates a deeply frustrating experience for the user. Furthermore, if
@@ -124,14 +121,11 @@ view. The working set is the set of chunks that we want to draw in order to
 depict the current view of the data. The renderer will step through every
 chunk in the working set and do one of these three things:
 
-```eval_rst
-============================= ============================================
-Case                          Action
-============================= ============================================
-Chunk is in VRAM              Render the chunk
-Chunk is in RAM but not VRAM  Transfer the chunk to VRAM if there is time
-Chunk is not in RAM           Ask the `ChunkLoader` to load the chunk
-============================= ============================================
+| Case                         | Action                                      |
+| :--------------------------- | :------------------------------------------ |
+| Chunk is in VRAM             | Render the chunk                            |
+| Chunk is in RAM but not VRAM | Transfer the chunk to VRAM if there is time |
+| Chunk is not in RAM          | Ask the `ChunkLoader` to load the chunk     |
 ```
 
 The important thing about this algorithm is that it never blocks. It draws
