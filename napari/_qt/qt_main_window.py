@@ -34,7 +34,6 @@ from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_event_loop import run as run_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array
@@ -814,7 +813,7 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
-    def show(self, run=False):
+    def show(self):
         """Resize, show, and bring forward the window.
 
         Parameters
@@ -852,9 +851,6 @@ class Window:
             app_name == 'napari' or in_jupyter()
         ) and self._qt_window.isActiveWindow():
             self.activate()
-
-        if run:
-            run_app()
 
     def activate(self):
         """Make the viewer the currently active window."""
