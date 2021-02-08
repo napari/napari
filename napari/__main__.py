@@ -14,9 +14,9 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-import napari
-from napari.components.viewer_model import valid_add_kwargs
-from napari.utils import citation_text, sys_info
+from . import __version__, layers, run, view_path
+from .components.viewer_model import valid_add_kwargs
+from .utils import citation_text, sys_info
 
 
 class InfoAction(argparse.Action):
@@ -109,7 +109,7 @@ def _run():
     parser.add_argument(
         '--version',
         action='version',
-        version=f'napari version {napari.__version__}',
+        version=f'napari version {__version__}',
     )
     parser.add_argument(
         '--info',
@@ -135,10 +135,10 @@ def _run():
     parser.add_argument(
         '--layer-type',
         metavar="TYPE",
-        choices=set(napari.layers.NAMES),
+        choices=set(layers.NAMES),
         help=(
             'force file to be interpreted as a specific layer type. '
-            f'one of {set(napari.layers.NAMES)}'
+            f'one of {set(layers.NAMES)}'
         ),
     )
 
@@ -181,19 +181,19 @@ def _run():
 
     else:
 
-        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
+        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
 
-        napari.view_path(
+        view_path(
             args.paths,
             stack=args.stack,
             plugin=args.plugin,
             layer_type=args.layer_type,
             **kwargs,
         )
-        napari.run(gui_exceptions=True)
+        run(gui_exceptions=True)
 
 
 def _run_pythonw(python_path):

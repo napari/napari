@@ -12,8 +12,8 @@ from napari import __main__
 def mock_run():
     """mock to prevent starting the event loop."""
     with mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'):
-        with mock.patch('napari.run'):
-            yield napari.run
+        with mock.patch('napari.__main__.run'):
+            yield napari.__main__.run
 
 
 def test_cli_works(monkeypatch, capsys):
@@ -44,7 +44,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch):
         yield
 
     # testing all the variants of literal_evals
-    monkeypatch.setattr(napari, 'view_path', assert_kwargs)
+    monkeypatch.setattr(napari.__main__, 'view_path', assert_kwargs)
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits', '(0, 1)'])
         __main__._run()
@@ -87,7 +87,7 @@ def test_cli_runscript(run_path, monkeypatch, tmp_path):
     run_path.assert_called_once_with(str(script))
 
 
-@mock.patch('napari.view_path')
+@mock.patch('napari.__main__.view_path')
 def test_cli_passes_kwargs(view_path, mock_run, monkeypatch):
     """test that we can parse layer keyword arg variants"""
 
