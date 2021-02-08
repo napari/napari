@@ -8,15 +8,7 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Callable, Optional, Sequence, Type, TypeVar
 
 import numpy as np
 
@@ -400,10 +392,10 @@ def ensure_list_of_layer_data_tuple(val):
     raise TypeError('Not a valid list of layer data tuples!')
 
 
-EqOperator = Callable[[Any, Any], bool]
+Q = TypeVar('Q')
 
 
-def pick_equality_operator(obj: Any) -> EqOperator:
+def pick_equality_operator(obj: Q) -> Callable[[Q, Q], bool]:
     """Return a function that can check equality between ``obj`` and another.
 
     Rather than always using ``==`` (i.e. ``operator.eq``), this function
