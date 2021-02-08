@@ -191,10 +191,10 @@ From the project root:
 make docs
 ```
 
-The docs will be built at `docs/build/html`.
+The docs will be built at `docs/_build/html`.
 
 Most web browsers will allow you to preview HTML pages.
-Try entering `file:///absolute/path/to/napari/docs/build/html/index.html` in your address bar.
+Try entering `file:///absolute/path/to/napari/docs/_build/html/index.html` in your address bar.
 
 ## Code of conduct
 

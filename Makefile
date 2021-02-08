@@ -1,5 +1,6 @@
 .PHONY: docs
 
 docs:
-	make -C docs clean
-	make -C docs html
+	rm -rf docs/_build/html
+	pip install -qr docs/requirements.txt
+	jb build docs
