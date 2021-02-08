@@ -78,16 +78,16 @@ def link_layers(
 
     # now, connect requested attributes between all requested layers.
     links = []
-    for (lay1, lay2), attr in product(permutations(layers, 2), attr_set):
+    for (lay1, lay2), attribute in product(permutations(layers, 2), attr_set):
 
-        key = _link_key(lay1, lay2, attr)
+        key = _link_key(lay1, lay2, attribute)
         # if the layers and attribute are already linked then ignore
         if key in _LINKED_LAYERS:
             continue
 
-        def _make_l2_setter(eq_op, l1=lay1, l2=lay2, attr=attr):
-            # where `eq_op` is an "equality checking function" that is suitable
-            # for the attribute object type.  (see ``pick_equality_operator``)
+        def _make_l2_setter(l1=lay1, l2=lay2, attr=attribute):
+            # get a suitable equality operator for this attribute type
+            eq_op = pick_equality_operator(getattr(l1, attr))
 
             def setter(event=None):
                 new_val = getattr(l1, attr)
@@ -95,15 +95,13 @@ def link_layers(
                 if not eq_op(getattr(l2, attr), new_val):
                     setattr(l2, attr, new_val)
 
-            setter.__doc__ = f"Set {attr!r} on {lay2} to that of {lay1}"
-            setter.__qualname__ = f"set_{attr}_on_layer_{id(lay2)}"
+            setter.__doc__ = f"Set {attr!r} on {l1} to that of {l2}"
+            setter.__qualname__ = f"set_{attr}_on_layer_{id(l2)}"
             return setter
 
-        # get a suitable equality operator for this attribute type
-        eq_op = pick_equality_operator(getattr(lay1, attr))
         # acually make the connection
-        callback = _make_l2_setter(eq_op)
-        emitter_group = getattr(lay1.events, attr)
+        callback = _make_l2_setter()
+        emitter_group = getattr(lay1.events, attribute)
         emitter_group.connect(callback)
 
         # store the connection so that we don't make it again.
