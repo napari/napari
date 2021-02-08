@@ -11,6 +11,19 @@ from .event import EmitterGroup, Event
 
 
 class EqualityMetaclass(ModelMetaclass):
+    """pydantic ModelMetaclass that preps "equality checking" operations.
+
+    A metaclass is the thing that "constructs" a class, and ``ModelMetaclass``
+    is where pydantic puts a lot of it's type introspection and ``ModelField``
+    creation logic.  Here, we simply tack on one more function, that builds a
+    ``cls.__eq_operators__`` dict which is mapping of field name to a function
+    that can be called to check equality of the value of that field with some
+    other object.  (used in ``EventedModel.__eq__``)
+
+    This happens only once, when an ``EventedModel`` class is created (and not
+    when each instance of an ``EventedModel`` is instantiated).
+    """
+
     def __new__(mcs, name, bases, namespace, **kwargs):
         cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {
@@ -115,7 +128,13 @@ class EventedModel(BaseModel, metaclass=EqualityMetaclass):
             self.events(Event(self))
 
     def __eq__(self, other) -> bool:
+        """Check equality with another object.
 
+        We override the pydantic approach (which just checks
+        ``self.dict() == other.dict()``) to accomodate more complicated types
+        like arrays, whose truth value is often ambiguous. ``__eq_operators__``
+        is constructed in ``EqualityMetaclass.__new__``
+        """
         if isinstance(other, EventedModel):
             for f_name, eq in self.__eq_operators__.items():
                 if f_name not in other.__eq_operators__:
