@@ -37,6 +37,8 @@
     - file: explanations/performance
     - file: explanations/rendering
 
+- file: release/index
+
 - file: api/index
   sections:
     - file: api/napari
