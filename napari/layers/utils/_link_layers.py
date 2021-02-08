@@ -26,7 +26,7 @@ def link_layers(
 
        for lay1, lay2 in permutations(layers, 2):
            for attr in attributes:
-              lay1.events.<attr>.connect(_set_lay2_<attr>)
+               lay1.events.<attr>.connect(_set_lay2_<attr>)
 
     Recursion is prevented by checking for value equality prior to setting.
 
