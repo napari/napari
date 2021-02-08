@@ -49,7 +49,7 @@ def link_layers(
     --------
     >>> data = np.random.rand(3, 64, 64)
     >>> viewer = napari.view_image(data, channel_axis=0)
-    >>> link_layers(viewer.layers)
+    >>> link_layers(viewer.layers)  # doctest: +SKIP
     """
 
     from ...utils.misc import get_equality_operator
