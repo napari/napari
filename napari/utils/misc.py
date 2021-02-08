@@ -400,12 +400,18 @@ def ensure_list_of_layer_data_tuple(val):
     raise TypeError('Not a valid list of layer data tuples!')
 
 
-def get_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
+EqOperator = Callable[[Any, Any], bool]
+
+
+def pick_equality_operator(obj: Any) -> EqOperator:
     """Return a function that can check equality between ``obj`` and another.
 
     Rather than always using ``==`` (i.e. ``operator.eq``), this function
     returns operators that are aware of object types: mostly "array types with
     more than one element" whose truth value is ambiguous.
+
+    This function works for both classes (types) and instances.  If an instance
+    is passed, it will be first cast to a type with type(obj).
 
     Parameters
     ----------
@@ -417,35 +423,32 @@ def get_equality_operator(obj: Any) -> Callable[[Any, Any], bool]:
     operator : Callable[[Any, Any], bool]
         An operation that can be called as ``operator(obj, other)`` to check
         equality between objects of type ``type(obj)``.
-
-    Examples
-    --------
-
     """
     import operator
 
-    import numpy as np
+    if not inspect.isclass(obj):
+        obj = type(obj)
 
-    if isinstance(obj, np.ndarray):
+    if issubclass(obj, np.ndarray):
         return np.array_equal
 
-    import dask.array as da
+    import dask.array
 
-    if isinstance(obj, da.Array):
+    if issubclass(obj, dask.array.Array):
         return operator.is_
 
     try:
-        import zarr
+        import zarr.core
 
-        if isinstance(obj, zarr.core.Array):
+        if issubclass(obj, zarr.core.Array):
             return operator.is_
     except ImportError:
         pass
 
     try:
-        import xarray as xr
+        import xarray.core.dataarray
 
-        if isinstance(obj, xr.DataArray):
+        if issubclass(obj, xarray.core.dataarray.DataArray):
             return np.array_equal
     except ImportError:
         pass

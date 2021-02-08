@@ -59,7 +59,7 @@ def link_layers(
     >>> link_layers(viewer.layers)  # doctest: +SKIP
     """
 
-    from ...utils.misc import get_equality_operator
+    from ...utils.misc import pick_equality_operator
 
     valid_attrs = _get_common_evented_attributes(layers)
 
@@ -87,7 +87,7 @@ def link_layers(
 
         def _make_l2_setter(eq_op, l1=lay1, l2=lay2, attr=attr):
             # where `eq_op` is an "equality checking function" that is suitable
-            # for the attribute object type.  (see ``get_equality_operator``)
+            # for the attribute object type.  (see ``pick_equality_operator``)
 
             def setter(event=None):
                 new_val = getattr(l1, attr)
@@ -100,7 +100,7 @@ def link_layers(
             return setter
 
         # get a suitable equality operator for this attribute type
-        eq_op = get_equality_operator(getattr(lay1, attr))
+        eq_op = pick_equality_operator(getattr(lay1, attr))
         # acually make the connection
         callback = _make_l2_setter(eq_op)
         emitter_group = getattr(lay1.events, attr)
