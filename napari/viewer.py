@@ -84,9 +84,9 @@ class Viewer(ViewerModel):
             image = self.window.screenshot(path=path)
         return image
 
-    def show(self, run=False):
+    def show(self):
         """Resize, show, and raise the viewer window."""
-        self.window.show(run=run)
+        self.window.show()
 
     def close(self):
         """Close the viewer window."""
