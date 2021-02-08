@@ -277,11 +277,6 @@ class Labels(Image):
         self.events.contour()
 
         if refresh is True:
-            self._save_history()
-
-        self._raw_to_displayed(self.data)
-
-        if refresh is True:
             self.refresh()
 
     @property
