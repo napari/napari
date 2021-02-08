@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from napari.utils.status_messages import status_format
 
