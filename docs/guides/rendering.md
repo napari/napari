@@ -73,7 +73,7 @@ class will use the same
 instead of the Vispy `ImageVisual` class that napari's
 {class}`~napari.layers.Image` class uses.
 
-See `Octree Configuration File`_ for Octree configuration options.
+See {ref}`octree-config` for Octree configuration options.
 
 ### Octree Visuals
 
@@ -175,6 +175,7 @@ Although data 3 levels above will be quite blurry, it's pretty amazing you
 can load one chunk and it will cover 64 ideal chunks. This is the heart of
 the power of Octrees, Quadtrees or image pyramids.
 
+(octree-config)=
 ### Octree Configuration File
 
 Setting `NAPARI_OCTREE=1` enables Octree rendering with the default
