@@ -242,7 +242,7 @@ def run(
         Force the application event_loop to start, even if there are no top
         level widgets to show.
     gui_exceptions : bool, optional
-        Whether to show uncaught exceptions in the GUI, by default they will be
+        Whether to show uncaught exceptions in the GUI. By default they will be
         shown in the console that launched the event loop.
     max_loop_level : int, optional
         The maximum allowable "loop level" for the execution thread.  Every
