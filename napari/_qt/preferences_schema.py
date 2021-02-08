@@ -1,8 +1,8 @@
 from json import dumps
 
-from PyQt5 import QtWidgets
+from qtpy import QtWidgets
 
-from .qt_jsonschema_form import WidgetBuilder
+from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 
 
 def get_preferences_dialog(schema, ui_schema):
