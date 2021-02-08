@@ -112,9 +112,7 @@ def test_evented_model_array_updates():
 
         values: Array[int]
 
-    model = Model(
-        values=[1, 2, 3],
-    )
+    model = Model(values=[1, 2, 3])
 
     # Mock events
     model.events.values = Mock(model.events.values)
