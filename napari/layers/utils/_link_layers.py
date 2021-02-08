@@ -39,6 +39,13 @@ def link_layers(
         *all*, event-providing attributes that are common to all ``layers``
         will be linked.
 
+    Returns
+    -------
+    links: list of (int, int, str) keys
+        The links created during execution of the function. The first two
+        elements of each tuple are the ids of the two layers, and the last
+        element is the linked attribute.
+
     Raises
     ------
     ValueError
