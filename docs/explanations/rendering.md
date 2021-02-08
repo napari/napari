@@ -126,7 +126,6 @@ chunk in the working set and do one of these three things:
 | Chunk is in VRAM             | Render the chunk                            |
 | Chunk is in RAM but not VRAM | Transfer the chunk to VRAM if there is time |
 | Chunk is not in RAM          | Ask the `ChunkLoader` to load the chunk     |
-```
 
 The important thing about this algorithm is that it never blocks. It draws
 what it can draw without blocking, and then it loads more data so that it
