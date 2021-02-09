@@ -2,16 +2,15 @@
 """
 
 import os
-from json import dumps
 from pathlib import Path
 
-import toml
 from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
 from napari.utils.settings._defaults import (
     ApplicationSettings,
     ConsoleSettings,
+    PluginSettings,
 )
 
 
@@ -24,7 +23,6 @@ class SettingsManager:
         self._defaults = {}
         self._models = {}
         self._plugins = []
-        self._format = "yaml"
 
         if not self._config_path.is_dir():
             os.makedirs(self._config_path)
@@ -35,53 +33,47 @@ class SettingsManager:
         if attr in self._settings:
             return self._settings[attr]
 
-    def _get_file_name(self, settings):
-        """"""
-        key = settings.Config.title.replace(" ", "_").lower()
-        if key.endswith("_settings"):
-            key = key.replace("_settings", "")
+    def _get_section_name(self, settings):
+        """
+        Return the normalized name of a section based on its config or class name.
+        """
+        section = settings.Config.title.replace(" ", "_").lower()
+        if section.endswith("_settings"):
+            section = section.replace("_settings", "")
 
-        return key
+        return section
 
     def _save(self):
         """Save configuration to disk."""
         data = {}
-        for key, model in self._settings.items():
-            data[key] = model.dict()
+        for section, model in self._settings.items():
+            data[section] = model.dict()
 
-        path = self._config_path / f"settings.{self._format}"
+        path = self._config_path / "settings.yaml"
         with open(path, "w") as fh:
             fh.write(safe_dump(data))
-
-        path = self._config_path / "settings.json"
-        with open(path, "w") as fh:
-            fh.write(dumps(data, sort_keys=True, indent=4))
-
-        path = self._config_path / "settings.toml"
-        with open(path, "w") as fh:
-            fh.write(toml.dumps(data))
 
     def _load(self):
         """Read configuration from disk.
 
         If no settings file is found, a new one is created using the defaults.
         """
-        path = self._config_path / f"settings.{self._format}"
-        for plugin in [ApplicationSettings, ConsoleSettings]:
-            key = self._get_file_name(plugin)
-            self._defaults[key] = plugin()
-            self._models[key] = plugin
+        path = self._config_path / "settings.yaml"
+        for plugin in [ApplicationSettings, ConsoleSettings, PluginSettings]:
+            section = self._get_section_name(plugin)
+            self._defaults[section] = plugin()
+            self._models[section] = plugin
 
         if path.is_file():
             with open(path) as fh:
                 data = safe_load(fh.read())
 
             # Check with models
-            for key, model_data in data.items():
+            for section, model_data in data.items():
                 try:
-                    model = self._models[key](**model_data)
+                    model = self._models[section](**model_data)
                     model.events.connect(lambda x: self._save())
-                    self._settings[key] = model
+                    self._settings[section] = model
                 except KeyError:
                     pass
                 except ValidationError as e:
@@ -93,26 +85,32 @@ class SettingsManager:
                         ]  # FIXME: For now grab the first item
                         try:
                             model_data_replace[item] = getattr(
-                                self._defaults[key], item
+                                self._defaults[section], item
                             )
                         except AttributeError:
                             model_data.pop(item)
 
                     model_data.update(model_data_replace)
-                    # FIXME: Add a try except
-                    model = self._models[key](**model_data)
+                    model = self._models[section](**model_data)
                     model.events.connect(lambda x: self._save())
-                    self._settings[key] = model
+                    self._settings[section] = model
         else:
             self._settings = self._defaults
+
+        self._save()
+
+    def reset(self):
+        """Reset settings to default values."""
+        for section in self._settings:
+            self._settings[section] = self._models[section]()
 
         self._save()
 
     def schemas(self):
         """Return the json schema for each of the settings model."""
         schemas = {}
-        for key, settings in self._settings.items():
-            schemas[key] = {
+        for section, settings in self._settings.items():
+            schemas[section] = {
                 "json_schema": settings.json_schema(),
                 "model": settings,
             }
