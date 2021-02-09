@@ -110,6 +110,9 @@ class Window:
         self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
         self._status_bar = self._qt_window.statusBar()
 
+        self._is_alive = True
+        self._qt_window.destroyed.connect(self._kill)
+
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
         self._plugin_menus: Dict[str, QMenu] = {}
@@ -156,6 +159,9 @@ class Window:
 
         if show:
             self.show()
+
+    def _kill(self):
+        self._is_alive = False
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -813,27 +819,19 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
+    @property
+    def is_alive(self):
+        return self._is_alive and hasattr(self, '_qt_window')
+
     def show(self):
-        """Resize, show, and bring forward the window.
-
-        Parameters
-        ----------
-        run : bool, optional
-            If true, will start an event loop if necessary, by default False
-
-        Raises
-        ------
-        RuntimeError
-            If the viewer.window has already been closed and deleted.
-        """
-        try:
-            self._qt_window.resize(self._qt_window.layout().sizeHint())
-            self._qt_window.show()
-        except (AttributeError, RuntimeError):
+        """Resize, show, and bring forward the window."""
+        if not self.is_alive:
             raise RuntimeError(
-                "This viewer has already been closed and deleted. "
+                "This window has already been closed and deleted. "
                 "Please create a new one."
             )
+        self._qt_window.resize(self._qt_window.layout().sizeHint())
+        self._qt_window.show()
 
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()

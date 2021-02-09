@@ -28,7 +28,7 @@ class Viewer(ViewerModel):
         ndisplay=2,
         order=(),
         axis_labels=(),
-        show=True,
+        show=False,
     ):
         super().__init__(
             title=title,
@@ -36,11 +36,9 @@ class Viewer(ViewerModel):
             order=order,
             axis_labels=axis_labels,
         )
-        # having this import here makes all of Qt imported lazily, upon
-        # instantiating the first Viewer.
-        from .window import Window
-
-        self.window = Window(self, show=show)
+        self.window = None
+        if show:
+            self.show()
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
@@ -86,7 +84,18 @@ class Viewer(ViewerModel):
 
     def show(self):
         """Resize, show, and raise the viewer window."""
+        from . import run
+
+        if self.window is None or not self.window.is_alive:
+            # having this import here makes all of Qt imported lazily,
+            # upon showing a Viewer for the first time.
+            from .window import Window
+
+            self.window = Window(self, show=True)
+
         self.window.show()
+
+        run()
 
     def close(self):
         """Close the viewer window."""
@@ -94,7 +103,7 @@ class Viewer(ViewerModel):
         self.layers.clear()
         # Close the main window
         self.window.close()
-
+        self.window = None
         if config.async_loading:
             from .components.experimental.chunk import chunk_loader
 
