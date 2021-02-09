@@ -36,6 +36,11 @@ For those wishing to add custom functionality to their project.
    napari.utils.perf
 
 
+.. autosummary::
+   :hidden:
+   :toctree:
+   napari
+
 Starting the Event Loop
 -----------------------
 
