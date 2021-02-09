@@ -14,7 +14,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from . import __version__, gui_qt, layers, view_path
+from . import __version__, layers, run, view_path
 from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
 
@@ -177,22 +177,23 @@ def _run():
                 'When providing a python script, only a '
                 'single positional argument may be provided'
             )
+        runpy.run_path(args.paths[0])
 
-        with gui_qt(startup_logo=True) as app:
-            if hasattr(app, '_splash_widget'):
-                app._splash_widget.close()
-            runpy.run_path(args.paths[0])
-            if getattr(app, '_existed', False):
-                sys.exit()
     else:
-        with gui_qt(startup_logo=True, gui_exceptions=True):
-            view_path(
-                args.paths,
-                stack=args.stack,
-                plugin=args.plugin,
-                layer_type=args.layer_type,
-                **kwargs,
-            )
+
+        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+
+        splash = NapariSplashScreen()
+        splash.close()  # will close once event loop starts
+
+        view_path(
+            args.paths,
+            stack=args.stack,
+            plugin=args.plugin,
+            layer_type=args.layer_type,
+            **kwargs,
+        )
+        run(gui_exceptions=True)
 
 
 def _run_pythonw(python_path):
