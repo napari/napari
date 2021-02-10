@@ -1,3 +1,4 @@
+from ..components._cursor_event import CursorEvent
 from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils.config import async_octree
 from .vispy_base_layer import VispyBaseLayer
@@ -47,4 +48,35 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
 
     raise TypeError(
         f'Could not find VispyLayer for layer of type {type(layer)}'
+    )
+
+
+def make_cursor_event(cursor, event):
+    """Turn a vispy mouse event into a napari cursor event
+
+    Parameters
+    ----------
+    cursor : napari.components.Cursor
+        Cursor object.
+    event : vispy.event.Events
+        Vispy mouse event that should be converted to a cursor event.
+
+    Returns
+    -------
+    cursor_event : napari.components._cursor_event.CursorEvent
+        Resulting cursor event.
+    """
+    if hasattr(event.native, 'inverted'):
+        inverted = bool(event.native.inverted())
+    else:
+        inverted = False
+
+    return CursorEvent(
+        position=cursor.position,
+        canvas_position=event.pos,
+        is_dragging=event.is_dragging,
+        type=event.type,
+        inverted=inverted,
+        modifiers=event.modifiers,
+        delta=event.delta,
     )

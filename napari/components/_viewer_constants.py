@@ -35,3 +35,18 @@ class CursorStyle(str, Enum):
     FORBIDDEN = 'forbidden'
     POINTING = 'pointing'
     STANDARD = 'standard'
+
+
+class CursorEventType(str, Enum):
+    """CursorEventType: Type of last cursor event.
+
+    * MOUSE_MOVE: A mouse move event
+    * MOUSE_PRESS: A mouse press event
+    * MOUSE_RELEASE: A mouse release event
+    * MOUSE_WHEEL: A mouse wheel event
+    """
+
+    MOUSE_MOVE = 'mouse_move'
+    MOUSE_PRESS = 'mouse_press'
+    MOUSE_RELEASE = 'mouse_release'
+    MOUSE_WHEEL = 'mouse_wheel'

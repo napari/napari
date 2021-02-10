@@ -12,7 +12,6 @@ from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
 from ..utils.interactions import (
-    ReadOnlyWrapper,
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
@@ -38,6 +37,7 @@ from .._vispy import (  # isort:skip
     VispyScaleBarVisual,
     VispyWelcomeVisual,
     create_vispy_visual,
+    make_cursor_event,
 )
 
 
@@ -650,13 +650,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        event = ReadOnlyWrapper(event)
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_wheel_callbacks(self.viewer, event)
+        cursor_event = make_cursor_event(self.viewer.cursor, event)
+        mouse_wheel_callbacks(self.viewer, cursor_event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_wheel_callbacks(layer, event)
+            mouse_wheel_callbacks(layer, cursor_event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -669,13 +669,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
-        event = ReadOnlyWrapper(event)
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_press_callbacks(self.viewer, event)
+        cursor_event = make_cursor_event(self.viewer.cursor, event)
+        mouse_press_callbacks(self.viewer, cursor_event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_press_callbacks(layer, event)
+            mouse_press_callbacks(layer, cursor_event)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -689,11 +689,12 @@ class QtViewer(QSplitter):
             return
 
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_move_callbacks(self.viewer, event)
+        cursor_event = make_cursor_event(self.viewer.cursor, event)
+        mouse_move_callbacks(self.viewer, cursor_event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_move_callbacks(layer, event)
+            mouse_move_callbacks(layer, cursor_event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -707,11 +708,12 @@ class QtViewer(QSplitter):
             return
 
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_release_callbacks(self.viewer, event)
+        cursor_event = make_cursor_event(self.viewer.cursor, event)
+        mouse_release_callbacks(self.viewer, cursor_event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_release_callbacks(layer, event)
+            mouse_release_callbacks(layer, cursor_event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
