@@ -29,8 +29,9 @@ def select(layer, cursor_event):
     """
     shift = 'Shift' in cursor_event.modifiers
     # on press
-    layer._moving_value = copy(layer._value)
-    shape_under_cursor, vertex_under_cursor = layer._value
+    value = layer.get_value(cursor_event.data_position, world=False)
+    layer._moving_value = copy(value)
+    shape_under_cursor, vertex_under_cursor = value
     if vertex_under_cursor is None:
         if shift and shape_under_cursor is not None:
             if shape_under_cursor in layer.selected_data:
@@ -212,7 +213,8 @@ def add_path_polygon(layer, cursor_event):
         ]
         vertices = np.concatenate((vertices, [coord]), axis=0)
         # Change the selected vertex
-        layer._value = (layer._value[0], layer._value[1] + 1)
+        value = layer.get_value(cursor_event.data_position, world=False)
+        layer._value = (value[0], value[1] + 1)
         layer._moving_value = copy(layer._value)
         data_full = layer.expand_shape(vertices)
         layer._data_view.edit(index, data_full, new_type=new_type)
@@ -335,7 +337,8 @@ def vertex_remove(layer, cursor_event):
     cursor_event : napari.components.cursor_event.CursorEvent
         Cursor event.
     """
-    shape_under_cursor, vertex_under_cursor = layer._value
+    value = layer.get_value(cursor_event.data_position, world=False)
+    shape_under_cursor, vertex_under_cursor = value
     if vertex_under_cursor is None:
         # No vertex was clicked on so return
         return
