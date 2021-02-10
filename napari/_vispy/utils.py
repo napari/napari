@@ -1,4 +1,4 @@
-from ..components._cursor_event import CursorEvent
+from ..components.cursor_event import CursorEvent
 from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils.config import async_octree
 from ..utils.interactions import ReadOnlyWrapper
@@ -64,7 +64,7 @@ def make_cursor_event(cursor, event):
 
     Returns
     -------
-    cursor_event : napari.components._cursor_event.CursorEvent
+    cursor_event : napari.components.cursor_event.CursorEvent
         Resulting cursor event.
     """
     if hasattr(event.native, 'inverted'):
