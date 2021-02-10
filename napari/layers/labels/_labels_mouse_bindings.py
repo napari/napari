@@ -73,4 +73,5 @@ def pick(layer, cursor_event):
         Cursor event.
     """
     # on press
-    layer.selected_label = layer._value or 0
+    value = layer.get_value(cursor_event.data_position, world=False)
+    layer.selected_label = value or 0

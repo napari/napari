@@ -15,6 +15,7 @@ __all__ = [
     'EventedModel',
     'EventEmitter',
     'NestableEventedList',
-    'ReadOnlyModel' 'SupportsEvents',
+    'ReadOnlyModel',
+    'SupportsEvents',
     'TypedMutableSequence',
 ]
