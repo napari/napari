@@ -1,6 +1,7 @@
 from ..components._cursor_event import CursorEvent
 from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils.config import async_octree
+from ..utils.interactions import ReadOnlyWrapper
 from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -71,12 +72,14 @@ def make_cursor_event(cursor, event):
     else:
         inverted = False
 
-    return CursorEvent(
-        position=cursor.position,
-        canvas_position=event.pos,
-        is_dragging=event.is_dragging,
-        type=event.type,
-        inverted=inverted,
-        modifiers=event.modifiers,
-        delta=event.delta,
+    return ReadOnlyWrapper(
+        CursorEvent(
+            position=cursor.position,
+            canvas_position=tuple(event.pos),
+            is_dragging=event.is_dragging,
+            type=event.type,
+            inverted=inverted,
+            modifiers=tuple(event.modifiers),
+            delta=tuple(event.delta),
+        )
     )
