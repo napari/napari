@@ -7,19 +7,27 @@ from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
 
-def highlight(layer, event):
-    """Highlight hovered shapes."""
+def highlight(layer, cursor_event):
+    """Highlight hovered shapes.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     layer._set_highlight()
 
 
-def select(layer, event):
+def select(layer, cursor_event):
     """Select shapes or vertices either in select or direct select mode.
 
     Once selected shapes can be moved or resized, and vertices can be moved
     depending on the mode. Holding shift when resizing a shape will preserve
     the aspect ratio.
     """
-    shift = 'Shift' in event.modifiers
+    shift = 'Shift' in cursor_event.modifiers
     # on press
     layer._moving_value = copy(layer._value)
     shape_under_cursor, vertex_under_cursor = layer._value
@@ -41,9 +49,12 @@ def select(layer, event):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor_event.type == 'mouse_move':
         # Drag any selected shapes
-        layer._move(layer.displayed_coordinates)
+        displayed_coordinates = [
+            cursor_event.data_position[i] for i in layer._dims_displayed
+        ]
+        layer._move(displayed_coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -51,7 +62,7 @@ def select(layer, event):
         yield
 
     # on release
-    shift = 'Shift' in event.modifiers
+    shift = 'Shift' in cursor_event.modifiers
     if not layer._is_moving and not layer._is_selecting and not shift:
         if shape_under_cursor is not None:
             layer.selected_data = {shape_under_cursor}
@@ -73,41 +84,74 @@ def select(layer, event):
         layer._update_thumbnail()
 
 
-def add_line(layer, event):
-    """Add a line."""
+def add_line(layer, cursor_event):
+    """Add a line.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
+    displayed_coordinates = [
+        cursor_event.data_position[i] for i in layer._dims_displayed
+    ]
+    corner = np.array(displayed_coordinates)
     data = np.array([corner, corner + size])
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='line'
+        layer, cursor_event, data=data, shape_type='line'
     )
 
 
-def add_ellipse(layer, event):
-    """Add an ellipse."""
+def add_ellipse(layer, cursor_event):
+    """Add an ellipse.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
+    displayed_coordinates = [
+        cursor_event.data_position[i] for i in layer._dims_displayed
+    ]
+    corner = np.array(displayed_coordinates)
     data = np.array(
         [corner, corner + [size, 0], corner + size, corner + [0, size]]
     )
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='ellipse'
+        layer, cursor_event, data=data, shape_type='ellipse'
     )
 
 
-def add_rectangle(layer, event):
-    """Add an rectangle."""
+def add_rectangle(layer, cursor_event):
+    """Add an rectangle.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
+    displayed_coordinates = [
+        cursor_event.data_position[i] for i in layer._dims_displayed
+    ]
+    corner = np.array(displayed_coordinates)
     data = np.array(
         [corner, corner + [size, 0], corner + size, corner + [0, size]]
     )
     yield from _add_line_rectangle_ellipse(
-        layer, event, data=data, shape_type='rectangle'
+        layer, cursor_event, data=data, shape_type='rectangle'
     )
 
 
-def _add_line_rectangle_ellipse(layer, event, data, shape_type):
+def _add_line_rectangle_ellipse(layer, cursor_event, data, shape_type):
     """Helper function for adding a a line, rectangle or ellipse."""
 
     # on press
@@ -121,18 +165,29 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor_event.type == 'mouse_move':
         # Drag any selected shapes
-        layer._move(layer.displayed_coordinates)
+        displayed_coordinates = [
+            cursor_event.data_position[i] for i in layer._dims_displayed
+        ]
+        layer._move(displayed_coordinates)
         yield
 
     # on release
     layer._finish_drawing()
 
 
-def add_path_polygon(layer, event):
-    """Add a path or polygon."""
-    coord = layer.displayed_coordinates
+def add_path_polygon(layer, cursor_event):
+    """Add a path or polygon.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
+    coord = [cursor_event.data_position[i] for i in layer._dims_displayed]
 
     # on press
     if layer._is_creating is False:
@@ -164,18 +219,36 @@ def add_path_polygon(layer, event):
         layer._selected_box = layer.interaction_box(layer.selected_data)
 
 
-def add_path_polygon_creating(layer, event):
-    """While a path or polygon move next vertex to be added."""
+def add_path_polygon_creating(layer, cursor_event):
+    """While a path or polygon move next vertex to be added.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     if layer._is_creating:
-        layer._move(layer.displayed_coordinates)
+        displayed_coordinates = [
+            cursor_event.data_position[i] for i in layer._dims_displayed
+        ]
+        layer._move(displayed_coordinates)
 
 
-def vertex_insert(layer, event):
+def vertex_insert(layer, cursor_event):
     """Insert a vertex into a selected shape.
 
     The vertex will get inserted in between the vertices of the closest edge
     from all the edges in selected shapes. Vertices cannot be inserted into
     Ellipses.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
     """
     # Determine all the edges in currently selected shapes
     all_edges = np.empty((0, 2, 2))
@@ -211,7 +284,10 @@ def vertex_insert(layer, event):
         return
 
     # Determine the closet edge to the current cursor coordinate
-    ind, loc = point_to_lines(layer.displayed_coordinates, all_edges)
+    displayed_coordinates = [
+        cursor_event.data_position[i] for i in layer._dims_displayed
+    ]
+    ind, loc = point_to_lines(displayed_coordinates, all_edges)
     index = all_edges_shape[ind][0]
     ind = all_edges_shape[ind][1] + 1
     shape_type = type(layer._data_view.shapes[index])
@@ -234,7 +310,10 @@ def vertex_insert(layer, event):
             ind = ind + 1
 
     # Insert new vertex at appropriate place in vertices of target shape
-    vertices = np.insert(vertices, ind, [layer.displayed_coordinates], axis=0)
+    displayed_coordinates = [
+        cursor_event.data_position[i] for i in layer._dims_displayed
+    ]
+    vertices = np.insert(vertices, ind, [displayed_coordinates], axis=0)
     with layer.events.set_data.blocker():
         data_full = layer.expand_shape(vertices)
         layer._data_view.edit(index, data_full, new_type=new_type)
@@ -242,12 +321,19 @@ def vertex_insert(layer, event):
     layer.refresh()
 
 
-def vertex_remove(layer, event):
+def vertex_remove(layer, cursor_event):
     """Remove a vertex from a selected shape.
 
     If a vertex is clicked on remove it from the shape it is in. If this cause
     the shape to shrink to a size that no longer is valid remove the whole
     shape.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        napari shapes layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
     """
     shape_under_cursor, vertex_under_cursor = layer._value
     if vertex_under_cursor is None:

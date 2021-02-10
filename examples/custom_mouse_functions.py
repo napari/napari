@@ -17,24 +17,25 @@ with napari.gui_qt():
     labels_layer = viewer.add_labels(labeled, name='blob ID')
 
     @viewer.mouse_drag_callbacks.append
-    def get_event(viewer, event):
-        print(event)
+    def get_event(viewer, cursor_event):
+        print(cursor_event)
 
     @viewer.mouse_drag_callbacks.append
-    def get_ndisplay(viewer, event):
-        if 'Alt' in event.modifiers:
+    def get_ndisplay(viewer, cursor_event):
+        if 'Alt' in cursor_event.modifiers:
             print('viewer display ', viewer.dims.ndisplay)
 
     @labels_layer.mouse_drag_callbacks.append
-    def get_connected_component_shape(layer, event):
-        cords = np.round(layer.coordinates).astype(int)
-        val = layer.get_value(layer.coordinates)
+    def get_connected_component_shape(layer, cursor_event):
+        coordinates = cursor_event.data_position
+        cords = np.round(coordinates).astype(int)
+        val = layer.get_value(coordinates)
         if val is None:
             return
         if val != 0:
             data = layer.data
             binary = data == val
-            if 'Shift' in event.modifiers:
+            if 'Shift' in cursor_event.modifiers:
                 binary_new = binary_erosion(binary)
                 data[binary] = 0
                 data[binary_new] = val
@@ -50,16 +51,15 @@ with napari.gui_qt():
             msg = f'clicked at {cords} on background which is ignored'
         print(msg)
 
-
     # Handle click or drag events separately
     @labels_layer.mouse_drag_callbacks.append
-    def click_drag(layer, event):
+    def click_drag(layer, cursor_event):
         print('mouse down')
         dragged = False
         yield
         # on move
-        while event.type == 'mouse_move':
-            print(event.pos)
+        while cursor_event.type == 'mouse_move':
+            print(cursor_event.position)
             dragged = True
             yield
         # on release

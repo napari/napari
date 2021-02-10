@@ -640,80 +640,69 @@ class QtViewer(QSplitter):
         """
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
-    def on_mouse_wheel(self, event):
-        """Called whenever mouse wheel activated in canvas.
+    def _process_mouse_event(self, mouse_callbacks, event):
+        """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        mouse_callbacks : function
+            Mouse callbacks function.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
         if event.pos is None:
             return
 
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        cursor_event = make_cursor_event(self.viewer.cursor, event)
-        mouse_wheel_callbacks(self.viewer, cursor_event)
+        viewer_cursor_event = make_cursor_event(self.viewer.cursor, event)
+        mouse_callbacks(self.viewer, viewer_cursor_event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            mouse_wheel_callbacks(layer, cursor_event)
+            layer_cursor_event = make_cursor_event(
+                self.viewer.cursor, event, transform=layer._world_to_data
+            )
+            mouse_callbacks(layer, layer_cursor_event)
+
+    def on_mouse_wheel(self, event):
+        """Called whenever mouse wheel activated in canvas.
+
+        Parameters
+        ----------
+        event : vispy.event.Event
+            The vispy event that triggered this method.
+        """
+        self._process_mouse_event(mouse_wheel_callbacks, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        cursor_event = make_cursor_event(self.viewer.cursor, event)
-        mouse_press_callbacks(self.viewer, cursor_event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_press_callbacks(layer, cursor_event)
+        self._process_mouse_event(mouse_press_callbacks, event)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        cursor_event = make_cursor_event(self.viewer.cursor, event)
-        mouse_move_callbacks(self.viewer, cursor_event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_move_callbacks(layer, cursor_event)
+        self._process_mouse_event(mouse_move_callbacks, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        cursor_event = make_cursor_event(self.viewer.cursor, event)
-        mouse_release_callbacks(self.viewer, cursor_event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_release_callbacks(layer, cursor_event)
+        self._process_mouse_event(mouse_release_callbacks, event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.

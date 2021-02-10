@@ -52,7 +52,7 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
     )
 
 
-def make_cursor_event(cursor, event):
+def make_cursor_event(cursor, event, transform=None):
     """Turn a vispy mouse event into a napari cursor event
 
     Parameters
@@ -61,6 +61,9 @@ def make_cursor_event(cursor, event):
         Cursor object.
     event : vispy.event.Events
         Vispy mouse event that should be converted to a cursor event.
+    transform : callable
+        Optional conversion between world and data coordinates. Use to
+        generate cursor events that are passed to a specific layer.
 
     Returns
     -------
@@ -72,9 +75,15 @@ def make_cursor_event(cursor, event):
     else:
         inverted = False
 
+    if transform is not None:
+        data_position = transform(cursor.position)
+    else:
+        data_position = None
+
     return ReadOnlyWrapper(
         CursorEvent(
             position=cursor.position,
+            data_position=data_position,
             canvas_position=tuple(event.pos),
             is_dragging=event.is_dragging,
             type=event.type,

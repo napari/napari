@@ -3,7 +3,7 @@ import numpy as np
 from ._points_utils import points_in_box
 
 
-def select(layer, event):
+def select(layer, cursor_event):
     """Select points.
 
     Clicking on a point will select that point. If holding shift while clicking
@@ -18,10 +18,18 @@ def select(layer, event):
     Holding shift throughout the entirety of this process will add those points
     to any existing selection, otherwise these will become the only selected
     points.
+
+    Parameters
+    ----------
+    layer : napari.layers.Points
+        napari points layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
     """
     # on press
     modify_selection = (
-        'Shift' in event.modifiers or 'Control' in event.modifiers
+        'Shift' in cursor_event.modifiers
+        or 'Control' in cursor_event.modifiers
     )
 
     # if modifying selection add / remove any from existing selection
@@ -47,16 +55,19 @@ def select(layer, event):
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor_event.type == 'mouse_move':
         # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
-            layer._move(layer.selected_data, layer.coordinates)
+            layer._move(layer.selected_data, cursor_event.data_position)
         else:
+            displayed_coordinates = [
+                cursor_event.data_position[i] for i in layer._dims_displayed
+            ]
             layer._is_selecting = True
             if layer._drag_start is None:
-                layer._drag_start = layer.displayed_coordinates
+                layer._drag_start = displayed_coordinates
             layer._drag_box = np.array(
-                [layer._drag_start, layer.displayed_coordinates]
+                [layer._drag_start, displayed_coordinates]
             )
             layer._set_highlight()
         yield
@@ -83,24 +94,40 @@ def select(layer, event):
     layer._set_highlight(force=True)
 
 
-def add(layer, event):
-    """Add a new point at the clicked position."""
+def add(layer, cursor_event):
+    """Add a new point at the clicked position.
+
+    Parameters
+    ----------
+    layer : napari.layers.Points
+        napari points layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     # on press
     dragged = False
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor_event.type == 'mouse_move':
         dragged = True
         yield
 
     # on release
     if not dragged:
-        layer.add(layer.coordinates)
+        layer.add(cursor_event.data_position)
 
 
-def highlight(layer, event):
-    """Highlight hovered points."""
+def highlight(layer, cursor_event):
+    """Highlight hovered points.
+
+    Parameters
+    ----------
+    layer : napari.layers.Points
+        napari points layer.
+    cursor_event : napari.components.cursor_event.CursorEvent
+        Cursor event.
+    """
     layer._set_highlight()
 
 
