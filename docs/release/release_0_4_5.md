@@ -12,19 +12,17 @@ https://github.com/napari/napari
 
 ## Highlights
 This release is our first release using Jupyter Book to build our documentation (#2187)
-which can be seen at https://napari.org/docs/dev. We'll be continuing to reorganize the
+which can be seen at https://napari.org/docs/dev/, or
+https://napari.org/docs/0.4.5/ . We'll be continuing to reorganize the
 napari.org website to create a more integrate feel with documentation and tutorials living
 together. You can read more about our website reorganization in (#764).
 
 We've also added exprimental support for the ability to link attribute in layers which could
-be useful for synchronizing attribute values across layers (#2226).
-
-We've also begun to use [pydantic](https://pydantic-docs.helpmanual.io/) for some our models
-like `Dims`, `Camera`, `Cursor` etc to enable guarentte type consistency of these models (#2127, #2042). 
+be useful for synchronizing attribute values across layers, for example to
+set matching contrast limits for multiple channels (#2226).
 
 
 ## New Features
-- Convert docs to use Jupyter Book (#2187)
 - Add experimental link_layers (#2226)
 
 
@@ -46,6 +44,10 @@ like `Dims`, `Camera`, `Cursor` etc to enable guarentte type consistency of thes
 - Prevent monitor information refering to one of first issues (#2214)
 - Fix close procedure (#2220)
 - Update `napari.run`, prevent double-blocking (#2225)
+
+
+## Documentation
+- Convert docs to use Jupyter Book (#2187)
 
 
 ## API Changes
