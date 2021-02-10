@@ -159,7 +159,7 @@ def _run():
         '--plugin-info',
         action=PluginInfoAction,
         nargs=0,
-        help='show information on plugins and exit',
+        help='show information about plugins and exit',
     )
     parser.add_argument(
         '--citation',
