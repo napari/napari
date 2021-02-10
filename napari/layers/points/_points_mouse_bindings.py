@@ -32,22 +32,20 @@ def select(layer, cursor_event):
         or 'Control' in cursor_event.modifiers
     )
 
+    # Get index of highlighted point if any
+    value = layer.get_value(cursor_event.data_position, world=False)
+
     # if modifying selection add / remove any from existing selection
     if modify_selection:
-        # layer._value is defined in the base layer and contains the value
-        # under the cursor. For points, this is the index of the highlighted
-        # point.
-        if layer._value is not None:
-            layer.selected_data = _toggle_selected(
-                layer.selected_data, layer._value
-            )
+        if value is not None:
+            layer.selected_data = _toggle_selected(layer.selected_data, value)
     else:
-        if layer._value is not None:
+        if value is not None:
             # If the current index is not in the current list make it the only
             # index selected, otherwise don't change the selection so that
             # the current selection can be dragged together.
-            if layer._value not in layer.selected_data:
-                layer.selected_data = {layer._value}
+            if value not in layer.selected_data:
+                layer.selected_data = {value}
         else:
             layer.selected_data = set()
     layer._set_highlight()
