@@ -2,7 +2,7 @@ from ._labels_constants import Mode
 from ._labels_utils import interpolate_coordinates
 
 
-def draw(layer, event):
+def draw(layer, cursor_event):
     """Draw with the currently selected label to a coordinate.
 
     This method have different behavior when draw is called
@@ -22,6 +22,7 @@ def draw(layer, event):
     eraser
     """
     # on press
+    cursor_position_data = layer._world_to_data(cursor_event.position)
     layer._save_history()
     layer._block_saving = True
     if layer._mode == Mode.ERASE:
@@ -30,17 +31,18 @@ def draw(layer, event):
         new_label = layer.selected_label
 
     if layer._mode in [Mode.PAINT, Mode.ERASE]:
-        layer.paint(layer.coordinates, new_label)
+        layer.paint(cursor_position_data, new_label)
     elif layer._mode == Mode.FILL:
-        layer.fill(layer.coordinates, new_label)
+        layer.fill(cursor_position_data, new_label)
 
-    last_cursor_coord = layer.coordinates
+    last_cursor_coord = cursor_position_data
     yield
 
     # on move
-    while event.type == 'mouse_move':
+    while cursor_event.type == 'mouse_move':
+        cursor_position_data = layer._world_to_data(cursor_event.position)
         interp_coord = interpolate_coordinates(
-            last_cursor_coord, layer.coordinates, layer.brush_size
+            last_cursor_coord, cursor_position_data, layer.brush_size
         )
         for c in interp_coord:
             if layer._mode in [Mode.PAINT, Mode.ERASE]:
@@ -48,14 +50,14 @@ def draw(layer, event):
             elif layer._mode == Mode.FILL:
                 layer.fill(c, new_label, refresh=False)
         layer.refresh()
-        last_cursor_coord = layer.coordinates
+        last_cursor_coord = cursor_position_data
         yield
 
     # on release
     layer._block_saving = False
 
 
-def pick(layer, event):
+def pick(layer, cursor_event):
     """Change the selected label to the same as the region clicked."""
     # on press
     layer.selected_label = layer._value or 0
