@@ -72,6 +72,7 @@ set matching contrast limits for multiple channels (#2226).
 - Skip perfmon test on windows pyside2 CI (#2223)
 - Generate api file for top-level napari package (#2237)
 - Fix API Reference link in docs (#2248)
+- Add missing release notes (#2250)
 
 
 ## 9 authors added to this release (alphabetical)
