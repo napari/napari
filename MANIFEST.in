@@ -16,3 +16,8 @@ exclude napari/benchmarks/*
 recursive-exclude resources *
 exclude bundle.py
 exclude dockerfile
+
+# Bundled test package for translations
+recursive-include napari *.in
+recursive-include napari *.po
+recursive-include napari *.py
