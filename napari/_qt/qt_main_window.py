@@ -23,6 +23,12 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from napari.utils.settings._defaults import (
+    ApplicationSettings,
+    ConsoleSettings,
+    PluginSettings,
+)
+
 from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
@@ -282,19 +288,22 @@ class Window:
         """Edit preferences from the menubar."""
         import json
 
-        # TO DO: need to put in relative path...
-        schema_dir = (
-            '/Users/pwadhwa/Documents/repos/napari/napari/_qt/ui_json_schemas/'
-        )
-
+        settings = [ApplicationSettings(), ConsoleSettings(), PluginSettings()]
         win = PreferencesDialog(parent=self._qt_window)
 
-        for f in sorted(os.listdir(schema_dir)):
-            f_tmp = os.path.join(schema_dir, f)
-            if os.path.isfile(f_tmp):
-                with open(f_tmp) as f_tmp2:
-                    schema = json.load(f_tmp2)
-                win.add_page(schema, {})
+        for setting in settings:
+
+            schema = json.loads(setting.schema_json())
+            # need to remove certain properties that will not be displayed on the GUI
+            properties = schema.pop('properties')
+            values = setting.dict()
+            for val in setting.NapariConfig().preferences_exclude:
+                properties.pop(val)
+                values.pop(val)
+
+            schema['properties'] = properties
+
+            win.add_page(schema, values)
 
         win._list.setCurrentRow(0)
 

@@ -5,17 +5,17 @@ from qtpy import QtWidgets
 from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 
 
-def get_preferences_dialog(schema, ui_schema):
-    #     app = QtWidgets.QApplication(sys.argv)
+def get_preferences_dialog(schema, values):
 
     builder = WidgetBuilder()
 
-    form = builder.create_form(schema, ui_schema)
+    form = builder.create_form(schema, {})
+    # set state values for widget
+    form.widget.state = values
 
     form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
 
     return form
-    # app.exec_()
 
 
 class PreferencesDialog(QtWidgets.QDialog):
