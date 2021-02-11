@@ -111,14 +111,15 @@ def napari_plugin_tester():
     """A fixture that can be used to test plugin registration.
 
     See _TestPluginManager above for tests implementations:
+
     Examples
     --------
     >>> def test_pm(napari_plugin_tester):
-    >>> napari_plugin_tester.assert_plugin_name_registered("test-plugin")
-    >>> napari_plugin_tester.assert_module_registered(_test)
-    >>> napari_plugin_tester.assert_implementations_registered(
-    >>>     "test-plugin", "napari_get_reader"
-    >>> )
+    ...     napari_plugin_tester.assert_plugin_name_registered("test-plugin")
+    ...     napari_plugin_tester.assert_module_registered(_test)
+    ...     napari_plugin_tester.assert_implementations_registered(
+    ...         "test-plugin", "napari_get_reader"
+    ...     )
     """
     from napari.plugins import hook_specifications
 
