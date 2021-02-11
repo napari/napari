@@ -71,6 +71,7 @@ set matching contrast limits for multiple channels (#2226).
 - Include a line on adding screenshots/animations to PRs (#2219)
 - Skip perfmon test on windows pyside2 CI (#2223)
 - Generate api file for top-level napari package (#2237)
+- Better plugin errors surfacing in CLI with `--plugin-info` (#2244)
 
 
 ## 9 authors added to this release (alphabetical)

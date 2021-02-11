@@ -24,6 +24,44 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
+        from .plugins import plugin_manager
+
+        errors = plugin_manager.get_errors()
+        if errors:
+            names = {e.plugin_name for e in errors}
+            print("\n‼️  Errors were detected in the following plugins:")
+            print("(Run 'napari --plugin-info -v' for more details)")
+            print("\n".join([f"  - {n}" for n in names]))
+        sys.exit()
+
+
+class PluginInfoAction(argparse.Action):
+    def __call__(self, *args, **kwargs):
+        # prevent unrelated INFO logs when doing "napari --info"
+        logging.basicConfig(level=logging.WARNING)
+        from .plugins import plugin_manager
+
+        print(plugin_manager)
+
+        verbose = '-v' in sys.argv or '--verbose' in sys.argv
+        errors = plugin_manager.get_errors()
+        if errors:
+            print("‼️  Some errors occurred:")
+            if not verbose:
+                print("   (use '-v') to show full tracebacks")
+            print("-" * 38)
+
+            for err in errors:
+                print(err.plugin_name)
+                print(f"  error: {err!r}")
+                print(f"  cause: {err.__cause__!r}")
+                if verbose:
+                    print("  traceback:")
+                    import traceback
+                    from textwrap import indent
+
+                    tb = traceback.format_tb(err.__cause__.__traceback__)
+                    print(indent("".join(tb), '   '))
         sys.exit()
 
 
@@ -116,6 +154,12 @@ def _run():
         action=InfoAction,
         nargs=0,
         help='show system information and exit',
+    )
+    parser.add_argument(
+        '--plugin-info',
+        action=PluginInfoAction,
+        nargs=0,
+        help='show information about plugins and exit',
     )
     parser.add_argument(
         '--citation',
