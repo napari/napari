@@ -34,12 +34,12 @@ from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.theme import get_theme, template
+from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
-from .preferences_schema import PreferencesDialog
 from .qt_event_loop import NAPARI_ICON_PATH, get_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
