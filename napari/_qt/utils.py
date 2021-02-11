@@ -21,16 +21,46 @@ from ..utils.misc import is_sequence
 QBYTE_FLAG = "!QBYTE_"
 
 
-def is_qbyte(string):
+def is_qbyte(string: str) -> bool:
+    """Check if a string is a QByteArray string.
+
+    Parameters
+    ----------
+    string : bool
+        State string.
+    """
     return isinstance(string, str) and string.startswith(QBYTE_FLAG)
 
 
-def qbytearray_to_str(qbyte):
+def qbytearray_to_str(qbyte: QByteArray) -> str:
+    """Convert a window state to a string.
+
+    Used for restoring the state of the main window.
+
+    Parameters
+    ----------
+    qbyte : QByteArray
+        State array.
+    """
     return QBYTE_FLAG + qbyte.toBase64().data().decode()
 
 
-def str_to_qbytearray(string):
-    return QByteArray.fromBase64(string.lstrip(QBYTE_FLAG).encode())
+def str_to_qbytearray(string: str) -> QByteArray:
+    """Convert a string to a QbyteArray.
+
+    Used for restoring the state of the main window.
+
+    Parameters
+    ----------
+    string : str
+        State string.
+    """
+    if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
+        raise ValueError(
+            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
+        )
+
+    return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
 def QImg2array(img):

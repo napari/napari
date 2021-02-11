@@ -1,19 +1,4 @@
 """Settings management.
-
-theme (superseding #943)
-PySide2 vs PyQt5 preference (if both installed)
-window position/geometry
-opt in for telemetry
-font size for console
-
-monitor DPI (#820)
-call order of plugins (after #937)
-default colormaps or color combinations (as discussed in #619)
-magic-naming for layer (off by default in #1008)
-highlight thickness for shapes / points layers
-dask cache size maximum, and dask fusion settings (#1173 (comment))
-version updates (has user been asked)
-key/mouse bindings
 """
 
 from enum import Enum
@@ -22,9 +7,6 @@ from typing import List, Tuple
 from pydantic import BaseSettings, Field
 
 from napari.utils.events.evented_model import EventedModel
-
-# If a plugin registers a theme, how does it work to do model generation?
-# FIXME: Generating enums on the fly for Themes?
 
 
 class QtBindingEnum(str, Enum):
@@ -35,7 +17,7 @@ class QtBindingEnum(str, Enum):
 
 
 class ThemeEnum(str, Enum):
-    """Python Qt binding to use with the application."""
+    """Application color theme."""
 
     dark = 'dark'
     light = 'light'
@@ -51,8 +33,6 @@ class ApplicationSettings(BaseSettings, EventedModel):
     highlight_thickness: int = 1
     theme: ThemeEnum = ThemeEnum.dark
     # Startup
-    # TODO: Make that a date time; so if telemetry ever changes, we can know wether user have accepted before/after?
-    # the change , and/or maybe remind them that we are collecting every year or so?
     opt_in_telemetry: bool = Field(
         False, description="Check to enable telemetry measurements"
     )
@@ -81,29 +61,14 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = [
+            "preferences_size",
+            "first_time",
             "window_position",
             "window_size",
             "window_maximized",
             "window_fullscreen",
             "window_state",
-            "first_time",
-            "preferences_size",
         ]
-
-
-class ConsoleSettings(BaseSettings, EventedModel):
-    # version = (0, 1, 0)
-    some_specific_console_config: str = None
-
-    class Config:
-        # Pydantic specific configuration
-        env_prefix = 'napari_settings_console_'
-        title = "Console settings"
-        use_enum_values = True
-
-    class NapariConfig:
-        # Napari specific configuration
-        preferences_exclude = []
 
 
 class PluginSettings(BaseSettings, EventedModel):
@@ -121,6 +86,4 @@ class PluginSettings(BaseSettings, EventedModel):
         preferences_exclude = []
 
 
-# print(ApplicationSettings().json_schema())
-# print(ConsoleSettings().json_schema())
-# print(PluginSettings().json_schema())
+CORE_SETTINGS = [ApplicationSettings, PluginSettings]

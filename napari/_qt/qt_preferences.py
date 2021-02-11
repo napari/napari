@@ -1,4 +1,4 @@
-"""
+"""Preferences dialog.
 """
 
 from qtpy.QtCore import Signal
@@ -22,8 +22,8 @@ class PreferencesDialog(QDialog):
         self._stack = QStackedWidget(self)
 
         # Use a Buttons group (forgot the name)
-        self._button_cancel = QPushButton("Ok")
-        self._button_ok = QPushButton("Cancel")
+        self._button_cancel = QPushButton("Cancel")
+        self._button_ok = QPushButton("Ok")
 
         # Setup
         self.setWindowTitle("Preferences")
@@ -48,12 +48,6 @@ class PreferencesDialog(QDialog):
         )
         self._button_ok.clicked.connect(lambda: print("ok"))
         self._button_cancel.clicked.connect(lambda: print("cancel"))
-
-    def add_page(self, schema):
-        """"""
-        # widget = build_form_from_schema(schema)
-        # self._list.addItem(schema["title"])
-        # self._stack.addWidget(widget)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
