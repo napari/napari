@@ -50,4 +50,4 @@ here is more technical and focuses on understanding how napari works.
 # developer introduction
 
 Information on specific functions, classes, and methods is available in the
-{doc}`api`.
+[API Reference](api/index.rst).
