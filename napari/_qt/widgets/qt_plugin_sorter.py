@@ -67,7 +67,6 @@ class ImplementationListItem(QFrame):
 
     def __init__(self, item: QListWidgetItem, parent: QWidget = None):
         super().__init__(parent)
-        self.setToolTip("Click and drag to change call order")
         self.item = item
         self.opacity = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
@@ -77,7 +76,29 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        self.plugin_name_label = QLabel(item.hook_implementation.plugin_name)
+        # ~~~just show function name
+        self.setToolTip("Click and drag to change call order")
+        self.plugin_name_label = QLabel(
+            f"{item.hook_implementation.function.__name__}"
+        )
+
+        # ~~~show plugin name + function name
+        # self.setToolTip("Click and drag to change call order")
+        # self.plugin_name_label = QLabel(f"{item.hook_implementation.plugin_name}: {item.hook_implementation.function.__name__}")
+
+        # ~~~show plugin name in tooltip
+        # self.setToolTip(f"Plugin: {item.hook_implementation.plugin_name}\n\nClick and drag to change call order")
+        # self.plugin_name_label = QLabel(f"{item.hook_implementation.function.__name__}")
+
+        # ~~~show plugin name if named as spec, otherwise function name
+        # has_spec = bool(item.hook_implementation._specname)
+        # display_name = item.hook_implementation.function.__name__ if has_spec\
+        #             else item.hook_implementation.plugin_name
+        # tooltip_prefix = f"Plugin: {item.hook_implementation.plugin_name}\n\n" if has_spec\
+        #             else ''
+        # self.setToolTip(f"{tooltip_prefix}Click and drag to change call order")
+        # self.plugin_name_label = QLabel(display_name)
+
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
