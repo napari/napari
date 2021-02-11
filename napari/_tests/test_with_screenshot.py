@@ -1,10 +1,10 @@
-import collections
 import os
 import sys
 
 import numpy as np
 import pytest
 
+from napari.components.cursor_event import CursorEvent
 from napari.utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -368,31 +368,33 @@ def test_labels_painting(make_napari_viewer):
     assert screenshot[:, :, :2].max() == 0
 
     # Enter paint mode
-    viewer.cursor.position = (0, 0)
+    position = (0, 0)
     layer.mode = 'paint'
     layer.selected_label = 3
 
     # Simulate click
-    Event = collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging']
+    event = ReadOnlyWrapper(
+        CursorEvent(data_position=position, type='mouse_press')
     )
-
-    # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    viewer.cursor.position = (100, 100)
+    position = (100, 100)
 
     # Simulate drag
-    event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
+    event = ReadOnlyWrapper(
+        CursorEvent(
+            data_position=position, type='mouse_move', is_dragging=True
+        )
+    )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        CursorEvent(
+            data_position=position, type='mouse_release', is_dragging=False
+        )
+    )
     mouse_release_callbacks(layer, event)
-
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
-    mouse_press_callbacks(layer, event)
 
     screenshot = viewer.screenshot(canvas_only=True)
     # Check that painting has now occurred
