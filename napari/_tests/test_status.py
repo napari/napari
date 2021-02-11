@@ -3,7 +3,7 @@ import numpy as np
 from napari.utils.status_messages import status_format
 
 
-def test_status_format(make_napari_viewer):
+def test_status_format():
     """ test various formatting cases embodied in utils.status_messages.status_format """
 
     values = np.array(
