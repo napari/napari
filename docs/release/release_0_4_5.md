@@ -75,6 +75,8 @@ set matching contrast limits for multiple channels (#2226).
 - Add pluginmanager fixture (#2247)
 - Fix API Reference link in docs (#2248)
 - Add missing release notes (#2250)
+- Update napari_plugin_tester docstring (#2251)
+- Remove pluginmanager fixture in favor of devtools repo (#2252)
 
 
 ## 9 authors added to this release (alphabetical)
