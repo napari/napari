@@ -72,6 +72,11 @@ set matching contrast limits for multiple channels (#2226).
 - Skip perfmon test on windows pyside2 CI (#2223)
 - Generate api file for top-level napari package (#2237)
 - Better plugin errors surfacing in CLI with `--plugin-info` (#2244)
+- Add pluginmanager fixture (#2247)
+- Fix API Reference link in docs (#2248)
+- Add missing release notes (#2250)
+- Update napari_plugin_tester docstring (#2251)
+- Remove pluginmanager fixture in favor of devtools repo (#2252)
 
 
 ## 9 authors added to this release (alphabetical)
