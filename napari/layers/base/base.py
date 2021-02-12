@@ -261,8 +261,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
                 'blending',
                 'opacity',
                 'visible',
-                'select',
-                'deselect',
+                'selection',
                 'scale',
                 'translate',
                 'rotate',
@@ -731,11 +730,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         if selected == self.selected:
             return
         self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+        self.events.selection(value=selected)
 
     @property
     def status(self):

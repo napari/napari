@@ -556,10 +556,8 @@ class Shapes(Layer):
             return
         self._selected = selected
 
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+        self.events.selection(value=selected)
+        if not selected:
             self._finish_drawing()
 
     @property

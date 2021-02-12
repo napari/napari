@@ -542,11 +542,8 @@ class Points(Layer):
         if selected == self.selected:
             return
         self._selected = selected
+        self.events.selection(value=selected)
 
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
         self._set_highlight()
 
     def _add_point_color(self, adding: int, attribute: str):

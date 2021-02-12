@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
 
-from ...utils.tree.group import Group
 from .qt_tree_model import QtNodeTreeModel
+
+if TYPE_CHECKING:
+    from ...utils.tree.group import Group
 
 
 class QtNodeTreeView(QTreeView):
