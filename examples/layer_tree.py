@@ -30,6 +30,9 @@ root = LayerGroup(
     ],
     name="root",
 )
+
+root.events.reordered.connect(lambda e: print(e.value))
+
 tree = QtLayerTreeView(root)
 model = tree.model()
 tree.show()
