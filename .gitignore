@@ -131,3 +131,7 @@ linux/
 windows/
 
 napari/_version.py
+
+docs/api/*
+!docs/api/index.rst
+docs/_build

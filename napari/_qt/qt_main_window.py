@@ -101,8 +101,7 @@ class Window:
 
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        # note: the return value must be retained to prevent garbage collection
-        _ = get_app()
+        get_app()
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow()
@@ -815,7 +814,18 @@ class Window:
         self._qt_window.resize(width, height)
 
     def show(self):
-        """Resize, show, and bring forward the window."""
+        """Resize, show, and bring forward the window.
+
+        Parameters
+        ----------
+        run : bool, optional
+            If true, will start an event loop if necessary, by default False
+
+        Raises
+        ------
+        RuntimeError
+            If the viewer.window has already been closed and deleted.
+        """
         try:
             self._qt_window.resize(self._qt_window.layout().sizeHint())
             self._qt_window.show()
@@ -829,11 +839,11 @@ class Window:
         self.qt_viewer.dims._resize_axis_labels()
 
         # We want to bring the viewer to the front when
-        # A) it is our own (gui_qt) event loop OR we are running in jupyter
+        # A) it is our own event loop OR we are running in jupyter
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # get_app(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()

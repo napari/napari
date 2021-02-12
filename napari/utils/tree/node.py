@@ -7,7 +7,29 @@ if TYPE_CHECKING:
 
 
 class Node:
+    """An object that can be a member of a :class:`Group`.
+
+    ``Node`` forms the base object of a composite Tree pattern. This class
+    describes operations that are common to both simple (node) and complex
+    (group) elements of the tree.  ``Node`` may not have children, whereas
+    :class:`~napari.utils.tree.group.Group` can.
+
+    For additional background on the composite design pattern, see:
+    https://refactoring.guru/design-patterns/composite
+
+    Parameters
+    ----------
+    name : str, optional
+        A name/id for this node, by default "Node"
+
+    Attributes
+    ----------
+    parent : Group, optional
+        The parent of this Node.
+    """
+
     def __init__(self, name: str = "Node"):
+
         self.parent: Group | None = None
         self.name = name
 
@@ -36,11 +58,14 @@ class Node:
         return "\n".join(self._render())
 
     def _render(self) -> list[str]:
-        """Recursively return list of strings that can render ascii tree."""
+        """Return list of strings that can render ascii tree.
+
+        For ``Node``, we just return the name of this specific node.
+        """
         return [self.name]
 
-    def emancipate(self):
+    def unparent(self):
         if self.parent is not None:
             self.parent.remove(self)
             return self
-        raise IndexError("Cannot emancipate orphaned Node: {self!r}")
+        raise IndexError("Cannot unparent orphaned Node: {self!r}")

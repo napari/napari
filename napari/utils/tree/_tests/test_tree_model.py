@@ -71,13 +71,13 @@ def test_node_indexing(tree):
     assert g1_1_0.name == '3'
     assert g1_1_0 is tree[1, 1, 0]  # nested index variant
 
-    g1_1_0.emancipate()
+    g1_1_0.unparent()
     assert g1_1_0.index_from_root() == ()
     assert g1_1_0.index_in_parent() == 0
 
     with pytest.raises(IndexError) as e:
-        g1_1_0.emancipate()
-    assert "Cannot emancipate orphaned Node" in str(e)
+        g1_1_0.unparent()
+    assert "Cannot unparent orphaned Node" in str(e)
 
 
 def test_traverse(tree):
@@ -107,7 +107,8 @@ def test_traverse(tree):
 def test_slicing(tree):
     """Indexing into a group returns a group instance."""
     assert tree.is_group()
-    slc = tree[::-2]
+    slc = tree[::-2]  # take every other item, starting from the end
+    assert [x.name for x in slc] == ['9', 'g1']
     assert slc.is_group()
     expected = ['Group', '9', 'g1', '2', 'g2', '3', '4', '5', '6', '7']
     assert [x.name for x in slc.traverse()] == expected
