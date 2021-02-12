@@ -29,28 +29,40 @@ class Node:
     """
 
     def __init__(self, name: str = "Node"):
-
         self.parent: Group | None = None
         self.name = name
 
     def is_group(self) -> bool:
+        """Return True if this Node is a composite.
+
+        :class:`~napari.utils.tree.Group` will return True.
+        """
         return False
 
-    def index_in_parent(self) -> int:
+    def index_in_parent(self) -> int | None:
+        """Return index of this Node in its parent, or None if no parent."""
         if self.parent is not None:
             return self.parent.index(self)
-        # TODO: check if this can be None?
-        return 0
+        return None
 
     def index_from_root(self) -> tuple[int, ...]:
+        """Return index of this Node relative to root.
+
+        Will return ``()`` if this object *is* the root.
+        """
         item = self
         indices: list[int] = []
         while item.parent is not None:
-            indices.insert(0, item.index_in_parent())
+            indices.insert(0, item.index_in_parent())  # type: ignore
             item = item.parent
         return tuple(indices)
 
     def traverse(self, leaves_only=False) -> Generator[Node, None, None]:
+        """Recursive all nodes and leaves of the Node.
+
+        This is mostly used by :class:`~napari.utils.tree.Group`, which can
+        also traverse children.  A ``Node`` simply yields itself.
+        """
         yield self
 
     def __str__(self):
@@ -61,10 +73,12 @@ class Node:
         """Return list of strings that can render ascii tree.
 
         For ``Node``, we just return the name of this specific node.
+        :class:`~napari.utils.tree.Group` will render a full tree.
         """
         return [self.name]
 
     def unparent(self):
+        """Remove this object from its parent."""
         if self.parent is not None:
             self.parent.remove(self)
             return self

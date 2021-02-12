@@ -54,7 +54,7 @@ def test_node_indexing(tree):
     assert not root[0].is_group()
 
     assert root.index_from_root() == ()
-    assert root.index_in_parent() == 0
+    assert root.index_in_parent() is None
     g1 = root[1]
     assert g1.name == 'g1'
     assert g1.index_from_root() == (1,)
@@ -73,7 +73,7 @@ def test_node_indexing(tree):
 
     g1_1_0.unparent()
     assert g1_1_0.index_from_root() == ()
-    assert g1_1_0.index_in_parent() == 0
+    assert g1_1_0.index_in_parent() is None
 
     with pytest.raises(IndexError) as e:
         g1_1_0.unparent()
