@@ -341,7 +341,9 @@ def napari_experimental_provide_function() -> Union[
     -------
     function(s) : FunctionType or list of FunctionType
         Implementations should provide either a single function, or a list of
-        functions. The functions should have Python type annotations so that
+        functions. Note that this does not preclude specifying multiple
+        separate implementations in the same file.
+        The functions should have Python type annotations so that
         `magicgui <https://napari.org/magicgui>`_ can generate a widget from
         them.
 
@@ -385,7 +387,8 @@ def napari_experimental_provide_dock_widget() -> Union[
         that ``shortcut=`` keyword is not yet supported).
 
         Implementations may also return a list, in which each item must be a
-        callable or ``(callable, dict)`` tuple.
+        callable or ``(callable, dict)`` tuple. Note that this does not
+        preclude specifying multiple separate implementations in the same file.
 
     Examples
     --------
