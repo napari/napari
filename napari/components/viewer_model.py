@@ -397,8 +397,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         layer = event.value
 
         # Connect individual layer events to viewer events
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.selection.connect(self._update_active_layer)
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
