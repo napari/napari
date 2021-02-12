@@ -31,7 +31,15 @@ class Node:
     def __init__(self, name: str = "Node"):
 
         self.parent: Group | None = None
-        self.name = name
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
 
     def is_group(self) -> bool:
         return False
@@ -50,7 +58,16 @@ class Node:
             item = item.parent
         return tuple(indices)
 
-    def traverse(self, leaves_only=False) -> Generator[Node, None, None]:
+    def root(self):
+        """Get the root parent."""
+        obj = self
+        while obj.parent:
+            obj = obj.parent
+        return obj
+
+    def traverse(
+        self, leaves_only=False, with_ancestors=False
+    ) -> Generator[Node, None, None]:
         yield self
 
     def __str__(self):

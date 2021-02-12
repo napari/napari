@@ -14,6 +14,7 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
+from ...utils.tree import Node
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -23,7 +24,7 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
-class Layer(KeymapProvider, MousemapProvider, ABC):
+class Layer(KeymapProvider, MousemapProvider, Node, ABC):
     """Base layer class.
 
     Parameters
@@ -294,11 +295,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return f'{cls.__name__}'
 
     @property
-    def name(self):
-        """str: Unique name of the layer."""
-        return self._name
-
-    @property
     def loaded(self) -> bool:
         """Return True if this layer is fully loaded in memory.
 
@@ -306,6 +302,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Derived classes that do asynchronous loading can override this.
         """
         return True
+
+    @property
+    def name(self) -> str:
+        """str: Unique name of the layer."""
+        return self._name
 
     @name.setter
     def name(self, name):

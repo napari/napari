@@ -57,11 +57,14 @@ class Group(NestableEventedList[Node], Node):
                 return True
         return False
 
-    def traverse(self, leaves_only=False) -> Generator[Node, None, None]:
+    def traverse(
+        self, leaves_only=False, with_ancestors=False
+    ) -> Generator[Node, None, None]:
         "Recursively traverse all nodes and leaves of the Group tree."
+        obj = self.root() if with_ancestors else self
         if not leaves_only:
-            yield self
-        for child in self:
+            yield obj
+        for child in obj:
             yield from child.traverse(leaves_only)
 
     def _render(self) -> list[str]:

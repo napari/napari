@@ -5,6 +5,7 @@ from dask import array as da
 
 from napari.layers.utils.layer_utils import (
     calc_data_range,
+    combine_extents,
     dataframe_to_properties,
     guess_continuous,
     segment_normal,
@@ -105,3 +106,11 @@ def test_guess_continuous():
 
     categorical_annotation_2 = np.array([1, 2, 3], dtype=np.int)
     assert not guess_continuous(categorical_annotation_2)
+
+
+def test_combine_extent():
+    input_extent_1 = [(0, 255), (0, 255)]
+    input_extent_2 = [(0, 1), (-5, 35), (15, 300)]
+    expected_result = [(0.0, 1.0), (-5.0, 255.0), (0.0, 300.0)]
+    result = combine_extents([input_extent_1, input_extent_2])
+    assert result == expected_result
