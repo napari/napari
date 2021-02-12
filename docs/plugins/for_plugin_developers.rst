@@ -191,8 +191,8 @@ implementation decorator:
    def whatever_name_you_want(path: str):
       ...
 
-This allows you to specify multiple hook implementations of the same hook specification in the same file, without needing
-an entirely new module or entry point.
+This allows you to specify multiple hook implementations of the same hook 
+specification in the same file, without needing an entirely new module or entry point.
 
 .. _plugin-discovery:
 
