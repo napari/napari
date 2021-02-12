@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import Generator, Iterable
+from typing import Generator, Iterable, TypeVar
 
 from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
 
+NodeType = TypeVar("NodeType", bound=Node)
 
-class Group(NestableEventedList[Node], Node):
+
+class Group(NestableEventedList[NodeType], Node):
     """An object that contain other objects in a composite Tree pattern.
 
     The ``Group`` (aka composite) is an element that has sub-elements:
@@ -35,6 +37,7 @@ class Group(NestableEventedList[Node], Node):
         NestableEventedList.__init__(self, children, basetype=Node)
 
     def __delitem__(self, key: MaybeNestedIndex):
+        """Remove item at ``key``, and unparent."""
         if isinstance(key, (int, tuple)):
             self[key].parent = None
         else:
@@ -43,6 +46,7 @@ class Group(NestableEventedList[Node], Node):
         super().__delitem__(key)
 
     def insert(self, index: int, value):
+        """Insert ``value`` as child of this group at position ``index``."""
         value.parent = self
         super().insert(index, value)
 
@@ -60,7 +64,7 @@ class Group(NestableEventedList[Node], Node):
     def traverse(
         self, leaves_only=False, with_ancestors=False
     ) -> Generator[Node, None, None]:
-        "Recursively traverse all nodes and leaves of the Group tree."
+        """Recursive all nodes and leaves of the Group tree."""
         obj = self.root() if with_ancestors else self
         if not leaves_only:
             yield obj
