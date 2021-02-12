@@ -14,7 +14,7 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from . import __version__, gui_qt, layers, view_path
+from . import __version__, layers, run, view_path
 from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
 
@@ -24,6 +24,44 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
+        from .plugins import plugin_manager
+
+        errors = plugin_manager.get_errors()
+        if errors:
+            names = {e.plugin_name for e in errors}
+            print("\n‼️  Errors were detected in the following plugins:")
+            print("(Run 'napari --plugin-info -v' for more details)")
+            print("\n".join([f"  - {n}" for n in names]))
+        sys.exit()
+
+
+class PluginInfoAction(argparse.Action):
+    def __call__(self, *args, **kwargs):
+        # prevent unrelated INFO logs when doing "napari --info"
+        logging.basicConfig(level=logging.WARNING)
+        from .plugins import plugin_manager
+
+        print(plugin_manager)
+
+        verbose = '-v' in sys.argv or '--verbose' in sys.argv
+        errors = plugin_manager.get_errors()
+        if errors:
+            print("‼️  Some errors occurred:")
+            if not verbose:
+                print("   (use '-v') to show full tracebacks")
+            print("-" * 38)
+
+            for err in errors:
+                print(err.plugin_name)
+                print(f"  error: {err!r}")
+                print(f"  cause: {err.__cause__!r}")
+                if verbose:
+                    print("  traceback:")
+                    import traceback
+                    from textwrap import indent
+
+                    tb = traceback.format_tb(err.__cause__.__traceback__)
+                    print(indent("".join(tb), '   '))
         sys.exit()
 
 
@@ -118,6 +156,12 @@ def _run():
         help='show system information and exit',
     )
     parser.add_argument(
+        '--plugin-info',
+        action=PluginInfoAction,
+        nargs=0,
+        help='show information about plugins and exit',
+    )
+    parser.add_argument(
         '--citation',
         action=CitationAction,
         nargs=0,
@@ -177,22 +221,23 @@ def _run():
                 'When providing a python script, only a '
                 'single positional argument may be provided'
             )
+        runpy.run_path(args.paths[0])
 
-        with gui_qt(startup_logo=True) as app:
-            if hasattr(app, '_splash_widget'):
-                app._splash_widget.close()
-            runpy.run_path(args.paths[0])
-            if getattr(app, '_existed', False):
-                sys.exit()
     else:
-        with gui_qt(startup_logo=True, gui_exceptions=True):
-            view_path(
-                args.paths,
-                stack=args.stack,
-                plugin=args.plugin,
-                layer_type=args.layer_type,
-                **kwargs,
-            )
+
+        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+
+        splash = NapariSplashScreen()
+        splash.close()  # will close once event loop starts
+
+        view_path(
+            args.paths,
+            stack=args.stack,
+            plugin=args.plugin,
+            layer_type=args.layer_type,
+            **kwargs,
+        )
+        run(gui_exceptions=True)
 
 
 def _run_pythonw(python_path):
