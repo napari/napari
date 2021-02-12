@@ -2,20 +2,18 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from ...utils.naming import inc_name_count
 from ...utils.tree import Group
 from ..base import Layer
 from ..utils.layer_utils import combine_extents
-from ...utils.naming import inc_name_count
 
 
-class LayerGroup(Layer, Group):
+class LayerGroup(Group, Layer):
     def __init__(
         self, children: Iterable[Layer] = (), name: str = 'LayerGroup'
     ) -> None:
-        Layer.__init__(self, None, 2)
         Group.__init__(self, children, name=name)
-
-    # LAYER METHODS
+        Layer.__init__(self, None, 2, name=name)
 
     def __str__(self):
         return Group.__str__(self)

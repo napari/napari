@@ -7,7 +7,7 @@ from typing import List, Optional
 import numpy as np
 
 from ...utils.dask_utils import configure_dask
-from ...utils.events import EmitterGroup, Event
+from ...utils.events import EmitterGroup
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -253,33 +253,43 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=False,
-            refresh=Event,
-            set_data=Event,
-            blending=Event,
-            opacity=Event,
-            visible=Event,
-            select=Event,
-            deselect=Event,
-            scale=Event,
-            translate=Event,
-            rotate=Event,
-            shear=Event,
-            affine=Event,
-            data=Event,
-            name=Event,
-            thumbnail=Event,
-            status=Event,
-            help=Event,
-            interactive=Event,
-            cursor=Event,
-            cursor_size=Event,
-            editable=Event,
-            loaded=Event,
-            _ndisplay=Event,
+
+        _events = dict.fromkeys(
+            (
+                'refresh',
+                'set_data',
+                'blending',
+                'opacity',
+                'visible',
+                'select',
+                'deselect',
+                'scale',
+                'translate',
+                'rotate',
+                'shear',
+                'affine',
+                'data',
+                'name',
+                'thumbnail',
+                'status',
+                'help',
+                'interactive',
+                'cursor',
+                'cursor_size',
+                'editable',
+                'loaded',
+                '_ndisplay',
+            )
         )
+        # For inheritance: If the mro already provides an EmitterGroup, add...
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+            self.events.add(**_events)
+        else:
+            # otherwise create a new one
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **_events
+            )
+
         self.name = name
 
     def __str__(self):
