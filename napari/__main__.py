@@ -243,11 +243,7 @@ def _run():
             layer_type=args.layer_type,
             **kwargs,
         )
-        # avoid regression; aggressively garbage collect _now_ to make sure we
-        # don't leak this again
-        import gc
 
-        gc.collect()
         run(gui_exceptions=True)
 
 
