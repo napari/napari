@@ -230,13 +230,24 @@ def _run():
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
 
-        view_path(
+        # viewer is unused but _must_  be kept around.
+        # it will be referenced by the global window only
+        # once napari has finished starting
+        # but in the meantime if the garbage collector runs;
+        # it will collect it and hang napari at start time.
+        # in a way that is machine, os, time (and likely weather dependant).
+        _viewer = view_path(  # noqa: F841
             args.paths,
             stack=args.stack,
             plugin=args.plugin,
             layer_type=args.layer_type,
             **kwargs,
         )
+        # avoid regression; aggressively garbage collect _now_ to make sure we
+        # don't leak this again
+        import gc
+
+        gc.collect()
         run(gui_exceptions=True)
 
 
