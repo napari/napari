@@ -28,6 +28,7 @@ class PreferencesDialog(QtWidgets.QDialog):
         # Set up buttons
         self._button_cancel = QtWidgets.QPushButton("Cancel")
         self._button_ok = QtWidgets.QPushButton("OK")
+        self._default_restore = QtWidgets.QPushButton("Restore defaults")
 
         # Setup
         self.setWindowTitle("Preferences")
@@ -43,6 +44,7 @@ class PreferencesDialog(QtWidgets.QDialog):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(main_layout)
+        layout.addWidget(self._default_restore)
         layout.addLayout(buttons_layout)
 
         self.setLayout(layout)
@@ -54,6 +56,10 @@ class PreferencesDialog(QtWidgets.QDialog):
         )
         self._button_cancel.clicked.connect(self.on_click_cancel)
         self._button_ok.clicked.connect(self.on_click_ok)
+        self._default_restore.clicked.connect(self.restore_defaults)
+
+    def restore_defaults(self):
+        print('Restoring defaults')
 
     def on_click_ok(self):
         print('OK')
