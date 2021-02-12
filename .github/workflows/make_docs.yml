@@ -53,7 +53,7 @@ jobs:
           VER=${GIT_TAG_NAME:-dev}
           DIR=./docs/$VER
           rm -rf $DIR
-          cp -r ./main/docs/build/html $DIR
+          cp -r ./main/docs/_build/html $DIR
           echo "::set-output name=directory::$VER"
       - name: Add & commit changes
         uses: EndBug/add-and-commit@v4
