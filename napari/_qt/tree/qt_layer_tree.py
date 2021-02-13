@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QItemSelection, QItemSelectionModel, QModelIndex, Qt
+from qtpy.QtCore import (
+    QItemSelection,
+    QItemSelectionModel,
+    QModelIndex,
+    QSize,
+    Qt,
+)
 from qtpy.QtGui import QPainter
 from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
@@ -37,17 +43,25 @@ class QtLayerTreeModel(QtNodeTreeModel):
 
 
 class LayerDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
     def paint(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ):
+        # print(
+        #     "painting row",
+        #     index.row(),
+        #     option.rect,
+        #     option.palette.highlight(),
+        # )
         # layer = index.internalPointer()
         super().paint(painter, option, index)
+
+    def sizeHint(
+        self, option: 'QStyleOptionViewItem', index: QModelIndex
+    ) -> QSize:
+        return QSize(228, 40)
 
 
 class QtLayerTreeView(QtNodeTreeView):
@@ -77,3 +91,20 @@ class QtLayerTreeView(QtNodeTreeView):
         idx = self.model().nestedIndex(nested_index)
         s = getattr(QItemSelectionModel, 'Select' if selected else 'Deselect')
         self.selectionModel().select(idx, s)
+
+    # def drawBranches(
+    #     self,
+    #     painter: QPainter,
+    #     rect: QRect,
+    #     index: QModelIndex,
+    # ) -> None:
+    #     """Responsible for drawing the arrows."""
+    #     return super().drawBranches(painter, rect, index)
+
+
+# self.setStyleSheet("""
+# QtLayerTreeView::branch{
+#     background-color:transparent;
+#     selection-background-color:transparent;
+# }
+# """)
