@@ -667,8 +667,14 @@ class Labels(Image):
             raise ValueError("Unsupported Color Mode")
 
         if self.contour:
-            mask = np.logical_xor(raw, ndi.binary_erosion(raw))
-            image[np.invert(mask)] = 0
+            image = np.zeros_like(raw)
+            struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            for label in np.unique(raw):
+                if label > 0:
+                    boundaries = ndi.binary_dilation(
+                        raw == label, struct_elem
+                    ) != ndi.binary_erosion(raw == label, struct_elem)
+                    image[boundaries] = raw[boundaries]
 
         return image
 

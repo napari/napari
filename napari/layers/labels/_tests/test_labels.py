@@ -349,16 +349,96 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
-def test_contour():
+@pytest.mark.parametrize(
+    "input_data, expected_data_view",
+    [
+        (
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (
+            np.array(
+                [
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 4],
+                    [3, 0, 3, 0, 0, 0, 4, 0, 0, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (
+            5 * np.ones((9, 10)),
+            np.array(
+                [
+                    [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 0, 0, 0, 0, 0, 0, 0, 0, 5],
+                    [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+    ],
+)
+def test_contour(input_data, expected_data_view):
     """Test changing contour."""
-    np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data)
+    layer = Labels(input_data)
     assert layer.contour is False
-    np.testing.assert_array_equal(layer.data, data)
+    np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(data), layer._data_view
+        layer._raw_to_displayed(input_data), layer._data_view
     )
     data_view_before_contour = layer._data_view.copy()
 
@@ -366,11 +446,12 @@ def test_contour():
     assert layer.contour is True
 
     # Check `layer.data` didn't change
-    np.testing.assert_array_equal(layer.data, data)
+    np.testing.assert_array_equal(layer.data, input_data)
 
     # Check what is returned in the view of the data
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(data), layer._data_view
+        layer._data_view,
+        expected_data_view,
     )
 
     # Check the view of the data changed after setting the contour
@@ -384,7 +465,7 @@ def test_contour():
 
     # Check it's in the same state as before setting the contour
     np.testing.assert_array_equal(
-        layer._raw_to_displayed(data), layer._data_view
+        layer._raw_to_displayed(input_data), layer._data_view
     )
 
 
