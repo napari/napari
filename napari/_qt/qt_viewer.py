@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
+from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
@@ -20,11 +20,10 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
-from ..utils.theme import get_theme, template
+from ..utils.theme import get_theme
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .qt_resources import get_stylesheet
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
@@ -83,8 +82,6 @@ class QtViewer(QSplitter):
     viewerButtons : QtViewerButtons
         Button controls for the napari viewer.
     """
-
-    raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer, welcome=False):
 
@@ -181,11 +178,11 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_theme()
+        self._update_canvas_background()
         self._on_active_layer_change()
 
         self.viewer.events.active_layer.connect(self._on_active_layer_change)
-        self.viewer.events.theme.connect(self._update_theme)
+        self.viewer.events.theme.connect(self._update_canvas_background)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -226,10 +223,7 @@ class QtViewer(QSplitter):
             parent=self,
             size=self.viewer._canvas_size[::-1],
         )
-        self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
-        self.canvas.native.setMinimumSize(QSize(200, 200))
-        self.canvas.context.set_depth_func('lequal')
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
@@ -547,13 +541,9 @@ class QtViewer(QSplitter):
 
         self.canvas.native.setCursor(q_cursor)
 
-    def _update_theme(self, event=None):
+    def _update_canvas_background(self, event=None):
         """Update the napari GUI theme."""
-        # template and apply the primary stylesheet
-        theme = get_theme(self.viewer.theme)
-        themed_stylesheet = template(self.raw_stylesheet, **theme)
-        self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = theme['canvas']
+        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
