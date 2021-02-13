@@ -59,8 +59,7 @@ def test_multitype_enforcement(list_type):
 
 
 def test_custom_lookup(list_type):
-    """Test that we can get objects by non-integer index using custom lookups.
-    """
+    """Test that we can get objects by non-integer index using custom lookups."""
 
     class Custom:
         def __init__(self, name='', data=()):
@@ -148,7 +147,9 @@ def test_nested_custom_lookup():
     c3 = Custom(name='c3')
 
     a = NestableEventedList(
-        [c, c1, [c2, [c3]]], basetype=Custom, lookup={str: lambda x: x.name},
+        [c, c1, [c2, [c3]]],
+        basetype=Custom,
+        lookup={str: lambda x: x.name},
     )
     # first level
     assert a[1].name == 'c1'  # index with integer as usual

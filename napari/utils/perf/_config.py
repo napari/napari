@@ -123,8 +123,7 @@ class PerfmonConfig:
 
     @property
     def trace_qt_events(self) -> bool:
-        """Return True if we should time Qt events.
-        """
+        """Return True if we should time Qt events."""
         if self.config_path is None:
             return True  # always trace qt events in legacy mode
         try:
@@ -134,8 +133,7 @@ class PerfmonConfig:
 
     @property
     def trace_file_on_start(self) -> str:
-        """Return path of trace file to write or None.
-        """
+        """Return path of trace file to write or None."""
         if self.config_path is None:
             return None  # don't trace on start in legacy mode
         try:

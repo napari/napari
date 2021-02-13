@@ -1,13 +1,9 @@
 import os
-import warnings
 from functools import partial
-from typing import List
 
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QApplication
 
-from napari import Viewer
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
@@ -39,37 +35,14 @@ except ImportError:
 def pytest_addoption(parser):
     """Add napari specific command line options.
 
-    --show-viewer
-        Show viewers during tests, they are hidden by default. Showing viewers
-        decreases test speed by around 20%.
-
-    --perfmon-only
-        Run only perfmon test.
-
     --aysnc_only
         Run only asynchronous tests, not sync ones.
 
     Notes
     -----
     Due to the placement of this conftest.py file, you must specifically name
-    the napari folder such as "pytest napari --show-viewer"
-
-    For --perfmon-only must also enable perfmon with env var:
-    NAPARI_PERFMON=1 pytest napari --perfmon-only
+    the napari folder such as "pytest napari --aysnc_only"
     """
-    parser.addoption(
-        "--show-viewer",
-        action="store_true",
-        default=False,
-        help="don't show viewer during tests",
-    )
-
-    parser.addoption(
-        "--perfmon-only",
-        action="store_true",
-        default=False,
-        help="run only perfmon tests",
-    )
 
     parser.addoption(
         "--async_only",
@@ -77,39 +50,6 @@ def pytest_addoption(parser):
         default=False,
         help="run only asynchronous tests",
     )
-
-
-@pytest.fixture
-def qtbot(qtbot):
-    """A modified qtbot fixture that makes sure no widgets have been leaked."""
-    initial = QApplication.topLevelWidgets()
-    yield qtbot
-    QApplication.processEvents()
-    leaks = set(QApplication.topLevelWidgets()).difference(initial)
-    # still not sure how to clean up some of the remaining vispy
-    # vispy.app.backends._qt.CanvasBackendDesktop widgets...
-    if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leaks]):
-        raise AssertionError(f'Widgets leaked!: {leaks}')
-    if leaks:
-        warnings.warn(f'Widgets leaked!: {leaks}')
-
-
-@pytest.fixture(scope="function")
-def make_test_viewer(qtbot, request):
-    viewers: List[Viewer] = []
-
-    def actual_factory(*model_args, viewer_class=Viewer, **model_kwargs):
-        model_kwargs['show'] = model_kwargs.pop(
-            'show', request.config.getoption("--show-viewer")
-        )
-        viewer = viewer_class(*model_args, **model_kwargs)
-        viewers.append(viewer)
-        return viewer
-
-    yield actual_factory
-
-    for viewer in viewers:
-        viewer.close()
 
 
 @pytest.fixture(
@@ -339,8 +279,8 @@ def configure_loading(request):
 def _is_async_mode() -> bool:
     """Return True if we are currently loading chunks asynchronously
 
-    Return
-    ------
+    Returns
+    -------
     bool
         True if we are currently loading chunks asynchronously.
     """
@@ -369,17 +309,6 @@ def skip_async_only(request):
         pytest.skip("not running with --async_only")
 
 
-@pytest.fixture(autouse=True)
-def perfmon_only(request):
-    """If flag is set, only run the perfmon tests."""
-    perfmon_flag = request.config.getoption("--perfmon-only")
-    perfmon_test = request.node.get_closest_marker('perfmon')
-    if perfmon_flag and not perfmon_test:
-        pytest.skip("running with --perfmon-only")
-    if not perfmon_flag and perfmon_test:
-        pytest.skip("not running with --perfmon-only")
-
-
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
 # Use with a debugger that's set to break on "unhandled exceptions".
 # https://github.com/pytest-dev/pytest/issues/7409
@@ -392,3 +321,14 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
     @pytest.hookimpl(tryfirst=True)
     def pytest_internalerror(excinfo):
         raise excinfo.value
+
+
+def pytest_collection_modifyitems(session, config, items):
+
+    put_at_end = ('test_trace_on_start',)
+    at_end = []
+    for i, item in enumerate(items):
+        if item.name in put_at_end:
+            at_end.append(items.pop(i))
+
+    items.extend([x for _, x in sorted(zip(put_at_end, at_end))])

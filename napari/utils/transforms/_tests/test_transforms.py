@@ -162,7 +162,10 @@ def test_scale_translate_rotate_shear_compose():
     coord = [10, 13]
     transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25, shear=[1])
     transform_b = Affine(
-        scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65, shear=[-0.5],
+        scale=[0.3, 1.4],
+        translate=[-2.2, 3],
+        rotate=65,
+        shear=[-0.5],
     )
     transform_c = transform_b.compose(transform_a)
 
@@ -220,6 +223,22 @@ def test_affine_matrix_compose(dimensionality):
     transform_C = transform_B.compose(transform_A)
     C = B @ A
     np.testing.assert_almost_equal(transform_C.affine_matrix, C)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_numpy_array_protocol(dimensionality):
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1] = np.random.random((N, N + 1))
+    transform = Affine(affine_matrix=A)
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+    np.testing.assert_almost_equal(np.asarray(transform), A)
+
+    coords = np.random.random((20, N + 1)) * 20
+    coords[:, -1] = 1
+    np.testing.assert_almost_equal(
+        (transform @ coords.T).T[:, :-1], transform(coords[:, :-1])
+    )
 
 
 @pytest.mark.parametrize('dimensionality', [2, 3])

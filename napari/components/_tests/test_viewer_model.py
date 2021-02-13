@@ -531,7 +531,9 @@ def test_active_layer_status_update():
     assert viewer.active_layer == viewer.layers[1]
 
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.active_layer.status
+    assert viewer.status == viewer.active_layer.get_status(
+        viewer.cursor.position, world=True
+    )
 
 
 def test_active_layer_cursor_size():

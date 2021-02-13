@@ -21,5 +21,5 @@ with napari.gui_qt():
     label_layer = viewer.add_labels(labels, name='segmentation')
 
     # Set the labels layer mode to picker with a string
-    label_layer.mode = 'picker'
+    label_layer.mode = 'PICK'
     print(f'The color of label 5 is {label_layer.get_color(5)}')

@@ -134,7 +134,7 @@ class ShapeList:
         self._set_color(face_color, 'face')
 
     def _set_color(self, colors, attribute):
-        """ Set the face_color or edge_color property
+        """Set the face_color or edge_color property
 
         Parameters
         ----------
@@ -338,8 +338,7 @@ class ShapeList:
             self._update_z_order()
 
     def remove_all(self):
-        """Removes all shapes
-        """
+        """Removes all shapes"""
         self.shapes = []
         self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
@@ -433,8 +432,7 @@ class ShapeList:
             self._update_displayed()
 
     def _update_z_order(self):
-        """Updates the z order of the triangles given the z_index list
-        """
+        """Updates the z order of the triangles given the z_index list"""
         self._z_order = np.argsort(self._z_index)
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty((0), dtype=int)

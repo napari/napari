@@ -1,2 +1,3 @@
 """Monitor service."""
-from .wrapper import monitor
+from ._monitor import monitor
+from ._utils import numpy_dumps

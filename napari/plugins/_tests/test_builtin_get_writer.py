@@ -42,7 +42,7 @@ def test_get_writer_succeeds(
         assert os.path.isfile(os.path.join(path, f))
 
     assert set(os.listdir(path)) == set(filenames)
-    assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+    assert set(os.listdir(tmpdir)) == {'layers_folder'}
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py

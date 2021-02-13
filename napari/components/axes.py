@@ -1,11 +1,7 @@
-import numpy as np
-
-from ..utils.colormaps.standardize_color import transform_single_color
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.events import EventedModel
 
 
-@evented_dataclass
-class Axes:
+class Axes(EventedModel):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes
@@ -26,16 +22,11 @@ class Axes:
         y=dashed, z=dotted.
     arrows : bool
         If axes have arrowheads or not.
-    background_color : np.ndarray
-        Background color of canvas. If axes are not colored
-        then they have the color opposite of this color.
     """
 
+    # fields
     visible: bool = False
     labels: bool = True
     colored: bool = True
     dashed: bool = False
     arrows: bool = True
-    background_color: Property[
-        np.ndarray, None, transform_single_color
-    ] = np.array([1, 1, 1, 1])

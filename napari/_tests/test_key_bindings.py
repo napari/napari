@@ -4,11 +4,10 @@ import numpy as np
 from vispy import keys
 
 
-def test_viewer_key_bindings(make_test_viewer):
-    """Test adding key bindings to the viewer
-    """
+def test_viewer_key_bindings(make_napari_viewer):
+    """Test adding key bindings to the viewer"""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     mock_press = Mock()
@@ -73,11 +72,10 @@ def test_viewer_key_bindings(make_test_viewer):
     mock_shift_release.reset_mock()
 
 
-def test_layer_key_bindings(make_test_viewer):
-    """Test adding key bindings to a layer
-    """
+def test_layer_key_bindings(make_napari_viewer):
+    """Test adding key bindings to a layer"""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     layer = viewer.add_image(np.random.random((10, 20)))
@@ -142,9 +140,9 @@ def test_layer_key_bindings(make_test_viewer):
     mock_shift_release.reset_mock()
 
 
-def test_reset_scroll_progress(make_test_viewer):
+def test_reset_scroll_progress(make_napari_viewer):
     """Test select all key binding."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
     assert viewer.dims._scroll_progress == 0
 

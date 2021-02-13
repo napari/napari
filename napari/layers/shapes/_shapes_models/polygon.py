@@ -21,7 +21,13 @@ class Polygon(Shape):
     """
 
     def __init__(
-        self, data, *, edge_width=1, z_index=0, dims_order=None, ndisplay=2,
+        self,
+        data,
+        *,
+        edge_width=1,
+        z_index=0,
+        dims_order=None,
+        ndisplay=2,
     ):
 
         super().__init__(
@@ -36,8 +42,7 @@ class Polygon(Shape):
 
     @property
     def data(self):
-        """np.ndarray: NxD array of vertices.
-        """
+        """np.ndarray: NxD array of vertices."""
         return self._data
 
     @data.setter

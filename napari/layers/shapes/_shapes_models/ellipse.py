@@ -54,8 +54,7 @@ class Ellipse(Shape):
 
     @property
     def data(self):
-        """(4, D) array: ellipse vertices.
-        """
+        """(4, D) array: ellipse vertices."""
         return self._data
 
     @data.setter

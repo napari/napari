@@ -7,8 +7,10 @@ on:
       - master
   schedule:
     - cron: '0 0 * * *'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
-name: Create App Bundle
+name: Create Bundle
 
 jobs:
   bundle:
@@ -46,7 +48,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install briefcase==0.3.1 tomlkit wheel dmgbuild>=1.4.2
-          python -m pip install PySide2==5.14.2.3
+          python -m pip install PySide2==5.15.2
           python -m pip install -e .
       - name: get tag
         shell: bash
@@ -55,8 +57,7 @@ jobs:
           echo "version=${VER}" >> $GITHUB_ENV
           echo $VER
       - name: Make Bundle
-        run: |
-          python -m bundle
+        run: python bundle.py
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -65,10 +66,10 @@ jobs:
       - name: Get Release
         if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
-        uses: bruceadams/get-release@v1.2.0
+        uses: bruceadams/get-release@v1.2.2
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-release-asset@v1.0.2
+        uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
@@ -80,7 +81,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label} # nightly build release from https://api.github.com/repos/napari/napari/releases
+          # nightly build release from https://api.github.com/repos/napari/napari/releases
+          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
           release_id: 34273071
           asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
           asset_name: napari-${{ runner.os }}.zip

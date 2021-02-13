@@ -2,10 +2,9 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
-def test_big_2D_image(make_test_viewer):
+def test_big_2D_image(make_napari_viewer):
     """Test big 2D image with axis exceeding max texture size."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     shape = (20_000, 10)
     data = np.random.random(shape)
@@ -17,10 +16,9 @@ def test_big_2D_image(make_test_viewer):
         assert np.all(layer._transforms['tile2data'].scale == s)
 
 
-@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
-def test_big_3D_image(make_test_viewer):
+def test_big_3D_image(make_napari_viewer):
     """Test big 3D image with axis exceeding max texture size."""
-    viewer = make_test_viewer(ndisplay=3)
+    viewer = make_napari_viewer(ndisplay=3)
 
     shape = (5, 10, 3_000)
     data = np.random.random(shape)
@@ -33,12 +31,12 @@ def test_big_3D_image(make_test_viewer):
 
 
 @pytest.mark.parametrize(
-    "shape", [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
+    "shape",
+    [(2, 4), (256, 4048), (4, 20_000), (20_000, 4)],
 )
-@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
-def test_downsample_value(make_test_viewer, shape):
+def test_downsample_value(make_napari_viewer, shape):
     """Test getting correct value for downsampled data."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     data = np.zeros(shape)
     data[shape[0] // 2 :, shape[1] // 2 :] = 1
@@ -54,4 +52,4 @@ def test_downsample_value(make_test_viewer, shape):
 
     for test_point, expected_value in zip(test_points, expected_values):
         viewer.cursor.position = test_point
-        assert layer.get_value() == expected_value
+        assert layer.get_value(layer.coordinates) == expected_value

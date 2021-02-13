@@ -93,7 +93,7 @@ all_commits = list(
         f'and {args.to_commit}',
     )
 )
-all_hashes = set(c.sha for c in all_commits)
+all_hashes = {c.sha for c in all_commits}
 
 
 def add_to_users(users, new_user):

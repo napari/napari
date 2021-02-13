@@ -63,29 +63,6 @@ def transform_color(colors: Any) -> np.ndarray:
     return _color_switch[colortype](colors)
 
 
-def transform_single_color(color):
-    """Transforms provided color(s) to a 1x4 array of RGBA np.float32
-    values.
-
-    Parameters
-    ----------
-    colors : string and array-like.
-        The color(s) to interpret and convert
-
-    Returns
-    -------
-    colors : np.ndarray
-        An instance of np.ndarray with a data type of float32, 4 columns in
-        RGBA order and 1 row for a single color.
-
-    Raises
-    ------
-    ValueError, AttributeError, KeyError
-        invalid inputs
-    """
-    return transform_color(color)[0]
-
-
 @functools.lru_cache(maxsize=1024)
 def _handle_str(color: str) -> np.ndarray:
     """Creates an array from a color of type string.

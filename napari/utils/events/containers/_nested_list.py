@@ -259,7 +259,9 @@ class NestableEventedList(EventedList[_T]):
         return dest_index
 
     def move_multiple(
-        self, sources: Sequence[NestedIndex], dest_index: NestedIndex = (0,),
+        self,
+        sources: Sequence[NestedIndex],
+        dest_index: NestedIndex = (0,),
     ) -> int:
         """Move a batch of nested indices, to a single destination.
 
@@ -387,7 +389,7 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(e, list):
             return self.__newlike__(e)
         if self._basetypes:
-            _types = set(self._basetypes) | set([NestableEventedList])
+            _types = set(self._basetypes) | {NestableEventedList}
             if not any(isinstance(e, t) for t in _types):
                 raise TypeError(
                     f'Cannot add object with type {type(e)!r} to '

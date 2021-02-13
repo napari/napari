@@ -49,7 +49,11 @@ class TypedMutableSequence(MutableSequence[_T]):
 
     # required for inspect.sigature to be correct...
     def __new__(
-        cls, data=(), *, basetype=(), lookup=dict(),
+        cls,
+        data=(),
+        *,
+        basetype=(),
+        lookup=dict(),
     ):
         return object.__new__(cls)
 

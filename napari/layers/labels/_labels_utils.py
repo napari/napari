@@ -40,7 +40,6 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
 def sphere_indices(radius, sphere_dims):
     """Generate centered indices within circle or n-dim sphere.
 
-
     Parameters
     -------
     radius : float

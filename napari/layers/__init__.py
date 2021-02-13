@@ -12,8 +12,8 @@ from .labels import Labels
 from .points import Points
 from .shapes import Shapes
 from .surface import Surface
-from .vectors import Vectors
 from .tracks import Tracks
+from .vectors import Vectors
 
 NAMES = {subclass.__name__.lower() for subclass in all_subclasses(Layer)}
 del all_subclasses

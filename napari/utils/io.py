@@ -27,7 +27,7 @@ def imsave(filename: str, data: np.ndarray):
     if ext in [".tif", ".tiff"]:
         import tifffile
 
-        tifffile.imsave(filename, data)
+        tifffile.imsave(filename, data, compress=1)
     else:
         import imageio
 
@@ -311,7 +311,10 @@ def write_csv(
     """
     with open(filename, mode='w', newline='') as csvfile:
         writer = csv.writer(
-            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
+            csvfile,
+            delimiter=',',
+            quotechar='"',
+            quoting=csv.QUOTE_MINIMAL,
         )
         if column_names is not None:
             writer.writerow(column_names)
@@ -335,11 +338,11 @@ def guess_layer_type_from_column_names(
         Layer type if recognized, otherwise None.
     """
 
-    if set(
-        ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
-    ).issubset(column_names):
+    if {'index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1'}.issubset(
+        column_names
+    ):
         return 'shapes'
-    elif set(['axis-0', 'axis-1']).issubset(column_names):
+    elif {'axis-0', 'axis-1'}.issubset(column_names):
         return 'points'
     else:
         return None

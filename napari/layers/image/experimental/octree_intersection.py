@@ -1,4 +1,4 @@
-"""OctreeIntersection class.
+"""OctreeView and OctreeIntersection classes.
 """
 from typing import List, NamedTuple, Tuple
 
@@ -12,16 +12,17 @@ from .octree_util import OctreeDisplayOptions
 class OctreeView(NamedTuple):
     """A view into the octree.
 
+    An OctreeView corresponds to a camera which is viewing the image data,
+    plus options as to how we want to render the data.
+
     Attributes
     ----------
     corner : np.ndarray
         The two (row, col) corners in data coordinates, base image pixels.
     canvas : np.ndarray
         The shape of the canvas, the window we are drawing into.
-    freeze_level : bool
-        If True the octree level will not be automatically chosen.
-    track_view : bool
-        If True which chunks are being rendered should update as the view is moved.
+    display : OctreeDisplayOptions
+        How to display the view.
     """
 
     corners: np.ndarray
@@ -32,8 +33,9 @@ class OctreeView(NamedTuple):
     def data_width(self) -> int:
         """The width between the corners, in data coordinates.
 
-        Return
-        ------
+        Returns
+        -------
+        int
             The width in data coordinates.
         """
         return self.corners[1][1] - self.corners[0][1]
@@ -42,12 +44,32 @@ class OctreeView(NamedTuple):
     def auto_level(self) -> bool:
         """True if the octree level should be selected automatically.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the octree level should be selected automatically.
         """
         return not self.display.freeze_level and self.display.track_view
+
+    def expand(self, expansion_factor: float) -> 'OctreeView':
+        """Return expanded view.
+
+        We expand the view so that load some tiles around the edge, so if
+        you pan they are more likely to be already loaded.
+
+        Parameters
+        ----------
+        expansion_factor : float
+            Expand the view by this much. Contract if less than 1.
+        """
+        assert expansion_factor > 0
+
+        extents = self.corners[1] - self.corners[0]
+        padding = ((extents * expansion_factor) - extents) / 2
+        new_corners = np.array(
+            (self.corners[0] - padding, self.corners[1] + padding)
+        )
+        return OctreeView(new_corners, self.canvas, self.display)
 
 
 class OctreeIntersection:
@@ -71,7 +93,7 @@ class OctreeIntersection:
         # are just one variable each? Use numpy more.
         rows, cols = view.corners[:, 0], view.corners[:, 1]
 
-        base = level_info.slice_config.base_shape
+        base = level_info.meta.base_shape
 
         self.normalized_range = np.array(
             [np.clip(rows / base[0], 0, 1), np.clip(cols / base[1], 0, 1)]
@@ -99,7 +121,7 @@ class OctreeIntersection:
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
 
-        tile_size = self.level.info.slice_config.tile_size
+        tile_size = self.level.info.meta.tile_size
 
         span_tiles = [span[0] / tile_size, span[1] / tile_size]
         clamped = [
@@ -120,8 +142,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [y0..y1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -136,8 +158,8 @@ class OctreeIntersection:
         span : Tuple[float, float]
             The span in image coordinates, [x0..x1]
 
-        Return
-        ------
+        Returns
+        -------
         range
             The range of tiles across the columns.
         """
@@ -170,8 +192,7 @@ class OctreeIntersection:
         chunks = []  # The chunks in the intersection.
 
         # Get every chunk that is within the rectangular region. These are
-        # all the chunks we might possibly draw, because they are within
-        # the current view.
+        # the chunks we want to draw to depict this region of the data.
         #
         # If we've accessed the chunk recently the existing OctreeChunk
         # will be returned, otherwise a new OctreeChunk is created
@@ -192,8 +213,8 @@ class OctreeIntersection:
     def tile_state(self) -> dict:
         """Return tile state, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The tile state.
         """
@@ -201,39 +222,35 @@ class OctreeIntersection:
         seen = np.vstack((x.ravel(), y.ravel())).T
 
         return {
-            "tile_state": {
-                # A list of (row, col) pairs of visible tiles.
-                "seen": seen,
-                # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
-                "corners": self._corners,
-            }
+            # A list of (row, col) pairs of visible tiles.
+            "seen": seen,
+            # The two corners of the view in data coordinates ((x0, y0), (x1, y1)).
+            "corners": self._corners,
         }
 
     @property
     def tile_config(self) -> dict:
         """Return tile config, for the monitor.
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The file config.
         """
         # TODO_OCTREE: Need to cleanup and re-name and organize
-        # OctreeLevelInfo and SliceConfig attrbiutes. Messy.
+        # OctreeLevelInfo and OctreeMetadata attrbiutes. Messy.
         level = self.level
         image_shape = level.info.image_shape
         shape_in_tiles = level.info.shape_in_tiles
 
-        slice_config = level.info.slice_config
-        base_shape = slice_config.base_shape
-        tile_size = slice_config.tile_size
+        meta = level.info.meta
+        base_shape = meta.base_shape
+        tile_size = meta.tile_size
 
         return {
-            "tile_config": {
-                "base_shape": base_shape,
-                "image_shape": image_shape,
-                "shape_in_tiles": shape_in_tiles,
-                "tile_size": tile_size,
-                "level_index": level.info.level_index,
-            }
+            "base_shape": base_shape,
+            "image_shape": image_shape,
+            "shape_in_tiles": shape_in_tiles,
+            "tile_size": tile_size,
+            "level_index": level.info.level_index,
         }

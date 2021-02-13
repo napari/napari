@@ -165,7 +165,10 @@ class QtBaseImageControls(QtLayerControls):
         # Note that QImage expects the image width followed by height
         cbar = self.layer.colormap.colorbar
         image = QImage(
-            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
+            cbar,
+            cbar.shape[1],
+            cbar.shape[0],
+            QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
@@ -190,9 +193,6 @@ class QtBaseImageControls(QtLayerControls):
         """
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(int(self.layer.gamma * 100))
-
-    def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._contrast_limits_msg
 
     def closeEvent(self, event):
         self.deleteLater()

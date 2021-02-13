@@ -1,5 +1,6 @@
 import inspect
 import time
+import warnings
 from functools import wraps
 from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 
@@ -122,13 +123,26 @@ class WorkerBase(QRunnable):
         self._running = True
         try:
             result = self.work()
+            if isinstance(result, Exception):
+                if isinstance(result, RuntimeError):
+                    # The Worker object has likely been deleted.
+                    # A deleted wrapped C/C++ object may result in a runtime
+                    # error that will cause segfault if we try to do much other
+                    # than simply notify the user.
+                    warnings.warn(
+                        f"RuntimeError in aborted thread: {str(result)}",
+                        RuntimeWarning,
+                    )
+                    return
+                else:
+                    raise result
             self.returned.emit(result)
         except Exception as exc:
             self.errored.emit(exc)
         self._running = False
         self.finished.emit()
 
-    def work(self):
+    def work(self) -> Union[Exception, Any]:
         """Main method to execute the worker.
 
         The end-user should never need to call this function.
@@ -274,7 +288,7 @@ class GeneratorWorker(WorkerBase):
         # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
 
-    def work(self) -> None:
+    def work(self):
         """Core event loop that calls the original function.
 
         Enters a continual loop, yielding and returning from the original
@@ -300,9 +314,15 @@ class GeneratorWorker(WorkerBase):
                 self.paused.emit()
                 continue
             try:
-                self.yielded.emit(self._gen.send(self._next_value()))
+                input = self._next_value()
+                output = self._gen.send(input)
+                self.yielded.emit(output)
             except StopIteration as exc:
                 return exc.value
+            except RuntimeError as exc:
+                # The worker has probably been deleted.  warning will be
+                # emitted in ``WorkerBase.run``
+                return exc
 
     def send(self, value: Any):
         """Send a value into the function (if a generator was used)."""
@@ -333,8 +353,7 @@ class GeneratorWorker(WorkerBase):
             self._pause_requested = True
 
     def resume(self) -> None:
-        """Send a request to resume the worker.
-        """
+        """Send a request to resume the worker."""
         if self.is_paused:
             self._resume_requested = True
 
@@ -632,7 +651,11 @@ def thread_worker(
         kwargs['_connect'] = kwargs.get('_connect', connect)
         kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
         kwargs['_ignore_errors'] = kwargs.get('_ignore_errors', ignore_errors)
-        return create_worker(function, *args, **kwargs,)
+        return create_worker(
+            function,
+            *args,
+            **kwargs,
+        )
 
     return worker_function
 

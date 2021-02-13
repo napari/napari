@@ -32,7 +32,7 @@ class Image2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 2)
 
     def time_set_data(self, n):
         """Time to get current value."""
@@ -76,7 +76,7 @@ class Image3DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 3)
 
     def time_set_data(self, n):
         """Time to get current value."""

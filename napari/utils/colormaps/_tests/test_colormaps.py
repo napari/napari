@@ -17,7 +17,7 @@ def test_colormap(name):
     cmap = AVAILABLE_COLORMAPS[name]
 
     # Test can map random 0-1 values
-    values = np.random.rand((50))
+    values = np.random.rand(50)
     colors = cmap.map(values)
     assert colors.shape == (len(values), 4)
 

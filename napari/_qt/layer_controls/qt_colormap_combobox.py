@@ -54,7 +54,10 @@ class ColorStyledDelegate(QStyledItemDelegate):
         super().paint(painter, style2, model)
         cbar = make_colorbar(ensure_colormap(model.data()), (18, 100))
         image = QImage(
-            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
+            cbar,
+            cbar.shape[1],
+            cbar.shape[0],
+            QImage.Format_RGBA8888,
         )
         painter.drawImage(cbar_rect, image)
 

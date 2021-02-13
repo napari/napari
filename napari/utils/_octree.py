@@ -9,13 +9,13 @@ import os
 from pathlib import Path
 from typing import Optional
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader")
 
 DEFAULT_OCTREE_CONFIG = {
-    "log_path": None,
-    "loader": {
+    "loader_defaults": {
+        "log_path": None,
         "force_synchronous": False,
-        "num_workers": 6,
+        "num_workers": 10,
         "use_processes": False,
         "auto_sync_ms": 30,
         "delay_queue_ms": 100,
@@ -23,30 +23,20 @@ DEFAULT_OCTREE_CONFIG = {
     "octree": {
         "enabled": True,
         "tile_size": 256,
-        "preload": {"level": 2, "level+1": 3, "level+2": 4},
+        "log_path": None,
+        "loaders": {
+            0: {"num_workers": 10, "delay_queue_ms": 100},
+            2: {"num_workers": 10, "delay_queue_ms": 0},
+        },
     },
 }
-
-
-def _log_to_file(path: str) -> None:
-    """Log "napari.async" messages to the given file.
-
-    Parameters
-    ----------
-    path : str
-        Log to this file path.
-    """
-    if path:
-        fh = logging.FileHandler(path)
-        LOGGER.addHandler(fh)
-        LOGGER.setLevel(logging.DEBUG)
 
 
 def _get_async_config() -> Optional[dict]:
     """Get configuration implied by NAPARI_ASYNC.
 
-    Return
-    ------
+    Returns
+    -------
     Optional[dict]
         The async config to use or None if async not specified.
     """
@@ -69,8 +59,8 @@ def _get_async_config() -> Optional[dict]:
 def get_octree_config() -> dict:
     """Return the config data from the user's file or the default data.
 
-    Return
-    ------
+    Returns
+    -------
     dict
         The config data we should use.
     """
