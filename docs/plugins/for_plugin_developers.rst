@@ -192,7 +192,7 @@ implementation decorator:
       ...
 
 This allows you to specify multiple hook implementations of the same hook 
-specification in the same file, without needing an entirely new module or entry point.
+specification in the same module or class, without needing a separate entry point.
 
 .. _plugin-discovery:
 
