@@ -127,6 +127,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             'removed in 0.4.8. Instead you should use connect to '
             'viewer.layers.events.active.',
             source=self,
+            event_class=Event,
         )
         self.events.add(active_layer=emitter)
         self.layers.events.active.connect(self.events.active_layer)
