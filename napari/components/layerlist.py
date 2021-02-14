@@ -24,11 +24,15 @@ class LayerList(EventedList):
 
     def __init__(self, data=()):
         super().__init__(
-            data=data,
+            data=(),
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
         self.events.add(active=Event)
+
+        # Add data to the list after the `active` event emitter has been added
+        for d in data:
+            self.append(d)
 
     def __newlike__(self, data):
         return LayerList(data)
