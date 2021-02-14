@@ -1,12 +1,13 @@
 import itertools
 import warnings
 from collections import namedtuple
+from functools import lru_cache
 from typing import List, Optional
 
 import numpy as np
 
 from ..layers import Layer
-from ..utils.events import EventedList
+from ..utils.events import Event, EventedList, disconnect_events
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
@@ -27,6 +28,7 @@ class LayerList(EventedList):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+        self.events.add(active=Event)
 
     def __newlike__(self, data):
         return LayerList(data)
@@ -67,7 +69,17 @@ class LayerList(EventedList):
         """Insert ``value`` before index."""
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
+        new_layer.events.select.connect(self._on_layer_selected_change)
+        new_layer.events.deselect.connect(self._on_layer_selected_change)
         super().insert(index, new_layer)
+        self._on_layer_selected_change()
+
+    def __delitem__(self, key):
+        # Disconnect events
+        for _, index in self._delitem_indices(key):
+            disconnect_events(self[index].events, self)
+        super().__delitem__(key)
+        self._on_layer_selected_change()
 
     @property
     def selected(self):
@@ -75,6 +87,7 @@ class LayerList(EventedList):
         return [layer for layer in self if layer.selected]
 
     @property
+    @lru_cache(maxsize=12)
     def active(self):
         """Active layer, if any, given by top most selected."""
         active_layer = None
@@ -93,6 +106,20 @@ class LayerList(EventedList):
             raise ValueError('Active layer must be in layer list')
         self.unselect_all(ignore=active)
         active.selected = True
+
+    def _on_layer_selected_change(self, event=None):
+        """Callback when layer selected status changes.
+
+        Parameters
+        ----------
+        event : napari.util.events.Event
+            Event emitted when layer selection changes.
+        """
+        old_value = self.active
+        LayerList.active.fget.cache_clear()
+        new_value = self.active
+        if old_value is not new_value:
+            self.events.active(value=new_value)
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it

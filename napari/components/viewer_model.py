@@ -22,7 +22,12 @@ from ..layers.utils.stack_utils import split_channels
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import EmitterGroup, Event, disconnect_events
+from ..utils.events import (
+    EmitterGroup,
+    Event,
+    WarningEmitter,
+    disconnect_events,
+)
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
@@ -79,7 +84,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             help=Event,
             title=Event,
             reset_view=Event,
-            active_layer=Event,
             theme=Event,
             layers_change=Event,
         )
@@ -99,7 +103,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         self._title = title
         self._theme = DEFAULT_THEME
 
-        self._active_layer = None
         self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
@@ -116,6 +119,17 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
+        self.layers.events.active.connect(self._update_active_layer)
+
+        # Deprecated active_layer emitter
+        emitter = WarningEmitter(
+            'Viewer.events.active_layer is deprectated and will be '
+            'removed in 0.4.8. Instead you should use connect to '
+            'viewer.layers.events.active.',
+            source=self,
+        )
+        self.events.add(active_layer=emitter)
+        self.layers.events.active.connect(self.events.active_layer)
 
         self.mouse_wheel_callbacks.append(dims_scroll)
 
@@ -185,7 +199,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         """int: index of active_layer"""
         warnings.warn(
             (
-                "The viewer.active_layer property is deprecated and will be removed after version 0.4.5."
+                "The viewer.active_layer property is deprecated and will be removed in version 0.4.8."
                 " Instead you should use the viewer.layers.active property"
             ),
             category=DeprecationWarning,
@@ -197,14 +211,12 @@ class ViewerModel(KeymapProvider, MousemapProvider):
     def active_layer(self, active_layer):
         warnings.warn(
             (
-                "The viewer.active_layer property is deprecated and will be removed after version 0.4.5."
+                "The viewer.active_layer property is deprecated and will be removed in version 0.4.8."
                 " Instead you should use the viewer.layers.active property"
             ),
             category=DeprecationWarning,
             stacklevel=2,
         )
-        if active_layer == self.active_layer:
-            return
         self.layers.active = active_layer
 
     @property
@@ -292,7 +304,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
-    def _update_active_layer(self, event):
+    def _update_active_layer(self, event=None):
         """Set the active layer by iterating over the layers list and
         finding the first selected layer. If multiple layers are selected the
         iteration stops and the active layer is set to be None
@@ -303,8 +315,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             No Event parameters are used
         """
         active_layer = self.layers.active
-        if self._active_layer == active_layer:
-            return
 
         if active_layer is None:
             self.help = ''
@@ -315,7 +325,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-            self.active_layer = active_layer
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -331,7 +340,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.cursor.position = (0,) * self.dims.ndim
         self.events.layers_change()
-        self._update_active_layer(event)
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -351,11 +359,12 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
-        if self.active_layer is not None:
-            self.status = self.active_layer.get_status(
+        active_layer = self.layers.active
+        if active_layer is not None:
+            self.status = active_layer.get_status(
                 self.cursor.position, world=True
             )
-            self.help = self.active_layer.help
+            self.help = active_layer.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
@@ -404,8 +413,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         layer = event.value
 
         # Connect individual layer events to viewer events
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
@@ -456,7 +463,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         # Disconnect all connections from layer
         disconnect_events(layer.events, self)
-        disconnect_events(layer.events, self.layers)
 
         # For the labels layer disconnect history resets
         if hasattr(layer, '_reset_history'):

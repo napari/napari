@@ -107,8 +107,11 @@ class QtViewer(QSplitter):
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
         self._key_bindings_dialog = None
-        self._active_layer = None
         self._console = None
+        # FIXME: Still need to keep a reference to previously active layer so it
+        #  can be removed from keymap handler. Key map handing should be improved so
+        # this is no longer needed.
+        self._active_layer = None
 
         layerList = QWidget()
         layerList.setObjectName('layerList')
@@ -184,7 +187,6 @@ class QtViewer(QSplitter):
         self._update_theme()
         self._on_active_layer_change()
 
-        self.viewer.events.active_layer.connect(self._on_active_layer_change)
         self.viewer.events.theme.connect(self._update_theme)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
@@ -192,6 +194,7 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.active.connect(self._on_active_layer_change)
 
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
@@ -327,7 +330,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.active_layer
+        active_layer = self.viewer.layers.active
 
         if self._active_layer in self._key_map_handler.keymap_providers:
             self._key_map_handler.keymap_providers.remove(self._active_layer)
@@ -654,7 +657,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_wheel_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.active
         if layer is not None:
             mouse_wheel_callbacks(layer, event)
 
@@ -673,7 +676,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.active
         if layer is not None:
             mouse_press_callbacks(layer, event)
 
@@ -691,7 +694,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.active
         if layer is not None:
             mouse_move_callbacks(layer, event)
 
@@ -709,7 +712,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.active
         if layer is not None:
             mouse_release_callbacks(layer, event)
 

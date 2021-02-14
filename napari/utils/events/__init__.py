@@ -1,4 +1,9 @@
-from .event import EmitterGroup, Event, EventEmitter  # isort:skip
+from .event import (  # isort:skip
+    EmitterGroup,  # isort:skip
+    Event,  # isort:skip
+    EventEmitter,  # isort:skip
+    WarningEmitter,  # isort:skip
+)  # isort:skip
 from .containers._evented_list import EventedList
 from .containers._nested_list import NestableEventedList
 from .containers._typed import TypedMutableSequence
@@ -16,4 +21,5 @@ __all__ = [
     'NestableEventedList',
     'SupportsEvents',
     'TypedMutableSequence',
+    'WarningEmitter',
 ]
