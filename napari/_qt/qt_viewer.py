@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, Qt
+from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
@@ -242,7 +242,10 @@ class QtViewer(QSplitter):
             parent=self,
             size=self.viewer._canvas_size[::-1],
         )
+        self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
+        self.canvas.native.setMinimumSize(QSize(200, 200))
+        self.canvas.context.set_depth_func('lequal')
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)

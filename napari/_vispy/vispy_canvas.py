@@ -1,6 +1,5 @@
 """VispyCanvas class.
 """
-from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas
 
 from .utils_gl import get_max_texture_sizes
@@ -32,10 +31,6 @@ class VispyCanvas(SceneCanvas):
         # get_max_texture_sizes() will return the same results because it's
         # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
-
-        self.events.ignore_callback_errors = False
-        self.native.setMinimumSize(QSize(200, 200))
-        self.context.set_depth_func('lequal')
 
     def _process_mouse_event(self, event):
         """Ignore mouse wheel events which have modifiers."""
