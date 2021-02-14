@@ -86,11 +86,11 @@ class Event:
         All extra keyword arguments become attributes of the event object.
     """
 
-    def __init__(self, type, native=None, **kwargs):
+    def __init__(self, type: str, native: Any = None, **kwargs: Any):
         # stack of all sources this event has been emitted through
-        self._sources = []
-        self._handled = False
-        self._blocked = False
+        self._sources: list[Any] = []
+        self._handled: bool = False
+        self._blocked: bool = False
         # Store args
         self._type = type
         self._native = native
@@ -98,12 +98,12 @@ class Event:
             setattr(self, k, v)
 
     @property
-    def source(self):
+    def source(self) -> Any:
         """The object that the event applies to (i.e. the source of the event)."""
         return self._sources[-1] if self._sources else None
 
     @property
-    def sources(self):
+    def sources(self) -> list[Any]:
         """List of objects that the event applies to (i.e. are or have
         been a source of the event). Can contain multiple objects in case
         the event traverses a hierarchy of objects.
@@ -117,17 +117,17 @@ class Event:
         return self._sources.pop()
 
     @property
-    def type(self):
+    def type(self) -> str:
         # No docstring; documeted in class docstring
         return self._type
 
     @property
-    def native(self):
+    def native(self) -> Any:
         # No docstring; documeted in class docstring
         return self._native
 
     @property
-    def handled(self):
+    def handled(self) -> bool:
         """This boolean property indicates whether the event has already been
         acted on by an event handler. Since many handlers may have access to
         the same events, it is recommended that each check whether the event
@@ -137,11 +137,11 @@ class Event:
         return self._handled
 
     @handled.setter
-    def handled(self, val):
+    def handled(self, val) -> bool:
         self._handled = bool(val)
 
     @property
-    def blocked(self):
+    def blocked(self) -> bool:
         """This boolean property indicates whether the event will be delivered
         to event callbacks. If it is set to True, then no further callbacks
         will receive the event. When possible, it is recommended to use
@@ -150,10 +150,10 @@ class Event:
         return self._blocked
 
     @blocked.setter
-    def blocked(self, val):
+    def blocked(self, val) -> bool:
         self._blocked = bool(val)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         # Try to generate a nice string representation of the event that
         # includes the interesting properties.
         # need to keep track of depth because it is
@@ -179,7 +179,7 @@ class Event:
         finally:
             _event_repr_depth -= 1
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Shorter string representation"""
         return self.__class__.__name__
 
