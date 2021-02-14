@@ -1,17 +1,19 @@
+
+import napari
 from napari.qt import get_app, run
 from napari.layers import Points
 from napari.layers.layergroup import LayerGroup
 from napari._qt.tree import QtLayerTreeView
-import logging
 
-end = "\033[0m"
-Bold = "\033[1m"
-Dim = "\033[2m"
-ResetDim = "\033[22m"
-red = "\033[0;31m"
-green = "\033[0;32m"
-colorlog_format = f'{green}%(levelname)9s:{end} {Dim}%(name)36s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
-logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
+# import logging
+# end = "\033[0m"
+# Bold = "\033[1m"
+# Dim = "\033[2m"
+# ResetDim = "\033[22m"
+# red = "\033[0;31m"
+# green = "\033[0;32m"
+# colorlog_format = f'{green}%(levelname)9s:{end} {Dim}%(name)36s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
+# logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
 
 app = get_app()
 
@@ -35,6 +37,10 @@ root.events.reordered.connect(lambda e: print(e.value))
 
 tree = QtLayerTreeView(root)
 model = tree.model()
-tree.show()
+# tree.show()
+
+v = napari.Viewer()
+v.layers.append(tip)
+v.window.add_dock_widget(tree, area='right')
 
 run()

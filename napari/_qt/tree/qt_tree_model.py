@@ -117,9 +117,7 @@ class QtNodeTreeModel(QAbstractItemModel):
                 self._root.move(moving_indices[0], dest_idx)
             else:
                 self._root.move_multiple(moving_indices, dest_idx)
-
-        # XXX: returning False seems to go against the Qt docs instructions, but
-        # If we return true, removeRows is called!?
+            return True
         return False
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag | Qt.ItemFlags:

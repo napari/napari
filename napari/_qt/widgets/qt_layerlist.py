@@ -117,7 +117,7 @@ class QtLayerList(QScrollArea):
         widget = QtLayerWidget(layer)
         self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
-        layer.events.select.connect(self._scroll_on_select)
+        layer.events.selection.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`.
@@ -203,8 +203,9 @@ class QtLayerList(QScrollArea):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.source
-        self._ensure_visible(layer)
+        if event.value:
+            layer = event.source
+            self._ensure_visible(layer)
 
     def _ensure_visible(self, layer):
         """Ensure layer widget for at particular layer is visible.
@@ -519,8 +520,7 @@ class QtLayerWidget(QFrame):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.select.connect(self._on_select_change)
-        self.layer.events.deselect.connect(self._on_deselect_change)
+        self.layer.events.selection.connect(self._on_selection_change)
         self.layer.events.name.connect(self._on_name_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.thumbnail.connect(self._on_thumbnail_change)
@@ -644,7 +644,7 @@ class QtLayerWidget(QFrame):
         """
         event.ignore()
 
-    def _on_select_change(self, event=None):
+    def _on_selection_change(self, event=None):
         """Update selected state of the layer.
 
         Parameters
@@ -652,17 +652,7 @@ class QtLayerWidget(QFrame):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
-        self.setSelected(True)
-
-    def _on_deselect_change(self, event=None):
-        """Update selected state of the layer.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
-        self.setSelected(False)
+        self.setSelected(event.value)
 
     def _on_name_change(self, event=None):
         """Update text displaying name of layer.
