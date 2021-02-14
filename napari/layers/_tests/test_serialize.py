@@ -1,8 +1,9 @@
+import inspect
+
 import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
-from napari.utils.misc import callsignature
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -16,7 +17,7 @@ def test_attrs_arrays(Layer, data, ndim):
     properties = layer._get_state()
 
     # Check every property is in call signature
-    signature = callsignature(Layer)
+    signature = inspect.signature(Layer)
 
     for prop in properties.keys():
         assert prop in signature.parameters

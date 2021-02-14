@@ -1,9 +1,11 @@
-import inspect
+from inspect import Parameter, getdoc, signature
 
-from .misc import callsignature, camel_to_snake
+from .misc import camel_to_snake
 
-template = """def {name}(self, {signature}):
-    layer = {cls_name}({call_args})
+template = """def {name}{signature}:
+    kwargs = locals()
+    kwargs.pop('self', None)
+    layer = {cls_name}(**kwargs)
     self.layers.append(layer)
     return layer
 """
@@ -11,8 +13,6 @@ template = """def {name}(self, {signature}):
 
 def create_func(cls, name=None, doc=None):
     cls_name = cls.__name__
-    sig = inspect.signature(cls)
-    call_args = callsignature(cls)
 
     if name is None:
         name = camel_to_snake(cls_name)
@@ -23,7 +23,7 @@ def create_func(cls, name=None, doc=None):
     name = 'add_' + name
 
     if doc is None:
-        doc = inspect.getdoc(cls)
+        doc = getdoc(cls)
         cutoff = doc.find('\n\nParameters\n----------\n')
         if cutoff > 0:
             doc = doc[cutoff:]
@@ -35,11 +35,15 @@ def create_func(cls, name=None, doc=None):
         doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
         doc = doc.expandtabs(4)
 
+    sig = signature(cls)
+    new_sig = sig.replace(
+        parameters=[Parameter('self', Parameter.POSITIONAL_OR_KEYWORD)]
+        + list(sig.parameters.values())
+    )
     src = template.format(
         name=name,
-        signature=str(sig)[1:-1],
+        signature=new_sig,
         cls_name=cls_name,
-        call_args=str(call_args)[1:-1],
     )
 
     execdict = {cls_name: cls}
