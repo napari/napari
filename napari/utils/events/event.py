@@ -740,11 +740,13 @@ class EmitterGroup(EventEmitter):
             return self._emitters[self._deprecated[name]]
         return self._emitters[name]
 
-    def __setitem__(self, name, emitter):
+    def __setitem__(
+        self, name: str, emitter: Type[Event] | EventEmitter | None
+    ):
         """
         Alias for EmitterGroup.add(name=emitter)
         """
-        self.add(**{name: emitter})
+        self.add(**{name: emitter})  # type: ignore
 
     def add(
         self,
@@ -890,7 +892,7 @@ class EmitterGroup(EventEmitter):
             elif isinstance(emitter, EmitterGroup):
                 emitter.ignore_callback_errors_all(ignore)
 
-    def blocker_all(self):
+    def blocker_all(self) -> EventBlockerAll:
         """Return an EventBlockerAll to be used in 'with' statements
 
         Notes
