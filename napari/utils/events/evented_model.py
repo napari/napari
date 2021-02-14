@@ -32,6 +32,12 @@ def no_class_attributes():
     manager basically "opts-out" of pydantic's ``ClassAttribute`` strategy,
     thereby directly setting the ``cls.__signature__`` to an instance of
     ``inspect.Signature``.
+
+    For additional context, see:
+    - https://github.com/napari/napari/issues/2264
+    - https://github.com/napari/napari/pull/2265
+    - https://bugreports.qt.io/browse/PYSIDE-1004
+    - https://codereview.qt-project.org/c/pyside/pyside-setup/+/261411
     """
 
     if "PySide2" not in sys.modules:
