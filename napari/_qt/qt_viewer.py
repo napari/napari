@@ -215,6 +215,25 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
+    def __getattr__(self, name):
+        if name == 'raw_stylesheet':
+            import warnings
+
+            from .qt_resources import get_stylesheet
+
+            warnings.warn(
+                (
+                    "The 'raw_stylesheet' attribute is deprecated and will be"
+                    "removed in version 0.4.7.  Please use "
+                    "`napari.qt.get_stylesheet` instead"
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return get_stylesheet()
+
+        return object.__getattribute__(self, name)
+
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
