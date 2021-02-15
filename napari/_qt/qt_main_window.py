@@ -27,7 +27,6 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.theme import get_theme, template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -97,8 +96,6 @@ class Window:
         Window menu.
     """
 
-    raw_stylesheet = get_stylesheet()
-
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
@@ -107,7 +104,7 @@ class Window:
         self._qt_window = _QtMainWindow()
         self.qt_viewer = QtViewer(viewer)
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
+        self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -142,10 +139,10 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        self.qt_viewer.viewer.events.status.connect(self._status_changed)
-        self.qt_viewer.viewer.events.help.connect(self._help_changed)
-        self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.theme.connect(self._update_theme)
+        viewer.events.status.connect(self._status_changed)
+        viewer.events.help.connect(self._help_changed)
+        viewer.events.title.connect(self._title_changed)
+        viewer.events.theme.connect(self._update_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -156,6 +153,23 @@ class Window:
 
         if show:
             self.show()
+
+    def __getattr__(self, name):
+        if name == 'raw_stylesheet':
+            import warnings
+
+            warnings.warn(
+                (
+                    "The 'raw_stylesheet' attribute is deprecated and will be"
+                    "removed in version 0.4.7.  Please use "
+                    "`napari.qt.get_stylesheet` instead"
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return get_stylesheet()
+
+        return object.__getattribute__(self, name)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -859,17 +873,8 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
-        # set window styles which don't use the primary stylesheet
-        # FIXME: this is a problem with the stylesheet not using properties
-        theme = get_theme(self.qt_viewer.viewer.theme)
-        self._status_bar.setStyleSheet(
-            template(
-                'QStatusBar { background: {{ background }}; '
-                'color: {{ text }}; }',
-                **theme,
-            )
-        )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
+        theme_name = self.qt_viewer.viewer.theme
+        self._qt_window.setStyleSheet(get_stylesheet(theme_name))
 
     def _status_changed(self, event):
         """Update status bar.
