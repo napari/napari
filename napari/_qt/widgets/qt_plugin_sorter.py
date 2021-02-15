@@ -5,7 +5,6 @@ from typing import List, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation, PluginManager
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
-from qtpy.QtGui import QFont
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -80,21 +79,10 @@ class ImplementationListItem(QFrame):
         # ~~~show plugin name + function name
         self.setToolTip("Click and drag to change call order")
         self.plugin_name_label = QLabel(item.hook_implementation.plugin_name)
-        plugin_name_font = QFont()
-        plugin_name_font.setPointSize(8)
-        self.plugin_name_label.setFont(plugin_name_font)
+        self.plugin_name_label.setObjectName('small_text')
         self.function_name_label = QLabel(
             item.hook_implementation.function.__name__
         )
-
-        # ~~~show plugin name if named as spec, otherwise function name with plugin tooltip
-        # has_spec = bool(item.hook_implementation._specname)
-        # display_name = item.hook_implementation.function.__name__ if has_spec\
-        #             else item.hook_implementation.plugin_name
-        # tooltip_prefix = f"Plugin: {item.hook_implementation.plugin_name}\n\n" if has_spec\
-        #             else ''
-        # self.setToolTip(f"{tooltip_prefix}Click and drag to change call order")
-        # self.plugin_name_label = QLabel(display_name)
 
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
