@@ -37,6 +37,11 @@ QMainWindow::separator:hover {
     background: {{ highlight }};
 }
 
+QStatusBar { 
+  background: {{ background }};
+  color: {{ text }};
+}
+
 /* ------------- DockWidgets --------- */
 
 #QtCustomTitleBar {

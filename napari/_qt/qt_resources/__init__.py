@@ -134,16 +134,19 @@ def import_resources(
     return respath, load
 
 
-@lru_cache(maxsize=4)
-def get_stylesheet(extra: Optional[List[str]] = None) -> str:
-    """Combine all qss files into single (cached) style string.
-
-    Note, this string may still have {{ template_variables }} that need to be
-    replaced using the :func:`napari.utils.theme.template` function.  (i.e. the
-    output of this function serves as the input of ``template()``)
+@lru_cache(maxsize=12)
+def get_stylesheet(
+    theme: str = None, extra: Optional[List[str]] = None
+) -> str:
+    """Combine all qss files into single, possibly pre-themed, style string.
 
     Parameters
     ----------
+    theme : str, optional
+        Theme to apply to the stylesheet. If no theme is provided, the returned
+        stylesheet will still have ``{{ template_variables }}`` that need to be
+        replaced using the :func:`napari.utils.theme.template` function prior
+        to using the stylesheet.
     extra : list of str, optional
         Additional paths to QSS files to include in stylesheet, by default None
 
@@ -161,6 +164,12 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
         for file in extra:
             with open(file) as f:
                 stylesheet += f.read()
+
+    if theme:
+        from ...utils.theme import get_theme, template
+
+        return template(stylesheet, **get_theme(theme))
+
     return stylesheet
 
 
