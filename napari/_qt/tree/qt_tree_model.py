@@ -213,7 +213,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         # items in the first column have children. So here,the column of the returned is 0.
         return self.createIndex(parentItem.index_in_parent(), 0, parentItem)
 
-    def rowCount(self, parent: QModelIndex) -> int:
+    def rowCount(self, parent: QModelIndex = None) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number of
@@ -344,6 +344,10 @@ class QtNodeTreeModel(QAbstractItemModel):
         for i in _p:
             par = self.index(i, 0, par)
         return par, idx
+
+    def hasGroups(self) -> bool:
+        """Return true if the root has any Groups."""
+        return any(node.is_group() for node in self._root)
 
 
 # TODO: cleanup stuff related to MIME formats and convenience methods

@@ -589,3 +589,75 @@ QtPluginDialog QSplitter{
 QtPluginSorter {
   padding: 20px;
 }
+
+/*  */
+
+QtLayerTreeView {
+  spacing: 5px;
+}
+
+QtLayerTreeView::item {
+  margin: 2px 0px 2px 0px;
+  background-color: {{ foreground }};
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+
+
+QtLayerTreeView::item:selected {
+  background-color: {{ current }};
+}
+
+/* 
+QtLayerTreeView::branch:selected {
+  background-color: palette(window);
+}
+ */
+
+
+QtLayerTreeView::indicator {
+  background-color: transparent;
+}
+
+QtLayerTreeView::indicator:hover {
+  background-color:  transparent;
+}
+
+
+QtLayerTreeView::indicator{
+  width: 18px;
+  height: 18px;
+}
+
+QtLayerTreeView::indicator:unchecked {
+  image: url(":/themes/{{ folder }}/visibility_off.svg");
+}
+
+QtLayerTreeView::indicator:checked {
+  image: url(":/themes/{{ folder }}/visibility.svg");
+}
+
+QTreeView::branch:has-siblings:!adjoins-item {
+    border-image: url(vline.png) 0;
+}
+
+QTreeView::branch:has-siblings:adjoins-item {
+    border-image: url(branch-more.png) 0;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+    border-image: url(branch-end.png) 0;
+}
+
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+        border-image: none;
+        image: url(branch-closed.png);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings  {
+        border-image: none;
+        image: url(branch-open.png);
+}
