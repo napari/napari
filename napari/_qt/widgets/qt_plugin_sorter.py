@@ -77,20 +77,10 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        # ~~~show plugin name + function name
         self.setToolTip("Click and drag to change call order")
         self.plugin_name_label = ElidingLabel(parent=self)
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
-        sizePolicy = QSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
-        )
-        sizePolicy.setHorizontalStretch(1)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(
-            self.plugin_name_label.sizePolicy().hasHeightForWidth()
-        )
-        self.plugin_name_label.setSizePolicy(sizePolicy)
 
         self.function_name_label = QLabel(
             item.hook_implementation.function.__name__
