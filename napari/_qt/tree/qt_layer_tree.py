@@ -38,26 +38,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt5.QtGui import QBrush, QIcon
 from qtpy.QtCore import (
     QItemSelection,
     QItemSelectionModel,
     QModelIndex,
-    QRect,
     QSize,
     Qt,
-    QVariant,
 )
-from qtpy.QtGui import QImage, QPainter, QPalette, QPixmap
-from qtpy.QtWidgets import (
-    QApplication,
-    QProxyStyle,
-    QStyle,
-    QStyledItemDelegate,
-    QStyleOption,
-    QStyleOptionViewItem,
-    QWidget,
-)
+from qtpy.QtGui import QIcon, QImage, QPainter, QPixmap
+from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from .qt_tree_model import QtNodeTreeModel
 from .qt_tree_view import QtNodeTreeView
@@ -84,22 +73,29 @@ class QtLayerTreeModel(QtNodeTreeModel):
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
         layer = self.getItem(index)
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole:  # used for item text
             return layer.name
-        if role == Qt.EditRole:
-            return layer.name
-        if role == Qt.ToolTipRole:
-            return layer.name
-        if role == Qt.CheckStateRole:
-            return layer.visible
-        if role == Qt.SizeHintRole:
-            h = 36 if layer.is_group() else 42
-            return QSize(228, h)
-        if role == Qt.TextAlignmentRole:
+        if role == Qt.TextAlignmentRole:  # alignment of the text
             return Qt.AlignCenter
-        if role == QtLayerTreeModel.LayerRole:
+        if role == Qt.EditRole:  # used to populate line edit when editing
+            return layer.name
+        if role == Qt.DecorationRole:  # icon to show
+            # TODO: this is one thing I can't figure out how to style via QSS
+            theme = 'dark'
+
+            # TODO: this could be used to combine multiple icons into a single
+            # QIcon before returning (such as a lock, or a linked layer icon)
+            return QIcon(f":/themes/{theme}/new_{layer._type_string}.svg")
+        if role == Qt.ToolTipRole:  # for tooltip
+            return layer.name
+        if role == Qt.CheckStateRole:  # the "checked" state of this item
+            return layer.visible
+        if role == Qt.SizeHintRole:  # determines size of item
+            h = 32 if layer.is_group() else 38
+            return QSize(228, h)
+        if role == QtLayerTreeModel.LayerRole:  # custom role: return the layer
             return self.getItem(index)
-        if role == QtLayerTreeModel.ThumbnailRole:
+        if role == QtLayerTreeModel.ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
                 thumbnail,
@@ -107,9 +103,7 @@ class QtLayerTreeModel(QtNodeTreeModel):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
-        if role == Qt.DecorationRole:
-            pass
-        return QVariant()
+        return None
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
         if role == Qt.CheckStateRole:
@@ -129,12 +123,11 @@ class QtLayerTreeView(QtNodeTreeView):
         self.setItemDelegate(LayerDelegate())
         self.setAnimated(True)
         self.setAutoExpandDelay(300)
-        # self.setStyle(QtLayerTreeStyle())
-        # self.setStyleSheet(
-        #     """
-        # QtLayerTreeView::branch { background-color: 'blue'; }
-        # """
-        # )
+
+    def viewOptions(self) -> QStyleOptionViewItem:
+        options = super().viewOptions()
+        options.decorationPosition = QStyleOptionViewItem.Right
+        return options
 
     def setRoot(self, root: LayerGroup):
         self.setModel(QtLayerTreeModel(root, self))
@@ -169,135 +162,34 @@ class QtLayerTreeView(QtNodeTreeView):
         s = getattr(QItemSelectionModel, 'Select' if selected else 'Deselect')
         # TODO: figure out bug on pop(0) in examples/layer_tree
         self.selectionModel().select(idx, s)
-        print("select", nested_index, selected)
-
-    # def reset(self):
-    #     print("reset called")
-    #     self.setRootIsDecorated(False)
-    #     super().reset()
-
-    # def rowsInserted(
-    #     self, parent: QtCore.QModelIndex, start: int, end: int
-    # ) -> None:
-    #     # if not parent.isValid() and self.model().nestedIndex(start)
-    #     #     self.setRootIsDecorated(True)
-    #     print("rows inserted", parent.isValid(), parent.parent().isValid())
-    #     return super().rowsInserted(parent, start, end)
-
-    # def dataChanged(
-    #     self,
-    #     topLeft: QtCore.QModelIndex,
-    #     bottomRight: QtCore.QModelIndex,
-    #     roles,
-    # ) -> None:
-    #     print("data changed from ", topLeft.row(), "to", bottomRight.row())
-    #     return super().dataChanged(topLeft, bottomRight, roles=roles)
-
-    # def drawBranches(
-    #     self,
-    #     painter: QPainter,
-    #     rect: QRect,
-    #     index: QModelIndex,
-    # ) -> None:
-    #     """Responsible for drawing the arrows."""
-    #     # rect.setWidth(rect.width() * 3 // 4)
-    #     print('b ', index.row(), rect)
-    #     return super().drawBranches(painter, rect, index)
 
 
 class LayerDelegate(QStyledItemDelegate):
-    pass
-
     def paint(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ):
-        thumb_rect = option.rect.translated(4, 0)  # figure out why 4
-        # MAGICNUMBER: 4 comes from the margin applied in the stylesheet to
+        # paint the standard itemView
+        super().paint(painter, option, index)
+
+        # paint the thumbnail
+        # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
+        thumb_rect = option.rect.translated(-2, 2)
         h = index.data(Qt.SizeHintRole).height() - 4
         thumb_rect.setWidth(h)
         thumb_rect.setHeight(h)
-        option.rect.translate(h, -2)
-        option.rect.setWidth(option.rect.width() - h)
-        # paint the standard itemView
-        super().paint(painter, option, index)
-        # paint the thumbnail
         image = index.data(QtLayerTreeModel.ThumbnailRole)
-        pen = painter.pen()
-        brush = painter.brush()
-        painter.setBrush(QBrush(image))
-        painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(thumb_rect, 2, 2)
-        painter.setPen(pen)
-        painter.setBrush(brush)
-        # painter.drawPixmap(thumb_rect)
+        painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
-    # def createEditor(
-    #     self,
-    #     parent: QWidget,
-    #     option: QStyleOptionViewItem,
-    #     index: QModelIndex,
-    # ) -> QWidget:
-    #     print("createEditor")
-    #     return super().createEditor(parent, option, index)
-
-    def updateEditorGeometry(
+    def createEditor(
         self,
-        editor: QWidget,
+        parent: QWidget,
         option: QStyleOptionViewItem,
         index: QModelIndex,
-    ) -> None:
-        h = index.data(Qt.SizeHintRole).height()
-        option.rect.translate(h, 0)
-        option.rect.setWidth(option.rect.width() - h)
-        return super().updateEditorGeometry(editor, option, index)
-
-
-# METRICS = {
-#     QStyle.PM_IndicatorWidth: 16,
-#     QStyle.PM_IndicatorHeight: 16,
-#     QStyle.PM_FocusFrameHMargin: 2,
-# }
-
-
-# class QtLayerTreeStyle(QProxyStyle):
-#     """A QProxyStyle wraps a QStyle (usually the default system style) for the
-#     purpose of dynamically overriding painting or other style behavior.
-#     """
-
-#     def pixelMetric(
-#         self,
-#         metric: QStyle.PixelMetric,
-#         option: QStyleOption = None,
-#         widget: QWidget = None,
-#     ) -> int:
-#         if metric in METRICS:
-#             return METRICS[metric]
-#         return super().pixelMetric(metric, option=option, widget=widget)
-
-#     def drawPrimitive(
-#         self,
-#         pe: QStyle.PrimitiveElement,
-#         opt: QStyleOption,
-#         p: QPainter,
-#         widget: QWidget,
-#     ) -> None:
-#         if pe == QStyle.PE_IndicatorItemViewItemCheck:
-#             print('pe  ', opt.rect)
-#             if opt.state & QStyle.State_On:
-#                 p.drawImage(opt.rect, QImage(":/themes/dark/visibility.svg"))
-#             elif opt.state & QStyle.State_Off:
-#                 p.drawImage(
-#                     opt.rect, QImage(":/themes/dark/visibility_off.svg")
-#                 )
-#             elif opt.state & QStyle.State_NoChange:
-#                 p.setPen(opt.palette.color(QPalette.Dark))
-#                 p.fillRect(opt.rect, opt.palette.brush(QPalette.Background))
-#                 p.drawRect(opt.rect)
-#             return
-#         if pe == QStyle.PE_IndicatorBranch:
-#             pass
-#         return super().drawPrimitive(pe, opt, p, widget=widget)
+    ) -> QWidget:
+        editor = super().createEditor(parent, option, index)
+        editor.setAlignment(Qt.Alignment(index.data(Qt.TextAlignmentRole)))
+        return editor

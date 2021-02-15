@@ -590,44 +590,65 @@ QtPluginSorter {
   padding: 20px;
 }
 
-/*  */
+/*  LayerTree Styles */
 
 QtLayerTreeView {
-  spacing: 5px;
+  margin: 4px;
 }
 
 QtLayerTreeView::item {
-  margin: 2px 0px 2px 0px;
+  margin: 2px 0px 2px 32px;
   background-color: {{ foreground }};
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
+  border: 1px solid {{ foreground }};
+  font-size: 14px;
+  qproperty-alignment: right;
 }
-
 
 
 QtLayerTreeView::item:selected {
-  background-color: {{ current }};
+  /* background-color: {{ current }}; */
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 20) }});
 }
 
-/* 
-QtLayerTreeView::branch:selected {
-  background-color: palette(window);
+QTreeView::item:hover {
+  border: 1px solid {{ highlight }};
 }
- */
 
-
-QtLayerTreeView::indicator {
+/* QtLayerTreeView::item:disabled {
   background-color: transparent;
+  border-color: transparent;
+  border-radius: 3px;
 }
 
-QtLayerTreeView::indicator:hover {
-  background-color:  transparent;
+QtLayerTreeView::item:active {
+  background-color: {{ darken(current, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+} */
+
+
+
+
+QTreeView::item:selected:active{
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
 }
 
+QTreeView::item:selected:!active {
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
+}
 
 QtLayerTreeView::indicator{
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  left: 0px;
+}
+
+
+/* the first one is the "unknown" state */
+QtLayerTreeView::indicator {
+  image: url(":/themes/{{ folder }}/visibility_off.svg");
 }
 
 QtLayerTreeView::indicator:unchecked {
@@ -636,28 +657,4 @@ QtLayerTreeView::indicator:unchecked {
 
 QtLayerTreeView::indicator:checked {
   image: url(":/themes/{{ folder }}/visibility.svg");
-}
-
-QTreeView::branch:has-siblings:!adjoins-item {
-    border-image: url(vline.png) 0;
-}
-
-QTreeView::branch:has-siblings:adjoins-item {
-    border-image: url(branch-more.png) 0;
-}
-
-QTreeView::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(branch-end.png) 0;
-}
-
-QTreeView::branch:has-children:!has-siblings:closed,
-QTreeView::branch:closed:has-children:has-siblings {
-        border-image: none;
-        image: url(branch-closed.png);
-}
-
-QTreeView::branch:open:has-children:!has-siblings,
-QTreeView::branch:open:has-children:has-siblings  {
-        border-image: none;
-        image: url(branch-open.png);
 }
