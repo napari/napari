@@ -47,12 +47,7 @@ from qtpy.QtCore import (
     Qt,
 )
 from qtpy.QtGui import QColor, QImage, QPainter, QPixmap
-from qtpy.QtWidgets import (
-    QCommonStyle,
-    QStyledItemDelegate,
-    QStyleOptionViewItem,
-    QWidget,
-)
+from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from ...utils.theme import get_theme
 from ..qt_resources._svg import colored_svg_icon
@@ -151,7 +146,7 @@ class QtLayerTreeView(QtNodeTreeView):
         self.setItemDelegate(LayerDelegate())
         self.setAnimated(True)
         self.setAutoExpandDelay(300)
-        self.setStyle(QCommonStyle())
+        # self.setStyle(QCommonStyle())
 
     def viewOptions(self) -> QStyleOptionViewItem:
         options = super().viewOptions()
@@ -211,7 +206,8 @@ class LayerDelegate(QStyledItemDelegate):
         ltype = index.data(QtLayerTreeModel.LayerTypeRole)
         icons = Path(__file__).parent.parent.parent / 'resources' / 'icons'
         if ltype == 'layergroup':
-            path = icons / 'folder.svg'
+            expanded = option.widget.isExpanded(index)
+            path = icons / ('folder-open.svg' if expanded else 'folder.svg')
         else:
             path = icons / f'new_{ltype}.svg'
 
@@ -241,6 +237,8 @@ class LayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> QWidget:
+        # necessary for geometry, otherwise editor takes up full space.
+        self._get_option_icon(option, index)
         editor = super().createEditor(parent, option, index)
         editor.setAlignment(Qt.Alignment(index.data(Qt.TextAlignmentRole)))
         return editor

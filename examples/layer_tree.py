@@ -1,8 +1,9 @@
 import napari
 from napari.qt import get_app, run
-from napari.layers import Points
+from napari.layers import Points, Image
 from napari.layers.layergroup import LayerGroup
 from napari._qt.tree import QtLayerTreeView
+from skimage.data import grass
 
 # import logging
 # end = "\033[0m"
@@ -25,21 +26,25 @@ root = LayerGroup(
         lg1,
         Points(name='4'),
         Points(name='5'),
-        Points(name='6'),
-        Points(name='7'),
-        Points(name='8'),
-        Points(name='9'),
+        # Points(name='6'),
+        # Points(name='7'),
+        # Points(name='8'),
+        # Points(name='9'),
     ],
     name="root",
 )
-
 root.events.reordered.connect(lambda e: print(e.value))
 
 tree = QtLayerTreeView(root)
-model = tree.model()
+# model = tree.model()
 # tree.show()
 
+im, pt = Image(grass()), Points()
+root2 = LayerGroup([LayerGroup([im, pt])])
+tree2 = QtLayerTreeView(root2)
 v = napari.Viewer()
+
+# v.layers.extend([im, pt])
 v.layers.append(tip)
 v.layers.append(p2)
 v.window.add_dock_widget(tree, area='right')

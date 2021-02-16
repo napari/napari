@@ -122,7 +122,6 @@ class LayerGroup(Group, Layer):
             child._set_highlight(force=force)
 
     def _update_thumbnail(self, *args, **kwargs):
-        print("update group thumb")
         import numpy as np
 
         self.thumbnail = np.sum(
