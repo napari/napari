@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
@@ -474,6 +475,24 @@ def test_paint_2d(brush_shape, expected_sum):
     assert np.sum(layer.data[24:37, 2:15] == 5) == expected_sum[2]
     assert np.sum(layer.data[33:, 33:] == 6) == expected_sum[3]
     assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
+
+
+@pytest.mark.timeout(1)
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum",
+    [("circle", 411), ("square", 432)],
+)
+def test_paint_2d_xarray(brush_shape, expected_sum):
+    """Test the memory usage of painting an xarray indirectly via timeout."""
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024)))
+
+    layer = Labels(data)
+    layer.brush_size = 12
+    layer.brush_shape = brush_shape
+    layer.mode = 'paint'
+    layer.paint((1, 1, 512, 512), 3)
+    assert isinstance(layer.data, xr.DataArray)
+    assert layer.data.sum() == expected_sum
 
 
 @pytest.mark.parametrize(
