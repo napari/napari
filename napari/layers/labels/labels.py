@@ -675,6 +675,9 @@ class Labels(Image):
                         raw == label, struct_elem
                     ) != ndi.binary_erosion(raw == label, struct_elem)
                     image[boundaries] = raw[boundaries]
+            image = np.where(
+                raw > 0, low_discrepancy_image(image, self._seed), 0
+            )
 
         return image
 
