@@ -47,7 +47,12 @@ from qtpy.QtCore import (
     Qt,
 )
 from qtpy.QtGui import QColor, QImage, QPainter, QPixmap
-from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
+from qtpy.QtWidgets import (
+    QCommonStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QWidget,
+)
 
 from ...utils.theme import get_theme
 from ..qt_resources._svg import colored_svg_icon
@@ -96,13 +101,13 @@ class QtLayerTreeModel(QtNodeTreeModel):
             else:
                 return Qt.Unchecked
         if role == Qt.SizeHintRole:  # determines size of item
-            h = 32 if layer.is_group() else 38
+            h = 38
             return QSize(228, h)
-        if role == QtLayerTreeModel.LayerRole:  # custom role: return the layer
+        if role == self.LayerRole:  # custom role: return the layer
             return self.getItem(index)
-        if role == QtLayerTreeModel.LayerTypeRole:  # custom: layer type string
+        if role == self.LayerTypeRole:  # custom: layer type string
             return self.getItem(index)._type_string
-        if role == QtLayerTreeModel.ThumbnailRole:  # return the thumbnail
+        if role == self.ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
                 thumbnail,
@@ -127,6 +132,18 @@ class QtLayerTreeModel(QtNodeTreeModel):
         self.dataChanged.emit(index, index, [role])
         return True
 
+    def _process_event(self, event):
+        # The model needs to emit `dataChanged` whenever data has changed
+        # for a given index, so that views can update themselves.
+        # Here we convert native events to the dataChanged signal.
+        # TODO: add more roles
+        if not hasattr(event, 'index'):
+            return
+        role = {'thumbnail': self.ThumbnailRole}.get(event.type, None)
+        roles = [role] if role else []
+        top = self.nestedIndex(event.index)
+        self.dataChanged.emit(top, top, roles)
+
 
 class QtLayerTreeView(QtNodeTreeView):
     def __init__(self, root: LayerGroup = None, parent: QWidget = None):
@@ -134,6 +151,7 @@ class QtLayerTreeView(QtNodeTreeView):
         self.setItemDelegate(LayerDelegate())
         self.setAnimated(True)
         self.setAutoExpandDelay(300)
+        self.setStyle(QCommonStyle())
 
     def viewOptions(self) -> QStyleOptionViewItem:
         options = super().viewOptions()

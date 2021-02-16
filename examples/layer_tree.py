@@ -1,4 +1,3 @@
-
 import napari
 from napari.qt import get_app, run
 from napari.layers import Points
@@ -18,7 +17,8 @@ from napari._qt.tree import QtLayerTreeView
 app = get_app()
 
 tip = Points(name='tip')
-lg2 = LayerGroup([Points(name='2')], name="g2")
+p2 = Points(name='2')
+lg2 = LayerGroup([p2], name="g2")
 lg1 = LayerGroup([lg2, Points(name='3'), tip, Points(name='1')], name="g1")
 root = LayerGroup(
     [
@@ -41,6 +41,7 @@ model = tree.model()
 
 v = napari.Viewer()
 v.layers.append(tip)
+v.layers.append(p2)
 v.window.add_dock_widget(tree, area='right')
 
 run()

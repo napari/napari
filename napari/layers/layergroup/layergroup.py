@@ -14,6 +14,16 @@ class LayerGroup(Group, Layer):
     ) -> None:
         Group.__init__(self, children, name=name)
         Layer.__init__(self, None, 2, name=name)
+        self.refresh(None)
+        self.events.connect(self._handle_child_events)
+
+    def _handle_child_events(self, event):
+        # event.sources[0] is the original event emitter.
+        # we only want child events here
+        if not hasattr(event, 'index') or event.sources[0] is self:
+            return
+        if event.index != () and event.type == 'thumbnail':
+            self._update_thumbnail()
 
     def __str__(self):
         return Group.__str__(self)
@@ -88,7 +98,7 @@ class LayerGroup(Group, Layer):
                 state.append(layer._get_state())
         return state
 
-    def _get_value(self):
+    def _get_value(self, position):
         """Returns a flat list of all layer values in the layergroup
         for a given mouse position and set of indices.
 
@@ -99,21 +109,25 @@ class LayerGroup(Group, Layer):
         value : list
             Flat list containing values of the layer data at the coord.
         """
-        return [layer._get_value() for layer in self]
+        return [layer._get_value(position) for layer in self]
 
     def _set_view_slice(self):
         """Set the view for each layer given the indices to slice with."""
         for child in self:
             child._set_view_slice()
 
-    def _set_highlight(self):
+    def _set_highlight(self, force=False):
         """Render layer hightlights when appropriate."""
         for child in self:
-            child._set_highlight()
+            child._set_highlight(force=force)
 
     def _update_thumbnail(self, *args, **kwargs):
-        # FIXME
-        # we should do something here, leave it for later
+        print("update group thumb")
+        import numpy as np
+
+        self.thumbnail = np.sum(
+            lay.thumbnail for lay in self.traverse(leaves_only=True)
+        )
         pass
 
     def refresh(self, event=None):
