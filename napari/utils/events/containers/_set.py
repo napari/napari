@@ -17,10 +17,10 @@ class EventedSet(MutableSet[_T]):
 
     Events
     ------
-    added (value: Any)
+    added (value: _T)
         emitted after an item is added to the set.  Will not be emitted if an
         item was already in the set when added.
-    removed (value: Any)
+    removed (value: _T)
         emitted after an item is removed from the set.  Will not be emitted if
         the item was not in the set when discarded.
     """
@@ -30,7 +30,6 @@ class EventedSet(MutableSet[_T]):
     def __init__(self, data: Iterable[_T] = ()):
 
         _events = {'added': None, 'removed': None}
-
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
@@ -68,13 +67,17 @@ class EventedSet(MutableSet[_T]):
 
     # <<<<<<<< End Abstract Methods
 
-    # inherited from MutableSet:
+    # methods inherited from Set:
+    # __le__, __lt__, __eq__, __ne__, __gt__, __ge__, __and__, __or__,
+    # __sub__, __xor__, and isdisjoint
+
+    # methods inherited from MutableSet:
     # clear, pop, remove, __ior__, __iand__, __ixor__, and __isub__
 
     # The rest are for parity with builtins.set:
 
     def __repr__(self) -> str:
-        return repr(self._set)
+        return f"{type(self).__name__}({repr(self._set)})"
 
     def update(self, others: Iterable[_T] = ()) -> None:
         """Update this set with the union of this set and others"""
