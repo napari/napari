@@ -12,6 +12,7 @@ from qtpy import API, QT_VERSION
 
 from napari import __version__
 
+from ._svg import QColoredSVGIcon
 from .build_icons import build_pyqt_resources
 
 

@@ -1,3 +1,6 @@
+"""
+A Class for generating QIcons from SVGs with arbitrary colors at runtime.
+"""
 from __future__ import annotations
 
 import re
@@ -33,12 +36,14 @@ def get_raw_svg(path: str) -> str:
 
 
 @lru_cache()
-def get_colorized_svg(path_or_xml: str, color: str = '#000000') -> str:
+def get_colorized_svg(path_or_xml: str, color: str = None) -> str:
     """Return a colorized version of the SVG XML at ``path``."""
     if '</svg>' in path_or_xml:
         xml = path_or_xml
     else:
         xml = get_raw_svg(path_or_xml)
+    if not color:
+        return xml
     return svg_tag_open.sub(f'\\1{svg_style_insert.format(color)}', xml)
 
 
@@ -51,16 +56,33 @@ class QColoredSVGIcon(QIcon):
         Raw SVG XML or a path to an existing svg file.  (Will raise error on
         ``__init__`` if a non-existent file is provided.)
     color : str, optional
-        A valid CSS color string, used to colorize the SVG. by default #000000
+        A valid CSS color string, used to colorize the SVG. by default None.
+
+    Examples
+    --------
+    >>> from napari._qt.qt_resources import QColoredSVGIcon
+    >>> from qtpy.QtWidgets import QLabel
+
+    # Create icon with specific color
+    >>> label = QLabel()
+    >>> icon = QColoredSVGIcon.from_resources('new_points', color='#0934e2')
+    >>> label.setPixmap(icon.pixmap(250, 250))
+    >>> label.show()
+
+    # Create colored icon using theme
+    >>> label = QLabel()
+    >>> icon = QColoredSVGIcon.from_resources('new_points', theme='light')
+    >>> label.setPixmap(icon.pixmap(250, 250))
+    >>> label.show()
     """
 
-    def __init__(self, path_or_xml: str, color: str = '#000000') -> None:
+    def __init__(self, path_or_xml: str, color: str = None) -> None:
         xml = get_colorized_svg(path_or_xml, color)
         super().__init__(SVGBufferIconEngine(xml))
 
     @classmethod
     @lru_cache()
-    def from_cache(cls, path_or_xml: str, color: str = '#000000'):
+    def from_cache(cls, path_or_xml: str, color: str = None):
         """Create or get icon from cache if previously created.
 
         This is the preferred way to create a ``QColoredSVGIcon``.
@@ -68,18 +90,27 @@ class QColoredSVGIcon(QIcon):
         return QColoredSVGIcon(path_or_xml, color)
 
     @classmethod
-    def from_theme(cls, icon_name: str, theme: str, role: str = 'icon'):
-        """Get an icon from resources using the ``role`` entry in ``theme``.
+    def from_resources(
+        cls,
+        icon_name: str,
+        color: str = None,
+        theme: str = None,
+        theme_key: str = 'icon',
+    ):
+        """Get a colorized icon from napari SVG resources.
 
         Parameters
         ----------
         icon_name : str
             The name of the icon svg to load (just the stem).  Must be in the
             napari icons folder.
+        color : str, optional
+            A valid CSS color string, used to colorize the SVG.  If provided,
+            will take precedence over ``theme``, by default None.
         theme : str
-            Name of the theme to colorize icon with
-        role : str, optional
-            Key in the theme dict to use, by default 'icon'
+            Name of the theme to from which to get `theme_key` color.
+        theme_key : str, optional
+            If using a theme, key in the theme dict to use, by default 'icon'
 
         Returns
         -------
@@ -89,8 +120,9 @@ class QColoredSVGIcon(QIcon):
         from ...resources import get_icon_path
         from ...utils.theme import get_theme
 
-        color = get_theme(theme)[role]
         path = get_icon_path(icon_name)
+        if not color and theme:
+            color = get_theme(theme)[theme_key]
         return QColoredSVGIcon.from_cache(path, color)
 
 
