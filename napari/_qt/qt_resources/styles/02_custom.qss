@@ -621,19 +621,6 @@ QTreeView::item:hover {
   border: 1px solid {{ highlight }};
 }
 
-/* QtLayerTreeView::item:disabled {
-  background-color: transparent;
-  border-color: transparent;
-  border-radius: 3px;
-}
-
-QtLayerTreeView::item:active {
-  background-color: {{ darken(current, 20) }};
-  selection-background-color: {{ lighten(current, 20) }};
-} */
-
-
-
 
 QTreeView::item:selected:active{
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
@@ -651,13 +638,13 @@ QtLayerTreeView::indicator{
 }
 
 
-/* the first one is the "unknown" state */
+/* the first one is the "partially checked" state */
 QtLayerTreeView::indicator {
   image: url(":/themes/{{ folder }}/visibility_off.svg");
 }
 
 QtLayerTreeView::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ folder }}/2D.svg");
 }
 
 QtLayerTreeView::indicator:checked {

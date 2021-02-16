@@ -369,7 +369,7 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
     @property
     def visible(self):
         """bool: Whether the visual is currently being displayed."""
-        return self._visible
+        return self._visible and all(p._visible for p in self.iter_parents())
 
     @visible.setter
     def visible(self, visibility):

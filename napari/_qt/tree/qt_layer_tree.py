@@ -39,7 +39,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PyQt5.QtGui import QColor
 from qtpy.QtCore import (
     QItemSelection,
     QItemSelectionModel,
@@ -47,7 +46,7 @@ from qtpy.QtCore import (
     QSize,
     Qt,
 )
-from qtpy.QtGui import QImage, QPainter, QPixmap
+from qtpy.QtGui import QColor, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 from ...utils.theme import get_theme
@@ -87,7 +86,15 @@ class QtLayerTreeModel(QtNodeTreeModel):
         if role == Qt.ToolTipRole:  # for tooltip
             return layer.name
         if role == Qt.CheckStateRole:  # the "checked" state of this item
-            return layer.visible
+            layer_visible = layer._visible
+            parents_visible = all(p._visible for p in layer.iter_parents())
+            if layer_visible:
+                if parents_visible:
+                    return Qt.Checked
+                else:
+                    return Qt.PartiallyChecked
+            else:
+                return Qt.Unchecked
         if role == Qt.SizeHintRole:  # determines size of item
             h = 32 if layer.is_group() else 38
             return QSize(228, h)
@@ -175,9 +182,11 @@ class LayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ):
+        # update the icon based on layer type
         self._get_option_icon(option, index)
-        # paint the standard itemView
+        # paint the standard itemView (includes layer name, icon, and visible)
         super().paint(painter, option, index)
+        # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
     def _get_option_icon(self, option, index):

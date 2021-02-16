@@ -65,12 +65,17 @@ class Node:
             item = item.parent
         return tuple(indices)
 
+    def iter_parents(self):
+        """Iterate the parent chain, starting with nearest relatives"""
+        obj = self.parent
+        while obj:
+            yield obj
+            obj = obj.parent
+
     def root(self) -> Node:
         """Get the root parent."""
-        obj = self
-        while obj.parent:
-            obj = obj.parent
-        return obj
+        parents = list(self.iter_parents())
+        return parents[-1] if parents else self
 
     def traverse(
         self, leaves_only=False, with_ancestors=False
