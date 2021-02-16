@@ -36,8 +36,10 @@ General rendering flow:
 """
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PyQt5.QtGui import QColor
 from qtpy.QtCore import (
     QItemSelection,
     QItemSelectionModel,
@@ -45,9 +47,11 @@ from qtpy.QtCore import (
     QSize,
     Qt,
 )
-from qtpy.QtGui import QIcon, QImage, QPainter, QPixmap
+from qtpy.QtGui import QImage, QPainter, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
+from ...utils.theme import get_theme
+from ..qt_resources._svg import colored_svg_icon
 from .qt_tree_model import QtNodeTreeModel
 from .qt_tree_view import QtNodeTreeView
 
@@ -60,6 +64,7 @@ if TYPE_CHECKING:
 class QtLayerTreeModel(QtNodeTreeModel):
     LayerRole = Qt.UserRole
     ThumbnailRole = Qt.UserRole + 1
+    LayerTypeRole = Qt.UserRole + 2
 
     def __init__(self, root: LayerGroup, parent: QWidget = None):
         super().__init__(root, parent)
@@ -79,13 +84,6 @@ class QtLayerTreeModel(QtNodeTreeModel):
             return Qt.AlignCenter
         if role == Qt.EditRole:  # used to populate line edit when editing
             return layer.name
-        if role == Qt.DecorationRole:  # icon to show
-            # TODO: this is one thing I can't figure out how to style via QSS
-            theme = 'dark'
-
-            # TODO: this could be used to combine multiple icons into a single
-            # QIcon before returning (such as a lock, or a linked layer icon)
-            return QIcon(f":/themes/{theme}/new_{layer._type_string}.svg")
         if role == Qt.ToolTipRole:  # for tooltip
             return layer.name
         if role == Qt.CheckStateRole:  # the "checked" state of this item
@@ -95,6 +93,8 @@ class QtLayerTreeModel(QtNodeTreeModel):
             return QSize(228, h)
         if role == QtLayerTreeModel.LayerRole:  # custom role: return the layer
             return self.getItem(index)
+        if role == QtLayerTreeModel.LayerTypeRole:  # custom: layer type string
+            return self.getItem(index)._type_string
         if role == QtLayerTreeModel.ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
@@ -103,6 +103,10 @@ class QtLayerTreeModel(QtNodeTreeModel):
                 thumbnail.shape[0],
                 QImage.Format_RGBA8888,
             )
+        # normally you'd put the icon in DecorationRole, but we do that in the
+        # # LayerDelegate which is aware of the theme.
+        # if role == Qt.DecorationRole:  # icon to show
+        #     pass
         return None
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
@@ -171,9 +175,29 @@ class LayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ):
+        self._get_option_icon(option, index)
         # paint the standard itemView
         super().paint(painter, option, index)
+        self._paint_thumbnail(painter, option, index)
 
+    def _get_option_icon(self, option, index):
+        ltype = index.data(QtLayerTreeModel.LayerTypeRole)
+        icons = Path(__file__).parent.parent.parent / 'resources' / 'icons'
+        if ltype == 'layergroup':
+            path = icons / 'folder.svg'
+        else:
+            path = icons / f'new_{ltype}.svg'
+
+        # guessing theme rather than passing it through.
+        bg = option.palette.color(option.palette.Background).red()
+        theme = get_theme('dark' if bg < 128 else 'light')
+        icon_color = theme['icon'].strip("rgb()").split(',')
+        icon_color = QColor(*map(int, icon_color)).name()
+
+        option.icon = colored_svg_icon(path, icon_color)
+        option.features |= QStyleOptionViewItem.HasDecoration
+
+    def _paint_thumbnail(self, painter, option, index):
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
