@@ -25,7 +25,9 @@ def test_set(request, regular_set):
         ('add', 2, []),
         ('add', 10, [call.added(value=10)]),
         ('discard', 2, [call.removed(value=2)]),
+        ('remove', 2, [call.removed(value=2)]),
         ('discard', 10, []),
+        # parity with set
         ('update', {3, 4, 5, 6}, [call.added(value=5), call.added(value=6)]),
         (
             'difference_update',
@@ -64,6 +66,33 @@ def test_set_interface_parity(test_set, regular_set, meth):
     assert tuple(test_set) == tuple(regular_set)
 
     assert test_set.events.mock_calls == expected
+
+
+def test_set_pop():
+    test_set = EventedSet(range(3))
+    test_set.events = Mock(wraps=test_set.events)
+    test_set.pop()
+    assert len(test_set.events.removed.call_args_list) == 1
+    test_set.pop()
+    assert len(test_set.events.removed.call_args_list) == 2
+    test_set.pop()
+    assert len(test_set.events.removed.call_args_list) == 3
+    with pytest.raises(KeyError):
+        test_set.pop()
+    with pytest.raises(KeyError):
+        test_set.remove(34)
+
+
+def test_set_clear(test_set):
+    assert test_set.events.mock_calls == []
+    test_set.clear()
+    assert test_set.events.mock_calls == [
+        call.removed(value=0),
+        call.removed(value=1),
+        call.removed(value=2),
+        call.removed(value=3),
+        call.removed(value=4),
+    ]
 
 
 @pytest.mark.parametrize(
