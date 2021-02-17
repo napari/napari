@@ -212,10 +212,10 @@ class LayerDelegate(QStyledItemDelegate):
             icon_name = 'folder-open' if expanded else 'folder'
         else:
             icon_name = f'new_{layer._type_string}'
+        icon = QColoredSVGIcon.from_resources(icon_name)
         # guessing theme rather than passing it through.
         bg = option.palette.color(option.palette.Background).red()
-        theme = 'dark' if bg < 128 else 'light'
-        option.icon = QColoredSVGIcon.from_resources(icon_name, theme=theme)
+        option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
         option.features |= option.HasDecoration
 
