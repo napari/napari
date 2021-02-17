@@ -81,6 +81,11 @@ class ImplementationListItem(QFrame):
         self.plugin_name_label = ElidingLabel(parent=self)
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
+        plugin_name_size_policy = QSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
+        )
+        plugin_name_size_policy.setHorizontalStretch(2)
+        self.plugin_name_label.setSizePolicy(plugin_name_size_policy)
 
         self.function_name_label = QLabel(
             item.hook_implementation.function.__name__
