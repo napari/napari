@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
-from ..utils.color_manager import initialize_color_manager, set_color
+from ..utils.color_manager import ColorManager, set_color
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
@@ -373,7 +373,7 @@ class Points(Layer):
         self._clipboard = {}
         self._round_index = False
 
-        self._edge_color = initialize_color_manager(
+        self._edge_color = ColorManager.from_layer_kwargs(
             n_colors=len(data),
             colors=edge_color,
             continuous_colormap=edge_colormap,
@@ -381,7 +381,7 @@ class Points(Layer):
             categorical_colormap=edge_color_cycle,
             properties=properties,
         )
-        self._face_color = initialize_color_manager(
+        self._face_color = ColorManager.from_layer_kwargs(
             n_colors=len(data),
             colors=face_color,
             continuous_colormap=face_colormap,
