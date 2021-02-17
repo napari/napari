@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
-from ..utils.color_manager import ColorManager, set_color
+from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
@@ -692,8 +692,7 @@ class Points(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        set_color(
-            color_manager=self._edge_color,
+        self._edge_color.set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
@@ -784,8 +783,7 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        set_color(
-            color_manager=self._face_color,
+        self._face_color.set_color(
             color=face_color,
             n_colors=len(self.data),
             properties=self.properties,

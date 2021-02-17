@@ -283,6 +283,51 @@ class ColorManager(EventedModel):
         values['colors'] = colors
         return values
 
+    def set_color(
+        self,
+        color: ColorType,
+        n_colors: int,
+        properties: Dict[str, np.ndarray],
+        current_properties: Dict[str, np.ndarray],
+    ):
+        """Set a color property. This is convenience function
+
+        Parameters
+        ----------
+        color : (N, 4) array or str
+            The value for setting edge or face_color
+        n_colors : int
+            The number of colors that needs to be set. Typically len(data).
+        properties : Dict[str, np.ndarray]
+            The layer property values
+        current_properties : Dict[str, np.ndarray]
+            The layer current property values
+        """
+        # if the provided color is a string, first check if it is a key in the properties.
+        # otherwise, assume it is the name of a color
+        if is_color_mapped(color, properties):
+            self.color_properties = ColorProperties(
+                name=color,
+                values=properties[color],
+                current_value=np.squeeze(current_properties[color]),
+            )
+            if guess_continuous(properties[color]):
+                self.mode = ColorMode.COLORMAP
+            else:
+                self.mode = ColorMode.CYCLE
+        else:
+            transformed_color = transform_color_with_defaults(
+                num_entries=n_colors,
+                colors=color,
+                elem_name="face_color",
+                default="white",
+            )
+            colors = normalize_and_broadcast_colors(
+                n_colors, transformed_color
+            )
+            self.mode = ColorMode.DIRECT
+            self.colors = colors
+
     def refresh_colors(
         self,
         properties: Dict[str, np.ndarray],
@@ -627,49 +672,3 @@ class ColorManager(EventedModel):
             )
 
         return cls(**color_kwargs)
-
-
-def set_color(
-    color_manager: ColorManager,
-    color: ColorType,
-    n_colors: int,
-    properties: Dict[str, np.ndarray],
-    current_properties: Dict[str, np.ndarray],
-):
-    """Set a color property. This is convenience function
-
-    Parameters
-    ----------
-    color_manager : ColorManager
-        The ColorManager object on which to set the color
-    color : (N, 4) array or str
-        The value for setting edge or face_color
-    n_colors : int
-        The number of colors that needs to be set. Typically len(data).
-    properties : Dict[str, np.ndarray]
-        The layer property values
-    current_properties : Dict[str, np.ndarray]
-        The layer current property values
-    """
-    # if the provided color is a string, first check if it is a key in the properties.
-    # otherwise, assume it is the name of a color
-    if is_color_mapped(color, properties):
-        color_manager.color_properties = ColorProperties(
-            name=color,
-            values=properties[color],
-            current_value=np.squeeze(current_properties[color]),
-        )
-        if guess_continuous(properties[color]):
-            color_manager.mode = ColorMode.COLORMAP
-        else:
-            color_manager.mode = ColorMode.CYCLE
-    else:
-        transformed_color = transform_color_with_defaults(
-            num_entries=n_colors,
-            colors=color,
-            elem_name="face_color",
-            default="white",
-        )
-        colors = normalize_and_broadcast_colors(n_colors, transformed_color)
-        color_manager.mode = ColorMode.DIRECT
-        color_manager.colors = colors
