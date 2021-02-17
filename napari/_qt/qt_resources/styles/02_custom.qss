@@ -604,6 +604,7 @@ QTreeView {
 
 QTreeView::item {
   margin: 2px 0px 2px 32px;
+  padding: 4px;
   background-color: {{ foreground }};
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;

@@ -38,22 +38,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt5.QtGui import QFont
-from qtpy.QtCore import (
-    QItemSelection,
-    QItemSelectionModel,
-    QModelIndex,
-    QSize,
-    Qt,
-)
-from qtpy.QtGui import QImage, QPainter, QPixmap
-from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
+from qtpy.QtCore import QSize, Qt
+from qtpy.QtGui import QFont, QImage, QPixmap
+from qtpy.QtWidgets import QStyledItemDelegate
 
 from ..qt_resources import QColoredSVGIcon
 from .qt_tree_model import QtNodeTreeModel
 from .qt_tree_view import QtNodeTreeView
 
 if TYPE_CHECKING:
+    from qtpy.QtCore import QItemSelection, QModelIndex
+    from qtpy.QtGui import QPainter
+    from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
+
     from ...layers import Layer
     from ...layers.layergroup import LayerGroup
     from ...utils.events.containers._nested_list import MaybeNestedIndex
@@ -145,9 +142,7 @@ class QtLayerTreeView(QtNodeTreeView):
     def __init__(self, root: LayerGroup = None, parent: QWidget = None):
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
-        self.setAnimated(True)
         self.setIndentation(18)
-        self.setAutoExpandDelay(300)
 
         # couldn't set in qss for some reason
         fnt = QFont()
@@ -158,7 +153,7 @@ class QtLayerTreeView(QtNodeTreeView):
 
     def viewOptions(self) -> QStyleOptionViewItem:
         options = super().viewOptions()
-        options.decorationPosition = QStyleOptionViewItem.Right
+        options.decorationPosition = options.Right
         return options
 
     def setRoot(self, root: LayerGroup):
@@ -191,9 +186,9 @@ class QtLayerTreeView(QtNodeTreeView):
         idx = self.model().nestedIndex(nested_index)
         if nested_index == () or not idx.isValid():
             return
-        s = getattr(QItemSelectionModel, 'Select' if selected else 'Deselect')
-        # TODO: figure out bug on pop(0) in examples/layer_tree
-        self.selectionModel().select(idx, s)
+        selection_model = self.selectionModel()
+        s = getattr(selection_model, 'Select' if selected else 'Deselect')
+        selection_model.select(idx, s)
 
 
 class LayerDelegate(QStyledItemDelegate):
@@ -222,7 +217,7 @@ class LayerDelegate(QStyledItemDelegate):
         theme = 'dark' if bg < 128 else 'light'
         option.icon = QColoredSVGIcon.from_resources(icon_name, theme=theme)
         option.decorationSize = QSize(18, 18)
-        option.features |= QStyleOptionViewItem.HasDecoration
+        option.features |= option.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
         # paint the thumbnail
