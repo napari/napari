@@ -1,5 +1,4 @@
 from copy import deepcopy
-from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -24,22 +23,21 @@ from .color_transformations import (
 )
 
 
-@dataclass
-class ColorProperties:
+class ColorProperties(EventedModel):
     name: str
     values: np.ndarray
     current_value: Optional[Any] = None
 
-    def __eq__(self, other):
-        if isinstance(other, ColorProperties):
-            names_eq = self.name == other.name
-            values_eq = np.array_equal(self.values, other.values)
-
-            eq = names_eq & values_eq
-        else:
-            eq = False
-
-        return eq
+    # def __eq__(self, other):
+    #     if isinstance(other, ColorProperties):
+    #         names_eq = self.name == other.name
+    #         values_eq = np.array_equal(self.values, other.values)
+    #
+    #         eq = names_eq & values_eq
+    #     else:
+    #         eq = False
+    #
+    #     return eq
 
 
 def compare_colormap(cmap_1, cmap_2):

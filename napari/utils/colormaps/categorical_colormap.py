@@ -6,7 +6,7 @@ from pydantic import validator
 from ...layers.utils.color_transformations import transform_color_cycle
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
-from .categorical_colormap_utils import ColorCycle, compare_color_cycle
+from .categorical_colormap_utils import ColorCycle
 from .standardize_color import transform_color
 
 
@@ -28,8 +28,6 @@ class CategoricalColormap(EventedModel):
     colormap: Dict[Any, Array[float, (4,)]] = {}
     fallback_color: ColorCycle = 'white'
 
-    __equality_checks__ = {'fallback_color': compare_color_cycle}
-
     @validator('colormap', pre=True)
     def _standardize_colormap(cls, v):
         transformed_colormap = {k: transform_color(v)[0] for k, v in v.items()}
@@ -39,6 +37,8 @@ class CategoricalColormap(EventedModel):
     def _standardize_colorcycle(cls, v):
         if isinstance(v, ColorCycle):
             color_cycle = v
+        elif isinstance(v, dict):
+            color_cycle = ColorCycle(**v)
         else:
             if isinstance(v, str):
                 v = [v]

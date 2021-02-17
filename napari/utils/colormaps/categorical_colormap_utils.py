@@ -4,7 +4,7 @@ from itertools import cycle
 import numpy as np
 
 
-@dataclass
+@dataclass(eq=False)
 class ColorCycle:
     """A dataclass to hold a color cycle for the fallback_colors
     in the CategoricalColormap
@@ -20,7 +20,10 @@ class ColorCycle:
     values: np.ndarray
     cycle: cycle
 
+    def __eq__(self, other):
+        if isinstance(other, ColorCycle):
+            eq = np.array_equal(self.values, other.values)
+        else:
+            eq = False
 
-def compare_color_cycle(cycle_1: ColorCycle, cycle_2: ColorCycle) -> bool:
-    """Equality check that returns true if two ColorCycle objects are equal"""
-    return np.array_equal(cycle_1.values, cycle_2.values)
+        return eq

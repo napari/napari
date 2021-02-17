@@ -49,3 +49,12 @@ def test_categorical_colormap_cycle():
     # map a third color and verify the colors wrap around
     third_color = cmap.map(['bonjour'])
     np.testing.assert_almost_equal(np.squeeze(third_color), color_cycle[0])
+
+
+def test_categorical_colormap_equality():
+    color_cycle = [[1, 1, 1, 1], [1, 0, 0, 1]]
+    cmap_1 = CategoricalColormap(fallback_color=color_cycle)
+    cmap_2 = CategoricalColormap(fallback_color=color_cycle)
+    cmap_3 = CategoricalColormap(fallback_color=[[1, 1, 1, 1], [1, 1, 0, 1]])
+    assert cmap_1 == cmap_2
+    assert cmap_1 != cmap_3
