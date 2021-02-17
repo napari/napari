@@ -14,12 +14,15 @@ from napari.utils import perf
 
 if os.getenv('CI', '0') != '0' and (
     sys.version_info >= (3, 9)
-    or (sys.platform.startswith('linux') and qtpy.API_NAME == "PySide2")
+    or (
+        (sys.platform.startswith('linux') or sys.platform.startswith('win'))
+        and qtpy.API_NAME == "PySide2"
+    )
 ):
     # this test is covered by other platforms, and also seems to work locally
     # on linux
     pytest.skip(
-        "Perfmon segfaults on linux CI with pyside2 or python 3.9",
+        "Perfmon segfaults on linux or windows CI with pyside2, or with python 3.9",
         allow_module_level=True,
     )
 

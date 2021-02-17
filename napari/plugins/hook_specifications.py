@@ -53,6 +53,8 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
     This is the primary "**reader plugin**" function.  It accepts a path or
     list of paths, and returns a list of data to be added to the ``Viewer``.
+    The function may return ``[(None, )]`` to indicate that the file was read
+    successfully, but did not contain any data.
 
     The main place this hook is used is in :func:`Viewer.open()
     <napari.components.viewer_model.ViewerModel.open>`, via the
@@ -339,7 +341,9 @@ def napari_experimental_provide_function() -> Union[
     -------
     function(s) : FunctionType or list of FunctionType
         Implementations should provide either a single function, or a list of
-        functions. The functions should have Python type annotations so that
+        functions. Note that this does not preclude specifying multiple
+        separate implementations in the same module or class.
+        The functions should have Python type annotations so that
         `magicgui <https://napari.org/magicgui>`_ can generate a widget from
         them.
 
@@ -383,7 +387,9 @@ def napari_experimental_provide_dock_widget() -> Union[
         that ``shortcut=`` keyword is not yet supported).
 
         Implementations may also return a list, in which each item must be a
-        callable or ``(callable, dict)`` tuple.
+        callable or ``(callable, dict)`` tuple. Note that this does not
+        preclude specifying multiple separate implementations in the same module
+        or class.
 
     Examples
     --------
