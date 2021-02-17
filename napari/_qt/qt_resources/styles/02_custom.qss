@@ -595,24 +595,40 @@ QtPluginSorter {
   padding: 20px;
 }
 
-/*  LayerTree Styles */
+/*  TreeView Styles */
 
-QtLayerTreeView {
-  margin: 4px;
+QTreeView {
+  margin-right: 4px;
+  min-width: 200px;
 }
 
-QtLayerTreeView::item {
+QTreeView::item {
   margin: 2px 0px 2px 32px;
   background-color: {{ foreground }};
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
   border: 1px solid {{ foreground }};
-  font-size: 14px;
-  qproperty-alignment: right;
+}
+
+QTreeView::item::text {
+  font-size: 8px;
 }
 
 
-QtLayerTreeView::item:selected {
+QTreeView::branch:closed:has-children {
+  image: url(":/themes/{{ folder }}/caret-right.svg");
+  padding: 6px;
+}
+QTreeView::branch:open:has-children {
+  image: url(":/themes/{{ folder }}/caret-down.svg");
+  padding: 5px;
+}
+QTreeView::branch:selected {
+  background-color: {{ background }};
+}
+
+
+QTreeView::item:selected {
   /* background-color: {{ current }}; */
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 20) }});
 }
@@ -630,13 +646,18 @@ QTreeView::item:selected:!active {
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
 }
 
-QtLayerTreeView::indicator{
+QTreeView::indicator{
   width: 16px;
   height: 16px;
   position: absolute;
   left: 0px;
 }
 
+QTreeView QLineEdit {
+  background-color: {{ darken(current, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+  font-size: 12px;
+}
 
 /* the first one is the "partially checked" state */
 QtLayerTreeView::indicator {
@@ -650,3 +671,4 @@ QtLayerTreeView::indicator:unchecked {
 QtLayerTreeView::indicator:checked {
   image: url(":/themes/{{ folder }}/visibility.svg");
 }
+

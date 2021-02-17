@@ -36,9 +36,9 @@ General rendering flow:
 """
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
+from PyQt5.QtGui import QFont
 from qtpy.QtCore import (
     QItemSelection,
     QItemSelectionModel,
@@ -46,11 +46,10 @@ from qtpy.QtCore import (
     QSize,
     Qt,
 )
-from qtpy.QtGui import QColor, QImage, QPainter, QPixmap
+from qtpy.QtGui import QImage, QPainter, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
-from ...utils.theme import get_theme
-from ..qt_resources._svg import colored_svg_icon
+from ..qt_resources import QColoredSVGIcon
 from .qt_tree_model import QtNodeTreeModel
 from .qt_tree_view import QtNodeTreeView
 
@@ -63,7 +62,6 @@ if TYPE_CHECKING:
 class QtLayerTreeModel(QtNodeTreeModel):
     LayerRole = Qt.UserRole
     ThumbnailRole = Qt.UserRole + 1
-    LayerTypeRole = Qt.UserRole + 2
 
     def __init__(self, root: LayerGroup, parent: QWidget = None):
         super().__init__(root, parent)
@@ -100,8 +98,6 @@ class QtLayerTreeModel(QtNodeTreeModel):
             return QSize(228, h)
         if role == self.LayerRole:  # custom role: return the layer
             return self.getItem(index)
-        if role == self.LayerTypeRole:  # custom: layer type string
-            return self.getItem(index)._type_string
         if role == self.ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
@@ -121,6 +117,7 @@ class QtLayerTreeModel(QtNodeTreeModel):
             self.getItem(index).visible = value
         elif role == Qt.EditRole:
             self.getItem(index).name = value
+            role = Qt.DisplayRole
         else:
             return super().setData(index, value, role=role)
 
@@ -131,13 +128,17 @@ class QtLayerTreeModel(QtNodeTreeModel):
         # The model needs to emit `dataChanged` whenever data has changed
         # for a given index, so that views can update themselves.
         # Here we convert native events to the dataChanged signal.
-        # TODO: add more roles
         if not hasattr(event, 'index'):
             return
-        role = {'thumbnail': self.ThumbnailRole}.get(event.type, None)
-        roles = [role] if role else []
+        role = {
+            'thumbnail': self.ThumbnailRole,
+            'visible': Qt.CheckStateRole,
+            'name': Qt.DisplayRole,
+        }.get(event.type, None)
+        roles = [role] if role is not None else []
         top = self.nestedIndex(event.index)
-        self.dataChanged.emit(top, top, roles)
+        bot = self.index(top.row() + 1)
+        self.dataChanged.emit(top, bot, roles)
 
 
 class QtLayerTreeView(QtNodeTreeView):
@@ -145,7 +146,14 @@ class QtLayerTreeView(QtNodeTreeView):
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
         self.setAnimated(True)
+        self.setIndentation(18)
         self.setAutoExpandDelay(300)
+
+        # couldn't set in qss for some reason
+        fnt = QFont()
+        fnt.setPixelSize(12)
+        self.setFont(fnt)
+
         # self.setStyle(QCommonStyle())
 
     def viewOptions(self) -> QStyleOptionViewItem:
@@ -203,21 +211,17 @@ class LayerDelegate(QStyledItemDelegate):
         self._paint_thumbnail(painter, option, index)
 
     def _get_option_icon(self, option, index):
-        ltype = index.data(QtLayerTreeModel.LayerTypeRole)
-        icons = Path(__file__).parent.parent.parent / 'resources' / 'icons'
-        if ltype == 'layergroup':
+        layer = index.data(QtLayerTreeModel.LayerRole)
+        if layer.is_group():
             expanded = option.widget.isExpanded(index)
-            path = icons / ('folder-open.svg' if expanded else 'folder.svg')
+            icon_name = 'folder-open' if expanded else 'folder'
         else:
-            path = icons / f'new_{ltype}.svg'
-
+            icon_name = f'new_{layer._type_string}'
         # guessing theme rather than passing it through.
         bg = option.palette.color(option.palette.Background).red()
-        theme = get_theme('dark' if bg < 128 else 'light')
-        icon_color = theme['icon'].strip("rgb()").split(',')
-        icon_color = QColor(*map(int, icon_color)).name()
-
-        option.icon = colored_svg_icon(path, icon_color)
+        theme = 'dark' if bg < 128 else 'light'
+        option.icon = QColoredSVGIcon.from_resources(icon_name, theme=theme)
+        option.decorationSize = QSize(18, 18)
         option.features |= QStyleOptionViewItem.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
@@ -241,4 +245,6 @@ class LayerDelegate(QStyledItemDelegate):
         self._get_option_icon(option, index)
         editor = super().createEditor(parent, option, index)
         editor.setAlignment(Qt.Alignment(index.data(Qt.TextAlignmentRole)))
+        editor.setObjectName("editor")
+
         return editor
