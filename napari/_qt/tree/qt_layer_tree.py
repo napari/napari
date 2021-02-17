@@ -141,7 +141,7 @@ class QtLayerTreeModel(QtNodeTreeModel):
 class QtLayerTreeView(QtNodeTreeView):
     def __init__(self, root: LayerGroup = None, parent: QWidget = None):
         super().__init__(root, parent)
-        self.setItemDelegate(LayerDelegate())
+        self.setItemDelegate(_LayerDelegate())
         self.setIndentation(18)
 
         # couldn't set in qss for some reason
@@ -191,7 +191,7 @@ class QtLayerTreeView(QtNodeTreeView):
         selection_model.select(idx, s)
 
 
-class LayerDelegate(QStyledItemDelegate):
+class _LayerDelegate(QStyledItemDelegate):
     def paint(
         self,
         painter: QPainter,
