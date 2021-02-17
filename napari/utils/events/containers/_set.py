@@ -46,7 +46,7 @@ class EventedSet(MutableSet[_T]):
         return x in self._set
 
     def __iter__(self) -> Iterator[_T]:
-        return self._set.__iter__()
+        return iter(self._set)
 
     def __len__(self) -> int:
         return len(self._set)
