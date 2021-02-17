@@ -514,115 +514,119 @@ class ColorManager(EventedModel):
         else:
             return False
 
+    @classmethod
+    def from_layer_kwargs(
+        cls,
+        colors: Union[dict, str, np.ndarray],
+        properties: Dict[str, np.ndarray],
+        n_colors: Optional[int] = None,
+        continuous_colormap: Optional[Union[str, Colormap]] = None,
+        contrast_limits: Optional[Tuple[float, float]] = None,
+        categorical_colormap: Optional[
+            Union[CategoricalColormap, list, np.ndarray]
+        ] = None,
+        mode: Optional[Union[ColorMode, str]] = None,
+        current_color: Optional[np.ndarray] = None,
+        default_color_cycle: np.ndarray = np.array([1, 1, 1, 1]),
+    ):
+        """Initialize a ColorManager object from layer kwargs. This is a convenience
+        function to coerce possible inputs into ColorManager kwargs
 
-def initialize_color_manager(
-    colors: Union[dict, str, np.ndarray],
-    properties: Dict[str, np.ndarray],
-    n_colors: Optional[int] = None,
-    continuous_colormap: Optional[Union[str, Colormap]] = None,
-    contrast_limits: Optional[Tuple[float, float]] = None,
-    categorical_colormap: Optional[
-        Union[CategoricalColormap, list, np.ndarray]
-    ] = None,
-    mode: Optional[Union[ColorMode, str]] = None,
-    current_color: Optional[np.ndarray] = None,
-    default_color_cycle: np.ndarray = np.array([1, 1, 1, 1]),
-) -> ColorManager:
-    """Initialize a ColorManager object from layer kwargs. This is a convenience
-    function to coerce possible inputs into ColorManager kwargs
+        """
+        properties = {k: np.asarray(v) for k, v in properties.items()}
+        if isinstance(colors, dict):
+            # if the kwargs are passed as a dictionary, unpack them
+            color_values = colors.get('colors', None)
+            current_color = colors.get('current_color', None)
+            mode = colors.get('mode', None)
+            color_properties = colors.get('color_properties', None)
+            continuous_colormap = colors.get('continuous_colormap', None)
+            contrast_limits = colors.get('contrast_limits', None)
+            categorical_colormap = colors.get('categorical_colormap', None)
 
-    """
-    properties = {k: np.asarray(v) for k, v in properties.items()}
-    if isinstance(colors, dict):
-        # if the kwargs are passed as a dictionary, unpack them
-        color_values = colors.get('colors', None)
-        current_color = colors.get('current_color', None)
-        mode = colors.get('mode', None)
-        color_properties = colors.get('color_properties', None)
-        continuous_colormap = colors.get('continuous_colormap', None)
-        contrast_limits = colors.get('contrast_limits', None)
-        categorical_colormap = colors.get('categorical_colormap', None)
+            if isinstance(color_properties, str):
+                # if the color properties were given as a property name,
+                # coerce into ColorProperties
+                try:
+                    prop_values = properties[color_properties]
+                    prop_name = color_properties
+                    color_properties = ColorProperties(
+                        name=prop_name, values=prop_values
+                    )
+                except KeyError:
+                    print(
+                        'if color_properties is a string, it should be a property name'
+                    )
+                    raise
+        else:
+            color_values = colors
+            color_properties = None
 
-        if isinstance(color_properties, str):
-            # if the color properties were given as a property name,
-            # coerce into ColorProperties
-            try:
-                prop_values = properties[color_properties]
-                prop_name = color_properties
-                color_properties = ColorProperties(
-                    name=prop_name, values=prop_values
-                )
-            except KeyError:
-                print(
-                    'if color_properties is a string, it should be a property name'
-                )
-                raise
-    else:
-        color_values = colors
-        color_properties = None
+        if categorical_colormap is None:
+            categorical_colormap = deepcopy(default_color_cycle)
 
-    if categorical_colormap is None:
-        categorical_colormap = deepcopy(default_color_cycle)
+        color_kwargs = {
+            'categorical_colormap': categorical_colormap,
+            'continuous_colormap': continuous_colormap,
+            'contrast_limits': contrast_limits,
+            'current_color': current_color,
+            'n_colors': n_colors,
+        }
 
-    color_kwargs = {
-        'categorical_colormap': categorical_colormap,
-        'continuous_colormap': continuous_colormap,
-        'contrast_limits': contrast_limits,
-        'current_color': current_color,
-        'n_colors': n_colors,
-    }
-
-    if color_properties is None:
-        if is_color_mapped(color_values, properties):
-            if n_colors == 0:
-                color_properties = ColorProperties(
-                    name=color_values,
-                    values=np.empty(0, dtype=properties[color_values].dtype),
-                    current_value=properties[color_values][0],
-                )
-            else:
-                color_properties = ColorProperties(
-                    name=color_values, values=properties[color_values]
-                )
-            if mode is None:
-                if guess_continuous(color_properties.values):
-                    mode = ColorMode.COLORMAP
+        if color_properties is None:
+            if is_color_mapped(color_values, properties):
+                if n_colors == 0:
+                    color_properties = ColorProperties(
+                        name=color_values,
+                        values=np.empty(
+                            0, dtype=properties[color_values].dtype
+                        ),
+                        current_value=properties[color_values][0],
+                    )
                 else:
-                    mode = ColorMode.CYCLE
+                    color_properties = ColorProperties(
+                        name=color_values, values=properties[color_values]
+                    )
+                if mode is None:
+                    if guess_continuous(color_properties.values):
+                        mode = ColorMode.COLORMAP
+                    else:
+                        mode = ColorMode.CYCLE
 
+                color_kwargs.update(
+                    {'mode': mode, 'color_properties': color_properties}
+                )
+
+            else:
+                # direct mode
+                if n_colors == 0:
+                    if current_color is None:
+                        current_color = transform_color(color_values)[0]
+                    color_kwargs.update(
+                        {
+                            'mode': ColorMode.DIRECT,
+                            'current_color': current_color,
+                        }
+                    )
+                else:
+                    transformed_color = transform_color_with_defaults(
+                        num_entries=n_colors,
+                        colors=color_values,
+                        elem_name="colors",
+                        default="white",
+                    )
+                    colors = normalize_and_broadcast_colors(
+                        n_colors, transformed_color
+                    )
+                    color_kwargs.update(
+                        {'mode': ColorMode.DIRECT, 'colors': colors}
+                    )
+        else:
             color_kwargs.update(
                 {'mode': mode, 'color_properties': color_properties}
             )
 
-        else:
-            # direct mode
-            if n_colors == 0:
-                if current_color is None:
-                    current_color = transform_color(color_values)[0]
-                color_kwargs.update(
-                    {'mode': ColorMode.DIRECT, 'current_color': current_color}
-                )
-            else:
-                transformed_color = transform_color_with_defaults(
-                    num_entries=n_colors,
-                    colors=color_values,
-                    elem_name="colors",
-                    default="white",
-                )
-                colors = normalize_and_broadcast_colors(
-                    n_colors, transformed_color
-                )
-                color_kwargs.update(
-                    {'mode': ColorMode.DIRECT, 'colors': colors}
-                )
-    else:
-        color_kwargs.update(
-            {'mode': mode, 'color_properties': color_properties}
-        )
-
-    color_manager = ColorManager(**color_kwargs)
-
-    return color_manager
+        return cls(**color_kwargs)
 
 
 def set_color(

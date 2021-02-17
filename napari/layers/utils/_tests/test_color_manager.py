@@ -165,7 +165,7 @@ def test_color_cycle(color_cycle):
 
 @pytest.mark.parametrize('n_colors', [0, 1, 5])
 def test_init_color_manager_direct(n_colors):
-    color_manager = initialize_color_manager(
+    color_manager = ColorManager.from_layer_kwargs(
         n_colors=n_colors,
         colors='red',
         mode='direct',
@@ -205,7 +205,7 @@ def test_init_color_manager_cycle():
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
-    color_manager = initialize_color_manager(
+    color_manager = ColorManager.from_layer_kwargs(
         n_colors=n_colors,
         colors='point_type',
         mode='cycle',
@@ -243,7 +243,7 @@ def test_init_empty_color_manager_cycle():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': ['A', 'B']}
-    color_manager = initialize_color_manager(
+    color_manager = ColorManager.from_layer_kwargs(
         n_colors=n_colors,
         colors='point_type',
         mode='cycle',
@@ -280,7 +280,7 @@ def test_init_color_manager_colormap():
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
-    color_manager = initialize_color_manager(
+    color_manager = ColorManager.from_layer_kwargs(
         n_colors=n_colors,
         colors='point_type',
         mode='colormap',
@@ -318,7 +318,7 @@ def test_init_empty_color_manager_colormap():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': [0]}
-    color_manager = initialize_color_manager(
+    color_manager = ColorManager.from_layer_kwargs(
         n_colors=n_colors,
         colors='point_type',
         mode='colormap',
