@@ -793,7 +793,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
+        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin) or []
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.

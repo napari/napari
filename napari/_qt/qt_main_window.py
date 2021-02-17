@@ -33,14 +33,13 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.theme import get_theme, template
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
-from .qt_event_loop import NAPARI_ICON_PATH, get_app
+from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array
@@ -54,14 +53,30 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
+
+    def closeEvent(self, event):
+        """This method will be called when the main window is closing.
+
+        Regardless of whether cmd Q, cmd W, or the close button is used...
+        """
+        # On some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        if self.isFullScreen():
+            self.showNormal()
+            for i in range(5):
+                time.sleep(0.1)
+                QApplication.processEvents()
+        event.accept()
 
 
 class Window:
@@ -88,18 +103,15 @@ class Window:
         Window menu.
     """
 
-    raw_stylesheet = get_stylesheet()
-
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        # note: the return value must be retained to prevent garbage collection
-        _ = get_app()
+        get_app()
 
         # Connect the Viewer and create the Main Window
-        self.qt_viewer = QtViewer(viewer)
         self._qt_window = _QtMainWindow()
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
-        self._qt_center = self._qt_window.centralWidget()
+        self.qt_viewer = QtViewer(viewer)
+        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
+        self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -123,9 +135,6 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self._qt_center.layout().addWidget(self.qt_viewer)
-        self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
-
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -137,10 +146,10 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        self.qt_viewer.viewer.events.status.connect(self._status_changed)
-        self.qt_viewer.viewer.events.help.connect(self._help_changed)
-        self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.theme.connect(self._update_theme)
+        viewer.events.status.connect(self._status_changed)
+        viewer.events.help.connect(self._help_changed)
+        viewer.events.title.connect(self._title_changed)
+        viewer.events.theme.connect(self._update_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -151,6 +160,23 @@ class Window:
 
         if show:
             self.show()
+
+    def __getattr__(self, name):
+        if name == 'raw_stylesheet':
+            import warnings
+
+            warnings.warn(
+                (
+                    "The 'raw_stylesheet' attribute is deprecated and will be"
+                    "removed in version 0.4.7.  Please use "
+                    "`napari.qt.get_stylesheet` instead"
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return get_stylesheet()
+
+        return object.__getattribute__(self, name)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -241,34 +267,11 @@ class Window:
         screenshot_wv.triggered.connect(self._screenshot_dialog)
 
         # OS X will rename this to Quit and put it in the app menu.
+        # This quits the entire QApplication and all windows that may be open.
         exitAction = QAction('Exit', self._qt_window)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setMenuRole(QAction.QuitRole)
-
-        def handle_exit():
-            # if the event loop was started in gui_qt() then the app will be
-            # named 'napari'. Since the Qapp was started by us, just close it.
-            if QApplication.applicationName() == 'napari':
-                QApplication.closeAllWindows()
-                QApplication.quit()
-            # otherwise, something else created the QApp before us (such as
-            # %gui qt IPython magic).  If we quit the app in this case, then
-            # *later* attempts to instantiate a napari viewer won't work until
-            # the event loop is restarted with app.exec_().  So rather than
-            # quit just close all the windows (and clear our app icon).
-            else:
-                QApplication.setWindowIcon(QIcon())
-                self.close()
-
-            if perf.USE_PERFMON:
-                # Write trace file before exit, if we were writing one.
-                # Is there a better place to make sure this is done on exit?
-                perf.timers.stop_trace_file()
-
-            _stop_monitor()
-            _shutdown_chunkloader()
-
-        exitAction.triggered.connect(handle_exit)
+        exitAction.triggered.connect(quit_app)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
@@ -425,10 +428,10 @@ class Window:
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
-        exit_action = QAction("Close Window", self._qt_window)
-        exit_action.setShortcut("Ctrl+W")
-        exit_action.setStatusTip('Close napari window')
-        exit_action.triggered.connect(self._qt_window.close)
+        close_action = QAction("Close Window", self._qt_window)
+        close_action.setShortcut("Ctrl+W")
+        close_action.setStatusTip('Close napari window')
+        close_action.triggered.connect(self._qt_window.close)
 
         clear_action = QAction("Remove Dock Widgets", self._qt_window)
         clear_action.setStatusTip('Remove all dock widgets')
@@ -437,7 +440,7 @@ class Window:
         )
 
         self.window_menu = self.main_menu.addMenu('&Window')
-        self.window_menu.addAction(exit_action)
+        self.window_menu.addAction(close_action)
         self.window_menu.addAction(clear_action)
         self.window_menu.addSeparator()
 
@@ -865,18 +868,36 @@ class Window:
         self._qt_window.resize(width, height)
 
     def show(self):
-        """Resize, show, and bring forward the window."""
-        self._qt_window.resize(self._qt_window.layout().sizeHint())
-        self._qt_window.show()
+        """Resize, show, and bring forward the window.
+
+        Parameters
+        ----------
+        run : bool, optional
+            If true, will start an event loop if necessary, by default False
+
+        Raises
+        ------
+        RuntimeError
+            If the viewer.window has already been closed and deleted.
+        """
+        try:
+            self._qt_window.resize(self._qt_window.layout().sizeHint())
+            self._qt_window.show()
+        except (AttributeError, RuntimeError):
+            raise RuntimeError(
+                "This viewer has already been closed and deleted. "
+                "Please create a new one."
+            )
+
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
 
         # We want to bring the viewer to the front when
-        # A) it is our own (gui_qt) event loop OR we are running in jupyter
+        # A) it is our own event loop OR we are running in jupyter
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # get_app(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
@@ -892,20 +913,8 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
-        # set window styles which don't use the primary stylesheet
-        # FIXME: this is a problem with the stylesheet not using properties
-        theme = get_theme(self.qt_viewer.viewer.theme)
-        self._status_bar.setStyleSheet(
-            template(
-                'QStatusBar { background: {{ background }}; '
-                'color: {{ text }}; }',
-                **theme,
-            )
-        )
-        self._qt_center.setStyleSheet(
-            template('QWidget { background: {{ background }}; }', **theme)
-        )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
+        theme_name = self.qt_viewer.viewer.theme
+        self._qt_window.setStyleSheet(get_stylesheet(theme_name))
 
     def _status_changed(self, event):
         """Update status bar.
@@ -966,39 +975,9 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
-            self._delete_qt_window()
-
-    def _delete_qt_window(self):
-        """Delete our self._qt_window."""
-
-        # On some versions of Darwin, exiting while fullscreen seems to tickle
-        # some bug deep in NSWindow.  This forces the fullscreen keybinding
-        # test to complete its draw cycle, then pop back out of fullscreen.
-        if self._qt_window.isFullScreen():
-            self._qt_window.showNormal()
-            for i in range(8):
-                time.sleep(0.1)
-                QApplication.processEvents()
-        self.qt_viewer.close()
-        self._qt_window.close()
-        del self._qt_window
-
-
-def _stop_monitor() -> None:
-    """Stop the monitor service if we were using it."""
-    if config.monitor:
-        from ..components.experimental.monitor import monitor
-
-        monitor.stop()
-
-
-def _shutdown_chunkloader() -> None:
-    """Shutdown the ChunkLoader."""
-    if config.async_loading:
-        from ..components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()
+            self.qt_viewer.close()
+            self._qt_window.close()
+            del self._qt_window

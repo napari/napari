@@ -1,6 +1,8 @@
+import inspect
 from typing import ClassVar
 from unittest.mock import Mock
 
+import dask.array as da
 import numpy as np
 import pytest
 from pydantic import Field
@@ -103,6 +105,86 @@ def test_evented_model_with_array():
         model.shaped2_values = [1]
 
 
+def test_evented_model_array_updates():
+    """Test updating an evented pydantic model with an array."""
+
+    class Model(EventedModel):
+        """Demo evented model."""
+
+        values: Array[int]
+
+    model = Model(values=[1, 2, 3])
+
+    # Mock events
+    model.events.values = Mock(model.events.values)
+
+    np.testing.assert_almost_equal(model.values, np.array([1, 2, 3]))
+
+    # Updating with new data
+    model.values = [1, 2, 4]
+    assert model.events.values.call_count == 1
+    np.testing.assert_almost_equal(
+        model.events.values.call_args[1]['value'], np.array([1, 2, 4])
+    )
+    model.events.values.reset_mock()
+
+    # Updating with same data, no event should be emitted
+    model.values = [1, 2, 4]
+    model.events.values.assert_not_called()
+
+
+def test_evented_model_array_equality():
+    """Test checking equality with an evented model with custom array."""
+
+    class Model(EventedModel):
+        """Demo evented model."""
+
+        values: Array[int]
+
+    model1 = Model(values=[1, 2, 3])
+    model2 = Model(values=[1, 5, 6])
+
+    assert model1 == model1
+    assert model1 != model2
+
+    model2.values = [1, 2, 3]
+    assert model1 == model2
+
+
+def test_evented_model_np_array_equality():
+    """Test checking equality with an evented model with direct numpy."""
+
+    class Model(EventedModel):
+        values: np.ndarray
+
+    model1 = Model(values=np.array([1, 2, 3]))
+    model2 = Model(values=np.array([1, 5, 6]))
+
+    assert model1 == model1
+    assert model1 != model2
+
+    model2.values = np.array([1, 2, 3])
+    assert model1 == model2
+
+
+def test_evented_model_da_array_equality():
+    """Test checking equality with an evented model with direct dask."""
+
+    class Model(EventedModel):
+        values: da.Array
+
+    r = da.ones((64, 64))
+    model1 = Model(values=r)
+    model2 = Model(values=da.ones((64, 64)))
+
+    assert model1 == model1
+    # dask arrays will only evaluate as equal if they are the same object.
+    assert model1 != model2
+
+    model2.values = r
+    assert model1 == model2
+
+
 def test_values_updated():
     class User(EventedModel):
         """Demo evented model.
@@ -150,3 +232,14 @@ def test_values_updated():
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
     assert user1_events.call_count == 0
+
+
+def test_evented_model_signature():
+    class T(EventedModel):
+        x: int
+        y: str = 'yyy'
+        z = b'zzz'
+
+    assert isinstance(T.__signature__, inspect.Signature)
+    sig = inspect.signature(T)
+    assert str(sig) == "(*, x: int, y: str = 'yyy', z: bytes = b'zzz') -> None"

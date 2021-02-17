@@ -8,7 +8,15 @@ import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 import numpy as np
 
@@ -311,34 +319,6 @@ class CallDefault(inspect.Parameter):
         return formatted
 
 
-class CallSignature(inspect.Signature):
-    _parameter_cls = CallDefault
-
-    def __str__(self):
-        """do not render separators
-
-        commented code is what was taken out from
-        the copy/pasted inspect module code :)
-        """
-        result = []
-        # render_pos_only_separator = False
-        # render_kw_only_separator = True
-        for param in self.parameters.values():
-            formatted = str(param)
-            result.append(formatted)
-
-        rendered = '({})'.format(', '.join(result))
-
-        if self.return_annotation is not inspect._empty:
-            anno = inspect.formatannotation(self.return_annotation)
-            rendered += f' -> {anno}'
-
-        return rendered
-
-
-callsignature = CallSignature.from_callable
-
-
 def all_subclasses(cls: Type) -> set:
     """Recursively find all subclasses of class ``cls``.
 
@@ -390,3 +370,55 @@ def ensure_list_of_layer_data_tuple(val):
         except TypeError:
             pass
     raise TypeError('Not a valid list of layer data tuples!')
+
+
+def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
+    """Return a function that can check equality between ``obj`` and another.
+
+    Rather than always using ``==`` (i.e. ``operator.eq``), this function
+    returns operators that are aware of object types: mostly "array types with
+    more than one element" whose truth value is ambiguous.
+
+    This function works for both classes (types) and instances.  If an instance
+    is passed, it will be first cast to a type with type(obj).
+
+    Parameters
+    ----------
+    obj : Any
+        An object whose equality with another object you want to check.
+
+    Returns
+    -------
+    operator : Callable[[Any, Any], bool]
+        An operation that can be called as ``operator(obj, other)`` to check
+        equality between objects of type ``type(obj)``.
+    """
+    import operator
+
+    type_ = type(obj) if not inspect.isclass(obj) else obj
+
+    if issubclass(type_, np.ndarray):
+        return np.array_equal
+
+    import dask.array
+
+    if issubclass(type_, dask.array.Array):
+        return operator.is_
+
+    try:
+        import zarr.core
+
+        if issubclass(type_, zarr.core.Array):
+            return operator.is_
+    except ImportError:
+        pass
+
+    try:
+        import xarray.core.dataarray
+
+        if issubclass(type_, xarray.core.dataarray.DataArray):
+            return np.array_equal
+    except ImportError:
+        pass
+
+    return operator.eq
