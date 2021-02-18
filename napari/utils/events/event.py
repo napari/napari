@@ -48,14 +48,23 @@ to emit events. The EmitterGroup groups EventEmitter objects.
 For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
-from __future__ import annotations
-
 import inspect
 import traceback
 import warnings
 import weakref
 from collections import Counter
-from typing import Any, Callable, Generator, Tuple, Type, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from typing_extensions import Literal
 from vispy.util.logs import _handle_exception, logger
@@ -88,7 +97,7 @@ class Event:
 
     def __init__(self, type: str, native: Any = None, **kwargs: Any):
         # stack of all sources this event has been emitted through
-        self._sources: list[Any] = []
+        self._sources: List[Any] = []
         self._handled: bool = False
         self._blocked: bool = False
         # Store args
@@ -103,7 +112,7 @@ class Event:
         return self._sources[-1] if self._sources else None
 
     @property
-    def sources(self) -> list[Any]:
+    def sources(self) -> List[Any]:
         """List of objects that the event applies to (i.e. are or have
         been a source of the event). Can contain multiple objects in case
         the event traverses a hierarchy of objects.
@@ -240,13 +249,13 @@ class EventEmitter:
         event_class: Type[Event] = Event,
     ):
         # connected callbacks
-        self._callbacks: list[Callback | CallbackRef] = []
+        self._callbacks: List[Union[Callback, CallbackRef]] = []
         # used when connecting new callbacks at specific positions
-        self._callback_refs: list[str | None] = []
+        self._callback_refs: List[Optional[str]] = []
 
         # count number of times this emitter is blocked for each callback.
-        self._blocked: dict[Callback | None, int] = {None: 0}
-        self._block_counter: Counter[Callback | None] = Counter()
+        self._blocked: Dict[Optional[Callback], int] = {None: 0}
+        self._block_counter: Counter[Optional[Callback]] = Counter()
 
         # used to detect emitter loops
         self.source = source
@@ -290,10 +299,12 @@ class EventEmitter:
     @print_callback_errors.setter
     def print_callback_errors(
         self,
-        val: Literal['first']
-        | Literal['reminders']
-        | Literal['always']
-        | Literal['never'],
+        val: Union[
+            Literal['first'],
+            Literal['reminders'],
+            Literal['always'],
+            Literal['never'],
+        ],
     ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
@@ -303,12 +314,12 @@ class EventEmitter:
         self._print_callback_errors = val
 
     @property
-    def callback_refs(self) -> tuple[str | None, ...]:
+    def callback_refs(self) -> Tuple[Optional[str], ...]:
         """The set of callback references"""
         return tuple(self._callback_refs)
 
     @property
-    def callbacks(self) -> tuple[Callback | CallbackRef, ...]:
+    def callbacks(self) -> Tuple[Union[Callback, CallbackRef], ...]:
         """The set of callbacks"""
         return tuple(self._callbacks)
 
@@ -328,11 +339,11 @@ class EventEmitter:
 
     def connect(
         self,
-        callback: Callback | CallbackRef | EmitterGroup,
-        ref: bool | str = False,
-        position: Literal['first'] | Literal['last'] = 'first',
-        before: str | Callback | list[str | Callback] | None = None,
-        after: str | Callback | list[str | Callback] | None = None,
+        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        ref: Union[bool, str] = False,
+        position: Union[Literal['first'], Literal['last']] = 'first',
+        before: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
         """Connect this emitter to a new callback.
 
@@ -415,7 +426,7 @@ class EventEmitter:
             )
 
         # bounds: upper & lower bnds (inclusive) of possible cb locs
-        bounds: list[int] = list()
+        bounds: List[int] = list()
         for ri, criteria in enumerate((before, after)):
             if criteria is None or criteria == []:
                 bounds.append(len(callback_refs) if ri == 0 else 0)
@@ -472,7 +483,7 @@ class EventEmitter:
                 self._callbacks.pop(idx)
                 self._callback_refs.pop(idx)
 
-    def _normalize_cb(self, callback) -> CallbackRef | Callback:
+    def _normalize_cb(self, callback) -> Union[CallbackRef, Callback]:
         # dereference methods into a (self, method_name) pair so that we can
         # make the connection without making a strong reference to the
         # instance.
@@ -521,7 +532,7 @@ class EventEmitter:
                 self._block_counter.update([None])
                 return event
 
-            rem: list[CallbackRef] = []
+            rem: List[CallbackRef] = []
             for cb in self._callbacks[:]:
                 if isinstance(cb, tuple):
                     obj = cb[0]()
@@ -703,15 +714,15 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = True,
-        deprecated: dict[str, str] | None = None,
-        **emitters: Type[Event] | EventEmitter | None,
+        deprecated: Optional[Dict[str, str]] = None,
+        **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
-        self._deprecated: dict[str, str] = deprecated or {}
+        self._deprecated: Dict[str, str] = deprecated or {}
         self.auto_connect_format = "on_%s"
-        self._emitters: dict[str, EventEmitter] = dict()
+        self._emitters: Dict[str, EventEmitter] = dict()
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
@@ -741,7 +752,7 @@ class EmitterGroup(EventEmitter):
         return self._emitters[name]
 
     def __setitem__(
-        self, name: str, emitter: Type[Event] | EventEmitter | None
+        self, name: str, emitter: Union[Type[Event], EventEmitter, None]
     ):
         """
         Alias for EmitterGroup.add(name=emitter)
@@ -751,7 +762,7 @@ class EmitterGroup(EventEmitter):
     def add(
         self,
         auto_connect: bool = None,
-        **kwargs: Type[Event] | EventEmitter | None,
+        **kwargs: Union[Type[Event], EventEmitter, None],
     ):
         """Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
@@ -814,7 +825,7 @@ class EmitterGroup(EventEmitter):
                 emitter.connect(self)
 
     @property
-    def emitters(self) -> dict[str, EventEmitter]:
+    def emitters(self) -> Dict[str, EventEmitter]:
         """List of current emitters in this group."""
         return self._emitters
 
@@ -838,11 +849,11 @@ class EmitterGroup(EventEmitter):
 
     def connect(
         self,
-        callback: Callback | CallbackRef | EmitterGroup,
-        ref: bool | str = False,
-        position: Literal['first'] | Literal['last'] = 'first',
-        before: str | Callback | list[str | Callback] | None = None,
-        after: str | Callback | list[str | Callback] | None = None,
+        callback: Union[Callback, CallbackRef, 'EmitterGroup'],
+        ref: Union[bool, str] = False,
+        position: Union[Literal['first'], Literal['last']] = 'first',
+        before: Union[str, Callback, List[Union[str, Callback]], None] = None,
+        after: Union[str, Callback, List[Union[str, Callback]], None] = None,
     ):
         """Connect the callback to the event group. The callback will receive
         events from *all* of the emitters in the group.
@@ -892,7 +903,7 @@ class EmitterGroup(EventEmitter):
             elif isinstance(emitter, EmitterGroup):
                 emitter.ignore_callback_errors_all(ignore)
 
-    def blocker_all(self) -> EventBlockerAll:
+    def blocker_all(self) -> 'EventBlockerAll':
         """Return an EventBlockerAll to be used in 'with' statements
 
         Notes
