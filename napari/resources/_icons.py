@@ -3,17 +3,16 @@ from functools import lru_cache
 from pathlib import Path
 
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
-ICONS = {x.stem: x for x in ICON_PATH.iterdir()}
+ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
 
 
 def get_icon_path(name: str) -> str:
     """Return path to an SVG in the theme icons."""
-    icon = ICONS.get(name)
-    if not icon:
+    if name not in ICONS:
         raise ValueError(
             f"unrecognized icon name: {name!r}. Known names: {ICONS}"
         )
-    return str(icon)
+    return ICONS[name]
 
 
 svg_elem = re.compile(r'(<svg[^>]*>)')
