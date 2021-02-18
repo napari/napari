@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from functools import lru_cache
 from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from qtpy import QtCore
+from typing import Generator, Iterable
 
 QRC_TEMPLATE = """
 <!DOCTYPE RCC><RCC version="1.0">
@@ -14,31 +16,43 @@ QRC_TEMPLATE = """
 """
 
 
-DEFAULT_OPACITY = (0.6, 1)
+DEFAULT_OPACITY = (0.5, 1)
 
 
 @contextmanager
-def temporary_qrc_file(themes=None, icons=None, opacities=None):
-    """[summary]
+def temporary_qrc_file(
+    themes: Iterable[str] | None = None,
+    icons: Iterable[str] | None = None,
+    opacities: Iterable[float] | None = None,
+) -> Generator[str, None, None]:
+    """Create a qrc file for all combinations of ``icon``, ``theme``, ``opac``.
 
-    <file alias='theme/icon_name.svg'>theme_icon_name.svg</file>
+    Generates a .qrc file containing, for all theme/icons:
+
+    <qresource prefix="/themes">
+        <file alias='theme/icon_name.svg'>theme_icon_name.svg</file>
+    </qresource>
 
     Parameters
     ----------
-    themes : tuple, optional
-        [description], by default all available themes
-    icons : tuple, optional
-        [description], by default all available icons
-    opacities : tuple, optional
-        [description], by default (0.6, 1)
+    themes : iterable of str, optional
+        The theme names for which to generate icons, by default all available
+        themes.
+    icons : iterable of str, optional
+        The set of icons , by default all available icons
+    opacities : iterable of float, optional
+        An iterable of icon opacities to pre-generate, by default (0.6, 1).
+        Icons with opacity < 1 can be accessed with the opacity as a percentage
+        for instance: ``icon_name_50.svg``
 
     Yields
     -------
-    [type]
-        [description]
+    QRC_name : str
+        The name of the temporary QRC file.  It will be in a temporary
+        directory containing all of the necessary modified/colorized svgs.
     """
-    from ...utils.theme import _themes
     from ...resources._icons import ICONS, get_colorized_svg
+    from ...utils.theme import _themes
 
     themes = themes or _themes.keys()
     icons = icons or ICONS.keys()
@@ -47,6 +61,10 @@ def temporary_qrc_file(themes=None, icons=None, opacities=None):
     # theme, icon_name, opacity_key, colorized.svg
     FILE_T = "<file alias='{}/{}{}.svg'>{}</file>"
 
+    # mapping of icon_name to theme key, otherwise icon color will be "icon"
+    color_override = {'warning': 'warning'}
+
+    # create a temporary directory for the qrc file and all colorized svgs.
     with TemporaryDirectory() as tdir_name:
         tmp_dir = Path(tdir_name)
 
@@ -55,7 +73,7 @@ def temporary_qrc_file(themes=None, icons=None, opacities=None):
         for theme, icon_name, op in product(_themes, ICONS, opacities):
             opacity_key = "" if op == 1 else f"_{op * 100:.0f}"
             tmp_svg = f"{theme}_{icon_name}{opacity_key}.svg"
-            color = _themes[theme]['icon']
+            color = _themes[theme][color_override.get(icon_name, 'icon')]
             xml = get_colorized_svg(ICONS[icon_name], color, op)
             (tmp_dir / tmp_svg).write_text(xml)
             files.append(FILE_T.format(theme, icon_name, opacity_key, tmp_svg))
@@ -73,8 +91,9 @@ def _compile_qrc_pyqt5(qrc, outfile):
 
 
 def _compile_qrc_pyside2(qrc, outfile):
+    from subprocess import CalledProcessError, run
+
     import PySide2
-    from subprocess import run, CalledProcessError
 
     exe = Path(PySide2.__file__).parent / 'rcc'
     if not exe.exists():

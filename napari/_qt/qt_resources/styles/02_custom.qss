@@ -218,7 +218,7 @@ QtLayerWidget > QCheckBox#visibility::indicator{
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ folder }}/visibility_off_50.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {

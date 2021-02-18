@@ -49,4 +49,7 @@ def get_colorized_svg(path_or_xml: str, color: str = None, opacity=1) -> str:
         xml = get_raw_svg(path_or_xml)
     if not color:
         return xml
+
+    # use regex to find the svg tag and insert css right after
+    # (the '\\1' syntax includes the matched tag in the output)
     return svg_elem.sub(f'\\1{svg_style.format(color, opacity)}', xml)

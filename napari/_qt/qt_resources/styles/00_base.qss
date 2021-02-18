@@ -118,7 +118,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-   image: url(":/themes/{{ folder }}/drop_down.svg");
+   image: url(":/themes/{{ folder }}/drop_down_50.svg");
    width: 14px;
    height: 14px;
 }
@@ -220,11 +220,11 @@ QAbstractSpinBox::down-arrow {
 }
 
 QAbstractSpinBox::up-arrow {
-   image: url(":/themes/{{ folder }}/plus.svg");
+   image: url(":/themes/{{ folder }}/plus_50.svg");
 }
 
 QAbstractSpinBox::down-arrow {
-   image: url(":/themes/{{ folder }}/minus.svg");
+   image: url(":/themes/{{ folder }}/minus_50.svg");
 }
 
 /* ----------------- QCheckBox ------------------ */
