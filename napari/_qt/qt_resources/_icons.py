@@ -1,10 +1,9 @@
-from __future__ import annotations
-
+import os
 from contextlib import contextmanager
 from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Generator, Iterable
+from typing import Generator, Iterable, Optional
 
 import qtpy
 
@@ -22,9 +21,9 @@ DEFAULT_OPACITIES = (0.5, 1)
 
 @contextmanager
 def temporary_qrc_file(
-    themes: Iterable[str] | None = None,
-    icons: Iterable[str] | None = None,
-    opacities: Iterable[float] | None = None,
+    themes: Optional[Iterable[str]] = None,
+    icons: Optional[Iterable[str]] = None,
+    opacities: Optional[Iterable[float]] = None,
 ) -> Generator[str, None, None]:
     """Create a qrc file for all combinations of ``icon``, ``theme``, ``opac``.
 
@@ -85,14 +84,20 @@ def temporary_qrc_file(
         yield str(res_file)
 
 
-def _compile_qrc_pyqt5(qrc, outfile):
+def _compile_qrc_pyqt5(qrc) -> bytes:
     from PyQt5.pyrcc_main import processResourceFile
 
-    processResourceFile([qrc], outfile, False)
+    tf = NamedTemporaryFile(suffix='.py', delete=False)
+    try:
+        tf.close()
+        processResourceFile([qrc], tf.name, False)
+        out = Path(tf.name).read_bytes()
+    finally:
+        os.unlink(tf.name)
+    return out
 
 
-def _compile_qrc_pyside2(qrc, outfile):
-    import os
+def _compile_qrc_pyside2(qrc) -> bytes:
     from subprocess import CalledProcessError, run
 
     import PySide2
@@ -114,30 +119,31 @@ def _compile_qrc_pyside2(qrc, outfile):
         raise RuntimeError(f"PySide2 rcc binary not found in {pyside_root}")
 
     try:
-        run(cmd + ['-o', outfile, qrc], check=True, capture_output=True)
+        return run(cmd + [qrc], check=True, capture_output=True).stdout
     except CalledProcessError as e:
         raise RuntimeError(f"Failed to build PySide2 resources {e}")
 
 
-def compile_qrc(qrc, outfile):
-
+def compile_qrc(qrc) -> bytes:
     if qtpy.API_NAME == 'PyQt5':
-        _compile_qrc_pyqt5(qrc, outfile)
+        return _compile_qrc_pyqt5(qrc)
     elif qtpy.API_NAME == 'PySide2':
-        _compile_qrc_pyside2(qrc, outfile)
+        return _compile_qrc_pyside2(qrc)
     else:
         raise RuntimeError(
             f"Cannot compile QRC. Unexpected qtpy API name: {qtpy.API_NAME}"
         )
 
 
-def build_qt_resources(themes=None, icons=None, opacities=None) -> str:
+def build_qt_resources(
+    themes=None, icons=None, opacities=None, save_path=None
+) -> str:
     with temporary_qrc_file(themes, icons, opacities) as qrc:
-        with NamedTemporaryFile() as f:
-            compile_qrc(qrc, f.name)
-            f.seek(0)
-            out = f.read().decode()
-            return out.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
+        output = compile_qrc(qrc)
+        output = output.replace(b'PySide2', b'qtpy').replace(b'PyQt5', b'qtpy')
+        if save_path:
+            Path(save_path).write_bytes(output)
+        return output.decode()
 
 
 def register_qt_resources(themes=None, icons=None, opacities=None):
@@ -175,14 +181,5 @@ def register_napari_resources(persist=True, force_rebuild=False):
         modname = f'napari._qt.qt_resources.{key}'
         import_module(modname)
     else:
-        resource_file = build_qt_resources()
-        if persist:
-            try:
-                save_path.write_text(resource_file)
-            except Exception as e:
-                import warnings
-
-                warnings.warn(
-                    f"Failed to save qt_resources to {save_path}: {e}"
-                )
+        resource_file = build_qt_resources(save_path=persist and save_path)
         exec(resource_file, globals())
