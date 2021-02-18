@@ -13,6 +13,8 @@ from ..utils import config, perf
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 from .qthreading import wait_for_workers_to_quit
+from .qt_resources._icons import register_resources
+
 
 NAPARI_ICON_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'resources', 'logo.png'
@@ -95,6 +97,7 @@ def get_app(
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
     kwargs = locals() if set_values else _defaults
+    global _app_ref
 
     app = QApplication.instance()
     if app:
@@ -121,9 +124,6 @@ def get_app(
         else:
             app = QApplication(sys.argv)
 
-        global _app_ref
-        _app_ref = app  # prevent garbage collection
-
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
         app.setApplicationName(kwargs.get('app_name'))
@@ -137,10 +137,13 @@ def get_app(
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    # see docstring of `wait_for_workers_to_quit` for caveats on killing
-    # workers at shutdown.
-    app.aboutToQuit.connect(wait_for_workers_to_quit)
+    if not _app_ref:  # running get_app for the first time
+        # see docstring of `wait_for_workers_to_quit` for caveats on killing
+        # workers at shutdown.
+        app.aboutToQuit.connect(wait_for_workers_to_quit)
+        register_resources()
 
+    _app_ref = app  # prevent garbage collection
     return app
 
 
