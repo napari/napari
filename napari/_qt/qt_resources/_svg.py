@@ -125,7 +125,7 @@ class SVGBufferIconEngine(QIconEngine):
 
     def __init__(self, xml: str | bytes) -> None:
         if isinstance(xml, str):
-            xml = bytes(xml, encoding='utf-8')
+            xml = xml.encode('utf-8')
         self.data = QByteArray(xml)
         super().__init__()
 
