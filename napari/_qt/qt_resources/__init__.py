@@ -3,7 +3,7 @@ from functools import lru_cache
 from glob import glob
 from typing import List, Optional
 
-from ._icons import register_qt_resources
+from ._icons import build_qt_resources, register_qt_resources
 from ._svg import QColoredSVGIcon
 
 __all__ = [
