@@ -10,6 +10,18 @@ from .categorical_colormap_utils import ColorCycle
 from .standardize_color import transform_color
 
 
+def compare_colormap_dicts(cmap_1, cmap_2):
+
+    if len(cmap_1) != len(cmap_2):
+        return False
+    for k, v in cmap_1.items():
+        if k not in cmap_2:
+            return False
+        if not np.allclose(v, cmap_2[k]):
+            return False
+    return True
+
+
 class CategoricalColormap(EventedModel):
     """Colormap that relates categorical values to colors.
 
@@ -25,7 +37,7 @@ class CategoricalColormap(EventedModel):
         The default value is a cycle of all white.
     """
 
-    colormap: Dict[Any, Array[float, (4,)]] = {}
+    colormap: Dict[Any, Array[np.float32, (4,)]] = {}
     fallback_color: ColorCycle = 'white'
 
     @validator('colormap', pre=True)
@@ -86,3 +98,15 @@ class CategoricalColormap(EventedModel):
         # map the colors
         colors = np.array([self.colormap[x] for x in color_properties])
         return colors
+
+    def __eq__(self, other):
+        if isinstance(other, CategoricalColormap):
+            if not compare_colormap_dicts(self.colormap, other.colormap):
+                return False
+            if not np.allclose(
+                self.fallback_color.values, other.fallback_color.values
+            ):
+                return False
+            return True
+        else:
+            return False
