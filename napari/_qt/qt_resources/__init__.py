@@ -3,9 +3,15 @@ from functools import lru_cache
 from glob import glob
 from typing import List, Optional
 
+from ._icons import register_qt_resources
 from ._svg import QColoredSVGIcon
 
-__all__ = ['get_stylesheet', 'QColoredSVGIcon']
+__all__ = [
+    'build_qt_resources',
+    'get_stylesheet',
+    'QColoredSVGIcon',
+    'register_qt_resources',
+]
 
 
 @lru_cache(maxsize=12)

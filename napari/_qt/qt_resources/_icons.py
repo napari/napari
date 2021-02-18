@@ -129,7 +129,7 @@ def build_qt_resources(themes=None, icons=None, opacities=None) -> str:
             return out.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
 
 
-def register_resources(themes=None, icons=None, opacities=None):
+def register_qt_resources(themes=None, icons=None, opacities=None):
     exec(build_qt_resources(themes, icons, opacities), globals())
 
 

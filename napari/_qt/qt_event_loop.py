@@ -12,9 +12,8 @@ from napari import __version__
 from ..utils import config, perf
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
+from .qt_resources import register_qt_resources
 from .qthreading import wait_for_workers_to_quit
-from .qt_resources._icons import register_resources
-
 
 NAPARI_ICON_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'resources', 'logo.png'
@@ -141,7 +140,10 @@ def get_app(
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
-        register_resources()
+
+        # this will register all of our resources (icons) with Qt, so that they
+        # can be used in qss files and elsewhere.
+        register_qt_resources()
 
     _app_ref = app  # prevent garbage collection
     return app
