@@ -1,9 +1,8 @@
 """
 A Class for generating QIcons from SVGs with arbitrary colors at runtime.
 """
-from __future__ import annotations
-
 from functools import lru_cache
+from typing import Optional, Union
 
 from qtpy.QtCore import QByteArray, QPoint, QRect, QRectF, Qt
 from qtpy.QtGui import QIcon, QIconEngine, QImage, QPainter, QPixmap
@@ -42,7 +41,10 @@ class QColoredSVGIcon(QIcon):
     """
 
     def __init__(
-        self, path_or_xml: str, color: str | None = None, opacity: float = 1.0
+        self,
+        path_or_xml: str,
+        color: Optional[str] = None,
+        opacity: float = 1.0,
     ) -> None:
         from ...resources import get_colorized_svg
 
@@ -53,11 +55,11 @@ class QColoredSVGIcon(QIcon):
     @lru_cache()
     def colored(
         self,
-        color: str | None = None,
+        color: Optional[str] = None,
         opacity: float = 1.0,
-        theme: str | None = None,
+        theme: Optional[str] = None,
         theme_key: str = 'icon',
-    ) -> QColoredSVGIcon:
+    ) -> 'QColoredSVGIcon':
         """Return a new colorized QIcon instance.
 
         Parameters
@@ -89,7 +91,7 @@ class QColoredSVGIcon(QIcon):
     @lru_cache()
     def from_resources(
         icon_name: str,
-    ) -> QColoredSVGIcon:
+    ) -> 'QColoredSVGIcon':
         """Get an icon from napari SVG resources.
 
         Parameters
@@ -123,7 +125,7 @@ class SVGBufferIconEngine(QIconEngine):
     see: https://doc.qt.io/qt-5/qiconengine.html
     """
 
-    def __init__(self, xml: str | bytes) -> None:
+    def __init__(self, xml: Union[str, bytes]) -> None:
         if isinstance(xml, str):
             xml = xml.encode('utf-8')
         self.data = QByteArray(xml)
