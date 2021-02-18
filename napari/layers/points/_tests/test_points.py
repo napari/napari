@@ -98,7 +98,7 @@ def test_empty_layer_with_face_colormap():
 
     # verify the current_face_color is correct
     face_color = np.array([1, 1, 1, 1])
-    np.testing.assert_allclose(layer._face_color.current_color, face_color)
+    np.testing.assert_allclose(layer._face.current_color, face_color)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -116,7 +116,7 @@ def test_empty_layer_with_edge_colormap():
 
     # verify the current_face_color is correct
     edge_color = np.array([1, 1, 1, 1])
-    np.testing.assert_allclose(layer._edge_color.current_color, edge_color)
+    np.testing.assert_allclose(layer._edge.current_color, edge_color)
 
 
 def test_random_points():
@@ -499,7 +499,7 @@ def test_adding_properties(attribute):
     assert isinstance(layer.properties['point_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     color_manager.color_properties = {
         'name': 'point_type',
         'values': np.empty(0),
@@ -741,7 +741,7 @@ def test_switch_color_mode(attribute):
     )
 
     # there should not be an edge_color_property
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     color_property = color_manager.color_properties
     assert color_property is None
 
@@ -750,7 +750,7 @@ def test_switch_color_mode(attribute):
     # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     color_property_name = color_manager.color_properties.name
     assert color_property_name == next(iter(properties))
     layer_color = getattr(layer, f'{attribute}_color')
@@ -940,7 +940,7 @@ def test_color_cycle(attribute, color_cycle):
     current_properties['point_type'] = np.array(['new'])
     layer.current_properties = current_properties
     layer.add([10, 10])
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
 
     assert 'new' in color_cycle_map
@@ -961,7 +961,7 @@ def test_color_cycle_dict(attribute):
     }
     layer = Points(data, **points_kwargs)
 
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
     np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
     np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
@@ -985,7 +985,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
 
     # verify the current_edge_color is correct
     expected_color = transform_color(color_cycle[0])[0]
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     current_color = color_manager.current_color
     np.testing.assert_allclose(current_color, expected_color)
 
@@ -1036,7 +1036,7 @@ def test_adding_value_color_cycle(attribute):
     props['point_type'] = point_types
     layer.properties = props
 
-    color_manager = getattr(layer, f'_{attribute}_color')
+    color_manager = getattr(layer, f'_{attribute}')
     color_cycle_map = color_manager.categorical_colormap.colormap
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys

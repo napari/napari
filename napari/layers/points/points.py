@@ -373,7 +373,7 @@ class Points(Layer):
         self._clipboard = {}
         self._round_index = False
 
-        self._edge_color = ColorManager.from_layer_kwargs(
+        self._edge = ColorManager.from_layer_kwargs(
             n_colors=len(data),
             colors=edge_color,
             continuous_colormap=edge_colormap,
@@ -381,7 +381,7 @@ class Points(Layer):
             categorical_colormap=edge_color_cycle,
             properties=properties,
         )
-        self._face_color = ColorManager.from_layer_kwargs(
+        self._face = ColorManager.from_layer_kwargs(
             n_colors=len(data),
             colors=face_color,
             continuous_colormap=face_colormap,
@@ -423,13 +423,13 @@ class Points(Layer):
             # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
-                if len(self._edge_color.colors) > len(data):
-                    self._edge_color.remove(
-                        np.arange(len(data), len(self._edge_color.colors))
+                if len(self._edge.colors) > len(data):
+                    self._edge.remove(
+                        np.arange(len(data), len(self._edge.colors))
                     )
-                if len(self._face_color.colors) > len(data):
-                    self._face_color.remove(
-                        np.arange(len(data), len(self._face_color.colors))
+                if len(self._face.colors) > len(data):
+                    self._face.remove(
+                        np.arange(len(data), len(self._face.colors))
                     )
                 self._size = self._size[: len(data)]
 
@@ -461,8 +461,8 @@ class Points(Layer):
                     )
 
                 # add new colors
-                self._edge_color.add(n_colors=adding)
-                self._face_color.add(n_colors=adding)
+                self._edge.add(n_colors=adding)
+                self._face.add(n_colors=adding)
 
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
@@ -500,31 +500,31 @@ class Points(Layer):
         if not isinstance(properties, dict):
             properties, _ = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
-        if self._face_color.color_properties is not None:
-            if self._face_color.color_properties.name not in self._properties:
-                self._face_color.mode = ColorMode.DIRECT
-                self._face_color.color_properties = None
+        if self._face.color_properties is not None:
+            if self._face.color_properties.name not in self._properties:
+                self._face.mode = ColorMode.DIRECT
+                self._face.color_properties = None
                 warnings.warn(
                     'property used for face_color dropped', RuntimeWarning
                 )
             else:
-                face_color_name = self._face_color.color_properties.name
-                self._face_color.color_properties = {
+                face_color_name = self._face.color_properties.name
+                self._face.color_properties = {
                     'name': face_color_name,
                     'values': properties[face_color_name],
                     'current_value': self.current_properties[face_color_name],
                 }
 
-        if self._edge_color.color_properties is not None:
-            if self._edge_color.color_properties.name not in self._properties:
-                self._edge_color.mode = ColorMode.DIRECT
-                self._edge_color.color_properties = None
+        if self._edge.color_properties is not None:
+            if self._edge.color_properties.name not in self._properties:
+                self._edge.mode = ColorMode.DIRECT
+                self._edge.color_properties = None
                 warnings.warn(
                     'property used for edge_color dropped', RuntimeWarning
                 )
             else:
-                edge_color_name = self._edge_color.color_properties.name
-                self._edge_color.color_properties = {
+                edge_color_name = self._edge.color_properties.name
+                self._edge.color_properties = {
                     'name': edge_color_name,
                     'values': properties[edge_color_name],
                     'current_value': self.current_properties[edge_color_name],
@@ -553,8 +553,8 @@ class Points(Layer):
                 props[k][list(self.selected_data)] = current_properties[k]
             self.properties = props
 
-        self._edge_color.update_current_properties(current_properties)
-        self._face_color.update_current_properties(current_properties)
+        self._edge.update_current_properties(current_properties)
+        self._face.update_current_properties(current_properties)
         self.events.current_properties()
 
     def _validate_properties(
@@ -686,13 +686,18 @@ class Points(Layer):
         self.events.edge_width()
 
     @property
+    def edge(self) -> ColorManager:
+        """The ColorManager object that coordinates the edge color of each point"""
+        return self._edge
+
+    @property
     def edge_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each point"""
-        return self._edge_color.colors
+        return self._edge.colors
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        self._edge_color.set_color(
+        self._edge.set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
@@ -705,11 +710,11 @@ class Points(Layer):
         """Union[list, np.ndarray] :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color.categorical_colormap.fallback_color.values
+        return self._edge.categorical_colormap.fallback_color.values
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
-        self._edge_color.categorical_colormap = edge_color_cycle
+        self._edge.categorical_colormap = edge_color_cycle
 
     @property
     def edge_colormap(self) -> Colormap:
@@ -720,29 +725,29 @@ class Points(Layer):
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._edge_color.continuous_colormap
+        return self._edge.continuous_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        self._edge_color.continuous_colormap = colormap
+        self._edge.continuous_colormap = colormap
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
         """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
-        return self._edge_color.contrast_limits
+        return self._edge.contrast_limits
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._edge_color.contrast_limits = contrast_limits
+        self._edge.contrast_limits = contrast_limits
 
     @property
     def current_edge_color(self) -> str:
         """str: Edge color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._edge_color.current_color)[0]
+        hex_ = rgb_to_hex(self._edge.current_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
@@ -755,7 +760,7 @@ class Points(Layer):
             update_indices = list(self.selected_data)
         else:
             update_indices = []
-        self._edge_color.update_current_color(
+        self._edge.update_current_color(
             edge_color, update_indices=update_indices
         )
         self.events.current_edge_color()
@@ -770,20 +775,25 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return self._edge_color.mode
+        return self._edge.mode
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
         self._set_color_mode(edge_color_mode, 'edge')
 
     @property
+    def face(self) -> ColorManager:
+        """The ColorManager object that coordinates the face color of each point"""
+        return self._face
+
+    @property
     def face_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA face colors for each point"""
-        return self._face_color.colors
+        return self._face.colors
 
     @face_color.setter
     def face_color(self, face_color):
-        self._face_color.set_color(
+        self._face.set_color(
             color=face_color,
             n_colors=len(self.data),
             properties=self.properties,
@@ -796,11 +806,11 @@ class Points(Layer):
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._face_color.categorical_colormap.fallback_color.values
+        return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
-        self._face_color.categorical_colormap = face_color_cycle
+        self._face.categorical_colormap = face_color_cycle
 
     @property
     def face_colormap(self) -> Colormap:
@@ -811,29 +821,29 @@ class Points(Layer):
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._face_color.continuous_colormap
+        return self._face.continuous_colormap
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg):
-        self._face_color.continuous_colormap = colormap
+        self._face.continuous_colormap = colormap
 
     @property
     def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
-        return self._face_color.contrast_limits
+        return self._face.contrast_limits
 
     @face_contrast_limits.setter
     def face_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._face_color.contrast_limits = contrast_limits
+        self._face.contrast_limits = contrast_limits
 
     @property
     def current_face_color(self) -> str:
         """Face color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._face_color.current_color)[0]
+        hex_ = rgb_to_hex(self._face.current_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
@@ -847,7 +857,7 @@ class Points(Layer):
             update_indices = list(self.selected_data)
         else:
             update_indices = []
-        self._face_color.update_current_color(
+        self._face.update_current_color(
             face_color, update_indices=update_indices
         )
         self.events.current_face_color()
@@ -862,7 +872,7 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return self._face_color.mode
+        return self._face.mode
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
@@ -883,7 +893,7 @@ class Points(Layer):
             Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
         """
         color_mode = ColorMode(color_mode)
-        color_manager = getattr(self, f'_{attribute}_color')
+        color_manager = getattr(self, f'_{attribute}')
 
         if color_mode == ColorMode.DIRECT:
             color_manager.mode = color_mode
@@ -935,8 +945,8 @@ class Points(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge_color.refresh_colors(self.properties, update_color_mapping)
-        self._face_color.refresh_colors(self.properties, update_color_mapping)
+        self._edge.refresh_colors(self.properties, update_color_mapping)
+        self._face.refresh_colors(self.properties, update_color_mapping)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1393,7 +1403,7 @@ class Points(Layer):
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            colors = self._face_color.colors[thumbnail_indices]
+            colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors
 
         colormapped[..., 3] *= self.opacity
@@ -1414,8 +1424,8 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
-            self._edge_color.remove(indices_to_remove=index)
-            self._face_color.remove(indices_to_remove=index)
+            self._edge.remove(indices_to_remove=index)
+            self._face.remove(indices_to_remove=index)
             for k in self.properties:
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
@@ -1466,11 +1476,11 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge_color.paste(
+            self._edge.paste(
                 colors=self._clipboard['edge_color'],
                 properties=self._clipboard['properties'],
             )
-            self._face_color.paste(
+            self._face.paste(
                 colors=self._clipboard['face_color'],
                 properties=self._clipboard['properties'],
             )
