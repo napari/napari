@@ -42,7 +42,7 @@ class QColoredSVGIcon(QIcon):
     """
 
     def __init__(
-        self, path_or_xml: str, color: str = None, opacity: float = 1.0
+        self, path_or_xml: str, color: str | None = None, opacity: float = 1.0
     ) -> None:
         from ...resources import get_colorized_svg
 
@@ -53,11 +53,11 @@ class QColoredSVGIcon(QIcon):
     @lru_cache()
     def colored(
         self,
-        color: str = None,
+        color: str | None = None,
         opacity: float = 1.0,
-        theme: str = None,
+        theme: str | None = None,
         theme_key: str = 'icon',
-    ):
+    ) -> QColoredSVGIcon:
         """Return a new colorized QIcon instance.
 
         Parameters
@@ -85,12 +85,11 @@ class QColoredSVGIcon(QIcon):
 
         return QColoredSVGIcon(self._svg, color, opacity)
 
-    @classmethod
+    @staticmethod
     @lru_cache()
     def from_resources(
-        cls,
         icon_name: str,
-    ):
+    ) -> QColoredSVGIcon:
         """Get an icon from napari SVG resources.
 
         Parameters
@@ -126,11 +125,11 @@ class SVGBufferIconEngine(QIconEngine):
 
     def __init__(self, xml: str | bytes) -> None:
         if isinstance(xml, str):
-            xml = bytes(xml, encoding='utf-8')
+            xml = xml.encode('utf-8')
         self.data = QByteArray(xml)
         super().__init__()
 
-    def paint(self, painter, rect, mode, state):
+    def paint(self, painter: QPainter, rect, mode, state):
         """Paint the icon int ``rect`` using ``painter``."""
         renderer = QSvgRenderer(self.data)
         renderer.render(painter, QRectF(rect))
