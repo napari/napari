@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from functools import lru_cache
 from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Generator, Iterable
+
+import qtpy
 
 QRC_TEMPLATE = """
 <!DOCTYPE RCC><RCC version="1.0">
@@ -107,19 +108,17 @@ def _compile_qrc_pyside2(qrc, outfile):
 
 
 def compile_qrc(qrc, outfile):
-    from qtpy import API_NAME
 
-    if API_NAME == 'PyQt5':
+    if qtpy.API_NAME == 'PyQt5':
         _compile_qrc_pyqt5(qrc, outfile)
-    elif API_NAME == 'PySide2':
+    elif qtpy.API_NAME == 'PySide2':
         _compile_qrc_pyside2(qrc, outfile)
     else:
         raise RuntimeError(
-            f"Cannot compile QRC. Unexpected qtpy API name: {API_NAME}"
+            f"Cannot compile QRC. Unexpected qtpy API name: {qtpy.API_NAME}"
         )
 
 
-@lru_cache()
 def build_qt_resources(themes=None, icons=None, opacities=None) -> str:
     with temporary_qrc_file(themes, icons, opacities) as qrc:
         with NamedTemporaryFile() as f:
@@ -131,6 +130,50 @@ def build_qt_resources(themes=None, icons=None, opacities=None) -> str:
 
 def register_qt_resources(themes=None, icons=None, opacities=None):
     exec(build_qt_resources(themes, icons, opacities), globals())
+
+
+def register_napari_resources(persist=True, force_rebuild=False):
+    """Build, save, and register napari Qt icon resources.
+
+    If a _qt_resources*.py file exists that matches the qt version and hash of
+    the icons directory, this function will simply import that file.
+    Otherwise, this function will create themed versions of the icons in the
+    resources/icons folder, create a .qrc file, and compile it, and import it.
+    If `persist` is `True`, the compiled resources will be saved for next run.
+
+    Parameters
+    ----------
+    persist : bool, optional
+        Whether to save newly compiled resources, by default True
+    force_rebuild : bool, optional
+        If true, resources will be recompiled and resaved, even if they already
+        exist
+    """
+    from ...resources._icons import ICON_PATH
+    from ...utils.misc import dir_hash
+
+    icon_hash = dir_hash(ICON_PATH)  # get hash of icons folder contents
+    key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
+    key = key.replace(".", "_")
+    save_path = Path(__file__).parent / f"{key}.py"
+
+    if not force_rebuild and save_path.exists():
+        from importlib import import_module
+
+        modname = f'napari._qt.qt_resources.{key}'
+        import_module(modname)
+    else:
+        resource_file = build_qt_resources()
+        if persist:
+            try:
+                save_path.write_text(resource_file)
+            except Exception as e:
+                import warnings
+
+                warnings.warn(
+                    f"Failed to save qt_resources to {save_path}: {e}"
+                )
+        exec(resource_file, globals())
 
 
 if __name__ == '__main__':
