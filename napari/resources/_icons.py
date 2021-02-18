@@ -26,27 +26,25 @@ rect {{fill: {0}; opacity: {1};}}
 
 @lru_cache()
 def get_raw_svg(path: str) -> str:
-    """Get and cached SVG XML.
+    """Get and cache SVG XML."""
+    return Path(path).read_text()
+
+
+@lru_cache()
+def get_colorized_svg(path_or_xml: str, color: str = None, opacity=1) -> str:
+    """Return a colorized version of the SVG XML at ``path``.
 
     Raises
     ------
     ValueError
         If the path exists but does not contain valid SVG data.
     """
-    with open(path) as f:
-        xml = f.read()
-        if not svg_elem.search(xml):
-            raise ValueError(f"Could not detect svg tag in {path!r}")
-        return xml
-
-
-@lru_cache()
-def get_colorized_svg(path_or_xml: str, color: str = None, opacity=1) -> str:
-    """Return a colorized version of the SVG XML at ``path``."""
-    if '</svg>' in path_or_xml:
-        xml = path_or_xml
-    else:
-        xml = get_raw_svg(path_or_xml)
+    xml = get_raw_svg(path_or_xml) if '</svg>' in path_or_xml else path_or_xml
     if not color:
         return xml
+
+    if not svg_elem.search(xml):
+        raise ValueError(f"Could not detect svg tag in {path_or_xml!r}")
+    # use regex to find the svg tag and insert css right after
+    # (the '\\1' syntax includes the matched tag in the output)
     return svg_elem.sub(f'\\1{svg_style.format(color, opacity)}', xml)
