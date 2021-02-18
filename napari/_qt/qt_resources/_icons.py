@@ -92,16 +92,24 @@ def _compile_qrc_pyqt5(qrc, outfile):
 
 
 def _compile_qrc_pyside2(qrc, outfile):
+    import os
     from subprocess import CalledProcessError, run
 
     import PySide2
 
     pyside_root = Path(PySide2.__file__).parent
 
-    if (pyside_root / 'rcc').exists():
-        cmd = [str(pyside_root / 'rcc'), '-g', 'python']
-    elif (pyside_root / 'pyside2-rcc').exists():
-        cmd = [str(pyside_root / 'pyside2-rcc')]
+    if os.name == 'nt':
+        look_for = ('rcc.exe', 'pyside2-rcc.exe')
+    else:
+        look_for = ('rcc', 'pyside2-rcc')
+
+    for bin in look_for:
+        if (pyside_root / bin).exists():
+            cmd = [str(pyside_root / bin)]
+            if 'pyside2' not in bin:  # older version
+                cmd.extend(['-g', 'python'])
+            break
     else:
         raise RuntimeError(f"PySide2 rcc binary not found in {pyside_root}")
 
