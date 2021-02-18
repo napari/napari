@@ -174,9 +174,3 @@ def register_napari_resources(persist=True, force_rebuild=False):
                     f"Failed to save qt_resources to {save_path}: {e}"
                 )
         exec(resource_file, globals())
-
-
-if __name__ == '__main__':
-
-    with open('/Users/talley/Desktop/out.py', 'w') as fn:
-        fn.write(build_qt_resources())
