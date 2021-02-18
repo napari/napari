@@ -124,13 +124,6 @@ class ColorManager(EventedModel):
     categorical_colormap: CategoricalColormap = [0, 0, 0, 1]
     colors: Array[float, (-1, 4)] = []
 
-    __equality_checks__ = {
-        'color_properties': compare_color_properties,
-        'contrast_limits': compare_contrast_limits,
-        'current_color': compare_colors,
-        'colors': compare_colors,
-    }
-
     # validators
     @validator('continuous_colormap', pre=True)
     def _ensure_continuous_colormap(cls, v):
@@ -503,7 +496,7 @@ class ColorManager(EventedModel):
         self.current_color = transform_color(current_color)[0]
         if len(update_indices) > 0:
             self.mode = ColorMode.DIRECT
-            cur_colors = self.colors
+            cur_colors = self.colors.copy()
             cur_colors[update_indices] = self.current_color
             self.colors = cur_colors
 
