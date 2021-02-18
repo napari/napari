@@ -86,12 +86,6 @@ class ImplementationListItem(QFrame):
         )
         plugin_name_size_policy.setHorizontalStretch(2)
         self.plugin_name_label.setSizePolicy(plugin_name_size_policy)
-        self.plugin_name_label.setStyleSheet(
-            """QLabel{
-            background-color: blue
-        }
-        """
-        )
 
         self.function_name_label = QLabel(
             item.hook_implementation.function.__name__
@@ -106,7 +100,7 @@ class ImplementationListItem(QFrame):
         layout.addWidget(self.position_label)
         layout.addWidget(self.enabled_checkbox)
         layout.addWidget(self.function_name_label)
-        layout.addWidget(self.plugin_name_label, alignment=Qt.AlignRight)
+        layout.addWidget(self.plugin_name_label)
         layout.setStretch(2, 1)
         layout.setContentsMargins(0, 0, 0, 0)
 
