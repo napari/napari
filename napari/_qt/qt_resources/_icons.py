@@ -17,7 +17,7 @@ QRC_TEMPLATE = """
 """
 
 
-DEFAULT_OPACITY = (0.5, 1)
+DEFAULT_OPACITIES = (0.5, 1)
 
 
 @contextmanager
@@ -57,7 +57,7 @@ def temporary_qrc_file(
 
     themes = themes or _themes.keys()
     icons = icons or ICONS.keys()
-    opacities = opacities or DEFAULT_OPACITY
+    opacities = opacities or DEFAULT_OPACITIES
 
     # theme, icon_name, opacity_key, colorized.svg
     FILE_T = "<file alias='{}/{}{}.svg'>{}</file>"
