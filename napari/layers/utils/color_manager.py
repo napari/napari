@@ -116,7 +116,7 @@ class ColorManager(EventedModel):
     """
 
     # fields
-    current_color: Optional[np.ndarray] = None
+    current_color: Optional[Array[float, (4,)]] = None
     mode: ColorMode = ColorMode.DIRECT
     color_properties: Optional[ColorProperties] = None
     continuous_colormap: Colormap = 'viridis'
