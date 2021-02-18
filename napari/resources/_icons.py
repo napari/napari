@@ -39,7 +39,7 @@ def get_colorized_svg(path_or_xml: str, color: str = None, opacity=1) -> str:
     ValueError
         If the path exists but does not contain valid SVG data.
     """
-    xml = get_raw_svg(path_or_xml) if '</svg>' in path_or_xml else path_or_xml
+    xml = path_or_xml if '</svg>' in path_or_xml else get_raw_svg(path_or_xml)
     if not color:
         return xml
 
