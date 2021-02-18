@@ -96,13 +96,17 @@ def _compile_qrc_pyside2(qrc, outfile):
 
     import PySide2
 
-    exe = Path(PySide2.__file__).parent / 'rcc'
-    if not exe.exists():
-        raise RuntimeError(f"PySide2 rcc binary not found at {exe}")
+    pyside_root = Path(PySide2.__file__).parent
 
-    cmd = [str(exe), '-g', 'python', '-o', outfile, qrc]
+    if (pyside_root / 'rcc').exists():
+        cmd = [str(pyside_root / 'rcc'), '-g', 'python']
+    elif (pyside_root / 'pyside2-rcc').exists():
+        cmd = [str(pyside_root / 'pyside2-rcc')]
+    else:
+        raise RuntimeError(f"PySide2 rcc binary not found in {pyside_root}")
+
     try:
-        run(cmd, check=True, capture_output=True)
+        run(cmd + ['-o', outfile, qrc], check=True, capture_output=True)
     except CalledProcessError as e:
         raise RuntimeError(f"Failed to build PySide2 resources {e}")
 
