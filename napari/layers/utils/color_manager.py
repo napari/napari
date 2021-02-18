@@ -182,10 +182,9 @@ class ColorManager(EventedModel):
                     v['values'] = np.asarray(v['values'])
                     color_properties = ColorProperties(**v)
                 except ValueError:
-                    print(
-                        'color_properties dictionary should have keys: name, value, and optionally current_value'
-                    )
-                    raise
+                    err_msg = 'color_properties dictionary should have keys: name, value, and optionally current_value'
+
+                    raise ValueError(err_msg)
 
         elif isinstance(v, ColorProperties):
             color_properties = v
@@ -508,42 +507,6 @@ class ColorManager(EventedModel):
             cur_colors[update_indices] = self.current_color
             self.colors = cur_colors
 
-    # def __eq__(self, other):
-    #     if isinstance(other, ColorManager):
-    #         current_color = self.__equality_checks__['current_color'](
-    #             self.current_color, other.current_color
-    #         )
-    #         mode = self.mode == other.mode
-    #         color_properties = self.__equality_checks__['color_properties'](
-    #             self.color_properties, other.color_properties
-    #         )
-    #         continuous_colormap = self.__equality_checks__[
-    #             'continuous_colormap'
-    #         ](self.continuous_colormap, other.continuous_colormap)
-    #         contrast_limits = self.__equality_checks__['contrast_limits'](
-    #             self.contrast_limits, other.contrast_limits
-    #         )
-    #         categorical_colormap = self.__equality_checks__[
-    #             'categorical_colormap'
-    #         ](self.categorical_colormap, other.categorical_colormap)
-    #         colors = self.__equality_checks__['colors'](
-    #             self.colors, other.colors
-    #         )
-    #
-    #         return np.all(
-    #             [
-    #                 current_color,
-    #                 mode,
-    #                 color_properties,
-    #                 continuous_colormap,
-    #                 contrast_limits,
-    #                 categorical_colormap,
-    #                 colors,
-    #             ]
-    #         )
-    #     else:
-    #         return False
-
     @classmethod
     def from_layer_kwargs(
         cls,
@@ -584,10 +547,9 @@ class ColorManager(EventedModel):
                         name=prop_name, values=prop_values
                     )
                 except KeyError:
-                    print(
+                    raise KeyError(
                         'if color_properties is a string, it should be a property name'
                     )
-                    raise
         else:
             color_values = colors
             color_properties = None
