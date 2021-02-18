@@ -204,7 +204,7 @@ class ColorManager(EventedModel):
         else:
             return transform_color(v)[0]
 
-    @root_validator(skip_on_failure=True)
+    @root_validator()
     def _validate_colors(cls, values):
 
         color_mode = values['mode']
