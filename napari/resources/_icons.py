@@ -1,6 +1,7 @@
 import re
 from functools import lru_cache
 from pathlib import Path
+from typing import Union
 
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
 ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
@@ -31,7 +32,9 @@ def get_raw_svg(path: str) -> str:
 
 
 @lru_cache()
-def get_colorized_svg(path_or_xml: str, color: str = None, opacity=1) -> str:
+def get_colorized_svg(
+    path_or_xml: Union[str, Path], color: str = None, opacity=1
+) -> str:
     """Return a colorized version of the SVG XML at ``path``.
 
     Raises
@@ -39,6 +42,7 @@ def get_colorized_svg(path_or_xml: str, color: str = None, opacity=1) -> str:
     ValueError
         If the path exists but does not contain valid SVG data.
     """
+    path_or_xml = str(path_or_xml)
     xml = path_or_xml if '</svg>' in path_or_xml else get_raw_svg(path_or_xml)
     if not color:
         return xml

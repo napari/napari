@@ -3,85 +3,68 @@ from contextlib import contextmanager
 from itertools import product
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Generator, Iterable, Optional
+from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
 import qtpy
 
 QRC_TEMPLATE = """
 <!DOCTYPE RCC><RCC version="1.0">
-<qresource prefix="/themes">
+<qresource prefix="{}">
 {}
 </qresource>
 </RCC>
 """
-
+ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
+FILE_T = "<file alias='{alias}'>{path}</file>"
 
 DEFAULT_OPACITIES = (0.5, 1)
 
 
 @contextmanager
 def temporary_qrc_file(
-    themes: Optional[Iterable[str]] = None,
-    icons: Optional[Iterable[str]] = None,
-    opacities: Optional[Iterable[float]] = None,
-) -> Generator[str, None, None]:
-    """Create a qrc file for all combinations of ``icon``, ``theme``, ``opac``.
-
-    Generates a .qrc file containing, for all theme/icons:
-
-    <qresource prefix="/themes">
-        <file alias='theme/icon_name.svg'>theme_icon_name.svg</file>
-    </qresource>
-
-    Parameters
-    ----------
-    themes : iterable of str, optional
-        The theme names for which to generate icons, by default all available
-        themes.
-    icons : iterable of str, optional
-        The set of icons , by default all available icons
-    opacities : iterable of float, optional
-        An iterable of icon opacities to pre-generate, by default (0.6, 1).
-        Icons with opacity < 1 can be accessed with the opacity as a percentage
-        for instance: ``icon_name_50.svg``
-
-    Yields
-    -------
-    QRC_name : str
-        The name of the temporary QRC file.  It will be in a temporary
-        directory containing all of the necessary modified/colorized svgs.
-    """
-    from ...resources._icons import ICONS, get_colorized_svg
-    from ...utils.theme import _themes
-
-    themes = themes or _themes.keys()
-    icons = icons or ICONS.keys()
-    opacities = opacities or DEFAULT_OPACITIES
-
-    # theme, icon_name, opacity_key, colorized.svg
-    FILE_T = "<file alias='{}/{}{}.svg'>{}</file>"
-
-    # mapping of icon_name to theme key, otherwise icon color will be "icon"
-    color_override = {'warning': 'warning'}
-
+    xmls: Iterable[Tuple[str, str]], prefix: str = ''
+) -> Iterator[str]:
     # create a temporary directory for the qrc file and all colorized svgs.
     with TemporaryDirectory() as tdir_name:
         tmp_dir = Path(tdir_name)
 
         # create the colorized SVGs
         files = []
-        for theme, icon_name, op in product(_themes, ICONS, opacities):
-            opacity_key = "" if op == 1 else f"_{op * 100:.0f}"
-            tmp_svg = f"{theme}_{icon_name}{opacity_key}.svg"
-            color = _themes[theme][color_override.get(icon_name, 'icon')]
-            xml = get_colorized_svg(ICONS[icon_name], color, op)
-            (tmp_dir / tmp_svg).write_text(xml)
-            files.append(FILE_T.format(theme, icon_name, opacity_key, tmp_svg))
+        for alias, xml in xmls:
+            path = alias.replace("/", "_")
+            (tmp_dir / path).write_text(xml)
+            files.append(FILE_T.format(alias=alias, path=path))
 
         # write the QRC file
         res_file = tmp_dir / 'res.qrc'
-        res_file.write_text(QRC_TEMPLATE.format("\n".join(files)))
+        res_file.write_text(QRC_TEMPLATE.format(prefix, '\n'.join(files)))
         yield str(res_file)
+
+
+def generate_colorized_svgs(
+    svg_paths: Iterable[Union[str, Path]],
+    colors: Iterable[Union[str, Tuple[str, str]]],
+    opacities: Iterable[float] = (1.0,),
+    theme_override: Optional[Dict[str, str]] = None,
+) -> Iterator[Tuple[str, str]]:
+    from ...resources._icons import get_colorized_svg
+
+    # mapping of svg_stem to theme_key
+    theme_override = theme_override or dict()
+
+    for color, path, op in product(colors, svg_paths, opacities):
+        clrkey = color
+        svg_stem = Path(path).stem
+        if isinstance(color, tuple):
+            from ...utils.theme import get_theme
+
+            clrkey, theme_key = color
+            theme_key = theme_override.get(theme_key, theme_key)
+            color = get_theme(clrkey)[theme_key]
+
+        op_key = "" if op == 1 else f"_{op * 100:.0f}"
+        alias = ALIAS_T.format(color=clrkey, svg_stem=svg_stem, opacity=op_key)
+        yield (alias, get_colorized_svg(path, color, op))
 
 
 def _compile_qrc_pyqt5(qrc) -> bytes:
@@ -126,28 +109,59 @@ def _compile_qrc_pyside2(qrc) -> bytes:
 
 def compile_qrc(qrc) -> bytes:
     if qtpy.API_NAME == 'PyQt5':
-        return _compile_qrc_pyqt5(qrc)
+        return _compile_qrc_pyqt5(qrc).replace(b'PyQt5', b'qtpy')
     elif qtpy.API_NAME == 'PySide2':
-        return _compile_qrc_pyside2(qrc)
+        return _compile_qrc_pyside2(qrc).replace(b'PySide2', b'qtpy')
     else:
         raise RuntimeError(
             f"Cannot compile QRC. Unexpected qtpy API name: {qtpy.API_NAME}"
         )
 
 
-def build_qt_resources(
-    themes=None, icons=None, opacities=None, save_path=None
+def compile_qt_resources(
+    svg_paths: Iterable[Union[str, Path]],
+    colors: Iterable[Union[str, Tuple[str, str]]],
+    opacities: Iterable[float] = (1.0,),
+    theme_override: Optional[Dict[str, str]] = None,
+    prefix='',
+    save_path: Optional[str] = None,
+    register: bool = False,
 ) -> str:
-    with temporary_qrc_file(themes, icons, opacities) as qrc:
+
+    svgs = generate_colorized_svgs(
+        svg_paths, colors, opacities, theme_override
+    )
+
+    with temporary_qrc_file(svgs, prefix=prefix) as qrc:
         output = compile_qrc(qrc)
-        output = output.replace(b'PySide2', b'qtpy').replace(b'PyQt5', b'qtpy')
         if save_path:
             Path(save_path).write_bytes(output)
+        if register:
+            from ..qt_event_loop import get_app
+
+            get_app()  # make sure app is created before we do this
+            exec(output, globals())
         return output.decode()
 
 
-def register_qt_resources(themes=None, icons=None, opacities=None):
-    exec(build_qt_resources(themes, icons, opacities), globals())
+def _compile_napari_resources(
+    save_path: Optional[Union[str, Path]] = None
+) -> str:
+    from ...resources._icons import ICONS
+    from ...utils.theme import _themes
+
+    svgs = generate_colorized_svgs(
+        svg_paths=ICONS.values(),
+        colors=[(k, 'icon') for k in _themes],
+        opacities=(0.5, 1),
+        theme_override={'warning': 'warning'},
+    )
+
+    with temporary_qrc_file(svgs, prefix='themes') as qrc:
+        output = compile_qrc(qrc)
+        if save_path:
+            Path(save_path).write_bytes(output)
+        return output.decode()
 
 
 def register_napari_resources(persist=True, force_rebuild=False):
@@ -181,5 +195,5 @@ def register_napari_resources(persist=True, force_rebuild=False):
         modname = f'napari._qt.qt_resources.{key}'
         import_module(modname)
     else:
-        resource_file = build_qt_resources(save_path=persist and save_path)
-        exec(resource_file, globals())
+        resources = _compile_napari_resources(save_path=persist and save_path)
+        exec(resources, globals())
