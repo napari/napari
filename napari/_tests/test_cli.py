@@ -1,3 +1,4 @@
+import gc
 import sys
 from contextlib import contextmanager
 from unittest import mock
@@ -103,3 +104,30 @@ def test_cli_passes_kwargs(view_path, mock_run, monkeypatch):
         name='some name',
     )
     mock_run.assert_called_once_with(gui_exceptions=True)
+
+
+def test_cli_retains_viewer_ref(mock_run, monkeypatch):
+    """Test that napari.__main__ is retaining a reference to the viewer."""
+    v = napari.Viewer(show=False)  # our mock view_path will return this object
+    ref_count = None  # counter that will be updated before __main__._run()
+
+    def _check_refs(**kwargs):
+        # when run() is called in napari.__main__, we will call this function
+        # it forces garbage collection, and then makes sure that at least one
+        # additional reference to our viewer exists.
+        gc.collect()
+        if not sys.getrefcount(v) > ref_count:
+            raise AssertionError(
+                "Reference to napari.viewer has been lost by "
+                "the time the event loop started in napari.__main__"
+            )
+
+    mock_run.side_effect = _check_refs
+    with monkeypatch.context() as m:
+        m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
+        with mock.patch(
+            'napari.__main__.view_path', return_value=v  # return our local v
+        ) as mock_vp:
+            ref_count = sys.getrefcount(v)  # count current references
+            __main__._run()
+            mock_vp.assert_called_once()

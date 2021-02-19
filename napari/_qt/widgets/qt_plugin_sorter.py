@@ -21,6 +21,7 @@ from qtpy.QtWidgets import (
 
 from ...plugins import plugin_manager as napari_plugin_manager
 from ..utils import drag_with_pixmap
+from ..widgets.qt_eliding_label import ElidingLabel
 
 
 def rst2html(text):
@@ -67,7 +68,6 @@ class ImplementationListItem(QFrame):
 
     def __init__(self, item: QListWidgetItem, parent: QWidget = None):
         super().__init__(parent)
-        self.setToolTip("Click and drag to change call order")
         self.item = item
         self.opacity = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
@@ -77,7 +77,20 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        self.plugin_name_label = QLabel(item.hook_implementation.plugin_name)
+        self.setToolTip("Click and drag to change call order")
+        self.plugin_name_label = ElidingLabel(parent=self)
+        self.plugin_name_label.setObjectName('small_text')
+        self.plugin_name_label.setText(item.hook_implementation.plugin_name)
+        plugin_name_size_policy = QSizePolicy(
+            QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
+        )
+        plugin_name_size_policy.setHorizontalStretch(2)
+        self.plugin_name_label.setSizePolicy(plugin_name_size_policy)
+
+        self.function_name_label = QLabel(
+            item.hook_implementation.function.__name__
+        )
+
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
@@ -86,6 +99,7 @@ class ImplementationListItem(QFrame):
         )
         layout.addWidget(self.position_label)
         layout.addWidget(self.enabled_checkbox)
+        layout.addWidget(self.function_name_label)
         layout.addWidget(self.plugin_name_label)
         layout.setStretch(2, 1)
         layout.setContentsMargins(0, 0, 0, 0)

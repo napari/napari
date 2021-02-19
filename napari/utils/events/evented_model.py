@@ -1,16 +1,60 @@
 import operator
+import sys
 import warnings
+from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set
 
-from pydantic import BaseModel, PrivateAttr
-from pydantic.main import ModelMetaclass
+from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
 from .custom_types import JSON_ENCODERS
 from .event import EmitterGroup, Event
 
 
-class EqualityMetaclass(ModelMetaclass):
+@contextmanager
+def no_class_attributes():
+    """Context in which pydantic.main.ClassAttribute just passes value 2.
+
+    Due to a very annoying decision by PySide2, all class ``__signature__``
+    attributes may only be assigned **once**.  (This seems to be regardless of
+    whether the class has anything to do with PySide2 or not).  Furthermore,
+    the PySide2 ``__signature__`` attribute seems to break the python
+    descriptor protocol, which means that class attributes that have a
+    ``__get__`` method will not be able to successfully retrieve their value
+    (instead, the descriptor object itself will be accessed).
+
+    This plays terribly with Pydantic, which assigns a ``ClassAttribute``
+    object to the value of ``cls.__signature__`` in ``ModelMetaclass.__new__``
+    in order to avoid masking the call signature of object instances that have
+    a ``__call__`` method (https://github.com/samuelcolvin/pydantic/pull/1466).
+
+    So, because we only get to set the ``__signature__`` once, this context
+    manager basically "opts-out" of pydantic's ``ClassAttribute`` strategy,
+    thereby directly setting the ``cls.__signature__`` to an instance of
+    ``inspect.Signature``.
+
+    For additional context, see:
+    - https://github.com/napari/napari/issues/2264
+    - https://github.com/napari/napari/pull/2265
+    - https://bugreports.qt.io/browse/PYSIDE-1004
+    - https://codereview.qt-project.org/c/pyside/pyside-setup/+/261411
+    """
+
+    if "PySide2" not in sys.modules:
+        yield
+        return
+
+    # monkey patch the pydantic ClassAttribute object
+    # the second argument to ClassAttribute is the inspect.Signature object
+    main.ClassAttribute = lambda x, y: y
+    try:
+        yield
+    finally:
+        # undo our monkey patch
+        main.ClassAttribute = utils.ClassAttribute
+
+
+class EventedMetaclass(main.ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
     A metaclass is the thing that "constructs" a class, and ``ModelMetaclass``
@@ -25,7 +69,8 @@ class EqualityMetaclass(ModelMetaclass):
     """
 
     def __new__(mcs, name, bases, namespace, **kwargs):
-        cls = super().__new__(mcs, name, bases, namespace, **kwargs)
+        with no_class_attributes():
+            cls = super().__new__(mcs, name, bases, namespace, **kwargs)
         cls.__eq_operators__ = {
             n: pick_equality_operator(f.type_)
             for n, f in cls.__fields__.items()
@@ -33,7 +78,7 @@ class EqualityMetaclass(ModelMetaclass):
         return cls
 
 
-class EventedModel(BaseModel, metaclass=EqualityMetaclass):
+class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     # add private attributes for event emission
     _events: EmitterGroup = PrivateAttr(default_factory=EmitterGroup)
@@ -63,8 +108,8 @@ class EventedModel(BaseModel, metaclass=EqualityMetaclass):
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
         json_encoders = JSON_ENCODERS
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         # add events for each field
         self._events.source = self

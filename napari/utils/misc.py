@@ -319,34 +319,6 @@ class CallDefault(inspect.Parameter):
         return formatted
 
 
-class CallSignature(inspect.Signature):
-    _parameter_cls = CallDefault
-
-    def __str__(self):
-        """do not render separators
-
-        commented code is what was taken out from
-        the copy/pasted inspect module code :)
-        """
-        result = []
-        # render_pos_only_separator = False
-        # render_kw_only_separator = True
-        for param in self.parameters.values():
-            formatted = str(param)
-            result.append(formatted)
-
-        rendered = '({})'.format(', '.join(result))
-
-        if self.return_annotation is not inspect._empty:
-            anno = inspect.formatannotation(self.return_annotation)
-            rendered += f' -> {anno}'
-
-        return rendered
-
-
-callsignature = CallSignature.from_callable
-
-
 def all_subclasses(cls: Type) -> set:
     """Recursively find all subclasses of class ``cls``.
 

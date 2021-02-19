@@ -1,3 +1,4 @@
+import inspect
 from typing import ClassVar
 from unittest.mock import Mock
 
@@ -231,3 +232,14 @@ def test_values_updated():
     user1.events.id.assert_not_called()
     user2.events.id.assert_not_called()
     assert user1_events.call_count == 0
+
+
+def test_evented_model_signature():
+    class T(EventedModel):
+        x: int
+        y: str = 'yyy'
+        z = b'zzz'
+
+    assert isinstance(T.__signature__, inspect.Signature)
+    sig = inspect.signature(T)
+    assert str(sig) == "(*, x: int, y: str = 'yyy', z: bytes = b'zzz') -> None"
