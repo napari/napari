@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
+from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
@@ -178,11 +178,9 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_canvas_background()
         self._on_active_layer_change()
 
         self.viewer.events.active_layer.connect(self._on_active_layer_change)
-        self.viewer.events.theme.connect(self._update_canvas_background)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -242,10 +240,7 @@ class QtViewer(QSplitter):
             parent=self,
             size=self.viewer._canvas_size[::-1],
         )
-        self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
-        self.canvas.native.setMinimumSize(QSize(200, 200))
-        self.canvas.context.set_depth_func('lequal')
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
@@ -255,6 +250,8 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
+        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
+        self.viewer.events.theme.connect(self.canvas._on_theme_change)
 
     def _add_visuals(self, welcome: bool) -> None:
         """Add visuals for axes, scale bar, and welcome text.
@@ -562,10 +559,6 @@ class QtViewer(QSplitter):
             q_cursor = self._cursors[cursor]
 
         self.canvas.native.setCursor(q_cursor)
-
-    def _update_canvas_background(self, event=None):
-        """Update the napari GUI theme."""
-        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
