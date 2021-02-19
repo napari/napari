@@ -669,12 +669,10 @@ class Labels(Image):
         if self.contour:
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
-            for label in np.unique(raw):
-                if label > 0:
-                    boundaries = ndi.binary_dilation(
-                        raw == label, struct_elem
-                    ) != ndi.binary_erosion(raw == label, struct_elem)
-                    image[boundaries] = raw[boundaries]
+            boundaries = ndi.grey_dilation(
+                raw, footprint=struct_elem
+            ) != ndi.grey_erosion(raw, footprint=struct_elem)
+            image[boundaries] = raw[boundaries]
             image = np.where(
                 raw > 0, low_discrepancy_image(image, self._seed), 0
             )
