@@ -37,7 +37,7 @@ def get_stylesheet(
     """
     resources_dir = os.path.abspath(os.path.dirname(__file__))
     stylesheet = ''
-    for file in sorted(glob(os.path.join(resources_dir, 'styles/*.qss'))):
+    for file in sorted(glob(os.path.join(resources_dir, 'styles', '*.qss'))):
         with open(file) as f:
             stylesheet += f.read()
     if extra:
