@@ -272,12 +272,10 @@ class Labels(Image):
         return self._contour
 
     @contour.setter
-    def contour(self, contour, refresh=True):
+    def contour(self, contour):
         self._contour = contour
         self.events.contour()
-
-        if refresh is True:
-            self.refresh()
+        self.refresh()
 
     @property
     def brush_size(self):
