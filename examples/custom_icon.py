@@ -3,7 +3,7 @@ from pathlib import Path
 from qtpy.QtWidgets import QLabel
 
 import napari
-from napari.qt import compile_qt_resources
+from napari.qt import compile_qt_svgs
 
 
 icon_path = Path(__file__).parent / 'grin.svg'  # icon svg in this folder
@@ -13,7 +13,7 @@ color = '#3956C9'
 # will generate all color-icon combinations provided
 # using register=True will immediately register the resources for
 # use with stylesheets and QIcons
-compile_qt_resources(svg_paths=[icon_path], colors=[color], register=True)
+compile_qt_svgs(svg_paths=[icon_path], colors=[color], register=True)
 # your resource(s) will be available at this url template:
 url = f':/{color}/{icon_path.name}'
 

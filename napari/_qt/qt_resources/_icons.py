@@ -193,7 +193,7 @@ def compile_qrc(qrc) -> bytes:
         )
 
 
-def compile_qt_resources(
+def compile_qt_svgs(
     svg_paths: Iterable[Union[str, Path]],
     colors: Iterable[Union[str, Tuple[str, str]]],
     opacities: Iterable[float] = (1.0,),

@@ -3,14 +3,14 @@ from functools import lru_cache
 from glob import glob
 from typing import List, Optional
 
-from ._icons import compile_qt_resources, register_napari_resources
+from ._icons import compile_qt_svgs, register_napari_resources
 from ._svg import QColoredSVGIcon
 
 __all__ = [
     'get_stylesheet',
     'QColoredSVGIcon',
     'register_napari_resources',
-    'compile_qt_resources',
+    'compile_qt_svgs',
 ]
 
 
