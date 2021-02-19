@@ -761,7 +761,7 @@ class EmitterGroup(EventEmitter):
 
     def add(
         self,
-        auto_connect: bool = None,
+        auto_connect: Optional[bool] = None,
         **kwargs: Union[Type[Event], EventEmitter, None],
     ):
         """Add one or more EventEmitter instances to this emitter group.
