@@ -146,13 +146,13 @@ def _run_process_and_parse(cmd: list):
 
     Parameters
     ----------
-    cmd: list
+    cmd : list
         List of commands
 
     Returns
     -------
     tuple
-        A tuple in the form `(result_dict, message)`.
+        A tuple in the form ``(result_dict, message)``.
     """
     result = {"data": {}, "message": ""}
     try:
@@ -208,7 +208,7 @@ class TranslationBundle:
 
         Parameters
         ----------
-        locale: str
+        locale : str
             The language name to use.
         """
         self._locale = locale
