@@ -17,14 +17,37 @@ QRC_TEMPLATE = """
 ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 FILE_T = "<file alias='{alias}'>{path}</file>"
 
-DEFAULT_OPACITIES = (0.5, 1)
-
 
 @contextmanager
 def temporary_qrc_file(
     xmls: Iterable[Tuple[str, str]], prefix: str = ''
 ) -> Iterator[str]:
-    # create a temporary directory for the qrc file and all colorized svgs.
+    """Create a temporary directory with icons and .qrc file
+
+    This constructs a temporary directory and builds a .qrc file as described
+    in https://doc.qt.io/qt-5/resources.html
+
+    Parameters
+    ----------
+    xmls : Iterable[Tuple[str, str]]
+        An iterable of ``(alias, xml)`` pairs, where `alias` is the name that
+        you want to use to access the icon in the Qt Resource system (such as
+        QSS), and `xml` is the *raw* SVG text (as read from a file, perhaps
+        pre-colored using one of the below functions).
+        The output of :func:`generate_colorized_svgs` is a suitable input for
+        `xmls`.
+    prefix : str, optional
+        A prefix to use when accessing these resources.  For instance, if
+        ``prefix='theme'``, and one of the aliases in `xmls` is
+        `"my_icon.svg"`, then you could access the compiled resources at
+        `:/theme/my_icon.svg`. by default ''
+
+    Yields
+    ------
+    Iterator[str]
+        Yields the *name* of the temporary generated .qrc file, which can be
+        used as input to :func:`compile_qrc`.
+    """
     with TemporaryDirectory() as tdir_name:
         tmp_dir = Path(tdir_name)
 
@@ -47,6 +70,43 @@ def generate_colorized_svgs(
     opacities: Iterable[float] = (1.0,),
     theme_override: Optional[Dict[str, str]] = None,
 ) -> Iterator[Tuple[str, str]]:
+    """Helper function to generate colorized SVGs.
+
+    This is a generator that yields tuples of ``(alias, icon_xml)`` for every
+    combination (cartesian product) of `svg_path`, `color`, and `opacity`
+    provided. It can be used as input to :func:`temporary_qrc_file`.
+
+
+    Parameters
+    ----------
+    svg_paths : Iterable[Union[str, Path]]
+        An iterable of paths to svg files
+    colors : Iterable[Union[str, Tuple[str, str]]]
+        An iterable of colors.  Every icon will be generated in every color. If
+        a `color` item is a string, it should be valid svg color style. Items
+        may also be a 2-tuple of strings, in which case the first item should
+        be an available theme name
+        (:func:`~napari.utils.theme.available_themes`), and the second item
+        should be a key in the theme (:func:`~napari.utils.theme.get_theme`),
+    opacities : Iterable[float], optional
+        An iterable of opacities to generate, by default (1.0,) Opacities less
+        than one can be accessed in qss with the opacity as a percentage
+        suffix, e.g.: `my_svg_50.svg` for opacity 0.5.
+    theme_override : Optional[Dict[str, str]], optional
+        When one of the `colors` is a theme ``(name, key)`` tuple,
+        `theme_override` may be used to override the `key` for a specific icon
+        name in `svg_paths`.  For example `{'exclamation': 'warning'}`, would
+        use the theme "warning" color for any icon named "exclamation.svg" by
+        default None
+
+    Yields
+    -------
+    (alias, xml) : Iterator[Tuple[str, str]]
+        `alias` is the name that will used to access the icon in the Qt
+        Resource system (such as QSS), and `xml` is the *raw* colorzied SVG
+        text (as read from a file, perhaps pre-colored using one of the below
+        functions).
+    """
     from ...resources._icons import get_colorized_svg
 
     # mapping of svg_stem to theme_key
@@ -68,8 +128,16 @@ def generate_colorized_svgs(
 
 
 def _compile_qrc_pyqt5(qrc) -> bytes:
+    """Compile qrc file using the PyQt5 method.
+
+    PyQt5 compiles qrc files using a direct function from the shared library
+    PyQt5.pyrcc.  They provide access via a helper function in `pyrcc_main`.
+    """
     from PyQt5.pyrcc_main import processResourceFile
 
+    # could not capture stdout no matter what I tried, so using a temp file.
+    # need to do it this way instead of context manager because of windows'
+    # handling of "shared" temporary files.
     tf = NamedTemporaryFile(suffix='.py', delete=False)
     try:
         tf.close()
@@ -81,6 +149,11 @@ def _compile_qrc_pyqt5(qrc) -> bytes:
 
 
 def _compile_qrc_pyside2(qrc) -> bytes:
+    """Compile qrc file using the PySide2 method.
+
+    PySide compiles qrc files using the rcc binary in the root directory, (same
+    path as PySide2.__init__)
+    """
     from subprocess import CalledProcessError, run
 
     import PySide2
@@ -95,7 +168,8 @@ def _compile_qrc_pyside2(qrc) -> bytes:
     for bin in look_for:
         if (pyside_root / bin).exists():
             cmd = [str(pyside_root / bin)]
-            if 'pyside2' not in bin:  # older version
+            if 'pyside2' not in bin:
+                # the newer pure rcc version requires this for python
                 cmd.extend(['-g', 'python'])
             break
     else:
@@ -108,6 +182,7 @@ def _compile_qrc_pyside2(qrc) -> bytes:
 
 
 def compile_qrc(qrc) -> bytes:
+    """Compile a qrc file into a resources.py bytes"""
     if qtpy.API_NAME == 'PyQt5':
         return _compile_qrc_pyqt5(qrc).replace(b'PyQt5', b'qtpy')
     elif qtpy.API_NAME == 'PySide2':
@@ -127,6 +202,45 @@ def compile_qt_resources(
     save_path: Optional[str] = None,
     register: bool = False,
 ) -> str:
+    """[summary]
+
+    Parameters
+    ----------
+    svg_paths : Iterable[Union[str, Path]]
+        An iterable of paths to svg files
+    colors : Iterable[Union[str, Tuple[str, str]]]
+        An iterable of colors.  Every icon will be generated in every color. If
+        a `color` item is a string, it should be valid svg color style. Items
+        may also be a 2-tuple of strings, in which case the first item should
+        be an available theme name
+        (:func:`~napari.utils.theme.available_themes`), and the second item
+        should be a key in the theme (:func:`~napari.utils.theme.get_theme`),
+    opacities : Iterable[float], optional
+        An iterable of opacities to generate, by default (1.0,) Opacities less
+        than one can be accessed in qss with the opacity as a percentage
+        suffix, e.g.: `my_svg_50.svg` for opacity 0.5.
+    theme_override : dict, optional
+        When one of the `colors` is a theme ``(name, key)`` tuple,
+        `theme_override` may be used to override the `key` for a specific icon
+        name in `svg_paths`.  For example `{'exclamation': 'warning'}`, would
+        use the theme "warning" color for any icon named "exclamation.svg" by
+        default None
+    prefix : str, optional
+        A prefix to use when accessing these resources.  For instance, if
+        ``prefix='theme'``, and one of the aliases in `xmls` is
+        `"my_icon.svg"`, then you could access the compiled resources at
+        `:/theme/my_icon.svg`. by default ''
+    save_path : str, optional
+        An optional output path for the compiled py resources, by default None
+    register : bool, optional
+        If `True`, immediately execute (import) the compiled resources.
+        By default `False`
+
+    Returns
+    -------
+    resources : str
+        compiled resources as resources.py file
+    """
 
     svgs = generate_colorized_svgs(
         svg_paths, colors, opacities, theme_override
@@ -147,6 +261,7 @@ def compile_qt_resources(
 def _compile_napari_resources(
     save_path: Optional[Union[str, Path]] = None
 ) -> str:
+    """Internal function to compile all napari icons for all themes."""
     from ...resources._icons import ICONS
     from ...utils.theme import _themes
 
@@ -179,7 +294,8 @@ def register_napari_resources(persist=True, force_rebuild=False):
         Whether to save newly compiled resources, by default True
     force_rebuild : bool, optional
         If true, resources will be recompiled and resaved, even if they already
-        exist
+        exist.  Rebuild may also be forced using the environment variable
+        "NAPARI_REBUILD_RESOURCES".
     """
     from ...resources._icons import ICON_PATH
     from ...utils.misc import dir_hash
