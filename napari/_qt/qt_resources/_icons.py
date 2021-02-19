@@ -189,7 +189,9 @@ def register_napari_resources(persist=True, force_rebuild=False):
     key = key.replace(".", "_")
     save_path = Path(__file__).parent / f"{key}.py"
 
-    if not force_rebuild and save_path.exists():
+    force = force_rebuild or os.environ.get('NAPARI_REBUILD_RESOURCES')
+
+    if not force and save_path.exists():
         from importlib import import_module
 
         modname = f'napari._qt.qt_resources.{key}'
