@@ -245,7 +245,7 @@ class EventEmitter:
     def __init__(
         self,
         source: Any = None,
-        type: str = None,
+        type: Optional[str] = None,
         event_class: Type[Event] = Event,
     ):
         # connected callbacks
@@ -401,7 +401,7 @@ class EventEmitter:
             return
 
         # deal with the ref
-        _ref: str | None
+        _ref: Union[str, None]
         if isinstance(ref, bool):
             if ref:
                 if isinstance(callback, tuple):
@@ -467,7 +467,7 @@ class EventEmitter:
         self._callback_refs.insert(idx, _ref)
         return callback  # allows connect to be used as a decorator
 
-    def disconnect(self, callback=None):
+    def disconnect(self, callback: Union[Callback, CallbackRef, None] = None):
         """Disconnect a callback from this emitter.
 
         If no callback is specified, then *all* callbacks are removed.
@@ -591,13 +591,13 @@ class EventEmitter:
             )
         return event
 
-    def blocked(self, callback: Callback = None) -> bool:
+    def blocked(self, callback: Optional[Callback] = None) -> bool:
         """Return boolean indicating whether the emitter is blocked for
         the given callback.
         """
         return self._blocked.get(callback, 0) > 0
 
-    def block(self, callback: Callback = None):
+    def block(self, callback: Optional[Callback] = None):
         """Block this emitter. Any attempts to emit an event while blocked
         will be silently ignored. If *callback* is given, then the emitter
         is only blocked for that specific callback.
@@ -607,7 +607,7 @@ class EventEmitter:
         """
         self._blocked[callback] = self._blocked.get(callback, 0) + 1
 
-    def unblock(self, callback: Callback = None):
+    def unblock(self, callback: Optional[Callback] = None):
         """Unblock this emitter. See :func:`event.EventEmitter.block`.
 
         Note: Use of ``unblock(None)`` only reverses the effect of
@@ -625,7 +625,7 @@ class EventEmitter:
         else:
             self._blocked[callback] = b
 
-    def blocker(self, callback: Callback = None):
+    def blocker(self, callback: Optional[Callback] = None):
         """Return an EventBlocker to be used in 'with' statements
 
         Notes
@@ -866,7 +866,7 @@ class EmitterGroup(EventEmitter):
             self, callback, ref, position, before, after
         )
 
-    def disconnect(self, callback=None):
+    def disconnect(self, callback: Optional[Callback] = None):
         """Disconnect the callback from this group. See
         :func:`connect() <vispy.event.EmitterGroup.connect>` and
         :func:`EventEmitter.connect() <vispy.event.EventEmitter.connect>` for
