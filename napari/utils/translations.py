@@ -171,7 +171,7 @@ def _run_process_and_parse(cmd: list):
 
 def get_installed_packages_locales() -> dict:
     """
-    Get all jupyterlab extensions installed that contain locale data.
+    Get all napari extensions installed that contain locale data.
 
     Returns
     -------
@@ -181,8 +181,8 @@ def get_installed_packages_locales() -> dict:
 
     Examples
     --------
-    - `entry_points={"jupyterlab.locale": "package-name = package_module"}`
-    - `entry_points={"jupyterlab.locale": "jupyterlab-git = jupyterlab_git"}`
+    - `entry_points={"napari.locale": "package-name = package_module"}`
+    - `entry_points={"napari.locale": "napari-git = napari_git"}`
     """
     cmd = [sys.executable, __file__, "_get_installed_language_pack_locales"]
     found_package_locales, message = _run_process_and_parse(cmd)
