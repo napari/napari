@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from pydantic import Field, validator
+from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..layers import Image, Layer
@@ -105,11 +105,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # 2-tuple indicating height and width
     _canvas_size: Tuple[int, int] = (600, 800)
 
-    class Config(EventedModel.Config):
-        # allow extra attributes during model initialization, useful for mixins
-        extra = 'allow'
-
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
+        # allow extra attributes during model initialization, useful for mixins
+        self.__config__.extra = Extra.allow
         super().__init__(
             title=title,
             dims={
@@ -118,6 +116,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 'order': order,
             },
         )
+        self.__config__.extra = Extra.ignore
 
         # Add extra events - ideally these will be removed too!
         self.events.add(layers_change=Event, reset_view=Event)
