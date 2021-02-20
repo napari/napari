@@ -23,35 +23,18 @@ def test_set(request, regular_set):
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
         ('add', 2, []),
-        ('add', 10, [call.added(value=10)]),
-        ('discard', 2, [call.removed(value=2)]),
-        ('remove', 2, [call.removed(value=2)]),
+        ('add', 10, [call.added(value={10})]),
+        ('discard', 2, [call.removed(value={2})]),
+        ('remove', 2, [call.removed(value={2})]),
         ('discard', 10, []),
         # parity with set
-        ('update', {3, 4, 5, 6}, [call.added(value=5), call.added(value=6)]),
-        (
-            'difference_update',
-            {3, 4, 5, 6},
-            [call.removed(value=3), call.removed(value=4)],
-        ),
-        (
-            'intersection_update',
-            {3, 4, 5, 6},
-            [
-                call.removed(value=0),
-                call.removed(value=1),
-                call.removed(value=2),
-            ],
-        ),
+        ('update', {3, 4, 5, 6}, [call.added(value={5, 6})]),
+        ('difference_update', {3, 4, 5, 6}, [call.removed(value={3, 4})]),
+        ('intersection_update', {3, 4, 5, 6}, [call.removed(value={0, 1, 2})]),
         (
             'symmetric_difference_update',
             {3, 4, 5, 6},
-            [
-                call.removed(value=3),
-                call.removed(value=4),
-                call.added(value=5),
-                call.added(value=6),
-            ],
+            [call.removed(value={3, 4}), call.added(value={5, 6})],
         ),
     ],
     ids=lambda x: x[0],
@@ -86,13 +69,7 @@ def test_set_pop():
 def test_set_clear(test_set):
     assert test_set.events.mock_calls == []
     test_set.clear()
-    assert test_set.events.mock_calls == [
-        call.removed(value=0),
-        call.removed(value=1),
-        call.removed(value=2),
-        call.removed(value=3),
-        call.removed(value=4),
-    ]
+    assert test_set.events.mock_calls == [call.removed(value={0, 1, 2, 3, 4})]
 
 
 @pytest.mark.parametrize(
