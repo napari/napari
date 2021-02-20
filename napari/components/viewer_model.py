@@ -104,6 +104,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     # 2-tuple indicating height and width
     _canvas_size = (600, 800)
 
+    class Config(EventedModel.Config):
+        # allow extra attributes during model initialization, useful for mixins
+        extra = 'allow'
+
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
         MousemapProvider.__init__(self)
