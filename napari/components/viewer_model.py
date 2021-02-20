@@ -38,6 +38,16 @@ from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
 DEFAULT_THEME = 'dark'
+EXCLUDE_DICT = {
+    'keymap',
+    '_mouse_wheel_gen',
+    '_mouse_drag_gen',
+    '_persisted_mouse_event',
+    'mouse_move_callbacks',
+    'mouse_drag_callbacks',
+    'mouse_wheel_callbacks',
+}
+EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
@@ -133,6 +143,26 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 f"Theme '{v}' not found; " f"options are {themes}."
             )
         return v
+
+    def json(self, **kwargs):
+        """Serialize to json."""
+        # Manually exclude the layer list and active layer which cannot be serialized at this point
+        # and mouse and keybindings don't belong on model
+        # https://github.com/samuelcolvin/pydantic/pull/2231
+        # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
+        exclude = kwargs.pop('exclude', set())
+        exclude = exclude.union(EXCLUDE_JSON)
+        return super().json(exclude=exclude, **kwargs)
+
+    def dict(self, **kwargs):
+        """Convert to a dictionaty."""
+        # Manually exclude the layer list and active layer which cannot be serialized at this point
+        # and mouse and keybindings don't belong on model
+        # https://github.com/samuelcolvin/pydantic/pull/2231
+        # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
+        exclude = kwargs.pop('exclude', set())
+        exclude = exclude.union(EXCLUDE_DICT)
+        return super().dict(exclude=exclude, **kwargs)
 
     def __hash__(self):
         return id(self)
