@@ -722,10 +722,6 @@ class EmitterGroup(EventEmitter):
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
 
-    # mypy fix for dynamic attribute access
-    def __getattr__(self, name: str) -> EventEmitter:
-        return object.__getattribute__(self, name)
-
     def __getitem__(self, name: str) -> EventEmitter:
         """
         Return the emitter assigned to the specified name.
