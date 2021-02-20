@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt
+from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
@@ -20,11 +20,10 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
-from ..utils.theme import get_theme, template
+from ..utils.theme import get_theme
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .qt_resources import get_stylesheet
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
@@ -83,8 +82,6 @@ class QtViewer(QSplitter):
     viewerButtons : QtViewerButtons
         Button controls for the napari viewer.
     """
-
-    raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer, welcome=False):
 
@@ -181,11 +178,9 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_theme()
         self._on_active_layer_change()
 
         self.viewer.events.active_layer.connect(self._on_active_layer_change)
-        self.viewer.events.theme.connect(self._update_theme)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -218,6 +213,25 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
+    def __getattr__(self, name):
+        if name == 'raw_stylesheet':
+            import warnings
+
+            from .qt_resources import get_stylesheet
+
+            warnings.warn(
+                (
+                    "The 'raw_stylesheet' attribute is deprecated and will be"
+                    "removed in version 0.4.7.  Please use "
+                    "`napari.qt.get_stylesheet` instead"
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return get_stylesheet()
+
+        return object.__getattribute__(self, name)
+
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -226,10 +240,7 @@ class QtViewer(QSplitter):
             parent=self,
             size=self.viewer._canvas_size[::-1],
         )
-        self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
-        self.canvas.native.setMinimumSize(QSize(200, 200))
-        self.canvas.context.set_depth_func('lequal')
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)
@@ -239,6 +250,8 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
+        self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
+        self.viewer.events.theme.connect(self.canvas._on_theme_change)
 
     def _add_visuals(self, welcome: bool) -> None:
         """Add visuals for axes, scale bar, and welcome text.
@@ -288,16 +301,23 @@ class QtViewer(QSplitter):
     def console(self):
         """QtConsole: iPython console terminal integrated into the napari GUI."""
         if self._console is None:
-            from .widgets.qt_console import QtConsole
+            try:
+                from napari_console import QtConsole
 
-            self.console = QtConsole({'viewer': self.viewer})
+                self.console = QtConsole(self.viewer)
+            except ImportError:
+                warnings.warn(
+                    'napari-console not found. It can be installed with'
+                    ' "pip install napari_console"'
+                )
+                self._console = None
         return self._console
 
     @console.setter
     def console(self, console):
         self._console = console
-        self.dockConsole.setWidget(console)
-        self._update_theme()
+        if console is not None:
+            self.dockConsole.setWidget(console)
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -539,16 +559,6 @@ class QtViewer(QSplitter):
             q_cursor = self._cursors[cursor]
 
         self.canvas.native.setCursor(q_cursor)
-
-    def _update_theme(self, event=None):
-        """Update the napari GUI theme."""
-        # template and apply the primary stylesheet
-        theme = get_theme(self.viewer.theme)
-        themed_stylesheet = template(self.raw_stylesheet, **theme)
-        if self._console is not None:
-            self.console._update_theme(theme, themed_stylesheet)
-        self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = theme['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.

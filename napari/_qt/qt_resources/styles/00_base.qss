@@ -10,6 +10,20 @@ might be possible to convert px to em by 1px = 0.0625em
 
 
 /* ----------------- QWidget ------------------ */
+/* 
+
+mappings between property and QPalette.ColorRole:
+these colors can be looked up dynamically in widgets using, e.g
+``widget.palette().color(QPalette.Window)``
+
+background -> QPalette.Window/QPalette.Background
+  background-color -> QPalette.Window/QPalette.Background
+color -> QPalette.WindowText/QPalette.Foreground
+selection-color -> QPalette.HighlightedText
+selection-background-color -> QPalette.Highlight
+alternate-background-color -> QPalette.AlternateBase
+
+*/
 
 QWidget {
   background-color: {{ background }};
