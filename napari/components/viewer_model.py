@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
 )
 
@@ -109,17 +110,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extra = 'allow'
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
-        super().__init__()
-        MousemapProvider.__init__(self)
-        KeymapProvider.__init__(self)
-
-        # Set initial values
-        if len(axis_labels) > 0:
-            self.dims.axis_labels = axis_labels
-        if len(order) > 0:
-            self.dims.order = order
-        self.dims.ndisplay = ndisplay
-        self.title = title
+        super().__init__(
+            title=title,
+            dims={
+                'axis_labels': axis_labels,
+                'ndisplay': ndisplay,
+                'order': order,
+            },
+        )
 
         # Add extra events - ideally these will be removed too!
         self.events.add(layers_change=Event, reset_view=Event)
