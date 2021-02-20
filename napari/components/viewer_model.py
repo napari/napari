@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
 
 
-# How to deal with KeymapProvider & MousemapProvider ?????
+# KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
@@ -106,6 +106,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
+        MousemapProvider.__init__(self)
+        KeymapProvider.__init__(self)
 
         # Set initial values
         if len(axis_labels) > 0:
