@@ -102,7 +102,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     title: str = 'napari'
 
     # 2-tuple indicating height and width
-    _canvas_size = (600, 800)
+    _canvas_size: Tuple[int, int] = (600, 800)
 
     class Config(EventedModel.Config):
         # allow extra attributes during model initialization, useful for mixins
