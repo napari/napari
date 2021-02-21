@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import logging
 import pickle
-from typing import cast
+from typing import Generic, List, Optional, Tuple, TypeVar, Union, cast
 
 from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
@@ -11,10 +9,11 @@ from ...utils.events import disconnect_events
 from ...utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
+NodeType = TypeVar("NodeType", bound=Node)
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
-class QtNodeTreeModel(QAbstractItemModel):
+class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
     """A concrete QItemModel for a tree of ``Node`` and ``Group`` objects.
 
     Key concepts and references:
@@ -27,10 +26,9 @@ class QtNodeTreeModel(QAbstractItemModel):
           <https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html>`_
     """
 
-    _root: Group
-
-    def __init__(self, root: Group, parent: QWidget = None):
+    def __init__(self, root: Group[NodeType], parent: QWidget = None):
         super().__init__(parent)
+        self._root: Group[NodeType]
         self.setRoot(root)
 
     # ########## Reimplemented Public Qt Functions ##################
@@ -74,7 +72,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         """
         item = self.getItem(index)
         if role == Qt.DisplayRole:
-            return str(item.name)
+            return item._node_name()
         if role == Qt.UserRole:
             return self.getItem(index)
         return None
@@ -120,7 +118,7 @@ class QtNodeTreeModel(QAbstractItemModel):
             return True
         return False
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlag | Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Union[Qt.ItemFlag, Qt.ItemFlags]:
         """Returns the item flags for the given ``index``.
 
         This describes the properties of a given item in the model.  We set them to be
@@ -159,11 +157,11 @@ class QtNodeTreeModel(QAbstractItemModel):
 
         parentItem = self.getItem(parent)
         if parentItem.is_group():
-            parentItem = cast(Group, parentItem)
+            parentItem = cast(Group[NodeType], parentItem)
             return self.createIndex(row, column, parentItem[row])
         return QModelIndex()
 
-    def mimeData(self, indices: list[QModelIndex]) -> NodeMimeData:
+    def mimeData(self, indices: List[QModelIndex]) -> Optional['NodeMimeData']:
         """Return an object containing serialized data corresponding to specified indexes.
 
         The format used to describe the encoded data is obtained from the mimeTypes()
@@ -174,10 +172,10 @@ class QtNodeTreeModel(QAbstractItemModel):
         # If the list of indexes is empty, or there are no supported MIME types, nullptr is
         # returned rather than a serialized empty list.
         if not indices:
-            return 0
+            return None
         return NodeMimeData([self.getItem(i) for i in indices])
 
-    def mimeTypes(self) -> list[str]:
+    def mimeTypes(self) -> List[str]:
         """Returns the list of allowed MIME types.
 
         By default, the built-in models and views use an internal MIME type:
@@ -235,12 +233,12 @@ class QtNodeTreeModel(QAbstractItemModel):
 
     # ########## New methods added for our model ##################
 
-    def setRoot(self, root: Group):
+    def setRoot(self, root: Group[NodeType]):
         if not isinstance(root, Group):
             raise TypeError(
                 "root node must be an instance of napari.utils.tree.Group"
             )
-        current_root: Group | None = getattr(self, "_root", None)
+        current_root: Optional[Group[NodeType]] = getattr(self, "_root", None)
         if root is current_root:
             return
         elif current_root is not None:
@@ -290,8 +288,8 @@ class QtNodeTreeModel(QAbstractItemModel):
         dest_par, dest_idx = self._split_nested_index(event.new_index)
 
         logger.debug(
-            f"beginMoveRows({self.getItem(src_par).name}, {src_idx}, "
-            f"{self.getItem(dest_par).name}, {dest_idx})"
+            f"beginMoveRows({self.getItem(src_par)._node_name()}, {src_idx}, "
+            f"{self.getItem(dest_par)._node_name()}, {dest_idx})"
         )
 
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
@@ -323,7 +321,7 @@ class QtNodeTreeModel(QAbstractItemModel):
             return hits[0]
         raise IndexError(f"Could not find node {obj!r} in the model")
 
-    def nestedIndex(self, nested_index: tuple[int, ...]) -> QModelIndex:
+    def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
         """Return a QModelIndex for a given ``nested_index``."""
         parent = QModelIndex()
         if isinstance(nested_index, tuple):
@@ -339,8 +337,8 @@ class QtNodeTreeModel(QAbstractItemModel):
         return self.index(child, 0, parent)
 
     def _split_nested_index(
-        self, nested_index: int | tuple[int, ...]
-    ) -> tuple[QModelIndex, int]:
+        self, nested_index: Union[int, Tuple[int, ...]]
+    ) -> Tuple[QModelIndex, int]:
         """Given a nested index, return (nested_parent_index, row)."""
         # TODO: split after using nestedIndex?
         if isinstance(nested_index, int):
@@ -358,20 +356,20 @@ class QtNodeTreeModel(QAbstractItemModel):
 
 # TODO: cleanup stuff related to MIME formats and convenience methods
 class NodeMimeData(QMimeData):
-    def __init__(self, nodes: list[Node] = None):
+    def __init__(self, nodes: List[Node] = None):
         super().__init__()
         self.nodes = nodes or []
         if nodes:
             self.setData(
                 "application/x-tree-node", pickle.dumps(self.node_indices())
             )
-            self.setText(" ".join([node.name for node in nodes]))
+            self.setText(" ".join([node._node_name() for node in nodes]))
 
-    def formats(self) -> list[str]:
+    def formats(self) -> List[str]:
         return ["application/x-tree-node", "text/plain"]
 
-    def node_indices(self) -> list[tuple[int, ...]]:
+    def node_indices(self) -> List[Tuple[int, ...]]:
         return [node.index_from_root() for node in self.nodes]
 
-    def node_names(self) -> list[str]:
-        return [node.name for node in self.nodes]
+    def node_names(self) -> List[str]:
+        return [node._node_name() for node in self.nodes]
