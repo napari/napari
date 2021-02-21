@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Generator, Iterable, TypeVar
+from typing import Generator, Iterable, List, TypeVar
 
 from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
@@ -68,7 +66,7 @@ class Group(NestableEventedList[NodeType], Node):
         for child in self:
             yield from child.traverse(leaves_only)
 
-    def _render(self) -> list[str]:
+    def _render(self) -> List[str]:
         """Recursively return list of strings that can render ascii tree."""
         lines = [self._node_name()]
 
