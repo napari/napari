@@ -1,3 +1,33 @@
+"""Helper functions to turn SVGs into compiled Qt resources.
+
+The primary *internal* function is :func:`_register_napari_resources`, which:
+
+1.  Checks to see if there is a pre-existing & current `_qt_resources*.py` file
+    in ``napari/_qt/qt_resources``.  The file name contains the Qt backend that
+    was used to compile the resources, and a hash of the content of the icons
+    folder.  If either are stale, a new file is generated following the steps
+    below (unless the `NAPARI_REBUILD_RESOURCES` environment flag is set),
+    otherwise the pre-existing file is imported.
+2.  Colorizes all of the icons in the resources/icons folder, using all of the
+    colors in the available themes, by adding a ``<style>`` element to the raw
+    SVG XML. (see :func:`generate_colorized_svgs`)
+3.  Builds a temporary .qrc file pointing to the colored icons, following the
+    format described at https://doc.qt.io/qt-5/resources.html (see
+    :func:`_temporary_qrc_file`)
+4.  Compiles that .qrc file using the `resource compiler (rcc)
+    <https://doc.qt.io/qt-5/rcc.html>`_ from the currently active Qt backend.
+    The output is raw ``bytes``. (see :func:`compile_qrc`)
+5.  The ``bytes`` from :func:`compile_qrc` are saved for later reloading (see
+    first step), and are immediately executed with ``exec``, which has the
+    effect of registering the resources.
+
+The primary *external* function is :func:`compile_qt_svgs`.  It provides a
+convenience wrapper around :func:`generate_colorized_svgs`,
+:func:`_temporary_qrc_file`, and :func:`compile_qrc`, and performs a sequence of
+steps to similar those described above, using arbitrary SVGs and colors as
+inputs.
+"""
+
 import os
 from contextlib import contextmanager
 from itertools import product
@@ -10,8 +40,8 @@ import qtpy
 __all__ = [
     '_register_napari_resources',
     'compile_qt_svgs',
+    'compile_qrc',
     'generate_colorized_svgs',
-    'temporary_qrc_file',
 ]
 
 QRC_TEMPLATE = """
@@ -26,7 +56,7 @@ FILE_T = "<file alias='{alias}'>{path}</file>"
 
 
 @contextmanager
-def temporary_qrc_file(
+def _temporary_qrc_file(
     xmls: Iterable[Tuple[str, str]], prefix: str = ''
 ) -> Iterator[str]:
     """Create a temporary directory with icons and .qrc file
@@ -81,8 +111,7 @@ def generate_colorized_svgs(
 
     This is a generator that yields tuples of ``(alias, icon_xml)`` for every
     combination (cartesian product) of `svg_path`, `color`, and `opacity`
-    provided. It can be used as input to :func:`temporary_qrc_file`.
-
+    provided. It can be used as input to :func:`_temporary_qrc_file`.
 
     Parameters
     ----------
@@ -209,7 +238,14 @@ def compile_qt_svgs(
     save_path: Optional[str] = None,
     register: bool = False,
 ) -> str:
-    """[summary]
+    """Return compiled qt resources for all combinations of `svgs` and `colors`.
+
+    This function is a convenience wrapper around
+    :func:`generate_colorized_svgs`, :func:`_temporary_qrc_file`, and
+    :func:`compile_qrc`.  It generates styled XML from SVG paths, organizes
+    a `.qrc file <https://doc.qt.io/qt-5/resources.html>`_, compiles that file,
+    and returns the text of the compiled python file (optionally saving it to
+    `save_path` and/or immediately registering/importing it with `register`.)
 
     Parameters
     ----------
@@ -253,7 +289,7 @@ def compile_qt_svgs(
         svg_paths, colors, opacities, theme_override
     )
 
-    with temporary_qrc_file(svgs, prefix=prefix) as qrc:
+    with _temporary_qrc_file(svgs, prefix=prefix) as qrc:
         output = compile_qrc(qrc)
         if save_path:
             Path(save_path).write_bytes(output)
@@ -279,7 +315,7 @@ def _compile_napari_resources(
         theme_override={'warning': 'warning'},
     )
 
-    with temporary_qrc_file(svgs, prefix='themes') as qrc:
+    with _temporary_qrc_file(svgs, prefix='themes') as qrc:
         output = compile_qrc(qrc)
         if save_path:
             Path(save_path).write_bytes(output)
