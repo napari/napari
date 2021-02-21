@@ -1,17 +1,12 @@
 """Test the translations API."""
 
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 
-from ...utils import translations
-from ..translations import (
-    _get_display_name,
+from napari.utils.translations import (
+    DEFAULT_LOCALE,
     _is_valid_locale,
-    _run_process_and_parse,
-    get_installed_packages_locales,
     translator,
 )
 
@@ -20,56 +15,95 @@ HERE = Path(__file__).parent
 TEST_LANGUAGE_PACK_PATH = HERE / "napari-language-pack-es_CO"
 
 
-@pytest.fixture(scope="module")
-def trans():
-    # Install test language package
-    p = subprocess.Popen(
-        [
-            sys.executable,
-            "-m",
-            "pip",
-            "install",
-            f"{TEST_LANGUAGE_PACK_PATH}",
-            # "--force-reinstall",
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    stdout, stderr = p.communicate()
-    print(stdout, stderr)
+def _get_display_name(
+    locale: str, display_locale: str = DEFAULT_LOCALE
+) -> str:
+    """
+    Return the language name to use with a `display_locale` for a given language locale.
+    Parameters
+    ----------
+    locale: str
+        The language name to use.
+    display_locale: str, optional
+        The language to display the `locale`.
+    Returns
+    -------
+    str
+        Localized `locale` and capitalized language name using `display_locale` as language.
+    """
+    # This is a dependency of the language packs to keep out of core
+    import babel
 
-    # Compile the *.po catalog to a *.mo file
-    import napari_language_pack_es_CO
-
-    package_dir = Path(napari_language_pack_es_CO.__file__).parent
-    p = subprocess.Popen(
-        [
-            "pybabel",
-            "compile",
-            "--domain=napari",
-            f"--dir={package_dir / 'locale'}",
-            f"--locale={TEST_LOCALE}",
-        ],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+    locale = locale if _is_valid_locale(locale) else DEFAULT_LOCALE
+    display_locale = (
+        display_locale if _is_valid_locale(display_locale) else DEFAULT_LOCALE
     )
-    stdout, stderr = p.communicate()
-    print(stdout, stderr)
+    loc = babel.Locale.parse(locale)
+    return loc.get_display_name(display_locale).capitalize()
 
-    print(
-        " ".join(
-            [
-                "pybabel",
-                "compile",
-                "--domain=napari",
-                f"--dir={package_dir / 'locale'}",
-                f"--locale={TEST_LOCALE}",
-            ]
-        )
+
+es_CO_po = r"""msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2021-02-18 19:00\n"
+"PO-Revision-Date:  2021-02-18 19:00\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.2\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: es_CO\n"
+
+#: /
+msgid "MORE ABOUT NAPARI"
+msgstr "Más sobre napari"
+"""
+
+es_CO_mo = (
+    b"\xde\x12\x04\x95\x00\x00\x00\x00\x02\x00\x00\x00\x1c\x00\x00\x00,"
+    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00<\x00"
+    b"\x00\x00\x11\x00\x00\x00=\x00\x00\x00[\x01\x00\x00O\x00\x00\x00\x11"
+    b"\x00\x00\x00\xab\x01\x00\x00\x00"
+    b"MORE ABOUT NAPARI\x00Project-Id-Version:  \n"
+    b"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+    b"POT-Creation-Date: 2021-02-18 19:00+0000\n"
+    b"PO-Revision-Date: 2021-02-18 19:00+0000\n"
+    b"Last-Translator: \nLanguage: es_CO\nLanguage-Team: \n"
+    b"Plural-Forms: nplurals=2; plural=(n != 1)\nMIME-Version: 1.0\n"
+    b"Content-Type: text/plain; charset=utf-8\nContent-Transfer-Encoding: 8bit"
+    b"\nGenerated-By: Babel 2.9.0\n\x00M\xc3\xa1s sobre napari\x00"
+)
+
+
+@pytest.fixture
+def trans(tmp_path):
+    """A good plugin that uses entry points."""
+    distinfo = tmp_path / "napari_language_pack_es_CO-0.1.0.dist-info"
+    distinfo.mkdir()
+    (distinfo / "top_level.txt").write_text('napari_language_pack_es_CO')
+    (distinfo / "entry_points.txt").write_text(
+        "[napari.languagepack]\nes_CO = napari_language_pack_es_CO\n"
     )
-    # Load translator and force a locale for testing
-    translator._set_locale(TEST_LOCALE)
-    return translator.load()
+    (distinfo / "METADATA").write_text(
+        "Metadata-Version: 2.1\n"
+        "Name: napari-language-pack-es-CO\n"
+        "Version: 0.1.0\n"
+    )
+    pkgdir = tmp_path / 'napari_language_pack_es_CO'
+    msgs = pkgdir / 'locale' / 'es_CO' / 'LC_MESSAGES'
+    msgs.mkdir(parents=True)
+    (pkgdir / '__init__.py').touch()
+    (msgs / "napari.po").write_text(es_CO_po)
+    (msgs / "napari.mo").write_bytes(es_CO_mo)
+
+    from napari_plugin_engine.manager import temp_path_additions
+
+    with temp_path_additions(tmp_path):
+        # Load translator and force a locale for testing
+        translator._set_locale(TEST_LOCALE)
+        return translator.load()
 
 
 def test_get_display_name_valid():
@@ -98,23 +132,6 @@ def test_is_valid_locale_invalid():
     assert not _is_valid_locale("bar")
 
 
-def test_run_process_and_parse(trans):
-    cmd = [
-        sys.executable,
-        translations.__file__,
-        "_get_installed_language_pack_locales",
-    ]
-    data, msg = _run_process_and_parse(cmd)
-    assert data == {'es_CO': 'napari_language_pack_es_CO'}
-    assert msg == ""
-
-
-def test_get_installed_packages_locales(trans):
-    data, msg = get_installed_packages_locales()
-    assert data == {'es_CO': 'napari_language_pack_es_CO'}
-    assert msg == ""
-
-
 def test_locale_valid_singular(trans):
     # Test singular method
     expected_result = "Más sobre napari"
@@ -127,10 +144,11 @@ def test_locale_valid_singular(trans):
 
 
 def test_locale_invalid():
-    translator._set_locale(TEST_LOCALE)
-    trans = translator.load()
-    result = trans._("BOO")
-    assert result == "BOO"
+    with pytest.warns(UserWarning):
+        translator._set_locale(TEST_LOCALE)
+        trans = translator.load()
+        result = trans._("BOO")
+        assert result == "BOO"
 
 
 def test_locale_n_runs(trans):
@@ -146,7 +164,6 @@ def test_locale_n_runs(trans):
     assert result == plural
 
 
-@pytest.mark.xfail(reason="On ubuntu and python3.7 is failing")
 def test_locale_p_runs(trans):
     # Test context singular method
     context = "context"
@@ -159,7 +176,6 @@ def test_locale_p_runs(trans):
     assert result == string
 
 
-@pytest.mark.xfail(reason="On ubuntu and python3.7 is failing")
 def test_locale_np_runs(trans):
     # Test plural context method
     n = 2
