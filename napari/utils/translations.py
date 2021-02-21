@@ -65,7 +65,6 @@ class TranslationBundle:
         self._domain = domain
         self._locale = locale
 
-        print("init", locale)
         self._update_locale(locale)
 
     def _update_locale(self, locale: str):
