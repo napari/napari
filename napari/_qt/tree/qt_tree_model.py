@@ -117,9 +117,7 @@ class QtNodeTreeModel(QAbstractItemModel):
                 self._root.move(moving_indices[0], dest_idx)
             else:
                 self._root.move_multiple(moving_indices, dest_idx)
-
-        # XXX: returning False seems to go against the Qt docs instructions, but
-        # If we return true, removeRows is called!?
+            return True
         return False
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag | Qt.ItemFlags:
@@ -213,7 +211,8 @@ class QtNodeTreeModel(QAbstractItemModel):
 
         # A common convention used in models that expose tree data structures is that only
         # items in the first column have children. So here,the column of the returned is 0.
-        return self.createIndex(parentItem.index_in_parent(), 0, parentItem)
+        row = parentItem.index_in_parent() or 0
+        return self.createIndex(row, 0, parentItem)
 
     def rowCount(self, parent: QModelIndex) -> int:
         """Returns the number of rows under the given parent.
@@ -254,6 +253,11 @@ class QtNodeTreeModel(QAbstractItemModel):
         self._root.events.inserted.connect(self._on_end_insert)
         self._root.events.moving.connect(self._on_begin_moving)
         self._root.events.moved.connect(self._on_end_move)
+        self._root.events.connect(self._process_event)
+
+    def _process_event(self, event):
+        # for subclasses to handle NodeType-specific data
+        pass
 
     def _on_begin_removing(self, event):
         """Begins a row removal operation.
@@ -346,6 +350,10 @@ class QtNodeTreeModel(QAbstractItemModel):
         for i in _p:
             par = self.index(i, 0, par)
         return par, idx
+
+    def hasGroups(self) -> bool:
+        """Return true if the root has any Groups."""
+        return any(node.is_group() for node in self._root)
 
 
 # TODO: cleanup stuff related to MIME formats and convenience methods
