@@ -325,7 +325,7 @@ class NestableEventedList(EventedList[_T]):
                     raise NotImplementedError(
                         "Can't yet deal with slice source indices in multimove"
                     )
-                _idx[len(dest_par)] += sum(map(lambda x: x <= z, dumped))  # type: ignore
+                _idx[len(dest_par)] += sum(map(_le(z), dumped))
                 idx = tuple(_idx)
 
             src_par, src_i = split_nested_index(idx)
@@ -336,11 +336,11 @@ class NestableEventedList(EventedList[_T]):
 
             # we need to decrement the src_i by 1 for each time we have
             # previously pulled items out from in front of the src_i
-            src_i -= sum(map(lambda x: x <= src_i, popped.get(src_par, [])))  # type: ignore
+            src_i -= sum(map(_le(src_i), popped.get(src_par, [])))
 
             # we need to decrement the dest_i by 1 for each time we have
             # previously pulled items out from in front of the dest_i
-            ddec = sum(map(lambda x: x <= dest_i, popped.get(dest_par, [])))  # type: ignore
+            ddec = sum(map(_le(dest_i), popped.get(dest_par, [])))
 
             # skip noop
             if src_par == dest_par and src_i == dest_i - ddec:
@@ -465,3 +465,8 @@ class NestableEventedList(EventedList[_T]):
                         yield i
         else:
             yield from super()._iter_indices(start, stop)
+
+
+def _le(y):
+    # create a new function that accepts a single value x, returns x < y
+    return lambda x: x < y
