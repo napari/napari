@@ -7,6 +7,13 @@ from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
 import qtpy
 
+__all__ = [
+    '_register_napari_resources',
+    'compile_qt_svgs',
+    'generate_colorized_svgs',
+    'temporary_qrc_file',
+]
+
 QRC_TEMPLATE = """
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource prefix="{}">
@@ -279,7 +286,7 @@ def _compile_napari_resources(
         return output.decode()
 
 
-def register_napari_resources(persist=True, force_rebuild=False):
+def _register_napari_resources(persist=True, force_rebuild=False):
     """Build, save, and register napari Qt icon resources.
 
     If a _qt_resources*.py file exists that matches the qt version and hash of

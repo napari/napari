@@ -12,7 +12,7 @@ from napari import __version__
 from ..utils import config, perf
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
-from .qt_resources import register_napari_resources
+from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
 NAPARI_ICON_PATH = os.path.join(
@@ -143,7 +143,7 @@ def get_app(
 
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
-        register_napari_resources()
+        _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
     return app
