@@ -1,6 +1,8 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
 
+from napari.utils.interactions import KEY_SYMBOLS
+
 
 class QtLayerButtons(QFrame):
     """Button controls for napari layers.
@@ -96,23 +98,28 @@ class QtViewerButtons(QFrame):
 
         self.viewer = viewer
         self.consoleButton = QtViewerPushButton(
-            self.viewer, 'console', 'Open IPython terminal'
+            self.viewer,
+            'console',
+            f"Open IPython terminal ({KEY_SYMBOLS['Control']}-{KEY_SYMBOLS['Shift']}-C)",
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            'Roll dimensions order for display',
+            f"Roll dimensions order for display ({KEY_SYMBOLS['Control']}-E)",
             lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            'Transpose displayed dimensions',
+            f"Transpose displayed dimensions ({KEY_SYMBOLS['Control']}-T)",
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
-            self.viewer, 'home', 'Reset view', lambda: self.viewer.reset_view()
+            self.viewer,
+            'home',
+            f"Reset view ({KEY_SYMBOLS['Control']}-R)",
+            lambda: self.viewer.reset_view(),
         )
         self.gridViewButton = QtGridViewButton(self.viewer)
         self.ndisplayButton = QtNDisplayButton(self.viewer)
@@ -240,7 +247,7 @@ class QtGridViewButton(QCheckBox):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip('Toggle grid view')
+        self.setToolTip(f"Toggle grid view ({KEY_SYMBOLS['Control']}-G)")
         self.viewer.grid.events.connect(self._on_grid_change)
         self.stateChanged.connect(self.change_grid)
         self._on_grid_change()
@@ -280,7 +287,9 @@ class QtNDisplayButton(QCheckBox):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip('Toggle number of displayed dimensions')
+        self.setToolTip(
+            f"Toggle number of displayed dimensions ({KEY_SYMBOLS['Control']}-Y)"
+        )
         self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
         self.setChecked(self.viewer.dims.ndisplay == 3)
