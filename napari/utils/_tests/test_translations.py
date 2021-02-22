@@ -1,5 +1,6 @@
 """Test the translations API."""
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -145,10 +146,12 @@ def test_locale_n_runs(trans):
     assert result == plural
 
 
-@pytest.mark.xfail(
-    reason="On ubuntu and python3.7 is failing, seems to be CI only"
+@pytest.mark.skipif(
+    sys.platform == "linux" and sys.version_info[:2] == (3, 7),
+    reason="On ubuntu and python3.7 is failing, seems to be CI only",
 )
 def test_locale_p_runs(trans):
+    print(sys.version_info)
     # Test context singular method
     context = "context"
     string = "MORE ABOUT NAPARI"
@@ -160,10 +163,12 @@ def test_locale_p_runs(trans):
     assert result == string
 
 
-@pytest.mark.xfail(
-    reason="On ubuntu and python3.7 is failing, seems to be CI only"
+@pytest.mark.skipif(
+    sys.platform == "linux" and sys.version_info[:2] == (3, 7),
+    reason="On ubuntu and python3.7 is failing, seems to be CI only",
 )
 def test_locale_np_runs(trans):
+    print(sys.version_info)
     # Test plural context method
     n = 2
     context = "context"
