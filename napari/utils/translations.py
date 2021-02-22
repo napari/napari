@@ -155,6 +155,17 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
 class TranslationBundle:
     """
     Translation bundle providing gettext translation functionality.
+
+
+    Parameters
+    ----------
+    domain : str
+        The python package/module that this bundle points to. This corresponds
+        to the module name of either the core package (``napari``) or any
+        extension, for example ``napari_console``. The language packs will
+        contain ``*.mo`` files with these names.
+    locale : str
+        The locale for this bundle. Examples include "en_US", "en_CO".
     """
 
     def __init__(self, domain: str, locale: str):

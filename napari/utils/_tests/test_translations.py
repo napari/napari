@@ -80,7 +80,7 @@ def trans(tmp_path):
         return translator.load()
 
 
-def test_get_language_packs():
+def test_get_language_packs(trans):
     result = get_language_packs("es_CO")
     assert result == {
         'en': {'displayName': 'Inglés', 'nativeName': 'English'},
