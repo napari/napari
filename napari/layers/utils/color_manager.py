@@ -252,7 +252,7 @@ class ColorManager(EventedModel):
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
                 colors=color,
-                elem_name="face_color",
+                elem_name="color",
                 default="white",
             )
             colors = normalize_and_broadcast_colors(

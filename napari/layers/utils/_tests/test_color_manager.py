@@ -37,7 +37,7 @@ color_arr = np.asarray(color_list)
 
 
 @pytest.mark.parametrize('color', [color_str, color_list, color_arr])
-def test_set_color_direct(color):
+def test_color_manager_direct(color):
     cm = ColorManager(colors=color, mode='direct')
     color_mode = cm.mode
     assert color_mode == 'direct'
@@ -63,6 +63,22 @@ def test_set_color_direct(color):
     # refreshing the colors in direct mode should have no effect
     cm.refresh_colors(properties={})
     np.testing.assert_allclose(cm.colors, post_paste_colors)
+
+
+@pytest.mark.parametrize('color', [color_str, color_list, color_arr])
+def test_set_color_direct(color):
+    """Test setting the colors via the set_color method in direct mode"""
+    # create an empty color manager
+    cm = ColorManager()
+    np.testing.assert_allclose(cm.colors, np.empty((0, 4)))
+    assert cm.mode == 'direct'
+
+    # set colors
+    expected_colors = np.array([[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]])
+    cm.set_color(
+        color, n_colors=len(color), properties={}, current_properties={}
+    )
+    np.testing.assert_almost_equal(cm.colors, expected_colors)
 
 
 def test_continuous_colormap():
@@ -129,6 +145,35 @@ def test_continuous_colormap():
     np.testing.assert_allclose(cm.colors[-2:], paste_colors)
 
 
+def test_set_color_colormap():
+    # make an empty colormanager
+    init_color_properties = {
+        'name': 'point_type',
+        'values': np.empty(0),
+        'current_value': np.array([1.5]),
+    }
+    cm = ColorManager(
+        color_properties=init_color_properties,
+        continuous_colormap='gray',
+        mode='colormap',
+    )
+
+    # use the set_color method to update the colors
+    n_colors = 10
+    updated_properties = {
+        'point_type': _make_cycled_properties([0, 1.5], n_colors)
+    }
+    current_properties = {'point_type': np.array([1.5])}
+    cm.set_color(
+        color='point_type',
+        n_colors=n_colors,
+        properties=updated_properties,
+        current_properties=current_properties,
+    )
+    color_array = transform_color(['black', 'white'] * int(n_colors / 2))
+    np.testing.assert_allclose(cm.colors, color_array)
+
+
 color_cycle_str = ['red', 'blue']
 color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
 color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
@@ -189,6 +234,35 @@ def test_color_cycle(color_cycle):
     paste_colors = np.array([[0, 0, 0, 1], [0, 0, 0, 1]])
     cm.paste(colors=paste_colors, properties=paste_props)
     np.testing.assert_allclose(cm.colors[-2:], paste_colors)
+
+
+def test_set_color_cycle():
+    # make an empty colormanager
+    init_color_properties = {
+        'name': 'point_type',
+        'values': np.empty(0),
+        'current_value': np.array(['A']),
+    }
+    cm = ColorManager(
+        color_properties=init_color_properties,
+        categorical_colormap=['black', 'white'],
+        mode='cycle',
+    )
+
+    # use the set_color method to update the colors
+    n_colors = 10
+    updated_properties = {
+        'point_type': _make_cycled_properties(['A', 'B'], n_colors)
+    }
+    current_properties = {'point_type': np.array(['B'])}
+    cm.set_color(
+        color='point_type',
+        n_colors=n_colors,
+        properties=updated_properties,
+        current_properties=current_properties,
+    )
+    color_array = transform_color(['black', 'white'] * int(n_colors / 2))
+    np.testing.assert_allclose(cm.colors, color_array)
 
 
 @pytest.mark.parametrize('n_colors', [0, 1, 5])
