@@ -297,7 +297,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
     def _on_end_move(self, e):
         self.endMoveRows()
 
-    def getItem(self, index: QModelIndex) -> Node:
+    def getItem(self, index: QModelIndex) -> NodeType:
         """Return ``Node`` object for a given `QModelIndex`.
 
         A null or invalid ``QModelIndex`` will return the root Node.

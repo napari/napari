@@ -34,14 +34,15 @@ root = LayerGroup(
     name="root",
 )
 root.events.reordered.connect(lambda e: print(e.value))
+root.selection.add((0,)) # start with a python-based selection
 
 tree = QtLayerTreeView(root)
 # model = tree.model()
 # tree.show()
 
-im, pt = Image(grass()), Points()
-root2 = LayerGroup([LayerGroup([im, pt])])
-tree2 = QtLayerTreeView(root2)
+# im, pt = Image(grass()), Points()
+# root2 = LayerGroup([LayerGroup([im, pt])])
+# tree2 = QtLayerTreeView(root2)
 v = napari.Viewer()
 
 # v.layers.extend([im, pt])

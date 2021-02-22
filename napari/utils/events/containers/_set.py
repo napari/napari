@@ -104,7 +104,7 @@ class EventedSet(MutableSet[_T]):
         """Remove all elements of another set from this set."""
         to_remove = self._set.intersection(others)
         if to_remove:
-            self._set.difference_update(others)
+            self._set.difference_update(to_remove)
             self.events.removed(value=to_remove)
 
     def intersection(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
@@ -136,7 +136,7 @@ class EventedSet(MutableSet[_T]):
         to_remove = self._set.intersection(others)
         to_add = set(others).difference(self)
         if to_remove:
-            self._set.difference_update(others)
+            self._set.difference_update(to_remove)
             self.events.removed(value=to_remove)
         if to_add:
             self._set.update(to_add)

@@ -30,9 +30,14 @@ class Group(NestableEventedList[NodeType], Node):
         A name/id for this group, by default "Group"
     """
 
-    def __init__(self, children: Iterable[NodeType] = (), name: str = "Group"):
+    def __init__(
+        self,
+        children: Iterable[NodeType] = (),
+        name: str = "Group",
+        basetype=Node,
+    ):
         Node.__init__(self, name=name)
-        NestableEventedList.__init__(self, children, basetype=Node)
+        NestableEventedList.__init__(self, data=children, basetype=basetype)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
