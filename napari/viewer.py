@@ -21,6 +21,9 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
+    # Create private variable for window
+    _window = None
+
     def __init__(
         self,
         *,
@@ -40,7 +43,12 @@ class Viewer(ViewerModel):
         # instantiating the first Viewer.
         from .window import Window
 
-        self.window = Window(self, show=show)
+        self._window = Window(self, show=show)
+
+    # Expose private window publically. This is needed to keep window off pydantic model
+    @property
+    def window(self):
+        return self._window
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
