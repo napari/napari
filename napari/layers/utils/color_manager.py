@@ -238,6 +238,7 @@ class ColorManager(EventedModel):
 
             if update_color_mapping is True:
                 self.contrast_limits = None
+            self.events.color_properties()
 
     def add(
         self,
