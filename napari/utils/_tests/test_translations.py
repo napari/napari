@@ -81,22 +81,9 @@ def trans(tmp_path):
 
 
 def test_get_language_packs(trans):
-    result = get_language_packs("es_CO")
-    assert result == {
-        'en': {'displayName': 'Inglés', 'nativeName': 'English'},
-        'es_CO': {
-            'displayName': 'Español (colombia)',
-            'nativeName': 'Español (colombia)',
-        },
-    }
-
     result = get_language_packs()
     assert result == {
-        'en': {'displayName': 'English', 'nativeName': 'English'},
-        'es_CO': {
-            'displayName': 'Spanish (colombia)',
-            'nativeName': 'Español (colombia)',
-        },
+        'en': {'displayName': 'English', 'nativeName': 'English'}
     }
 
 
