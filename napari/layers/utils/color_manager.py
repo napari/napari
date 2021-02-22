@@ -29,50 +29,6 @@ class ColorProperties(EventedModel):
     current_value: Optional[Any] = None
 
 
-def compare_colormap(cmap_1, cmap_2):
-    names_eq = cmap_1.name == cmap_2.name
-    colors_eq = np.array_equal(cmap_1.colors, cmap_2.colors)
-
-    return np.all([names_eq, colors_eq])
-
-
-def compare_categorical_colormap(cmap_1, cmap_2):
-    # todo: add real equivalence test
-    if np.array_equal(
-        cmap_1.fallback_color.values, cmap_2.fallback_color.values
-    ):
-        return True
-    else:
-        return False
-
-
-def compare_color_properties(c_prop_1, c_prop_2):
-    if (c_prop_1 is None) and (c_prop_2 is None):
-        return True
-    elif (c_prop_1 is None) != (c_prop_2 is None):
-        return False
-    else:
-        names_eq = c_prop_1.name == c_prop_2.name
-        values_eq = np.array_equal(c_prop_1.values, c_prop_2.values)
-
-        eq = names_eq & values_eq
-
-    return eq
-
-
-def compare_colors(color_1, color_2):
-    return np.allclose(color_1, color_2)
-
-
-def compare_contrast_limits(clim_1, clim_2):
-    if (clim_1 is None) and (clim_2 is None):
-        return True
-    elif (clim_1 is None) != (clim_2 is None):
-        return False
-    else:
-        return np.allclose(clim_1, clim_2)
-
-
 class ColorManager(EventedModel):
     """A class for controlling the display colors for annotations in napari.
 
