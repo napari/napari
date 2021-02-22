@@ -6,10 +6,10 @@ _T = TypeVar("_T")
 
 
 class Selection(EventedSet[_T]):
-    def __init__(self, data: Iterable[_T] = ()):
+    def __init__(self, data: Iterable[_T] = (), current: Optional[_T] = None):
         super().__init__(data=data)
         self.events.add(current=None)
-        self._current: Optional[_T] = None
+        self._current = current
 
     @property
     def current(self) -> Optional[_T]:
