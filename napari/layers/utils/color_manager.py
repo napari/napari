@@ -479,12 +479,16 @@ class ColorManager(EventedModel):
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
             color_values = colors.get('colors', None)
-            current_color = colors.get('current_color', None)
-            mode = colors.get('mode', None)
+            current_color = colors.get('current_color', current_color)
+            mode = colors.get('mode', mode)
             color_properties = colors.get('color_properties', None)
-            continuous_colormap = colors.get('continuous_colormap', None)
-            contrast_limits = colors.get('contrast_limits', None)
-            categorical_colormap = colors.get('categorical_colormap', None)
+            continuous_colormap = colors.get(
+                'continuous_colormap', continuous_colormap
+            )
+            contrast_limits = colors.get('contrast_limits', contrast_limits)
+            categorical_colormap = colors.get(
+                'categorical_colormap', categorical_colormap
+            )
 
             if isinstance(color_properties, str):
                 # if the color properties were given as a property name,

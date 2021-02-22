@@ -248,6 +248,35 @@ def test_init_color_manager_cycle():
     assert color_manager == color_manager_3
 
 
+def test_init_color_manager_cycle_with_colors_dict():
+    """Test initializing color cycle ColorManager from layer kwargs
+    where the colors are given as a dictionary of ColorManager
+    fields/values
+    """
+    n_colors = 10
+    color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
+    colors_dict = {
+        'color_properties': 'point_type',
+        'mode': 'cycle',
+        'categorical_colormap': color_cycle,
+    }
+    color_manager = ColorManager.from_layer_kwargs(
+        n_colors=n_colors,
+        colors=colors_dict,
+        continuous_colormap='viridis',
+        properties=properties,
+    )
+    assert len(color_manager.colors) == n_colors
+    assert color_manager.mode == 'cycle'
+    color_array = transform_color(
+        list(islice(cycle(color_cycle), 0, n_colors))
+    )
+    np.testing.assert_allclose(color_manager.colors, color_array)
+    assert color_manager.color_properties.current_value == 'B'
+    assert color_manager.continuous_colormap.name == 'viridis'
+
+
 def test_init_empty_color_manager_cycle():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
@@ -323,6 +352,35 @@ def test_init_color_manager_colormap():
     assert color_manager == color_manager_3
 
 
+def test_init_color_manager_colormap_with_colors_dict():
+    """Test initializing colormap ColorManager from layer kwargs
+    where the colors are given as a dictionary of ColorManager
+    fields/values
+    """
+    n_colors = 10
+    color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
+    properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
+    colors_dict = {
+        'color_properties': 'point_type',
+        'mode': 'colormap',
+        'categorical_colormap': color_cycle,
+        'continuous_colormap': 'gray',
+    }
+    color_manager = ColorManager.from_layer_kwargs(
+        n_colors=n_colors,
+        colors=colors_dict,
+        properties=properties,
+    )
+    assert len(color_manager.colors) == n_colors
+    assert color_manager.mode == 'colormap'
+    color_array = transform_color(['black', 'white'] * int(n_colors / 2))
+    colors = color_manager.colors.copy()
+    np.testing.assert_allclose(colors, color_array)
+    np.testing.assert_allclose(color_manager.current_color, [1, 1, 1, 1])
+    assert color_manager.color_properties.current_value == 1.5
+    assert color_manager.continuous_colormap.name == 'gray'
+
+
 def test_init_empty_color_manager_colormap():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
@@ -358,3 +416,24 @@ def test_init_empty_color_manager_colormap():
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
+
+
+def test_colormanager_invalid_color_properties():
+    """Passing an invalid property name for color_properties
+    should raise a KeyError
+    """
+    n_colors = 10
+    color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
+    properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
+    colors_dict = {
+        'color_properties': 'not_point_type',
+        'mode': 'colormap',
+        'categorical_colormap': color_cycle,
+        'continuous_colormap': 'gray',
+    }
+    with pytest.raises(KeyError):
+        _ = ColorManager.from_layer_kwargs(
+            n_colors=n_colors,
+            colors=colors_dict,
+            properties=properties,
+        )
