@@ -3,8 +3,9 @@ from itertools import cycle, islice
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
-from napari.layers.utils.color_manager import ColorManager
+from napari.layers.utils.color_manager import ColorManager, ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -29,6 +30,58 @@ def test_color_manager_empty():
     cm = ColorManager()
     np.testing.assert_allclose(cm.colors, np.empty((0, 4)))
     assert cm.mode == 'direct'
+
+
+c_prop_dict = {
+    'name': 'point_type',
+    'values': np.array(['A', 'B', 'C']),
+    'current_value': np.array(['C']),
+}
+c_prop_obj = ColorProperties(**c_prop_dict)
+
+
+@pytest.mark.parametrize(
+    'c_props,expected',
+    [
+        (None, None),
+        ({}, None),
+        (c_prop_obj, c_prop_obj),
+        (c_prop_dict, c_prop_obj),
+    ],
+)
+def test_color_properties_coercion(c_props, expected):
+    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+    cm = ColorManager(colors=colors, color_properties=c_props, mode='direct')
+    assert cm.color_properties == expected
+
+
+wrong_type = ('prop_1', np.array([1, 2, 3]))
+invalid_keys = {'values': np.array(['A', 'B', 'C'])}
+
+
+@pytest.mark.parametrize('c_props', [wrong_type, invalid_keys])
+def test_invalid_color_properties(c_props):
+
+    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+    with pytest.raises(ValidationError):
+        _ = ColorManager(
+            colors=colors, color_properties=c_props, mode='direct'
+        )
+
+
+@pytest.mark.parametrize(
+    'curr_color,expected',
+    [
+        (None, np.array([0, 0, 0, 1])),
+        ([], np.array([0, 0, 0, 1])),
+        ('red', np.array([1, 0, 0, 1])),
+        ([1, 0, 0, 1], np.array([1, 0, 0, 1])),
+    ],
+)
+def test_current_color_coercion(curr_color, expected):
+    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+    cm = ColorManager(colors=colors, current_color=curr_color, mode='direct')
+    np.testing.assert_allclose(cm.current_color, expected)
 
 
 color_str = ['red', 'red', 'red']

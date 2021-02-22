@@ -131,7 +131,7 @@ class ColorManager(EventedModel):
                     v['values'] = np.asarray(v['values'])
                     color_properties = ColorProperties(**v)
                 except ValueError:
-                    err_msg = 'color_properties dictionary should have keys: name, value, and optionally current_value'
+                    err_msg = 'color_properties dictionary should have keys: name, values, and optionally current_value'
 
                     raise ValueError(err_msg)
 
@@ -156,7 +156,7 @@ class ColorManager(EventedModel):
         if v is None:
             return v
         elif len(v) == 0:
-            return np.emtpy((0, 4))
+            return None
         else:
             return transform_color(v)[0]
 
