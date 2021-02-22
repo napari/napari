@@ -722,6 +722,9 @@ class EmitterGroup(EventEmitter):
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
 
+    def __getattr__(self, name) -> EventEmitter:
+        return object.__getattribute__(self, name)
+
     def __getitem__(self, name: str) -> EventEmitter:
         """
         Return the emitter assigned to the specified name.
