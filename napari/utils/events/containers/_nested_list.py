@@ -12,6 +12,7 @@ from typing import (
     Iterable,
     NewType,
     Tuple,
+    TypeVar,
     Union,
     cast,
     overload,
@@ -19,13 +20,14 @@ from typing import (
 
 from ..event import Event
 from ..types import SupportsEvents
-from ._evented_list import _T, EventedList, Index
+from ._evented_list import EventedList, Index
 
 logger = logging.getLogger(__name__)
 
 NestedIndex = Tuple[Index, ...]
 MaybeNestedIndex = Union[Index, NestedIndex]
 ParentIndex = NewType('ParentIndex', Tuple[int, ...])
+_T = TypeVar("_T")
 
 
 def ensure_tuple_index(index: MaybeNestedIndex) -> NestedIndex:
@@ -207,10 +209,7 @@ class NestableEventedList(EventedList[_T]):
                 )
             else:
                 indices = [index]
-            return [
-                (cast(NestableEventedList[_T], self[parent_i]), i)
-                for i in indices
-            ]
+            return [(self[parent_i], i) for i in indices]
         return super()._delitem_indices(key)
 
     def __delitem__(self, key):
@@ -258,7 +257,7 @@ class NestableEventedList(EventedList[_T]):
         self, parent_index: ParentIndex, dest_index: Index
     ) -> Index:
         """Make sure dest_index is a positive index inside parent_index."""
-        destination_group = cast(NestableEventedList[_T], self[parent_index])
+        destination_group = self[parent_index]
         # not handling slice indexes
         if isinstance(dest_index, int):
             if dest_index < 0:
@@ -319,30 +318,29 @@ class NestableEventedList(EventedList[_T]):
 
             # i.e. we need to increase the (src_par, ...) by 1 for each time
             # we have previously inserted items in front of the (src_par, ...)
-            if len(idx) > len(dest_par):
-                z = idx[len(dest_par)]
+            _parlen = len(dest_par)
+            if len(idx) > _parlen:
                 _idx: list[Index] = list(idx)
-                if isinstance(_idx[len(dest_par)], slice):
+                if isinstance(_idx[_parlen], slice):
                     raise NotImplementedError(
                         "Can't yet deal with slice source indices in multimove"
                     )
-                _idx[len(dest_par)] += sum(map(lambda x: x <= z, dumped))  # type: ignore
+                _idx[_parlen] += sum(map(_le(_idx[_parlen]), dumped))
                 idx = tuple(_idx)
 
             src_par, src_i = split_nested_index(idx)
             if isinstance(src_i, slice):
                 raise ValueError("Terminal source index may not be a slice")
-            src_i = cast(int, src_i)
             if src_i < 0:
                 src_i += len(self[src_par])
 
             # we need to decrement the src_i by 1 for each time we have
             # previously pulled items out from in front of the src_i
-            src_i -= sum(map(lambda x: x <= src_i, popped.get(src_par, [])))
+            src_i -= sum(map(_le(src_i), popped.get(src_par, [])))
 
             # we need to decrement the dest_i by 1 for each time we have
             # previously pulled items out from in front of the dest_i
-            ddec = sum(map(lambda x: x <= dest_i, popped.get(dest_par, [])))
+            ddec = sum(map(_le(dest_i), popped.get(dest_par, [])))
 
             # skip noop
             if src_par == dest_par and src_i == dest_i - ddec:
@@ -457,7 +455,7 @@ class NestableEventedList(EventedList[_T]):
         if deep:
             for i in range(start, len(self) if stop is None else stop):
                 if isinstance(self[i], NestableEventedList):
-                    yield from self[i]._iter_indices(
+                    yield from self[i]._iter_indices(  # type: ignore
                         root=root + (i,), deep=deep
                     )
                 else:
@@ -467,3 +465,8 @@ class NestableEventedList(EventedList[_T]):
                         yield i
         else:
             yield from super()._iter_indices(start, stop)
+
+
+def _le(y):
+    # create a new function that accepts a single value x, returns x < y
+    return lambda x: x <= y

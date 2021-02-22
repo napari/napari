@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Generator, Iterable, TypeVar
+from typing import Generator, Iterable, List, TypeVar
 
 from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
@@ -32,7 +30,7 @@ class Group(NestableEventedList[NodeType], Node):
         A name/id for this group, by default "Group"
     """
 
-    def __init__(self, children: Iterable[Node] = (), name: str = "Group"):
+    def __init__(self, children: Iterable[NodeType] = (), name: str = "Group"):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, children, basetype=Node)
 
@@ -63,7 +61,7 @@ class Group(NestableEventedList[NodeType], Node):
 
     def traverse(
         self, leaves_only=False, with_ancestors=False
-    ) -> Generator[Node, None, None]:
+    ) -> Generator[NodeType, None, None]:
         """Recursive all nodes and leaves of the Group tree."""
         obj = self.root() if with_ancestors else self
         if not leaves_only:
@@ -71,9 +69,9 @@ class Group(NestableEventedList[NodeType], Node):
         for child in obj:
             yield from child.traverse(leaves_only)
 
-    def _render(self) -> list[str]:
+    def _render(self) -> List[str]:
         """Recursively return list of strings that can render ascii tree."""
-        lines = [self.name]
+        lines = [self._node_name()]
 
         for n, child in enumerate(self):
             spacer, bul = (
