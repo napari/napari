@@ -133,7 +133,7 @@ def generate_colorized_svgs(
         `theme_override` may be used to override the `key` for a specific icon
         name in `svg_paths`.  For example `{'exclamation': 'warning'}`, would
         use the theme "warning" color for any icon named "exclamation.svg" by
-        default None
+        default `None`
 
     Yields
     -------
