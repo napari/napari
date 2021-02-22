@@ -15,6 +15,37 @@ DEFAULT_LOCALE = "en"
 LOCALE_DIR = "locale"
 
 
+def _get_display_name(
+    locale: str, display_locale: str = DEFAULT_LOCALE
+) -> str:
+    """
+    Return the language name to use with a `display_locale` for a given language locale.
+
+    This is used to generate the preferences dialog options.
+
+    Parameters
+    ----------
+    locale: str
+        The language name to use.
+    display_locale: str, optional
+        The language to display the `locale`.
+
+    Returns
+    -------
+    str
+        Localized `locale` and capitalized language name using `display_locale` as language.
+    """
+    # This is a dependency of the language packs to keep out of core
+    import babel
+
+    locale = locale if _is_valid_locale(locale) else DEFAULT_LOCALE
+    display_locale = (
+        display_locale if _is_valid_locale(display_locale) else DEFAULT_LOCALE
+    )
+    loc = babel.Locale.parse(locale)
+    return loc.get_display_name(display_locale).capitalize()
+
+
 def _is_valid_locale(locale: str) -> bool:
     """
     Check if a `locale` value is valid.
@@ -52,6 +83,71 @@ def _is_valid_locale(locale: str) -> bool:
         pass
 
     return valid
+
+
+def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
+    """
+    Return the available language packs installed in the system.
+
+    The returned information contains the languages displayed in the current
+    locale. This can be used to generate the preferences dialog information.
+
+    Parameters
+    ----------
+    display_locale: str, optional
+        Default is DEFAULT_LOCALE.
+
+    Returns
+    -------
+    dict
+        A dict with the native and display language for all locales found.
+
+    Example
+    -------
+    >>> get_language_packs("es_CO")
+    {
+        'en': {'displayName': 'Inglés', 'nativeName': 'English'},
+        'es_CO': {
+            'displayName': 'Español (colombia)',
+            'nativeName': 'Español (colombia)',
+        },
+    }
+    """
+    from napari_plugin_engine.manager import iter_available_plugins
+
+    lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
+    found_locales = {k: v for (k, v, _) in lang_packs}
+
+    invalid_locales = []
+    valid_locales = []
+    messages = []
+    for locale in found_locales:
+        if _is_valid_locale(locale):
+            valid_locales.append(locale)
+        else:
+            invalid_locales.append(locale)
+
+    display_locale = (
+        display_locale if display_locale in valid_locales else DEFAULT_LOCALE
+    )
+    locales = {
+        DEFAULT_LOCALE: {
+            "displayName": _get_display_name(DEFAULT_LOCALE, display_locale),
+            "nativeName": _get_display_name(DEFAULT_LOCALE, DEFAULT_LOCALE),
+        }
+    }
+    for locale in valid_locales:
+        locales[locale] = {
+            "displayName": _get_display_name(locale, display_locale),
+            "nativeName": _get_display_name(locale, locale),
+        }
+
+    if invalid_locales:
+        messages.append(
+            f"The following locales are invalid: {invalid_locales}!"
+        )
+
+    return locales
 
 
 # --- Translators
