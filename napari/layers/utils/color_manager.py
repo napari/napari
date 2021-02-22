@@ -11,9 +11,10 @@ from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ._color_manager_constants import ColorMode
 from .color_manager_utils import (
+    _validate_colormap_mode,
+    _validate_cycle_mode,
     guess_continuous,
     is_color_mapped,
-    map_property,
 )
 from .color_transformations import (
     ColorType,
@@ -141,45 +142,11 @@ class ColorManager(EventedModel):
 
     @root_validator()
     def _validate_colors(cls, values):
-
         color_mode = values['mode']
-
         if color_mode == ColorMode.CYCLE:
-            color_properties = values['color_properties'].values
-            cmap = values['categorical_colormap']
-            if len(color_properties) == 0:
-                colors = np.empty((0, 4))
-                current_prop_value = values['color_properties'].current_value
-                if current_prop_value is not None:
-                    values['current_color'] = cmap.map(current_prop_value)[0]
-            else:
-                colors = cmap.map(color_properties)
-            values['categorical_colormap'] = cmap
-
+            colors, values = _validate_cycle_mode(values)
         elif color_mode == ColorMode.COLORMAP:
-            color_properties = values['color_properties'].values
-            cmap = values['continuous_colormap']
-            if len(color_properties) > 0:
-                if values['contrast_limits'] is None:
-                    colors, contrast_limits = map_property(
-                        prop=color_properties,
-                        colormap=cmap,
-                    )
-                    values['contrast_limits'] = contrast_limits
-                else:
-                    colors, _ = map_property(
-                        prop=color_properties,
-                        colormap=cmap,
-                        contrast_limits=values['contrast_limits'],
-                    )
-            else:
-                colors = np.empty((0, 4))
-                current_prop_value = values['color_properties'].current_value
-                if current_prop_value is not None:
-                    values['current_color'] = cmap.map(current_prop_value)[0]
-
-            if len(colors) == 0:
-                colors = np.empty((0, 4))
+            colors, values = _validate_colormap_mode(values)
         elif color_mode == ColorMode.DIRECT:
             colors = values['colors']
 

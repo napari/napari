@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 
@@ -73,3 +73,78 @@ def map_property(
     mapped_properties = colormap.map(normalized_properties)
 
     return mapped_properties, contrast_limits
+
+
+def _validate_colormap_mode(
+    values: Dict[str, Any]
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    """Validate the ColorManager field values specific for colormap mode
+    This is called by the root_validator in ColorManager
+
+    Parameters
+    ----------
+    values : dict
+        The field values that are passed to the ColorManager root validator
+
+    Returns
+    -------
+    colors : np.ndarray
+        The (Nx4) color array to set as ColorManager.colors
+    values : dict
+    """
+    color_properties = values['color_properties'].values
+    cmap = values['continuous_colormap']
+    if len(color_properties) > 0:
+        if values['contrast_limits'] is None:
+            colors, contrast_limits = map_property(
+                prop=color_properties,
+                colormap=cmap,
+            )
+            values['contrast_limits'] = contrast_limits
+        else:
+            colors, _ = map_property(
+                prop=color_properties,
+                colormap=cmap,
+                contrast_limits=values['contrast_limits'],
+            )
+    else:
+        colors = np.empty((0, 4))
+        current_prop_value = values['color_properties'].current_value
+        if current_prop_value is not None:
+            values['current_color'] = cmap.map(current_prop_value)[0]
+
+    if len(colors) == 0:
+        colors = np.empty((0, 4))
+
+    return colors, values
+
+
+def _validate_cycle_mode(
+    values: Dict[str, Any]
+) -> Tuple[np.ndarray, Dict[str, Any]]:
+    """Validate the ColorManager field values specific for color cycle mode
+    This is called by the root_validator in ColorManager
+
+    Parameters
+    ----------
+    values : dict
+        The field values that are passed to the ColorManager root validator
+
+    Returns
+    -------
+    colors : np.ndarray
+        The (Nx4) color array to set as ColorManager.colors
+    values : dict
+    """
+    color_properties = values['color_properties'].values
+    cmap = values['categorical_colormap']
+    if len(color_properties) == 0:
+        colors = np.empty((0, 4))
+        current_prop_value = values['color_properties'].current_value
+        if current_prop_value is not None:
+            values['current_color'] = cmap.map(current_prop_value)[0]
+    else:
+        colors = cmap.map(color_properties)
+    values['categorical_colormap'] = cmap
+
+    return colors, values
