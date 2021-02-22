@@ -1,32 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterable, Tuple, Union
+from typing import Iterable
 
-from ...utils.events import EventedSet
 from ...utils.naming import inc_name_count
 from ...utils.tree import Group
 from ..base import Layer
 from ..utils.layer_utils import combine_extents
-
-Index = Union[int, Tuple[int, ...]]
-
-
-class SelectionModel(EventedSet[Index]):
-    # indices in set are not guaranteed to be valid in the model.
-
-    def __init__(self):
-        super().__init__()
-        self.events.add(current=None)
-        self._current = None
-
-    @property
-    def current(self):
-        return self._current
-
-    @current.setter
-    def current(self, index):
-        previous, self._current = self._current, index
-        self.events.current(value=index, previous=previous)
 
 
 class LayerGroup(Group[Layer], Layer):
@@ -36,16 +15,6 @@ class LayerGroup(Group[Layer], Layer):
         Group.__init__(self, children, name=name, basetype=Layer)
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
-        self.events.connect(self._handle_child_events)
-        self.selection = None
-
-    @property
-    def selection(self):
-        return self._selection
-
-    @selection.setter
-    def selection(self, model=None):
-        self._selection = model or SelectionModel()
 
     def _handle_child_events(self, event):
         # event.sources[0] is the original event emitter.

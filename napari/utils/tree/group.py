@@ -1,10 +1,12 @@
-from typing import Generator, Iterable, List, TypeVar
+from typing import Generator, Iterable, List, Tuple, TypeVar, Union
 
+from ...utils.events import EventedSet
 from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
 
 NodeType = TypeVar("NodeType", bound=Node)
+Index = Union[int, Tuple[int, ...]]
 
 
 class Group(NestableEventedList[NodeType], Node):
@@ -38,6 +40,22 @@ class Group(NestableEventedList[NodeType], Node):
     ):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, data=children, basetype=basetype)
+        self.events.add(current=None)
+        self._selection = EventedSet[Index]
+        self._current = None
+
+    @property
+    def selection(self):
+        return self._selection
+
+    @property
+    def current(self):
+        return self._current
+
+    @current.setter
+    def current(self, index):
+        previous, self._current = self._current, index
+        self.events.current(value=index, previous=previous)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
