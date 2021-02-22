@@ -45,6 +45,11 @@ def test_set_color_direct(color):
     np.testing.assert_allclose(cm.colors, expected_colors)
     np.testing.assert_allclose(cm.current_color, expected_colors[-1])
 
+    # test adding a color
+    new_color = [1, 1, 1, 1]
+    cm.add(new_color)
+    np.testing.assert_allclose(cm.colors[-1], new_color)
+
 
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
@@ -418,7 +423,7 @@ def test_init_empty_color_manager_colormap():
     assert color_manager == color_manager_2
 
 
-def test_colormanager_invalid_color_properties():
+def test_color_manager_invalid_color_properties():
     """Passing an invalid property name for color_properties
     should raise a KeyError
     """
