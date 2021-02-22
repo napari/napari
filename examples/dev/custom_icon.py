@@ -1,3 +1,7 @@
+"""Basic example of using `compile_qt_svgs` to compile one or SVG icons,
+(colorized with one or more color), to a qt_resources.py file that can be
+saved, or immediately registered for use in qss style sheets.
+"""
 from pathlib import Path
 
 from qtpy.QtWidgets import QLabel
