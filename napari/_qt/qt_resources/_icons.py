@@ -127,7 +127,7 @@ def generate_colorized_svgs(
     opacities : Iterable[float], optional
         An iterable of opacities to generate, by default (1.0,) Opacities less
         than one can be accessed in qss with the opacity as a percentage
-        suffix, e.g.: `my_svg_50.svg` for opacity 0.5.
+        suffix, e.g.: ``my_svg_50.svg`` for opacity 0.5.
     theme_override : Optional[Dict[str, str]], optional
         When one of the `colors` is a theme ``(name, key)`` tuple,
         `theme_override` may be used to override the `key` for a specific icon
