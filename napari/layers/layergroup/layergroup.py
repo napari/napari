@@ -16,6 +16,7 @@ class SelectionModel(EventedSet[Index]):
 
     def __init__(self):
         super().__init__()
+        self.events.add(current=None)
         self._current = None
 
     @property
@@ -24,7 +25,8 @@ class SelectionModel(EventedSet[Index]):
 
     @current.setter
     def current(self, index):
-        self._current = index
+        previous, self._current = self._current, index
+        self.events.current(value=index, previous=previous)
 
 
 class LayerGroup(Group[Layer], Layer):

@@ -43,6 +43,7 @@ from qtpy.QtCore import QItemSelection, QSize, Qt
 from qtpy.QtGui import QFont, QImage, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
+from ...layers import Layer
 from ..qt_resources import QColoredSVGIcon
 from .qt_tree_model import QtNodeTreeModel
 from .qt_tree_view import QtNodeTreeView
@@ -56,7 +57,7 @@ if TYPE_CHECKING:
     from ...utils.events import Event
 
 
-class QtLayerTreeModel(QtNodeTreeModel['Layer']):
+class QtLayerTreeModel(QtNodeTreeModel[Layer]):
     LayerRole = Qt.UserRole
     ThumbnailRole = Qt.UserRole + 1
 
@@ -163,13 +164,20 @@ class QtLayerTreeView(QtNodeTreeView):
         self.model().rowsRemoved.connect(self._redecorate_root)
         self.model().rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
-        root.selection.events.connect(self._on_pymodel_selection_event)
+        root.selection.events.connect(self._on_py_selection_model_event)
         self._sync_selection_models()
 
     def _redecorate_root(self, parent=None, *_):
         """Add a branch/arrow column only if there are Groups in the root."""
         if not parent or not parent.isValid():
             self.setRootIsDecorated(self.model().hasGroups())
+
+    def currentChanged(self, current: QModelIndex, previous: QModelIndex):
+        """The Qt current item has changed. Update the python model."""
+        item = current.internalPointer()
+        idx = item.index_from_root() if item else None
+        self._root.selection.current = idx
+        return super().currentChanged(current, previous)
 
     def selectionChanged(
         self, selected: QItemSelection, deselected: QItemSelection
@@ -192,11 +200,17 @@ class QtLayerTreeView(QtNodeTreeView):
             selection.select(idx, idx)
         sel_model.select(selection, sel_model.ClearAndSelect)
 
-    def _on_pymodel_selection_event(self, event: Event):
+    def _on_py_selection_model_event(self, event: Event):
         """The python model selection has changed.  Update the Qt view."""
-        type_ = event.type
         sel_model: QItemSelectionModel = self.selectionModel()
-        s = sel_model.Select if type_ == 'added' else sel_model.Deselect
+        if event.type == 'current':
+            if not event.value:
+                sel_model.clearCurrentIndex()
+            else:
+                idx = self.model().nestedIndex(event.value)
+                sel_model.setCurrentIndex(idx, sel_model.Current)
+            return
+        s = sel_model.Select if event.type == 'added' else sel_model.Deselect
         for idx in event.value:
             model_idx = self.model().nestedIndex(idx)
             if not model_idx.isValid():

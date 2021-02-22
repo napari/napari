@@ -611,10 +611,13 @@ QTreeView::item {
   border: 1px solid {{ foreground }};
 }
 
+QTreeView::item:hover {
+  border: 1px solid {{ highlight }};
+}
+
 QTreeView::item::text {
   font-size: 8px;
 }
-
 
 QTreeView::branch:closed:has-children {
   image: url(":/themes/{{ folder }}/caret-right.svg");
@@ -627,17 +630,6 @@ QTreeView::branch:open:has-children {
 QTreeView::branch:selected {
   background-color: {{ background }};
 }
-
-
-QTreeView::item:selected {
-  /* background-color: {{ current }}; */
-  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 20) }});
-}
-
-QTreeView::item:hover {
-  border: 1px solid {{ highlight }};
-}
-
 
 QTreeView::item:selected:active{
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
