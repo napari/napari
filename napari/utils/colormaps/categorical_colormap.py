@@ -87,6 +87,30 @@ class CategoricalColormap(EventedModel):
         colors = np.array([self.colormap[x] for x in color_properties])
         return colors
 
+    @classmethod
+    def from_array(cls, fallback_color):
+        return cls(fallback_color=fallback_color)
+
+    @classmethod
+    def from_dict(cls, params: dict):
+        if ('colormap' in params) or ('fallback_color' in params):
+            if 'colormap' in params:
+                colormap = {
+                    k: transform_color(v)[0]
+                    for k, v in params['colormap'].items()
+                }
+            else:
+                colormap = {}
+            if 'fallback_color' in params:
+                fallback_color = params['fallback_color']
+            else:
+                fallback_color = 'white'
+        else:
+            colormap = {k: transform_color(v)[0] for k, v in params.items()}
+            fallback_color = 'white'
+
+        return cls(colormap=colormap, fallback_color=fallback_color)
+
     def __eq__(self, other):
         if isinstance(other, CategoricalColormap):
             if not compare_colormap_dicts(self.colormap, other.colormap):

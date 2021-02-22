@@ -6,6 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from napari.layers.utils.color_manager import ColorManager, ColorProperties
+from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -30,6 +31,48 @@ def test_color_manager_empty():
     cm = ColorManager()
     np.testing.assert_allclose(cm.colors, np.empty((0, 4)))
     assert cm.mode == 'direct'
+
+
+color_mapping = {0: np.array([1, 1, 1, 1]), 1: np.array([1, 0, 0, 1])}
+fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
+default_fallback_color = np.array([[1, 1, 1, 1]])
+categorical_map = CategoricalColormap(
+    colormap=color_mapping, fallback_color=fallback_colors
+)
+
+
+@pytest.mark.parametrize(
+    'cat_cmap,expected',
+    [
+        ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
+        (
+            {'colormap': color_mapping, 'fallback_color': fallback_colors},
+            (color_mapping, fallback_colors),
+        ),
+        ({'fallback_color': fallback_colors}, ({}, fallback_colors)),
+        (color_mapping, (color_mapping, default_fallback_color)),
+        (fallback_colors, ({}, fallback_colors)),
+        (categorical_map, (color_mapping, fallback_colors)),
+    ],
+)
+def test_categorical_colormap_from_dict(cat_cmap, expected):
+    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+    cm = ColorManager(
+        colors=colors, categorical_colormap=cat_cmap, mode='direct'
+    )
+    np.testing.assert_equal(cm.categorical_colormap.colormap, expected[0])
+    np.testing.assert_almost_equal(
+        cm.categorical_colormap.fallback_color.values, expected[1]
+    )
+
+
+def test_invalid_categorical_colormap():
+    colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
+    invalid_cmap = 42
+    with pytest.raises(ValidationError):
+        _ = ColorManager(
+            colors=colors, categorical_colormap=invalid_cmap, mode='direct'
+        )
 
 
 c_prop_dict = {

@@ -91,32 +91,11 @@ class ColorManager(EventedModel):
         if isinstance(v, CategoricalColormap):
             return v
         if isinstance(v, list) or isinstance(v, np.ndarray):
-            fallback_color = v
-
-            # reset the color mapping
-            colormap = {}
+            return CategoricalColormap.from_array(v)
         elif isinstance(v, dict):
-            if ('colormap' in v) or ('fallback_color' in v):
-                if 'colormap' in v:
-                    colormap = {
-                        k: transform_color(v)[0]
-                        for k, v in v['colormap'].items()
-                    }
-                else:
-                    colormap = {}
-                if 'fallback_color' in v:
-                    fallback_color = v['fallback_color']
-                else:
-                    fallback_color = 'white'
-            else:
-                colormap = {k: transform_color(v)[0] for k, v in v.items()}
-                fallback_color = 'white'
+            return CategoricalColormap.from_dict(v)
         else:
             raise TypeError('colormap should be an array or dict')
-
-        return CategoricalColormap(
-            colormap=colormap, fallback_color=fallback_color
-        )
 
     @validator('color_properties', pre=True)
     def _coerce_color_properties(cls, v):

@@ -1,6 +1,7 @@
 from itertools import cycle
 
 import numpy as np
+import pytest
 
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
 
@@ -76,6 +77,37 @@ def test_categorical_colormap_cycle_as_dict():
     np.testing.assert_almost_equal(
         next(cmap.fallback_color.cycle), color_values[0]
     )
+
+
+fallback_colors = np.array([[1, 0, 0, 1], [0, 1, 0, 1]])
+
+
+def test_categorical_colormap_from_array():
+
+    cmap = CategoricalColormap.from_array(fallback_colors)
+    np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
+
+
+color_mapping = {0: np.array([1, 1, 1, 1]), 1: np.array([1, 0, 0, 1])}
+default_fallback_color = np.array([[1, 1, 1, 1]])
+
+
+@pytest.mark.parametrize(
+    'params,expected',
+    [
+        ({'colormap': color_mapping}, (color_mapping, default_fallback_color)),
+        (
+            {'colormap': color_mapping, 'fallback_color': fallback_colors},
+            (color_mapping, fallback_colors),
+        ),
+        ({'fallback_color': fallback_colors}, ({}, fallback_colors)),
+        (color_mapping, (color_mapping, default_fallback_color)),
+    ],
+)
+def test_categorical_colormap_from_dict(params, expected):
+    cmap = CategoricalColormap.from_dict(params)
+    np.testing.assert_equal(cmap.colormap, expected[0])
+    np.testing.assert_almost_equal(cmap.fallback_color.values, expected[1])
 
 
 def test_categorical_colormap_equality():
