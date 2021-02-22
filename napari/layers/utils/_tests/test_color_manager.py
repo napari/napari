@@ -60,6 +60,10 @@ def test_set_color_direct(color):
     post_paste_colors = np.vstack((expected_colors[1:3], paste_colors))
     np.testing.assert_allclose(cm.colors, post_paste_colors)
 
+    # refreshing the colors in direct mode should have no effect
+    cm.refresh_colors(properties={})
+    np.testing.assert_allclose(cm.colors, post_paste_colors)
+
 
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
@@ -452,3 +456,44 @@ def test_color_manager_invalid_color_properties():
             colors=colors_dict,
             properties=properties,
         )
+
+
+def test_refresh_colors():
+    # create ColorManager with a continuous colormap
+    n_colors = 4
+    properties = {
+        'name': 'point_type',
+        'values': _make_cycled_properties([0, 1.5], n_colors),
+    }
+    cm = ColorManager(
+        color_properties=properties,
+        continuous_colormap='gray',
+        mode='colormap',
+    )
+    color_mode = cm.mode
+    assert color_mode == 'colormap'
+    color_array = transform_color(['black', 'white'] * int(n_colors / 2))
+    colors = cm.colors.copy()
+    np.testing.assert_allclose(colors, color_array)
+    np.testing.assert_allclose(cm.current_color, [1, 1, 1, 1])
+
+    # after refresh, the color should now be white. since we didn't
+    # update the color mapping, the other values should remain
+    # unchanged even though we added a value that extends the range
+    # of values
+    new_properties = {'point_type': properties['values']}
+    new_properties['point_type'][0] = 3
+    cm.refresh_colors(new_properties, update_color_mapping=False)
+    new_colors = color_array.copy()
+    new_colors[0] = [1, 1, 1, 1]
+    np.testing.assert_allclose(cm.colors, new_colors)
+
+    # now, refresh the colors, but update the mapping
+    cm.refresh_colors(new_properties, update_color_mapping=True)
+    refreshed_colors = [
+        [1, 1, 1, 1],
+        [0.5, 0.5, 0.5, 1],
+        [0, 0, 0, 1],
+        [0.5, 0.5, 0.5, 1],
+    ]
+    np.testing.assert_allclose(cm.colors, refreshed_colors)
