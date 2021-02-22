@@ -50,7 +50,6 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 """
 import inspect
 import traceback
-import warnings
 import weakref
 from collections import Counter
 from typing import (
@@ -704,8 +703,6 @@ class EmitterGroup(EventEmitter):
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
-    deprecated: dict
-        dict with mapping old emitter name to new emitter name
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
@@ -714,28 +711,16 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = True,
-        deprecated: Optional[Dict[str, str]] = None,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
-        self._deprecated: Dict[str, str] = deprecated or {}
         self.auto_connect_format = "on_%s"
         self._emitters: Dict[str, EventEmitter] = dict()
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
         self.add(**emitters)  # type: ignore
-
-    # mypy fix for dynamic attribute access
-    def __getattr__(self, name: str) -> EventEmitter:
-        if name in self._deprecated:
-            warnings.warn(
-                f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
-                category=FutureWarning,
-            ),
-            return object.__getattribute__(self, self._deprecated[name])
-        return object.__getattribute__(self, name)
 
     def __getitem__(self, name: str) -> EventEmitter:
         """
@@ -743,12 +728,6 @@ class EmitterGroup(EventEmitter):
         Note that emitters may also be retrieved as an attribute of the
         EmitterGroup.
         """
-        if name in self._deprecated:
-            warnings.warn(
-                f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
-                category=FutureWarning,
-            ),
-            return self._emitters[self._deprecated[name]]
         return self._emitters[name]
 
     def __setitem__(

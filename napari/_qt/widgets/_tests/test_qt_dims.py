@@ -69,7 +69,7 @@ def test_changing_ndim(qtbot):
 
 def test_changing_focus(qtbot):
     """Test changing focus updates the dims.last_used prop."""
-    # too-few dims, should have no sliders to update
+    # Initialize to 0th axis
     ndim = 2
     view = QtDims(Dims(ndim=ndim))
     qtbot.addWidget(view)
