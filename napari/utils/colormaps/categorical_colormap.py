@@ -6,20 +6,8 @@ from pydantic import validator
 from ...layers.utils.color_transformations import transform_color_cycle
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
-from .categorical_colormap_utils import ColorCycle
+from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts
 from .standardize_color import transform_color
-
-
-def compare_colormap_dicts(cmap_1, cmap_2):
-
-    if len(cmap_1) != len(cmap_2):
-        return False
-    for k, v in cmap_1.items():
-        if k not in cmap_2:
-            return False
-        if not np.allclose(v, cmap_2[k]):
-            return False
-    return True
 
 
 class CategoricalColormap(EventedModel):

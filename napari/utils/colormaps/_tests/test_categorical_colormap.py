@@ -1,6 +1,17 @@
+from itertools import cycle
+
 import numpy as np
 
 from napari.utils.colormaps.categorical_colormap import CategoricalColormap
+
+
+def test_default_categorical_colormap():
+    cmap = CategoricalColormap()
+    assert cmap.colormap == {}
+
+    color_cycle = cmap.fallback_color
+    np.testing.assert_almost_equal(color_cycle.values, [[1, 1, 1, 1]])
+    np.testing.assert_almost_equal(next(color_cycle.cycle), [1, 1, 1, 1])
 
 
 def test_categorical_colormap_direct():
@@ -39,7 +50,7 @@ def test_categorical_colormap_cycle():
     # verify that no mapping between prop value and color has been set
     assert cmap.colormap == {}
 
-    # the values used to create the color cycle can be accessed via fallback colro
+    # the values used to create the color cycle can be accessed via fallback color
     np.testing.assert_almost_equal(cmap.fallback_color.values, color_cycle)
 
     # map 2 colors, verify their colors are returned in order
@@ -51,10 +62,33 @@ def test_categorical_colormap_cycle():
     np.testing.assert_almost_equal(np.squeeze(third_color), color_cycle[0])
 
 
+def test_categorical_colormap_cycle_as_dict():
+    color_values = np.array([[1, 1, 1, 1], [1, 0, 0, 1]])
+    color_cycle = cycle(color_values)
+    fallback_color = {'values': color_values, 'cycle': color_cycle}
+    cmap = CategoricalColormap(fallback_color=fallback_color)
+
+    # verify that no mapping between prop value and color has been set
+    assert cmap.colormap == {}
+
+    # the values used to create the color cycle can be accessed via fallback color
+    np.testing.assert_almost_equal(cmap.fallback_color.values, color_values)
+    np.testing.assert_almost_equal(
+        next(cmap.fallback_color.cycle), color_values[0]
+    )
+
+
 def test_categorical_colormap_equality():
     color_cycle = [[1, 1, 1, 1], [1, 0, 0, 1]]
     cmap_1 = CategoricalColormap(fallback_color=color_cycle)
     cmap_2 = CategoricalColormap(fallback_color=color_cycle)
     cmap_3 = CategoricalColormap(fallback_color=[[1, 1, 1, 1], [1, 1, 0, 1]])
+    cmap_4 = CategoricalColormap(
+        colormap={0: np.array([0, 0, 0, 1])}, fallback_color=color_cycle
+    )
     assert cmap_1 == cmap_2
     assert cmap_1 != cmap_3
+    assert cmap_1 != cmap_4
+
+    # test equality against a different type
+    assert cmap_1 != color_cycle

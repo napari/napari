@@ -27,3 +27,15 @@ class ColorCycle:
             eq = False
 
         return eq
+
+
+def compare_colormap_dicts(cmap_1, cmap_2):
+
+    if len(cmap_1) != len(cmap_2):
+        return False
+    for k, v in cmap_1.items():
+        if k not in cmap_2:
+            return False
+        if not np.allclose(v, cmap_2[k]):
+            return False
+    return True
