@@ -318,14 +318,14 @@ class NestableEventedList(EventedList[_T]):
 
             # i.e. we need to increase the (src_par, ...) by 1 for each time
             # we have previously inserted items in front of the (src_par, ...)
-            if len(idx) > len(dest_par):
-                z = idx[len(dest_par)]
+            _parlen = len(dest_par)
+            if len(idx) > _parlen:
                 _idx: list[Index] = list(idx)
-                if isinstance(_idx[len(dest_par)], slice):
+                if isinstance(_idx[_parlen], slice):
                     raise NotImplementedError(
                         "Can't yet deal with slice source indices in multimove"
                     )
-                _idx[len(dest_par)] += sum(map(_le(z), dumped))
+                _idx[_parlen] += sum(map(_le(_idx[_parlen]), dumped))
                 idx = tuple(_idx)
 
             src_par, src_i = split_nested_index(idx)
@@ -469,4 +469,4 @@ class NestableEventedList(EventedList[_T]):
 
 def _le(y):
     # create a new function that accepts a single value x, returns x < y
-    return lambda x: x < y
+    return lambda x: x <= y

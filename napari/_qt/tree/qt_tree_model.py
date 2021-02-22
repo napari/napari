@@ -10,9 +10,9 @@ from ...utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)
+NodeMIMEType = "application/x-tree-node"
 
 
-# https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
 class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
     """A concrete QItemModel for a tree of ``Node`` and ``Group`` objects.
 
@@ -172,7 +172,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         # If the list of indexes is empty, or there are no supported MIME types, nullptr is
         # returned rather than a serialized empty list.
         if not indices:
-            return None
+            return 0
         return NodeMimeData([self.getItem(i) for i in indices])
 
     def mimeTypes(self) -> List[str]:
@@ -193,7 +193,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         list of str
             MIME types allowed for drag & drop support
         """
-        return ["application/x-tree-node", "text/plain"]
+        return [NodeMIMEType, "text/plain"]
 
     def parent(self, index: QModelIndex) -> QModelIndex:
         """Returns the parent of the model item with the given ``inde``x.
@@ -231,7 +231,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         """
         return Qt.MoveAction
 
-    # ########## New methods added for our model ##################
+    # ########## New methods added for Group Model ##################
 
     def setRoot(self, root: Group[NodeType]):
         if not isinstance(root, Group):
@@ -340,7 +340,6 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         self, nested_index: Union[int, Tuple[int, ...]]
     ) -> Tuple[QModelIndex, int]:
         """Given a nested index, return (nested_parent_index, row)."""
-        # TODO: split after using nestedIndex?
         if isinstance(nested_index, int):
             return QModelIndex(), nested_index
         par = QModelIndex()
@@ -354,19 +353,16 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         return any(node.is_group() for node in self._root)
 
 
-# TODO: cleanup stuff related to MIME formats and convenience methods
 class NodeMimeData(QMimeData):
-    def __init__(self, nodes: List[Node] = None):
+    def __init__(self, nodes: Optional[List[Node]] = None):
         super().__init__()
-        self.nodes = nodes or []
+        self.nodes: List[Node] = nodes or []
         if nodes:
-            self.setData(
-                "application/x-tree-node", pickle.dumps(self.node_indices())
-            )
+            self.setData(NodeMIMEType, pickle.dumps(self.node_indices()))
             self.setText(" ".join([node._node_name() for node in nodes]))
 
     def formats(self) -> List[str]:
-        return ["application/x-tree-node", "text/plain"]
+        return [NodeMIMEType, "text/plain"]
 
     def node_indices(self) -> List[Tuple[int, ...]]:
         return [node.index_from_root() for node in self.nodes]
