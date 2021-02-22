@@ -50,6 +50,16 @@ def test_set_color_direct(color):
     cm.add(new_color)
     np.testing.assert_allclose(cm.colors[-1], new_color)
 
+    # test removing colors
+    cm.remove([0, 3])
+    np.testing.assert_allclose(cm.colors, expected_colors[1:3])
+
+    # test pasting colors
+    paste_colors = np.array([[0, 0, 0, 1], [0, 0, 0, 1]])
+    cm.paste(colors=paste_colors, properties={})
+    post_paste_colors = np.vstack((expected_colors[1:3], paste_colors))
+    np.testing.assert_allclose(cm.colors, post_paste_colors)
+
 
 def test_continuous_colormap():
     # create ColorManager with a continuous colormap
