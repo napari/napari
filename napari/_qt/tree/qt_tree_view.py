@@ -11,30 +11,51 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
     from ...utils.events import Event
-    from ...utils.tree.group import Group, Node
+    from ...utils.tree import Group, Node
 
 
 class QtNodeTreeView(QTreeView):
     model_class = QtNodeTreeModel
+    _root: Group[Node]
 
-    def __init__(self, root: Group['Node'] = None, parent: QWidget = None):
+    def __init__(self, root: Group[Node], parent: QWidget = None):
         super().__init__(parent)
         self.setHeaderHidden(True)
         self.setDragDropMode(QTreeView.InternalMove)
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QTreeView.ExtendedSelection)
-        if root is not None:
-            self.setRoot(root)
+        self.setRoot(root)
 
-    def setRoot(self, root: Group['Node']):
+    def setRoot(self, root: Group[Node]):
+        self._root: Group[Node] = root
         self.setModel(self.model_class(root, self))
+
+        # connect model events
+        self.model().rowsRemoved.connect(self._redecorate_root)
+        self.model().rowsInserted.connect(self._redecorate_root)
+        self._redecorate_root()
+
+        # connect selection events
         root.selection.events.connect(self._on_py_selection_model_event)
         self._sync_selection_models()
 
     def _redecorate_root(self, parent=None, *_):
-        """Add a branch/arrow column only if there are Groups in the root."""
+        """Add a branch/arrow column only if there are Groups in the root.
+
+        This makes the tree fall back to looking like a simple list if there
+        are no groups in the root level.
+        """
         if not parent or not parent.isValid():
             self.setRootIsDecorated(self.model().hasGroups())
+
+    def _sync_selection_models(self):
+        """Clear and re-sync the Qt selection view from the python selection."""
+        sel_model: QItemSelectionModel = self.selectionModel()
+        selection = QItemSelection()
+        for i in self._root.selection:
+            idx = self.model().nestedIndex(i)
+            selection.select(idx, idx)
+        sel_model.select(selection, sel_model.ClearAndSelect)
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
@@ -54,15 +75,6 @@ class QtNodeTreeView(QTreeView):
             i.internalPointer().index_from_root() for i in selected.indexes()
         )
         return super().selectionChanged(selected, deselected)
-
-    def _sync_selection_models(self):
-        """Clear and re-sync the Qt selection view from the python selection."""
-        sel_model: QItemSelectionModel = self.selectionModel()
-        selection = QItemSelection()
-        for i in self._root.selection:
-            idx = self.model().nestedIndex(i)
-            selection.select(idx, idx)
-        sel_model.select(selection, sel_model.ClearAndSelect)
 
     def _on_py_selection_model_event(self, event: Event):
         """The python model selection has changed.  Update the Qt view."""

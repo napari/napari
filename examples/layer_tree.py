@@ -34,9 +34,10 @@ root = LayerGroup(
     name="root",
 )
 root.events.reordered.connect(lambda e: print(e.value))
-root.selection.add((0,)) # start with a python-based selection
+root.selection.add((0,))  # start with a python-based selection
 
 tree = QtLayerTreeView(root)
+root.selection.events.connect(lambda e: print("selection", e.type, e.value))
 # model = tree.model()
 # tree.show()
 

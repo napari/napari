@@ -1,12 +1,11 @@
-from typing import Generator, Iterable, List, Tuple, TypeVar, Union
+from typing import Generator, Iterable, List, TypeVar
 
-from ...utils.events import EventedSet
 from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
+from .selection import NestedListSelection
 
 NodeType = TypeVar("NodeType", bound=Node)
-Index = Union[int, Tuple[int, ...]]
 
 
 class Group(NestableEventedList[NodeType], Node):
@@ -40,27 +39,26 @@ class Group(NestableEventedList[NodeType], Node):
     ):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, data=children, basetype=basetype)
-        self.events.add(current=None)
-        self._selection = EventedSet[Index]
-        self._current = None
+        self._selection = NestedListSelection()
 
     @property
-    def selection(self):
+    def selection(self) -> NestedListSelection:
         return self._selection
 
-    @property
-    def current(self):
-        return self._current
+    def clear_invalid_selection_indices(self) -> None:
+        """Force all indices in the selection model to be valid for this model.
 
-    @current.setter
-    def current(self, index):
-        previous, self._current = self._current, index
-        self.events.current(value=index, previous=previous)
+        This is not always desirable.  It could be possible for multiple models
+        to share a single selection model, in which case some indices may not
+        be valid for all models.
+        """
+        invalid = {i for i in self.selection if not self.has_index(i)}
+        self.selection.difference_update(invalid)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
         if isinstance(key, (int, tuple)):
-            self[key].parent = None
+            self[key].parent = None  # type: ignore
         else:
             for item in self[key]:
                 item.parent = None

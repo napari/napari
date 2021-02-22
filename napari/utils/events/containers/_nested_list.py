@@ -10,6 +10,7 @@ from typing import (
     DefaultDict,
     Generator,
     Iterable,
+    MutableSequence,
     NewType,
     Tuple,
     TypeVar,
@@ -172,7 +173,9 @@ class NestableEventedList(EventedList[_T]):
         if isinstance(key, tuple):
             item: NestableEventedList[_T] = self
             for idx in key:
-                item = item[idx]  # type: ignore
+                if not isinstance(item, MutableSequence):
+                    raise IndexError(f'index out of range: {key}')
+                item = item[idx]
             return item
         return super().__getitem__(key)
 
@@ -465,6 +468,18 @@ class NestableEventedList(EventedList[_T]):
                         yield i
         else:
             yield from super()._iter_indices(start, stop)
+
+    def has_index(self, index: Union[int, Tuple[int, ...]]) -> bool:
+        """Return true if `index` is valid for this nestable list."""
+        if isinstance(index, int):
+            return -len(self) <= index < len(self)
+        if isinstance(index, tuple):
+            try:
+                self[index]
+                return True
+            except IndexError:
+                return False
+        return False
 
 
 def _le(y):

@@ -15,6 +15,7 @@ class LayerGroup(Group[Layer], Layer):
         Group.__init__(self, children, name=name, basetype=Layer)
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
+        self.events.connect(self._handle_child_events)
 
     def _handle_child_events(self, event):
         # event.sources[0] is the original event emitter.
@@ -148,23 +149,3 @@ class LayerGroup(Group[Layer], Layer):
 
     def save(self):
         raise NotImplementedError()
-
-    # TODO: Selection model
-
-    @property
-    def selected_children(self):
-        return [lay for lay in self if lay.selected]
-
-    def remove_selected(self):
-        """Removes selected items from list."""
-        selected = self.selected_children
-        [self.remove(i) for i in selected]
-        if selected and self:
-            # changing 1 -> assuming we won't reverse sort the layerlist anymore
-            self[0].selected = True
-
-    def unselect_all(self, ignore=None):
-        """Unselects all layers expect any specified in ignore."""
-        for layer in self:
-            if layer.selected != ignore:
-                layer.selected = False

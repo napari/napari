@@ -38,8 +38,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QItemSelectionModel
-from qtpy.QtCore import QItemSelection, QSize, Qt
+from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QFont, QImage, QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
@@ -54,7 +53,6 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
     from ...layers.layergroup import LayerGroup
-    from ...utils.events import Event
 
 
 class QtLayerTreeModel(QtNodeTreeModel[Layer]):
@@ -137,8 +135,9 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
 
 class QtLayerTreeView(QtNodeTreeView):
     _root: LayerGroup
+    model_class = QtLayerTreeModel
 
-    def __init__(self, root: LayerGroup = None, parent: QWidget = None):
+    def __init__(self, root: LayerGroup, parent: QWidget = None):
         super().__init__(root, parent)
         self.setItemDelegate(_LayerDelegate())
         self.setIndentation(18)
@@ -154,68 +153,6 @@ class QtLayerTreeView(QtNodeTreeView):
         options = super().viewOptions()
         options.decorationPosition = options.Right
         return options
-
-    def model(self) -> QtLayerTreeModel:
-        return super().model()
-
-    def setRoot(self, root: LayerGroup):
-        self._root = root
-        self.setModel(QtLayerTreeModel(root, self))
-        self.model().rowsRemoved.connect(self._redecorate_root)
-        self.model().rowsInserted.connect(self._redecorate_root)
-        self._redecorate_root()
-        root.selection.events.connect(self._on_py_selection_model_event)
-        self._sync_selection_models()
-
-    def _redecorate_root(self, parent=None, *_):
-        """Add a branch/arrow column only if there are Groups in the root."""
-        if not parent or not parent.isValid():
-            self.setRootIsDecorated(self.model().hasGroups())
-
-    def currentChanged(self, current: QModelIndex, previous: QModelIndex):
-        """The Qt current item has changed. Update the python model."""
-        item = current.internalPointer()
-        idx = item.index_from_root() if item else None
-        self._root.selection.current = idx
-        return super().currentChanged(current, previous)
-
-    def selectionChanged(
-        self, selected: QItemSelection, deselected: QItemSelection
-    ):
-        """The Qt Selection has changed. Update the python model."""
-        self._root.selection.difference_update(
-            i.internalPointer().index_from_root() for i in deselected.indexes()
-        )
-        self._root.selection.update(
-            i.internalPointer().index_from_root() for i in selected.indexes()
-        )
-        return super().selectionChanged(selected, deselected)
-
-    def _sync_selection_models(self):
-        """Clear and re-sync the Qt selection view from the python selection."""
-        sel_model: QItemSelectionModel = self.selectionModel()
-        selection = QItemSelection()
-        for i in self._root.selection:
-            idx = self.model().nestedIndex(i)
-            selection.select(idx, idx)
-        sel_model.select(selection, sel_model.ClearAndSelect)
-
-    def _on_py_selection_model_event(self, event: Event):
-        """The python model selection has changed.  Update the Qt view."""
-        sel_model: QItemSelectionModel = self.selectionModel()
-        if event.type == 'current':
-            if not event.value:
-                sel_model.clearCurrentIndex()
-            else:
-                idx = self.model().nestedIndex(event.value)
-                sel_model.setCurrentIndex(idx, sel_model.Current)
-            return
-        s = sel_model.Select if event.type == 'added' else sel_model.Deselect
-        for idx in event.value:
-            model_idx = self.model().nestedIndex(idx)
-            if not model_idx.isValid():
-                continue
-            sel_model.select(model_idx, s)
 
 
 class _LayerDelegate(QStyledItemDelegate):

@@ -133,14 +133,9 @@ class EventedSet(MutableSet[_T]):
         This will remove any items in this set that are also in `other`, and
         add any items in others that are not present in this set.
         """
-        to_remove = self._set.intersection(others)
         to_add = set(others).difference(self)
-        if to_remove:
-            self._set.difference_update(to_remove)
-            self.events.removed(value=to_remove)
-        if to_add:
-            self._set.update(to_add)
-            self.events.added(value=to_add)
+        self.difference_update(others)
+        self.update(to_add)
 
     def union(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return a set containing the union of sets"""
