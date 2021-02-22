@@ -409,18 +409,6 @@ def test_evented_list_subclass():
     assert lst == [1, 2]
 
 
-def test_event_group_depr():
-    events = EmitterGroup(b=None, deprecated={"a": "b"})
-    with pytest.warns(FutureWarning):
-        assert events.b == events.a
-    with pytest.raises(AttributeError):
-        events.c.connect()
-    with pytest.warns(FutureWarning):
-        assert events["b"] == events["a"]
-    with pytest.raises(KeyError):
-        events["c"].connect()
-
-
 def test_array_like_setitem():
     """Test that EventedList.__setitem__ works for array-like items"""
     array = np.array((10, 10))
