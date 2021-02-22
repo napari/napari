@@ -103,6 +103,12 @@ def test_continuous_colormap():
     updated_colors = cm.colors
     np.testing.assert_allclose(updated_colors[-1], [1, 1, 1, 1])
 
+    # test pasting values
+    paste_props = {'point_type': np.array([0, 0])}
+    paste_colors = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
+    cm.paste(colors=paste_colors, properties=paste_props)
+    np.testing.assert_allclose(cm.colors[-2:], paste_colors)
+
 
 color_cycle_str = ['red', 'blue']
 color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
@@ -158,6 +164,12 @@ def test_color_cycle(color_cycle):
 
     # the first color should now be black
     np.testing.assert_allclose(cm.colors[0], [0, 0, 0, 1])
+
+    # test pasting values
+    paste_props = {'point_type': np.array(['B', 'B'])}
+    paste_colors = np.array([[0, 0, 0, 1], [0, 0, 0, 1]])
+    cm.paste(colors=paste_colors, properties=paste_props)
+    np.testing.assert_allclose(cm.colors[-2:], paste_colors)
 
 
 @pytest.mark.parametrize('n_colors', [0, 1, 5])
