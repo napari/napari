@@ -106,8 +106,9 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
-    contour : bool
-        If `True`, displays contours of labels instead of shaded regions
+    contour : int
+        If greater than 0, displays contours of labels instead of shaded regions
+        with a thickness equal to its value.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -175,7 +176,7 @@ class Labels(Image):
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
-        self._contour = False
+        self._contour = 0
 
         if properties is None:
             self._properties = {}
@@ -268,7 +269,7 @@ class Labels(Image):
 
     @property
     def contour(self):
-        """bool: displays contours of labels instead of shaded regions."""
+        """int: displays contours of labels instead of shaded regions."""
         return self._contour
 
     @contour.setter
@@ -664,15 +665,19 @@ class Labels(Image):
         else:
             raise ValueError("Unsupported Color Mode")
 
-        if self.contour:
+        if self.contour > 0:
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            thickness = self.contour
+            thick_struct_elem = ndi.iterate_structure(
+                struct_elem, thickness
+            ).astype(bool)
             boundaries = ndi.grey_dilation(
                 raw, footprint=struct_elem
-            ) != ndi.grey_erosion(raw, footprint=struct_elem)
+            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
             image[boundaries] = raw[boundaries]
             image = np.where(
-                raw > 0, low_discrepancy_image(image, self._seed), 0
+                image > 0, low_discrepancy_image(image, self._seed), 0
             )
 
         return image
