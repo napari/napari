@@ -4,10 +4,12 @@ import builtins
 import collections.abc
 import inspect
 import itertools
+import os
 import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,6 +18,7 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    Union,
 )
 
 import numpy as np
@@ -422,3 +425,29 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
         pass
 
     return operator.eq
+
+
+def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
+    """Compute the hash of a directory, based on structure and contents."""
+    import hashlib
+
+    hashfunc = hashlib.md5
+
+    if not Path(path).is_dir():
+        raise TypeError(f"{path} is not a directory.")
+
+    _hash = hashfunc()
+    for root, _, files in os.walk(path):
+        for fname in sorted(files):
+            if fname.startswith(".") and ignore_hidden:
+                continue
+            # update the hash with the file contents
+            file = Path(root) / fname
+            _hash.update(file.read_bytes())
+
+            if include_paths:
+                # update the hash with the filename
+                fparts = file.relative_to(path).parts
+                _hash.update(''.join(fparts).encode())
+
+    return _hash.hexdigest()

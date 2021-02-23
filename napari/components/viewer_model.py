@@ -419,7 +419,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         Parameters
         ----------
-        event :  napari.utils.event.Event
+        event : napari.utils.event.Event
             Event which will remove a layer.
 
         Returns

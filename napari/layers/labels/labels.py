@@ -106,6 +106,8 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
+    contour : bool
+        If `True`, displays contours of labels instead of shaded regions
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -173,6 +175,7 @@ class Labels(Image):
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
+        self._contour = False
 
         if properties is None:
             self._properties = {}
@@ -219,6 +222,7 @@ class Labels(Image):
             selected_label=Event,
             color_mode=Event,
             brush_shape=Event,
+            contour=Event,
         )
 
         self._n_dimensional = False
@@ -261,6 +265,17 @@ class Labels(Image):
     def n_dimensional(self, n_dimensional):
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
+
+    @property
+    def contour(self):
+        """bool: displays contours of labels instead of shaded regions."""
+        return self._contour
+
+    @contour.setter
+    def contour(self, contour):
+        self._contour = contour
+        self.events.contour()
+        self.refresh()
 
     @property
     def brush_size(self):
@@ -648,6 +663,17 @@ class Labels(Image):
             )
         else:
             raise ValueError("Unsupported Color Mode")
+
+        if self.contour:
+            image = np.zeros_like(raw)
+            struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            boundaries = ndi.grey_dilation(
+                raw, footprint=struct_elem
+            ) != ndi.grey_erosion(raw, footprint=struct_elem)
+            image[boundaries] = raw[boundaries]
+            image = np.where(
+                raw > 0, low_discrepancy_image(image, self._seed), 0
+            )
 
         return image
 

@@ -180,4 +180,4 @@ def available_themes():
     list of str
         Names of available themes.
     """
-    return list(_themes)
+    return tuple(_themes)
