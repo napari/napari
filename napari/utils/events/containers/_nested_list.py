@@ -287,7 +287,7 @@ class NestableEventedList(EventedList[_T]):
             The destination for sources.
 
         Yields
-        -------
+        ------
         Generator[tuple[int, ...], None, None]
             [description]
 
