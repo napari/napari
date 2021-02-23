@@ -1,9 +1,10 @@
 from typing import Generator, Iterable, List, TypeVar
 
 from ..events import NestableEventedList
+from ..events.containers._selection import RefSelection
 from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
-from .selection import Selection
+from weakref import ref, ReferenceType
 
 NodeType = TypeVar("NodeType", bound=Node)
 
@@ -39,11 +40,16 @@ class Group(NestableEventedList[NodeType], Node):
     ):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, data=children, basetype=basetype)
-        self._selection: Selection[NodeType] = Selection()
-        self.events.removed.connect(lambda e: self._selection.discard(e.value))
+        self._selection: RefSelection[
+            'ReferenceType[NodeType]'
+        ] = RefSelection()
+        self.events.removed.connect(self._on_remove)
+
+    def _on_remove(self, e):
+        self._selection.discard(ref(e.value))
 
     @property
-    def selection(self) -> Selection[NodeType]:
+    def selection(self) -> RefSelection['ReferenceType[NodeType]']:
         return self._selection
 
     def __delitem__(self, key: MaybeNestedIndex):

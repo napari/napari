@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qtpy.QtCore import QItemSelection, QModelIndex
+from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QTreeView
 
 from .qt_tree_model import QtNodeTreeModel
@@ -56,9 +56,16 @@ class QtNodeTreeView(QTreeView):
         sel_model = self.selectionModel()
         selection = QItemSelection()
         for i in self._root.selection:
-            idx = self.model().findIndex(i)
+            idx = self.model().findIndex(i())
             selection.select(idx, idx)
         sel_model.select(selection, sel_model.ClearAndSelect)
+
+    def keyPressEvent(self, event) -> None:
+        """delete items with delete key."""
+        if event.key() in (Qt.Key_Backspace, Qt.Key_Delete):
+            for i in self.selectionModel().selectedIndexes():
+                self._root.remove(i.internalPointer())
+        return super().keyPressEvent(event)
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
@@ -86,7 +93,7 @@ class QtNodeTreeView(QTreeView):
             return
         t = sel_model.Select if event.type == 'added' else sel_model.Deselect
         for idx in event.value:
-            model_idx = self.model().findIndex(idx)
+            model_idx = self.model().findIndex(idx())
             if not model_idx.isValid():
                 continue
             sel_model.select(model_idx, t)
