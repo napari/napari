@@ -8,15 +8,12 @@ import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
-from ..tree.selection import Selection
-from .containers import EventedSet
 from .event import EmitterGroup, Event
 
-JSON_ENCODERS = {
-    np.ndarray: lambda arr: arr.tolist(),
-    EventedSet: EventedSet._encode,
-    Selection: Selection._encode,
-}
+# encoders for non-napari specific field types.  To declare a custom encoder
+# for a napari type, add a `_json_encode` method to the class itself.
+# it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
+_BASE_JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
 
 
 @contextmanager
@@ -79,10 +76,15 @@ class EventedMetaclass(main.ModelMetaclass):
     def __new__(mcs, name, bases, namespace, **kwargs):
         with no_class_attributes():
             cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        cls.__eq_operators__ = {
-            n: pick_equality_operator(f.type_)
-            for n, f in cls.__fields__.items()
-        }
+        cls.__eq_operators__ = {}
+        for n, f in cls.__fields__.items():
+            cls.__eq_operators__[n] = pick_equality_operator(f.type_)
+            # If a field type has a _json_encode method, add it to the json
+            # encoders for this model.
+            # NOTE: a _json_encode field must return an object that can be
+            # passed to json.dumps ... but it needn't return a string.
+            if hasattr(f.type_, '_json_encode'):
+                cls.__config__.json_encoders[f.type_] = f.type_._json_encode
         return cls
 
 
@@ -112,9 +114,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         use_enum_values = True
         # whether to validate field defaults (default: False)
         validate_all = True
-        # a dict used to customise the way types are encoded to JSON
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
-        json_encoders = JSON_ENCODERS
+        # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
+        # field declares a _json_encode method.
+        json_encoders = _BASE_JSON_ENCODERS
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
