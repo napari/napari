@@ -614,56 +614,6 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
-            u, inv = np.unique(raw, return_inverse=True)
-            image = np.array(
-                [
-                    self._label_color_index[x]
-                    if x in self._label_color_index
-                    else self._label_color_index[None]
-                    for x in u
-                ]
-            )[inv].reshape(raw.shape)
-        elif (
-            not self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            image = np.where(
-                raw > 0, low_discrepancy_image(raw, self._seed), 0
-            )
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.AUTO
-        ):
-            selected = self._selected_label
-            image = np.where(
-                raw == selected,
-                low_discrepancy_image(selected, self._seed),
-                0,
-            )
-        elif (
-            self.show_selected_label
-            and self._color_mode == LabelColorMode.DIRECT
-        ):
-            selected = self._selected_label
-            if selected not in self._label_color_index:
-                selected = None
-            index = self._label_color_index
-            image = np.where(
-                raw == selected,
-                index[selected],
-                np.where(
-                    raw != self._background_label,
-                    index[None],
-                    index[self._background_label],
-                ),
-            )
-        else:
-            raise ValueError("Unsupported Color Mode")
-
         if self.contour:
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
