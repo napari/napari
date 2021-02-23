@@ -12,9 +12,8 @@ from napari.utils.notifications import notification_manager
 
 from ..utils import config, perf
 from ..utils.perf import perf_config
-from .exceptions import ExceptionHandler
-from .qt_resources import _register_napari_resources
 from .dialogs.qt_notification import NapariQtNotification
+from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
 NAPARI_ICON_PATH = os.path.join(

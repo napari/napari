@@ -1,11 +1,12 @@
 import logging
 import os
+import sys
 
 import pytest
 from qtpy.QtCore import Qt
 
 from napari._qt.exceptions import ExceptionHandler
-from napari.utils.notifications import notification_manager
+from napari.utils.notifications import notification_manager, show_info
 
 
 # caplog fixture comes from pytest
@@ -32,7 +33,7 @@ def test_keyboard_interupt_handler(qtbot, capsys):
     assert capsys.readouterr().err == "Closed by KeyboardInterrupt\n"
 
 
-def test_notification_manager(qtbot, make_napari_viewer):
+def test_notification_manager_via_gui(qtbot, make_napari_viewer):
     """
     Test that exception trigered by button in the UI, propagate to the manager,
     and are displayed in the UI.
@@ -65,3 +66,27 @@ def test_notification_manager(qtbot, make_napari_viewer):
             del os.environ['DEBUG_NAPARI_NOTIFICATION']
         else:
             os.environ['DEBUG_NAPARI_NOTIFICATION'] = nothing
+
+
+def test_notification_manager_no_gui(qtbot, make_napari_viewer):
+    """
+    Test that exception trigered by button in the UI, propagate to the manager,
+    and are displayed in the UI.
+    """
+
+    with notification_manager:
+        show_info('this is one way of showing an informatin message')
+        notification_manager.receive_info(
+            'This is another information message'
+        )
+
+        class PurposefullException(Exception):
+            pass
+
+        try:
+            raise PurposefullException("this is an exception")
+        except PurposefullException:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            notification_manager.receive_error(
+                exc_type, exc_value, exc_traceback
+            )
