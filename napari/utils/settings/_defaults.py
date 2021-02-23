@@ -9,14 +9,14 @@ from pydantic import BaseSettings, Field
 from napari.utils.events.evented_model import EventedModel
 
 
-class QtBindingEnum(str, Enum):
+class QtBindingChoice(str, Enum):
     """Python Qt binding to use with the application."""
 
-    pyside = 'pyside2'
-    pyqt = 'pyqt5'
+    pyside2 = 'pyside2'
+    pyqt5 = 'pyqt5'
 
 
-class ThemeEnum(str, Enum):
+class ThemeChoice(str, Enum):
     """Application color theme."""
 
     dark = 'dark'
@@ -26,12 +26,18 @@ class ThemeEnum(str, Enum):
 class ApplicationSettings(BaseSettings, EventedModel):
     """Main application settings."""
 
-    version = (0, 1, 0)
+    # 1. If you want to *change* the default value of a current option, you need to
+    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+    # 2. If you want to *remove* options that are no longer needed in the codebase,
+    #    or if you want to *rename* options, then you need to do a MAJOR update in
+    #    version, e.g. from 3.0.0 to 4.0.0
+    # 3. You don't need to touch this value if you're just adding a new option
+    schema_version = (0, 1, 0)
     # Python
-    qt_binding: QtBindingEnum = QtBindingEnum.pyside
+    qt_binding: QtBindingChoice = QtBindingChoice.pyside2
     # UI Elements
     highlight_thickness: int = 1
-    theme: ThemeEnum = ThemeEnum.dark
+    theme: ThemeChoice = ThemeChoice.dark
     # Startup
     opt_in_telemetry: bool = Field(
         False, description="Check to enable telemetry measurements"
@@ -53,7 +59,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
 
     class Config:
         # Pydantic specific configuration
-        env_prefix = 'napari_settings_application_'
+        env_prefix = 'napari_'
         title = "Application settings"
         use_enum_values = True
         validate_all = True
@@ -72,7 +78,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
 
 
 class PluginSettings(BaseSettings, EventedModel):
-    # version = (0, 1, 0)
+    schema_version = (0, 1, 0)
     plugins_call_order: List[str] = []
 
     class Config:

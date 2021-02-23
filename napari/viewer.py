@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 from typing import TYPE_CHECKING
 
-=======
->>>>>>> Fix precommits
 from .components import ViewerModel
 from .utils import config
 

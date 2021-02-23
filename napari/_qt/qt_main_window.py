@@ -27,16 +27,14 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.theme import get_theme, template
+from ..utils.settings import SETTINGS
 from ..utils.translations import translator
-from ..utils.settings._manager import SETTINGS
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
-from .qt_preferences import PreferencesDialog
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
@@ -201,13 +199,6 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
         event.accept()
-
-    def show_preferences(self):
-        """Show the preferences dialog."""
-        dlg = PreferencesDialog(parent=self)
-        dlg.sig_resized.connect(self._update_preferences_dialog_size)
-        dlg.resize(self._preferences_dialog_size)
-        dlg.exec_()
 
 
 class Window:
@@ -386,10 +377,6 @@ class Window:
             lambda: self.qt_viewer._save_layers_dialog(selected=False)
         )
 
-        open_preferences = QAction('Preferences...', self._qt_window)
-        open_preferences.setShortcut('Ctrl-,')
-        open_preferences.triggered.connect(self._qt_window.show_preferences)
-
         screenshot = QAction('Save Screenshot...', self._qt_window)
         screenshot.setShortcut('Alt+S')
         screenshot.setStatusTip(
@@ -420,7 +407,6 @@ class Window:
         self.file_menu.addSeparator()
         self.file_menu.addAction(save_selected_layers)
         self.file_menu.addAction(save_all_layers)
-        self.file_menu.addAction(open_preferences)
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
@@ -435,7 +421,7 @@ class Window:
         toggle_theme = QAction('Toggle Theme', self._qt_window)
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
-        toggle_theme.triggered.connect(self._toggle_theme)
+        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
         toggle_fullscreen.setShortcut('Ctrl+F')
         toggle_fullscreen.setStatusTip('Toggle full screen')
@@ -1025,11 +1011,6 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
-    def _toggle_theme(self):
-        self.qt_viewer.viewer._toggle_theme()
-        SETTINGS.application.theme = self.qt_viewer.viewer.theme
-        self._update_theme()
-
     def _update_theme(self, event=None):
         """Update widget color theme."""
         theme_name = self.qt_viewer.viewer.theme
@@ -1037,16 +1018,6 @@ class Window:
 
         if event:
             SETTINGS.application.theme = event.value
-
-        # set window styles which don't use the primary stylesheet
-        theme = get_theme(SETTINGS.application.theme)
-        self._status_bar.setStyleSheet(
-            template(
-                'QStatusBar { background: {{ background }}; '
-                'color: {{ text }}; }',
-                **theme,
-            )
-        )
 
     def _status_changed(self, event):
         """Update status bar.
@@ -1113,19 +1084,3 @@ class Window:
             self.qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
-
-
-def _stop_monitor() -> None:
-    """Stop the monitor service if we were using it."""
-    if config.monitor:
-        from ..components.experimental.monitor import monitor
-
-        monitor.stop()
-
-
-def _shutdown_chunkloader() -> None:
-    """Shutdown the ChunkLoader."""
-    if config.async_loading:
-        from ..components.experimental.chunk import chunk_loader
-
-        chunk_loader.shutdown()

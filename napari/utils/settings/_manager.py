@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 
+from appdirs import user_config_dir
 from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
@@ -23,17 +24,37 @@ class SettingsManager:
         which will point to `"~/.napari/settings/`.
     save_to_disk : bool, optional
         Persist settings on disk. Default is True.
+
+    Notes
+    -----
+    The settings manager will create a new user configuration folder which is
+    provided by `appdirs` in a cross platform manner. On the first startup a
+    new configuration file will be created using the default values defined by
+    the `CORE_SETTINGS` models.
+
+    If a configuration file is found in the specified location, it will be
+    loaded by the `_load` method. On configuration load the following checks
+    are performed:
+
+    - If invalid sections are found, these will be removed from the file.
+    - If invalid keys are found within a valid section,  these will be removed
+      from the file.
+    - If invalid values are found within valid sections and valid keys, these
+      will be replaced by the default value provided by `CORE_SETTINGS`
+      models.
     """
 
     _FILENAME = "settings.yaml"
+    _APPNAME = "Napari"
+    _APPAUTHOR = "Napari"
 
     def __init__(self, config_path: str = None, save_to_disk: bool = True):
-        # TODO: Use this instead Path.home() / ".config" / ".napari" ?
         self._config_path = (
-            Path.home() / ".napari" / "settings"
+            Path(user_config_dir(self._APPNAME, self._APPAUTHOR))
             if config_path is None
-            else config_path
+            else Path(config_path)
         )
+        print(self._config_path)
         self._save_to_disk = save_to_disk
         self._settings = {}
         self._defaults = {}
@@ -75,16 +96,13 @@ class SettingsManager:
     def _save(self):
         """Save configuration to disk."""
         if self._save_to_disk:
-            path = self._config_path / self._FILENAME
+            path = self.path / self._FILENAME
             with open(path, "w") as fh:
                 fh.write(safe_dump(self._to_dict()))
 
     def _load(self):
-        """Read configuration from disk.
-
-        If no settings file is found, a new one is created using the defaults.
-        """
-        path = self._config_path / self._FILENAME
+        """Read configuration from disk."""
+        path = self.path / self._FILENAME
         for plugin in CORE_SETTINGS:
             section = self._get_section_name(plugin)
             self._defaults[section] = plugin()
@@ -123,6 +141,10 @@ class SettingsManager:
             self._settings = self._defaults
 
         self._save()
+
+    @property
+    def path(self):
+        return self._config_path
 
     def reset(self):
         """Reset settings to default values."""
