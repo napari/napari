@@ -27,6 +27,7 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
+from ..utils.translations import translator
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -38,6 +39,8 @@ from .qt_viewer import QtViewer
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+
+trans = translator.load()
 
 
 class _QtMainWindow(QMainWindow):
@@ -124,7 +127,7 @@ class Window:
         self._add_plugins_menu()
         self._add_help_menu()
 
-        self._status_bar.showMessage('Ready')
+        self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
