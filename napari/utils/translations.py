@@ -25,9 +25,9 @@ def _get_display_name(
 
     Parameters
     ----------
-    locale: str
+    locale : str
         The language name to use.
-    display_locale: str, optional
+    display_locale : str, optional
         The language to display the `locale`.
 
     Returns
@@ -52,7 +52,7 @@ def _is_valid_locale(locale: str) -> bool:
 
     Parameters
     ----------
-    locale: str
+    locale : str
         Language locale code.
 
     Notes
@@ -94,7 +94,7 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
 
     Parameters
     ----------
-    display_locale: str, optional
+    display_locale : str, optional
         Default is DEFAULT_LOCALE.
 
     Returns
@@ -337,7 +337,7 @@ class TranslationBundle:
         """
         return self.pgettext(msgctxt, msgid)
 
-    def _np(self, msgctxt: str, msgid: str, msgid_plular: str, n: str) -> str:
+    def _np(self, msgctxt: str, msgid: str, msgid_plural: str, n: str) -> str:
         """
         Shorthand for npgettext.
 
@@ -357,7 +357,7 @@ class TranslationBundle:
         str
             The translated string.
         """
-        return self.npgettext(msgctxt, msgid, msgid_plular, n)
+        return self.npgettext(msgctxt, msgid, msgid_plural, n)
 
 
 class _Translator:
