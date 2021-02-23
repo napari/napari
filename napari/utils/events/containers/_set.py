@@ -1,14 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Iterator,
-    List,
-    MutableSet,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
 from napari.utils.events import EmitterGroup
 
@@ -178,6 +170,6 @@ class EventedSet(MutableSet[_T]):
             raise ValidationError(errors, cls)  # type: ignore
         return cls(v)
 
-    def _encode(self) -> List[_T]:
+    def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         return list(self)

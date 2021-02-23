@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
 
 from ...utils.events import EventedSet
 
@@ -103,6 +103,6 @@ class Selection(EventedSet[_T]):
             raise ValidationError(errors, cls)  # type: ignore
         return cls(data=data, current=current)
 
-    def _encode(self) -> Dict[str, Any]:  # type: ignore
+    def _json_encode(self):
         """Return an object that can be used by json.dumps."""
-        return {'data': super()._encode(), 'current': self.current}
+        return {'data': super()._json_encode(), 'current': self.current}
