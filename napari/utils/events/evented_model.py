@@ -4,11 +4,19 @@ import warnings
 from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set
 
+import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
-from .custom_types import JSON_ENCODERS
+from ..tree.selection import Selection
+from .containers import EventedSet
 from .event import EmitterGroup, Event
+
+JSON_ENCODERS = {
+    np.ndarray: lambda arr: arr.tolist(),
+    EventedSet: EventedSet._encode,
+    Selection: Selection._encode,
+}
 
 
 @contextmanager

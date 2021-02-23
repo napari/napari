@@ -1,10 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Iterator,
+    List,
+    MutableSet,
+    TypeVar,
+)
 
 from napari.utils.events import EmitterGroup
 
 _T = TypeVar("_T")
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -140,3 +151,33 @@ class EventedSet(MutableSet[_T]):
     def union(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return a set containing the union of sets"""
         return EventedSet(self._set.union(others))
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, field: ModelField):
+        """Pydantic validator."""
+        from pydantic.utils import sequence_like
+
+        if not sequence_like(v):
+            raise TypeError(f'Value is not a valid sequence: {v}')
+        if not field.sub_fields:
+            return cls(v)
+
+        type_field = field.sub_fields[0]
+        errors = []
+        for i, v_ in enumerate(v):
+            valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            if error:
+                errors.append(error)
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(v)
+
+    def _encode(self) -> List[_T]:
+        """Return an object that can be used by json.dumps."""
+        return list(self)

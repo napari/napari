@@ -25,6 +25,3 @@ class Array(np.ndarray):
         ):
             result = result.reshape(shape)
         return result
-
-
-JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}

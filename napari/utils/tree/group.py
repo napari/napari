@@ -9,7 +9,7 @@ NodeType = TypeVar("NodeType", bound=Node)
 
 
 class Group(NestableEventedList[NodeType], Node):
-    """An object that contain other objects in a composite Tree pattern.
+    """An object that can contain other objects in a composite Tree pattern.
 
     The ``Group`` (aka composite) is an element that has sub-elements:
     which may be ``Nodes`` or other ``Groups``.  By inheriting from
@@ -40,6 +40,7 @@ class Group(NestableEventedList[NodeType], Node):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, data=children, basetype=basetype)
         self._selection: Selection[NodeType] = Selection()
+        self.events.removed.connect(lambda e: self._selection.discard(e.value))
 
     @property
     def selection(self) -> Selection[NodeType]:
