@@ -209,7 +209,7 @@ def _is_null_layer_sentinel(layer_data: Union[LayerData, Any]) -> bool:
 
     Parameters
     ----------
-    layer_data: LayerData
+    layer_data : LayerData
         The layer data returned from a reader function to check
 
     Returns
