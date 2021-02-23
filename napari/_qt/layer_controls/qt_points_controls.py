@@ -9,6 +9,8 @@ from qtpy.QtWidgets import (
     QSlider,
 )
 
+from napari.utils.interactions import KEY_SYMBOLS
+
 from ...layers.points._points_constants import Mode, Symbol
 from ...utils.events import disconnect_events
 from ..utils import disable_with_opacity, qt_signals_blocked
@@ -116,19 +118,23 @@ class QtPointsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
 
         self.select_button = QtModeRadioButton(
-            layer, 'select_points', Mode.SELECT, tooltip='Select points'
+            layer, 'select_points', Mode.SELECT, tooltip='Select points (S)'
         )
         self.addition_button = QtModeRadioButton(
-            layer, 'add_points', Mode.ADD, tooltip='Add points'
+            layer, 'add_points', Mode.ADD, tooltip='Add points (P)'
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'pan_zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom', checked=True
+            layer,
+            'pan_zoom',
+            Mode.PAN_ZOOM,
+            tooltip='Pan/zoom (Z)',
+            checked=True,
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip='Delete selected points',
+            tooltip=f"Delete selected points ({KEY_SYMBOLS['Backspace']})",
         )
 
         text_disp_cb = QCheckBox()
