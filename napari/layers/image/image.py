@@ -27,7 +27,7 @@ else:
 
 
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class _ImageBase(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -785,3 +785,7 @@ class Image(IntensityVisualizationMixin, Layer):
             # Convert the ChunkRequest to SliceData and use it.
             data = SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
+
+
+class Image(_ImageBase):
+    pass
