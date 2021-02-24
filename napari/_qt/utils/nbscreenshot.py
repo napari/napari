@@ -1,6 +1,6 @@
 from io import BytesIO
 
-__all__ = ['nbscreenshot']
+__all__ = ['NotebookScreenshot']
 
 
 class NotebookScreenshot:
@@ -67,6 +67,3 @@ class NotebookScreenshot:
             file_obj.seek(0)
             png = file_obj.read()
         return png
-
-
-nbscreenshot = NotebookScreenshot

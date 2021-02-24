@@ -16,8 +16,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils.misc import is_sequence
-
 
 def QImg2array(img):
     """Convert QImage to an array.
@@ -168,6 +166,8 @@ def combine_widgets(
     TypeError
         If ``widgets`` is neither a ``QWidget`` or a sequence of ``QWidgets``.
     """
+    from ...utils.misc import is_sequence
+
     if isinstance(getattr(widgets, 'native', None), QWidget):
         # compatibility with magicgui v0.2.0 which no longer uses QWidgets
         # directly. Like vispy, the backend widget is at widget.native
