@@ -13,6 +13,8 @@ texture_dtypes = [
     np.dtype(np.uint8),
     np.dtype(np.int16),
     np.dtype(np.uint16),
+    np.dtype(np.int32),
+    np.dtype(np.uint32),
     np.dtype(np.float32),
     np.dtype(np.float64),
 ]
@@ -21,7 +23,20 @@ texture_dtypes = [
 class ImageLayerNode:
     def __init__(self, custom_node: Node = None):
         self._custom_node = custom_node
-        self._image_node = ImageNode(None, method='auto')
+        # 'r' will be replaced (if needed) with rgb or rgba depending on number of bands
+        # _texture_dtype_format = {
+        #     np.float32: 'r32f',
+        #     np.float64: 'r32f',
+        #     np.uint8: 'r8',
+        #     np.uint16: 'r16',
+        #     np.uint32: 'r32',
+        #     np.int8: 'r8',
+        #     np.int16: 'r16',
+        #     np.int32: 'r32',
+        # }
+        self._image_node = ImageNode(
+            None, texture_format='auto', method='auto'
+        )
         self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
 
     def get_node(self, ndisplay: int) -> Node:
@@ -68,7 +83,7 @@ class VispyLabelsLayer(VispyBaseLayer):
         self.node = self._layer_node.get_node(self.layer._ndisplay)
 
         if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay)
+            data = np.zeros((1,) * self.layer._ndisplay, dtype=np.int32)
 
         if self.layer._empty:
             self.node.visible = False
@@ -76,7 +91,8 @@ class VispyLabelsLayer(VispyBaseLayer):
             self.node.visible = self.layer.visible
 
         if self.layer.loaded:
-            self.node.set_data(data)
+            print(f'{data.dtype=}')
+            self._set_node_data(self.node, data)
 
         self.node.parent = parent
         self.node.order = self.order
@@ -126,6 +142,7 @@ class VispyLabelsLayer(VispyBaseLayer):
         ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
             self._on_display_change(data)
         else:
+            print(f'{data.dtype=}')
             node.set_data(data)
 
         if self.layer._empty:
