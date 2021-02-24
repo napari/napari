@@ -58,11 +58,14 @@ when using `magicgui` with napari-specific type annotations.
 ## magicgui and type annotations
 
 `magicgui` uses [type hints](https://www.python.org/dev/peps/pep-0484/) to infer
-the appropriate widget type to display a given function parameter (or, in the
-absense of a type hint, the type of the default value may be used).  Third party
-packages (like `napari` in this case) may provide support for their types using
+the appropriate widget type for a given function parameter, and to indicate a
+context-dependent action for the object returned from the function. (in the
+absense of a type hint, the type of the default value will be used).  Third
+party packages (like `napari` in this case) may provide support for their types
+using
 [`magicgui.register_type`](https://napari.org/magicgui/usage/types_widgets.html#register-type).
-This is how using the type annotations described below lead to "actions" in napari.
+This is how using the type annotations described below lead to widgets and/or
+"actions" in napari.
 
 ```{important}
 All of the type annotations described below *require* that the resulting widget
@@ -285,7 +288,7 @@ viewer.window._qt_window.resize(750, 550)
 nbscreenshot(viewer)
 ```
 
-### Return annotation of `napari.types.<LayerType>Data`
+### Return annotation of `napari.types.LayerDataTuple`
 
 The most flexible return type annotation is {attr}`napari.types.LayerDataTuple`:
 it gives you full control over the layer that will be created and added to the
@@ -294,11 +297,112 @@ viewer.  (It also lets you update an existing layer with a matching name).
 A {attr}`~napari.types.LayerDataTuple` is a {class}`tuple` in one of the
 following three forms:
 
-1. data only: `(layer_data,)`
-2. data and metadata {class}`dict`: `(layer_data, {})`
-   - the metadata `dict` is a key-value mapping, where the keys must be valid keyword
-     arguments to the corresponding {class}`napari.layers.Layer` constructor.
-3. data, metadata, and layer type string: `(layer_data, {}, 'layer_type')`.
-   - `layer_type` should be a lowercase string form of one of the layer types
-     (like `'points'`, `'shapes'`, etc...).  If omitted, the layer type is assumed
-     to be `'image'`.
+1. `(layer_data,)`
+   - a single item tuple containing only layer data (will be interpreted as an image).
+2. `(layer_data, {})`
+   - a 2-tuple of `layer_data` and a metadata {class}`dict`. the keys in the
+     metadata `dict` must be valid keyword arguments to the corresponding
+     {class}`napari.layers.Layer` constructor.
+3. `(layer_data, {}, 'layer_type')`
+   - a 3-tuple of data, metadata, and layer type string.`layer_type` should be a
+     lowercase string form of one of the layer types (like `'points'`,
+     `'shapes'`, etc...).  If omitted, the layer type is assumed to be
+     `'image'`.
+
+The following are all valid {attr}`napari.types.LayerDataTuple` examples:
+
+```python
+# an image array
+(np.random.rand(64, 64),) 
+
+# an image with name and custom blending mode
+(np.random.rand(64, 64), {'name': 'My Image', 'blending': 'additive'})
+
+# an empty points layer
+(None, {}, 'points')
+
+# points with properties
+(np.random.rand(20, 2), {'properties': {'values': np.random.rand(20)}}, 'points')
+```
+
+An example of using a {attr}`~napari.types.LayerDataTuple` return annotation in
+a `magicgui` function:
+
+```{code-cell} python
+:tags: [remove-output]
+import napari.types
+
+@magicgui(call_button='Make Points')
+def make_points(n_points=40) -> napari.types.LayerDataTuple:
+  data = 500 * np.random.rand(n_points, 2)
+  props = {'values': np.random.rand(n_points)}
+  return (data, {'properties': props}, 'points')
+
+viewer = napari.Viewer()
+viewer.window.add_dock_widget(make_points)
+make_points()  # "call the widget" to call the function.
+               # Normally this would be caused by some user UI interaction
+```
+
+```{code-cell} python
+:tags: [remove-input]
+from napari.utils import nbscreenshot
+
+viewer.window._qt_window.resize(750, 550)
+nbscreenshot(viewer)
+```
+
+#### Updating an existing Layer
+
+The default behavior is to add a new layer to the viewer for each
+`LayerDataTuple` returned by a magicgui function. By providing your a unique
+`name` key in your {attr}`~napari.types.LayerDataTuple` metadata dict, you can
+update an existing layer, rather than creating a new layer each time the
+function is called:
+
+```{code-cell} python
+:tags: [remove-output]
+
+@magicgui(call_button='Make Points', n_points={'maximum': 200})
+def make_points(n_points=40) -> napari.types.LayerDataTuple:
+  data = 500 * np.random.rand(n_points, 2)
+  return (data, {'name': 'My Points'}, 'points')
+
+viewer = napari.Viewer()
+viewer.window.add_dock_widget(make_points)
+# calling this multiple times will just update 'My Points'
+make_points()
+make_points.n_points.value = 80
+make_points()
+make_points.n_points.value = 120
+make_points()
+```
+
+```{code-cell} python
+:tags: [remove-input]
+from napari.utils import nbscreenshot
+
+viewer.window._qt_window.resize(750, 550)
+nbscreenshot(viewer)
+```
+
+### Return annotation of `List[napari.types.LayerDataTuple]`
+
+You can also create multiple layers by returning a list of
+{attr}`~napari.types.LayerDataTuple`.
+
+```python
+from typing import List
+
+@magicgui
+def make_points(...) -> List[napari.types.LayerDataTuple]:
+  ...
+```
+
+```{note}
+Note: the `List[]` syntax here is optional from the perspective of `napari`.  You
+can return either a single tuple or a list of tuples and they will all be added
+to the viewer as long as you use either `List[napari.types.LayerDataTuple]` or 
+`napari.types.LayerDataTuple`.  If you want your code to be properly typed, however,
+your return type must match your return annotation.
+```
