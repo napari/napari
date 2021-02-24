@@ -81,7 +81,7 @@ class EventedSet(MutableSet[_T]):
 
     def clear(self) -> None:
         if self._set:
-            values = set(self._set)
+            values = set(self)
             self._set.clear()
             self.events.removed(value=values)
 
@@ -97,11 +97,11 @@ class EventedSet(MutableSet[_T]):
 
     def copy(self) -> EventedSet[_T]:
         """Return a shallow copy of this set."""
-        return EventedSet(self._set)
+        return type(self)(self._set)
 
     def difference(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return set of all elements that are in this set but not other."""
-        return EventedSet(self._set.difference(others))
+        return type(self)(self._set.difference(others))
 
     def difference_update(self, others: Iterable[_T] = ()) -> None:
         """Remove all elements of another set from this set."""
@@ -112,7 +112,7 @@ class EventedSet(MutableSet[_T]):
 
     def intersection(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return all elements that are in both sets as a new set."""
-        return EventedSet(self._set.intersection(others))
+        return type(self)(self._set.intersection(others))
 
     def intersection_update(self, others: Iterable[_T] = ()) -> None:
         """Remove all elements of in this set that are not present in other."""
@@ -128,7 +128,7 @@ class EventedSet(MutableSet[_T]):
 
     def symmetric_difference(self, others: Iterable[_T]) -> EventedSet[_T]:
         """Returns set of elements that are in exactly one of the sets"""
-        return EventedSet(self._set.symmetric_difference(others))
+        return type(self)(self._set.symmetric_difference(others))
 
     def symmetric_difference_update(self, others: Iterable[_T]) -> None:
         """Update set to the symmetric difference of itself and another.
@@ -142,7 +142,7 @@ class EventedSet(MutableSet[_T]):
 
     def union(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return a set containing the union of sets"""
-        return EventedSet(self._set.union(others))
+        return type(self)(self._set.union(others))
 
     @classmethod
     def __get_validators__(cls):
@@ -173,3 +173,45 @@ class EventedSet(MutableSet[_T]):
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         return list(self)
+
+
+from typing import Union
+from weakref import ref, ReferenceType
+
+
+class EventedWeakSet(EventedSet['ReferenceType[_T]']):
+    def add(self, value: Union[_T, 'ReferenceType[_T]']) -> None:
+        vref = self._ensure_ref(value)
+        if vref not in self:
+            self._set.add(vref)
+            self.events.added(value={value})
+
+    def discard(self, value: Union[_T, 'ReferenceType[_T]']) -> None:
+        vref = self._ensure_ref(value)
+        if vref in self:
+            self._set.discard(vref)
+            self.events.removed(value={value})
+
+    def update(
+        self, others: Iterable[Union[_T, 'ReferenceType[_T]']] = ()
+    ) -> None:
+        """Update this set with the union of this set and others"""
+        orefs = {self._ensure_ref(o) for o in others}
+        to_add = orefs.difference(self._set)
+        if to_add:
+            self._set.update(to_add)
+            self.events.added(value={i() for i in to_add})
+
+    @staticmethod
+    def _ensure_ref(val):
+        return ref(val) if not isinstance(val, ReferenceType) else val
+
+    def __contains__(self, x: Any) -> bool:
+        return super().__contains__(self._ensure_ref(x))
+
+    def __iter__(self):
+        for x in iter(self._set):
+            yield x()
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({repr(set(self))})"

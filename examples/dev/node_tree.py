@@ -23,15 +23,15 @@ from napari.utils.tree import Node, Group
 import logging
 
 # create some readable logging.  Drag and drop the items in the tree to
-# # see what sort of events are happening in the background.
-# end = "\033[0m"
-# Bold = "\033[1m"
-# Dim = "\033[2m"
-# ResetDim = "\033[22m"
-# red = "\033[0;31m"
-# green = "\033[0;32m"
-# colorlog_format = f'{green}%(levelname)6s:{end} {Dim}%(name)43s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
-# logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
+# see what sort of events are happening in the background.
+end = "\033[0m"
+Bold = "\033[1m"
+Dim = "\033[2m"
+ResetDim = "\033[22m"
+red = "\033[0;31m"
+green = "\033[0;32m"
+colorlog_format = f'{green}%(levelname)6s:{end} {Dim}%(name)43s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
+logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
 
 get_app()
 
@@ -50,10 +50,7 @@ root = Group(
 print(root)
 root.events.reordered.connect(lambda e: print(e.value))
 
-
 view = QtNodeTreeView(root)
-
-
 
 view.show()
 

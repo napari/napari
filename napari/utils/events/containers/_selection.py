@@ -1,11 +1,9 @@
 from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
-from weakref import ref
 
-from ._set import EventedSet
+from ._set import EventedSet, EventedWeakSet
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
-    from weakref import ReferenceType
 
 _T = TypeVar("_T")
 
@@ -109,10 +107,3 @@ class Selection(EventedSet[_T]):
         """Return an object that can be used by json.dumps."""
         return {'data': super()._json_encode(), 'current': self.current}
 
-
-class RefSelection(Selection[_T]):
-    def add(self, value: _T) -> None:
-        return super().add(ref(value))
-
-    def update(self, value: Iterable[_T] = ()) -> None:
-        return super().update(ref(v) for v in value)
