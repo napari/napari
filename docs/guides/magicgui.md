@@ -81,35 +81,112 @@ functions. The consequence of each is described below:
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {class}`napari.Viewer`
 
-### Annotating parameters with `Layer` subclasses
+### Annotating parameters as a `Layer` subclasses
 
-If you annotated one of your function parameters with a
-{class}`~napari.layers.Layer` subclass, it will be rendered as a
-{class}`~magicgui.widgets.ComboBox` (i.e. "dropdown menu"), where the options in
-the dropdown box are the layers of the corresponding type currently in the
-viewer.
+If you annotate one of your function parameters as a
+{class}`~napari.layers.Layer` subclass (such as {class}`~napari.layers.Image` or
+{class}`~napari.layers.Points`), it will be rendered as a
+{class}`~magicgui.widgets.ComboBox` widget (i.e. "dropdown menu"), where the
+options in the dropdown box are the layers of the corresponding type currently
+in the viewer.
 
 ```python
 from napari.layers import Image
 
 @magicgui
-def my_widget(layer: Image):
+def my_widget(image: Image):
+    # do something with whatever image layer the user has selected
+    # note: it *may* be None! so your function should handle the null case
     ...
 ```
 
-```{code-cell} python
-import napari
-from napari.layers import Points
-from napari.utils import nbscreenshot
+Here's a complete example:
 
-@magicgui
-def my_widget(layer: Points):
+```{code-cell} python
+:tags: [remove-output]
+import napari
+import numpy as np
+from napari.layers import Image
+
+@magicgui(image={'label': 'Pick an Image'})
+def my_widget(image: Image):
     ...
 
-viewer = napari.Viewer()
-viewer.add_points(None)
+viewer = napari.view_image(np.random.rand(64, 64), name="My Image")
 viewer.window.add_dock_widget(my_widget)
+```
+
+*Note the widget at the bottom with "My Image" as the currently selected option*
+
+```{code-cell} python
+:tags: [remove-input]
+from napari.utils import nbscreenshot
+
+viewer.window._qt_window.resize(750, 550)
 nbscreenshot(viewer)
+```
+
+### Annotating parameters as `Layer`
+
+In the previous example, the dropdown menu will *only* show
+{class}`~napari.layers.Image` layers, because the parameter was annotated as an
+{class}`~napari.layers.Image`.  If you'd like a dropdown menu that allows the
+user to pick from *all* layers in the layer list, annotate your parameter as
+{class}`~napari.layers.Layer`
+
+```python
+from napari.layers import Layer
+
+@magicgui
+def my_widget(layer: Layer):
+    # do something with whatever layer the user has selected
+    # note: it *may* be None! so your function should handle the null case
+    ...
+```
+
+### Annotating parameters as a `napari.types.<LayerType>Data`
+
+In the previous example, the object passed to your function will be the actual
+{class}`~napari.layers.Layer` instance, meaning you will need to access any
+attributes (like `layer.data`) on your own.  If your function is designed to
+accept a numpy array, you can use the any of the special `<Layer>Data` types
+from {mod}`napari.types` to indicate that you only want the data attribute from
+the layer (where `<LayerType>` is one of the available layer types).  Here's an
+example using {attr}`napari.types.ImageData`
+
+```python
+from napari.types import ImageData
+import numpy as np
+
+@magicgui
+def my_widget(array: ImageData):
+    # note: it *may* be None! so your function should handle the null case
+    if array is not None:
+      assert isinstance(array, np.ndarray)  # it will be!
+```
+
+### Annotating parameters as a `napari.Viewer`
+
+Lastly, if you need to access the actual {class}`~napari.viewer.Viewer` instance
+in which the widget is docked, you can annotate one of your parameters as a
+{class}`napari.Viewer`.
+
+```python
+from napari import Viewer
+
+@magicgui
+def my_widget(viewer: Viewer):
+  ...
+```
+
+```{caution}
+Please use this sparingly, as a last resort. If you need to *add* layers
+to the viewer from your function, prefer one of the return-annotation methods
+described [below](#adding-layers-to-napari-from-your-magicgui-function).
+If you find that you require the viewer instance because of functionality that
+is otherwise missing here, please consider opening an issue in the
+[napari issue tracker](https://github.com/napari/napari/issues/new/choose),
+describing your use case.
 ```
 
 ## Adding layers to napari from your magicgui function
@@ -122,3 +199,106 @@ functions. The consequence of each is described below:
 - any of the `<Layer>Data` types from {mod}`napari.types`, such as
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {attr}`napari.types.LayerDataTuple`
+
+### Return annotation of `Layer` subclass
+
+If you use a {class}`~napari.layers.Layer` subclass as a *return* annotation on a
+`magicgui` function, `napari` will interpet it to mean that the layer returned
+from the function should be added to the viewer.  The object returned from the
+function must be an actual {class}`~napari.layers.Layer` instance.
+
+```python
+from napari.layers import Image
+import numpy as np
+
+@magicgui
+def my_widget(ny: int=64, nx: int=64) -> Image:
+  return Image(np.random.rand(ny, nx), name='my Image')
+```
+
+Here's a complete example
+
+```{code-cell} python
+:tags: [remove-output]
+@magicgui(call_button='Add Image')
+def my_widget(ny: int=64, nx: int=64) -> Image:
+  return Image(np.random.rand(ny, nx), name='My Image')
+
+viewer = napari.Viewer()
+viewer.window.add_dock_widget(my_widget, area='right')
+my_widget()  # "call the widget" to call the function.
+             # Normally this would be caused by some user UI interaction
+```
+
+*Note the new "My Image" layer in the viewer as a result of having called the widget function.*
+
+```{code-cell} python
+:tags: [remove-input]
+from napari.utils import nbscreenshot
+
+viewer.window._qt_window.resize(750, 550)
+nbscreenshot(viewer)
+```
+
+```{note}
+With this method, a new layer will be added to the layer list each time the
+function is called.  To update an existing layer, you must use the
+`LayerDataTuple` approach described below
+```
+
+### Return annotation of `napari.types.<LayerType>Data`
+
+In the previous example, the object returned by the function had to be an actual
+{class}`~napari.layers.Layer` instance (in keeping with the return type
+annotation).  In many cases, you may only be interested in receiving and
+returning the layer {attr}`~napari.layers.Layer.data`  itself.  (There are
+*many* functions already written that accept and return a `numpy.ndarray`, for
+example). In this case, you may use a return type annotation of one the special
+`<Layer>Data` types from {mod}`napari.types` to indicate that you want data
+returned by your function to be turned into the corresponding
+{class}`~napari.layers.Layer` type, and added to the viewer.
+
+For example, in combination with the {attr}`~napari.types.ImageData`` paramater
+annotation [described
+above](#annotating-parameters-as-a-naparitypeslayertypedata):
+
+```{code-cell} python
+:tags: [remove-output]
+from napari.types import LabelsData, ImageData
+
+@magicgui(call_button='Run Threshold')
+def threshold(image: ImageData, threshold: int = 75) -> LabelsData:
+    """Threshold an image and return a mask."""
+    return (image > threshold).astype(int)
+
+viewer = napari.view_image(np.random.randint(0, 100, (64, 64)))
+viewer.window.add_dock_widget(threshold)
+threshold()  # "call the widget" to call the function.
+             # Normally this would be caused by some user UI interaction
+```
+
+```{code-cell} python
+:tags: [remove-input]
+from napari.utils import nbscreenshot
+
+viewer.window._qt_window.resize(750, 550)
+nbscreenshot(viewer)
+```
+
+### Return annotation of `napari.types.<LayerType>Data`
+
+The most flexible return type annotation is {attr}`napari.types.LayerDataTuple`:
+it gives you full control over the layer that will be created and added to the
+viewer.  (It also lets you update an existing layer with a matching name).
+
+A {attr}`~napari.types.LayerDataTuple` is a {class}`tuple` in one of the
+following three forms:
+
+1. data only: `(layer_data,)`
+2. data and metadata {class}`dict`: `(layer_data, {})`
+   - the metadata `dict` is a key-value mapping, where the keys must be valid keyword
+     arguments to the corresponding {class}`napari.layers.Layer` constructor.
+3. data, metadata, and layer type string: `(layer_data, {}, 'layer_type')`.
+   - `layer_type` should be a lowercase string form of one of the layer types
+     (like `'points'`, `'shapes'`, etc...).  If omitted, the layer type is assumed
+     to be `'image'`.
