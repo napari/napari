@@ -4,11 +4,7 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils.colormaps import (
-    color_dict_to_colormap,
-    label_colormap,
-    low_discrepancy_image,
-)
+from ...utils.colormaps import color_dict_to_colormap, label_colormap
 from ...utils.events import Event
 from ..image import Image
 from ..utils.color_transformations import transform_color
@@ -614,6 +610,7 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+        image = raw
         if self.contour:
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
@@ -621,10 +618,7 @@ class Labels(Image):
                 raw, footprint=struct_elem
             ) != ndi.grey_erosion(raw, footprint=struct_elem)
             image[boundaries] = raw[boundaries]
-            image = np.where(
-                raw > 0, low_discrepancy_image(image, self._seed), 0
-            )
-
+        print(f'{image.dtype=}')
         return image
 
     def new_colormap(self):
