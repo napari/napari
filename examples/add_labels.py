@@ -2,7 +2,7 @@
 Display a labels layer above of an image layer using the add_labels and
 add_image APIs
 """
-
+import numpy as np
 from skimage import data
 from skimage.filters import threshold_otsu
 from skimage.segmentation import clear_border
@@ -22,7 +22,7 @@ with napari.gui_qt():
     cleared = remove_small_objects(clear_border(bw), 20)
 
     # label image regions
-    label_image = label(cleared)
+    label_image = label(cleared).astype(np.int32)
 
     # initialise viewer with coins image
     viewer = napari.view_image(image, name='coins', rgb=False)
