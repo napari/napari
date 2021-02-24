@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
 
-from napari.utils.interactions import KEY_SYMBOLS
+from ...utils.interactions import KEY_SYMBOLS
 
 
 class QtLayerButtons(QFrame):

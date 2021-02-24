@@ -9,10 +9,9 @@ from qtpy.QtWidgets import (
     QSlider,
 )
 
-from napari.utils.interactions import KEY_SYMBOLS
-
 from ...layers.points._points_constants import Mode, Symbol
 from ...utils.events import disconnect_events
+from ...utils.interactions import KEY_SYMBOLS
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
