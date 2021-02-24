@@ -3,8 +3,13 @@ from io import BytesIO
 __all__ = ['nbscreenshot']
 
 
-def nbscreenshot(viewer, *, canvas_only=False):
+class NotebookScreenshot:
     """Display napari screenshot in the jupyter notebook.
+
+    Functions returning an object with a _repr_png_() method
+    will displayed as a rich image in the jupyter notebook.
+
+    https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html
 
     Parameters
     ----------
@@ -13,22 +18,6 @@ def nbscreenshot(viewer, *, canvas_only=False):
     canvas_only : bool, optional
         If True includes the napari viewer frame in the screenshot,
         otherwise just includes the canvas. By default, True.
-
-    Returns
-    -------
-    napari.utils.notebook_display.NotebookScreenshot
-        Napari screenshot rendered as rich display in the jupyter notebook.
-    """
-    return NotebookScreenshot(viewer, canvas_only=canvas_only)
-
-
-class NotebookScreenshot:
-    """Display napari screenshot in the jupyter notebook.
-
-    Functions returning an object with a _repr_png_() method
-    will displayed as a rich image in the jupyter notebook.
-
-    https://ipython.readthedocs.io/en/stable/api/generated/IPython.display.html
 
     Examples
     --------
@@ -69,9 +58,15 @@ class NotebookScreenshot:
         """
         from imageio import imsave
 
+        from napari._qt.qt_event_loop import get_app
+
+        get_app().processEvents()
         self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
         with BytesIO() as file_obj:
             imsave(file_obj, self.image, format='png')
             file_obj.seek(0)
             png = file_obj.read()
         return png
+
+
+nbscreenshot = NotebookScreenshot
