@@ -1,5 +1,11 @@
+from typing import TYPE_CHECKING
+
 from .components import ViewerModel
 from .utils import config
+
+if TYPE_CHECKING:
+    # helpful for IDE support
+    from ._qt.qt_main_window import Window
 
 
 class Viewer(ViewerModel):
@@ -22,7 +28,7 @@ class Viewer(ViewerModel):
     """
 
     # Create private variable for window
-    _window = None
+    _window: 'Window'
 
     def __init__(
         self,
@@ -47,7 +53,7 @@ class Viewer(ViewerModel):
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
-    def window(self):
+    def window(self) -> 'Window':
         return self._window
 
     def update_console(self, variables):
