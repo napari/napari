@@ -1,6 +1,6 @@
 from io import BytesIO
 
-__all__ = ['NotebookScreenshot']
+__all__ = ['nbscreenshot']
 
 
 class NotebookScreenshot:
@@ -58,7 +58,7 @@ class NotebookScreenshot:
         """
         from imageio import imsave
 
-        from ..._qt.qt_event_loop import get_app
+        from .._qt.qt_event_loop import get_app
 
         get_app().processEvents()
         self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
@@ -67,3 +67,6 @@ class NotebookScreenshot:
             file_obj.seek(0)
             png = file_obj.read()
         return png
+
+
+nbscreenshot = NotebookScreenshot
