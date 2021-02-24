@@ -100,14 +100,16 @@ def my_widget(layer: Image):
 ```{code-cell} python
 import napari
 from napari.layers import Points
+from napari.utils import nbscreenshot
 
 @magicgui
 def my_widget(layer: Points):
     ...
 
 viewer = napari.Viewer()
+viewer.add_points(None)
 viewer.window.add_dock_widget(my_widget)
-
+nbscreenshot(viewer)
 ```
 
 ## Adding layers to napari from your magicgui function
