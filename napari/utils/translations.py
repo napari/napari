@@ -5,6 +5,7 @@ localization data.
 
 import gettext
 import os
+import sys
 from pathlib import Path
 
 # Entry points
@@ -13,6 +14,7 @@ NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
 # Constants
 DEFAULT_LOCALE = "en"
 LOCALE_DIR = "locale"
+PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 def _get_display_name(
@@ -254,7 +256,12 @@ class TranslationBundle:
         str
             The translated string.
         """
-        return gettext.dpgettext(self._domain, msgctxt, msgid)
+        if PY37_OR_LOWER:
+            translation = gettext.dgettext(self._domain, msgid)
+        else:
+            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+
+        return translation
 
     def npgettext(
         self, msgctxt: str, msgid: str, msgid_plural: str, n: int
@@ -278,9 +285,16 @@ class TranslationBundle:
         str
             The translated string.
         """
-        return gettext.dnpgettext(
-            self._domain, msgctxt, msgid, msgid_plural, n
-        )
+        if PY37_OR_LOWER:
+            translation = gettext.dngettext(
+                self._domain, msgid, msgid_plural, n
+            )
+        else:
+            translation = gettext.dnpgettext(
+                self._domain, msgctxt, msgid, msgid_plural, n
+            )
+
+        return translation
 
     # Shorthands
     def _(self, msgid: str) -> str:
