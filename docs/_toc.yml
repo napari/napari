@@ -7,6 +7,7 @@
   sections:
     - file: guides/event_loop
     - file: guides/threading
+    - file: guides/magicgui
     - file: guides/perfmon
     - file: guides/rendering
 
