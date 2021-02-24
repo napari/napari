@@ -444,8 +444,6 @@ development environment, you will still get all the type inference.
 
 :::
 
-
-
 ## Using `magicgui` in napari plugin widgets
 
 Using `magicgui` can be an effective way to generate widgets for use in napari
@@ -530,4 +528,3 @@ class MyGui(FunctionGui):
 def napari_experimental_provide_dock_widget():
     return MyGui
 ```
-
