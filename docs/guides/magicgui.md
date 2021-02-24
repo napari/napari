@@ -70,21 +70,22 @@ This is how using the type annotations described below lead to widgets and/or
 ```{important}
 All of the type annotations described below *require* that the resulting widget
 be added to a napari viewer (using, e.g., `viewer.window.add_dock_widget`, or
-providing a magicgui-based widget via the {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget` plugin hookspec)
+providing a magicgui-based widget via the {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget` plugin hook specification.)
 ```
 
-## Getting information from napari into your magicgui function
+## Parameter Annotations
 
-The following napari types may be used as *parameter* type annotations in magicgui
-functions. The consequence of each is described below:
+The following napari types may be used as *parameter* type annotations in
+magicgui functions to get information from the napari viewer into your
+magicgui function. The consequence of each type annotation is described below:
 
 - any napari {class}`~napari.layers.Layer` type, such as
   {class}`~napari.layers.Image` or {class}`~napari.layers.Points`
-- any of the `<Layer>Data` types from {mod}`napari.types`, such as
+- any of the `<LayerType>Data` types from {mod}`napari.types`, such as
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {class}`napari.Viewer`
 
-### Annotating parameters as a `Layer` subclasses
+### Annotating as a `Layer` subclasses
 
 If you annotate one of your function parameters as a
 {class}`~napari.layers.Layer` subclass (such as {class}`~napari.layers.Image` or
@@ -129,7 +130,7 @@ viewer.window._qt_window.resize(750, 550)
 nbscreenshot(viewer)
 ```
 
-### Annotating parameters as `Layer`
+### Annotating as `Layer`
 
 In the previous example, the dropdown menu will *only* show
 {class}`~napari.layers.Image` layers, because the parameter was annotated as an
@@ -147,12 +148,12 @@ def my_widget(layer: Layer):
     ...
 ```
 
-### Annotating parameters as a `napari.types.<LayerType>Data`
+### Annotating as `napari.types.*Data`
 
 In the previous example, the object passed to your function will be the actual
 {class}`~napari.layers.Layer` instance, meaning you will need to access any
 attributes (like `layer.data`) on your own.  If your function is designed to
-accept a numpy array, you can use the any of the special `<Layer>Data` types
+accept a numpy array, you can use the any of the special `<LayerType>Data` types
 from {mod}`napari.types` to indicate that you only want the data attribute from
 the layer (where `<LayerType>` is one of the available layer types).  Here's an
 example using {attr}`napari.types.ImageData`
@@ -168,7 +169,7 @@ def my_widget(array: ImageData):
       assert isinstance(array, np.ndarray)  # it will be!
 ```
 
-### Annotating parameters as a `napari.Viewer`
+### Annotating as `napari.Viewer`
 
 Lastly, if you need to access the actual {class}`~napari.viewer.Viewer` instance
 in which the widget is docked, you can annotate one of your parameters as a
@@ -192,18 +193,19 @@ is otherwise missing here, please consider opening an issue in the
 describing your use case.
 ```
 
-## Adding layers to napari from your magicgui function
+## Return Annotations
 
 The following napari types may be used as *return* type annotations in magicgui
-functions. The consequence of each is described below:
+functions to add layers to napari from your magicgui function. The consequence of
+each type is described below:
 
 - any napari {class}`~napari.layers.Layer` type, such as
   {class}`~napari.layers.Image` or {class}`~napari.layers.Points`
-- any of the `<Layer>Data` types from {mod}`napari.types`, such as
+- any of the `<LayerType>Data` types from {mod}`napari.types`, such as
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {attr}`napari.types.LayerDataTuple`
 
-### Return annotation of `Layer` subclass
+### Returning a `Layer` subclass
 
 If you use a {class}`~napari.layers.Layer` subclass as a *return* annotation on a
 `magicgui` function, `napari` will interpet it to mean that the layer returned
@@ -249,7 +251,7 @@ function is called.  To update an existing layer, you must use the
 `LayerDataTuple` approach described below
 ```
 
-### Return annotation of `napari.types.<LayerType>Data`
+### Returning `napari.types.*Data`
 
 In the previous example, the object returned by the function had to be an actual
 {class}`~napari.layers.Layer` instance (in keeping with the return type
@@ -257,13 +259,12 @@ annotation).  In many cases, you may only be interested in receiving and
 returning the layer {attr}`~napari.layers.Layer.data`  itself.  (There are
 *many* functions already written that accept and return a `numpy.ndarray`, for
 example). In this case, you may use a return type annotation of one the special
-`<Layer>Data` types from {mod}`napari.types` to indicate that you want data
+`<LayerType>Data` types from {mod}`napari.types` to indicate that you want data
 returned by your function to be turned into the corresponding
 {class}`~napari.layers.Layer` type, and added to the viewer.
 
-For example, in combination with the {attr}`~napari.types.ImageData`` paramater
-annotation [described
-above](#annotating-parameters-as-a-naparitypeslayertypedata):
+For example, in combination with the {attr}`~napari.types.ImageData` paramater
+annotation [described above](#annotating-as-napari-types-data):
 
 ```{code-cell} python
 :tags: [remove-output]
@@ -288,7 +289,7 @@ viewer.window._qt_window.resize(750, 550)
 nbscreenshot(viewer)
 ```
 
-### Return annotation of `napari.types.LayerDataTuple`
+### Returning `napari.types.LayerDataTuple`
 
 The most flexible return type annotation is {attr}`napari.types.LayerDataTuple`:
 it gives you full control over the layer that will be created and added to the
@@ -352,7 +353,28 @@ viewer.window._qt_window.resize(750, 550)
 nbscreenshot(viewer)
 ```
 
-#### Updating an existing Layer
+### Returning `List[napari.types.LayerDataTuple]`
+
+You can also create multiple layers by returning a list of
+{attr}`~napari.types.LayerDataTuple`.
+
+```python
+from typing import List
+
+@magicgui
+def make_points(...) -> List[napari.types.LayerDataTuple]:
+  ...
+```
+
+```{note}
+Note: the `List[]` syntax here is optional from the perspective of `napari`.  You
+can return either a single tuple or a list of tuples and they will all be added
+to the viewer as long as you use either `List[napari.types.LayerDataTuple]` or 
+`napari.types.LayerDataTuple`.  If you want your code to be properly typed, however,
+your return type must match your return annotation.
+```
+
+### Updating an existing Layer
 
 The default behavior is to add a new layer to the viewer for each
 `LayerDataTuple` returned by a magicgui function. By providing your a unique
@@ -386,23 +408,126 @@ viewer.window._qt_window.resize(750, 550)
 nbscreenshot(viewer)
 ```
 
-### Return annotation of `List[napari.types.LayerDataTuple]`
+## Avoid imports with forward references
 
-You can also create multiple layers by returning a list of
-{attr}`~napari.types.LayerDataTuple`.
+Sometimes, it is undesireable to import and/or depend on `napari` directly just
+to provide type annotations.  It is possible to avoid importing `napari`
+entirely by annotating with the string form of the napari type.  This is called
+a [Forward
+reference](https://www.python.org/dev/peps/pep-0484/#forward-references):
 
 ```python
-from typing import List
+@magicgui
+def my_func(data: 'napari.types.ImageData') -> 'napari.types.ImageData':
+    ...
+```
+
+:::{tip}
+
+If you'd like to maintain IDE type support and autocompletion, you can
+do so by hiding the napari imports inside of a {attr}`typing.TYPE_CHECKING`
+clause:
+
+```python
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  import napari
 
 @magicgui
-def make_points(...) -> List[napari.types.LayerDataTuple]:
-  ...
+def my_func(data: 'napari.types.ImageData') -> 'napari.types.ImageData':
+    ...
 ```
 
-```{note}
-Note: the `List[]` syntax here is optional from the perspective of `napari`.  You
-can return either a single tuple or a list of tuples and they will all be added
-to the viewer as long as you use either `List[napari.types.LayerDataTuple]` or 
-`napari.types.LayerDataTuple`.  If you want your code to be properly typed, however,
-your return type must match your return annotation.
+This will not require `napari` at runtime, but if it is installed in your
+development environment, you will still get all the type inference.
+
+:::
+
+
+
+## Using `magicgui` in napari plugin widgets
+
+Using `magicgui` can be an effective way to generate widgets for use in napari
+[plugins](../plugins/index.md), in particular the
+{func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget`
+plugin hook specification.  There is an important distinction to be made,
+however, between using `magicgui` with `viewer.window.add_dock_widget`, and
+using it with
+{func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget`.
+
+`viewer.window.add_dock_widget` expects an *instance* of a widget, like a
+{class}`magicgui.widgets.Widget` or a {class}`qtpy.QtWidgets.QWidget`.
+{func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget`,
+on the other hand, expects a widget *class* (or, more broadly, a `callable` that
+returns a widget instance).  There are two ways to acheive this with `magicgui`.
+
+### `@magic_factory`
+
+In most cases, the {func}`@magicgui <magicgui.magicgui>` decorator used in the
+preceding examples can simply be replaced with the {func}`@magic_factory <magicgui.magic_factory>`
+decorator, to use it as a plugin dock widget.
+
+For example, the threshold widget [shown above](#returning-napari-types-data)
+could be provided as a napari plugin as follows:
+
+```python
+from magicgui import magic_factory
+from napari_plugin_engine import napari_hook_implementation
+
+@magic_factory(auto_call=True, threshold={'max': 2 ** 16})
+def threshold(
+    data: 'napari.types.ImageData', threshold: int
+) -> 'napari.types.LabelsData':
+    return (data > threshold).astype(int)
+
+@napari_hook_implementation
+def napari_experimental_provide_dock_widget():
+    return threshold
 ```
+
+:::{note}
+{func}`@magic_factory <magicgui.magic_factory>` behaves very much like
+{func}`functools.partial`: it returns a callable that "remembers" some or
+all of the parameters required for a "future" call to {func}`magicgui.magicgui`.
+The parameters provided to {func}`@magic_factory <magicgui.magic_factory>` can
+also be overridden when creating a widget from a factory:
+
+```python
+@magic_factory(call_button=True)
+def my_factory(x: int):
+    ...
+
+widget1 = my_factory()
+widget2 = my_factory(call_button=False, x={'widget_type': 'Slider'})
+```
+
+:::
+
+### `magicgui.widgets.FunctionGui`
+
+The other option for using `magicgui` in plugins is to directly subclass
+{class}`magicgui.widgets.FunctionGui` (which is the type that is returned
+by the {func}`@magicgui <magicgui.magicgui>` decorator.)
+
+```python
+from magicgui.widgets import FunctionGui
+
+def my_function(...):
+    ...
+
+class MyGui(FunctionGui):
+    def __init__(self):
+        super().__init__(
+          my_function,
+          call_button=True,
+          layout='vertical',
+          param_options={...}
+        )
+        # do whatever other initialization you want here
+
+@napari_hook_implementation
+def napari_experimental_provide_dock_widget():
+    return MyGui
+```
+
