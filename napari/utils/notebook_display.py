@@ -58,7 +58,7 @@ class NotebookScreenshot:
         """
         from imageio import imsave
 
-        from napari._qt.qt_event_loop import get_app
+        from .._qt.qt_event_loop import get_app
 
         get_app().processEvents()
         self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
