@@ -21,7 +21,9 @@ texture_dtypes = [
 class ImageLayerNode:
     def __init__(self, custom_node: Node = None):
         self._custom_node = custom_node
-        self._image_node = ImageNode(None, method='auto')
+        self._image_node = ImageNode(
+            None, method='auto', texture_format='auto'
+        )
         self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
 
     def get_node(self, ndisplay: int) -> Node:
@@ -66,16 +68,9 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = None
 
         self.node = self._layer_node.get_node(self.layer._ndisplay)
+        self.node.visible = (not self.layer._empty) and self.layer.visible
 
-        if data is None:
-            data = np.zeros((1,) * self.layer._ndisplay)
-
-        if self.layer._empty:
-            self.node.visible = False
-        else:
-            self.node.visible = self.layer.visible
-
-        if self.layer.loaded:
+        if self.layer.loaded and data is not None:
             self.node.set_data(data)
 
         self.node.parent = parent
