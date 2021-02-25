@@ -3,12 +3,12 @@ from os.path import dirname, join
 import numpy as np
 import scipy.ndimage as ndi
 from imageio import imread
+from vispy.scene.visuals import Image as ImageNode
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
 from ..utils.misc import str_to_rgb
 from ..utils.theme import darken, get_theme, lighten
-from .image import Image as ImageNode
 
 
 class VispyWelcomeVisual:

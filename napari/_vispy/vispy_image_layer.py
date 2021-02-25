@@ -3,8 +3,8 @@ import warnings
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
+from vispy.scene.visuals import Image as ImageNode
 
-from .image import Image as ImageNode
 from .vispy_base_layer import VispyBaseLayer
 from .volume import Volume as VolumeNode
 
