@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPainter
@@ -155,12 +153,11 @@ class QtLabelsControls(QtLayerControls):
         self.paint_button = QtModeRadioButton(
             layer, 'paint', Mode.PAINT, tooltip='Paint mode (P)'
         )
-        btn = 'Cmd' if sys.platform == 'darwin' else 'Ctrl'
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tooltip=f'Fill mode ({btn})'
+            layer, 'fill', Mode.FILL, tooltip='Fill mode (F)'
         )
         self.erase_button = QtModeRadioButton(
-            layer, 'erase', Mode.ERASE, tooltip='Erase mode (Alt)'
+            layer, 'erase', Mode.ERASE, tooltip='Erase mode (E)'
         )
 
         self.button_group = QButtonGroup(self)
@@ -187,7 +184,7 @@ class QtLabelsControls(QtLayerControls):
         index = brush_shape_comboBox.findText(
             self.layer.brush_shape, Qt.MatchFixedString
         )
-        brush_shape_comboBox.setCurrentIndex(index)
+        brush_shape_comboBox.sextCurrentIndex(index)
         brush_shape_comboBox.activated[str].connect(self.change_brush_shape)
         self.brushShapeComboBox = brush_shape_comboBox
         self._on_brush_shape_change()
