@@ -2,6 +2,7 @@
 """
 import types
 import warnings
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -26,8 +27,10 @@ else:
     SliceDataClass = ImageSliceData
 
 
+# It is important to contain at least one abstractmethod to properly exclude this class
+# in creating NAMES set inside __init__ file of labels module
 # Mixin must come before Layer
-class _ImageBase(IntensityVisualizationMixin, Layer):
+class _ImageBase(IntensityVisualizationMixin, Layer, metaclass=ABCMeta):
     """Image layer.
 
     Parameters
@@ -478,6 +481,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return self._slice.loaded
 
+    @abstractmethod
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -486,40 +490,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         state : dict
             Dictionary of layer state.
         """
-        state = self._get_base_state()
-        state.update(
-            {
-                'rgb': self.rgb,
-                'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
-                'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
-                'rendering': self.rendering,
-                'iso_threshold': self.iso_threshold,
-                'attenuation': self.attenuation,
-                'gamma': self.gamma,
-                'data': self.data,
-            }
-        )
-        return state
 
+    @abstractmethod
     def _raw_to_displayed(self, raw):
-        """Determine displayed image from raw image.
-
-        For normal image layers, just return the actual image.
-
-        Parameters
-        ----------
-        raw : array
-            Raw array.
-
-        Returns
-        -------
-        image : array
-            Displayed array.
-        """
-        image = raw
-        return image
+        """Determine displayed image from raw image."""
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
@@ -788,4 +762,45 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
 
 class Image(_ImageBase):
-    pass
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'rgb': self.rgb,
+                'multiscale': self.multiscale,
+                'colormap': self.colormap.name,
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state
+
+    def _raw_to_displayed(self, raw):
+        """Determine displayed image from raw image.
+
+        For normal image layers, just return the actual image.
+
+        Parameters
+        ----------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        image = raw
+        return image
