@@ -500,7 +500,7 @@ class Window:
         about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
-            lambda e: QtAbout.showAbout(self.qt_viewer)
+            lambda e: QtAbout.showAbout(self.qt_viewer, self._qt_window)
         )
         self.help_menu.addAction(about_action)
 
