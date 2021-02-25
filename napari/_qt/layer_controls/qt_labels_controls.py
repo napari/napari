@@ -184,7 +184,7 @@ class QtLabelsControls(QtLayerControls):
         index = brush_shape_comboBox.findText(
             self.layer.brush_shape, Qt.MatchFixedString
         )
-        brush_shape_comboBox.sextCurrentIndex(index)
+        brush_shape_comboBox.setCurrentIndex(index)
         brush_shape_comboBox.activated[str].connect(self.change_brush_shape)
         self.brushShapeComboBox = brush_shape_comboBox
         self._on_brush_shape_change()
