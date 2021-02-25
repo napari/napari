@@ -54,7 +54,6 @@ class SettingsManager:
             if config_path is None
             else Path(config_path)
         )
-        print(self._config_path)
         self._save_to_disk = save_to_disk
         self._settings = {}
         self._defaults = {}

@@ -284,16 +284,6 @@ class Window:
         if show:
             self.show()
 
-            if SETTINGS.application.first_time:
-                SETTINGS.application.first_time = False
-            else:
-                try:
-                    self._qt_window._set_window_settings(
-                        *self._qt_window._load_window_settings()
-                    )
-                except Exception as e:
-                    print(e)
-
     def __getattr__(self, name):
         if name == 'raw_stylesheet':
             import warnings
@@ -980,8 +970,33 @@ class Window:
         RuntimeError
             If the viewer.window has already been closed and deleted.
         """
+        if SETTINGS.application.first_time:
+            SETTINGS.application.first_time = False
+            try:
+                self._qt_window.resize(self._qt_window.layout().sizeHint())
+            except (AttributeError, RuntimeError):
+                raise RuntimeError(
+                    "This viewer has already been closed and deleted. "
+                    "Please create a new one."
+                )
+        else:
+            try:
+                self._qt_window._set_window_settings(
+                    *self._qt_window._load_window_settings()
+                )
+            except Exception as err:
+                import warnings
+
+                warnings.warn(
+                    (
+                        "The window geometry settings could not be "
+                        f"loaded due to the following error: {err}"
+                    ),
+                    category=RuntimeWarning,
+                    stacklevel=2,
+                )
+
         try:
-            self._qt_window.resize(self._qt_window.layout().sizeHint())
             self._qt_window.show()
         except (AttributeError, RuntimeError):
             raise RuntimeError(
