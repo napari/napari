@@ -725,9 +725,6 @@ class EmitterGroup(EventEmitter):
     def __getattr__(self, name) -> EventEmitter:
         return object.__getattribute__(self, name)
 
-    def __dir__(self) -> List[str]:
-        return list(super().__dir__()) + list(self._emitters)
-
     def __getitem__(self, name: str) -> EventEmitter:
         """
         Return the emitter assigned to the specified name.
