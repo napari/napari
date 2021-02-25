@@ -21,7 +21,7 @@ IM_ATTRS = {
     'rendering': 'translucent',
     'iso_threshold': 0.34,
     'interpolation': 'bilinear',
-    'contrast_limits': [0.25, 0.75],
+    'contrast_limits': (0.25, 0.75),
     'gamma': 0.5,
 }
 

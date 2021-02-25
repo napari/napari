@@ -272,18 +272,18 @@ def test_contrast_limits():
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
-    assert layer.contrast_limits == layer._contrast_limits_range
+    assert layer.contrast_limits == layer.contrast_limits_range
 
     # Change contrast_limits property
-    contrast_limits = [0, 2]
+    contrast_limits = (0, 2)
     layer.contrast_limits = contrast_limits
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
     # Set contrast_limits as keyword argument
     layer = Image(data, multiscale=True, contrast_limits=contrast_limits)
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
 
 def test_contrast_limits_range():
@@ -301,8 +301,8 @@ def test_contrast_limits_range():
     shapes = [(40, 20), (20, 10), (10, 5)]
     data = [np.zeros(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer._contrast_limits_range == [0, 1]
-    assert layer.contrast_limits == [0.0, 1.0]
+    assert layer.contrast_limits_range == (0, 1)
+    assert layer.contrast_limits == (0.0, 1.0)
 
 
 def test_metadata():
