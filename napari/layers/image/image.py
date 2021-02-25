@@ -27,7 +27,7 @@ else:
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
-# in creating NAMES set inside __init__ file of labels module
+# in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
 class _ImageBase(IntensityVisualizationMixin, Layer):
     """Image layer.
