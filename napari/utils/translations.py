@@ -256,6 +256,8 @@ class TranslationBundle:
         str
             The translated string.
         """
+        # Python 3.7 or lower does not offer translations based on context.
+        # On these versions `gettext.pgettext` falls back to `gettext.gettext`
         if PY37_OR_LOWER:
             translation = gettext.dgettext(self._domain, msgid)
         else:
@@ -285,6 +287,8 @@ class TranslationBundle:
         str
             The translated string.
         """
+        # Python 3.7 or lower does not offer translations based on context.
+        # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
         if PY37_OR_LOWER:
             translation = gettext.dngettext(
                 self._domain, msgid, msgid_plural, n

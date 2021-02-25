@@ -148,12 +148,16 @@ def test_locale_n_runs(trans):
 
 
 def test_locale_p_runs(trans):
-    print(sys.version_info)
     # Test context singular method
     context = "context"
     string = "MORE ABOUT NAPARI"
     py37_result = "Más sobre napari"
     result = trans.pgettext(context, string)
+
+    # Python 3.7 or lower does not offer translations based on context
+    # so pgettext, or npgettext are not available. We fallback to the
+    # singular and plural versions without context. For these cases:
+    # `pgettext` falls back to `gettext` and `npgettext` to `gettext`
     if PY37_OR_LOWER:
         assert result == py37_result
     else:
@@ -168,7 +172,6 @@ def test_locale_p_runs(trans):
 
 
 def test_locale_np_runs(trans):
-    print(sys.version_info)
     # Test plural context method
     n = 2
     context = "context"
