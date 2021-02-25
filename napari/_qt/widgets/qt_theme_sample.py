@@ -18,7 +18,6 @@ To generate a screenshot within python:
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QApplication,
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
@@ -158,9 +157,10 @@ if __name__ == "__main__":
     import sys
 
     from ...utils.theme import available_themes
+    from ..qt_event_loop import get_app
 
     themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
-    app = QApplication([])
+    app = get_app()
     widgets = []
     for n, theme in enumerate(themes):
         try:
