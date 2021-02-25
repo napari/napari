@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
 
-from ._set import EventedSet, EventedWeakSet
+from ._set import EventedSet
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -106,4 +106,3 @@ class Selection(EventedSet[_T]):
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         return {'data': super()._json_encode(), 'current': self.current}
-

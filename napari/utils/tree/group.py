@@ -1,9 +1,9 @@
 from typing import Generator, Iterable, List, TypeVar
+from weakref import ReferenceType
 
 from ..events import NestableEventedList, Selection
 from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
-from weakref import ref, ReferenceType
 
 NodeType = TypeVar("NodeType", bound=Node)
 
