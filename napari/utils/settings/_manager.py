@@ -21,7 +21,7 @@ class SettingsManager:
     ----------
     config_path : str, optional
         Provide the base folder to store napari configuration. Default is None,
-        which will point to `"~/.napari/settings/`.
+        which will point to user config provided by `appdirs`.
     save_to_disk : bool, optional
         Persist settings on disk. Default is True.
 
