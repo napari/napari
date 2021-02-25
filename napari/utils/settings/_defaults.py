@@ -67,7 +67,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = [
-            "preferences_size",
+            "schema_version" "preferences_size",
             "first_time",
             "window_position",
             "window_size",
@@ -83,7 +83,7 @@ class PluginSettings(BaseSettings, EventedModel):
 
     class Config:
         # Pydantic specific configuration
-        env_prefix = 'napari_settings_plugins_'
+        env_prefix = 'napari_'
         title = "Plugin settings"
         use_enum_values = True
 

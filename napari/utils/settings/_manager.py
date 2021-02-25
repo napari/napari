@@ -8,7 +8,7 @@ from appdirs import user_config_dir
 from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
-from napari.utils.settings._defaults import CORE_SETTINGS
+from ..settings import CORE_SETTINGS
 
 
 class SettingsManager:
@@ -37,7 +37,7 @@ class SettingsManager:
     are performed:
 
     - If invalid sections are found, these will be removed from the file.
-    - If invalid keys are found within a valid section,  these will be removed
+    - If invalid keys are found within a valid section, these will be removed
       from the file.
     - If invalid values are found within valid sections and valid keys, these
       will be replaced by the default value provided by `CORE_SETTINGS`
