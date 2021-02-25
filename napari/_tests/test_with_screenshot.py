@@ -203,7 +203,7 @@ def test_changing_image_gamma(make_napari_viewer):
     viewer = make_napari_viewer(show=True)
 
     data = np.ones((20, 20, 20))
-    layer = viewer.add_image(data, contrast_limits=[0, 2])
+    layer = viewer.add_image(data, contrast_limits=[0, 1.99])
 
     screenshot = viewer.screenshot(canvas_only=True)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
