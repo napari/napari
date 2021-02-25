@@ -38,6 +38,7 @@ from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_plugin_sorter import QtPluginSorter
+from .widgets.qt_size_preview import SizeSliderPreviewWidget
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 trans = translator.load()
@@ -388,6 +389,9 @@ class Window:
         exitAction.setMenuRole(QAction.QuitRole)
         exitAction.triggered.connect(quit_app)
 
+        widgetAction = QAction('Show widget...', self._qt_window)
+        widgetAction.triggered.connect(self._show_widget)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
@@ -399,6 +403,17 @@ class Window:
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(exitAction)
+        self.file_menu.addAction(widgetAction)
+
+    def _show_widget(self):
+        widget = SizeSliderPreviewWidget(
+            parent=self._qt_window,
+            description=trans._(
+                "Change the size of the text in Napari's Python Console."
+            ),
+            preview_text=trans._("Here is some sample console text."),
+        )
+        widget.show()
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
