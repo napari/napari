@@ -2,7 +2,6 @@
 """
 import types
 import warnings
-from abc import abstractmethod
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -481,9 +480,23 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """
         return self._slice.loaded
 
-    @abstractmethod
     def _raw_to_displayed(self, raw):
-        """Determine displayed image from raw image."""
+        """Determine displayed image from raw image.
+
+        For normal image layers, just return the actual image.
+
+        Parameters
+        ----------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        image = raw
+        return image
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
@@ -776,21 +789,3 @@ class Image(_ImageBase):
             }
         )
         return state
-
-    def _raw_to_displayed(self, raw):
-        """Determine displayed image from raw image.
-
-        For normal image layers, just return the actual image.
-
-        Parameters
-        ----------
-        raw : array
-            Raw array.
-
-        Returns
-        -------
-        image : array
-            Displayed array.
-        """
-        image = raw
-        return image
