@@ -2,7 +2,7 @@
 """
 import types
 import warnings
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -30,7 +30,7 @@ else:
 # It is important to contain at least one abstractmethod to properly exclude this class
 # in creating NAMES set inside __init__ file of labels module
 # Mixin must come before Layer
-class _ImageBase(IntensityVisualizationMixin, Layer, metaclass=ABCMeta):
+class _ImageBase(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -480,16 +480,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer, metaclass=ABCMeta):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
-
-    @abstractmethod
-    def _get_state(self):
-        """Get dictionary of layer state.
-
-        Returns
-        -------
-        state : dict
-            Dictionary of layer state.
-        """
 
     @abstractmethod
     def _raw_to_displayed(self, raw):
