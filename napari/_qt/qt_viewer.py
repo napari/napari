@@ -39,6 +39,55 @@ from .._vispy import (  # isort:skip
     create_vispy_visual,
 )
 
+from PyQt5.QtCore import pyqtSignal, QObject 
+import rtmidi
+
+def get_port_by_name(port_name, client):
+    for i in range(client.get_port_count()):
+        if port_name == client.get_port_name(i):
+            return client.open_port(i)
+
+    # Report available ports if not found
+    msg = f'Unknown port {port_name}'
+    for i in range (client.get_port_count()):
+        msg += f'\n - {client.get_port_name(i)}'
+    raise Exception(msg)
+
+
+class MidiReceiver(QObject):
+    # Internal signal for handing over MIDI events in thread-safe manner
+    _queue_message = pyqtSignal(int, int, int, int)
+
+    """
+    Qt signal for a received MIDI message. Signature is:
+        int: status
+        int: data1
+        int: data2
+        int: event time in ms
+    """
+    process_message = pyqtSignal(int, int, int, int)
+
+    def __init__(self, midi_in_port):
+        super().__init__()
+        self._midi_in = get_port_by_name(midi_in_port, rtmidi.MidiIn())
+        self._midi_in.set_callback(self._midi_in_callback, self)
+        self._time_ms = 0
+        self._queue_message.connect(self._thread_safe_queue_message, Qt.QueuedConnection)
+
+    def _thread_safe_queue_message(self, status, data1, data2, time):
+        self.process_message.emit(status, data1, data2, time)
+
+    @staticmethod
+    def _midi_in_callback(msg_time_ms_tup, self):
+        self._time_ms += int(msg_time_ms_tup[1] * 1000)
+        msg = msg_time_ms_tup[0]
+        status = msg[0]
+        data1 = msg[1]
+        data2 = msg[2]
+        self._queue_message.emit(status, data1, data2, self._time_ms)
+
+
+
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -89,6 +138,7 @@ class QtViewer(QSplitter):
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        print("we're in init")
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         QCoreApplication.setAttribute(
@@ -213,6 +263,10 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
+        self.midi_control = MidiReceiver('X-TOUCH MINI 0')
+        self.midi_control.process_message.connect(self.viewer.on_midi)
+        
+
     def __getattr__(self, name):
         if name == 'raw_stylesheet':
             import warnings
@@ -241,6 +295,7 @@ class QtViewer(QSplitter):
             size=self.viewer._canvas_size[::-1],
         )
         self.canvas.events.draw.connect(self.dims.enable_play)
+
 
         self.canvas.connect(self.on_mouse_move)
         self.canvas.connect(self.on_mouse_press)

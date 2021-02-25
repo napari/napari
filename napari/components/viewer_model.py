@@ -441,6 +441,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self._on_layers_change(None)
         self._on_grid_change(None)
 
+    def on_midi(self, status, data1, data2, _time_ms):
+        def is_control_change(status):
+            return (status & 0xb0) == 0xb0
+        if is_control_change(status):
+            axis=data1
+            (min_val, max_val, step_size) = self.dims.range[axis]
+            self.dims.set_point(axis,
+                                min_val+(max_val-min_val)*data2/127.0)
+
+            
     def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
 
