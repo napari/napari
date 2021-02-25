@@ -23,12 +23,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari.utils.settings._defaults import (
-    ApplicationSettings,
-    ConsoleSettings,
-    PluginSettings,
-)
-
 from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
@@ -276,6 +270,9 @@ class Window:
         )
         self.window_menu.addSeparator()
 
+        print('settings')
+        SETTINGS.application.events.theme.connect(self._update_theme)
+
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
@@ -421,26 +418,42 @@ class Window:
         """Edit preferences from the menubar."""
         import json
 
-        settings = [ApplicationSettings(), ConsoleSettings(), PluginSettings()]
+        from napari.utils.settings._defaults import (
+            ApplicationSettings,
+            PluginSettings,
+        )
+
+        settings_list = [ApplicationSettings(), PluginSettings()]
         win = PreferencesDialog(parent=self._qt_window)
+        print('0')
+        cnt = 0
+        for key, setting in SETTINGS.schemas().items():
 
-        for setting in settings:
-
-            schema = json.loads(setting.schema_json())
+            if key == 'plugin':
+                continue
+            # setting = SETTINGS.schemas[key]
+            print('1')
+            schema = json.loads(setting['json_schema'])
             # need to remove certain properties that will not be displayed on the GUI
+            print('2')
             properties = schema.pop('properties')
-            values = setting.dict()
-            for val in setting.NapariConfig().preferences_exclude:
+            print('3')
+            values = setting['model'].dict()
+            print('4')
+            for val in settings_list[cnt].NapariConfig().preferences_exclude:
                 properties.pop(val)
                 values.pop(val)
 
+            cnt += 1
             schema['properties'] = properties
-
+            print(schema)
             win.add_page(schema, values)
+
+        print(win._list)
 
         win._list.setCurrentRow(0)
 
-        win.exec_()
+        win.show()
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""

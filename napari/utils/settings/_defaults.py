@@ -34,10 +34,18 @@ class ApplicationSettings(BaseSettings, EventedModel):
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version = (0, 1, 0)
     # Python
-    qt_binding: QtBindingChoice = QtBindingChoice.pyside2
+    qt_binding: str = Field(
+        QtBindingChoice.pyside2,
+        description="Python Qt binding to use with the application.",
+    )
+    # qt_binding: QtBindingChoice = QtBindingChoice.pyside2
     # UI Elements
     highlight_thickness: int = 1
-    theme: ThemeChoice = ThemeChoice.dark
+    # theme: ThemeChoice = ThemeChoice.dark
+
+    theme: str = Field(
+        ThemeChoice.dark, description="Theme to use with the application."
+    )
     # Startup
     opt_in_telemetry: bool = Field(
         False, description="Check to enable telemetry measurements"
@@ -67,7 +75,8 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = [
-            "schema_version" "preferences_size",
+            "schema_version",
+            "preferences_size",
             "first_time",
             "window_position",
             "window_size",

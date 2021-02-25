@@ -1,21 +1,8 @@
-from json import dumps
-
 from qtpy import QtWidgets
 
 from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 
-
-def get_preferences_dialog(schema, values):
-
-    builder = WidgetBuilder()
-
-    form = builder.create_form(schema, {})
-    # set state values for widget
-    form.widget.state = values
-
-    form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
-
-    return form
+from ...utils.settings import SETTINGS
 
 
 class PreferencesDialog(QtWidgets.QDialog):
@@ -71,6 +58,29 @@ class PreferencesDialog(QtWidgets.QDialog):
 
     def add_page(self, schema, ui_schema):
 
-        widget = get_preferences_dialog(schema, ui_schema)
+        widget = self.get_preferences_dialog(schema, ui_schema)
         self._list.addItem(schema["title"])
         self._stack.addWidget(widget)
+
+    def get_preferences_dialog(self, schema, values):
+
+        builder = WidgetBuilder()
+
+        form = builder.create_form(schema, {})
+        # set state values for widget
+        form.widget.state = values
+
+        form.widget.on_changed.connect(lambda d: self.check_differences(d))
+
+        # form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
+
+        return form
+
+    def check_differences(self, d):
+
+        if d['theme'] == 'light':
+            SETTINGS.application.theme = "light"
+            print('theme is light')
+        elif d['theme'] == 'dark':
+            SETTINGS.application.theme = "dark"
+            print('theme is dark')
