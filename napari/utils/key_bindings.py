@@ -303,8 +303,8 @@ class KeymapProvider:
         Instance keymap.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.keymap = {}
 
     def __init_subclass__(cls, **kwargs):

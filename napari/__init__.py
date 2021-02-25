@@ -50,4 +50,5 @@ __all__ = [
     'view_tracks',
     'view_vectors',
     'gui_qt',
+    'run',
 ]

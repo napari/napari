@@ -1,17 +1,4 @@
 """Settings management.
-theme (superseding #943)
-PySide2 vs PyQt5 preference (if both installed)
-window position/geometry
-opt in for telemetry
-font size for console
-monitor DPI (#820)
-call order of plugins (after #937)
-default colormaps or color combinations (as discussed in #619)
-magic-naming for layer (off by default in #1008)
-highlight thickness for shapes / points layers
-dask cache size maximum, and dask fusion settings (#1173 (comment))
-version updates (has user been asked)
-key/mouse bindings
 """
 
 from enum import Enum
@@ -21,19 +8,16 @@ from pydantic import BaseSettings, Field
 
 from napari.utils.events.evented_model import EventedModel
 
-# If a plugin registers a theme, how does it work to do model generation?
-# FIXME: Generating enums on the fly for Themes?
 
-
-class QtBindingEnum(str, Enum):
+class QtBindingChoice(str, Enum):
     """Python Qt binding to use with the application."""
 
-    pyside = 'pyside2'
-    pyqt = 'pyqt5'
+    pyside2 = 'pyside2'
+    pyqt5 = 'pyqt5'
 
 
-class ThemeEnum(str, Enum):
-    """Theme to use with the application."""
+class ThemeChoice(str, Enum):
+    """Application color theme."""
 
     dark = 'dark'
     light = 'light'
@@ -42,24 +26,19 @@ class ThemeEnum(str, Enum):
 class ApplicationSettings(BaseSettings, EventedModel):
     """Main application settings."""
 
-    version = (0, 1, 0)
+    # 1. If you want to *change* the default value of a current option, you need to
+    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+    # 2. If you want to *remove* options that are no longer needed in the codebase,
+    #    or if you want to *rename* options, then you need to do a MAJOR update in
+    #    version, e.g. from 3.0.0 to 4.0.0
+    # 3. You don't need to touch this value if you're just adding a new option
+    schema_version = (0, 1, 0)
     # Python
-    # qt_binding: QtBindingEnum = QtBindingEnum.pyside
-    qt_binding: str = Field(
-        QtBindingEnum.pyside,
-        description="Python Qt binding to use with the application.",
-    )
-    # qt_binding: str = QtBindingEnum.pyside
+    qt_binding: QtBindingChoice = QtBindingChoice.pyside2
     # UI Elements
     highlight_thickness: int = 1
-    # theme: str = ThemeEnum.dark
-    # theme: ThemeEnum = ThemeEnum.dark
-    theme: str = Field(
-        ThemeEnum.dark, description="Theme to use with the application."
-    )
+    theme: ThemeChoice = ThemeChoice.dark
     # Startup
-    # TODO: Make that a date time; so if telemetry ever changes, we can know wether user have accepted before/after?
-    # the change , and/or maybe remind them that we are collecting every year or so?
     opt_in_telemetry: bool = Field(
         False, description="Check to enable telemetry measurements"
     )
@@ -80,7 +59,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
 
     class Config:
         # Pydantic specific configuration
-        env_prefix = 'napari_settings_application_'
+        env_prefix = 'napari_'
         title = "Application settings"
         use_enum_values = True
         validate_all = True
@@ -88,39 +67,23 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class NapariConfig:
         # Napari specific configuration
         preferences_exclude = [
+            "schema_version" "preferences_size",
+            "first_time",
             "window_position",
             "window_size",
             "window_maximized",
             "window_fullscreen",
             "window_state",
-            "first_time",
-            "preferences_size",
-            "version",
         ]
 
 
-class ConsoleSettings(BaseSettings, EventedModel):
-    # version = (0, 1, 0)
-    some_specific_console_config: str = None
-
-    class Config:
-        # Pydantic specific configuration
-        env_prefix = 'napari_settings_console_'
-        title = "Console settings"
-        use_enum_values = True
-
-    class NapariConfig:
-        # Napari specific configuration
-        preferences_exclude = []
-
-
 class PluginSettings(BaseSettings, EventedModel):
-    # version = (0, 1, 0)
+    schema_version = (0, 1, 0)
     plugins_call_order: List[str] = []
 
     class Config:
         # Pydantic specific configuration
-        env_prefix = 'napari_settings_plugins_'
+        env_prefix = 'napari_'
         title = "Plugin settings"
         use_enum_values = True
 
@@ -129,6 +92,4 @@ class PluginSettings(BaseSettings, EventedModel):
         preferences_exclude = []
 
 
-# print(ApplicationSettings().json_schema())
-# print(ConsoleSettings().json_schema())
-# print(PluginSettings().json_schema())
+CORE_SETTINGS = [ApplicationSettings, PluginSettings]
