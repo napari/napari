@@ -6,6 +6,7 @@ could serve to define a window Protocol that a backend would need to implement
 to server as a graphical user interface for napari.
 """
 
+__all__ = ['Window']
 
 try:
     from ._qt import Window
