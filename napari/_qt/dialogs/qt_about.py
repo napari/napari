@@ -94,7 +94,6 @@ class QtAbout(QDialog):
         """
         d = QtAbout(parent)
         d.setObjectName('QtAbout')
-        d.setStyleSheet(qt_viewer.styleSheet())
         d.setWindowTitle('About')
         d.setWindowModality(Qt.ApplicationModal)
         d.exec_()
