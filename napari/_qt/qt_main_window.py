@@ -1081,11 +1081,13 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
-        theme_name = self.qt_viewer.viewer.theme
-        self._qt_window.setStyleSheet(get_stylesheet(theme_name))
-
         if event:
-            SETTINGS.application.theme = event.value
+            value = event.value
+            SETTINGS.application.theme = value
+            self.qt_viewer.viewer.theme = value
+        else:
+            value = self.qt_viewer.viewer.theme
+        self._qt_window.setStyleSheet(get_stylesheet(value))
 
     def _status_changed(self, event):
         """Update status bar.
