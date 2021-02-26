@@ -1490,3 +1490,21 @@ def test_world_data_extent():
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_slice_data():
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+    layer = Points(data)
+    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
+    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 3
+    assert (
+        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
+        == 3
+    )
+    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 1

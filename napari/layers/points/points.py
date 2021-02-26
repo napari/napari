@@ -1516,7 +1516,8 @@ class Points(Layer):
                 return slice_indices, scale
             else:
                 data = self.data[:, not_disp]
-                matches = np.all(data == indices[not_disp], axis=1)
+                distances = np.abs(data - indices[not_disp])
+                matches = np.all(distances < 1e-5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
         else:
