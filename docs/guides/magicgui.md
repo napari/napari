@@ -69,8 +69,8 @@ This is how using the type annotations described below leads to widgets and/or
 
 ```{important}
 All of the type annotations described below *require* that the resulting widget
-be added to a napari viewer (using, e.g., `viewer.window.add_dock_widget`, or
-providing a magicgui-based widget via the {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget` plugin hook specification.)
+be added to a napari viewer (either via `viewer.window.add_dock_widget`, or
+by providing a magicgui-based widget via the {func}`~napari.plugins.hook_specifications.napari_experimental_provide_dock_widget` plugin hook specification).
 ```
 
 ## Parameter Annotations
