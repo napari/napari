@@ -377,7 +377,7 @@ your return type must match your return annotation.
 ### Updating an existing Layer
 
 The default behavior is to add a new layer to the viewer for each
-`LayerDataTuple` returned by a magicgui function. By providing your a unique
+`LayerDataTuple` returned by a magicgui function. By providing a unique
 `name` key in your {attr}`~napari.types.LayerDataTuple` metadata dict, you can
 update an existing layer, rather than creating a new layer each time the
 function is called:
