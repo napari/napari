@@ -506,7 +506,7 @@ widget2 = my_factory(call_button=False, x={'widget_type': 'Slider'})
 
 The other option for using `magicgui` in plugins is to directly subclass
 {class}`magicgui.widgets.FunctionGui` (which is the type that is returned
-by the {func}`@magicgui <magicgui.magicgui>` decorator.)
+by the {func}`@magicgui <magicgui.magicgui>` decorator).
 
 ```python
 from magicgui.widgets import FunctionGui
