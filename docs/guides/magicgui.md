@@ -196,7 +196,7 @@ describing your use case.
 ## Return Annotations
 
 The following napari types may be used as *return* type annotations in `magicgui`
-functions to add layers to napari from your magicgui function. The consequence of
+functions to add layers to napari from your `magicgui` function. The consequence of
 each type is described below:
 
 - any napari {class}`~napari.layers.Layer` type, such as
