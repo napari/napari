@@ -85,7 +85,7 @@ magicgui function. The consequence of each type annotation is described below:
   {attr}`napari.types.ImageData` or  {attr}`napari.types.LabelsData`
 - {class}`napari.Viewer`
 
-### Annotating as a `Layer` subclasses
+### Annotating as a `Layer` subclass
 
 If you annotate one of your function parameters as a
 {class}`~napari.layers.Layer` subclass (such as {class}`~napari.layers.Image` or
