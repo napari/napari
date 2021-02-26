@@ -139,7 +139,11 @@ def test_equality_operator():
     import xarray as xr
     import zarr
 
+    class MyNPArray(np.ndarray):
+        pass
+
     assert pick_equality_operator(np.ones((1, 1))) == np.array_equal
+    assert pick_equality_operator(MyNPArray([1, 1])) == np.array_equal
     assert pick_equality_operator(da.ones((1, 1))) == operator.is_
     assert pick_equality_operator(zarr.ones((1, 1))) == operator.is_
     assert (
