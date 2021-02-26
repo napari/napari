@@ -64,7 +64,7 @@ absense of a type hint, the type of the default value will be used).  Third
 party packages (like `napari` in this case) may provide support for their types
 using
 [`magicgui.register_type`](https://napari.org/magicgui/usage/types_widgets.html#register-type).
-This is how using the type annotations described below lead to widgets and/or
+This is how using the type annotations described below leads to widgets and/or
 "actions" in napari.
 
 ```{important}
