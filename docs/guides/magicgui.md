@@ -410,7 +410,7 @@ nbscreenshot(viewer)
 
 ## Avoid imports with forward references
 
-Sometimes, it is undesireable to import and/or depend on `napari` directly just
+Sometimes, it is undesirable to import and/or depend on `napari` directly just
 to provide type annotations.  It is possible to avoid importing `napari`
 entirely by annotating with the string form of the napari type.  This is called
 a [Forward
