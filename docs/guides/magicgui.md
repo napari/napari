@@ -153,7 +153,7 @@ def my_widget(layer: Layer):
 In the previous example, the object passed to your function will be the actual
 {class}`~napari.layers.Layer` instance, meaning you will need to access any
 attributes (like `layer.data`) on your own.  If your function is designed to
-accept a numpy array, you can use the any of the special `<LayerType>Data` types
+accept a numpy array, you can use any of the special `<LayerType>Data` types
 from {mod}`napari.types` to indicate that you only want the data attribute from
 the layer (where `<LayerType>` is one of the available layer types).  Here's an
 example using {attr}`napari.types.ImageData`
