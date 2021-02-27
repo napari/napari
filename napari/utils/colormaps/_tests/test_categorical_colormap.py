@@ -1,3 +1,4 @@
+import json
 from itertools import cycle
 
 import numpy as np
@@ -124,3 +125,13 @@ def test_categorical_colormap_equality():
 
     # test equality against a different type
     assert cmap_1 != color_cycle
+
+
+def test_categorical_colormap_serialization():
+    color_cycle = [[1, 1, 1, 1], [1, 0, 0, 1]]
+    cmap_1 = CategoricalColormap(fallback_color=color_cycle)
+    cmap_json = cmap_1.json()
+
+    json_dict = json.loads(cmap_json)
+    cmap_2 = CategoricalColormap(**json_dict)
+    assert cmap_1 == cmap_2

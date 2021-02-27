@@ -38,6 +38,19 @@ class CategoricalColormap(EventedModel):
         if isinstance(v, ColorCycle):
             color_cycle = v
         elif isinstance(v, dict):
+            try:
+                color_values = np.asarray(v['values'])
+                v.update({'values': color_values})
+            except KeyError:
+                raise ValueError('fallback_color dict requires a values key.')
+            if 'cycle' not in v:
+                transformed_color_cycle = transform_color_cycle(
+                    color_cycle=color_values,
+                    elem_name='color_cycle',
+                    default="white",
+                )[0]
+                v.update({'cycle': transformed_color_cycle})
+
             color_cycle = ColorCycle(**v)
         else:
             if isinstance(v, str):

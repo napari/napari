@@ -20,6 +20,9 @@ class ColorCycle:
     values: np.ndarray
     cycle: cycle
 
+    def _json_encode(self):
+        return {'values': self.values.tolist()}
+
     def __eq__(self, other):
         if isinstance(other, ColorCycle):
             eq = np.array_equal(self.values, other.values)
