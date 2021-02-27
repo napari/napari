@@ -1,7 +1,13 @@
+import os
 import subprocess
 import sys
 
+import pytest
 
+
+@pytest.mark.skipif(
+    bool(os.environ.get('MIN_REQ')), reason='skip import time test on MIN_REQ'
+)
 def test_import_time(tmp_path):
     cmd = [sys.executable, '-X', 'importtime', '-c', 'import napari']
     proc = subprocess.run(cmd, capture_output=True, check=True)

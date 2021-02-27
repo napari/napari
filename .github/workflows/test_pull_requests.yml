@@ -123,6 +123,7 @@ jobs:
           TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
+          MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'
