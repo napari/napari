@@ -3,7 +3,6 @@ from typing import Any, Dict, Union
 import numpy as np
 from pydantic import validator
 
-from ...layers.utils.color_transformations import transform_color_cycle
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts
@@ -32,41 +31,6 @@ class CategoricalColormap(EventedModel):
     def _standardize_colormap(cls, v):
         transformed_colormap = {k: transform_color(v)[0] for k, v in v.items()}
         return transformed_colormap
-
-    @validator('fallback_color', pre=True)
-    def _standardize_colorcycle(cls, v):
-        if isinstance(v, ColorCycle):
-            color_cycle = v
-        elif isinstance(v, dict):
-            try:
-                color_values = np.asarray(v['values'])
-                v.update({'values': color_values})
-            except KeyError:
-                raise ValueError('fallback_color dict requires a values key.')
-            if 'cycle' not in v:
-                transformed_color_cycle = transform_color_cycle(
-                    color_cycle=color_values,
-                    elem_name='color_cycle',
-                    default="white",
-                )[0]
-                v.update({'cycle': transformed_color_cycle})
-
-            color_cycle = ColorCycle(**v)
-        else:
-            if isinstance(v, str):
-                v = [v]
-            (
-                transformed_color_cycle,
-                transformed_colors,
-            ) = transform_color_cycle(
-                color_cycle=v,
-                elem_name='color_cycle',
-                default="white",
-            )
-            color_cycle = ColorCycle(
-                values=transformed_colors, cycle=transformed_color_cycle
-            )
-        return color_cycle
 
     def map(self, color_properties: Union[list, np.ndarray]) -> np.ndarray:
         """Map an array of values to an array of colors
