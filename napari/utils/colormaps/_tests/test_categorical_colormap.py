@@ -89,7 +89,10 @@ def test_categorical_colormap_from_array():
     np.testing.assert_almost_equal(cmap.fallback_color.values, fallback_colors)
 
 
-color_mapping = {0: np.array([1, 1, 1, 1]), 1: np.array([1, 0, 0, 1])}
+color_mapping = {
+    'typeA': np.array([1, 1, 1, 1]),
+    'typeB': np.array([1, 0, 0, 1]),
+}
 default_fallback_color = np.array([[1, 1, 1, 1]])
 
 
@@ -127,9 +130,16 @@ def test_categorical_colormap_equality():
     assert cmap_1 != color_cycle
 
 
-def test_categorical_colormap_serialization():
-    color_cycle = [[1, 1, 1, 1], [1, 0, 0, 1]]
-    cmap_1 = CategoricalColormap(fallback_color=color_cycle)
+@pytest.mark.parametrize(
+    'params',
+    [
+        {'colormap': color_mapping},
+        {'colormap': color_mapping, 'fallback_color': fallback_colors},
+        {'fallback_color': fallback_colors},
+    ],
+)
+def test_categorical_colormap_serialization(params):
+    cmap_1 = CategoricalColormap(**params)
     cmap_json = cmap_1.json()
 
     json_dict = json.loads(cmap_json)
