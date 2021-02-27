@@ -15,6 +15,12 @@ from ...utils import citation_text, sys_info
 class QtAbout(QDialog):
     """Qt dialog window for displaying 'About napari' information.
 
+    Parameters
+    ----------
+    parent : QWidget, optional
+        Parent of the dialog, to correctly inherit and apply theme.
+        Default is None.
+
     Attributes
     ----------
     citationCopyButton : napari._qt.qt_about.QtCopyToClipboardButton
@@ -33,8 +39,8 @@ class QtAbout(QDialog):
         Layout widget for the entire 'About napari' dialog.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.layout = QVBoxLayout()
 
@@ -75,17 +81,19 @@ class QtAbout(QDialog):
         self.setLayout(self.layout)
 
     @staticmethod
-    def showAbout(qt_viewer):
+    def showAbout(qt_viewer, parent=None):
         """Display the 'About napari' dialog box.
 
         Parameters
         ----------
         qt_viewer : QtViewer
             QtViewer instance that the `About napari` dialog box belongs to.
+        parent : QWidget, optional
+            Parent of the dialog, to correctly inherit and apply theme.
+            Default is None.
         """
-        d = QtAbout()
+        d = QtAbout(parent)
         d.setObjectName('QtAbout')
-        d.setStyleSheet(qt_viewer.styleSheet())
         d.setWindowTitle('About')
         d.setWindowModality(Qt.ApplicationModal)
         d.exec_()

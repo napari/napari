@@ -54,6 +54,9 @@ def make_napari_viewer(_strict_qtbot, request):
     ...     assert len(viewer.layers) == 1
     """
     from napari import Viewer
+    from napari.utils.settings import SETTINGS
+
+    SETTINGS.reset()
 
     viewers: List[Viewer] = []
 
@@ -69,3 +72,5 @@ def make_napari_viewer(_strict_qtbot, request):
 
     for viewer in viewers:
         viewer.close()
+
+    SETTINGS.reset()

@@ -11,8 +11,8 @@ class MousemapProvider:
         Callbacks from when mouse wheel is scrolled.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
