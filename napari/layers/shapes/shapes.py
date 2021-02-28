@@ -2134,6 +2134,14 @@ class Shapes(Layer):
         data_full : array
             Full D dimensional data array of the shape.
         """
+        warnings.warn(
+            "expand_shape is deprecated and will be removed in version 0.4.8."
+            " It should no longer be used as layers should will soon not know"
+            " which dimensions are displayed.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+
         if self.ndim == 2:
             data_full = data[:, self._dims_displayed_order]
         else:

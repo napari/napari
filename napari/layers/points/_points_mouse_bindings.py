@@ -56,7 +56,7 @@ def select(layer, event):
             layer._is_selecting = True
             if layer._drag_start is None:
                 layer._drag_start = coord
-            layer._drag_box = np.array([coord, coord])
+            layer._drag_box = np.array([layer._drag_start, coord])
             layer._set_highlight()
         yield
 

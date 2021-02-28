@@ -79,8 +79,12 @@ def select(layer, event):
 def add_line(layer, event):
     """Add a line."""
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
-    data = np.array([corner, corner + size])
+    full_size = np.zeros(layer.ndim, dtype=float)
+    for i in layer._dims_displayed:
+        full_size[i] = size
+
+    corner = np.array(layer.coordinates)
+    data = np.array([corner, corner + full_size])
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
     )
@@ -89,9 +93,14 @@ def add_line(layer, event):
 def add_ellipse(layer, event):
     """Add an ellipse."""
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
+    size_h = np.zeros(layer.ndim, dtype=float)
+    size_h[layer._dims_displayed[0]] = size
+    size_v = np.zeros(layer.ndim, dtype=float)
+    size_v[layer._dims_displayed[1]] = size
+
+    corner = np.array(layer.coordinates)
     data = np.array(
-        [corner, corner + [size, 0], corner + size, corner + [0, size]]
+        [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
     )
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='ellipse'
@@ -99,12 +108,18 @@ def add_ellipse(layer, event):
 
 
 def add_rectangle(layer, event):
-    """Add an rectangle."""
+    """Add a rectangle."""
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
+    size_h = np.zeros(layer.ndim, dtype=float)
+    size_h[layer._dims_displayed[0]] = size
+    size_v = np.zeros(layer.ndim, dtype=float)
+    size_v[layer._dims_displayed[1]] = size
+
+    corner = np.array(layer.coordinates)
     data = np.array(
-        [corner, corner + [size, 0], corner + size, corner + [0, size]]
+        [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
     )
+
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='rectangle'
     )
@@ -115,8 +130,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
 
     # on press
     # Start drawing rectangle / ellipse / line
-    data_full = layer.expand_shape(data)
-    layer.add(data_full, shape_type=shape_type)
+    layer.add(data, shape_type=shape_type)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 4)
     layer._moving_value = copy(layer._value)
