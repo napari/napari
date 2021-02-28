@@ -44,9 +44,9 @@ def select(layer, event):
     while event.type == 'mouse_move':
         # Drag any selected shapes
         if len(layer.selected_data) == 0:
-            _drag_selection_box(layer, layer.displayed_coordinates)
+            _drag_selection_box(layer, layer.coordinates)
         else:
-            _move(layer, layer.displayed_coordinates)
+            _move(layer, layer.coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -126,7 +126,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        _move(layer, layer.displayed_coordinates)
+        _move(layer, layer.coordinates)
         yield
 
     # on release
@@ -170,7 +170,7 @@ def add_path_polygon(layer, event):
 def add_path_polygon_creating(layer, event):
     """While a path or polygon move next vertex to be added."""
     if layer._is_creating:
-        _move(layer, layer.displayed_coordinates)
+        _move(layer, layer.coordinates)
 
 
 def vertex_insert(layer, event):
@@ -299,19 +299,21 @@ def vertex_remove(layer, event):
     layer.refresh()
 
 
-def _drag_selection_box(layer, coord):
+def _drag_selection_box(layer, coordinates):
     """Drag a selection box.
 
     Parameters
     ----------
     layer : napari.layers.Shapes
         Shapes layer.
-    coord : sequence of two int
-        Position of mouse cursor in image coordinates.
+    coordinates : tuple
+        Position of mouse cursor in data coordinates.
     """
     # If something selected return
     if len(layer.selected_data) > 0:
         return
+
+    coord = [coordinates[i] for i in layer._dims_displayed]
 
     # Create or extend a selection box
     layer._is_selecting = True
@@ -321,21 +323,23 @@ def _drag_selection_box(layer, coord):
     layer._set_highlight()
 
 
-def _move(layer, coord):
+def _move(layer, coordinates):
     """Moves object at given mouse position and set of indices.
 
     Parameters
     ----------
     layer : napari.layers.Shapes
         Shapes layer.
-    coord : sequence of two int
-        Position of mouse cursor in image coordinates.
+    coordinates : tuple
+        Position of mouse cursor in data coordinates.
     """
     # If nothing selected return
     if len(layer.selected_data) == 0:
         return
 
+    coord = [coordinates[i] for i in layer._dims_displayed]
     vertex = layer._moving_value[1]
+
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
