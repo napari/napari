@@ -17,6 +17,7 @@ from typing import Any, Dict, List
 from . import __version__, layers, run, view_path
 from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
+from .utils.settings import SETTINGS
 
 
 class InfoAction(argparse.Action):
@@ -185,6 +186,11 @@ def _run():
             f'one of {set(layers.NAMES)}'
         ),
     )
+    parser.add_argument(
+        '--reset',
+        action='store_true',
+        help='reset settings to default values.',
+    )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -202,6 +208,10 @@ def _run():
         format="%(asctime)s %(levelname)s %(message)s",
         datefmt='%H:%M:%S',
     )
+
+    if args.reset:
+        SETTINGS.reset()
+        sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:
         # make sure plugin is only used when files are specified

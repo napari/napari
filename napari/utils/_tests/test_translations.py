@@ -15,6 +15,7 @@ from napari.utils.translations import (
 TEST_LOCALE = "es_CO"
 HERE = Path(__file__).parent
 TEST_LANGUAGE_PACK_PATH = HERE / "napari-language-pack-es_CO"
+PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 es_CO_po = r"""msgid ""
@@ -146,29 +147,31 @@ def test_locale_n_runs(trans):
     assert result == plural
 
 
-@pytest.mark.skipif(
-    sys.platform == "linux" and sys.version_info[:2] == (3, 7),
-    reason="On ubuntu and python3.7 is failing, seems to be CI only",
-)
 def test_locale_p_runs(trans):
-    print(sys.version_info)
     # Test context singular method
     context = "context"
     string = "MORE ABOUT NAPARI"
+    py37_result = "Más sobre napari"
     result = trans.pgettext(context, string)
-    assert result == string
+
+    # Python 3.7 or lower does not offer translations based on context
+    # so pgettext, or npgettext are not available. We fallback to the
+    # singular and plural versions without context. For these cases:
+    # `pgettext` falls back to `gettext` and `npgettext` to `gettext`
+    if PY37_OR_LOWER:
+        assert result == py37_result
+    else:
+        assert result == string
 
     # Test context singular method shorthand
     result = trans._p(context, string)
-    assert result == string
+    if PY37_OR_LOWER:
+        assert result == py37_result
+    else:
+        assert result == string
 
 
-@pytest.mark.skipif(
-    sys.platform == "linux" and sys.version_info[:2] == (3, 7),
-    reason="On ubuntu and python3.7 is failing, seems to be CI only",
-)
 def test_locale_np_runs(trans):
-    print(sys.version_info)
     # Test plural context method
     n = 2
     context = "context"

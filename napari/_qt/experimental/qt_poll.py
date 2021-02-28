@@ -57,8 +57,12 @@ class QtPoll(QObject):
         self._interval = IntervalTimer()
 
     def on_camera(self, _event) -> None:
-        """Called when camera view changes at all."""
-        self.wake_up()
+        """Called when camera view changes."""
+        # When the mouse button is down and the camera is being zoomed
+        # or panned, timer events are starved out. So we call poll
+        # explicitly here. It will start the timer if needed so that
+        # polling can continue even after the camera stops moving.
+        self._poll()
 
     def wake_up(self, _event=None) -> None:
         """Wake up QtPoll so it starts polling."""
@@ -78,7 +82,14 @@ class QtPoll(QObject):
 
     def _poll(self) -> None:
         """Called on camera move or with the timer."""
-        # Listeners might include visuals and the monitor.
+
+        # Between timers and camera and wake_up() we might be called multiple
+        # times in quick succession. Use an IntervalTimer to ignore these
+        # near-duplicate calls.
+        if self._interval.elapsed_ms < IGNORE_INTERVAL_MS:
+            return
+
+        # Poll all listeners.
         event = self.events.poll()
 
         # Listeners will "handle" the event if they need more polling. If

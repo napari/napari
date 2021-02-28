@@ -1,11 +1,11 @@
 import os
 import sys
 from pathlib import Path
-from typing import List
+from typing import Sequence
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
-from qtpy.QtCore import QProcess, QProcessEnvironment, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QProcess, QProcessEnvironment, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPushButton,
@@ -76,7 +77,7 @@ class Installer:
             text = self.process.readAllStandardOutput().data().decode()
             self._output_widget.append(text)
 
-    def install(self, pkg_list: List[str]):
+    def install(self, pkg_list: Sequence[str]):
         cmd = ['-m', 'pip', 'install', '--upgrade']
         if running_as_bundled_app() and sys.platform.startswith('linux'):
             cmd += [
@@ -84,14 +85,14 @@ class Installer:
                 '--prefix',
                 user_plugin_dir(),
             ]
-        self.process.setArguments(cmd + pkg_list)
+        self.process.setArguments(cmd + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
         self.process.start()
 
-    def uninstall(self, pkg_list: List[str]):
+    def uninstall(self, pkg_list: Sequence[str]):
         args = ['-m', 'pip', 'uninstall', '-y']
-        self.process.setArguments(args + pkg_list)
+        self.process.setArguments(args + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
         self.process.start()
@@ -390,6 +391,9 @@ class QtPluginDialog(QDialog):
 
         buttonBox = QHBoxLayout()
         self.working_indicator = QLabel("loading ...", self)
+        sp = self.working_indicator.sizePolicy()
+        sp.setRetainSizeWhenHidden(True)
+        self.working_indicator.setSizePolicy(sp)
         self.process_error_indicator = QLabel(self)
         self.process_error_indicator.setObjectName("error_label")
         self.process_error_indicator.hide()
@@ -398,6 +402,15 @@ class QtPluginDialog(QDialog):
         mov.setScaledSize(QSize(18, 18))
         self.working_indicator.setMovie(mov)
         mov.start()
+
+        self.direct_entry_edit = QLineEdit(self)
+        self.direct_entry_edit.installEventFilter(self)
+        self.direct_entry_edit.setPlaceholderText(
+            'install by name/url, or drop file...'
+        )
+        self.direct_entry_btn = QPushButton("Install", self)
+        self.direct_entry_btn.clicked.connect(self._install_packages)
+
         self.show_status_btn = QPushButton("Show Status", self)
         self.show_status_btn.setFixedWidth(100)
         self.show_sorter_btn = QPushButton("<< Show Sorter", self)
@@ -405,8 +418,10 @@ class QtPluginDialog(QDialog):
         self.close_btn.clicked.connect(self.reject)
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
+        buttonBox.addWidget(self.direct_entry_edit)
+        buttonBox.addWidget(self.direct_entry_btn)
         buttonBox.addWidget(self.process_error_indicator)
-        buttonBox.addStretch()
+        buttonBox.addSpacing(60)
         buttonBox.addWidget(self.show_sorter_btn)
         buttonBox.addWidget(self.close_btn)
         buttonBox.setContentsMargins(0, 0, 4, 0)
@@ -423,6 +438,19 @@ class QtPluginDialog(QDialog):
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
 
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.DragEnter:
+            # we need to accept this event explicitly to be able
+            # to receive QDropEvents!
+            event.accept()
+        if event.type() == QEvent.Drop:
+            md = event.mimeData()
+            if md.hasUrls():
+                files = [url.toLocalFile() for url in md.urls()]
+                self.direct_entry_edit.setText(files[0])
+                return True
+        return super().eventFilter(watched, event)
+
     def _toggle_sorter(self, show):
         if show:
             self.show_sorter_btn.setText(">> Hide Sorter")
@@ -438,6 +466,17 @@ class QtPluginDialog(QDialog):
         else:
             self.show_status_btn.setText("Show Status")
             self.stdout_text.hide()
+
+    def _install_packages(self, packages: Sequence[str] = ()):
+        if not packages:
+            _packages = self.direct_entry_edit.text()
+            if os.path.exists(_packages):
+                packages = [_packages]
+            else:
+                packages = _packages.split()
+            self.direct_entry_edit.clear()
+        if packages:
+            self.installer.install(packages)
 
 
 if __name__ == "__main__":
