@@ -437,7 +437,11 @@ def test_contour(input_data, expected_data_view):
     # Check what is returned in the view of the data
     np.testing.assert_array_equal(
         layer._data_view,
-        np.where(input_data > 0, low_discrepancy_image(expected_data_view), 0),
+        np.where(
+            expected_data_view > 0,
+            low_discrepancy_image(expected_data_view),
+            0,
+        ),
     )
 
     # Check the view of the data changed after setting the contour
