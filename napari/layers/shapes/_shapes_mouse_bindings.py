@@ -115,8 +115,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
 
     # on press
     # Start drawing rectangle / ellipse / line
-    # data_full = layer.expand_shape(data)
-    data_full = data
+    data_full = layer.expand_shape(data)
     layer.add(data_full, shape_type=shape_type)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 4)
