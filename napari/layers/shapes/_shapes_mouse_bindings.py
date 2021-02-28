@@ -227,9 +227,7 @@ def vertex_insert(layer, event):
     else:
         new_type = None
     closed = shape_type != Path
-    vertices = layer._data_view.displayed_vertices[
-        layer._data_view.displayed_index == index
-    ]
+    vertices = layer._data_view.shapes[index].data
     if not closed:
         if int(ind) == 1 and loc < 0:
             ind = 0
@@ -237,10 +235,9 @@ def vertex_insert(layer, event):
             ind = ind + 1
 
     # Insert new vertex at appropriate place in vertices of target shape
-    vertices = np.insert(vertices, ind, [layer.displayed_coordinates], axis=0)
+    vertices = np.insert(vertices, ind, [layer.coordinates], axis=0)
     with layer.events.set_data.blocker():
-        data_full = layer.expand_shape(vertices)
-        layer._data_view.edit(index, data_full, new_type=new_type)
+        layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
     layer.refresh()
 
