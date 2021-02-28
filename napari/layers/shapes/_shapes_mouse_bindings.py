@@ -208,7 +208,8 @@ def vertex_insert(layer, event):
         return
 
     # Determine the closet edge to the current cursor coordinate
-    ind, loc = point_to_lines(layer.displayed_coordinates, all_edges)
+    coord = [layer.coordinates[i] for i in layer._dims_displayed]
+    ind, loc = point_to_lines(coord, all_edges)
     index = all_edges_shape[ind][0]
     ind = all_edges_shape[ind][1] + 1
     shape_type = type(layer._data_view.shapes[index])
@@ -253,9 +254,7 @@ def vertex_remove(layer, event):
     if shape_type == Ellipse:
         # Removing vertex from ellipse not implemented
         return
-    vertices = layer._data_view.displayed_vertices[
-        layer._data_view.displayed_index == shape_under_cursor
-    ]
+    vertices = layer._data_view.shapes[shape_under_cursor].data
     if len(vertices) <= 2:
         # If only 2 vertices present, remove whole shape
         with layer.events.set_data.blocker():
@@ -281,9 +280,8 @@ def vertex_remove(layer, event):
         # Remove clicked on vertex
         vertices = np.delete(vertices, vertex_under_cursor, axis=0)
         with layer.events.set_data.blocker():
-            data_full = layer.expand_shape(vertices)
             layer._data_view.edit(
-                shape_under_cursor, data_full, new_type=new_type
+                shape_under_cursor, vertices, new_type=new_type
             )
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
@@ -328,12 +326,12 @@ def _move(layer, coordinates):
     if len(layer.selected_data) == 0:
         return
 
-    coord = [coordinates[i] for i in layer._dims_displayed]
     vertex = layer._moving_value[1]
 
     if layer._mode in (
         [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
     ):
+        coord = [coordinates[i] for i in layer._dims_displayed]
         layer._is_moving = True
         if vertex is None:
             # Check where dragging box from to move whole object
@@ -467,11 +465,9 @@ def _move(layer, coordinates):
                     new_type = Polygon
                 else:
                     new_type = None
-                indices = layer._data_view.displayed_index == index
-                vertices = layer._data_view.displayed_vertices[indices]
-                vertices[vertex] = coord
-                data_full = layer.expand_shape(vertices)
-                layer._data_view.edit(index, data_full, new_type=new_type)
+                vertices = layer._data_view.shapes[index].data
+                vertices[vertex] = coordinates
+                layer._data_view.edit(index, vertices, new_type=new_type)
                 shapes = layer.selected_data
                 layer._selected_box = layer.interaction_box(shapes)
                 layer.refresh()
