@@ -2,7 +2,7 @@ from copy import copy
 
 import numpy as np
 
-from ._shapes_constants import Mode
+from ._shapes_constants import Box, Mode
 from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
@@ -43,7 +43,10 @@ def select(layer, event):
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        layer._move(layer.displayed_coordinates)
+        if len(layer.selected_data) == 0:
+            _drag_selection_box(layer, layer.displayed_coordinates)
+        else:
+            _move(layer, layer.displayed_coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -75,9 +78,16 @@ def select(layer, event):
 
 def add_line(layer, event):
     """Add a line."""
-    size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(layer.displayed_coordinates)
+    size = 0  # layer._vertex_size * layer.scale_factor / 4
+    # Size offset should only be inside plane of current view ... otherwise not goood .....
+    # Need to fix!!!!!!
+    corner_old = np.array(layer.displayed_coordinates)
+    corner = np.array(layer.coordinates)
+    print('pp', corner_old, corner)
     data = np.array([corner, corner + size])
+    data_old = np.array([corner_old, corner_old + size])
+    data_full = layer.expand_shape(data_old)
+    print('a', data - data_full)
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
     )
@@ -112,7 +122,8 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
 
     # on press
     # Start drawing rectangle / ellipse / line
-    data_full = layer.expand_shape(data)
+    # data_full = layer.expand_shape(data)
+    data_full = data
     layer.add(data_full, shape_type=shape_type)
     layer.selected_data = {layer.nshapes - 1}
     layer._value = (layer.nshapes - 1, 4)
@@ -123,7 +134,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        layer._move(layer.displayed_coordinates)
+        _move(layer, layer.displayed_coordinates)
         yield
 
     # on release
@@ -167,7 +178,7 @@ def add_path_polygon(layer, event):
 def add_path_polygon_creating(layer, event):
     """While a path or polygon move next vertex to be added."""
     if layer._is_creating:
-        layer._move(layer.displayed_coordinates)
+        _move(layer, layer.displayed_coordinates)
 
 
 def vertex_insert(layer, event):
@@ -294,3 +305,201 @@ def vertex_remove(layer, event):
             shapes = layer.selected_data
             layer._selected_box = layer.interaction_box(shapes)
     layer.refresh()
+
+
+def _drag_selection_box(layer, coord):
+    """Drag a selection box.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        Shapes layer.
+    coord : sequence of two int
+        Position of mouse cursor in image coordinates.
+    """
+    layer._is_selecting = True
+    if layer._drag_start is None:
+        layer._drag_start = coord
+    layer._drag_box = np.array([layer._drag_start, coord])
+    layer._set_highlight()
+
+
+def _move(layer, coord):
+    """Moves object at given mouse position and set of indices.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        Shapes layer.
+    coord : sequence of two int
+        Position of mouse cursor in image coordinates.
+    """
+    vertex = layer._moving_value[1]
+    if layer._mode in (
+        [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
+    ):
+        if len(layer.selected_data) > 0:
+            layer._is_moving = True
+            if vertex is None:
+                # Check where dragging box from to move whole object
+                if layer._drag_start is None:
+                    center = layer._selected_box[Box.CENTER]
+                    layer._drag_start = coord - center
+                center = layer._selected_box[Box.CENTER]
+                shift = coord - center - layer._drag_start
+                for index in layer.selected_data:
+                    layer._data_view.shift(index, shift)
+                layer._selected_box = layer._selected_box + shift
+                layer.refresh()
+            elif vertex < Box.LEN:
+                # Corner / edge vertex is being dragged so resize object
+                box = layer._selected_box
+                if layer._fixed_vertex is None:
+                    layer._fixed_index = (vertex + 4) % Box.LEN
+                    layer._fixed_vertex = box[layer._fixed_index]
+
+                size = (
+                    box[(layer._fixed_index + 4) % Box.LEN]
+                    - box[layer._fixed_index]
+                )
+                offset = box[Box.HANDLE] - box[Box.CENTER]
+                if np.linalg.norm(offset) > 0:
+                    offset = offset / np.linalg.norm(offset)
+                offset_perp = np.array([offset[1], -offset[0]])
+
+                fixed = layer._fixed_vertex
+                new = list(coord)
+
+                if layer._fixed_aspect and layer._fixed_index % 2 == 0:
+                    if (new - fixed)[0] == 0:
+                        ratio = 1
+                    else:
+                        ratio = abs((new - fixed)[1] / (new - fixed)[0])
+                    if ratio > layer._aspect_ratio:
+                        r = layer._aspect_ratio / ratio
+                        new[1] = fixed[1] + (new[1] - fixed[1]) * r
+                    else:
+                        r = ratio / layer._aspect_ratio
+                        new[0] = fixed[0] + (new[0] - fixed[0]) * r
+
+                if size @ offset == 0:
+                    dist = 1
+                else:
+                    dist = ((new - fixed) @ offset) / (size @ offset)
+
+                if size @ offset_perp == 0:
+                    dist_perp = 1
+                else:
+                    dist_perp = ((new - fixed) @ offset_perp) / (
+                        size @ offset_perp
+                    )
+
+                if layer._fixed_index % 2 == 0:
+                    # corner selected
+                    scale = np.array([dist_perp, dist])
+                elif layer._fixed_index % 4 == 3:
+                    # top selected
+                    scale = np.array([1, dist])
+                else:
+                    # side selected
+                    scale = np.array([dist_perp, 1])
+
+                # prevent box from shrinking below a threshold size
+                threshold = layer._vertex_size * layer.scale_factor / 8
+                scale[abs(scale * size[[1, 0]]) < threshold] = 1
+
+                # check orientation of box
+                angle = -np.arctan2(offset[0], -offset[1])
+                c, s = np.cos(angle), np.sin(angle)
+                if angle == 0:
+                    for index in layer.selected_data:
+                        layer._data_view.scale(
+                            index, scale, center=layer._fixed_vertex
+                        )
+                    layer._scale_box(scale, center=layer._fixed_vertex)
+                else:
+                    rotation = np.array([[c, s], [-s, c]])
+                    scale_mat = np.array([[scale[0], 0], [0, scale[1]]])
+                    inv_rot = np.array([[c, -s], [s, c]])
+                    transform = rotation @ scale_mat @ inv_rot
+                    for index in layer.selected_data:
+                        layer._data_view.shift(index, -layer._fixed_vertex)
+                        layer._data_view.transform(index, transform)
+                        layer._data_view.shift(index, layer._fixed_vertex)
+                    layer._transform_box(transform, center=layer._fixed_vertex)
+                layer.refresh()
+            elif vertex == 8:
+                # Rotation handle is being dragged so rotate object
+                handle = layer._selected_box[Box.HANDLE]
+                if layer._drag_start is None:
+                    layer._fixed_vertex = layer._selected_box[Box.CENTER]
+                    offset = handle - layer._fixed_vertex
+                    layer._drag_start = -np.degrees(
+                        np.arctan2(offset[0], -offset[1])
+                    )
+
+                new_offset = coord - layer._fixed_vertex
+                new_angle = -np.degrees(
+                    np.arctan2(new_offset[0], -new_offset[1])
+                )
+                fixed_offset = handle - layer._fixed_vertex
+                fixed_angle = -np.degrees(
+                    np.arctan2(fixed_offset[0], -fixed_offset[1])
+                )
+
+                if np.linalg.norm(new_offset) < 1:
+                    angle = 0
+                elif layer._fixed_aspect:
+                    angle = np.round(new_angle / 45) * 45 - fixed_angle
+                else:
+                    angle = new_angle - fixed_angle
+
+                for index in layer.selected_data:
+                    layer._data_view.rotate(
+                        index, angle, center=layer._fixed_vertex
+                    )
+                layer._rotate_box(angle, center=layer._fixed_vertex)
+                layer.refresh()
+        else:
+            layer._is_selecting = True
+            if layer._drag_start is None:
+                layer._drag_start = coord
+            layer._drag_box = np.array([layer._drag_start, coord])
+            layer._set_highlight()
+    elif layer._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
+        if len(layer.selected_data) > 0:
+            if vertex is not None:
+                layer._is_moving = True
+                index = layer._moving_value[0]
+                shape_type = type(layer._data_view.shapes[index])
+                if shape_type == Ellipse:
+                    # DIRECT vertex moving of ellipse not implemented
+                    pass
+                else:
+                    if shape_type == Rectangle:
+                        new_type = Polygon
+                    else:
+                        new_type = None
+                    indices = layer._data_view.displayed_index == index
+                    vertices = layer._data_view.displayed_vertices[indices]
+                    vertices[vertex] = coord
+                    data_full = layer.expand_shape(vertices)
+                    layer._data_view.edit(index, data_full, new_type=new_type)
+                    shapes = layer.selected_data
+                    layer._selected_box = layer.interaction_box(shapes)
+                    layer.refresh()
+        else:
+            layer._is_selecting = True
+            if layer._drag_start is None:
+                layer._drag_start = coord
+            layer._drag_box = np.array([layer._drag_start, coord])
+            layer._set_highlight()
+    elif layer._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
+        if len(layer.selected_data) > 0:
+            pass
+        else:
+            layer._is_selecting = True
+            if layer._drag_start is None:
+                layer._drag_start = coord
+            layer._drag_box = np.array([layer._drag_start, coord])
+            layer._set_highlight()
