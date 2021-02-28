@@ -135,14 +135,11 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
 
 def add_path_polygon(layer, event):
     """Add a path or polygon."""
-    coord = layer.displayed_coordinates
-
     # on press
     if layer._is_creating is False:
         # Start drawing a path
-        data = np.array([coord, coord])
-        data_full = layer.expand_shape(data)
-        layer.add(data_full, shape_type='path')
+        data = np.array([layer.coordinates, layer.coordinates])
+        layer.add(data, shape_type='path')
         layer.selected_data = {layer.nshapes - 1}
         layer._value = (layer.nshapes - 1, 1)
         layer._moving_value = copy(layer._value)
@@ -155,15 +152,12 @@ def add_path_polygon(layer, event):
             new_type = Polygon
         else:
             new_type = None
-        vertices = layer._data_view.displayed_vertices[
-            layer._data_view.displayed_index == index
-        ]
-        vertices = np.concatenate((vertices, [coord]), axis=0)
+        vertices = layer._data_view.shapes[index].data
+        vertices = np.concatenate((vertices, [layer.coordinates]), axis=0)
         # Change the selected vertex
         layer._value = (layer._value[0], layer._value[1] + 1)
         layer._moving_value = copy(layer._value)
-        data_full = layer.expand_shape(vertices)
-        layer._data_view.edit(index, data_full, new_type=new_type)
+        layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
 
 
