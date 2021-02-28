@@ -90,7 +90,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.setSingleStep(1)
         self.selectionSpinBox.setMinimum(0)
-        self.selectionSpinBox.setMaximum(2147483647)
+        self.selectionSpinBox.setMaximum(1024)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()

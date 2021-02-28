@@ -1,3 +1,4 @@
+import warnings
 from collections import deque
 from typing import Dict, Union
 
@@ -665,7 +666,7 @@ class Labels(_ImageBase):
         else:
             raise ValueError("Unsupported Color Mode")
 
-        if self.contour > 0:
+        if self.contour > 0 and raw.ndim == 2:
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
             thickness = self.contour
@@ -679,6 +680,8 @@ class Labels(_ImageBase):
             image = np.where(
                 image > 0, low_discrepancy_image(image, self._seed), 0
             )
+        elif self.contour > 0 and raw.ndim > 2:
+            warnings.warn("Contours are not displayed during 3D rendering")
 
         return image
 

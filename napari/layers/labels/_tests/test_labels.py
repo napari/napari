@@ -420,7 +420,7 @@ def test_n_dimensional():
 def test_contour(input_data, expected_data_view):
     """Test changing contour."""
     layer = Labels(input_data)
-    assert layer.contour is False
+    assert layer.contour == 0
     np.testing.assert_array_equal(layer.data, input_data)
 
     np.testing.assert_array_equal(
@@ -428,8 +428,8 @@ def test_contour(input_data, expected_data_view):
     )
     data_view_before_contour = layer._data_view.copy()
 
-    layer.contour = True
-    assert layer.contour is True
+    layer.contour = 1
+    assert layer.contour == 1
 
     # Check `layer.data` didn't change
     np.testing.assert_array_equal(layer.data, input_data)
@@ -446,8 +446,8 @@ def test_contour(input_data, expected_data_view):
             data_view_before_contour, layer._data_view
         )
 
-    layer.contour = False
-    assert layer.contour is False
+    layer.contour = 0
+    assert layer.contour == 0
 
     # Check it's in the same state as before setting the contour
     np.testing.assert_array_equal(
