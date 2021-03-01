@@ -686,11 +686,6 @@ class Points(Layer):
         self.events.edge_width()
 
     @property
-    def edge(self) -> ColorManager:
-        """The ColorManager object that coordinates the edge color of each point"""
-        return self._edge
-
-    @property
     def edge_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each point"""
         return self._edge.colors
@@ -780,11 +775,6 @@ class Points(Layer):
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
         self._set_color_mode(edge_color_mode, 'edge')
-
-    @property
-    def face(self) -> ColorManager:
-        """The ColorManager object that coordinates the face color of each point"""
-        return self._face
 
     @property
     def face_color(self) -> np.ndarray:
