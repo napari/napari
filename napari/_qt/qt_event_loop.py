@@ -135,14 +135,9 @@ def get_app(
 
         if os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False'):
 
-            app.arena = []
-
-            def show_notification(*args, **kwargs):
-                notif = NapariQtNotification.from_notification(*args, **kwargs)
-                notif.show()
-                app.arena.append(notif)
-
-            notification_manager.notification_ready.connect(show_notification)
+            notification_manager.notification_ready.connect(
+                NapariQtNotification
+            )
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.

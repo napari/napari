@@ -176,8 +176,6 @@ class NotificationManager:
             sys.__excepthook__(exctype, value, traceback)
             sys.exit("Exit on error")
         try:
-            # if self._originals_except_hooks:
-            #    self._originals_except_hooks[-1](exctype, value, traceback)
             self.dispatch(Notification.from_exception(value))
         except Exception:
             pass

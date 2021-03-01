@@ -322,3 +322,7 @@ class NapariQtNotification(QDialog):
             severity=notification.severity,
             source=notification.source,
         )
+
+    @classmethod
+    def show_notification(cls, notification):
+        cls.from_notification(notification).show()
