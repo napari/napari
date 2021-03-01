@@ -5,7 +5,6 @@ import sys
 import warnings
 from datetime import datetime
 from enum import auto
-from time import time
 from types import TracebackType
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
@@ -40,7 +39,7 @@ class Notification(Event):
     ----------
     message : str
         The main message/payload of the notification.
-    severity :  str or NotificationSeverity, optional
+    severity : str or NotificationSeverity, optional
         The severity of the notification, by default
         `NotificationSeverity.WARNING`.
     actions : sequence of tuple, optional
@@ -55,6 +54,7 @@ class Notification(Event):
         A native backend event that may have triggered this Notification,
         by default None
     """
+
     def __init__(
         self,
         message: str,
@@ -69,18 +69,13 @@ class Notification(Event):
     ):
 
         super().__init__(type, **kwargs)
-        self._time = time()
         self.message = message
         self.severity = NotificationSeverity(severity)
         # self.source = source  # TODO
         self.actions = actions
 
         # let's store when the object was created;
-        self._date = datetime.now()
-
-    @property
-    def time(self):
-        return self._time
+        self.date = datetime.now()
 
     @classmethod
     def from_exception(cls, exc: BaseException, **kwargs) -> 'Notification':
