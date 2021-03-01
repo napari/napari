@@ -74,7 +74,7 @@ class ColorManager(EventedModel):
 
     # fields
     current_color: Optional[Array[float, (4,)]] = None
-    mode: ColorMode = ColorMode.DIRECT
+    color_mode: ColorMode = ColorMode.DIRECT
     color_properties: Optional[ColorProperties] = None
     continuous_colormap: Colormap = 'viridis'
     contrast_limits: Optional[Tuple[float, float]] = None
@@ -142,7 +142,7 @@ class ColorManager(EventedModel):
 
     @root_validator()
     def _validate_colors(cls, values):
-        color_mode = values['mode']
+        color_mode = values['color_mode']
         if color_mode == ColorMode.CYCLE:
             colors, values = _validate_cycle_mode(values)
         elif color_mode == ColorMode.COLORMAP:
@@ -191,9 +191,9 @@ class ColorManager(EventedModel):
                 current_value=np.squeeze(current_properties[color]),
             )
             if guess_continuous(properties[color]):
-                self.mode = ColorMode.COLORMAP
+                self.color_mode = ColorMode.COLORMAP
             else:
-                self.mode = ColorMode.CYCLE
+                self.color_mode = ColorMode.CYCLE
         else:
             transformed_color = transform_color_with_defaults(
                 num_entries=n_colors,
@@ -204,7 +204,7 @@ class ColorManager(EventedModel):
             colors = normalize_and_broadcast_colors(
                 n_colors, transformed_color
             )
-            self.mode = ColorMode.DIRECT
+            self.color_mode = ColorMode.DIRECT
             self.colors = colors
 
     def refresh_colors(
@@ -226,7 +226,7 @@ class ColorManager(EventedModel):
            the color cycle map or colormap), set update_color_mapping=False.
            Default value is False.
         """
-        if self.mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+        if self.color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
             property_name = self.color_properties.name
             current_value = self.color_properties.current_value
             property_values = properties[property_name]
@@ -258,7 +258,7 @@ class ColorManager(EventedModel):
             If in colormap mode, update the contrast limits when adding the new values
             (i.e., reset the range to 0-new_max_value).
         """
-        if self.mode == ColorMode.DIRECT:
+        if self.color_mode == ColorMode.DIRECT:
             if color is None:
                 new_color = self.current_color
             else:
@@ -289,7 +289,7 @@ class ColorManager(EventedModel):
                 current_value=current_value,
             )
 
-            if update_clims and self.mode == ColorMode.COLORMAP:
+            if update_clims and self.color_mode == ColorMode.COLORMAP:
                 self.contrast_limits = None
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
@@ -301,7 +301,7 @@ class ColorManager(EventedModel):
         """
         selected_indices = list(indices_to_remove)
         if len(selected_indices) > 0:
-            if self.mode == ColorMode.DIRECT:
+            if self.color_mode == ColorMode.DIRECT:
                 self.colors = np.delete(self.colors, selected_indices, axis=0)
             else:
                 # remove the color_properties
@@ -332,7 +332,7 @@ class ColorManager(EventedModel):
             The property values to add. These are used if the color mode
             is colormap or cycle.
         """
-        if self.mode == ColorMode.DIRECT:
+        if self.color_mode == ColorMode.DIRECT:
             self.colors = np.concatenate(
                 (self.colors, transform_color(colors))
             )
@@ -398,7 +398,7 @@ class ColorManager(EventedModel):
         """
         self.current_color = transform_color(current_color)[0]
         if len(update_indices) > 0:
-            self.mode = ColorMode.DIRECT
+            self.color_mode = ColorMode.DIRECT
             cur_colors = self.colors.copy()
             cur_colors[update_indices] = self.current_color
             self.colors = cur_colors
@@ -414,7 +414,7 @@ class ColorManager(EventedModel):
         categorical_colormap: Optional[
             Union[CategoricalColormap, list, np.ndarray]
         ] = None,
-        mode: Optional[Union[ColorMode, str]] = None,
+        color_mode: Optional[Union[ColorMode, str]] = None,
         current_color: Optional[np.ndarray] = None,
         default_color_cycle: np.ndarray = np.array([1, 1, 1, 1]),
     ):
@@ -427,7 +427,7 @@ class ColorManager(EventedModel):
             # if the kwargs are passed as a dictionary, unpack them
             color_values = colors.get('colors', None)
             current_color = colors.get('current_color', current_color)
-            mode = colors.get('mode', mode)
+            color_mode = colors.get('color_mode', color_mode)
             color_properties = colors.get('color_properties', None)
             continuous_colormap = colors.get(
                 'continuous_colormap', continuous_colormap
@@ -479,14 +479,17 @@ class ColorManager(EventedModel):
                     color_properties = ColorProperties(
                         name=color_values, values=properties[color_values]
                     )
-                if mode is None:
+                if color_mode is None:
                     if guess_continuous(color_properties.values):
-                        mode = ColorMode.COLORMAP
+                        color_mode = ColorMode.COLORMAP
                     else:
-                        mode = ColorMode.CYCLE
+                        color_mode = ColorMode.CYCLE
 
                 color_kwargs.update(
-                    {'mode': mode, 'color_properties': color_properties}
+                    {
+                        'color_mode': color_mode,
+                        'color_properties': color_properties,
+                    }
                 )
 
             else:
@@ -496,7 +499,7 @@ class ColorManager(EventedModel):
                         current_color = transform_color(color_values)[0]
                     color_kwargs.update(
                         {
-                            'mode': ColorMode.DIRECT,
+                            'color_mode': ColorMode.DIRECT,
                             'current_color': current_color,
                         }
                     )
@@ -511,11 +514,14 @@ class ColorManager(EventedModel):
                         n_colors, transformed_color
                     )
                     color_kwargs.update(
-                        {'mode': ColorMode.DIRECT, 'colors': colors}
+                        {'color_mode': ColorMode.DIRECT, 'colors': colors}
                     )
         else:
             color_kwargs.update(
-                {'mode': mode, 'color_properties': color_properties}
+                {
+                    'color_mode': color_mode,
+                    'color_properties': color_properties,
+                }
             )
 
         return cls(**color_kwargs)

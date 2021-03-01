@@ -502,7 +502,7 @@ class Points(Layer):
         self._properties = self._validate_properties(properties)
         if self._face.color_properties is not None:
             if self._face.color_properties.name not in self._properties:
-                self._face.mode = ColorMode.DIRECT
+                self._face.color_mode = ColorMode.DIRECT
                 self._face.color_properties = None
                 warnings.warn(
                     'property used for face_color dropped', RuntimeWarning
@@ -517,7 +517,7 @@ class Points(Layer):
 
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self._properties:
-                self._edge.mode = ColorMode.DIRECT
+                self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
                     'property used for edge_color dropped', RuntimeWarning
@@ -775,7 +775,7 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return self._edge.mode
+        return self._edge.color_mode
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
@@ -872,7 +872,7 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return self._face.mode
+        return self._face.color_mode
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
@@ -896,7 +896,7 @@ class Points(Layer):
         color_manager = getattr(self, f'_{attribute}')
 
         if color_mode == ColorMode.DIRECT:
-            color_manager.mode = color_mode
+            color_manager.color_mode = color_mode
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
             if color_manager.color_properties is not None:
                 color_property = color_manager.color_properties.name
@@ -930,7 +930,7 @@ class Points(Layer):
                 raise TypeError(
                     'selected property must be numeric to use ColorMode.COLORMAP'
                 )
-            color_manager.mode = color_mode
+            color_manager.color_mode = color_mode
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map

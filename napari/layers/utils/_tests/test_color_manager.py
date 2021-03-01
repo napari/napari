@@ -30,7 +30,7 @@ def _make_cycled_properties(values, length):
 def test_color_manager_empty():
     cm = ColorManager()
     np.testing.assert_allclose(cm.colors, np.empty((0, 4)))
-    assert cm.mode == 'direct'
+    assert cm.color_mode == 'direct'
 
 
 color_mapping = {0: np.array([1, 1, 1, 1]), 1: np.array([1, 0, 0, 1])}
@@ -58,7 +58,7 @@ categorical_map = CategoricalColormap(
 def test_categorical_colormap_from_dict(cat_cmap, expected):
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
     cm = ColorManager(
-        colors=colors, categorical_colormap=cat_cmap, mode='direct'
+        colors=colors, categorical_colormap=cat_cmap, color_mode='direct'
     )
     np.testing.assert_equal(cm.categorical_colormap.colormap, expected[0])
     np.testing.assert_almost_equal(
@@ -71,7 +71,9 @@ def test_invalid_categorical_colormap():
     invalid_cmap = 42
     with pytest.raises(ValidationError):
         _ = ColorManager(
-            colors=colors, categorical_colormap=invalid_cmap, mode='direct'
+            colors=colors,
+            categorical_colormap=invalid_cmap,
+            color_mode='direct',
         )
 
 
@@ -94,7 +96,9 @@ c_prop_obj = ColorProperties(**c_prop_dict)
 )
 def test_color_properties_coercion(c_props, expected):
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
-    cm = ColorManager(colors=colors, color_properties=c_props, mode='direct')
+    cm = ColorManager(
+        colors=colors, color_properties=c_props, color_mode='direct'
+    )
     assert cm.color_properties == expected
 
 
@@ -108,7 +112,7 @@ def test_invalid_color_properties(c_props):
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
     with pytest.raises(ValidationError):
         _ = ColorManager(
-            colors=colors, color_properties=c_props, mode='direct'
+            colors=colors, color_properties=c_props, color_mode='direct'
         )
 
 
@@ -123,7 +127,9 @@ def test_invalid_color_properties(c_props):
 )
 def test_current_color_coercion(curr_color, expected):
     colors = np.array([[1, 1, 1, 1], [1, 0, 0, 1], [0, 0, 0, 1]])
-    cm = ColorManager(colors=colors, current_color=curr_color, mode='direct')
+    cm = ColorManager(
+        colors=colors, current_color=curr_color, color_mode='direct'
+    )
     np.testing.assert_allclose(cm.current_color, expected)
 
 
@@ -134,8 +140,8 @@ color_arr = np.asarray(color_list)
 
 @pytest.mark.parametrize('color', [color_str, color_list, color_arr])
 def test_color_manager_direct(color):
-    cm = ColorManager(colors=color, mode='direct')
-    color_mode = cm.mode
+    cm = ColorManager(colors=color, color_mode='direct')
+    color_mode = cm.color_mode
     assert color_mode == 'direct'
     expected_colors = np.array([[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]])
     np.testing.assert_allclose(cm.colors, expected_colors)
@@ -167,7 +173,7 @@ def test_set_color_direct(color):
     # create an empty color manager
     cm = ColorManager()
     np.testing.assert_allclose(cm.colors, np.empty((0, 4)))
-    assert cm.mode == 'direct'
+    assert cm.color_mode == 'direct'
 
     # set colors
     expected_colors = np.array([[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]])
@@ -187,9 +193,9 @@ def test_continuous_colormap():
     cm = ColorManager(
         color_properties=properties,
         continuous_colormap='gray',
-        mode='colormap',
+        color_mode='colormap',
     )
-    color_mode = cm.mode
+    color_mode = cm.color_mode
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(n_colors / 2))
     colors = cm.colors.copy()
@@ -251,7 +257,7 @@ def test_set_color_colormap():
     cm = ColorManager(
         color_properties=init_color_properties,
         continuous_colormap='gray',
-        mode='colormap',
+        color_mode='colormap',
     )
 
     # use the set_color method to update the colors
@@ -288,11 +294,11 @@ def test_color_cycle(color_cycle):
         'values': _make_cycled_properties(['A', 'B'], n_colors),
     }
     cm = ColorManager(
-        mode='cycle',
+        color_mode='cycle',
         color_properties=properties,
         categorical_colormap=color_cycle,
     )
-    color_mode = cm.mode
+    color_mode = cm.color_mode
     assert color_mode == 'cycle'
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, n_colors))
@@ -364,17 +370,16 @@ def test_set_color_cycle():
 @pytest.mark.parametrize('n_colors', [0, 1, 5])
 def test_init_color_manager_direct(n_colors):
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
         colors='red',
-        mode='direct',
+        properties={},
+        n_colors=n_colors,
         continuous_colormap='viridis',
         contrast_limits=None,
         categorical_colormap=[[0, 0, 0, 1], [1, 1, 1, 1]],
-        properties={},
     )
 
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'direct'
+    assert color_manager.color_mode == 'direct'
     np.testing.assert_array_almost_equal(
         color_manager.current_color, [1, 0, 0, 1]
     )
@@ -386,7 +391,7 @@ def test_init_color_manager_direct(n_colors):
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
     color_manager_2 = ColorManager.from_layer_kwargs(
-        colors=cm_dict, n_colors=n_colors, properties={}
+        colors=cm_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_2
 
@@ -394,7 +399,7 @@ def test_init_color_manager_direct(n_colors):
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager.from_layer_kwargs(
-        colors=cm_json_dict, n_colors=n_colors, properties={}
+        colors=cm_json_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_3
 
@@ -404,17 +409,16 @@ def test_init_color_manager_cycle():
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
         colors='point_type',
-        mode='cycle',
+        properties=properties,
+        n_colors=n_colors,
         continuous_colormap='viridis',
         contrast_limits=None,
         categorical_colormap=color_cycle,
-        properties=properties,
     )
 
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'cycle'
+    assert color_manager.color_mode == 'cycle'
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, n_colors))
     )
@@ -432,7 +436,7 @@ def test_init_color_manager_cycle():
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager.from_layer_kwargs(
-        colors=cm_json_dict, n_colors=n_colors, properties={}
+        colors=cm_json_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_3
 
@@ -447,17 +451,17 @@ def test_init_color_manager_cycle_with_colors_dict():
     properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
     colors_dict = {
         'color_properties': 'point_type',
-        'mode': 'cycle',
+        'color_mode': 'cycle',
         'categorical_colormap': color_cycle,
     }
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
         colors=colors_dict,
-        continuous_colormap='viridis',
         properties=properties,
+        n_colors=n_colors,
+        continuous_colormap='viridis',
     )
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'cycle'
+    assert color_manager.color_mode == 'cycle'
     color_array = transform_color(
         list(islice(cycle(color_cycle), 0, n_colors))
     )
@@ -471,17 +475,16 @@ def test_init_empty_color_manager_cycle():
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': ['A', 'B']}
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
         colors='point_type',
-        mode='cycle',
+        properties=properties,
+        n_colors=n_colors,
         continuous_colormap='viridis',
         contrast_limits=None,
         categorical_colormap=color_cycle,
-        properties=properties,
     )
 
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'cycle'
+    assert color_manager.color_mode == 'cycle'
 
     np.testing.assert_allclose(color_manager.current_color, [0, 0, 0, 1])
     assert color_manager.color_properties.current_value == 'A'
@@ -508,17 +511,16 @@ def test_init_color_manager_colormap():
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
         colors='point_type',
-        mode='colormap',
+        properties=properties,
+        n_colors=n_colors,
         continuous_colormap='gray',
         contrast_limits=None,
         categorical_colormap=color_cycle,
-        properties=properties,
     )
 
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'colormap'
+    assert color_manager.color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(n_colors / 2))
     colors = color_manager.colors.copy()
     np.testing.assert_allclose(colors, color_array)
@@ -536,7 +538,7 @@ def test_init_color_manager_colormap():
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
     color_manager_3 = ColorManager.from_layer_kwargs(
-        colors=cm_json_dict, n_colors=n_colors, properties={}
+        colors=cm_json_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_3
 
@@ -551,17 +553,15 @@ def test_init_color_manager_colormap_with_colors_dict():
     properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
     colors_dict = {
         'color_properties': 'point_type',
-        'mode': 'colormap',
+        'color_mode': 'colormap',
         'categorical_colormap': color_cycle,
         'continuous_colormap': 'gray',
     }
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
-        colors=colors_dict,
-        properties=properties,
+        colors=colors_dict, properties=properties, n_colors=n_colors
     )
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'colormap'
+    assert color_manager.color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(n_colors / 2))
     colors = color_manager.colors.copy()
     np.testing.assert_allclose(colors, color_array)
@@ -575,17 +575,17 @@ def test_init_empty_color_manager_colormap():
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': [0]}
     color_manager = ColorManager.from_layer_kwargs(
-        n_colors=n_colors,
         colors='point_type',
-        mode='colormap',
+        properties=properties,
+        n_colors=n_colors,
+        color_mode='colormap',
         continuous_colormap='gray',
         contrast_limits=None,
         categorical_colormap=color_cycle,
-        properties=properties,
     )
 
     assert len(color_manager.colors) == n_colors
-    assert color_manager.mode == 'colormap'
+    assert color_manager.color_mode == 'colormap'
 
     np.testing.assert_allclose(color_manager.current_color, [0, 0, 0, 1])
     assert color_manager.color_properties.current_value == 0
@@ -616,15 +616,13 @@ def test_color_manager_invalid_color_properties():
     properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
     colors_dict = {
         'color_properties': 'not_point_type',
-        'mode': 'colormap',
+        'color_mode': 'colormap',
         'categorical_colormap': color_cycle,
         'continuous_colormap': 'gray',
     }
     with pytest.raises(KeyError):
         _ = ColorManager.from_layer_kwargs(
-            n_colors=n_colors,
-            colors=colors_dict,
-            properties=properties,
+            colors=colors_dict, properties=properties, n_colors=n_colors
         )
 
 
@@ -638,9 +636,9 @@ def test_refresh_colors():
     cm = ColorManager(
         color_properties=properties,
         continuous_colormap='gray',
-        mode='colormap',
+        color_mode='colormap',
     )
-    color_mode = cm.mode
+    color_mode = cm.color_mode
     assert color_mode == 'colormap'
     color_array = transform_color(['black', 'white'] * int(n_colors / 2))
     colors = cm.colors.copy()
