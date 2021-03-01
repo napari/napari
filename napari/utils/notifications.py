@@ -170,15 +170,6 @@ class NotificationManager:
         value: Exception = None,
         traceback: TracebackType = None,
     ):
-        import gc
-
-        dbg = gc.get_debug()
-        gc.set_debug(gc.DEBUG_COLLECTABLE)
-        import gc
-
-        gc.collect()
-        gc.set_debug(dbg)
-
         if isinstance(value, KeyboardInterrupt):
             sys.exit("Closed by KeyboardInterrupt")
         if self.exit_on_error:
