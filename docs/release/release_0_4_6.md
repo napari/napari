@@ -11,12 +11,13 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-This release is the first that adds support for persistant settings in napari (#2212).
+This release is the first that adds support for persistent settings in napari (#2212).
 Right now we just store the current theme and window geometry but we will be expanding 
 this to include a full set of preferences in future releases.
 
 We've also made plugin installation from our plugin dialog more flexible, including
-supporting instalation from a url, name, or file (#2319).
+supporting installation from anything supported by `pip`, such as a
+package name, url, or local file (#2319).
 
 
 ## New Features
@@ -40,7 +41,7 @@ supporting instalation from a url, name, or file (#2319).
 - Add EventedSet class (#2280)
 - Refactor icon build process (#2285)
 - Add more tooltips (#2292)
-- Make contour thickness setable (#2296)
+- Make contour thickness settable (#2296)
 - Add `_json_encode` method API for EventedModel serdes (#2297)
 - Don't subclass `Layer` directly from `Image`, (adds `_ImageBase`) (#2307)
 - Disable run pre release test outside napari main repository (#2331)
@@ -102,4 +103,3 @@ supporting instalation from a url, name, or file (#2319).
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [ziyangczi](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
-
