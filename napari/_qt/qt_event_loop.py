@@ -136,7 +136,7 @@ def get_app(
         if os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False'):
 
             notification_manager.notification_ready.connect(
-                NapariQtNotification
+                NapariQtNotification.show_notification
             )
 
     if perf_config and not perf_config.patched:
@@ -224,8 +224,9 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
         splash.close()
     try:
         yield app
-    except Exception as e:
-        notification_manager.from_exception(e)
+    except Exception:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        notification_manager.receive_error(exc_type, exc_obj, exc_tb)
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
 

@@ -1,9 +1,9 @@
 import logging
-import os
 import sys
 
 import pytest
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QPushButton
 
 from napari._qt.exceptions import ExceptionHandler
 from napari.utils.notifications import notification_manager, show_info
@@ -39,36 +39,35 @@ def test_notification_manager_via_gui(qtbot, make_napari_viewer):
     and are displayed in the UI.
     """
 
-    nothing = object()
-    orig = os.environ.get('DEBUG_NAPARI_NOTIFICATION', nothing)
-    os.environ['DEBUG_NAPARI_NOTIFICATION'] = '1'
-    try:
-        viewer = make_napari_viewer()
-        qtv = viewer.window.qt_viewer
-        errButton = qtv.layerButtons.newErrorButton
-        warnButton = qtv.layerButtons.newWarnButton
-        with notification_manager:
-            for btt, expected_message in [
-                (errButton, 'error!'),
-                (warnButton, 'warning!'),
-            ]:
-                assert btt is not None, errButton
-                assert len(notification_manager.records) == 0
-                qtbot.mouseClick(btt, Qt.LeftButton)
-                qtbot.wait(150)
-                assert len(notification_manager.records) == 1
-                assert (
-                    notification_manager.records[0].message == expected_message
-                )
-                notification_manager.records = []
-    finally:
-        if orig is nothing:
-            del os.environ['DEBUG_NAPARI_NOTIFICATION']
-        else:
-            os.environ['DEBUG_NAPARI_NOTIFICATION'] = nothing
+    def raise_():
+        raise ValueError("error!")
+
+    def warn_():
+        import warnings
+
+        warnings.warn("warning!")
+
+    viewer = make_napari_viewer()
+    errButton = QPushButton(viewer.window.qt_viewer)
+    warnButton = QPushButton(viewer.window.qt_viewer)
+    errButton.clicked.connect(raise_)
+    warnButton.clicked.connect(warn_)
+
+    with notification_manager:
+        for btt, expected_message in [
+            (errButton, 'error!'),
+            (warnButton, 'warning!'),
+        ]:
+            assert btt is not None, errButton
+            assert len(notification_manager.records) == 0
+            qtbot.mouseClick(btt, Qt.LeftButton)
+            qtbot.wait(150)
+            assert len(notification_manager.records) == 1
+            assert notification_manager.records[0].message == expected_message
+            notification_manager.records = []
 
 
-def test_notification_manager_no_gui(qtbot, make_napari_viewer):
+def test_notification_manager_no_gui():
     """
     Test that exception trigered by button in the UI, propagate to the manager,
     and are displayed in the UI.

@@ -1,6 +1,3 @@
-import os
-import warnings
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
 
@@ -65,23 +62,6 @@ class QtLayerButtons(QFrame):
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
-        if os.environ.get('DEBUG_NAPARI_NOTIFICATION', False):
-
-            def raise_():
-                raise ValueError("error!")
-
-            def warn_():
-                warnings.warn("warning!")
-
-            self.newErrorButton = QtViewerPushButton(
-                self.viewer, 'warning', 'new Error', lambda: None
-            )
-            self.newErrorButton.clicked.connect(raise_)
-            self.newWarnButton = QtViewerPushButton(
-                self.viewer, 'warning', 'new Warn', warn_
-            )
-            layout.addWidget(self.newErrorButton)
-            layout.addWidget(self.newWarnButton)
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)
