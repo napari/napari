@@ -25,6 +25,19 @@ from .color_transformations import (
 
 
 class ColorProperties(EventedModel):
+    """The property values that are used for setting colors in ColorMode.COLORMAP
+    and ColorMode.CYCLE.
+
+    Attributes
+    ----------
+    name : str
+        The name of the property being used.
+    values : np.ndarray
+        The array containing the property values.
+    current_value : Optional[Any]
+        the Value for the next item to be added.
+    """
+
     name: str
     values: np.ndarray
     current_value: Optional[Any] = None
