@@ -207,7 +207,7 @@ class ColorManager(EventedModel):
             self.color_mode = ColorMode.DIRECT
             self.colors = colors
 
-    def refresh_colors(
+    def _refresh_colors(
         self,
         properties: Dict[str, np.ndarray],
         update_color_mapping: bool = False,
@@ -240,7 +240,7 @@ class ColorManager(EventedModel):
                 self.contrast_limits = None
             self.events.color_properties()
 
-    def add(
+    def _add(
         self,
         color: Optional[ColorType] = None,
         n_colors: int = 1,
@@ -292,7 +292,7 @@ class ColorManager(EventedModel):
             if update_clims and self.color_mode == ColorMode.COLORMAP:
                 self.contrast_limits = None
 
-    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
+    def _remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Remove the indicated color elements
         Parameters
         ----------
@@ -316,7 +316,7 @@ class ColorManager(EventedModel):
                     current_value=current_value,
                 )
 
-    def paste(self, colors: np.ndarray, properties: Dict[str, np.ndarray]):
+    def _paste(self, colors: np.ndarray, properties: Dict[str, np.ndarray]):
         """Append colors to the ColorManager. Uses the color values if
         in direct mode and the properties in colormap or cycle mode.
 
@@ -352,7 +352,7 @@ class ColorManager(EventedModel):
                 current_value=current_value,
             )
 
-    def update_current_properties(
+    def _update_current_properties(
         self, current_properties: Dict[str, np.ndarray]
     ):
         """This is updates the current_value of the color_properties when the
@@ -379,7 +379,7 @@ class ColorManager(EventedModel):
                         current_value=new_current_value,
                     )
 
-    def update_current_color(
+    def _update_current_color(
         self, current_color: np.ndarray, update_indices: list = []
     ):
         """Update the current color and update the colors if requested.
@@ -404,7 +404,7 @@ class ColorManager(EventedModel):
             self.colors = cur_colors
 
     @classmethod
-    def from_layer_kwargs(
+    def _from_layer_kwargs(
         cls,
         colors: Union[dict, str, np.ndarray],
         properties: Dict[str, np.ndarray],

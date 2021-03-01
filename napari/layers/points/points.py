@@ -373,7 +373,7 @@ class Points(Layer):
         self._clipboard = {}
         self._round_index = False
 
-        self._edge = ColorManager.from_layer_kwargs(
+        self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(data),
             colors=edge_color,
             continuous_colormap=edge_colormap,
@@ -381,7 +381,7 @@ class Points(Layer):
             categorical_colormap=edge_color_cycle,
             properties=properties,
         )
-        self._face = ColorManager.from_layer_kwargs(
+        self._face = ColorManager._from_layer_kwargs(
             n_colors=len(data),
             colors=face_color,
             continuous_colormap=face_colormap,
@@ -424,11 +424,11 @@ class Points(Layer):
             # extra ones
             with self.events.set_data.blocker():
                 if len(self._edge.colors) > len(data):
-                    self._edge.remove(
+                    self._edge._remove(
                         np.arange(len(data), len(self._edge.colors))
                     )
                 if len(self._face.colors) > len(data):
-                    self._face.remove(
+                    self._face._remove(
                         np.arange(len(data), len(self._face.colors))
                     )
                 self._size = self._size[: len(data)]
@@ -461,8 +461,8 @@ class Points(Layer):
                     )
 
                 # add new colors
-                self._edge.add(n_colors=adding)
-                self._face.add(n_colors=adding)
+                self._edge._add(n_colors=adding)
+                self._face._add(n_colors=adding)
 
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
@@ -553,8 +553,8 @@ class Points(Layer):
                 props[k][list(self.selected_data)] = current_properties[k]
             self.properties = props
 
-        self._edge.update_current_properties(current_properties)
-        self._face.update_current_properties(current_properties)
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
         self.events.current_properties()
 
     def _validate_properties(
@@ -760,7 +760,7 @@ class Points(Layer):
             update_indices = list(self.selected_data)
         else:
             update_indices = []
-        self._edge.update_current_color(
+        self._edge._update_current_color(
             edge_color, update_indices=update_indices
         )
         self.events.current_edge_color()
@@ -857,7 +857,7 @@ class Points(Layer):
             update_indices = list(self.selected_data)
         else:
             update_indices = []
-        self._face.update_current_color(
+        self._face._update_current_color(
             face_color, update_indices=update_indices
         )
         self.events.current_face_color()
@@ -945,8 +945,8 @@ class Points(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        self._edge.refresh_colors(self.properties, update_color_mapping)
-        self._face.refresh_colors(self.properties, update_color_mapping)
+        self._edge._refresh_colors(self.properties, update_color_mapping)
+        self._face._refresh_colors(self.properties, update_color_mapping)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1425,8 +1425,8 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
-            self._edge.remove(indices_to_remove=index)
-            self._face.remove(indices_to_remove=index)
+            self._edge._remove(indices_to_remove=index)
+            self._face._remove(indices_to_remove=index)
             for k in self.properties:
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
@@ -1477,11 +1477,11 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge.paste(
+            self._edge._paste(
                 colors=self._clipboard['edge_color'],
                 properties=self._clipboard['properties'],
             )
-            self._face.paste(
+            self._face._paste(
                 colors=self._clipboard['face_color'],
                 properties=self._clipboard['properties'],
             )

@@ -149,21 +149,21 @@ def test_color_manager_direct(color):
 
     # test adding a color
     new_color = [1, 1, 1, 1]
-    cm.add(new_color)
+    cm._add(new_color)
     np.testing.assert_allclose(cm.colors[-1], new_color)
 
     # test removing colors
-    cm.remove([0, 3])
+    cm._remove([0, 3])
     np.testing.assert_allclose(cm.colors, expected_colors[1:3])
 
     # test pasting colors
     paste_colors = np.array([[0, 0, 0, 1], [0, 0, 0, 1]])
-    cm.paste(colors=paste_colors, properties={})
+    cm._paste(colors=paste_colors, properties={})
     post_paste_colors = np.vstack((expected_colors[1:3], paste_colors))
     np.testing.assert_allclose(cm.colors, post_paste_colors)
 
     # refreshing the colors in direct mode should have no effect
-    cm.refresh_colors(properties={})
+    cm._refresh_colors(properties={})
     np.testing.assert_allclose(cm.colors, post_paste_colors)
 
 
@@ -203,7 +203,7 @@ def test_continuous_colormap():
     np.testing.assert_allclose(cm.current_color, [1, 1, 1, 1])
 
     # Add 2 color elements and test their color
-    cm.add(0, n_colors=2)
+    cm._add(0, n_colors=2)
     cm_colors = cm.colors
     assert len(cm_colors) == n_colors + 2
     np.testing.assert_allclose(
@@ -214,7 +214,7 @@ def test_continuous_colormap():
     )
 
     # Check removing data adjusts colors correctly
-    cm.remove({0, 2, 11})
+    cm._remove({0, 2, 11})
     cm_colors_2 = cm.colors
     assert len(cm_colors_2) == (n_colors - 1)
     np.testing.assert_allclose(
@@ -243,7 +243,7 @@ def test_continuous_colormap():
     # test pasting values
     paste_props = {'point_type': np.array([0, 0])}
     paste_colors = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
-    cm.paste(colors=paste_colors, properties=paste_props)
+    cm._paste(colors=paste_colors, properties=paste_props)
     np.testing.assert_allclose(cm.colors[-2:], paste_colors)
 
 
@@ -306,7 +306,7 @@ def test_color_cycle(color_cycle):
     np.testing.assert_allclose(cm.colors, color_array)
 
     # Add 2 color elements and test their color
-    cm.add('A', n_colors=2)
+    cm._add('A', n_colors=2)
     cm_colors = cm.colors
     assert len(cm_colors) == n_colors + 2
     np.testing.assert_allclose(
@@ -317,7 +317,7 @@ def test_color_cycle(color_cycle):
     )
 
     # Check removing data adjusts colors correctly
-    cm.remove({0, 2, 11})
+    cm._remove({0, 2, 11})
     cm_colors_2 = cm.colors
     assert len(cm_colors_2) == (n_colors - 1)
     np.testing.assert_allclose(
@@ -334,7 +334,7 @@ def test_color_cycle(color_cycle):
     # test pasting values
     paste_props = {'point_type': np.array(['B', 'B'])}
     paste_colors = np.array([[0, 0, 0, 1], [0, 0, 0, 1]])
-    cm.paste(colors=paste_colors, properties=paste_props)
+    cm._paste(colors=paste_colors, properties=paste_props)
     np.testing.assert_allclose(cm.colors[-2:], paste_colors)
 
 
@@ -369,7 +369,7 @@ def test_set_color_cycle():
 
 @pytest.mark.parametrize('n_colors', [0, 1, 5])
 def test_init_color_manager_direct(n_colors):
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors='red',
         properties={},
         n_colors=n_colors,
@@ -390,7 +390,7 @@ def test_init_color_manager_direct(n_colors):
         )
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
-    color_manager_2 = ColorManager.from_layer_kwargs(
+    color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_2
@@ -398,7 +398,7 @@ def test_init_color_manager_direct(n_colors):
     # test json serialization
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
-    color_manager_3 = ColorManager.from_layer_kwargs(
+    color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_3
@@ -408,7 +408,7 @@ def test_init_color_manager_cycle():
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': _make_cycled_properties(['A', 'B'], n_colors)}
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors='point_type',
         properties=properties,
         n_colors=n_colors,
@@ -427,7 +427,7 @@ def test_init_color_manager_cycle():
 
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
-    color_manager_2 = ColorManager.from_layer_kwargs(
+    color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
@@ -435,7 +435,7 @@ def test_init_color_manager_cycle():
     # test json serialization
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
-    color_manager_3 = ColorManager.from_layer_kwargs(
+    color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_3
@@ -454,7 +454,7 @@ def test_init_color_manager_cycle_with_colors_dict():
         'color_mode': 'cycle',
         'categorical_colormap': color_cycle,
     }
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors=colors_dict,
         properties=properties,
         n_colors=n_colors,
@@ -474,7 +474,7 @@ def test_init_empty_color_manager_cycle():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': ['A', 'B']}
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors='point_type',
         properties=properties,
         n_colors=n_colors,
@@ -489,18 +489,18 @@ def test_init_empty_color_manager_cycle():
     np.testing.assert_allclose(color_manager.current_color, [0, 0, 0, 1])
     assert color_manager.color_properties.current_value == 'A'
 
-    color_manager.add()
+    color_manager._add()
     np.testing.assert_allclose(color_manager.colors, [[0, 0, 0, 1]])
 
     color_manager.color_properties.current_value = 'B'
-    color_manager.add()
+    color_manager._add()
     np.testing.assert_allclose(
         color_manager.colors, [[0, 0, 0, 1], [1, 1, 1, 1]]
     )
 
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
-    color_manager_2 = ColorManager.from_layer_kwargs(
+    color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
@@ -510,7 +510,7 @@ def test_init_color_manager_colormap():
     n_colors = 10
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': _make_cycled_properties([0, 1.5], n_colors)}
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors='point_type',
         properties=properties,
         n_colors=n_colors,
@@ -529,7 +529,7 @@ def test_init_color_manager_colormap():
 
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
-    color_manager_2 = ColorManager.from_layer_kwargs(
+    color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
@@ -537,7 +537,7 @@ def test_init_color_manager_colormap():
     # test json serialization
     json_str = color_manager.json()
     cm_json_dict = json.loads(json_str)
-    color_manager_3 = ColorManager.from_layer_kwargs(
+    color_manager_3 = ColorManager._from_layer_kwargs(
         colors=cm_json_dict, properties={}, n_colors=n_colors
     )
     assert color_manager == color_manager_3
@@ -557,7 +557,7 @@ def test_init_color_manager_colormap_with_colors_dict():
         'categorical_colormap': color_cycle,
         'continuous_colormap': 'gray',
     }
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors=colors_dict, properties=properties, n_colors=n_colors
     )
     assert len(color_manager.colors) == n_colors
@@ -574,7 +574,7 @@ def test_init_empty_color_manager_colormap():
     n_colors = 0
     color_cycle = [[0, 0, 0, 1], [1, 1, 1, 1]]
     properties = {'point_type': [0]}
-    color_manager = ColorManager.from_layer_kwargs(
+    color_manager = ColorManager._from_layer_kwargs(
         colors='point_type',
         properties=properties,
         n_colors=n_colors,
@@ -590,18 +590,18 @@ def test_init_empty_color_manager_colormap():
     np.testing.assert_allclose(color_manager.current_color, [0, 0, 0, 1])
     assert color_manager.color_properties.current_value == 0
 
-    color_manager.add()
+    color_manager._add()
     np.testing.assert_allclose(color_manager.colors, [[1, 1, 1, 1]])
 
     color_manager.color_properties.current_value = 1.5
-    color_manager.add(update_clims=True)
+    color_manager._add(update_clims=True)
     np.testing.assert_allclose(
         color_manager.colors, [[0, 0, 0, 1], [1, 1, 1, 1]]
     )
 
     # test that colormanager state can be saved and loaded
     cm_dict = color_manager.dict()
-    color_manager_2 = ColorManager.from_layer_kwargs(
+    color_manager_2 = ColorManager._from_layer_kwargs(
         colors=cm_dict, properties=properties
     )
     assert color_manager == color_manager_2
@@ -621,7 +621,7 @@ def test_color_manager_invalid_color_properties():
         'continuous_colormap': 'gray',
     }
     with pytest.raises(KeyError):
-        _ = ColorManager.from_layer_kwargs(
+        _ = ColorManager._from_layer_kwargs(
             colors=colors_dict, properties=properties, n_colors=n_colors
         )
 
@@ -651,13 +651,13 @@ def test_refresh_colors():
     # of values
     new_properties = {'point_type': properties['values']}
     new_properties['point_type'][0] = 3
-    cm.refresh_colors(new_properties, update_color_mapping=False)
+    cm._refresh_colors(new_properties, update_color_mapping=False)
     new_colors = color_array.copy()
     new_colors[0] = [1, 1, 1, 1]
     np.testing.assert_allclose(cm.colors, new_colors)
 
     # now, refresh the colors, but update the mapping
-    cm.refresh_colors(new_properties, update_color_mapping=True)
+    cm._refresh_colors(new_properties, update_color_mapping=True)
     refreshed_colors = [
         [1, 1, 1, 1],
         [0.5, 0.5, 0.5, 1],
