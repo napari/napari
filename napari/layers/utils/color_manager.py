@@ -175,7 +175,7 @@ class ColorManager(EventedModel):
         values['colors'] = colors
         return values
 
-    def set_color(
+    def _set_color(
         self,
         color: ColorType,
         n_colors: int,

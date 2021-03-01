@@ -177,7 +177,7 @@ def test_set_color_direct(color):
 
     # set colors
     expected_colors = np.array([[1, 0, 0, 1], [1, 0, 0, 1], [1, 0, 0, 1]])
-    cm.set_color(
+    cm._set_color(
         color, n_colors=len(color), properties={}, current_properties={}
     )
     np.testing.assert_almost_equal(cm.colors, expected_colors)
@@ -266,7 +266,7 @@ def test_set_color_colormap():
         'point_type': _make_cycled_properties([0, 1.5], n_colors)
     }
     current_properties = {'point_type': np.array([1.5])}
-    cm.set_color(
+    cm._set_color(
         color='point_type',
         n_colors=n_colors,
         properties=updated_properties,
@@ -357,7 +357,7 @@ def test_set_color_cycle():
         'point_type': _make_cycled_properties(['A', 'B'], n_colors)
     }
     current_properties = {'point_type': np.array(['B'])}
-    cm.set_color(
+    cm._set_color(
         color='point_type',
         n_colors=n_colors,
         properties=updated_properties,

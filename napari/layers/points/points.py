@@ -692,7 +692,7 @@ class Points(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        self._edge.set_color(
+        self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
             properties=self.properties,
@@ -783,7 +783,7 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        self._face.set_color(
+        self._face._set_color(
             color=face_color,
             n_colors=len(self.data),
             properties=self.properties,
