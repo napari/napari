@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import sys
 import warnings
@@ -5,7 +7,7 @@ from datetime import datetime
 from enum import auto
 from time import time
 from types import TracebackType
-from typing import Any, Callable, List, Sequence, Tuple, Type, Union
+from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
 
 from .events import Event, EventEmitter
 from .misc import StringEnum
@@ -112,7 +114,7 @@ class NotificationManager:
     """
 
     records: List[Notification]
-    _instance: 'NotificationManager' = None
+    _instance: Optional[NotificationManager] = None
 
     def __new__(cls):
         # singleton
@@ -166,9 +168,9 @@ class NotificationManager:
 
     def receive_error(
         self,
-        exctype: Type[Exception] = None,
-        value: Exception = None,
-        traceback: TracebackType = None,
+        exctype: Type[BaseException],
+        value: BaseException,
+        traceback: TracebackType,
     ):
         if isinstance(value, KeyboardInterrupt):
             sys.exit("Closed by KeyboardInterrupt")
