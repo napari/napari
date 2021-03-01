@@ -34,6 +34,27 @@ ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
 class Notification(Event):
+    """A Notifcation event.  Usually created by :class:`NotificationManager`.
+
+    Parameters
+    ----------
+    message : str
+        The main message/payload of the notification.
+    severity :  str or NotificationSeverity, optional
+        The severity of the notification, by default
+        `NotificationSeverity.WARNING`.
+    actions : sequence of tuple, optional
+        Where each tuple is a `(str, callable)` 2-tuple where the first item
+        is a name for the action (which may, for example, be put on a button),
+        and the callable is a callback to perform when the action is triggered.
+        (for example, one might show a traceback dialog). by default ()
+    type : str, optional
+        The notification event type, by default 'notification'.  May be changed
+        by subclasses.
+    native : Any, optional
+        A native backend event that may have triggered this Notification,
+        by default None
+    """
     def __init__(
         self,
         message: str,
