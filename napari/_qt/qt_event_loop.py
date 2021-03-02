@@ -112,8 +112,8 @@ def get_app(
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
 
-        if not _app_ref and app.applicationName() == ' ':
-            _patch_ipython()
+        if not _app_ref and _ipython_has_eventloop():
+            _reassign_ipy_excepthook_on_evloop()
 
     else:
         # automatically determine monitor DPI.
@@ -240,6 +240,30 @@ def _ipython_has_eventloop() -> bool:
         return False
 
 
+def _reassign_ipy_excepthook_on_evloop():
+    """Fix IPython console tracebacks when using gui_qt
+
+    If we're using the IPython gui qt QApp. we can give better console
+    tracebacks (ones that don't always say "this is a bug in IPython"), by
+    making sure that IPython owns the sys.excepthook after the qt loop starts.
+    could maybe be included upstream eventually?
+    see https://github.com/ipython/ipython/issues/10057
+
+    """
+    try:
+        from IPython import get_ipython
+        from qtpy.QtCore import QTimer
+
+        def _patch_excepthook():
+            sys.excepthook = get_ipython().excepthook
+
+        # timer with singleShot of 0 will schedule this to be called right
+        # after the event loop has started.
+        QTimer.singleShot(0, _patch_excepthook)
+    except ImportError:
+        pass
+
+
 def run(
     *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
 ):
@@ -316,25 +340,3 @@ def _install_hooks(gui_exceptions=True):
     finally:
         sys.excepthook = orighook
         exception_handler.deleteLater()
-
-
-def _patch_ipython():
-    """Fix IPython console tracebacks when using gui_qt
-
-    If we're using the IPython gui qt QApp. we can give better console
-    tracebacks (ones that don't always say "this is a bug in IPython"), by
-    making sure that IPython owns the sys.excepthook after the qt loop starts.
-    could maybe be included upstream eventually?
-    see https://github.com/ipython/ipython/issues/10057
-
-    """
-    if _ipython_has_eventloop():
-        from IPython import get_ipython
-        from qtpy.QtCore import QTimer
-
-        def _patch_excepthook():
-            sys.excepthook = get_ipython().excepthook
-
-        # timer with singleShot of 0 will schedule this to be called right
-        # after the event loop has started.
-        QTimer.singleShot(0, _patch_excepthook)
