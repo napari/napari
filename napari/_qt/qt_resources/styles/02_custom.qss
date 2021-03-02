@@ -37,6 +37,11 @@ QMainWindow::separator:hover {
     background: {{ highlight }};
 }
 
+QStatusBar { 
+  background: {{ background }};
+  color: {{ text }};
+}
+
 /* ------------- DockWidgets --------- */
 
 #QtCustomTitleBar {
@@ -213,7 +218,7 @@ QtLayerWidget > QCheckBox#visibility::indicator{
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ folder }}/visibility_off_50.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
@@ -264,8 +269,8 @@ QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 245px;
-    max-height: 245px;
+    min-height: 265px;
+    max-height: 265px;
     min-width: 240px;
     max-width: 240px;
     margin-left: 10px;

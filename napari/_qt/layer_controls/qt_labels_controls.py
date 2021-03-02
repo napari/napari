@@ -78,6 +78,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
         self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.contour.connect(self._on_contour_change)
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
@@ -89,7 +90,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.setSingleStep(1)
         self.selectionSpinBox.setMinimum(0)
-        self.selectionSpinBox.setMaximum(2147483647)
+        self.selectionSpinBox.setMaximum(1024)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
@@ -114,6 +115,17 @@ class QtLabelsControls(QtLayerControls):
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
         self._on_n_dimensional_change()
+
+        contour_sb = QSpinBox()
+        contour_sb.setToolTip('display contours of labels')
+        contour_sb.valueChanged.connect(self.change_contour)
+        self.contourSpinBox = contour_sb
+        self.contourSpinBox.setKeyboardTracking(False)
+        self.contourSpinBox.setSingleStep(1)
+        self.contourSpinBox.setMinimum(0)
+        self.contourSpinBox.setMaximum(2147483647)
+        self.contourSpinBox.setAlignment(Qt.AlignCenter)
+        self._on_contour_change()
 
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
@@ -216,14 +228,16 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.blendComboBox, 5, 1, 1, 3)
         self.grid_layout.addWidget(QLabel('color mode:'), 6, 0, 1, 1)
         self.grid_layout.addWidget(self.colorModeComboBox, 6, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 7, 0, 1, 1)
-        self.grid_layout.addWidget(self.contigCheckBox, 7, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 2, 1, 1)
-        self.grid_layout.addWidget(self.ndimCheckBox, 7, 3, 1, 1)
-        self.grid_layout.addWidget(QLabel('preserve labels:'), 8, 0, 1, 2)
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 8, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel('show selected:'), 8, 2, 1, 1)
-        self.grid_layout.addWidget(self.selectedColorCheckbox, 8, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel('contour:'), 7, 0, 1, 1)
+        self.grid_layout.addWidget(self.contourSpinBox, 7, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 8, 0, 1, 1)
+        self.grid_layout.addWidget(self.contigCheckBox, 8, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 8, 2, 1, 1)
+        self.grid_layout.addWidget(self.ndimCheckBox, 8, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 9, 0, 1, 2)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 9, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('show selected:'), 9, 2, 1, 1)
+        self.grid_layout.addWidget(self.selectedColorCheckbox, 9, 3, 1, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -314,6 +328,18 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
+    def change_contour(self, value):
+        """Change contour thickness.
+
+        Parameters
+        ----------
+        value : int
+            Thickness of contour.
+        """
+        self.layer.contour = value
+        self.contourSpinBox.clearFocus()
+        self.setFocus()
+
     def change_preserve_labels(self, state):
         """Toggle preserve_labels state of label layer.
 
@@ -348,6 +374,18 @@ class QtLabelsControls(QtLayerControls):
             SQUARE uses square paintbrush (case insensitive).
         """
         self.layer.brush_shape = brush_shape
+
+    def _on_contour_change(self, event=None):
+        """Receive layer model contour value change event and update spinbox.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
+        """
+        with self.layer.events.contour.blocker():
+            value = self.layer.contour
+            self.contourSpinBox.setValue(int(value))
 
     def _on_selected_label_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.

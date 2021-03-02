@@ -4,11 +4,22 @@ import builtins
 import collections.abc
 import inspect
 import itertools
+import os
 import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import TYPE_CHECKING, Optional, Sequence, Type, TypeVar
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 
@@ -311,34 +322,6 @@ class CallDefault(inspect.Parameter):
         return formatted
 
 
-class CallSignature(inspect.Signature):
-    _parameter_cls = CallDefault
-
-    def __str__(self):
-        """do not render separators
-
-        commented code is what was taken out from
-        the copy/pasted inspect module code :)
-        """
-        result = []
-        # render_pos_only_separator = False
-        # render_kw_only_separator = True
-        for param in self.parameters.values():
-            formatted = str(param)
-            result.append(formatted)
-
-        rendered = '({})'.format(', '.join(result))
-
-        if self.return_annotation is not inspect._empty:
-            anno = inspect.formatannotation(self.return_annotation)
-            rendered += f' -> {anno}'
-
-        return rendered
-
-
-callsignature = CallSignature.from_callable
-
-
 def all_subclasses(cls: Type) -> set:
     """Recursively find all subclasses of class ``cls``.
 
@@ -390,3 +373,71 @@ def ensure_list_of_layer_data_tuple(val):
         except TypeError:
             pass
     raise TypeError('Not a valid list of layer data tuples!')
+
+
+def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
+    """Return a function that can check equality between ``obj`` and another.
+
+    Rather than always using ``==`` (i.e. ``operator.eq``), this function
+    returns operators that are aware of object types: mostly "array types with
+    more than one element" whose truth value is ambiguous.
+
+    This function works for both classes (types) and instances.  If an instance
+    is passed, it will be first cast to a type with type(obj).
+
+    Parameters
+    ----------
+    obj : Any
+        An object whose equality with another object you want to check.
+
+    Returns
+    -------
+    operator : Callable[[Any, Any], bool]
+        An operation that can be called as ``operator(obj, other)`` to check
+        equality between objects of type ``type(obj)``.
+    """
+    import operator
+
+    type_ = type(obj) if not inspect.isclass(obj) else obj
+
+    # yes, it's a little riskier, but we are checking namespaces instead of
+    # actual `issubclass` here to avoid slow import times
+    _known_arrays = {
+        'numpy.ndarray': np.array_equal,  # numpy.ndarray
+        'dask.Array': operator.is_,  # dask.array.core.Array
+        'zarr.Array': operator.is_,  # zarr.core.Array
+        'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
+    }
+    for base in type_.mro():
+        key = f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
+        func = _known_arrays.get(key)
+        if func:
+            return func
+
+    return operator.eq
+
+
+def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
+    """Compute the hash of a directory, based on structure and contents."""
+    import hashlib
+
+    hashfunc = hashlib.md5
+
+    if not Path(path).is_dir():
+        raise TypeError(f"{path} is not a directory.")
+
+    _hash = hashfunc()
+    for root, _, files in os.walk(path):
+        for fname in sorted(files):
+            if fname.startswith(".") and ignore_hidden:
+                continue
+            # update the hash with the file contents
+            file = Path(root) / fname
+            _hash.update(file.read_bytes())
+
+            if include_paths:
+                # update the hash with the filename
+                fparts = file.relative_to(path).parts
+                _hash.update(''.join(fparts).encode())
+
+    return _hash.hexdigest()

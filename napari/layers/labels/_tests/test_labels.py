@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
 from napari.utils import Colormap
+from napari.utils.colormaps import low_discrepancy_image
 
 
 def test_random_labels():
@@ -349,6 +351,114 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.parametrize(
+    "input_data, expected_data_view",
+    [
+        (
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (
+            np.array(
+                [
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (5 * np.ones((9, 10)), np.zeros((9, 10))),
+    ],
+)
+def test_contour(input_data, expected_data_view):
+    """Test changing contour."""
+    layer = Labels(input_data)
+    assert layer.contour == 0
+    np.testing.assert_array_equal(layer.data, input_data)
+
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(input_data), layer._data_view
+    )
+    data_view_before_contour = layer._data_view.copy()
+
+    layer.contour = 1
+    assert layer.contour == 1
+
+    # Check `layer.data` didn't change
+    np.testing.assert_array_equal(layer.data, input_data)
+
+    # Check what is returned in the view of the data
+    np.testing.assert_array_equal(
+        layer._data_view,
+        np.where(
+            expected_data_view > 0,
+            low_discrepancy_image(expected_data_view),
+            0,
+        ),
+    )
+
+    # Check the view of the data changed after setting the contour
+    with np.testing.assert_raises(AssertionError):
+        np.testing.assert_array_equal(
+            data_view_before_contour, layer._data_view
+        )
+
+    layer.contour = 0
+    assert layer.contour == 0
+
+    # Check it's in the same state as before setting the contour
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(input_data), layer._data_view
+    )
+
+
 def test_selecting_label():
     """Test selecting label."""
     np.random.seed(0)
@@ -474,6 +584,24 @@ def test_paint_2d(brush_shape, expected_sum):
     assert np.sum(layer.data[24:37, 2:15] == 5) == expected_sum[2]
     assert np.sum(layer.data[33:, 33:] == 6) == expected_sum[3]
     assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
+
+
+@pytest.mark.timeout(1)
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum",
+    [("circle", 411), ("square", 432)],
+)
+def test_paint_2d_xarray(brush_shape, expected_sum):
+    """Test the memory usage of painting an xarray indirectly via timeout."""
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024)))
+
+    layer = Labels(data)
+    layer.brush_size = 12
+    layer.brush_shape = brush_shape
+    layer.mode = 'paint'
+    layer.paint((1, 1, 512, 512), 3)
+    assert isinstance(layer.data, xr.DataArray)
+    assert layer.data.sum() == expected_sum
 
 
 @pytest.mark.parametrize(

@@ -3,13 +3,14 @@ These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
 import json
-import os
 import re
-import sys
+import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import lru_cache
-from typing import Dict, Generator, List, NamedTuple, Optional, Tuple
+from functools import lru_cache, partial
+from typing import Dict, Generator, List, NamedTuple, Optional
 from urllib import error, parse, request
+
+import certifi
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 
@@ -19,6 +20,9 @@ setup_py_entrypoint = re.compile(
 setup_py_pypi_name = re.compile(
     r"setup\s?\(.*name\s?=\s?['\"]([^'\"]+)['\"]", re.DOTALL
 )
+
+context = ssl.create_default_context(cafile=certifi.where())
+urlopen = partial(request.urlopen, context=context)
 
 
 class ProjectInfo(NamedTuple):
@@ -46,7 +50,7 @@ def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
         {name: url} for all packages at pypi that start with ``prefix``
     """
 
-    with request.urlopen(PYPI_SIMPLE_API_URL) as response:
+    with urlopen(PYPI_SIMPLE_API_URL) as response:
         html = response.read().decode()
 
     return {
@@ -72,7 +76,7 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
     pattern = 'class="package-snippet__name">(.+)</span>'
     while package_count == 0 or len(packages) < package_count:
         url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}&page={page}"
-        with request.urlopen(url) as response:
+        with urlopen(url) as response:
             html = response.read().decode()
 
         if package_count == 0:
@@ -102,20 +106,10 @@ def get_package_versions(name: str) -> List[str]:
     tuple
         versions available on pypi
     """
-    with request.urlopen(PYPI_SIMPLE_API_URL + name) as response:
+    with urlopen(PYPI_SIMPLE_API_URL + name) as response:
         html = response.read()
 
     return re.findall(f'>{name}-(.+).tar', html.decode())
-
-
-@lru_cache(maxsize=1)
-def get_napari_plugin_repos_from_github() -> List[dict]:
-    """Return GitHub API hits for repos with "napari plugin" in the README."""
-    with request.urlopen(
-        'https://api.github.com/search/repositories?q="napari+plugin"+in:readme'
-    ) as response:
-        data = json.loads(response.read().decode())
-        return list(data.get("items"))
 
 
 @lru_cache(maxsize=128)
@@ -124,7 +118,7 @@ def ensure_published_at_pypi(
 ) -> Optional[ProjectInfo]:
     """Return name if ``name`` is a package in PyPI with dev_status > min."""
     try:
-        with request.urlopen(f'https://pypi.org/pypi/{name}/json') as resp:
+        with urlopen(f'https://pypi.org/pypi/{name}/json') as resp:
             info = json.loads(resp.read().decode()).get("info")
     except error.HTTPError:
         return None
@@ -141,62 +135,6 @@ def ensure_published_at_pypi(
         author=info["author"],
         license=info["license"] or "UNKNOWN",
     )
-
-
-@lru_cache(maxsize=128)
-def ensure_repo_is_napari_plugin(
-    info: Tuple[str, str]
-) -> Optional[ProjectInfo]:
-    """Return ProjectInfo of published napari plugin or None.
-
-    This function looks for a setup.py or setup.cfg file in the default branch
-    of the repo, then looks for a "napari.plugins" in the entry_points section.
-    As such, it will only currently find projects that use setuptools.
-
-    Parameters
-    ----------
-    info : tuple
-        2-tuple containing full repo name on github (e.g. "napari/napari"), and
-        branch to query (e.g. "master")
-
-    Returns
-    -------
-    info : ProjectInfo, optional
-        named tuple with project info or None
-
-    """
-    # otherwise... we have to look for the entry_point
-    base = 'https://raw.githubusercontent.com/{}/{}/'.format(*info)
-
-    # first check setup.py
-    try:
-        with request.urlopen(base + "setup.py") as resp:
-            text = resp.read().decode()
-        match = setup_py_entrypoint.search(text)
-        if match:
-            if any(
-                'napari.plugin' in line.split("#")[0]
-                for line in match.groups()[0].splitlines()
-            ):
-                name = setup_py_pypi_name.search(text)
-                if name:
-                    return ensure_published_at_pypi(name.groups()[0])
-    except error.HTTPError:  # usually 404
-        pass
-
-    # then check setup.cfg
-    try:
-        import configparser
-
-        with request.urlopen(base + "setup.cfg") as resp:
-            text = resp.read().decode()
-        parser = configparser.ConfigParser()
-        parser.read_string(text)
-        if parser.has_option('options.entry_points', 'napari.plugin'):
-            return ensure_published_at_pypi(parser.get("metadata", "name"))
-    except error.HTTPError:
-        pass
-    return None
 
 
 def iter_napari_plugin_info(
@@ -216,46 +154,11 @@ def iter_napari_plugin_info(
             if name not in skip
         ]
 
-        futures.extend(
-            [
-                executor.submit(
-                    ensure_repo_is_napari_plugin,
-                    (repo_info['full_name'], repo_info['default_branch']),
-                )
-                for repo_info in get_napari_plugin_repos_from_github()
-                if repo_info['name'] not in skip  # repo may not have pkg name
-            ]
-        )
         for future in as_completed(futures):
             info = future.result()
             if info and info not in already_yielded:
                 already_yielded.add(info)
                 yield info
-
-
-@lru_cache(maxsize=1)
-def list_outdated() -> Dict[str, Tuple[str, ...]]:
-    # slow!
-    import subprocess
-
-    from ..utils._appdirs import user_site_packages
-
-    env = os.environ.copy()
-    combined = os.pathsep.join(
-        [user_site_packages(), env.get("PYTHONPATH", "")]
-    )
-    env['PYTHONPATH'] = combined
-    result = subprocess.check_output(
-        [sys.executable, '-m', 'pip', 'list', '--outdated'], env=env
-    )
-    lines = result.decode().splitlines()
-    if len(lines) <= 2:
-        return {}
-    out = dict()
-    for line in lines[2:]:
-        name, *rest = line.split()
-        out[name] = tuple(rest[:2])
-    return out
 
 
 def normalized_name(name) -> str:

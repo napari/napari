@@ -1,5 +1,11 @@
+from typing import TYPE_CHECKING
+
 from .components import ViewerModel
 from .utils import config
+
+if TYPE_CHECKING:
+    # helpful for IDE support
+    from ._qt.qt_main_window import Window
 
 
 class Viewer(ViewerModel):
@@ -21,6 +27,9 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
+    # Create private variable for window
+    _window: 'Window'
+
     def __init__(
         self,
         *,
@@ -40,7 +49,12 @@ class Viewer(ViewerModel):
         # instantiating the first Viewer.
         from .window import Window
 
-        self.window = Window(self, show=show)
+        self._window = Window(self, show=show)
+
+    # Expose private window publically. This is needed to keep window off pydantic model
+    @property
+    def window(self) -> 'Window':
+        return self._window
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.

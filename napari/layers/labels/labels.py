@@ -1,3 +1,4 @@
+import warnings
 from collections import deque
 from typing import Dict, Union
 
@@ -10,7 +11,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ..image import Image
+from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
@@ -18,7 +19,7 @@ from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import sphere_indices
 
 
-class Labels(Image):
+class Labels(_ImageBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -106,6 +107,9 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
+    contour : int
+        If greater than 0, displays contours of labels instead of shaded regions
+        with a thickness equal to its value.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -173,6 +177,7 @@ class Labels(Image):
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
+        self._contour = 0
 
         if properties is None:
             self._properties = {}
@@ -219,6 +224,7 @@ class Labels(Image):
             selected_label=Event,
             color_mode=Event,
             brush_shape=Event,
+            contour=Event,
         )
 
         self._n_dimensional = False
@@ -261,6 +267,17 @@ class Labels(Image):
     def n_dimensional(self, n_dimensional):
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
+
+    @property
+    def contour(self):
+        """int: displays contours of labels instead of shaded regions."""
+        return self._contour
+
+    @contour.setter
+    def contour(self, contour):
+        self._contour = contour
+        self.events.contour()
+        self.refresh()
 
     @property
     def brush_size(self):
@@ -649,6 +666,23 @@ class Labels(Image):
         else:
             raise ValueError("Unsupported Color Mode")
 
+        if self.contour > 0 and raw.ndim == 2:
+            image = np.zeros_like(raw)
+            struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            thickness = self.contour
+            thick_struct_elem = ndi.iterate_structure(
+                struct_elem, thickness
+            ).astype(bool)
+            boundaries = ndi.grey_dilation(
+                raw, footprint=struct_elem
+            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
+            image[boundaries] = raw[boundaries]
+            image = np.where(
+                image > 0, low_discrepancy_image(image, self._seed), 0
+            )
+        elif self.contour > 0 and raw.ndim > 2:
+            warnings.warn("Contours are not displayed during 3D rendering")
+
         return image
 
     def new_colormap(self):
@@ -833,6 +867,17 @@ class Labels(Image):
                 slice_coord = slice_coord_temp
 
             slice_coord = tuple(slice_coord)
+
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
+
+            if isinstance(self.data, xr.DataArray):
+                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
+        except ImportError:
+            pass
 
         # slice_coord from square brush is tuple of slices per dimension
         # slice_coord from circle brush is tuple of coord. arrays per dimension

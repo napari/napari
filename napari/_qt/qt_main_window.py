@@ -9,7 +9,7 @@ from collections import Counter
 from itertools import chain, repeat
 from typing import Dict
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -27,7 +27,8 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
-from ..utils.theme import get_theme, template
+from ..utils.settings import SETTINGS
+from ..utils.translations import translator
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -36,9 +37,11 @@ from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
-from .utils import QImg2array
+from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+
+trans = translator.load()
 
 
 class _QtMainWindow(QMainWindow):
@@ -57,17 +60,142 @@ class _QtMainWindow(QMainWindow):
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
+        self._maximized_flag = False
+        self._preferences_dialog_size = QSize()
+        self._status_bar = self.statusBar()
+
+    def _load_window_settings(self):
+        """
+        Load window layout settings from configuration.
+        """
+        window_size = SETTINGS.application.window_size
+        window_state = SETTINGS.application.window_state
+        preferences_dialog_size = SETTINGS.application.preferences_size
+        window_position = SETTINGS.application.window_position
+
+        # It's necessary to verify if the window/position value is valid with the current screen.
+        width, height = window_position
+        screen_shape = QApplication.desktop().geometry()
+        current_width = screen_shape.width()
+        current_height = screen_shape.height()
+        if current_width < width or current_height < height:
+            window_position = (self.x(), self.y())
+
+        window_maximized = SETTINGS.application.window_maximized
+        window_fullscreen = SETTINGS.application.window_fullscreen
+        return (
+            window_state,
+            window_size,
+            window_position,
+            window_maximized,
+            window_fullscreen,
+            preferences_dialog_size,
+        )
+
+    def _get_window_settings(self):
+        """
+        Return current window settings.
+
+        Symmetric to the 'set_window_settings' setter.
+        """
+        window_size = (self.width(), self.height())
+        window_fullscreen = self.isFullScreen()
+
+        if window_fullscreen:
+            window_maximized = self._maximized_flag
+        else:
+            window_maximized = self.isMaximized()
+
+        window_position = (self.x(), self.y())
+        preferences_dialog_size = (
+            self._preferences_dialog_size.width(),
+            self._preferences_dialog_size.height(),
+        )
+        window_state = qbytearray_to_str(self.saveState())
+        return (
+            window_state,
+            window_size,
+            window_position,
+            window_maximized,
+            window_fullscreen,
+            preferences_dialog_size,
+        )
+
+    def _set_window_settings(
+        self,
+        window_state,
+        window_size,
+        window_position,
+        window_maximized,
+        window_fullscreen,
+        preferences_dialog_size,
+    ):
+        """
+        Set window settings.
+
+        Symmetric to the 'get_window_settings' accessor.
+        """
+        self.setUpdatesEnabled(False)
+        self.setWindowState(Qt.WindowNoState)
+
+        if preferences_dialog_size:
+            self._preferences_dialog_size = QSize(*preferences_dialog_size)
+
+        if window_position:
+            window_position = QPoint(*window_position)
+            self.move(window_position)
+
+        if window_size:
+            window_size = QSize(*window_size)
+            self.resize(window_size)
+
+        if window_state:
+            self.restoreState(str_to_qbytearray(window_state))
+
+        if window_fullscreen:
+            self.setWindowState(Qt.WindowFullScreen)
+            self._maximized_flag = window_maximized
+        elif window_maximized:
+            self.setWindowState(Qt.WindowMaximized)
+
+        self.setUpdatesEnabled(True)
+
+    def _save_current_window_settings(self):
+        """Save the current geometry of the main window."""
+        (
+            window_state,
+            window_size,
+            window_position,
+            window_maximized,
+            window_fullscreen,
+            preferences_dialog_size,
+        ) = self._get_window_settings()
+
+        SETTINGS.application.window_size = window_size
+        SETTINGS.application.window_maximized = window_maximized
+        SETTINGS.application.window_fullscreen = window_fullscreen
+        SETTINGS.application.window_position = window_position
+        SETTINGS.application.window_state = window_state
+        SETTINGS.application.preferences_size = preferences_dialog_size
+        SETTINGS.application.window_statusbar = not self._status_bar.isHidden()
+
+    def _update_preferences_dialog_size(self, event):
+        """Save preferences dialog size."""
+        self._preferences_dialog_size = event.size()
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        self._save_current_window_settings()
+
         # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self.isFullScreen():
             self.showNormal()
-            for i in range(5):
+            for _i in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
         event.accept()
@@ -97,18 +225,15 @@ class Window:
         Window menu.
     """
 
-    raw_stylesheet = get_stylesheet()
-
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        # note: the return value must be retained to prevent garbage collection
-        _ = get_app()
+        get_app()
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow()
         self.qt_viewer = QtViewer(viewer)
+        self._qt_window = _QtMainWindow()
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
+        self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -128,10 +253,11 @@ class Window:
         self._add_plugins_menu()
         self._add_help_menu()
 
-        self._status_bar.showMessage('Ready')
+        self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
+        self.qt_viewer.viewer.theme = SETTINGS.application.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -143,10 +269,10 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        self.qt_viewer.viewer.events.status.connect(self._status_changed)
-        self.qt_viewer.viewer.events.help.connect(self._help_changed)
-        self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.theme.connect(self._update_theme)
+        viewer.events.status.connect(self._status_changed)
+        viewer.events.help.connect(self._help_changed)
+        viewer.events.title.connect(self._title_changed)
+        viewer.events.theme.connect(self._update_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -157,6 +283,23 @@ class Window:
 
         if show:
             self.show()
+
+    def __getattr__(self, name):
+        if name == 'raw_stylesheet':
+            import warnings
+
+            warnings.warn(
+                (
+                    "The 'raw_stylesheet' attribute is deprecated and will be"
+                    "removed in version 0.4.7.  Please use "
+                    "`napari.qt.get_stylesheet` instead"
+                ),
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            return get_stylesheet()
+
+        return object.__getattribute__(self, name)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -484,7 +627,7 @@ class Window:
         about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
-            lambda e: QtAbout.showAbout(self.qt_viewer)
+            lambda e: QtAbout.showAbout(self.qt_viewer, self._qt_window)
         )
         self.help_menu.addAction(about_action)
 
@@ -815,9 +958,45 @@ class Window:
         self._qt_window.resize(width, height)
 
     def show(self):
-        """Resize, show, and bring forward the window."""
+        """Resize, show, and bring forward the window.
+
+        Parameters
+        ----------
+        run : bool, optional
+            If true, will start an event loop if necessary, by default False
+
+        Raises
+        ------
+        RuntimeError
+            If the viewer.window has already been closed and deleted.
+        """
+        if SETTINGS.application.first_time:
+            SETTINGS.application.first_time = False
+            try:
+                self._qt_window.resize(self._qt_window.layout().sizeHint())
+            except (AttributeError, RuntimeError):
+                raise RuntimeError(
+                    "This viewer has already been closed and deleted. "
+                    "Please create a new one."
+                )
+        else:
+            try:
+                self._qt_window._set_window_settings(
+                    *self._qt_window._load_window_settings()
+                )
+            except Exception as err:
+                import warnings
+
+                warnings.warn(
+                    (
+                        "The window geometry settings could not be "
+                        f"loaded due to the following error: {err}"
+                    ),
+                    category=RuntimeWarning,
+                    stacklevel=2,
+                )
+
         try:
-            self._qt_window.resize(self._qt_window.layout().sizeHint())
             self._qt_window.show()
         except (AttributeError, RuntimeError):
             raise RuntimeError(
@@ -829,11 +1008,11 @@ class Window:
         self.qt_viewer.dims._resize_axis_labels()
 
         # We want to bring the viewer to the front when
-        # A) it is our own (gui_qt) event loop OR we are running in jupyter
+        # A) it is our own event loop OR we are running in jupyter
         # B) it is not the first time a QMainWindow is being created
 
         # `app_name` will be "napari" iff the application was instantiated in
-        # gui_qt(). isActiveWindow() will be True if it is the second time a
+        # get_app(). isActiveWindow() will be True if it is the second time a
         # _qt_window has been created.
         # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
@@ -849,17 +1028,11 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
-        # set window styles which don't use the primary stylesheet
-        # FIXME: this is a problem with the stylesheet not using properties
-        theme = get_theme(self.qt_viewer.viewer.theme)
-        self._status_bar.setStyleSheet(
-            template(
-                'QStatusBar { background: {{ background }}; '
-                'color: {{ text }}; }',
-                **theme,
-            )
-        )
-        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **theme))
+        theme_name = self.qt_viewer.viewer.theme
+        self._qt_window.setStyleSheet(get_stylesheet(theme_name))
+
+        if event:
+            SETTINGS.application.theme = event.value
 
     def _status_changed(self, event):
         """Update status bar.
