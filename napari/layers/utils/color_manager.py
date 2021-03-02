@@ -149,17 +149,6 @@ class ColorManager(EventedModel):
         coerced_colormap = ensure_colormap(v)
         return coerced_colormap
 
-    @validator('categorical_colormap', pre=True)
-    def _coerce_categorical_colormap(cls, v):
-        if isinstance(v, CategoricalColormap):
-            return v
-        if isinstance(v, list) or isinstance(v, np.ndarray):
-            return CategoricalColormap.from_array(v)
-        elif isinstance(v, dict):
-            return CategoricalColormap.from_dict(v)
-        else:
-            raise TypeError('colormap should be an array or dict')
-
     @validator('colors', pre=True)
     def _ensure_color_array(cls, v, values):
         if len(v) > 0:

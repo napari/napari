@@ -88,6 +88,21 @@ class CategoricalColormap(EventedModel):
 
         return cls(colormap=colormap, fallback_color=fallback_color)
 
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_type
+
+    @classmethod
+    def validate_type(cls, val):
+        if isinstance(val, cls):
+            return val
+        if isinstance(val, list) or isinstance(val, np.ndarray):
+            return cls.from_array(val)
+        elif isinstance(val, dict):
+            return cls.from_dict(val)
+        else:
+            raise TypeError('colormap should be an array or dict')
+
     def __eq__(self, other):
         if isinstance(other, CategoricalColormap):
             if not compare_colormap_dicts(self.colormap, other.colormap):
