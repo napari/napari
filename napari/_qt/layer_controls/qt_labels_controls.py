@@ -18,6 +18,7 @@ from ...layers.labels._labels_constants import (
     Mode,
 )
 from ...utils.events import disconnect_events
+from ...utils.interactions import KEY_SYMBOLS
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
@@ -154,10 +155,17 @@ class QtLabelsControls(QtLayerControls):
             layer, 'paint', Mode.PAINT, tooltip='Paint mode (P)'
         )
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tooltip='Fill mode (F)'
+            layer,
+            'fill',
+            Mode.FILL,
+            tooltip='Fill mode (F) \n'
+            + f"Toggle with {KEY_SYMBOLS['Control']}",
         )
         self.erase_button = QtModeRadioButton(
-            layer, 'erase', Mode.ERASE, tooltip='Erase mode (E)'
+            layer,
+            'erase',
+            Mode.ERASE,
+            tooltip='Erase mode (E) \n' + f"Toggle with {KEY_SYMBOLS['Alt']}",
         )
 
         self.button_group = QButtonGroup(self)
