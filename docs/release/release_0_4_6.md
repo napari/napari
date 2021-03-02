@@ -63,7 +63,7 @@ package name, url, or local file (#2319).
 ## API Changes
 - The ViewerModel is now a Pydantic BaseModel and so subclassing the Viewer might require
 reading some of the [Pydantic BaseModel documentation](https://pydantic-docs.helpmanual.io/usage/models/).
-Otherwise the API of the ViewModel is unchanged.
+Otherwise the API of the ViewerModel is unchanged.
 
 ## Build Tools and Support
 - Add missing release notes 0.4.5 (#2250)
