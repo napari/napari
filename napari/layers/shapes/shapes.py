@@ -15,19 +15,15 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
 from ..base import Layer
+from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -143,7 +139,7 @@ class Shapes(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -543,7 +539,7 @@ class Shapes(Layer):
         self.text.add(self.current_properties, n_new_shapes)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -633,7 +629,6 @@ class Shapes(Layer):
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_edge_width(i, edge_width)
-        self.status = format_float(self.current_edge_width)
         self.events.edge_width()
 
     @property
@@ -1396,7 +1391,6 @@ class Shapes(Layer):
         else:
             raise ValueError("Mode not recognized")
 
-        self.status = str(mode)
         self._mode = mode
 
         draw_modes = [
@@ -2156,10 +2150,13 @@ class Shapes(Layer):
 
         return data_full
 
-    def _get_value(self):
-        """Determine if any shape at given coord using triangle meshes.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
 
-        Getting value is not supported yet for 3D meshes
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
@@ -2176,7 +2173,7 @@ class Shapes(Layer):
         if self._is_moving:
             return self._moving_value
 
-        coord = self.displayed_coordinates
+        coord = [position[i] for i in self._dims_displayed]
 
         # Check selected shapes
         value = None

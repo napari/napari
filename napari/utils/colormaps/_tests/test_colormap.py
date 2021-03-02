@@ -43,7 +43,10 @@ def test_binned_colormap_with_control_points():
     """Test a binned with control points."""
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     cmap = Colormap(
-        colors, name='testing', interpolation='zero', controls=[0, 0.2, 0.3, 1]
+        colors,
+        name='testing',
+        interpolation='zero',
+        controls=[0, 0.2, 0.3, 1],
     )
 
     assert cmap.name == 'testing'
@@ -51,3 +54,12 @@ def test_binned_colormap_with_control_points():
     assert len(cmap.controls) == len(colors) + 1
     np.testing.assert_almost_equal(cmap.colors, colors)
     np.testing.assert_almost_equal(cmap.map([0.4]), [[0, 0, 1, 1]])
+
+
+def test_colormap_equality():
+    colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
+    cmap_1 = Colormap(colors, name='testing', controls=[0, 0.75, 1])
+    cmap_2 = Colormap(colors, name='testing', controls=[0, 0.75, 1])
+    cmap_3 = Colormap(colors, name='testing', controls=[0, 1])
+    assert cmap_1 == cmap_2
+    assert cmap_1 != cmap_3

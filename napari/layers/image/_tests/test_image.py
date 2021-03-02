@@ -510,7 +510,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0)
     assert value == data[0, 0]
 
@@ -520,7 +520,7 @@ def test_message():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str
 
 

@@ -1,4 +1,6 @@
 """ChunkedSliceData class.
+
+This is for pre-Octree Image class only.
 """
 import logging
 from typing import Optional
@@ -55,8 +57,8 @@ class ChunkedSliceData(ImageSliceData):
     def load_chunks(self) -> bool:
         """Load this slice data's chunks sync or async.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if chunks were loaded synchronously.
         """
@@ -100,7 +102,6 @@ class ChunkedSliceData(ImageSliceData):
         ----------
         layer : Layer
             The layer for this request.
-
         request : ChunkRequest
             The request that was loaded.
         """

@@ -35,7 +35,7 @@ txtB = (
 
 
 @mock.patch(
-    'napari.plugins.pypi.request.urlopen', return_value=FakeResponse(data=txtA)
+    'napari.plugins.pypi.urlopen', return_value=FakeResponse(data=txtA)
 )
 def test_get_packages_by_prefix(mock_get):
     urls = pypi.get_packages_by_prefix('package')
@@ -44,7 +44,7 @@ def test_get_packages_by_prefix(mock_get):
 
 
 @mock.patch(
-    'napari.plugins.pypi.request.urlopen', return_value=FakeResponse(data=txtB)
+    'napari.plugins.pypi.urlopen', return_value=FakeResponse(data=txtB)
 )
 def test_get_package_versions(mock_get):
     versions = pypi.get_package_versions('package')

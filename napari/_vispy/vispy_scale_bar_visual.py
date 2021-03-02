@@ -86,7 +86,7 @@ class VispyScaleBarVisual:
         )
         scale = target_canvas_pixels_rounded
 
-        if self._viewer.scale_bar._position in [
+        if self._viewer.scale_bar.position in [
             Position.TOP_RIGHT,
             Position.BOTTOM_RIGHT,
         ]:
@@ -124,11 +124,11 @@ class VispyScaleBarVisual:
 
     def _on_position_change(self, event):
         """Change position of scale bar."""
-        if self._viewer.scale_bar._position == Position.TOP_LEFT:
+        if self._viewer.scale_bar.position == Position.TOP_LEFT:
             sign = 1
             self.node.transform.translate = [66, 14, 0, 0]
             self.text_node.transform.translate = [33, 16, 0, 0]
-        elif self._viewer.scale_bar._position == Position.TOP_RIGHT:
+        elif self._viewer.scale_bar.position == Position.TOP_RIGHT:
             sign = -1
             canvas_size = list(self.node.canvas.size)
             self.node.transform.translate = [canvas_size[0] - 66, 14, 0, 0]
@@ -138,7 +138,7 @@ class VispyScaleBarVisual:
                 0,
                 0,
             ]
-        elif self._viewer.scale_bar._position == Position.BOTTOM_RIGHT:
+        elif self._viewer.scale_bar.position == Position.BOTTOM_RIGHT:
             sign = -1
             canvas_size = list(self.node.canvas.size)
             self.node.transform.translate = [
@@ -153,7 +153,7 @@ class VispyScaleBarVisual:
                 0,
                 0,
             ]
-        elif self._viewer.scale_bar._position == Position.BOTTOM_LEFT:
+        elif self._viewer.scale_bar.position == Position.BOTTOM_LEFT:
             sign = 1
             canvas_size = list(self.node.canvas.size)
             self.node.transform.translate = [66, canvas_size[1] - 16, 0, 0]

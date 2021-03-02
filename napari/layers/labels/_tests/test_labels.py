@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
+import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
 from napari.utils import Colormap
+from napari.utils.colormaps import low_discrepancy_image
 
 
 def test_random_labels():
@@ -219,19 +221,19 @@ def test_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value()
-    layer_message = layer.get_message()
+    current_label = layer.get_value(layer.coordinates)
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -254,19 +256,19 @@ def test_multiscale_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value()[1]
-    layer_message = layer.get_message()
+    current_label = layer.get_value(layer.coordinates)[1]
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_message()
+    layer_message = layer.get_status(layer.position)
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -347,6 +349,114 @@ def test_n_dimensional():
 
     layer.n_dimensional = True
     assert layer.n_dimensional is True
+
+
+@pytest.mark.parametrize(
+    "input_data, expected_data_view",
+    [
+        (
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (
+            np.array(
+                [
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (5 * np.ones((9, 10)), np.zeros((9, 10))),
+    ],
+)
+def test_contour(input_data, expected_data_view):
+    """Test changing contour."""
+    layer = Labels(input_data)
+    assert layer.contour == 0
+    np.testing.assert_array_equal(layer.data, input_data)
+
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(input_data), layer._data_view
+    )
+    data_view_before_contour = layer._data_view.copy()
+
+    layer.contour = 1
+    assert layer.contour == 1
+
+    # Check `layer.data` didn't change
+    np.testing.assert_array_equal(layer.data, input_data)
+
+    # Check what is returned in the view of the data
+    np.testing.assert_array_equal(
+        layer._data_view,
+        np.where(
+            expected_data_view > 0,
+            low_discrepancy_image(expected_data_view),
+            0,
+        ),
+    )
+
+    # Check the view of the data changed after setting the contour
+    with np.testing.assert_raises(AssertionError):
+        np.testing.assert_array_equal(
+            data_view_before_contour, layer._data_view
+        )
+
+    layer.contour = 0
+    assert layer.contour == 0
+
+    # Check it's in the same state as before setting the contour
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(input_data), layer._data_view
+    )
 
 
 def test_selecting_label():
@@ -476,6 +586,24 @@ def test_paint_2d(brush_shape, expected_sum):
     assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
 
 
+@pytest.mark.timeout(1)
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum",
+    [("circle", 411), ("square", 432)],
+)
+def test_paint_2d_xarray(brush_shape, expected_sum):
+    """Test the memory usage of painting an xarray indirectly via timeout."""
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024)))
+
+    layer = Labels(data)
+    layer.brush_size = 12
+    layer.brush_shape = brush_shape
+    layer.mode = 'paint'
+    layer.paint((1, 1, 512, 512), 3)
+    assert isinstance(layer.data, xr.DataArray)
+    assert layer.data.sum() == expected_sum
+
+
 @pytest.mark.parametrize(
     "brush_shape, expected_sum",
     [("circle", [137, 1189, 1103]), ("square", [144, 1728, 1548])],
@@ -525,7 +653,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0)
     assert value == data[0, 0]
 
@@ -535,7 +663,7 @@ def test_message():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str
 
 

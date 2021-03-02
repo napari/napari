@@ -431,6 +431,10 @@ class Affine(Transform):
         self.linear_matrix = affine_matrix[:-1, :-1]
         self.translate = affine_matrix[:-1, -1]
 
+    def __array__(self, *args, **kwargs):
+        """NumPy __array__ protocol to get the affine transform matrix."""
+        return self.affine_matrix
+
     @property
     def inverse(self) -> 'Affine':
         """Return the inverse transform."""

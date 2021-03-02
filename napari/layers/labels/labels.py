@@ -1,3 +1,4 @@
+import warnings
 from collections import deque
 from typing import Dict, Union
 
@@ -10,8 +11,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ...utils.status_messages import format_float
-from ..image import Image
+from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
@@ -19,7 +19,7 @@ from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import sphere_indices
 
 
-class Labels(Image):
+class Labels(_ImageBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -57,7 +57,7 @@ class Labels(Image):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -107,6 +107,9 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
+    contour : int
+        If greater than 0, displays contours of labels instead of shaded regions
+        with a thickness equal to its value.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -174,6 +177,7 @@ class Labels(Image):
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
+        self._contour = 0
 
         if properties is None:
             self._properties = {}
@@ -220,6 +224,7 @@ class Labels(Image):
             selected_label=Event,
             color_mode=Event,
             brush_shape=Event,
+            contour=Event,
         )
 
         self._n_dimensional = False
@@ -264,6 +269,17 @@ class Labels(Image):
         self.events.n_dimensional()
 
     @property
+    def contour(self):
+        """int: displays contours of labels instead of shaded regions."""
+        return self._contour
+
+    @contour.setter
+    def contour(self, contour):
+        self._contour = contour
+        self.events.contour()
+        self.refresh()
+
+    @property
     def brush_size(self):
         """float: Size of the paint in world coordinates."""
         return self._brush_size
@@ -277,7 +293,6 @@ class Labels(Image):
             [self.scale[d] for d in self._dims_displayed]
         )
         self.cursor_size = self.brush_size * data2world_scale
-        self.status = format_float(self.brush_size)
         self.events.brush_size()
 
     @property
@@ -554,7 +569,6 @@ class Labels(Image):
         else:
             raise ValueError("Mode not recognized")
 
-        self.status = str(mode)
         self._mode = mode
 
         self.events.mode(mode=mode)
@@ -651,6 +665,23 @@ class Labels(Image):
             )
         else:
             raise ValueError("Unsupported Color Mode")
+
+        if self.contour > 0 and raw.ndim == 2:
+            image = np.zeros_like(raw)
+            struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            thickness = self.contour
+            thick_struct_elem = ndi.iterate_structure(
+                struct_elem, thickness
+            ).astype(bool)
+            boundaries = ndi.grey_dilation(
+                raw, footprint=struct_elem
+            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
+            image[boundaries] = raw[boundaries]
+            image = np.where(
+                image > 0, low_discrepancy_image(image, self._seed), 0
+            )
+        elif self.contour > 0 and raw.ndim > 2:
+            warnings.warn("Contours are not displayed during 3D rendering")
 
         return image
 
@@ -837,6 +868,17 @@ class Labels(Image):
 
             slice_coord = tuple(slice_coord)
 
+        # Fix indexing for xarray if necessary
+        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
+        # for difference from indexing numpy
+        try:
+            import xarray as xr
+
+            if isinstance(self.data, xr.DataArray):
+                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
+        except ImportError:
+            pass
+
         # slice_coord from square brush is tuple of slices per dimension
         # slice_coord from circle brush is tuple of coord. arrays per dimension
 
@@ -858,18 +900,35 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
-    def get_message(self):
-        msg = super().get_message()
+    def get_status(self, position=None, world=False):
+        """Status message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a status update.
+        """
+        msg = super().get_status(position, world=world)
+
         # if this labels layer has properties
         if self._label_index and self._properties:
+            value = self.get_value(position, world=world)
             # if the cursor is not outside the image or on the background
-            if self._value is not None:
+            if value is not None:
                 if self.multiscale:
-                    value = self._value[1]
+                    label_value = value[1]
                 else:
-                    value = self._value
-                if value in self._label_index:
-                    idx = self._label_index[value]
+                    label_value = value
+                if label_value in self._label_index:
+                    idx = self._label_index[label_value]
                     for k, v in self._properties.items():
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'

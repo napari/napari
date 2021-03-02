@@ -15,7 +15,7 @@ def test_get_theme():
 def test_register_theme():
     # Check that blue theme is not listed in available themes
     themes = available_themes()
-    assert 'blue' not in themes
+    assert 'test_blue' not in themes
 
     # Create new blue theme based on dark theme
     blue_theme = get_theme('dark')
@@ -27,16 +27,16 @@ def test_register_theme():
     )
 
     # Register blue theme
-    register_theme('blue', blue_theme)
+    register_theme('test_blue', blue_theme)
 
     # Check that blue theme is listed in available themes
     themes = available_themes()
-    assert 'blue' in themes
+    assert 'test_blue' in themes
 
     # Check that the dark theme has not been overwritten
     dark_theme = get_theme('dark')
     assert not dark_theme['background'] == blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
-    theme = get_theme('blue')
+    theme = get_theme('test_blue')
     assert theme['background'] == blue_theme['background']

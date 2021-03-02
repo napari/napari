@@ -8,7 +8,7 @@ no class or named tuple that gets passed between them.
 
 Instead, we'll probably just have a function signature that takes things
 like the pos, size and depth of each tile as separate arguments. But
-for now both do depend on OctreeChunk.
+for now the visual and Octree both depend on OctreeChunk.
 """
 from typing import List, Set
 
@@ -20,32 +20,27 @@ from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
 from .tile_set import TileSet
 
-# Shape of she whole texture in tiles. Hardcode for now. TODO_OCTREE: We
-# need to calculate this based on the tile size. Long term we want to
-# support huge tiles. So big images/layers will get small tiles, but if the
-# layer can fit within the max texture size, as big as (16384, 16384) then
-# it might be more efficient to put that in a single tiles.
-#
-# This might require that we can support multiple TexturAtlas2D objects
-# per TiledImageVisual.
+# Shape of she whole texture in tiles. Hardcode for now. We hope to make
+# TiledImageVisuals support multiple texture sizes and multiple tile
+# sizes in the future.
 SHAPE_IN_TILES = (16, 16)
 
 
 class TiledImageVisual(ImageVisual):
-    """An image that is drawn using one or more chunks or tiles.
+    """An image that is drawn using one or more tiles.
 
     A regular ImageVisual is a single image drawn as a single rectangle
     with a single texture. A tiled TiledImageVisual also has a single
-    texture, but that texture is a TextureAtlas2D.
+    texture, but that texture is a TextureAtlas2D instead of Texture2D.
 
     A texture atlas is basically a single texture that contains smaller
-    textures within it, like a quilt. In our cases the smaller textures are
-    all the same size, for example (256, 256). For example a 4k x 4k
-    texture can hold 256 different (256, 256) tiles.
+    textures within it, arranged in a grid like a quilt. In our case the
+    smaller textures are all the same size, for example (256, 256). A
+    (4096, 4096) texture can hold 256 different (256, 256) tiles.
 
-    When the TiledImageVisual draws, it draws a single list of quads. Each
-    quad's texture coordinates potentially refers to a different texture in
-    the atlas.
+    When the TiledImageVisual is drawn, it draws a single list of quads.
+    Each quad's texture coordinates potentially refers to a different
+    texture in the atlas.
 
     The quads can be located anywhere, even in 3D. TiledImageVisual does
     not know if it's drawing an octree or a grid, or just a scatter of tiles.
@@ -54,10 +49,14 @@ class TiledImageVisual(ImageVisual):
 
     For example, one quad might have a (256, 256) texture, but it's
     physically tiny on the screen. While the next quad is also showing a
-    (256, 256) texture, it has to be, but that quad is really big on that
-    same screen. This ability to have different size quads comes in handy
-    for octree rendering, where we often draw chunks from multiple levels
-    of the octree at the same time.
+    (256, 256) texture, but that quad is really big on that same screen.
+    This ability to have different size quads comes in handy for octree
+    rendering, where we often draw chunks from multiple levels of the
+    octree at the same time, and those chunks are difference sizes on the
+    screen.
+
+    Notes
+    -----
 
     Adding or removing tiles from a TiledImageVisual is efficient. Only the
     bytes in the the tile(s) being updated are sent to the card. The Vispy
@@ -108,8 +107,8 @@ class TiledImageVisual(ImageVisual):
         tile_shape : np.ndarray
             The shape of our tiles such as (256, 256, 4).
 
-        Return
-        ------
+        Returns
+        -------
         TextureAtlas2D
             The newly created texture atlas.
         """
@@ -162,10 +161,10 @@ class TiledImageVisual(ImageVisual):
 
     @property
     def num_tiles(self) -> int:
-        """Return the number tiles currently being drawn.
+        """The number tiles currently being drawn.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles currently being drawn.
         """
@@ -173,23 +172,23 @@ class TiledImageVisual(ImageVisual):
 
     @property
     def octree_chunks(self) -> List[OctreeChunk]:
-        """Return data for the chunks we are drawing.
+        """The chunks we are currently drawing.
 
         List[OctreeChunk]
-            The data for the chunks we are drawing.
+            The chunks we are currently drawing.
         """
         return self._tiles.chunks
 
     def add_chunks(self, chunks: List[OctreeChunk]) -> int:
-        """Any one or more chunks that we are not already drawing.
+        """Add one or more chunks that we are not already drawing.
 
         Parameters
         ----------
         chunks : List[OctreeChunk]
             Chunks that we may or may not already be drawing.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks that still need to be added.
         """
@@ -226,8 +225,8 @@ class TiledImageVisual(ImageVisual):
         octree_chunk : OctreeChunk
             The chunk we are adding.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The newly added chunk's index.
         """
@@ -250,8 +249,8 @@ class TiledImageVisual(ImageVisual):
     def chunk_set(self) -> Set[OctreeChunk]:
         """Return the set of chunks we are drawing.
 
-        Return
-        ------
+        Returns
+        -------
         Set[OctreeChunk]
             The set of chunks we are drawing.
         """
@@ -314,9 +313,6 @@ class TiledImageVisual(ImageVisual):
         verts = np.zeros((0, 2), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
 
-        # TODO_OCTREE: We can probably avoid vstack here? Maybe create one
-        # vertex buffer sized according to the max number of tiles we
-        # expect? But grow it if we exceed our guess?
         for tile_data in self._tiles.tile_data_sorted:
             atlas_tile = tile_data.atlas_tile
             verts = np.vstack((verts, atlas_tile.verts))
@@ -331,24 +327,17 @@ class TiledImageVisual(ImageVisual):
         self._need_vertex_update = False
 
     def _build_texture(self) -> None:
-        """Override of ImageVisual._build_texture().
+        """Override of ImageVisual._build_texture()."""
 
-        TODO_OCTREE: This needs work. Need to do the clim stuff in in the
-        base ImageVisual._build_texture but do it for each tile?
-        """
+        # clim not implemented yet, use code from base ImageVisual?
         self._clim = np.array([0, 1])
-
-        self._texture_limits = np.array([0, 1])  # hardcode
+        self._texture_limits = np.array([0, 1])
         self._need_colortransform_update = True
 
         self._need_texture_upload = False
 
     def _prepare_draw(self, view) -> None:
-        """Override of ImageVisual._prepare_draw()
-
-        TODO_OCTREE: See how much this changes from base class, if we can
-        avoid too much duplication. Or factor out some common methods.
-        """
+        """Override of ImageVisual._prepare_draw()"""
         if self._need_interpolation_update:
             # Call the base ImageVisual._build_interpolation()
             self._build_interpolation()

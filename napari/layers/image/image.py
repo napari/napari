@@ -9,7 +9,6 @@ from scipy import ndimage as ndi
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -27,8 +26,10 @@ else:
     SliceDataClass = ImageSliceData
 
 
+# It is important to contain at least one abstractmethod to properly exclude this class
+# in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class _ImageBase(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -82,7 +83,7 @@ class Image(IntensityVisualizationMixin, Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -332,7 +333,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     def _get_ndim(self):
@@ -389,7 +390,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
-        self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
@@ -401,7 +401,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @attenuation.setter
     def attenuation(self, value):
-        self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
@@ -480,31 +479,6 @@ class Image(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
-
-    def _get_state(self):
-        """Get dictionary of layer state.
-
-        Returns
-        -------
-        state : dict
-            Dictionary of layer state.
-        """
-        state = self._get_base_state()
-        state.update(
-            {
-                'rgb': self.rgb,
-                'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
-                'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
-                'rendering': self.rendering,
-                'iso_threshold': self.iso_threshold,
-                'attenuation': self.attenuation,
-                'gamma': self.gamma,
-                'data': self.data,
-            }
-        )
-        return state
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
@@ -639,7 +613,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         Parameters
         ----------
-        request : ChunkRequest
+        data : ChunkRequest
             The request that was satisfied/loaded.
         sync : bool
             If True the chunk was loaded synchronously.
@@ -735,21 +709,25 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
         value : tuple
-            Value of the data at the coord.
+            Value of the data.
         """
         if self.multiscale:
             # for multiscale data map the coordinate from the data back to
             # the tile
-            coord = self._transforms['tile2data'].inverse(self.coordinates)
+            coord = self._transforms['tile2data'].inverse(position)
         else:
-            coord = self.coordinates
+            coord = position
 
         coord = np.round(coord).astype(int)
 
@@ -784,3 +762,30 @@ class Image(IntensityVisualizationMixin, Layer):
             # Convert the ChunkRequest to SliceData and use it.
             data = SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
+
+
+class Image(_ImageBase):
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'rgb': self.rgb,
+                'multiscale': self.multiscale,
+                'colormap': self.colormap.name,
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state

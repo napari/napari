@@ -27,7 +27,7 @@ def imsave(filename: str, data: np.ndarray):
     if ext in [".tif", ".tiff"]:
         import tifffile
 
-        tifffile.imsave(filename, data)
+        tifffile.imsave(filename, data, compress=1)
     else:
         import imageio
 

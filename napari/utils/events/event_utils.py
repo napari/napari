@@ -8,7 +8,7 @@ def disconnect_events(emitter, listener):
     ----------
     emitter : napari.utils.events.event.EmitterGroup
         Emitter group.
-    listener: Object
+    listener : Object
         Any object that has been connected to.
     """
     for em in emitter.emitters.values():

@@ -1,6 +1,6 @@
 """DelayQueue class.
 
-Delays a configurable amount of time before submitting a request.
+Delay load requests a configurable amount of time before submitting them.
 """
 import logging
 import threading
@@ -36,20 +36,20 @@ class DelayQueue(threading.Thread):
     view before they are loaded.
 
     For example, when rapidly scrolling through slices, it would be
-    pointless to submit requests for every new slice we pass through.
-    Instead by using a small delay, we hold back submitting our requests
-    until the user has settled on a specific slice.
+    pointless to submit requests for every slice we pass through. Instead,
+    by using a small delay, we hold back submitting our requests until the
+    user has settled on a specific slice.
 
     Similarly with the Octree, when panning and zooming rapidly we might
-    choose to delay so that we don't waste time loading chunks that
+    choose to delay loads so that we don't waste time loading chunks that
     will quickly be out of view.
 
     With the Octree however we do want to show something as you pan and
-    zoom around. For this reason ChunkLoader can have multiple loader pools
-    each with different delays Typically we we delay the "ideal level"
-    chunks the most, but we load coarser levels sooner. So we show the user
-    something quickly, but we only load the full set of ideal chunks when
-    the camera movement has settled down.
+    zoom around. For this reason, ChunkLoader can have multiple loader
+    pools each with different delays. Typically we we delay the "ideal
+    level" chunks the most, but we load coarser levels sooner. We want to
+    show the user something quickly, but we only want to load the full set
+    of ideal chunks when the camera movement has settled down.
 
     Parameters
     ----------
@@ -126,8 +126,8 @@ class DelayQueue(threading.Thread):
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """
@@ -153,8 +153,8 @@ class DelayQueue(threading.Thread):
         now : float
             Current time in seconds.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the entry was submitted.
         """

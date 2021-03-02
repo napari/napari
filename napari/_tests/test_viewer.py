@@ -13,9 +13,9 @@ from napari._tests.utils import (
 from napari.utils._tests.test_naming import eval_with_filename
 
 
-def test_viewer(make_test_viewer):
+def test_viewer(make_napari_viewer):
     """Test instantiating viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     assert viewer.title == 'napari'
@@ -46,8 +46,8 @@ def test_viewer(make_test_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
-    viewer = make_test_viewer()
+def test_add_layer(make_napari_viewer, layer_class, data, ndim, visible):
+    viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
@@ -58,11 +58,11 @@ def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
 def test_add_layer_magic_name(
-    make_test_viewer, layer_class, a_unique_name, ndim
+    make_napari_viewer, layer_class, a_unique_name, ndim
 ):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
-    viewer = make_test_viewer()  # noqa: F841
+    viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
         "add_layer_by_type(viewer, layer_class, a_unique_name)",
         "somefile.py",
@@ -70,9 +70,9 @@ def test_add_layer_magic_name(
     assert layer.name == "a_unique_name"
 
 
-def test_screenshot(make_test_viewer):
+def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     # Add image
@@ -104,9 +104,9 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
-def test_changing_theme(make_test_viewer):
+def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     viewer.add_points(data=None)
     assert viewer.theme == 'dark'
 
@@ -126,10 +126,10 @@ def test_changing_theme(make_test_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
+def test_roll_traspose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
 
@@ -158,9 +158,9 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
-def test_toggling_axes(make_test_viewer):
+def test_toggling_axes(make_napari_viewer):
     """Test toggling axes."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # Check axes are not visible
     assert not viewer.axes.visible
@@ -178,9 +178,9 @@ def test_toggling_axes(make_test_viewer):
     assert not viewer.axes.visible
 
 
-def test_toggling_scale_bar(make_test_viewer):
+def test_toggling_scale_bar(make_napari_viewer):
     """Test toggling scale bar."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # Check scale bar is not visible
     assert not viewer.scale_bar.visible

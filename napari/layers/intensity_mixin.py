@@ -72,7 +72,6 @@ class IntensityVisualizationMixin:
             + ', '
             + format_float(contrast_limits[1])
         )
-        self.status = self._contrast_limits_msg
         self._contrast_limits = contrast_limits
         # make sure range slider is big enough to fit range
         newrange = list(self.contrast_limits_range)
@@ -117,7 +116,6 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
         self.events.gamma()

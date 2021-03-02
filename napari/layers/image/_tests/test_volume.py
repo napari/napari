@@ -146,7 +146,7 @@ def test_value():
     data = np.random.random((10, 15, 20))
     layer = Image(data)
     layer._slice_dims(ndisplay=3)
-    value = layer.get_value()
+    value = layer.get_value(layer.coordinates)
     assert layer.coordinates == (0, 0, 0)
     assert value == data[0, 0, 0]
 
@@ -157,5 +157,5 @@ def test_message():
     data = np.random.random((10, 15, 20))
     layer = Image(data)
     layer._slice_dims(ndisplay=3)
-    msg = layer.get_message()
+    msg = layer.get_status(layer.position)
     assert type(msg) == str

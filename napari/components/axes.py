@@ -1,8 +1,7 @@
-from ..utils.events.dataclass import evented_dataclass
+from ..utils.events import EventedModel
 
 
-@evented_dataclass
-class Axes:
+class Axes(EventedModel):
     """Axes indicating world coordinate origin and orientation.
 
     Attributes
@@ -25,6 +24,7 @@ class Axes:
         If axes have arrowheads or not.
     """
 
+    # fields
     visible: bool = False
     labels: bool = True
     colored: bool = True

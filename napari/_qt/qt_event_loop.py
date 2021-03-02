@@ -1,16 +1,18 @@
 import os
 import sys
 from contextlib import contextmanager
+from warnings import warn
 
-from qtpy.QtCore import Qt, QTimer
-from qtpy.QtGui import QIcon, QPixmap
-from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import QApplication
 
 from napari import __version__
 
-from ..utils.misc import in_ipython
+from ..utils import config, perf
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
+from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
 NAPARI_ICON_PATH = os.path.join(
@@ -34,6 +36,10 @@ _defaults = {
     'org_domain': 'napari.org',
     'app_id': NAPARI_APP_ID,
 }
+
+
+# store reference to QApplication to prevent garbage collection
+_app_ref = None
 
 
 def get_app(
@@ -90,11 +96,11 @@ def get_app(
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
     kwargs = locals() if set_values else _defaults
+    global _app_ref
 
     app = QApplication.instance()
     if app:
         if set_values:
-            from warnings import warn
 
             warn(
                 "QApplication already existed, these arguments to to 'get_app'"
@@ -106,23 +112,9 @@ def get_app(
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
 
-        if (
-            in_ipython()
-            and app.applicationName() == ' '  # will be true in IPython gui qt
-            and not getattr(app, '_ipython_patched', False)
-        ):
-            # we're using the IPython gui qt QApp.
-            # we can patch sys.excepthook to give better console tracebacks
-            # may be included upstream eventually?
-            # see https://github.com/ipython/ipython/issues/10057
-            def _patch_excepthook():
-                from IPython import get_ipython
+        if not _app_ref and app.applicationName() == ' ':
+            _patch_ipython()
 
-                sys.excepthook = get_ipython().excepthook
-
-            QTimer.singleShot(0, _patch_excepthook)
-            app._ipython_patched = True
-        app._existed = True
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
@@ -136,8 +128,7 @@ def get_app(
             app = QApplication(sys.argv)
 
         # if this is the first time the Qt app is being instantiated, we set
-        # the name, so that we know whether to raise_ in Window.show()
-
+        # the name and metadata
         app.setApplicationName(kwargs.get('app_name'))
         app.setApplicationVersion(kwargs.get('app_version'))
         app.setOrganizationName(kwargs.get('org_name'))
@@ -149,16 +140,58 @@ def get_app(
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    # see docstring of `wait_for_workers_to_quit` for caveats on killing
-    # workers at shutdown.
-    app.aboutToQuit.connect(wait_for_workers_to_quit)
+    if not _app_ref:  # running get_app for the first time
+        # see docstring of `wait_for_workers_to_quit` for caveats on killing
+        # workers at shutdown.
+        app.aboutToQuit.connect(wait_for_workers_to_quit)
 
+        # this will register all of our resources (icons) with Qt, so that they
+        # can be used in qss files and elsewhere.
+        _register_napari_resources()
+
+    _app_ref = app  # prevent garbage collection
     return app
+
+
+def quit_app():
+    """Close all windows and quit the QApplication if napari started it."""
+    QApplication.closeAllWindows()
+    # if we started the application then the app will be named 'napari'.
+    if QApplication.applicationName() == 'napari':
+        QApplication.quit()
+
+    # otherwise, something else created the QApp before us (such as
+    # %gui qt IPython magic).  If we quit the app in this case, then
+    # *later* attempts to instantiate a napari viewer won't work until
+    # the event loop is restarted with app.exec_().  So rather than
+    # quit just close all the windows (and clear our app icon).
+    else:
+        QApplication.setWindowIcon(QIcon())
+
+    if perf.USE_PERFMON:
+        # Write trace file before exit, if we were writing one.
+        # Is there a better place to make sure this is done on exit?
+        perf.timers.stop_trace_file()
+
+    if config.monitor:
+        # Stop the monitor service if we were using it
+        from ..components.experimental.monitor import monitor
+
+        monitor.stop()
+
+    if config.async_loading:
+        # Shutdown the chunkloader
+        from ..components.experimental.chunk import chunk_loader
+
+        chunk_loader.shutdown()
 
 
 @contextmanager
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
+
+    NOTE: This context manager may be deprecated in the future. Prefer using
+    :func:`napari.run` instead.
 
     Parameters
     ----------
@@ -178,39 +211,38 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
-    splash_widget = None
 
     app = get_app()
+    splash = None
     if startup_logo and app.applicationName() == 'napari':
-        pm = QPixmap(NAPARI_ICON_PATH).scaled(
-            360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
-        )
-        splash_widget = QSplashScreen(pm)
-        splash_widget.show()
-        app._splash_widget = splash_widget
+        from .widgets.qt_splash_screen import NapariSplashScreen
 
-    # instantiate the exception handler
-    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
-    sys.excepthook = exception_handler.handle
+        splash = NapariSplashScreen()
+        splash.close()
 
+    yield app
+    run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
+
+
+def _ipython_has_eventloop() -> bool:
+    """Return True if IPython %gui qt is active.
+
+    Using this is better than checking ``QApp.thread().loopLevel() > 0``,
+    because IPython starts and stops the event loop continuously to accept code
+    at the prompt.  So it will likely "appear" like there is no event loop
+    running, but we still don't need to start one.
+    """
     try:
-        yield app
-    except Exception:
-        exception_handler.handle(*sys.exc_info())
+        from IPython import get_ipython
 
-    # if the application already existed before this function was called,
-    # there's no need to start it again.  By avoiding unnecessary calls to
-    # ``app.exec_``, we avoid blocking.
-    # we add 'magicgui' so that anyone using @magicgui *before* calling gui_qt
-    # will also have the application executed. (a bandaid for now?...)
-    # see https://github.com/napari/napari/pull/2016
-    if app.applicationName() in ('napari', 'magicgui'):
-        if splash_widget and startup_logo:
-            splash_widget.close()
-        run(force=force, _func_name='gui_qt')
+        return get_ipython().active_eventloop == 'qt'
+    except (ImportError, AttributeError):
+        return False
 
 
-def run(*, force=False, _func_name='run'):
+def run(
+    *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
+):
     """Start the Qt Event Loop
 
     Parameters
@@ -218,6 +250,15 @@ def run(*, force=False, _func_name='run'):
     force : bool, optional
         Force the application event_loop to start, even if there are no top
         level widgets to show.
+    gui_exceptions : bool, optional
+        Whether to show uncaught exceptions in the GUI. By default they will be
+        shown in the console that launched the event loop.
+    max_loop_level : int, optional
+        The maximum allowable "loop level" for the execution thread.  Every
+        time `QApplication.exec_()` is called, Qt enters the event loop,
+        increments app.thread().loopLevel(), and waits until exit() is called.
+        This function will prevent calling `exec_()` if the application already
+        has at least ``max_loop_level`` event loops running.  By default, 1.
     _func_name : str, optional
         name of calling function, by default 'run'.  This is only here to
         provide functions like `gui_qt` a way to inject their name into the
@@ -229,6 +270,10 @@ def run(*, force=False, _func_name='run'):
         (To avoid confusion) if no widgets would be shown upon starting the
         event loop.
     """
+    if _ipython_has_eventloop():
+        # If %gui qt is active, we don't need to block again.
+        return
+
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
@@ -237,11 +282,59 @@ def run(*, force=False, _func_name='run'):
             'or qtpy.QtWidgets.QApplication([])'
         )
     if not app.topLevelWidgets() and not force:
-        from warnings import warn
-
         warn(
             "Refusing to run a QApplication with no topLevelWidgets. "
             f"To run the app anyway, use `{_func_name}(force=True)`"
         )
         return
-    app.exec_()
+
+    if app.thread().loopLevel() >= max_loop_level:
+        loops = app.thread().loopLevel()
+        s = 's' if loops > 1 else ''
+        warn(
+            f"A QApplication is already running with {loops} event loop{s}."
+            "To enter *another* event loop, use "
+            f"`{_func_name}(max_loop_level={loops + 1})`"
+        )
+        return
+
+    with _install_hooks(gui_exceptions):
+        app.exec_()
+
+
+@contextmanager
+def _install_hooks(gui_exceptions=True):
+    """Install ExceptionHandler as sys.excepthook.
+
+    probably temporary until https://github.com/napari/napari/pull/2205
+    """
+    # instantiate the exception handler
+    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
+    orighook, sys.excepthook = sys.excepthook, exception_handler.handle
+    try:
+        yield
+    finally:
+        sys.excepthook = orighook
+        exception_handler.deleteLater()
+
+
+def _patch_ipython():
+    """Fix IPython console tracebacks when using gui_qt
+
+    If we're using the IPython gui qt QApp. we can give better console
+    tracebacks (ones that don't always say "this is a bug in IPython"), by
+    making sure that IPython owns the sys.excepthook after the qt loop starts.
+    could maybe be included upstream eventually?
+    see https://github.com/ipython/ipython/issues/10057
+
+    """
+    if _ipython_has_eventloop():
+        from IPython import get_ipython
+        from qtpy.QtCore import QTimer
+
+        def _patch_excepthook():
+            sys.excepthook = get_ipython().excepthook
+
+        # timer with singleShot of 0 will schedule this to be called right
+        # after the event loop has started.
+        QTimer.singleShot(0, _patch_excepthook)

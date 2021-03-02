@@ -86,7 +86,6 @@ with napari.gui_qt():
         edge_width=5,
         edge_color='coral',
         face_color='purple',
-        opacity=0.75,
     )
 
     masks = layer.to_masks([512, 512])

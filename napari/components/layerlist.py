@@ -46,18 +46,28 @@ class LayerList(EventedList):
         new_name : str
             Coerced, unique name.
         """
-        for _layer in self:
-            if _layer is layer:
-                continue
-            if _layer.name == name:
-                name = inc_name_count(name)
-
+        if layer is None:
+            for existing_name in sorted(x.name for x in self):
+                if name == existing_name:
+                    name = inc_name_count(name)
+        else:
+            for _layer in sorted(self, key=lambda x: x.name):
+                if _layer is layer:
+                    continue
+                if name == _layer.name:
+                    name = inc_name_count(name)
         return name
 
     def _update_name(self, event):
         """Coerce name of the layer in `event.layer`."""
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
+
+    def insert(self, index: int, value: Layer):
+        """Insert ``value`` before index."""
+        new_layer = self._type_check(value)
+        new_layer.name = self._coerce_name(new_layer.name)
+        super().insert(index, new_layer)
 
     @property
     def selected(self):

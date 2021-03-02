@@ -1,27 +1,34 @@
 import inspect
 import itertools
 import os
-import warnings
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy as np
+from pydantic import Extra, Field, validator
 
 from .. import layers
+from ..layers import Image, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..plugins.io import read_data_with_plugins
-from ..types import FullLayerData, LayerData
 from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
-from ..utils.events import EmitterGroup, Event, disconnect_events
+from ..utils.events import Event, EventedModel, disconnect_events
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-
-# Private _themes import needed until viewer.palette is dropped
-from ..utils.theme import _themes, available_themes, get_theme
+from ..utils.theme import available_themes
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -32,9 +39,23 @@ from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
 DEFAULT_THEME = 'dark'
+EXCLUDE_DICT = {
+    'keymap',
+    '_mouse_wheel_gen',
+    '_mouse_drag_gen',
+    '_persisted_mouse_event',
+    'mouse_move_callbacks',
+    'mouse_drag_callbacks',
+    'mouse_wheel_callbacks',
+}
+EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
+
+if TYPE_CHECKING:
+    from ..types import FullLayerData, LayerData
 
 
-class ViewerModel(KeymapProvider, MousemapProvider):
+# KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
+class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -48,7 +69,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         Order in which dimensions are displayed where the last two or last
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
-    axis_labels = list of str
+    axis_labels : list of str
         Dimension names.
 
     Attributes
@@ -61,41 +82,46 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         Contains axes, indices, dimensions and sliders.
     """
 
+    # After https://github.com/samuelcolvin/pydantic/pull/2196 is released
+    # make all of these fields with allow_mutation=False
+    axes: Axes = Axes()
+    camera: Camera = Camera()
+    cursor: Cursor = Cursor()
+    dims: Dims = Dims()
+    grid: GridCanvas = GridCanvas()
+    layers: LayerList = Field(
+        default_factory=LayerList
+    )  # Need to create custom JSON encoder for layer!
+    scale_bar: ScaleBar = ScaleBar()
+
+    active_layer: Optional[
+        Layer
+    ] = None  # Would be nice to remove this/ make it layer name instead of layer?
+    help: str = ''
+    status: str = 'Ready'
+    theme: str = DEFAULT_THEME
+    title: str = 'napari'
+
+    # 2-tuple indicating height and width
+    _canvas_size: Tuple[int, int] = (600, 800)
+
     def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
-        super().__init__()
-
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            status=Event,
-            help=Event,
-            title=Event,
-            reset_view=Event,
-            active_layer=Event,
-            theme=Event,
-            layers_change=Event,
+        # allow extra attributes during model initialization, useful for mixins
+        self.__config__.extra = Extra.allow
+        super().__init__(
+            title=title,
+            dims={
+                'axis_labels': axis_labels,
+                'ndisplay': ndisplay,
+                'order': order,
+            },
         )
+        self.__config__.extra = Extra.ignore
 
-        self.dims = Dims(
-            ndisplay=ndisplay, order=order, axis_labels=axis_labels
-        )
+        # Add extra events - ideally these will be removed too!
+        self.events.add(layers_change=Event, reset_view=Event)
 
-        self.layers = LayerList()
-        self.camera = Camera()
-        self.cursor = Cursor()
-        self.axes = Axes()
-        self.scale_bar = ScaleBar()
-
-        self._status = 'Ready'
-        self._help = ''
-        self._title = title
-        self._theme = DEFAULT_THEME
-
-        self._active_layer = None
-        self.grid = GridCanvas()
-        # 2-tuple indicating height and width
-        self._canvas_size = (600, 800)
-
+        # Connect events
         self.grid.events.connect(self.reset_view)
         self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
@@ -109,190 +135,44 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
 
+        # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+
+    @validator('theme')
+    def _valid_theme(cls, v):
+        themes = available_themes()
+        if v not in available_themes():
+            raise ValueError(
+                f"Theme '{v}' not found; " f"options are {themes}."
+            )
+        return v
+
+    def json(self, **kwargs):
+        """Serialize to json."""
+        # Manually exclude the layer list and active layer which cannot be serialized at this point
+        # and mouse and keybindings don't belong on model
+        # https://github.com/samuelcolvin/pydantic/pull/2231
+        # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
+        exclude = kwargs.pop('exclude', set())
+        exclude = exclude.union(EXCLUDE_JSON)
+        return super().json(exclude=exclude, **kwargs)
+
+    def dict(self, **kwargs):
+        """Convert to a dictionaty."""
+        # Manually exclude the layer list and active layer which cannot be serialized at this point
+        # and mouse and keybindings don't belong on model
+        # https://github.com/samuelcolvin/pydantic/pull/2231
+        # https://github.com/samuelcolvin/pydantic/issues/660#issuecomment-642211017
+        exclude = kwargs.pop('exclude', set())
+        exclude = exclude.union(EXCLUDE_DICT)
+        return super().dict(exclude=exclude, **kwargs)
+
+    def __hash__(self):
+        return id(self)
 
     def __str__(self):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
-
-    @property
-    def palette(self):
-        """Dict[str, str]: Color palette for styling the viewer."""
-        warnings.warn(
-            (
-                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
-                " To access the palette you can call it using napari.utils.theme.register_theme"
-                " using the viewer.theme as the key."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return get_theme(self.theme)
-
-    @palette.setter
-    def palette(self, palette):
-        warnings.warn(
-            (
-                "The viewer.palette attribute is deprecated and will be removed after version 0.4.5."
-                " To add a new palette you should add it using napari.utils.theme.register_theme"
-                " and then set the viewer.theme attribute."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        for existing_theme_name, existing_theme in _themes.items():
-            if existing_theme == palette:
-                self.theme = existing_theme_name
-                return
-        raise ValueError(
-            f"Palette not found among existing themes; "
-            f"options are {available_themes()}."
-        )
-
-    @property
-    def theme(self):
-        """string or None : Color theme."""
-        return self._theme
-
-    @theme.setter
-    def theme(self, theme):
-        if theme == self.theme:
-            return
-
-        if theme in available_themes():
-            self._theme = theme
-        else:
-            raise ValueError(
-                f"Theme '{theme}' not found; "
-                f"options are {available_themes()}."
-            )
-        self.events.theme(value=self.theme)
-
-    @property
-    def grid_size(self):
-        """tuple: Size of grid."""
-        warnings.warn(
-            (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.shape"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.grid.shape
-
-    @grid_size.setter
-    def grid_size(self, grid_size):
-        warnings.warn(
-            (
-                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.shape"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.shape = grid_size
-
-    @property
-    def grid_stride(self):
-        """int: Number of layers in each grid square."""
-        warnings.warn(
-            (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.stride"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.grid.stride
-
-    @grid_stride.setter
-    def grid_stride(self, grid_stride):
-        warnings.warn(
-            (
-                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.4."
-                " Instead you should use viewer.grid.stride"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.stride = grid_stride
-
-    @property
-    def status(self):
-        """string: Status string"""
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        if status == self.status:
-            return
-        self._status = status
-        self.events.status(value=self._status)
-
-    @property
-    def help(self):
-        """string: String that can be displayed to the
-        user in the status bar with helpful usage tips.
-        """
-        return self._help
-
-    @help.setter
-    def help(self, help):
-        if help == self.help:
-            return
-        self._help = help
-        self.events.help(value=self._help)
-
-    @property
-    def title(self):
-        """string: String that is displayed in window title."""
-        return self._title
-
-    @title.setter
-    def title(self, title):
-        if title == self.title:
-            return
-        self._title = title
-        self.events.title(value=self._title)
-
-    @property
-    def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not."""
-        warnings.warn(
-            (
-                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
-                " Instead you should use viewer.camera.interactive"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.camera.interactive
-
-    @interactive.setter
-    def interactive(self, interactive):
-        warnings.warn(
-            (
-                "The viewer.interactive parameter is deprecated and will be removed after version 0.4.5."
-                " Instead you should use viewer.camera.interactive"
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.camera.interactive = interactive
-
-    @property
-    def active_layer(self):
-        """int: index of active_layer"""
-        return self._active_layer
-
-    @active_layer.setter
-    def active_layer(self, active_layer):
-        if active_layer == self.active_layer:
-            return
-
-        self._active_layer = active_layer
-        self.events.active_layer(value=self._active_layer)
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
@@ -401,13 +281,11 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 break
 
         if active_layer is None:
-            self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
             self.active_layer = None
         else:
-            self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
@@ -426,6 +304,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             self.dims.ndim = ndim
             for i in range(ndim):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
+        self.cursor.position = (0,) * self.dims.ndim
         self.events.layers_change()
         self._update_active_layer(event)
 
@@ -448,7 +327,9 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
-            self.status = self.active_layer.status
+            self.status = self.active_layer.get_status(
+                self.cursor.position, world=True
+            )
             self.help = self.active_layer.help
 
     def _on_grid_change(self, event):
@@ -458,54 +339,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         for i, layer in enumerate(self.layers):
             i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
             self._subplot(layer, (i_row, i_column), extent)
-
-    def grid_view(self, n_row=None, n_column=None, stride=1):
-        """Arrange the current layers is a 2D grid.
-
-        Default behaviour is to make a square 2D grid.
-
-        Parameters
-        ----------
-        n_row : int, optional
-            Number of rows in the grid.
-        n_column : int, optional
-            Number of column in the grid.
-        stride : int, optional
-            Number of layers to place in each grid square before moving on to
-            the next square. The default ordering is to place the most visible
-            layer in the top left corner of the grid. A negative stride will
-            cause the order in which the layers are placed in the grid to be
-            reversed.
-        """
-        warnings.warn(
-            (
-                "The viewer.grid_view method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
-                " and viewer.grid.shape and viewer.grid.stride to set the size and stride of the"
-                " grid respectively."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.stride = stride
-        if n_row is None:
-            n_row = -1
-        if n_column is None:
-            n_column = -1
-        self.grid.shape = (n_row, n_column)
-        self.grid.enabled = True
-
-    def stack_view(self):
-        """Arrange the current layers in a stack."""
-        warnings.warn(
-            (
-                "The viewer.stack_view method is deprecated and will be removed after version 0.4.4."
-                " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.grid.enabled = False
 
     def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
@@ -544,9 +377,6 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             Layer to add.
         """
         layer = event.value
-
-        # Coerce name into being unique and connect event to ensure uniqueness
-        layer.name = self.layers._coerce_name(layer.name, layer)
 
         # Connect individual layer events to viewer events
         layer.events.select.connect(self._update_active_layer)
@@ -589,8 +419,8 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         Parameters
         ----------
-        layer : :class:`napari.layers.Layer`
-            Layer to add.
+        event : napari.utils.event.Event
+            Event which will remove a layer.
 
         Returns
         -------
@@ -611,7 +441,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         self._on_layers_change(None)
         self._on_grid_change(None)
 
-    def add_layer(self, layer: layers.Layer) -> layers.Layer:
+    def add_layer(self, layer: Layer) -> Layer:
         """Add a layer to the viewer.
 
         Parameters
@@ -655,7 +485,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         blending=None,
         visible=True,
         multiscale=None,
-    ) -> Union[layers.Image, List[layers.Image]]:
+    ) -> Union[Image, List[Image]]:
         """Add an image layer to the layer list.
 
         Parameters
@@ -736,7 +566,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
             A vector of shear values for an upper triangular n-D shear matrix.
             If a list then must have same length as the axis that is being
             expanded as channels.
-        affine: n-D array or napari.utils.transforms.Affine
+        affine : n-D array or napari.utils.transforms.Affine
             (N+1, N+1) affine transformation matrix in homogeneous coordinates.
             The first (N, N) entries correspond to a linear transform and
             the final column is a lenght N translation vector and a 1 or a napari
@@ -848,7 +678,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
         **kwargs,
-    ) -> List[layers.Layer]:
+    ) -> List[Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
@@ -896,7 +726,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 paths, kwargs, plugin=plugin, layer_type=layer_type
             )
 
-        added: List[layers.Layer] = []  # for layers that get added
+        added: List[Layer] = []  # for layers that get added
         for _path in paths:
             added.extend(
                 self._add_layers_with_plugins(
@@ -912,7 +742,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         kwargs: Optional[dict] = None,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
-    ) -> List[layers.Layer]:
+    ) -> List[Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
         This function is mostly called from self.open_path, where the ``stack``
@@ -940,10 +770,12 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
         Returns
         -------
-        List[layers.Layer]
+        List[Layer]
             A list of any layers that were added to the viewer.
         """
-        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
+        from ..plugins.io import read_data_with_plugins
+
+        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin) or []
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
@@ -960,7 +792,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
                 filenames = itertools.repeat(path_or_paths[0])
 
         # add each layer to the viewer
-        added: List[layers.Layer] = []  # for layers that get added
+        added: List[Layer] = []  # for layers that get added
         for data, filename in zip(layer_data, filenames):
             basename, ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
@@ -975,7 +807,7 @@ class ViewerModel(KeymapProvider, MousemapProvider):
 
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> Union[layers.Layer, List[layers.Layer]]:
+    ) -> Union[Layer, List[Layer]]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -1053,17 +885,17 @@ class ViewerModel(KeymapProvider, MousemapProvider):
         return layer
 
 
-def _get_image_class() -> layers.Image:
+def _get_image_class() -> Image:
     """Return Image or OctreeImage based config settings."""
     if config.async_octree:
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage
 
-    return layers.Image
+    return Image
 
 
-def _normalize_layer_data(data: LayerData) -> FullLayerData:
+def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1104,11 +936,11 @@ def _normalize_layer_data(data: LayerData) -> FullLayerData:
 
 
 def _unify_data_and_user_kwargs(
-    data: LayerData,
+    data: 'LayerData',
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> FullLayerData:
+) -> 'FullLayerData':
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:

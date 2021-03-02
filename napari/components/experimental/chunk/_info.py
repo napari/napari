@@ -1,4 +1,4 @@
-"""LoadType, LoadStats and LayerInfo.
+"""LoadCounts, LoadType, LoadInfo, LoadStats and LayerInfo.
 """
 import logging
 import time

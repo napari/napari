@@ -1,8 +1,6 @@
 """VispyTiledImageLayer class.
 
-A tiled image that uses TiledImageVisual and TextureAtlas2D so that adding
-and removing tiles is faster than if we created a separate ImageVisual for
-each tile.
+A tiled image layer that uses TiledImageVisual and TextureAtlas2D.
 """
 import logging
 from dataclasses import dataclass
@@ -53,7 +51,7 @@ class VispyTiledImageLayer(VispyImageLayer):
     Tiles are rendered using TiledImageVisual which uses a TextureAtlas2D,
     see those classes for more details.
 
-    History
+    Notes
     -------
 
     An early tiled visual we had created a new ImageVisual for each tile.
@@ -97,10 +95,10 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     @property
     def num_tiles(self) -> int:
-        """Return the number of tiles currently being drawn.
+        """The number of tiles currently being drawn.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles currently being drawn.
         """
@@ -127,12 +125,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         # This might be overly dynamic, but for now if we see there's a new
         # tile shape we nuke our texture atlas and start over with the new
         # shape.
-        #
-        # We added this because the QtTestImage GUI currently set the tile
-        # shape after the layer is created. Thus potentially changing the
-        # same on the fly. But this "on the fly change" might come in handy
-        # and it was not hard to implement, but we could probably drop it
-        # if it becomes a pain.
         tile_shape = self.layer.tile_shape
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
@@ -171,10 +163,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         if the camera isn't moving. We expect to be polled and drawn until
         we can finish adding the rest of the drawable chunks.
 
-        Return
-        ------
+        Returns
+        -------
         int
-             The number of chunks that still need to be added.
+            The number of chunks that still need to be added.
         """
         if not self.node.visible:
             return 0
@@ -204,8 +196,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         3) Create tiles for newly drawable chunks, one or more.
         4) Optionally update our grid based on the now drawable chunks.
 
-        Return
-        ------
+        Returns
+        -------
         ChunkStats
             Statistics about the update process.
         """
@@ -262,8 +254,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         drawable_chunks : List[OctreeChunk]
             Chunks we should add, if not already in the tiled image.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks that still need to be added.
         """

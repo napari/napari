@@ -6,18 +6,14 @@ import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.events import Event
-from ...utils.status_messages import format_float
 from ..base import Layer
+from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils.layer_utils import dataframe_to_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 from ._vectors_constants import DEFAULT_COLOR_CYCLE, ColorMode
 
@@ -70,7 +66,7 @@ class Vectors(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -261,7 +257,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self._dims_displayed)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
         self._set_editable()
 
     @property
@@ -359,7 +355,6 @@ class Vectors(Layer):
 
         self.events.edge_width()
         self.refresh()
-        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -381,7 +376,6 @@ class Vectors(Layer):
 
         self.events.length()
         self.refresh()
-        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> np.ndarray:
@@ -719,14 +713,17 @@ class Vectors(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self) -> None:
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        value : int, None
+        value : None
             Value of the data at the coord.
         """
-
         return None
