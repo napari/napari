@@ -66,12 +66,26 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
     name : str
         name of all packages at pypi that declare ``classifier``
     """
+    packages = []
+    package_count = 0
+    page = 1
+    pattern = 'class="package-snippet__name">(.+)</span>'
+    while package_count == 0 or len(packages) < package_count:
+        url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}&page={page}"
+        with request.urlopen(url) as response:
+            html = response.read().decode()
 
-    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}"
-    with request.urlopen(url) as response:
-        html = response.read().decode()
-
-    return re.findall('class="package-snippet__name">(.+)</span>', html)
+        if package_count == 0:
+            total_packages = re.findall('<strong>(.+)</strong> projects', html)
+            if len(total_packages) == 1 and total_packages[0].isdigit():
+                package_count = int(total_packages[0])
+            else:
+                # TODO not finding a valid package count, likely page format
+                # change from pypi, raise exception?
+                package_count = len(packages)
+        packages.extend(re.findall(pattern, html))
+        page += 1
+    return packages
 
 
 @lru_cache(maxsize=128)
