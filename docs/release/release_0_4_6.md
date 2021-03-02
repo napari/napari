@@ -70,6 +70,7 @@ package name, url, or local file (#2319).
 - Documentation on napari types in magicgui (#2306)
 - Pin pydantic < 1.8.0 (#2323)
 - Fix docs build with code execution (#2324)
+- Pin pydantic != 1.8.0 (#2333)
 
 
 ## 12 authors added to this release (alphabetical)
