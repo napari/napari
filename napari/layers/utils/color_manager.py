@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
@@ -24,7 +25,8 @@ from .color_transformations import (
 )
 
 
-class ColorProperties(EventedModel):
+@dataclass
+class ColorProperties:
     """The property values that are used for setting colors in ColorMode.COLORMAP
     and ColorMode.CYCLE.
 
@@ -35,12 +37,59 @@ class ColorProperties(EventedModel):
     values : np.ndarray
         The array containing the property values.
     current_value : Optional[Any]
-        the Value for the next item to be added.
+        the value for the next item to be added.
     """
 
     name: str
     values: np.ndarray
     current_value: Optional[Any] = None
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_type
+
+    @classmethod
+    def validate_type(cls, val):
+        if val is None:
+            color_properties = val
+        elif isinstance(val, dict):
+            if len(val) == 0:
+                color_properties = None
+            else:
+                try:
+                    # ensure the values are a numpy array
+                    val['values'] = np.asarray(val['values'])
+                    color_properties = cls(**val)
+                except ValueError:
+                    err_msg = 'color_properties dictionary should have keys: name, values, and optionally current_value'
+
+                    raise ValueError(err_msg)
+
+        elif isinstance(val, cls):
+            color_properties = val
+        else:
+            raise TypeError(
+                'color_properties should be None, a dict, or ColorProperties object'
+            )
+
+        return color_properties
+
+    def _json_encode(self):
+        return {
+            'name': self.name,
+            'values': self.values.tolist(),
+            'current_value': self.current_value,
+        }
+
+    def __eq__(self, other):
+        if isinstance(other, ColorProperties):
+            name_eq = self.name == other.name
+            values_eq = np.array_equal(self.values, other.values)
+            current_value_eq = self.current_value == other.current_value
+
+            return np.all([name_eq, values_eq, current_value_eq])
+        else:
+            return False
 
 
 class ColorManager(EventedModel):
@@ -110,32 +159,6 @@ class ColorManager(EventedModel):
             return CategoricalColormap.from_dict(v)
         else:
             raise TypeError('colormap should be an array or dict')
-
-    @validator('color_properties', pre=True)
-    def _coerce_color_properties(cls, v):
-        if v is None:
-            color_properties = v
-        elif isinstance(v, dict):
-            if len(v) == 0:
-                color_properties = None
-            else:
-                try:
-                    # ensure the values are a numpy array
-                    v['values'] = np.asarray(v['values'])
-                    color_properties = ColorProperties(**v)
-                except ValueError:
-                    err_msg = 'color_properties dictionary should have keys: name, values, and optionally current_value'
-
-                    raise ValueError(err_msg)
-
-        elif isinstance(v, ColorProperties):
-            color_properties = v
-        else:
-            raise TypeError(
-                'color_properties should be None, a dict, or ColorProperties object'
-            )
-
-        return color_properties
 
     @validator('colors', pre=True)
     def _ensure_color_array(cls, v, values):
