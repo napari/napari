@@ -71,15 +71,15 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
         name of all packages at pypi that declare ``classifier``
     """
     packages = []
-    package_count = 0
+    package_count = None
     page = 1
     pattern = 'class="package-snippet__name">(.+)</span>'
-    while package_count == 0 or len(packages) < package_count:
+    while package_count is None or len(packages) < package_count:
         url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}&page={page}"
         with urlopen(url) as response:
             html = response.read().decode()
 
-        if package_count == 0:
+        if package_count is None:
             total_packages = re.findall('<strong>(.+)</strong> projects', html)
             if len(total_packages) == 1 and total_packages[0].isdigit():
                 package_count = int(total_packages[0])
