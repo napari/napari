@@ -783,8 +783,7 @@ class Labels(_ImageBase):
                     matches, labeled_matches == match_label
                 )
 
-        if refresh is True:
-            self._save_history((matches, labels[matches]))
+        self._save_history((matches, labels[matches]))
 
         # Replace target pixels with new_label
         labels[matches] = new_label
@@ -883,8 +882,7 @@ class Labels(_ImageBase):
         # slice_coord from circle brush is tuple of coord. arrays per dimension
 
         # save the existing values to the history
-        if refresh is True:
-            self._save_history((slice_coord, self.data[slice_coord]))
+        self._save_history((slice_coord, self.data[slice_coord]))
 
         # update the labels image
 
