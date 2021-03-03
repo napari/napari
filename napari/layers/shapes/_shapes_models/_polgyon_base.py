@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.interpolate import CubicSpline
 
 from .._shapes_utils import create_box
 from .shape import Shape
@@ -74,8 +75,29 @@ class PolygonBase(Shape):
     def _update_displayed_data(self):
         """Update the data that is to be displayed."""
         # For path connect every all data
+        if self.data_displayed.shape[0] > 2 and self.name == 'path':
+            distance = np.cumsum(
+                np.sqrt(
+                    np.sum(
+                        np.diff(self.data_displayed[:-1, :], axis=0) ** 2,
+                        axis=1,
+                    )
+                )
+            )
+            distance = np.insert(distance, 0, 0) / distance[-1]
+
+            # the number of sampled data points might need to be carefully thought
+            # about (might need to change with image scale?)
+            alpha = np.linspace(0, 1, 75)
+
+            spl = CubicSpline(distance, self.data_displayed[:-1, :])
+            points_for_mesh = spl(alpha)
+        else:
+            points_for_mesh = self.data_displayed
+
+        print(points_for_mesh)
         self._set_meshes(
-            self.data_displayed, face=self._filled, closed=self._closed
+            points_for_mesh, face=self._filled, closed=self._closed
         )
         self._box = create_box(self.data_displayed)
 
