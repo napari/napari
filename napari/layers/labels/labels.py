@@ -721,7 +721,7 @@ class Labels(_ImageBase):
             return
 
         history_item = before.pop()
-        after.append(reversed(history_item))
+        after.append(list(reversed(history_item)))
         for prev_indices, prev_values in reversed(history_item):
             self.data[prev_indices] = prev_values
 
