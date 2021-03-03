@@ -708,19 +708,19 @@ class Labels(_ImageBase):
         ):
             self._undo_history.popleft()
 
-    def _save_history(self):
+    def _save_history(self, value):
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(self.data[self._slice_indices].copy())
+            self._undo_history.append(value)
             self._trim_history()
 
     def _load_history(self, before, after):
         if len(before) == 0:
             return
 
-        prev = before.pop()
-        after.append(self.data[self._slice_indices].copy())
-        self.data[self._slice_indices] = prev
+        prev_indices, prev_values = before.pop()
+        after.append((prev_indices, prev_values))
+        self.data[prev_indices] = prev_values
 
         self.refresh()
 
@@ -761,9 +761,6 @@ class Labels(_ImageBase):
         ):
             return
 
-        if refresh is True:
-            self._save_history()
-
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
@@ -782,6 +779,9 @@ class Labels(_ImageBase):
                 matches = np.logical_and(
                     matches, labeled_matches == match_label
                 )
+
+        if refresh is True:
+            self._save_history((matches, labels[matches]))
 
         # Replace target pixels with new_label
         labels[matches] = new_label
@@ -808,9 +808,6 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        if refresh is True:
-            self._save_history()
-
         if self.brush_shape == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if not self.n_dimensional and self.ndim > 2:
@@ -881,6 +878,10 @@ class Labels(_ImageBase):
 
         # slice_coord from square brush is tuple of slices per dimension
         # slice_coord from circle brush is tuple of coord. arrays per dimension
+
+        # save the existing values to the history
+        if refresh is True:
+            self._save_history((slice_coord, self.data[slice_coord]))
 
         # update the labels image
 
