@@ -2124,6 +2124,11 @@ class Shapes(Layer):
     def expand_shape(self, data):
         """Expand shape from 2D to the full data dims.
 
+        expand_shape is deprecated and will be removed in version 0.4.9.
+        It should no longer be used as layers should will soon not know
+        which dimensions are displayed. Instead you should work with
+        full nD shape data as much as possible.
+
         Parameters
         ----------
         data : array
