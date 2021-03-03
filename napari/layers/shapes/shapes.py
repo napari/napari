@@ -2135,9 +2135,10 @@ class Shapes(Layer):
             Full D dimensional data array of the shape.
         """
         warnings.warn(
-            "expand_shape is deprecated and will be removed in version 0.4.8."
+            "expand_shape is deprecated and will be removed in version 0.4.9."
             " It should no longer be used as layers should will soon not know"
-            " which dimensions are displayed.",
+            " which dimensions are displayed. Instead you should work with"
+            " full nD shape data as much as possible.",
             category=DeprecationWarning,
             stacklevel=2,
         )
