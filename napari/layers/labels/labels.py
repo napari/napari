@@ -711,16 +711,19 @@ class Labels(_ImageBase):
     def _save_history(self, value):
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(value)
+            self._undo_history.append([value])
             self._trim_history()
+        else:
+            self._undo_history[-1].append(value)
 
     def _load_history(self, before, after):
         if len(before) == 0:
             return
 
-        prev_indices, prev_values = before.pop()
-        after.append((prev_indices, prev_values))
-        self.data[prev_indices] = prev_values
+        history_item = before.pop()
+        after.append(reversed(history_item))
+        for prev_indices, prev_values in reversed(history_item):
+            self.data[prev_indices] = prev_values
 
         self.refresh()
 
