@@ -783,7 +783,7 @@ class Labels(_ImageBase):
                     matches, labeled_matches == match_label
                 )
 
-        self._save_history((matches, labels[matches]))
+        self._save_history((np.nonzero(matches), labels[matches]))
 
         # Replace target pixels with new_label
         labels[matches] = new_label
