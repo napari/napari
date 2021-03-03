@@ -1,18 +1,20 @@
 # Profiling
 
-In comparison to performance tracing profiling does not provide information about time of events but provide 
-combined information about time of execution of functions and allow producing call graph which simplify tracing 
-relations between functions.   
+In contrast to performance tracing, profiling does not provide information
+about the timing of events, but instead provides combined information about the
+total time of execution of each function. It also produces a call graph that
+simplifies understanding the call relationship between functions.
 
 ![Example part of execution graph](images/execution_graph.png)
 
-The basic tool for perform profile is build in python module `cProfile`. For profile whole script use:
+The basic tool for profile in Python is the built-in module `cProfile`.
+To profile an entire script, use the call:
 
 ```bash
 python -m cProfile path_to_script.py
 ```
 
-The output of this call will be such table:
+The output will be a table similar to this one:
 
 ```
          2334264 function calls (2267576 primitive calls) in 2.242 seconds
@@ -33,9 +35,11 @@ The output of this call will be such table:
     18283    0.027    0.000    0.278    0.000 fromnumeric.py:70(_wrapreduction)
 ...
 ```
-To understand this output we suggest reading: https://docs.python.org/3/library/profile.html#instant-user-s-manual.
-Because output for napari will be very long we suggest ot pip output to `less` command or save it to file,
-which could be investigated later using command:
+The format of this table is documented in the Python docs
+[here](https://docs.python.org/3/library/profile.html#instant-user-s-manual).
+Because the output for complex programs such as napari can be very long,
+we suggest piping output to `less`, or saving it to a file,
+which can be investigated later. To save the output to file use the `-o` option:
 
 ```bash
 python -m cProfile -o result.pstat path_to_script.py
@@ -45,50 +49,56 @@ There are few options for check content of `pstat` file.
 
 1.  The Stat object.
     
-    Profiling output could be parsed and viewed using `Stats` object from `pstat` library. Example usage:
+    You can parse the profile output using the `Stats` object from the `pstats` built-in library. For example:
     ```python
     from pstats import Stats
     stat = Stats("path/to/result.pstat")
     stat.sort_stats("tottime").print_stats(10)
     ```
-    Documentation here https://docs.python.org/3/library/profile.html#the-stats-class
+    You can find more documentation about the Stats object in the Python documentation [here](https://docs.python.org/3/library/profile.html#the-stats-class).
 
 2.  Snakeviz.
     
-    If You do not have `snakeviz` command available then ensure than your developer environment 
-    is active and call `pip install snakeviz`. To visualize profiling use command:
+    Snakeviz is a third party library designed to visualize profiling output interactively.
+    You can install it with pip like any other Python library using `pip install snakeviz`.
+    This will provide the `snakeviz` command, which you can call to create an in-browser
+    visualization of your profiling data. Use the command:
     ```bash
     snakeviz path/to/result.pstat   
     ```
-    Then in your browser should be opened a new tab with similar content
-    ![Snakeviz example view](images/snakeviz.png)
+    This should cause a new page to open in your browser with your profiling information.
+    You can read more about how to interpret this visualization on the
+    [snakeviz homepage](https://jiffyclub.github.io/snakeviz/).
 
 3.  gprof2dot
 
-    For using this method there is need to have [`graphviz`](https://graphviz.org/) installed in your system.  
-    To install:
+    You can visualize the call graph with [`graphviz`](https://graphviz.org/),
+    a third party graph visualization library.
+    You can install graphviz with system package managers:
     
     * Ubuntu: `sudo apt install graphviz`
     * MacOS with brew: `brew install graphviz`
     * Windows with choco `choco install graphviz`
 
-    then use `gprof2dot` (install with `pip install gprof2dot`) to convert `.pstat` to `.dot` file and use graphviz:
+    You can then use `gprof2dot`, a Python library, to convert the `.pstat`
+    statistics to a `.dot` graph file and use graphviz:
 
     ```bash
     $ python -m gprof2dot -f pstats  -n 5  result.pstat -o result.dot
     $ dot -Tpng -o result.png result.dot
     ```
     
-    If the shell support piping it could be combined into one command:
+    If your shell supports piping, this can all be combined into one command:
     
     ```bash
     $ python -m gprof2dot -f pstats  -n 5  result.pstat -o | dot -Tpng -o result.png
     ```
 
-4.  PyCharm professional allows to view `.pstat` file using Tools > Open CProfile snapshot.
+4.  Some IDEs have built in profiling visualization tools. For example, PyCharm Professional, which is free for academics and open source maintainers, allows viewing `.pstat` files using Tools > Open CProfile snapshot.
 
-cProfile allows also for profile not only whole script, but also part of code. These needs code modification.
-We suggest usage of `cProfile.Profile()` as a context manager:
+cProfile also allows profiling only specific parts of the code.
+You can restrict profiling to particular code sections using
+`cProfile.Profile()` as a context manager:
 
 ```python
 import cProfile
@@ -98,11 +108,12 @@ with cProfile.Profile() as pr:
 pr.dump_stats("result.pstat")
 ```
 
-Then It could be visualized using same methods.
+The resulting profile can then be visualized using the above methods.
 
-To profile code which needs first few steps done in viewer code, then code for profile could be hidden under some button.
-
-For example:
+In some situations, you might want to profile code that needs
+some preliminary steps to be performed in the viewer, which you
+don't want to measure. In this situation, you can create a
+button to trigger profiling:
 
 ```python
 def testing_fun():
@@ -115,9 +126,9 @@ testing_btn.clicked.connect(testing_fun)
 viewer.window.add_dock_widget(testing_btn)
 ```
 
-Alternative profilers available in python are:
+In addition to cProfile, third-party profilers are available in Python:
 
 *  `yappi` with support for multithreading
 *  `vmprof` 
 
-Both could be installed from using `pip`.
+Both can be installed with `pip`.
