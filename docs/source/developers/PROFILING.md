@@ -45,7 +45,7 @@ which can be investigated later. To save the output to file use the `-o` option:
 python -m cProfile -o result.pstat path_to_script.py
 ```
 
-There are few options for check content of `pstat` file.  
+Once the file is saved, you can investigate using free tools. Some options include:
 
 1.  The Stat object.
     
