@@ -34,6 +34,6 @@ class Path(PolygonBase):
             dims_order=dims_order,
             ndisplay=ndisplay,
             filled=False,
-            closed=True,
+            closed=False,
             name='path',
         )
