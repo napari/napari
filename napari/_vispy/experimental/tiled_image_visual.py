@@ -329,9 +329,9 @@ class TiledImageVisual(ImageVisual):
     def _build_texture(self) -> None:
         """Override of ImageVisual._build_texture()."""
 
-        # clim not implemented yet, use code from base ImageVisual?
-        self._clim = np.array([0, 1])
-        self._texture_limits = np.array([0, 1])
+        if isinstance(self._clim, str) and self._clim == 'auto':
+            raise ValueError('Auto clims not supported for tiled image visual')
+        self._texture_limits = np.array(self._clim)
         self._need_colortransform_update = True
 
         self._need_texture_upload = False
