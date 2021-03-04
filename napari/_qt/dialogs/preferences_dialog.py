@@ -1,3 +1,5 @@
+from json import dumps
+
 from qtpy import QtWidgets
 
 from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
@@ -46,14 +48,20 @@ class PreferencesDialog(QtWidgets.QDialog):
         self._default_restore.clicked.connect(self.restore_defaults)
 
     def restore_defaults(self):
+        SETTINGS.reset()
+
         print('Restoring defaults')
+        self.close()
 
     def on_click_ok(self):
         print('OK')
+        # will keep these values set in settings.
         self.close()
 
     def on_click_cancel(self):
         print('cancel')
+        # reset to already saved values
+        self.check_differences(self._values_orig_set, self._values_set)
         self.close()
 
     def add_page(self, schema, ui_schema):
@@ -64,23 +72,36 @@ class PreferencesDialog(QtWidgets.QDialog):
 
     def get_preferences_dialog(self, schema, values):
 
+        self._values_orig_set = set(values.items())
+        self._values_set = set(values.items())
+
         builder = WidgetBuilder()
 
         form = builder.create_form(schema, {})
         # set state values for widget
         form.widget.state = values
+        form.widget.on_changed.connect(
+            lambda d: self.check_differences(set(d.items()), self._values_set)
+        )
 
-        form.widget.on_changed.connect(lambda d: self.check_differences(d))
-
-        # form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
+        form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
 
         return form
 
-    def check_differences(self, d):
+    def check_differences(self, new_set, values_set):
+        """
+        d: the set of new values
+        values_set: the set by which to compare
+        """
+        different_values = list(new_set - values_set)
 
-        if d['theme'] == 'light':
-            SETTINGS.application.theme = "light"
-            print('theme is light')
-        elif d['theme'] == 'dark':
-            SETTINGS.application.theme = "dark"
-            print('theme is dark')
+        if len(different_values) > 0:
+            #     # change the values in SETTINGS
+            for val in different_values:
+                # to do -- reference proper page -- will need to do to make plugins work
+                try:
+                    # need to validate so a wrong value is not saved at all...
+                    setattr(SETTINGS._settings['application'], val[0], val[1])
+                    self._values_set = new_set
+                except:  # noqa: E722
+                    continue

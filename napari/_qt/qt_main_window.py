@@ -271,7 +271,9 @@ class Window:
         self.window_menu.addSeparator()
 
         print('settings')
+        # SETTINGS.application.events.theme.connect(self._update_window)
         SETTINGS.application.events.theme.connect(self._update_theme)
+        # SETTINGS.application.events.connect(self._update_window)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -431,25 +433,21 @@ class Window:
 
             if key == 'plugin':
                 continue
-            # setting = SETTINGS.schemas[key]
-            print('1')
             schema = json.loads(setting['json_schema'])
             # need to remove certain properties that will not be displayed on the GUI
-            print('2')
             properties = schema.pop('properties')
-            print('3')
             values = setting['model'].dict()
-            print('4')
+            # save original values in case 'cancel' is entered.
             for val in settings_list[cnt].NapariConfig().preferences_exclude:
                 properties.pop(val)
                 values.pop(val)
 
             cnt += 1
             schema['properties'] = properties
-            print(schema)
+            print(values)
+            # save original values in case the user cancels the action.
+            # values_orig = values
             win.add_page(schema, values)
-
-        print(win._list)
 
         win._list.setCurrentRow(0)
 
@@ -1079,8 +1077,15 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
+    def _update_window(self, event=None):
+        print('resetting preferences')
+        SETTINGS.reset()
+        get_app()
+        # self._qt_window.repaint()
+
     def _update_theme(self, event=None):
         """Update widget color theme."""
+        print('updating theme')
         if event:
             value = event.value
             SETTINGS.application.theme = value
