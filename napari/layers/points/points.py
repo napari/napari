@@ -471,7 +471,7 @@ class Points(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: Optional[np.ndarray]):
         data, _ = _fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
