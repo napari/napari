@@ -122,9 +122,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # add events for each field
         self._events.source = self
-        self._events.add(**dict.fromkeys(self.__fields__))
+        # add event emitters for each field which is mutable
+        fields = []
+        for name, field in self.__fields__.items():
+            if field.field_info.allow_mutation:
+                fields.append(name)
+        self._events.add(**dict.fromkeys(fields))
 
     def __setattr__(self, name, value):
         if name not in getattr(self, 'events', {}):
