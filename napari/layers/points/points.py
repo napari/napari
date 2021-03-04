@@ -1,7 +1,7 @@
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -265,16 +265,7 @@ class Points(Layer):
         if ndim is None and scale is not None:
             ndim = len(scale)
 
-        if data is None or len(data) == 0:
-            if ndim is None:
-                ndim = 2
-            data = np.empty((0, ndim))
-        else:
-            data = np.atleast_2d(data)
-            data_ndim = data.shape[1]
-            if ndim is not None and ndim != data_ndim:
-                raise ValueError("Points dimensions must be equal to ndim")
-            ndim = data_ndim
+        data, ndim = _fix_data_points(data, ndim)
 
         super().__init__(
             data,
@@ -481,6 +472,7 @@ class Points(Layer):
 
     @data.setter
     def data(self, data: np.ndarray):
+        data, _ = _fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
 
@@ -1802,3 +1794,19 @@ class Points(Layer):
 
         else:
             self._clipboard = {}
+
+
+def _fix_data_points(
+    data: Optional[np.ndarray], ndim: Optional[int]
+) -> Tuple[np.ndarray, int]:
+    if data is None or len(data) == 0:
+        if ndim is None:
+            ndim = 2
+        data = np.empty((0, ndim))
+    else:
+        data = np.atleast_2d(data)
+        data_ndim = data.shape[1]
+        if ndim is not None and ndim != data_ndim:
+            raise ValueError("Points dimensions must be equal to ndim")
+        ndim = data_ndim
+    return data, ndim

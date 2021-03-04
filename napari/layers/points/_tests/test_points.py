@@ -1520,3 +1520,15 @@ def test_scale_init():
 
     with pytest.raises(ValueError):
         Points([[1, 1, 1]], scale=(1, 1, 1, 1))
+
+
+def test_update_none():
+    layer = Points([(1, 2, 3), (1, 3, 2)])
+    assert layer.ndim == 3
+    assert layer.data.size == 6
+    layer.data = None
+    assert layer.ndim == 3
+    assert layer.data.size == 0
+    layer.data = [(1, 2, 3), (1, 3, 2)]
+    assert layer.ndim == 3
+    assert layer.data.size == 6
