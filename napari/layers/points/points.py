@@ -276,9 +276,6 @@ class Points(Layer):
                 raise ValueError("Points dimensions must be equal to ndim")
             ndim = data_ndim
 
-        if ndim is None:
-            ndim = 2
-
         super().__init__(
             data,
             ndim,
