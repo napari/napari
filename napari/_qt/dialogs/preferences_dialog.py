@@ -98,7 +98,7 @@ class PreferencesDialog(QtWidgets.QDialog):
         if len(different_values) > 0:
             #     # change the values in SETTINGS
             for val in different_values:
-                # to do -- reference proper page -- will need to do to make plugins work
+                # to do -- reference proper page -- its hard coded for just 'application' right now
                 try:
                     # need to validate so a wrong value is not saved at all...
                     setattr(SETTINGS._settings['application'], val[0], val[1])

@@ -147,8 +147,12 @@ class SettingsManager:
 
     def reset(self):
         """Reset settings to default values."""
+
         for section in self._settings:
-            self._settings[section] = self._models[section]()
+            for key, default_value in self._defaults[section].dict().items():
+                setattr(self._settings[section], key, default_value)
+        # for section in self._settings:
+        #     self._settings[section] = self._models[section]()
 
         self._save()
 

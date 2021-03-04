@@ -437,16 +437,12 @@ class Window:
             # need to remove certain properties that will not be displayed on the GUI
             properties = schema.pop('properties')
             values = setting['model'].dict()
-            # save original values in case 'cancel' is entered.
             for val in settings_list[cnt].NapariConfig().preferences_exclude:
                 properties.pop(val)
                 values.pop(val)
 
             cnt += 1
             schema['properties'] = properties
-            print(values)
-            # save original values in case the user cancels the action.
-            # values_orig = values
             win.add_page(schema, values)
 
         win._list.setCurrentRow(0)
