@@ -264,17 +264,18 @@ class Points(Layer):
     ):
         if ndim is None and scale is not None:
             ndim = len(scale)
-        if data is None:
+
+        if data is None or len(data) == 0:
             if ndim is None:
                 ndim = 2
             data = np.empty((0, ndim))
         else:
             data = np.atleast_2d(data)
             data_ndim = data.shape[1]
-            if data_ndim != 0:
-                if ndim is not None and ndim != data_ndim:
-                    raise ValueError("Points dimensions must be equal to ndim")
-                ndim = data_ndim
+            if ndim is not None and ndim != data_ndim:
+                raise ValueError("Points dimensions must be equal to ndim")
+            ndim = data_ndim
+
         if ndim is None:
             ndim = 2
 

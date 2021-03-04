@@ -1508,3 +1508,15 @@ def test_slice_data():
         == 3
     )
     assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 1
+
+
+def test_scale_init():
+    layer = Points(None, scale=(1, 1, 1, 1))
+    assert layer.ndim == 4
+    layer1 = Points([], scale=(1, 1, 1, 1))
+    assert layer1.ndim == 4
+    layer2 = Points([])
+    assert layer2.ndim == 2
+
+    with pytest.raises(ValueError):
+        Points([[1, 1, 1]], scale=(1, 1, 1, 1))
