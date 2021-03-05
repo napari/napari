@@ -99,6 +99,30 @@ class TiledImageVisual(ImageVisual):
         self._texture_atlas = self._create_texture_atlas(tile_shape)
         self.freeze()
 
+    @property
+    def clim(self):
+        return self._clim if isinstance(self._clim, str) else tuple(self._clim)
+
+    @clim.setter
+    def clim(self, clim):
+        if isinstance(clim, str):
+            if clim != 'auto':
+                raise ValueError('clim must be "auto" if a string')
+            self._need_texture_upload = True
+        else:
+            clim = np.array(clim, float)
+            if clim.shape != (2,):
+                raise ValueError('clim must have two elements')
+            if self._texture_limits is not None and (
+                (clim[0] < self._texture_limits[0])
+                or (clim[1] > self._texture_limits[1])
+            ):
+                self._need_texture_upload = True
+        self._clim = clim
+        if self._texture_limits is not None:
+            self.shared_program.frag['color_transform'][1]['clim'] = self.clim
+        self.update()
+
     def _create_texture_atlas(self, tile_shape: np.ndarray) -> TextureAtlas2D:
         """Create texture atlas up front or if we change texture shape.
 
@@ -356,7 +380,7 @@ class TiledImageVisual(ImageVisual):
             self.shared_program.frag[
                 'color_transform'
             ] = _build_color_transform(
-                grayscale, self.clim_normalized, self.gamma, self.cmap
+                grayscale, self.clim, self.gamma, self.cmap
             )
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = (

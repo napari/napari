@@ -273,6 +273,9 @@ class TextureAtlas2D(Texture2D):
 
         assert isinstance(data, np.ndarray)
 
+        # Convert all data to float32
+        data = data.astype(np.float32)
+
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
             # are wrong. Or if the data is too big to fit in one tile.
