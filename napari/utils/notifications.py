@@ -110,17 +110,17 @@ class WarningNotification(Notification):
 
 class NotificationManager:
     """
-    A Singleton instance of notification manager.
+    A notification manager, to route all notifications through.
 
-    Only one instance can be constructed; as we need notification to all flow to
-    a single location that is registered with the sys.except_hook  and
-    showwarning hook.
+    Only one instance is in general available through napari; as we need
+    notification to all flow to a single location that is registered with the
+    sys.except_hook  and showwarning hook.
 
     This can and should be used a context manager; the context manager will
-    properly rentered, and install/remove hooks and keep them in a stack to
+    properly re-entered, and install/remove hooks and keep them in a stack to
     restore them.
 
-    While it might seem unnecessary to make it entrant; or to make the
+    While it might seem unnecessary to make it re-entrant; or to make the
     re-entrancy no-op; one need to consider that this could be used inside
     another context manager that modify except_hook and showwarning.
 
@@ -131,16 +131,6 @@ class NotificationManager:
 
     records: List[Notification]
     _instance: Optional[NotificationManager] = None
-
-    def __new__(cls):
-        # singleton
-        if cls._instance is None:
-            cls._instance = object.__new__(cls)
-        else:
-            raise RuntimeError(
-                'Napari expects a single instance of NotificationManager'
-            )
-        return cls._instance
 
     def __init__(self) -> None:
         self.records: List[Notification] = []
