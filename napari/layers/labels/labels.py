@@ -1,3 +1,4 @@
+import warnings
 from collections import deque
 from typing import Dict, Union
 
@@ -10,7 +11,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ..image import Image
+from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
@@ -18,7 +19,7 @@ from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import sphere_indices
 
 
-class Labels(Image):
+class Labels(_ImageBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -106,8 +107,9 @@ class Labels(Image):
         If `True`, the fill bucket changes only connected pixels of same label.
     n_dimensional : bool
         If `True`, paint and fill edit labels across all dimensions.
-    contour : bool
-        If `True`, displays contours of labels instead of shaded regions
+    contour : int
+        If greater than 0, displays contours of labels instead of shaded regions
+        with a thickness equal to its value.
     brush_size : float
         Size of the paint brush in data coordinates.
     selected_label : int
@@ -175,7 +177,7 @@ class Labels(Image):
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
-        self._contour = False
+        self._contour = 0
 
         if properties is None:
             self._properties = {}
@@ -268,7 +270,7 @@ class Labels(Image):
 
     @property
     def contour(self):
-        """bool: displays contours of labels instead of shaded regions."""
+        """int: displays contours of labels instead of shaded regions."""
         return self._contour
 
     @contour.setter
@@ -664,16 +666,22 @@ class Labels(Image):
         else:
             raise ValueError("Unsupported Color Mode")
 
-        if self.contour:
+        if self.contour > 0 and raw.ndim == 2:
             image = np.zeros_like(raw)
             struct_elem = ndi.generate_binary_structure(raw.ndim, 1)
+            thickness = self.contour
+            thick_struct_elem = ndi.iterate_structure(
+                struct_elem, thickness
+            ).astype(bool)
             boundaries = ndi.grey_dilation(
                 raw, footprint=struct_elem
-            ) != ndi.grey_erosion(raw, footprint=struct_elem)
+            ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
             image[boundaries] = raw[boundaries]
             image = np.where(
-                raw > 0, low_discrepancy_image(image, self._seed), 0
+                image > 0, low_discrepancy_image(image, self._seed), 0
             )
+        elif self.contour > 0 and raw.ndim > 2:
+            warnings.warn("Contours are not displayed during 3D rendering")
 
         return image
 

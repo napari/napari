@@ -7,16 +7,13 @@ import numpy as np
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.events import Event
 from ..base import Layer
+from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils.layer_utils import dataframe_to_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 from ._vectors_constants import DEFAULT_COLOR_CYCLE, ColorMode
 

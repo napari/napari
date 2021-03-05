@@ -381,10 +381,9 @@ class QtViewer(QSplitter):
             # moves or the timer goes off.
             self._qt_poll.events.poll.connect(vispy_layer._on_poll)
 
-            # In the other direction, some visuals need to tell
-            # QtPoll to start polling. When they receive new data
-            # and need to be polled to load it over some number
-            # of frames.
+            # In the other direction, some visuals need to tell QtPoll to
+            # start polling. When they receive new data they need to be
+            # polled to load it, even if the camera is not moving.
             if vispy_layer.events is not None:
                 vispy_layer.events.loaded.connect(self._qt_poll.wake_up)
 
@@ -823,13 +822,12 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
     Create a QtPoll instance for octree or monitor.
 
     Octree needs QtPoll so VispyTiledImageLayer can finish in-progress
-    loads even if the camera is not moving. Once loading is finish it
-    will tell QtPoll it no longer need to be polled.
+    loads even if the camera is not moving. Once loading is finish it will
+    tell QtPoll it no longer needs to be polled.
 
-    Monitor need QtPoll to poll for incoming messages. We can probably get
-    rid of this need to be polled by using a thread that's blocked waiting
-    for new messages, and that posts those messages as Qt Events. That
-    might be something to do in the future.
+    Monitor needs QtPoll to poll for incoming messages. This might be
+    temporary until we can process incoming messages with a dedicated
+    thread.
 
     Parameters
     ----------

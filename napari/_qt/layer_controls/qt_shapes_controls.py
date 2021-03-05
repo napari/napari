@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.events import disconnect_events
+from ...utils.interactions import KEY_SYMBOLS
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -108,34 +109,47 @@ class QtShapesControls(QtLayerControls):
         self.widthSlider = sld
 
         self.select_button = QtModeRadioButton(
-            layer, 'select', Mode.SELECT, tooltip='Select shapes'
+            layer, 'select', Mode.SELECT, tooltip='Select shapes (S)'
         )
         self.direct_button = QtModeRadioButton(
-            layer, 'direct', Mode.DIRECT, tooltip='Select vertices'
+            layer, 'direct', Mode.DIRECT, tooltip='Select vertices (D)'
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom', checked=True
+            layer,
+            'zoom',
+            Mode.PAN_ZOOM,
+            tooltip='Pan/zoom (Space)',
+            checked=True,
         )
         self.rectangle_button = QtModeRadioButton(
-            layer, 'rectangle', Mode.ADD_RECTANGLE, tooltip='Add rectangles'
+            layer,
+            'rectangle',
+            Mode.ADD_RECTANGLE,
+            tooltip='Add rectangles (R)',
         )
         self.ellipse_button = QtModeRadioButton(
-            layer, 'ellipse', Mode.ADD_ELLIPSE, tooltip='Add ellipses'
+            layer, 'ellipse', Mode.ADD_ELLIPSE, tooltip='Add ellipses (E)'
         )
         self.line_button = QtModeRadioButton(
-            layer, 'line', Mode.ADD_LINE, tooltip='Add lines'
+            layer, 'line', Mode.ADD_LINE, tooltip='Add lines (L)'
         )
         self.path_button = QtModeRadioButton(
-            layer, 'path', Mode.ADD_PATH, tooltip='Add paths'
+            layer, 'path', Mode.ADD_PATH, tooltip='Add paths (T)'
         )
         self.polygon_button = QtModeRadioButton(
-            layer, 'polygon', Mode.ADD_POLYGON, tooltip='Add polygons'
+            layer, 'polygon', Mode.ADD_POLYGON, tooltip='Add polygons (P)'
         )
         self.vertex_insert_button = QtModeRadioButton(
-            layer, 'vertex_insert', Mode.VERTEX_INSERT, tooltip='Insert vertex'
+            layer,
+            'vertex_insert',
+            Mode.VERTEX_INSERT,
+            tooltip='Insert vertex (I)',
         )
         self.vertex_remove_button = QtModeRadioButton(
-            layer, 'vertex_remove', Mode.VERTEX_REMOVE, tooltip='Remove vertex'
+            layer,
+            'vertex_remove',
+            Mode.VERTEX_REMOVE,
+            tooltip='Remove vertex (X)',
         )
 
         self.move_front_button = QtModePushButton(
@@ -154,7 +168,7 @@ class QtShapesControls(QtLayerControls):
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip='Delete selected shapes',
+            tooltip=f"Delete selected shapes ({KEY_SYMBOLS['Backspace']})",
         )
 
         self.button_group = QButtonGroup(self)
