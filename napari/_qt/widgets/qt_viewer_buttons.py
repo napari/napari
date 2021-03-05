@@ -298,7 +298,7 @@ class QtBistateButton(QCheckBox):
         self._on_change()
 
     def change(self, state):
-        """Toggle between grid view mode and (the ordinary) stack view mode.
+        """Toggle between the multiple states of this button.
 
         Parameters
         ----------
@@ -313,7 +313,7 @@ class QtBistateButton(QCheckBox):
         setattr(self._target, self._attribute, newstate)
 
     def _on_change(self, event=None):
-        """Update grid layout size.
+        """Called wen mirrored value changes
 
         Parameters
         ----------
