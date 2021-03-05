@@ -112,9 +112,7 @@ def test_find_nodes():
     node = Node(name='212')
     root[2, 1].append(node)
     assert qt_tree.findIndex(node).row() == 2
-
-    with pytest.raises(IndexError):
-        qt_tree.findIndex(Node(name='new node'))
+    assert not qt_tree.findIndex(Node(name='new node')).isValid()
 
 
 def test_view_smoketest(qtbot):
