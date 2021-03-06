@@ -233,6 +233,7 @@ class TiledImageVisual(ImageVisual):
         # Add to the texture atlas.
         # Note that clim data is currently provided to do a normalization. This
         # will not be required after https://github.com/vispy/vispy/pull/1920/
+        # and at that point should be changed.
         atlas_tile = self._texture_atlas.add_tile(
             octree_chunk, clim=self._clim
         )

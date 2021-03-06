@@ -277,6 +277,7 @@ class TextureAtlas2D(Texture2D):
 
         # normalize by contrast limits if provided. This normalization
         # will not be required after https://github.com/vispy/vispy/pull/1920/
+        # and at that point should be changed.
         if clim is not None and (data.ndim == 2 or data.shape[2] == 1):
             clim = np.asarray(clim, dtype=np.float32)
             data = data - clim[0]  # not inplace so we don't modify orig data

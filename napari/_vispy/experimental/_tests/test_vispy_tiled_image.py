@@ -63,7 +63,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)
 
-    # Wait until the chunks have added
+    # Wait until the chunks have added, ToDo change this to a qtbot.waitSignal
     qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
@@ -108,7 +108,7 @@ def test_tiled_changing_contrast_limits(
     # Check visual is a tiled image visual
     assert isinstance(visual, VispyTiledImageLayer)
 
-    # Wait until the chunks have added
+    # Wait until the chunks have added, ToDo change this to a qtbot.waitSignal
     qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
@@ -130,7 +130,7 @@ def test_tiled_changing_contrast_limits(
     # Make clim data range so center pixel now appears fully saturated
     layer.contrast_limits = [0, 1]
 
-    # Required wait is longer
+    # Required wait is longer, ToDo change this to a qtbot.waitSignal
     qtbot.wait(LONG_LOADING_DELAY)
 
     screenshot = viewer.screenshot(canvas_only=True)
