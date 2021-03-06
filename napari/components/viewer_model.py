@@ -82,17 +82,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Contains axes, indices, dimensions and sliders.
     """
 
-    # After https://github.com/samuelcolvin/pydantic/pull/2196 is released
-    # make all of these fields with allow_mutation=False
-    axes: Axes = Axes()
-    camera: Camera = Camera()
-    cursor: Cursor = Cursor()
-    dims: Dims = Dims()
-    grid: GridCanvas = GridCanvas()
+    # Using allow_mutation=False means these attributes aren't settable and don't
+    # have an event emitter associated with them
+    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
+    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
+    cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
+    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
+    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
     layers: LayerList = Field(
-        default_factory=LayerList
+        default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = ScaleBar()
+    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
 
     active_layer: Optional[
         Layer
