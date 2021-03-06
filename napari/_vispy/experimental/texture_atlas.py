@@ -286,7 +286,7 @@ class TextureAtlas2D(Texture2D):
 
         assert isinstance(data, np.ndarray)
 
-        # Make sure data is of a type acceptable to vispy
+        # Make sure data is of a dtype acceptable to vispy
         data = fix_data_dtype(data)
 
         if not self.spec.is_compatible(data):
