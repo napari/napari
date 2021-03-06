@@ -253,13 +253,17 @@ class TextureAtlas2D(Texture2D):
 
         return _quad(shape, pos)
 
-    def add_tile(self, octree_chunk: OctreeChunk) -> Optional[AtlasTile]:
+    def add_tile(
+        self, octree_chunk: OctreeChunk, clim=None
+    ) -> Optional[AtlasTile]:
         """Add one tile to the atlas.
 
         Parameters
         ----------
         octree_chunk : np.ndarray
             The image data for this one tile.
+        clim : tuple, optional
+            Contrast limits to normalize by if provided.
 
         Returns
         -------
@@ -270,6 +274,16 @@ class TextureAtlas2D(Texture2D):
 
         if data.dtype == np.float64:
             data = data.astype(np.float32)
+
+        # normalize by contrast limits if provided. This normalization
+        # will not be required after https://github.com/vispy/vispy/pull/1920/
+        if clim is not None and (data.ndim == 2 or data.shape[2] == 1):
+            clim = np.asarray(clim, dtype=np.float32)
+            data = data - clim[0]  # not inplace so we don't modify orig data
+            if clim[1] - clim[0] > 0:
+                data /= clim[1] - clim[0]
+            else:
+                data[:] = 1 if data[0, 0] != 0 else 0
 
         assert isinstance(data, np.ndarray)
 

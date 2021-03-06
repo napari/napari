@@ -17,8 +17,9 @@ skip_local_popups = pytest.mark.skipif(
     reason='Tests requiring GUI windows are skipped locally by default.',
 )
 
-# Add a loading delay in ms, any number > 0 seems to work.
-LOADING_DELAY = 1
+# Add a loading delay in ms.
+SHORT_LOADING_DELAY = 1
+LONG_LOADING_DELAY = 250
 
 # Test all dtypes
 dtypes = [
@@ -41,16 +42,19 @@ dtypes = [
 @skip_on_win_ci
 @skip_local_popups
 @pytest.mark.parametrize('dtype', dtypes)
-def test_tiled_screenshot(qtbot, make_napari_viewer, dtype):
+def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
     """Test rendering of tiled data with screenshot."""
+    # Enable tiled rendering
+    monkeypatch.setenv("NAPARI_OCTREE", "1")
+
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
-    data = [np.ones(s, dtype) for s in shapes]
+    data = [100 * np.ones(s, dtype) for s in shapes]
     layer = viewer.add_image(
-        data, multiscale=True, contrast_limits=[0, 1], colormap='blue'
+        data, multiscale=True, contrast_limits=[0, 200], colormap='blue'
     )
 
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
@@ -59,12 +63,12 @@ def test_tiled_screenshot(qtbot, make_napari_viewer, dtype):
     assert isinstance(visual, VispyTiledImageLayer)
 
     # Wait until the chunks have added
-    qtbot.wait(LOADING_DELAY)
+    qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
-    target_center = np.array([0, 0, 255, 255], dtype='uint8')
+    target_center = np.array([0, 0, 128, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
@@ -80,8 +84,13 @@ def test_tiled_screenshot(qtbot, make_napari_viewer, dtype):
 @pytest.mark.async_only
 @skip_on_win_ci
 @skip_local_popups
-def test_tiled_changing_contrast_limits(qtbot, make_napari_viewer):
+def test_tiled_changing_contrast_limits(
+    qtbot, monkeypatch, make_napari_viewer
+):
     """Test changing contrast limits of tiled data."""
+    # Enable tiled rendering
+    monkeypatch.setenv("NAPARI_OCTREE", "1")
+
     viewer = make_napari_viewer(show=True)
     # Set canvas size to target amount
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
@@ -98,7 +107,7 @@ def test_tiled_changing_contrast_limits(qtbot, make_napari_viewer):
     assert isinstance(visual, VispyTiledImageLayer)
 
     # Wait until the chunks have added
-    qtbot.wait(LOADING_DELAY)
+    qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
     screenshot = viewer.screenshot(canvas_only=True)
@@ -118,6 +127,9 @@ def test_tiled_changing_contrast_limits(qtbot, make_napari_viewer):
 
     # Make clim data range so center pixel now appears fully saturated
     layer.contrast_limits = [0, 1]
+
+    # Required wait is longer
+    qtbot.wait(LONG_LOADING_DELAY)
 
     screenshot = viewer.screenshot(canvas_only=True)
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
