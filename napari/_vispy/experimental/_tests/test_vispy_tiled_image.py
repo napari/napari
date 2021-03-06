@@ -86,6 +86,48 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
 @pytest.mark.skip("NAPARI_OCTREE env var cannot be dynamically set")
 @skip_on_win_ci
 @skip_local_popups
+def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
+    """Test rgb data works as expected."""
+    # Enable tiled rendering
+    monkeypatch.setenv("NAPARI_OCTREE", "1")
+
+    viewer = make_napari_viewer(show=True)
+    # Set canvas size to target amount
+    viewer.window.qt_viewer.view.canvas.size = (800, 600)
+
+    shapes = [(4000, 3000, 3), (2000, 1500, 3), (1000, 750, 3), (500, 375, 3)]
+    data = [128 * np.ones(s, np.uint8) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True, rgb=True)
+
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+
+    # Check visual is a tiled image visual
+    assert isinstance(visual, VispyTiledImageLayer)
+
+    # Wait until the chunks have added, ToDo change this to a qtbot.waitSignal
+    qtbot.wait(SHORT_LOADING_DELAY)
+
+    # Take the screenshot
+    screenshot = viewer.screenshot(canvas_only=True)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    target_center = np.array([128, 128, 128, 255], dtype='uint8')
+    target_edge = np.array([0, 0, 0, 255], dtype='uint8')
+    screen_offset = 3  # Offset is needed as our screenshots have black borders
+
+    # Center pixel should be gray
+    np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
+    np.testing.assert_allclose(
+        screenshot[screen_offset, screen_offset], target_edge
+    )
+    np.testing.assert_allclose(
+        screenshot[-screen_offset, -screen_offset], target_edge
+    )
+
+
+@pytest.mark.async_only
+@pytest.mark.skip("NAPARI_OCTREE env var cannot be dynamically set")
+@skip_on_win_ci
+@skip_local_popups
 def test_tiled_changing_contrast_limits(
     qtbot, monkeypatch, make_napari_viewer
 ):
@@ -135,45 +177,3 @@ def test_tiled_changing_contrast_limits(
 
     screenshot = viewer.screenshot(canvas_only=True)
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
-
-
-@pytest.mark.async_only
-@pytest.mark.skip("NAPARI_OCTREE env var cannot be dynamically set")
-@skip_on_win_ci
-@skip_local_popups
-def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
-    """Test changing contrast limits of tiled data."""
-    # Enable tiled rendering
-    monkeypatch.setenv("NAPARI_OCTREE", "1")
-
-    viewer = make_napari_viewer(show=True)
-    # Set canvas size to target amount
-    viewer.window.qt_viewer.view.canvas.size = (800, 600)
-
-    shapes = [(4000, 3000, 3), (2000, 1500, 3), (1000, 750, 3), (500, 375, 3)]
-    data = [128 * np.ones(s, np.uint8) for s in shapes]
-    layer = viewer.add_image(data, multiscale=True, rgb=True)
-
-    visual = viewer.window.qt_viewer.layer_to_visual[layer]
-
-    # Check visual is a tiled image visual
-    assert isinstance(visual, VispyTiledImageLayer)
-
-    # Wait until the chunks have added, ToDo change this to a qtbot.waitSignal
-    qtbot.wait(SHORT_LOADING_DELAY)
-
-    # Take the screenshot
-    screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
-    target_center = np.array([128, 128, 128, 255], dtype='uint8')
-    target_edge = np.array([0, 0, 0, 255], dtype='uint8')
-    screen_offset = 3  # Offset is needed as our screenshots have black borders
-
-    # Center pixel should be gray
-    np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
-    np.testing.assert_allclose(
-        screenshot[screen_offset, screen_offset], target_edge
-    )
-    np.testing.assert_allclose(
-        screenshot[-screen_offset, -screen_offset], target_edge
-    )
