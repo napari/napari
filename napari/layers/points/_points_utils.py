@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 import numpy as np
 
 
@@ -76,3 +78,41 @@ def points_in_box(corners, points, sizes):
     # Determine indices of points which have at least one corner inside box
     inside = np.unique(point_corners_in_box % len(points))
     return list(inside)
+
+
+def fix_data_points(
+    points: Optional[np.ndarray], ndim: Optional[int]
+) -> Tuple[np.ndarray, int]:
+    """
+    Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)
+
+    Parameters
+    ----------
+    points : (N, M) array or None
+        Points to be checked
+    ndim : int or None
+        number of expected dimensions
+
+    Returns
+    -------
+    points : (N, M) array
+        Points array
+    ndim : int
+        number of dimensions
+
+    Raises
+    ------
+    ValueError
+        if ndim does not match with second dimensions of points
+    """
+    if points is None or len(points) == 0:
+        if ndim is None:
+            ndim = 2
+        points = np.empty((0, ndim))
+    else:
+        points = np.atleast_2d(points)
+        data_ndim = points.shape[1]
+        if ndim is not None and ndim != data_ndim:
+            raise ValueError("Points dimensions must be equal to ndim")
+        ndim = data_ndim
+    return points, ndim

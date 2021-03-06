@@ -28,7 +28,7 @@ from ..utils.layer_utils import (
 from ..utils.text import TextManager
 from ._points_constants import SYMBOL_ALIAS, ColorMode, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
-from ._points_utils import create_box, points_to_squares
+from ._points_utils import create_box, fix_data_points, points_to_squares
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -265,7 +265,7 @@ class Points(Layer):
         if ndim is None and scale is not None:
             ndim = len(scale)
 
-        data, ndim = _fix_data_points(data, ndim)
+        data, ndim = fix_data_points(data, ndim)
 
         super().__init__(
             data,
@@ -472,7 +472,7 @@ class Points(Layer):
 
     @data.setter
     def data(self, data: Optional[np.ndarray]):
-        data, _ = _fix_data_points(data, self.ndim)
+        data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
 
@@ -1794,19 +1794,3 @@ class Points(Layer):
 
         else:
             self._clipboard = {}
-
-
-def _fix_data_points(
-    data: Optional[np.ndarray], ndim: Optional[int]
-) -> Tuple[np.ndarray, int]:
-    if data is None or len(data) == 0:
-        if ndim is None:
-            ndim = 2
-        data = np.empty((0, ndim))
-    else:
-        data = np.atleast_2d(data)
-        data_ndim = data.shape[1]
-        if ndim is not None and ndim != data_ndim:
-            raise ValueError("Points dimensions must be equal to ndim")
-        ndim = data_ndim
-    return data, ndim
