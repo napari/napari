@@ -70,12 +70,19 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
     name : str
         name of all packages at pypi that declare ``classifier``
     """
-
-    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}"
-    with urlopen(url) as response:
-        html = response.read().decode()
-
-    return re.findall('class="package-snippet__name">(.+)</span>', html)
+    packages = []
+    page = 1
+    pattern = re.compile('class="package-snippet__name">(.+)</span>')
+    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}&page="
+    while True:
+        try:
+            with urlopen(f'{url}{page}') as response:
+                html = response.read().decode()
+                packages.extend(pattern.findall(html))
+            page += 1
+        except error.HTTPError:
+            break
+    return packages
 
 
 @lru_cache(maxsize=128)
