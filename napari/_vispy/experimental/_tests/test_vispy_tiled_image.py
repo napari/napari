@@ -39,6 +39,7 @@ dtypes = [
 
 
 @pytest.mark.async_only
+@pytest.mark.skip("NAPARI_OCTREE env var cannot be dynamically set")
 @skip_on_win_ci
 @skip_local_popups
 @pytest.mark.parametrize('dtype', dtypes)
@@ -82,6 +83,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
 
 
 @pytest.mark.async_only
+@pytest.mark.skip("NAPARI_OCTREE env var cannot be dynamically set")
 @skip_on_win_ci
 @skip_local_popups
 def test_tiled_changing_contrast_limits(
