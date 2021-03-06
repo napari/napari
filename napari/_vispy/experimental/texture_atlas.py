@@ -8,6 +8,7 @@ import numpy as np
 from vispy.gloo import Texture2D
 
 from ...layers.image.experimental import OctreeChunk
+from ..utils_gl import fix_data_dtype
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(
@@ -272,9 +273,6 @@ class TextureAtlas2D(Texture2D):
         """
         data = octree_chunk.data
 
-        if data.dtype == np.float64:
-            data = data.astype(np.float32)
-
         # normalize by contrast limits if provided. This normalization
         # will not be required after https://github.com/vispy/vispy/pull/1920/
         # and at that point should be changed.
@@ -288,8 +286,8 @@ class TextureAtlas2D(Texture2D):
 
         assert isinstance(data, np.ndarray)
 
-        # Convert all data to float32
-        data = data.astype(np.float32)
+        # Make sure data is of a type acceptable to vispy
+        data = fix_data_dtype(data)
 
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
