@@ -5,7 +5,6 @@ wrap.
 import inspect
 import os
 import time
-from collections import Counter
 from itertools import chain, repeat
 from typing import Dict
 
@@ -238,7 +237,6 @@ class Window:
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
-        self._plugin_menus: Dict[str, QMenu] = {}
 
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
@@ -563,39 +561,33 @@ class Window:
         if not plugins.dock_widgets:
             plugins.discover_dock_widgets()
 
-        # Get names of all plugins providing dock widgets or functions
-        plugin_widgets = chain(plugins.dock_widgets, plugins.function_widgets)
-        plugin_counts = Counter(plug_name for plug_name, _ in plugin_widgets)
-
-        # Add submenu for each plugin with more than 1 item
-        for plugin_name, count in plugin_counts.items():
-            if count > 1:
-                menu = QMenu(plugin_name, self._qt_window)
-                self._plugin_menus[plugin_name] = menu
-                self._plugin_dock_widget_menu.addMenu(menu)
-
         # Add a menu item (QAction) for each available plugin widget
-        docks = zip(repeat("dock"), plugins.dock_widgets)
-        funcs = zip(repeat("func"), plugins.function_widgets)
-        for hook_type, key in chain(docks, funcs):
-            plugin_name, wdg_name = key
-            if plugin_name in self._plugin_menus:
-                # this plugin has a submenu.
-                action = QAction(wdg_name, parent=self._qt_window)
-                self._plugin_menus[plugin_name].addAction(action)
+        docks = zip(repeat("dock"), plugins.dock_widgets.items())
+        funcs = zip(repeat("func"), plugins.function_widgets.items())
+        for hook_type, (plugin_name, widgets) in chain(docks, funcs):
+            multiprovider = len(widgets) > 1
+            if multiprovider:
+                menu = QMenu(plugin_name, self._qt_window)
+                self._plugin_dock_widget_menu.addMenu(menu)
             else:
-                # this plugin only has one widget, add a namespaced menu item
-                full_name = plugins.menu_item_template.format(*key)
-                action = QAction(full_name, parent=self._qt_window)
-                self._plugin_dock_widget_menu.addAction(action)
+                menu = self._plugin_dock_widget_menu
 
-            def _add_widget(*args, key=key, hook_type=hook_type):
-                if hook_type == 'dock':
-                    self._add_plugin_dock_widget(key)
+            for wdg_name in widgets:
+                key = (plugin_name, wdg_name)
+                if multiprovider:
+                    action = QAction(wdg_name, parent=self._qt_window)
                 else:
-                    self._add_plugin_function_widget(key)
+                    full_name = plugins.menu_item_template.format(*key)
+                    action = QAction(full_name, parent=self._qt_window)
 
-            action.triggered.connect(_add_widget)
+                def _add_widget(*args, key=key, hook_type=hook_type):
+                    if hook_type == 'dock':
+                        self.add_plugin_dock_widget(*key)
+                    else:
+                        self._add_plugin_function_widget(*key)
+
+                menu.addAction(action)
+                action.triggered.connect(_add_widget)
 
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
@@ -679,22 +671,34 @@ class Window:
             axis = self.qt_viewer.viewer.dims.last_used or 0
             self.qt_viewer.dims.play(axis)
 
-    def _add_plugin_dock_widget(self, key):
+    def add_plugin_dock_widget(
+        self, plugin_name: str, widget_name: str = None
+    ):
         """Add plugin dock widget if not already added.
 
         Parameters
         ----------
-        key : 2-tuple of str
-            Plugin name and widget name.
+        plugin_name : str
+            Name of a plugin providing a widget
+        widget_name : str, optional
+            Name of a widget provided by `plugin_name`. If `None`, and the
+            specified plugin provides only a single widget, that widget will be
+            returned, otherwise a ValueError will be raised, by default None
         """
         from ..viewer import Viewer
 
-        full_name = plugins.menu_item_template.format(*key)
+        Widget, dock_kwargs = plugins.get_plugin_widget(
+            plugin_name, widget_name
+        )
+        if not widget_name:
+            # if widget_name wasn't provided, `get_plugin_widget` will have
+            # ensured that there is a single widget available.
+            widget_name = list(plugins.dock_widgets[plugin_name])[0]
+
+        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()
             return
-
-        Widget, dock_kwargs = plugins.dock_widgets[key]
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
@@ -714,32 +718,33 @@ class Window:
         # Add dock widget
         self.add_dock_widget(
             wdg,
-            name=plugins.menu_item_template.format(*key),
+            name=full_name,
             area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
 
-    def _add_plugin_function_widget(self, key):
+    def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
         """Add plugin function widget if not already added.
 
         Parameters
         ----------
-        key : 2-tuple of str
-            Plugin name and function name.
+        plugin_name : str
+            Name of a plugin providing a widget
+        widget_name : str, optional
+            Name of a widget provided by `plugin_name`. If `None`, and the
+            specified plugin provides only a single widget, that widget will be
+            returned, otherwise a ValueError will be raised, by default None
         """
-        full_name = plugins.menu_item_template.format(*key)
+        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()
             return
 
-        func = plugins.function_widgets[key]
+        func = plugins.function_widgets[plugin_name][widget_name]
 
         # Add function widget
         self.add_function_widget(
-            func,
-            name=plugins.menu_item_template.format(*key),
-            area=None,
-            allowed_areas=None,
+            func, name=full_name, area=None, allowed_areas=None
         )
 
     def add_dock_widget(

@@ -74,6 +74,20 @@ class CitationAction(argparse.Action):
         sys.exit()
 
 
+def required_length(nmin, nmax):
+    class RequiredLength(argparse.Action):
+        def __call__(self, parser, args, values, option_string=None):
+            if not nmin <= len(values) <= nmax:
+                msg = (
+                    f'argument "{self.dest}" requires between '
+                    f'{nmin} and {nmax} arguments'
+                )
+                raise argparse.ArgumentTypeError(msg)
+            setattr(args, self.dest, values)
+
+    return RequiredLength
+
+
 def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     """Convert a list of strings into a dict of valid kwargs for add_* methods.
 
@@ -144,6 +158,18 @@ def _run():
         action='count',
         default=0,
         help="increase output verbosity",
+    )
+    parser.add_argument(
+        '-w',
+        '--widget',
+        nargs='+',
+        metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
+        action=required_length(1, 2),
+        help=(
+            "open napari with dock widget from specified plugin name."
+            "(If plugin provides multiple dock widgets, widget name must also "
+            "be provided)"
+        ),
     )
     parser.add_argument(
         '--version',
@@ -234,6 +260,13 @@ def _run():
         runpy.run_path(args.paths[0])
 
     else:
+        if args.widget:
+            from . import plugins
+
+            # if a plugin widget has been requested, this will fail immediately
+            # if the requested plugin/widget is not available.
+            plugins.discover_dock_widgets()
+            plugins.get_plugin_widget(*args.widget)
 
         from ._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -246,13 +279,16 @@ def _run():
         # but in the meantime if the garbage collector runs;
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
-        _viewer = view_path(  # noqa: F841
+        viewer = view_path(  # noqa: F841
             args.paths,
             stack=args.stack,
             plugin=args.plugin,
             layer_type=args.layer_type,
             **kwargs,
         )
+
+        if args.widget:
+            viewer.window.add_plugin_dock_widget(*args.widget)
 
         run(gui_exceptions=True)
 
