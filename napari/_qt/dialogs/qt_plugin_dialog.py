@@ -355,6 +355,7 @@ class QtPluginDialog(QDialog):
 
         self.worker.yielded.connect(_handle_yield)
         self.worker.finished.connect(self.working_indicator.hide)
+        self.worker.finished.connect(self._update_count_in_label)
         self.worker.start()
 
     def setup_ui(self):
@@ -380,7 +381,8 @@ class QtPluginDialog(QDialog):
         uninstalled = QWidget(self.v_splitter)
         lay = QVBoxLayout(uninstalled)
         lay.setContentsMargins(0, 2, 0, 2)
-        lay.addWidget(QLabel("Available Plugin Packages"))
+        self.avail_label = QLabel("Available Plugins")
+        lay.addWidget(self.avail_label)
         self.available_list = QPluginList(uninstalled, self.installer)
         lay.addWidget(self.available_list)
 
@@ -437,6 +439,10 @@ class QtPluginDialog(QDialog):
 
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
+
+    def _update_count_in_label(self):
+        count = self.available_list.count()
+        self.avail_label.setText(f"Available Plugins ({count})")
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.DragEnter:
