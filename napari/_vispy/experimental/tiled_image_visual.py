@@ -231,7 +231,12 @@ class TiledImageVisual(ImageVisual):
             The newly added chunk's index.
         """
         # Add to the texture atlas.
-        atlas_tile = self._texture_atlas.add_tile(octree_chunk)
+        # Note that clim data is currently provided to do a normalization. This
+        # will not be required after https://github.com/vispy/vispy/pull/1920/
+        # and at that point should be changed.
+        atlas_tile = self._texture_atlas.add_tile(
+            octree_chunk, clim=self._clim
+        )
 
         if atlas_tile is None:
             # TODO_OCTREE: No slot was available in the atlas. That's bad,
@@ -329,9 +334,9 @@ class TiledImageVisual(ImageVisual):
     def _build_texture(self) -> None:
         """Override of ImageVisual._build_texture()."""
 
-        # clim not implemented yet, use code from base ImageVisual?
-        self._clim = np.array([0, 1])
-        self._texture_limits = np.array([0, 1])
+        if isinstance(self._clim, str) and self._clim == 'auto':
+            raise ValueError('Auto clims not supported for tiled image visual')
+        self._texture_limits = np.array(self._clim)
         self._need_colortransform_update = True
 
         self._need_texture_upload = False
