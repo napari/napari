@@ -187,7 +187,7 @@ def sprial_index(row_range, col_range):
         x, y = x + dx, y + dy
 
 
-def linear_index(row_ranges, col_ranges):
+def linear_index(row_range, col_range):
     """Generate a linear index from a set of row and column indices.
 
     A linear index starts at the top left and procedes in a raster fashion.
@@ -204,6 +204,6 @@ def linear_index(row_ranges, col_ranges):
     generator
         (row, column) tuples in order of a linear index.
     """
-    for row in row_ranges:
-        for col in col_ranges:
+    for row in row_range:
+        for col in col_range:
             yield (row, col)

@@ -205,7 +205,6 @@ class OctreeIntersection:
         # We use spiral indexing to get chunks from the center first
         for row, col in sprial_index(self._row_range, self._col_range):
             chunk = self.level.get_chunk(row, col, create=create)
-            # Store visit to chunk location
             if chunk is not None:
                 chunks.append(chunk)
         return chunks
