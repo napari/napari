@@ -205,5 +205,5 @@ def linear_index(row_range, col_range):
         (row, column) tuples in order of a linear index.
     """
     from itertools import product
-    
+
     yield from product(row_range, col_range)
