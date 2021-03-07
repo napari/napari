@@ -6,7 +6,7 @@ import warnings
 from datetime import datetime
 from enum import auto
 from types import TracebackType
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
 
 from .events import Event, EventEmitter
 from .misc import StringEnum
@@ -18,14 +18,14 @@ class NotificationSeverity(StringEnum):
     ERROR = auto()
     WARNING = auto()
     INFO = auto()
-    NONE = auto()
+    DEBUG = auto()
 
     def as_icon(self):
         return {
             self.ERROR: "ⓧ",
             self.WARNING: "⚠️",
             self.INFO: "ⓘ",
-            self.NONE: "",
+            self.DEBUG: "🐛",
         }[self]
 
 
@@ -47,12 +47,6 @@ class Notification(Event):
         is a name for the action (which may, for example, be put on a button),
         and the callable is a callback to perform when the action is triggered.
         (for example, one might show a traceback dialog). by default ()
-    type : str, optional
-        The notification event type, by default 'notification'.  May be changed
-        by subclasses.
-    native : Any, optional
-        A native backend event that may have triggered this Notification,
-        by default None
     """
 
     def __init__(
@@ -61,17 +55,12 @@ class Notification(Event):
         severity: Union[
             str, NotificationSeverity
         ] = NotificationSeverity.WARNING,
-        # source: Optional[str] = None, # TODO
         actions: ActionSequence = (),
-        type: str = 'notification',
-        native: Any = None,
         **kwargs,
     ):
-
-        super().__init__(type, **kwargs)
-        self.message = message
         self.severity = NotificationSeverity(severity)
-        # self.source = source  # TODO
+        super().__init__(type=str(self.severity).lower(), **kwargs)
+        self.message = message
         self.actions = actions
 
         # let's store when the object was created;
@@ -91,9 +80,8 @@ class ErrorNotification(Notification):
 
     def __init__(self, exception: BaseException, *args, **kwargs):
         msg = getattr(exception, 'message', str(exception))
-        severity = getattr(exception, 'severity', 'ERROR')
         actions = getattr(exception, 'actions', ())
-        super().__init__(msg, severity, actions, type='error')
+        super().__init__(msg, NotificationSeverity.ERROR, actions)
         self.exception = exception
 
 
@@ -102,9 +90,8 @@ class WarningNotification(Notification):
 
     def __init__(self, warning: Warning, *args, **kwargs):
         msg = getattr(warning, 'message', str(warning))
-        severity = getattr(warning, 'severity', 'WARNING')
         actions = getattr(warning, 'actions', ())
-        super().__init__(msg, severity, actions, type='warning')
+        super().__init__(msg, NotificationSeverity.WARNING, actions)
         self.warning = warning
 
 
