@@ -14,6 +14,7 @@ def test_notification_manager_no_gui():
     notification manager itself can receive a info, warning or error.
     """
 
+    previous_exhook = sys.excepthook
     with notification_manager:
 
         show_info('this is one way of showing an information message')
@@ -41,3 +42,6 @@ def test_notification_manager_no_gui():
         assert warnings.showwarning == notification_manager.receive_warning
         warnings.showwarning('this is a warning', UserWarning, '', 0)
         assert len(notification_manager.records) == 4
+
+    # make sure we've restored the except hook
+    assert sys.excepthook == previous_exhook
