@@ -145,3 +145,65 @@ class OctreeMetadata(NamedTuple):
         For example HDTV resolution is 16:9 which has aspect ration 1.77.
         """
         return self.base_shape[1] / self.base_shape[0]
+
+
+def sprial_index(row_range, col_range):
+    """Generate a spiral index from a set of row and column indices.
+
+    A spiral index starts at the center point and moves out in a spiral
+    Paramters
+    ---------
+    row_range : range
+        Range of rows to be accessed.
+    col_range : range
+        Range of columns to be accessed.
+
+    Returns
+    -------
+    generator
+        (row, column) tuples in order of a spiral index.
+    """
+
+    # Determine how many rows and columns need to be transvered
+    total_row = row_range.stop - row_range.start
+    total_col = col_range.stop - col_range.start
+    # Get center offset
+    row_center = int(np.ceil((row_range.stop + row_range.start) / 2) - 1)
+    col_center = int(np.ceil((col_range.stop + col_range.start) / 2) - 1)
+    # Let the first move be down
+    x, y = 0, 0
+    dx, dy = 0, -1
+    # Loop through the desired number of indices
+    for i_ in range(max(total_row, total_col) ** 2):
+        # Check if values are in range
+        if (-total_row // 2 < x <= total_row // 2) and (
+            -total_col // 2 < y <= total_col // 2
+        ):
+            # Return desired row, col tuple
+            yield (row_center + x, col_center + y)
+        # Change direction at appropriate points
+        if x == y or (x < 0 and x == -y) or (x > 0 and x == 1 - y):
+            dx, dy = -dy, dx
+        x, y = x + dx, y + dy
+
+
+def linear_index(row_ranges, col_ranges):
+    """Generate a linear index from a set of row and column indices.
+
+    A linear index starts at the top left and procedes in a raster fashion.
+
+    Paramters
+    ---------
+    row_range : range
+        Range of rows to be accessed.
+    col_range : range
+        Range of columns to be accessed.
+
+    Returns
+    -------
+    generator
+        (row, column) tuples in order of a linear index.
+    """
+    for row in row_ranges:
+        for col in col_ranges:
+            yield (row, col)
