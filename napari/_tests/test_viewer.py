@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-from napari import layers
+from napari import Viewer, layers
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -12,8 +12,16 @@ from napari._tests.utils import (
 )
 from napari.utils._tests.test_naming import eval_with_filename
 
+viewer_methods = set(super(Viewer, Viewer).class_keymap.values())
+viewer_methods.update(Viewer.class_keymap.values())
 
-def test_viewer(make_napari_viewer):
+
+def test_len_methods_viewer():
+    assert len(viewer_methods) == 18
+
+
+@pytest.mark.parametrize('func', viewer_methods)
+def test_viewer(make_napari_viewer, func):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
@@ -33,15 +41,12 @@ def test_viewer(make_napari_viewer):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-
     # Run all class key bindings
-    for func in viewer.class_keymap.values():
-        # skip fullscreen test locally
-        if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
-            continue
-        if func.__name__ == 'play':
-            continue
-        func(viewer)
+    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
+        return
+    if func.__name__ == 'play':
+        return
+    func(viewer)
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
@@ -51,8 +56,11 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim, visible):
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
+    methods = set(super(type(layer), layer).class_keymap.values())
+    methods.update(layer.class_keymap.values())
     # Run all class key bindings
-    for func in layer.class_keymap.values():
+    assert len(methods) == 13
+    for func in methods:
         func(layer)
 
 
