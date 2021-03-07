@@ -204,6 +204,6 @@ def linear_index(row_range, col_range):
     generator
         (row, column) tuples in order of a linear index.
     """
-    for row in row_range:
-        for col in col_range:
-            yield (row, col)
+    from itertools import product
+    
+    yield from product(row_range, col_range)
