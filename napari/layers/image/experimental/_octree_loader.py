@@ -234,31 +234,73 @@ class OctreeLoader:
             return [ideal_chunk]
 
         # Get alternates for this chunk, from other levels.
-        family = self._get_family(ideal_chunk)
+        # Not now we're only getting higher level chunks to get
+        # quick coverage. Alternative approaches could also get
+        # coverage children, which may be useful when zooming out.
+        family = self._get_coverage_ancestors(ideal_chunk)
 
-        ideal_level_index = ideal_chunk.location.level_index
+        # As we are no longer getting children we don't need the following
+        # code, which only kept children that were already drawn. We might
+        # want to revisit this though.
+        # ideal_level_index = ideal_chunk.location.level_index
 
-        # For levels below the ideal level, we only keep an alternate if
-        # it's already being drawn. This is usually when zooming out. The
-        # alternates are "too small" but still look fine on screen.
-        #
-        # For levels above the ideal level, we will load and draw them. We
-        # even sort so they get loaded and drawn *before* the ideal chunk.
-        #
-        # We do this because they provide coverage very quickly, and the
-        # best user experience is to see imagery quickly even if not at the
-        # ideal level.
-        def keep_chunk(chunk) -> bool:
-            lower_level = chunk.location.level_index < ideal_level_index
+        # # For levels below the ideal level, we only keep an alternate if
+        # # it's already being drawn. This is usually when zooming out. The
+        # # alternates are "too small" but still look fine on screen.
+        # #
+        # # For levels above the ideal level, we will load and draw them. We
+        # # even sort so they get loaded and drawn *before* the ideal chunk.
+        # #
+        # # We do this because they provide coverage very quickly, and the
+        # # best user experience is to see imagery quickly even if not at the
+        # # ideal level.
+        # def keep_chunk(chunk) -> bool:
+        #     lower_level = chunk.location.level_index < ideal_level_index
 
-            if lower_level:
-                return chunk in drawn_set
+        #     if lower_level:
+        #         return chunk in drawn_set
 
-            return True  # Keep all higher level chunks.
+        #     return True  # Keep all higher level chunks.
 
-        keep = [chunk for chunk in family if keep_chunk(chunk)]
+        # keep = [chunk for chunk in family if keep_chunk(chunk)]
 
-        return keep
+        return family
+
+    def _get_coverage_ancestors(
+        self, ideal_chunk: OctreeChunk
+    ) -> List[OctreeChunk]:
+        """Return the highest resolution in memory ancestor for this ideal chunk.
+
+        Parameters
+        ----------
+        ideal_chunk : OctreeChunk
+            Get ancestor coverage this chunk.
+
+        Returns
+        -------
+        List[OctreeChunk]
+            Best ancestor that is in memory.
+        """
+        # Get the closest ancestor that is already in memory that
+        # covers the ideal chunk. Don't create chunks because it is better to
+        # just create the ideal chunks. Note that the most distant ancestor is
+        # returned first, so need to look at the end of the list to get closet
+        # one.
+        ancestors = self._octree.get_ancestors(
+            ideal_chunk, create=False, in_memory=True
+        )
+
+        # If no in memory chunk was found get the root tile.
+        # We say create=True because the root is not part of the current
+        # intersection. However since it's permanent once created and
+        # loaded it should always be available. As long as we don't garbage
+        # collect it!
+        if len(ancestors) == 0:
+            chunk = self._octree.levels[-1].get_chunk(0, 0, create=True)
+        else:
+            chunk = ancestors[-1]
+
+        return [chunk]
 
     def _get_family(self, ideal_chunk: OctreeChunk) -> List[OctreeChunk]:
         """Return chunks below and above this ideal chunk.
