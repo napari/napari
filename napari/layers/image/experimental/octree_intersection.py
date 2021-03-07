@@ -6,7 +6,7 @@ import numpy as np
 
 from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
-from .octree_util import OctreeDisplayOptions, sprial_index
+from .octree_util import OctreeDisplayOptions, spiral_index
 
 
 class OctreeView(NamedTuple):
@@ -203,7 +203,7 @@ class OctreeIntersection:
         # every chunk within the view.
 
         # We use spiral indexing to get chunks from the center first
-        for row, col in sprial_index(self._row_range, self._col_range):
+        for row, col in spiral_index(self._row_range, self._col_range):
             chunk = self.level.get_chunk(row, col, create=create)
             if chunk is not None:
                 chunks.append(chunk)

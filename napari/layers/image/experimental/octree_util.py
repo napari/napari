@@ -147,7 +147,7 @@ class OctreeMetadata(NamedTuple):
         return self.base_shape[1] / self.base_shape[0]
 
 
-def sprial_index(row_range, col_range):
+def spiral_index(row_range, col_range):
     """Generate a spiral index from a set of row and column indices.
 
     A spiral index starts at the center point and moves out in a spiral
