@@ -17,12 +17,12 @@ def test_notification_manager_no_gui():
             'This is another information message'
         )
 
-        class PurposefullException(Exception):
+        class PurposefulException(Exception):
             pass
 
         try:
-            raise PurposefullException("this is an exception")
-        except PurposefullException:
+            raise PurposefulException("this is an exception")
+        except PurposefulException:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             notification_manager.receive_error(
                 exc_type, exc_value, exc_traceback
