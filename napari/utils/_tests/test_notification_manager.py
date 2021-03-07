@@ -22,6 +22,7 @@ def test_notification_manager_no_gui():
     previous_exhook = sys.excepthook
     with notification_manager:
         store: List[Notification] = []
+        # save all of the events that get emitted
         notification_manager.notification_ready.connect(store.append)
 
         show_info('this is one way of showing an information message')

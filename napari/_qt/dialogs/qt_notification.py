@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.notifications import NotificationSeverity
+from ...utils.notifications import Notification, NotificationSeverity
 from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
@@ -70,7 +70,7 @@ class NapariQtNotification(QDialog):
     def __init__(
         self,
         message: str,
-        severity: str = 'WARNING',
+        severity: Union[str, NotificationSeverity] = 'WARNING',
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
@@ -104,7 +104,7 @@ class NapariQtNotification(QDialog):
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
 
-        self.timer = None
+        self.timer = QTimer()
         self.opacity = QGraphicsOpacityEffect()
         self.setGraphicsEffect(self.opacity)
         self.opacity_anim = QPropertyAnimation(self.opacity, b"opacity", self)
@@ -136,7 +136,6 @@ class NapariQtNotification(QDialog):
         """Show the message with a fade and slight slide in from the bottom."""
         super().show()
         self.slide_in()
-        self.timer = QTimer()
         if self.DISMISS_AFTER > 0:
             self.timer.setInterval(self.DISMISS_AFTER)
             self.timer.setSingleShot(True)
@@ -301,28 +300,16 @@ class NapariQtNotification(QDialog):
         )
 
     @classmethod
-    def from_exception(cls, exception: BaseException) -> NapariQtNotification:
-        """Create a NapariNotifcation dialog from an exception object."""
-        # TODO: this method could be used to recognize various exception
-        # subclasses and populate the dialog accordingly.
-        extra_msg = (
-            "\nYou can start napari with NAPARI_CATCH_ERRORS=0 or "
-            "NAPARI_EXIT_ON_ERROR=1 to find more about this error"
-        )
-        msg = getattr(exception, 'message', str(exception)) + extra_msg
-        severity = getattr(exception, 'severity', 'WARNING')
-        source = None
-        actions = getattr(exception, 'actions', ())
-        return cls(msg, severity, source, actions)
-
-    @classmethod
-    def from_notification(cls, notification):
+    def from_notification(
+        cls, notification: Notification
+    ) -> NapariQtNotification:
         return cls(
             message=notification.message,
             severity=notification.severity,
             source=notification.source,
+            actions=notification.actions,
         )
 
     @classmethod
-    def show_notification(cls, notification):
+    def show_notification(cls, notification: Notification):
         cls.from_notification(notification).show()

@@ -1,11 +1,18 @@
 import logging
+import warnings
+from unittest.mock import patch
 
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
+from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari._qt.exceptions import ExceptionHandler
-from napari.utils.notifications import notification_manager
+from napari.utils.notifications import (
+    Notification,
+    NotificationSeverity,
+    notification_manager,
+)
 
 
 # caplog fixture comes from pytest
@@ -32,23 +39,17 @@ def test_keyboard_interupt_handler(qtbot, capsys):
     assert capsys.readouterr().err == "Closed by KeyboardInterrupt\n"
 
 
-def test_notification_manager_via_gui(qtbot, make_napari_viewer):
-    """
-    Test that exception triggered by button in the UI, propagate to the manager,
-    and are displayed in the UI.
-    """
+def test_notification_manager_via_gui(qtbot):
+    """Test that the notification_manager intercepts Qt excepthook."""
 
     def raise_():
         raise ValueError("error!")
 
     def warn_():
-        import warnings
-
         warnings.warn("warning!")
 
-    viewer = make_napari_viewer()
-    errButton = QPushButton(viewer.window.qt_viewer)
-    warnButton = QPushButton(viewer.window.qt_viewer)
+    errButton = QPushButton()
+    warnButton = QPushButton()
     errButton.clicked.connect(raise_)
     warnButton.clicked.connect(warn_)
 
@@ -57,10 +58,37 @@ def test_notification_manager_via_gui(qtbot, make_napari_viewer):
             (errButton, 'error!'),
             (warnButton, 'warning!'),
         ]:
-            assert btt is not None, errButton
             assert len(notification_manager.records) == 0
             qtbot.mouseClick(btt, Qt.LeftButton)
-            qtbot.wait(150)
+            qtbot.wait(50)
             assert len(notification_manager.records) == 1
             assert notification_manager.records[0].message == expected_message
             notification_manager.records = []
+
+
+@pytest.mark.parametrize('severity', NotificationSeverity.__members__)
+@patch('napari._qt.dialogs.qt_notification.QDialog.show')
+def test_notification_display(mock_show, severity):
+    """Test that NapariQtNotification can present a Notification event.
+
+    NOTE: in napari.utils._tests.test_notification_manager, we already test
+    that the notification manager successfully overrides sys.excepthook,
+    and warnings.showwarning... and that it emits an event which is an instance
+    of napari.utils.notifications.Notification.
+
+    in `get_app()`, we connect `notification_manager.notification_ready` to
+    `NapariQtNotification.show_notification`, so all we have to test here is
+    that show_notification is capable of receiving various event types.
+    (we don't need to test that )
+    """
+    notif = Notification('hi', severity, actions=[('click', lambda x: None)])
+    NapariQtNotification.show_notification(notif)
+    mock_show.assert_called_once()
+
+    dialog = NapariQtNotification.from_notification(notif)
+    assert not dialog.property('expanded')
+    dialog.toggle_expansion()
+    assert dialog.property('expanded')
+    dialog.toggle_expansion()
+    assert not dialog.property('expanded')
+    dialog.close()
