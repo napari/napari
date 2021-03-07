@@ -201,12 +201,52 @@ class OctreeIntersection:
         # OctreeChunks can be loaded or unloaded. Unloaded chunks are not
         # drawn until their data as been loaded in. But here we return
         # every chunk within the view.
-        for row in self._row_range:
-            for col in self._col_range:
-                chunk = self.level.get_chunk(row, col, create=create)
-                if chunk is not None:
-                    chunks.append(chunk)
 
+        def sprial_index(row_range, col_range):
+            """Generate a spiral index from a set of row and column indices.
+
+            A spiral index starts at the center point and moves out in a spiral
+            Paramters
+            ---------
+            row_range : range
+                Range of rows to be accessed.
+            col_range : range
+                Range of columns to be accessed.
+
+            Returns
+            -------
+            iterable
+                (row, column) tuples in order of a spiral index.
+            """
+
+            # Determine how many rows and columns need to be transvered
+            total_row = row_range.stop - row_range.start
+            total_col = row_range.stop - row_range.start
+            # Get center offset
+            row_center = (row_range.stop + row_range.start) // 2
+            col_center = (col_range.stop + col_range.start) // 2
+            # Let the first move be down
+            x = 0
+            y = 0
+            dx = 0
+            dy = -1
+            # Loop through the desired number of indices
+            for i_ in range(max(total_row, total_col) ** 2):
+                if (-total_row / 2 < row <= total_row / 2) and (
+                    -total_col / 2 < col <= total_col / 2
+                ):
+                    yield (row_center + x, col_center + y)
+                if x == y or (x < 0 and x == -y) or (x > 0 and x == 1 - y):
+                    dx, dy = -dy, dx
+                x, y = x + dx, y + dy
+
+        print('aaa', list(sprial_index(self._row_range, self._col_range)))
+        # We use spiral indexing to get chunks from the center first
+        for row, col in sprial_index(self._row_range, self._col_range):
+            chunk = self.level.get_chunk(row, col, create=create)
+            # Store visit to chunk location
+            if chunk is not None:
+                chunks.append(chunk)
         return chunks
 
     @property
