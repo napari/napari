@@ -234,35 +234,11 @@ class OctreeLoader:
             return [ideal_chunk]
 
         # Get alternates for this chunk, from other levels.
-        # Not now we're only getting higher level chunks to get
-        # quick coverage. Alternative approaches could also get
-        # coverage children, which may be useful when zooming out.
-        family = self._get_coverage_ancestors(ideal_chunk)
+        family = self._get_family(ideal_chunk)
 
-        # As we are no longer getting children we don't need the following
-        # code, which only kept children that were already drawn. We might
-        # want to revisit this though.
-        # ideal_level_index = ideal_chunk.location.level_index
-
-        # # For levels below the ideal level, we only keep an alternate if
-        # # it's already being drawn. This is usually when zooming out. The
-        # # alternates are "too small" but still look fine on screen.
-        # #
-        # # For levels above the ideal level, we will load and draw them. We
-        # # even sort so they get loaded and drawn *before* the ideal chunk.
-        # #
-        # # We do this because they provide coverage very quickly, and the
-        # # best user experience is to see imagery quickly even if not at the
-        # # ideal level.
-        # def keep_chunk(chunk) -> bool:
-        #     lower_level = chunk.location.level_index < ideal_level_index
-
-        #     if lower_level:
-        #         return chunk in drawn_set
-
-        #     return True  # Keep all higher level chunks.
-
-        # keep = [chunk for chunk in family if keep_chunk(chunk)]
+        # For levels below the ideal level, we could only keep an alternate if
+        # it's already being drawn, but for now we keep any that are in memory
+        # as it is quick to draw them. This is useful when zooming out.
 
         return family
 
@@ -322,12 +298,13 @@ class OctreeLoader:
             ideal_chunk, create=False, in_memory=True
         )
 
-        # Get the parent and maybe more distant ancestors. Even if we have
-        # all four children, we still consider loading and drawing these
-        # because they will provide more coverage. They will cover the
-        # ideal chunk plus more.
+        # Get the closest ancestor that is already in memory that
+        # covers the ideal chunk. Don't create chunks because it is better to
+        # just create the ideal chunks. Note that the most distant ancestor is
+        # returned first, so need to look at the end of the list to get closet
+        # one.
         ancestors = self._octree.get_ancestors(
-            ideal_chunk, NUM_ANCESTOR_LEVELS, create=True
+            ideal_chunk, create=False, in_memory=True
         )
 
         return children + ancestors
