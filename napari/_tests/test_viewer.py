@@ -59,7 +59,7 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim, visible):
     methods = set(super(type(layer), layer).class_keymap.values())
     methods.update(layer.class_keymap.values())
     # Run all class key bindings
-    assert len(methods) == 13
+    assert len(methods) in (14, 8, 17), layer
     for func in methods:
         func(layer)
 
