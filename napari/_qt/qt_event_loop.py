@@ -225,8 +225,7 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     try:
         yield app
     except Exception:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        notification_manager.receive_error(exc_type, exc_obj, exc_tb)
+        notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
 
