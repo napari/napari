@@ -11,6 +11,15 @@ from napari.utils.notifications import (
 )
 
 
+# capsys fixture comes from pytest
+# https://docs.pytest.org/en/stable/logging.html#caplog-fixture
+def test_keyboard_interupt_handler(capsys):
+    with pytest.raises(SystemExit):
+        notification_manager.receive_error(
+            KeyboardInterrupt, KeyboardInterrupt(), None
+        )
+
+
 def test_notification_manager_no_gui():
     """
     Direct test of the notification manager.

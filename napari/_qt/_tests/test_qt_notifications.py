@@ -1,4 +1,3 @@
-import logging
 import warnings
 from unittest.mock import patch
 
@@ -7,36 +6,11 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
-from napari._qt.exceptions import ExceptionHandler
 from napari.utils.notifications import (
     Notification,
     NotificationSeverity,
     notification_manager,
 )
-
-
-# caplog fixture comes from pytest
-# https://docs.pytest.org/en/stable/logging.html#caplog-fixture
-def test_exception_handler_interactive(qtbot, caplog):
-    """Test exception handler logs to console and emits a signal."""
-    handler = ExceptionHandler(gui_exceptions=False)
-    with qtbot.waitSignal(handler.error, timeout=1000):
-        with caplog.at_level(logging.ERROR):
-            handler.handle(ValueError, ValueError("whoops"), None)
-    assert len(caplog.records) == 1
-    record = caplog.records[0]
-    assert record.levelname == 'ERROR'
-    assert 'Unhandled exception' in record.message
-    assert 'ValueError: whoops' in record.message
-
-
-# caplog fixture comes from pytest
-# https://docs.pytest.org/en/stable/logging.html#caplog-fixture
-def test_keyboard_interupt_handler(qtbot, capsys):
-    handler = ExceptionHandler()
-    with pytest.raises(SystemExit):
-        handler.handle(KeyboardInterrupt, KeyboardInterrupt(), None)
-    assert capsys.readouterr().err == "Closed by KeyboardInterrupt\n"
 
 
 def test_notification_manager_via_gui(qtbot):
