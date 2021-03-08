@@ -122,9 +122,11 @@ class OctreeLoader:
         it does not need any additional coverage and we move on. We next look to see if
         all four children are already drawn, this happens most often when zooming out,
         and if so we leave them there. If the ideal chunk is in memory we'll draw it too.
-        If not, we then look to see what the closet drawn ancestor is, and if that is the closest
-        in memory chunk. We'll then draw the closet drawn ancestor and then if needed the
-        closest in memory ancestor chunk too.
+        If not, we then look to see what the closet in memory ancestor and closet drawn ancestors
+        are. If they are the same then we'll draw that chunk, along with the ideal chunk if
+        it is in memory too. If they are not the same then we'll draw the closest drawn ancestor
+        and either the closest in memory chunk or the ideal chunk if
+        it is in memory too.
 
         Finally, we will start loading any ideal chunks that aren't in memory that we want to
         draw.
