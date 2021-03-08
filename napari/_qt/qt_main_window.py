@@ -436,6 +436,7 @@ class Window:
             schema = json.loads(setting['json_schema'])
             # need to remove certain properties that will not be displayed on the GUI
             properties = schema.pop('properties')
+            properties['theme']['type'] = 'string'
             values = setting['model'].dict()
             for val in settings_list[cnt].NapariConfig().preferences_exclude:
                 properties.pop(val)

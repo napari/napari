@@ -41,11 +41,13 @@ class ApplicationSettings(BaseSettings, EventedModel):
     # qt_binding: QtBindingChoice = QtBindingChoice.pyside2
     # UI Elements
     highlight_thickness: int = 1
-    # theme: ThemeChoice = ThemeChoice.dark
 
-    theme: str = Field(
-        ThemeChoice.dark, description="Theme to use with the application."
+    theme: ThemeChoice = Field(
+        ThemeChoice.dark,
+        description="Theme selection.",
+        enum=[ThemeChoice.dark, ThemeChoice.light],
     )
+
     # Startup
     opt_in_telemetry: bool = Field(
         False, description="Check to enable telemetry measurements"
