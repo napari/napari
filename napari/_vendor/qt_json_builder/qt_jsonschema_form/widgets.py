@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Dict, List, Optional, Tuple
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
@@ -181,7 +181,7 @@ class QColorButton(QtWidgets.QPushButton):
     Implementation derived from https://martinfitzpatrick.name/article/qcolorbutton-a-color-selector-tool-for-pyqt/
     """
 
-    colorChanged = QtCore.pyqtSignal()
+    colorChanged = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -266,9 +266,9 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
 
 
 class ArrayControlsWidget(QtWidgets.QWidget):
-    on_delete = QtCore.pyqtSignal()
-    on_move_up = QtCore.pyqtSignal()
-    on_move_down = QtCore.pyqtSignal()
+    on_delete = QtCore.Signal()
+    on_move_up = QtCore.Signal()
+    on_move_down = QtCore.Signal()
 
     def __init__(self):
         super().__init__()
