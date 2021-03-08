@@ -1,5 +1,5 @@
 from typing import Any, Iterable, TypeVar, Union
-from weakref import ReferenceType, ref
+from weakref import ReferenceType, finalize, ref
 
 from napari.utils.events.containers._set import EventedSet
 
@@ -17,6 +17,7 @@ class EventedWeakSet(EventedSet['ReferenceType[_T]']):
         vref = _ensure_ref(value)
         if vref not in self:
             self._set.add(vref)
+            finalize(value, self.discard, vref)
             self.events.added(value={value})
 
     def discard(self, value: Union[_T, 'ReferenceType[_T]']) -> None:
@@ -33,7 +34,11 @@ class EventedWeakSet(EventedSet['ReferenceType[_T]']):
         to_add = orefs.difference(self._set)
         if to_add:
             self._set.update(to_add)
-            self.events.added(value={i() for i in to_add})
+            unref = set()
+            for v in to_add:
+                unref.add(v())
+                finalize(v(), self.discard, v)
+            self.events.added(value=unref)
 
     def __contains__(self, x: Any) -> bool:
         return super().__contains__(_ensure_ref(x))

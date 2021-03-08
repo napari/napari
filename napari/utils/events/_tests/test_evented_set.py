@@ -99,3 +99,23 @@ def test_set_new_objects(test_set, regular_set, meth):
     assert result is not test_set
 
     assert test_set.events.mock_calls == []
+
+
+def test_weakset():
+    from napari.utils.events.containers._weakset import EventedWeakSet
+
+    class T:
+        pass
+
+    a = EventedWeakSet()
+    t1 = T()
+    t2 = T()
+    a.add(t1)
+    a.add(t2)
+    assert t1 in a
+    assert t2 in a
+    assert len(a) == 2
+    del t1
+    assert len(a) == 1
+    del t2
+    assert len(a) == 0
