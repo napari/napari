@@ -85,6 +85,14 @@ class ApplicationSettings(BaseSettings, EventedModel):
             "window_maximized",
             "window_fullscreen",
             "window_state",
+            "qt_binding",
+            "highlight_thickness",
+            "opt_in_telemetry",
+            "font_plain_family",
+            "font_plain_size",
+            "font_rich_family",
+            "font_rich_size",
+            "window_statusbar",
         ]
 
 

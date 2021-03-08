@@ -1,5 +1,3 @@
-from json import dumps
-
 from qtpy import QtWidgets
 
 from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
@@ -49,17 +47,13 @@ class PreferencesDialog(QtWidgets.QDialog):
 
     def restore_defaults(self):
         SETTINGS.reset()
-
-        print('Restoring defaults')
         self.close()
 
     def on_click_ok(self):
-        print('OK')
         # will keep these values set in settings.
         self.close()
 
     def on_click_cancel(self):
-        print('cancel')
         # reset to already saved values
         self.check_differences(self._values_orig_set, self._values_set)
         self.close()
@@ -83,8 +77,6 @@ class PreferencesDialog(QtWidgets.QDialog):
         form.widget.on_changed.connect(
             lambda d: self.check_differences(set(d.items()), self._values_set)
         )
-
-        form.widget.on_changed.connect(lambda d: print(dumps(d, indent=4)))
 
         return form
 

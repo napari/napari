@@ -270,7 +270,6 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        print('settings')
         # SETTINGS.application.events.theme.connect(self._update_window)
         SETTINGS.application.events.theme.connect(self._update_theme)
         # SETTINGS.application.events.connect(self._update_window)
@@ -427,7 +426,6 @@ class Window:
 
         settings_list = [ApplicationSettings(), PluginSettings()]
         win = PreferencesDialog(parent=self._qt_window)
-        print('0')
         cnt = 0
         for key, setting in SETTINGS.schemas().items():
 
@@ -1075,14 +1073,12 @@ class Window:
         self._qt_window.activateWindow()  # for Windows
 
     def _update_window(self, event=None):
-        print('resetting preferences')
         SETTINGS.reset()
         get_app()
         # self._qt_window.repaint()
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
-        print('updating theme')
         if event:
             value = event.value
             SETTINGS.application.theme = value

@@ -78,17 +78,17 @@ class WidgetBuilder:
         validator_cls.check_schema(schema)
         validator = validator_cls(schema)
         schema_widget = self.create_widget(schema, ui_schema, state)
-        # form = widgets.MyMainWindow(schema_widget)
+       
         form = widgets.FormWidget(schema_widget)
 
         def validate(data):
             form.clear_errors()
-            # form.centralWidget().clear_errors()
+           
             errors = [*validator.iter_errors(data)]
 
             if errors:
                 form.display_errors(errors)
-                # form.centralWidget().display_errors(errors)
+               
 
             for err in errors:
                 schema_widget.handle_error(err.path, err)
