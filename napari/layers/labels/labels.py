@@ -716,22 +716,27 @@ class Labels(_ImageBase):
         else:
             self._undo_history[-1].append(value)
 
-    def _load_history(self, before, after):
+    def _load_history(self, before, after, undoing=True):
         if len(before) == 0:
             return
 
         history_item = before.pop()
         after.append(list(reversed(history_item)))
-        for prev_indices, prev_values in reversed(history_item):
-            self.data[prev_indices] = prev_values
+        for prev_indices, prev_values, next_values in reversed(history_item):
+            values = prev_values if undoing else next_values
+            self.data[prev_indices] = values
 
         self.refresh()
 
     def undo(self):
-        self._load_history(self._undo_history, self._redo_history)
+        self._load_history(
+            self._undo_history, self._redo_history, undoing=True
+        )
 
     def redo(self):
-        self._load_history(self._redo_history, self._undo_history)
+        self._load_history(
+            self._redo_history, self._undo_history, undoing=False
+        )
 
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
@@ -889,23 +894,21 @@ class Labels(_ImageBase):
         except ImportError:
             pass
 
-        # slice_coord from square brush is tuple of slices per dimension
-        # slice_coord from circle brush is tuple of coord. arrays per dimension
-
-        # save the existing values to the history
-        self._save_history((slice_coord, self.data[slice_coord]))
-
-        # update the labels image
-
-        if not self.preserve_labels:
-            self.data[slice_coord] = new_label
-        else:
+        # slice coord is a tuple of coordinate arrays per dimension
+        # subset it if we want to only paint into background/only erase
+        # current label
+        if self.preserve_labels:
             if new_label == self._background_label:
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
-            self.data[slice_coord] = new_label
+
+        # save the existing values to the history
+        self._save_history((slice_coord, self.data[slice_coord], new_label))
+
+        # update the labels image
+        self.data[slice_coord] = new_label
 
         if refresh is True:
             self.refresh()
