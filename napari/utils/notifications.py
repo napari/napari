@@ -35,6 +35,7 @@ class NotificationSeverity(StringEnum):
             self.WARNING: "⚠️",
             self.INFO: "ⓘ",
             self.DEBUG: "🐛",
+            self.NONE: "",
         }[self]
 
     def __lt__(self, other):
