@@ -709,6 +709,25 @@ class Labels(_ImageBase):
             self._undo_history.popleft()
 
     def _save_history(self, value):
+        """Save a history "atom" to the undo history.
+
+        A history "atom" is a single change operation to the array. A history
+        *item* is a collection of atoms that were applied together to make a
+        single change. For example, when dragging and painting, at each mouse
+        callback we create a history "atom", but we save all those atoms in
+        a single history item, since we would want to undo one drag in one
+        undo operation.
+
+        Parameters
+        ----------
+        value: 3-tuple of arrays
+            The value is a 3-tuple containing:
+
+            - a numpy multi-index, pointing to the array elements that were
+              changed
+            - the values corresponding to those elements before the change
+            - the value(s) after the change
+        """
         self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append([value])
@@ -717,6 +736,24 @@ class Labels(_ImageBase):
             self._undo_history[-1].append(value)
 
     def _load_history(self, before, after, undoing=True):
+        """Load a history item and apply it to the array.
+
+        Parameters
+        ----------
+        before : list of history items
+            The list of elements from which we want to load.
+        after : list of history items
+            The list of element to which to append the loaded element. In the
+            case of an undo operation, this is the redo queue, and vice versa.
+        undoing : bool
+            Whether we are undoing (default) or redoing. In the case of
+            redoing, we apply the "after change" element of a history element
+            (the third element of the history "atom").
+
+        See Also
+        --------
+        `Labels._save_history`
+        """
         if len(before) == 0:
             return
 
