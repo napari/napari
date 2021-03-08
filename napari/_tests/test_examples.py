@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 import napari
+from napari.utils.notifications import notification_manager
 
 # not testing these examples
 skip = [
@@ -42,17 +43,16 @@ def qapp():
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
-    from napari._qt.exceptions import ExceptionHandler
     from napari._qt.qt_main_window import Window
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
 
     # make sure our sys.excepthook override in gui_qt doesn't hide errors
-    def raise_errors(self, etype, value, tb):
+    def raise_errors(etype, value, tb):
         raise value
 
-    monkeypatch.setattr(ExceptionHandler, 'handle', raise_errors)
+    monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
     assert runpy.run_path(str(EXAMPLE_DIR / fname))
