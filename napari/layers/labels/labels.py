@@ -783,14 +783,27 @@ class Labels(_ImageBase):
                     matches, labeled_matches == match_label
                 )
 
-        self._save_history((np.nonzero(matches), labels[matches]))
+        match_indices_local = np.nonzero(matches)
+        if not (self.n_dimensional or self.ndim == 2):
+            n_idx = len(match_indices_local[0])
+            match_indices = []
+            j = 0
+            for d in range(self.ndim):
+                if d in self._dims_not_displayed:
+                    match_indices.append(np.full(n_idx, int_coord[d]))
+                else:
+                    match_indices.append(match_indices_local[j])
+                    j += 1
+            match_indices = tuple(match_indices)
+        else:
+            match_indices = match_indices_local
+
+        self._save_history(
+            (match_indices, self.data[match_indices], new_label)
+        )
 
         # Replace target pixels with new_label
-        labels[matches] = new_label
-
-        if not (self.n_dimensional or self.ndim == 2):
-            # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self._slice_indices)] = labels
+        self.data[match_indices] = new_label
 
         if refresh is True:
             self.refresh()
