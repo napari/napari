@@ -7,13 +7,12 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from napari import __version__
-from napari.utils.notifications import (
+from .. import __version__
+from ..utils import config, perf
+from ..utils.notifications import (
     notification_manager,
     show_console_notification,
 )
-
-from ..utils import config, perf
 from ..utils.perf import perf_config
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_resources import _register_napari_resources
