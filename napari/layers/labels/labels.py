@@ -16,7 +16,7 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import sphere_indices
+from ._labels_utils import indices_in_shape, sphere_indices
 
 
 class Labels(_ImageBase):
@@ -823,6 +823,7 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        shape = self.data.shape
         if self.brush_shape == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if not self.n_dimensional and self.ndim > 2:
@@ -843,9 +844,10 @@ class Labels(_ImageBase):
                     coord, self.data.shape, brush_size_dims
                 )
             )
+            slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
+            slice_coord = indices_in_shape(slice_coord, shape)
         elif self.brush_shape == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
-            shape = self.data.shape
             if not self.n_dimensional and self.ndim > 2:
                 coord = [coord[i] for i in self._dims_displayed]
                 shape = [shape[i] for i in self._dims_displayed]
@@ -859,11 +861,7 @@ class Labels(_ImageBase):
             mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
 
             # discard candidate coordinates that are out of bounds
-            discard_coords = np.logical_and(
-                ~np.any(mask_indices < 0, axis=1),
-                ~np.any(mask_indices >= np.array(shape), axis=1),
-            )
-            mask_indices = mask_indices[discard_coords]
+            mask_indices = indices_in_shape(mask_indices, shape)
 
             # Transfer valid coordinates to slice_coord,
             # or expand coordinate if 3rd dim in 2D image
@@ -906,11 +904,8 @@ class Labels(_ImageBase):
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
-            if self.brush_shape == "circle":
-                slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
-                self.data[slice_coord] = new_label
-            else:
-                self.data[slice_coord][keep_coords] = new_label
+            slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
+            self.data[slice_coord] = new_label
 
         if refresh is True:
             self.refresh()
