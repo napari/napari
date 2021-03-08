@@ -323,7 +323,7 @@ class OctreeLoader:
         # Get the closest ancestor that is already in memory that
         # covers the ideal chunk. Don't create chunks because it is better to
         # just create the ideal chunks. Note that the most distant ancestor is
-        # returned first, so need to look at the end of the list to get closet
+        # returned first, so need to look at the end of the list to get closest
         # one.
         ancestors = self._octree.get_ancestors(
             ideal_chunk, create=False, in_memory=True
