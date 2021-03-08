@@ -868,17 +868,6 @@ class Labels(_ImageBase):
 
             slice_coord = tuple(slice_coord)
 
-        # Fix indexing for xarray if necessary
-        # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing
-        # for difference from indexing numpy
-        try:
-            import xarray as xr
-
-            if isinstance(self.data, xr.DataArray):
-                slice_coord = tuple(xr.DataArray(i) for i in slice_coord)
-        except ImportError:
-            pass
-
         # slice_coord from square brush is tuple of slices per dimension
         # slice_coord from circle brush is tuple of coord. arrays per dimension
 

@@ -231,7 +231,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         # Set data
         self.rgb = rgb
-        self._data = data
+        if 'xarray.core.dataarray.DataArray' in str(data.__class__):
+            self._data = data.values
+        else:
+            self._data = data
         if self.multiscale:
             self._data_level = len(self.data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
@@ -331,7 +334,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @data.setter
     def data(self, data):
-        self._data = data
+        if 'xarray.core.dataarray.DataArray' in str(data.__class__):
+            self._data = data.values
+        else:
+            self._data = data
         self._update_dims()
         self.events.data(value=self.data)
         self._set_editable()
