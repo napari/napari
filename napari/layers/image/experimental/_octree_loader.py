@@ -115,18 +115,18 @@ class OctreeLoader:
         The first thing we do is find the best single chunk in memory that will
         cover all the ideal chunks, and draw that. Drawing this chunk will happen
         right away and ensure that something is always drawn and the canvas never
-        flikers to empty. Worst case we draw the root tile.
+        flickers to empty. Worst case we draw the root tile.
 
         Next we look through all the ideal chunks and see what are the already drawn
         chunks that we should just leave there. If the ideal chunk has been drawn then
         it does not need any additional coverage and we move on. We next look to see if
         all four children are already drawn, this happens most often when zooming out,
         and if so we leave them there. If the ideal chunk is in memory we'll draw it too.
-        We then look to see what the closet drawn ancestor is, and if that is the closest
+        If not, we then look to see what the closet drawn ancestor is, and if that is the closest
         in memory chunk. We'll then draw the closet drawn ancestor and then if needed the
         closest in memory ancestor chunk too.
 
-        Finally will start loading any ideal chunks that aren't in memory that we want to
+        Finally, we will start loading any ideal chunks that aren't in memory that we want to
         draw.
 
         Parameters
