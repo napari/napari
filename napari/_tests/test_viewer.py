@@ -196,3 +196,13 @@ def test_toggling_scale_bar(make_napari_viewer):
     # Make scale bar not visible
     viewer.scale_bar.visible = False
     assert not viewer.scale_bar.visible
+
+
+def test_removing_points_data(make_napari_viewer):
+    viewer = make_napari_viewer()
+    points = np.random.random((4, 2)) * 4
+
+    pts_layer = viewer.add_points(points)
+    pts_layer.data = np.zeros([0, 2])
+
+    assert len(pts_layer.data) == 0
