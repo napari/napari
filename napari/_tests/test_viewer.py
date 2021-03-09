@@ -12,16 +12,47 @@ from napari._tests.utils import (
 )
 from napari.utils._tests.test_naming import eval_with_filename
 
-viewer_methods = set(super(Viewer, Viewer).class_keymap.values())
-viewer_methods.update(Viewer.class_keymap.values())
+
+def _get_all_keybinding_methods(type_):
+    obj_methods = set(super(type_, type_).class_keymap.values())
+    obj_methods.update(type_.class_keymap.values())
+    return obj_methods
+
+
+viewer_methods = _get_all_keybinding_methods(Viewer)
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 18
 
 
 def test_len_methods_viewer():
-    assert len(viewer_methods) == 18
+    """
+    Make sure we do find all the methods attached to a viewer via keybindings
+    """
+    assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
+
+
+@pytest.mark.xfail
+def test_non_existing_bindings():
+    """
+    Those are condition tested in next unittest; but do not exists; this is
+    likely due to an oversight somewhere.
+    """
+    assert 'play' in [x.__name__ for x in viewer_methods]
+    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_methods]
 
 
 @pytest.mark.parametrize('func', viewer_methods)
-def test_viewer(make_napari_viewer, func):
+def test_viewer_methods(make_napari_viewer, func):
+    """Test instantiating viewer."""
+    viewer = make_napari_viewer()
+
+    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
+        pytest.skip("Fullscreen cannot be tested in CI")
+    if func.__name__ == 'play':
+        pytest.skip("Play cannot be tested with Pytest")
+    func(viewer)
+
+
+def test_viewer(make_napari_viewer):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
@@ -41,12 +72,17 @@ def test_viewer(make_napari_viewer, func):
     assert viewer.dims.ndisplay == 3
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
-    # Run all class key bindings
-    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
-        return
-    if func.__name__ == 'play':
-        return
-    func(viewer)
+
+
+EXPECTED_NUMBER_OF_LAYER_METHODS = {
+    'Image': 0,
+    'Vectors': 0,
+    'Surface': 0,
+    'Tracks': 0,
+    'Points': 8,
+    'Labels': 14,
+    'Shapes': 17,
+}
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
@@ -56,12 +92,14 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim, visible):
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
-    methods = set(super(type(layer), layer).class_keymap.values())
-    methods.update(layer.class_keymap.values())
+    methods = _get_all_keybinding_methods(type(layer))
     # Run all class key bindings
-    assert len(methods) in (14, 8, 17), layer
     for func in methods:
         func(layer)
+
+    assert (
+        len(methods) == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
+    )
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
