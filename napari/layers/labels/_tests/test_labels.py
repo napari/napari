@@ -1,6 +1,9 @@
+import itertools
+
 import numpy as np
 import pytest
 import xarray as xr
+from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
@@ -684,3 +687,49 @@ def test_world_data_extent():
     layer = Labels(data)
     extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+@pytest.mark.parametrize(
+    'brush_shape, brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    list(
+        itertools.product(
+            ['square', 'circle'],
+            list(range(1, 22, 5)),
+            ['fill', 'erase', 'paint'],
+            [1, 20, 100],
+            [True, False],
+            [True, False],
+        )
+    ),
+)
+def test_undo_redo(
+    brush_shape,
+    brush_size,
+    mode,
+    selected_label,
+    preserve_labels,
+    n_dimensional,
+):
+    blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
+    layer = Labels(blobs)
+    data_history = [blobs.copy()]
+    layer.brush_shape = brush_shape
+    layer.brush_size = brush_size
+    layer.mode = mode
+    layer.selected_label = selected_label
+    layer.preserve_labels = preserve_labels
+    layer.n_dimensional = n_dimensional
+    coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
+    while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
+        coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
+    if layer.mode == 'fill':
+        layer.fill(coord, layer.selected_label)
+    if layer.mode == 'erase':
+        layer.paint(coord, 0)
+    if layer.mode == 'paint':
+        layer.paint(coord, layer.selected_label)
+    data_history.append(np.copy(layer.data))
+    layer.undo()
+    np.testing.assert_array_equal(layer.data, data_history[0])
+    layer.redo()
+    np.testing.assert_array_equal(layer.data, data_history[1])
