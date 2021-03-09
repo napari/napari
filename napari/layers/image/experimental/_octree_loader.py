@@ -22,9 +22,6 @@ LOADER = logging.getLogger("napari.loader.futures")
 # us lots of coverage quickly, so we load and draw then even before
 # the ideal level
 NUM_ANCESTOR_LEVELS = 3
-# When is single level rendering mode place a limit on the maximum number
-# of chunks that can ever be drawn
-MAX_NUM_DRAWABLE_CHUNKS = 36
 
 
 class OctreeLoader:
@@ -134,13 +131,6 @@ class OctreeLoader:
         Finally, we will start loading any ideal chunks that aren't in memory that we want to
         draw.
 
-        If there is only a single level to our octree then we are in
-        a single scaled tiled rendering case and there is no possible
-        additional coverage. We take the best chunks up to a certain limit
-        to avoid rendering an impossibly large number of chunks. In the
-        future we might be able to dynamically construct an octree and
-        this limit will not be needed.
-
         Parameters
         ----------
         drawn_chunk_set : Set[OctreeChunk]
@@ -190,7 +180,7 @@ class OctreeLoader:
         drawable = []
 
         # Load everything in seen if needed.
-        for i, chunk in enumerate(seen.chunks()):
+        for chunk in seen.chunks():
             # The ideal level is priority 0, 1 is one level above idea, etc.
             priority = chunk.location.level_index - ideal_level
 
@@ -198,15 +188,6 @@ class OctreeLoader:
                 drawable.append(chunk)
             elif chunk.needs_load and self._load_chunk(chunk, priority):
                 drawable.append(chunk)  # It was a sync load, ready to draw.
-
-            # If there is only a single level to our octree then we are in
-            # a single scaled tiled rendering case and there is no possible
-            # additional coverage. We take the best chunks up to a certain limit
-            # to avoid rendering an impossibly large number of chunks. In the
-            # future we might be able to dynamically construct an octree and
-            # this limit will not be needed.
-            if self._octree.num_levels == 1 and i > MAX_NUM_DRAWABLE_CHUNKS:
-                break
 
         # Useful for debugging but very spammy.
         # log_chunks("drawable", drawable)
