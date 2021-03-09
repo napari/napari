@@ -17,6 +17,7 @@ class EventedWeakSet(EventedSet['ReferenceType[_T]']):
         vref = _ensure_ref(value)
         if vref not in self:
             self._set.add(vref)
+            # discards this item from the set when it is garbage collected
             finalize(value, self.discard, vref)
             self.events.added(value={value})
 
@@ -37,6 +38,7 @@ class EventedWeakSet(EventedSet['ReferenceType[_T]']):
             unref = set()
             for v in to_add:
                 unref.add(v())
+                # discards this item from the set when it is garbage collected
                 finalize(v(), self.discard, v)
             self.events.added(value=unref)
 
