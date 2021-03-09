@@ -11,6 +11,14 @@ from typing import Callable, List, Optional, Sequence, Tuple, Type, Union
 from .events import Event, EventEmitter
 from .misc import StringEnum
 
+name2num = {
+    'error': 40,
+    'warning': 30,
+    'info': 20,
+    'debug': 10,
+    'none': 0,
+}
+
 
 class NotificationSeverity(StringEnum):
     """Severity levels for the notification dialog.  Along with icons for each."""
@@ -19,6 +27,7 @@ class NotificationSeverity(StringEnum):
     WARNING = auto()
     INFO = auto()
     DEBUG = auto()
+    NONE = auto()
 
     def as_icon(self):
         return {
@@ -26,7 +35,20 @@ class NotificationSeverity(StringEnum):
             self.WARNING: "⚠️",
             self.INFO: "ⓘ",
             self.DEBUG: "🐛",
+            self.NONE: "",
         }[self]
+
+    def __lt__(self, other):
+        return name2num[str(self)] < name2num[str(other)]
+
+    def __le__(self, other):
+        return name2num[str(self)] <= name2num[str(other)]
+
+    def __gt__(self, other):
+        return name2num[str(self)] > name2num[str(other)]
+
+    def __ge__(self, other):
+        return name2num[str(self)] >= name2num[str(other)]
 
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
@@ -84,15 +106,34 @@ class ErrorNotification(Notification):
         super().__init__(msg, NotificationSeverity.ERROR, actions)
         self.exception = exception
 
+    def __str__(self):
+        from ._tracebacks import get_tb_formatter
+
+        fmt = get_tb_formatter()
+        exc_info = (
+            self.exception.__class__,
+            self.exception,
+            self.exception.__traceback__,
+        )
+        return fmt(exc_info, as_html=False)
+
 
 class WarningNotification(Notification):
     warning: Warning
 
-    def __init__(self, warning: Warning, *args, **kwargs):
+    def __init__(
+        self, warning: Warning, filename=None, lineno=None, *args, **kwargs
+    ):
         msg = getattr(warning, 'message', str(warning))
         actions = getattr(warning, 'actions', ())
         super().__init__(msg, NotificationSeverity.WARNING, actions)
         self.warning = warning
+        self.filename = filename
+        self.lineno = lineno
+
+    def __str__(self):
+        category = type(self.warning).__name__
+        return f'{self.filename}:{self.lineno}: {category}: {self.warning}!'
 
 
 class NotificationManager:
@@ -184,7 +225,11 @@ class NotificationManager:
         file=None,
         line=None,
     ):
-        self.dispatch(Notification.from_warning(message))
+        self.dispatch(
+            Notification.from_warning(
+                message, filename=filename, lineno=lineno
+            )
+        )
 
     def receive_info(self, message: str):
         self.dispatch(Notification(message, 'INFO'))
@@ -195,3 +240,12 @@ notification_manager = NotificationManager()
 
 def show_info(message: str):
     notification_manager.receive_info(message)
+
+
+def show_console_notification(notification: Notification):
+    from .settings import SETTINGS
+
+    if notification.severity < SETTINGS.application.console_notification_level:
+        return
+
+    print(notification)

@@ -42,7 +42,7 @@ def test_notification_manager_via_gui(qtbot):
 
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_display(mock_show, severity):
+def test_notification_display(mock_show, severity, monkeypatch):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
@@ -55,9 +55,15 @@ def test_notification_display(mock_show, severity):
     that show_notification is capable of receiving various event types.
     (we don't need to test that )
     """
+    from napari.utils.settings import SETTINGS
+
+    monkeypatch.setattr(SETTINGS.application, 'gui_notification_level', 'info')
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
-    mock_show.assert_called_once()
+    if NotificationSeverity(severity) >= NotificationSeverity.INFO:
+        mock_show.assert_called_once()
+    else:
+        mock_show.assert_not_called()
 
     dialog = NapariQtNotification.from_notification(notif)
     assert not dialog.property('expanded')

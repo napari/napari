@@ -7,10 +7,12 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from napari import __version__
-from napari.utils.notifications import notification_manager
-
+from .. import __version__
 from ..utils import config, perf
+from ..utils.notifications import (
+    notification_manager,
+    show_console_notification,
+)
 from ..utils.perf import perf_config
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_resources import _register_napari_resources
@@ -133,11 +135,12 @@ def get_app(
         app.setWindowIcon(QIcon(kwargs.get('icon')))
         set_app_id(kwargs.get('app_id'))
 
-        if os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False'):
-
-            notification_manager.notification_ready.connect(
-                NapariQtNotification.show_notification
-            )
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
