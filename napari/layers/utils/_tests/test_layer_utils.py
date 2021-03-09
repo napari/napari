@@ -13,6 +13,10 @@ data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
 )
 
+data_dask_plane = da.random.random(
+    size=(100_000, 100_000), chunks=(1000, 1000)
+)
+
 
 def test_calc_data_range():
     # all zeros should return [0, 1] by default
@@ -68,6 +72,12 @@ def test_calc_data_fast_uint8():
 @pytest.mark.timeout(2)
 def test_calc_data_range_fast_big():
     val = calc_data_range(data_dask)
+    assert len(val) > 0
+
+
+@pytest.mark.timeout(2)
+def test_calc_data_range_fast_big_plane():
+    val = calc_data_range(data_dask_plane)
     assert len(val) > 0
 
 
