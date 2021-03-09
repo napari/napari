@@ -418,6 +418,7 @@ class Points(Layer):
             # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
+                self._set_view_slice()
                 if len(self._edge.colors) > len(data):
                     self._edge._remove(
                         np.arange(len(data), len(self._edge.colors))
