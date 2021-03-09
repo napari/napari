@@ -1,39 +1,44 @@
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QIntValidator, QFont
+from qtpy.QtCore import QSize, Qt, Signal
+from qtpy.QtGui import QFont, QIntValidator
 from qtpy.QtWidgets import (
     QFrame,
-    QLabel,
     QHBoxLayout,
-    QDialog,
-    QWidget,
-    QSlider,
+    QLabel,
     QLineEdit,
-    QGridLayout,
-    QVBoxLayout,
     QPlainTextEdit,
-    QTextEdit,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
 )
 
 from ...utils.translations import translator
-
 
 trans = translator.load()
 
 
 class QtFontSizePreview(QFrame):
     """
+    Widget that displays a preview text.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        Parent widget.
+    text : str, optional
+        Preview text to display. Default is None.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: QWidget = None, text: str = None):
         super().__init__(parent)
 
-        self._text = ""
+        self._text = text or ""
 
         # Widget
         self._preview = QPlainTextEdit(self)
 
         # Widget setup
         self._preview.setReadOnly(True)
+        self._preview.setPlainText(self._text)
 
         # Layout
         layout = QHBoxLayout()
@@ -41,47 +46,90 @@ class QtFontSizePreview(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def setText(self, text):
+    def sizeHint(self):
+        """Override Qt method."""
+        return QSize(100, 80)
+
+    def text(self) -> str:
+        """Return the current preview text.
+
+        Returns
+        -------
+        str
+            The current preview text.
+        """
+        return self._text
+
+    def setText(self, text: str):
+        """Set the current preview text.
+
+        Parameters
+        ----------
+        text : str
+            The current preview text.
+        """
+        self._text = text
         self._preview.setPlainText(text)
 
 
-class SizeSliderPreviewWidget(QDialog):
+class QtSizeSliderPreviewWidget(QWidget):
     """
+    Widget displaying a description, textedit and slider to adjust font size
+    with preview.
+
+    Parameters
+    ----------
+    parent : qtpy.QtWidgets.QWidget, optional
+        Default is None.
+    description : str, optional
+        Default is "".
+    preview_text : str, optional
+        Default is "".
+    value : int, optional
+        Default is None.
+    min_value : int, optional
+        Default is 1.
+    max_value : int, optional
+        Default is 50.
+    unit : str, optional
+        Default is "px".
     """
+
     valueChanged = Signal(int)
 
     def __init__(
-            self,
-            parent: QWidget = None,
-            description :str = "",
-            preview_text :str = "",
-            value: int = None,
-            min_value:int = 1,
-            max_value:int = 50,
-            unit:str = "px",
-        ):
+        self,
+        parent: QWidget = None,
+        description: str = None,
+        preview_text: str = None,
+        value: int = None,
+        min_value: int = 1,
+        max_value: int = 50,
+        unit: str = "px",
+    ):
         super().__init__(parent)
 
+        description = description or ""
+        preview_text = preview_text or ""
         self._value = value if value else self.fontMetrics().height()
         self._min_value = min_value
         self._max_value = max_value
 
         # Widget
         self._lineedit = QLineEdit()
-        self._description = QLabel(self)
-        self._unit = QLabel(self)
+        self._description_label = QLabel(self)
+        self._unit_label = QLabel(self)
         self._slider = QSlider(Qt.Horizontal, self)
         self._slider_min_label = QLabel(self)
         self._slider_max_label = QLabel(self)
         self._preview = QtFontSizePreview(self)
         self._preview_label = QLabel(self)
-        self._validator = QIntValidator(min_value, max_value, self)
+        self._validator = None
 
         # Widgets setup
-        self._description.setText(description)
-        self._description.setWordWrap(True)
-        self._unit.setText(unit)
-        self._lineedit.setValidator(self._validator)
+        self._description_label.setText(description)
+        self._description_label.setWordWrap(True)
+        self._unit_label.setText(unit)
         self._lineedit.setAlignment(Qt.AlignRight)
         self._slider_min_label.setText(str(min_value))
         self._slider_max_label.setText(str(max_value))
@@ -90,119 +138,239 @@ class SizeSliderPreviewWidget(QDialog):
         self._preview.setText(preview_text)
         self._preview_label.setText(trans._("preview"))
         self._preview_label.setAlignment(Qt.AlignHCenter)
-
-        # Signals
-        self._slider.valueChanged.connect(self._update_value)
-        self._lineedit.textChanged.connect(self._update_value)
+        self.setFocusProxy(self._lineedit)
 
         # Layout
-        # self._layout = QGridLayout()
-        layout = QHBoxLayout()
-
-        left_layout = QVBoxLayout()
-        left_layout.addWidget(self._description)
-
         left_bottom_layout = QHBoxLayout()
         left_bottom_layout.addWidget(self._lineedit)
-        left_bottom_layout.addWidget(self._unit)
-        left_bottom_layout.addStretch()
+        left_bottom_layout.addWidget(self._unit_label)
         left_bottom_layout.addWidget(self._slider_min_label)
         left_bottom_layout.addWidget(self._slider)
         left_bottom_layout.addWidget(self._slider_max_label)
 
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(self._description_label)
         left_layout.addLayout(left_bottom_layout)
-
-        layout.addLayout(left_layout)
 
         right_layout = QVBoxLayout()
         right_layout.addWidget(self._preview)
         right_layout.addWidget(self._preview_label)
 
-        layout.addLayout(right_layout)
+        layout = QHBoxLayout()
+        layout.addLayout(left_layout, 2)
+        layout.addLayout(right_layout, 1)
 
         self.setLayout(layout)
-        self._update_line_width()
 
-        self.refresh()
+        # Signals
+        self._slider.valueChanged.connect(self._update_value)
+        self._lineedit.textChanged.connect(self._update_value)
+
+        self._update_line_width()
+        self._update_validator()
+        self._update_value(self._value)
+
+    def _update_validator(self):
+        self._validator = QIntValidator(self._min_value, self._max_value, self)
+        self._lineedit.setValidator(self._validator)
 
     def _update_line_width(self):
-        size = self._lineedit.fontMetrics().width("m" * (1 + len(str(self._max_value))))
+        """Update width ofg line text edit."""
+        size = self._lineedit.fontMetrics().width(
+            "m" * (1 + len(str(self._max_value)))
+        )
         self._lineedit.setMaximumWidth(size)
         self._lineedit.setMinimumWidth(size)
 
-    def _update_value(self, value):
+    def _update_value(self, value: int):
+        """Update internal value and emit if changed."""
         if value == "":
             value = int(self._value)
 
-        self._value = int(value)
-        self.refresh()
+        value = int(value)
 
-    def refresh(self):
+        if value > self._max_value:
+            value = self._max_value
+        elif value < self._min_value:
+            value = self._min_value
+
+        if value != self._value:
+            self.valueChanged.emit(value)
+
+        self._value = value
+        self._refresh(self._value)
+
+    def _refresh(self, value: int = None):
+        """Refresh the value on all subwidgets."""
+        value = value if value else self._value
         self.blockSignals(True)
-        self._lineedit.setText(str(self._value))
-        self._slider.setValue(self._value)
+        self._lineedit.setText(str(value))
+        self._slider.setValue(value)
         font = QFont()
-        font.setPixelSize(self._value)
+        font.setPixelSize(value)
         self._preview.setFont(font)
+
+        font = QFont()
+        font.setPixelSize(self.fontMetrics().height() - 4)
+        self._preview_label.setFont(font)
+
         self.blockSignals(False)
-        self.valueChanged.emit(self._value)
 
-    def getValue(self):
-        return self._value
+    def description(self) -> str:
+        """Return the current widget description.
 
-    def setValue(self, value):
-        self._update_value(value)
-        self._refresh()
+        Returns
+        -------
+        str
+            The description text.
+        """
+        return self._description_label.text()
 
-    def getDescription(self):
-        return self._desctiption_label.text()
+    def setDescription(self, text: str):
+        """Set the current widget description.
 
-    def setDescription(self, text):
-        self._desctiption_label.setText(text)
+        Parameters
+        ----------
+        text : str
+            The description text.
+        """
+        self._description_label.setText(text)
 
-    def getPreviewText(self):
+    def previewText(self) -> str:
+        """Return the current preview text.
+
+        Returns
+        -------
+        str
+            The current preview text.
+        """
         return self._preview.text()
 
-    def setPreviewText(self, text):
+    def setPreviewText(self, text: str):
+        """Set the current preview text.
+
+        Parameters
+        ----------
+        text : str
+            The current preview text.
+        """
         self._preview.setText(text)
 
-    def getUnit(self):
+    def unit(self) -> str:
+        """Return the current unit text.
+
+        Returns
+        -------
+        str
+            The current unit text.
+        """
         return self._unit_label.text()
 
-    def setUnit(self, text):
+    def setUnit(self, text: str):
+        """Set the current unit text.
+
+        Parameters
+        ----------
+        text : str
+            The current preview text.
+        """
         self._unit_label.setText(text)
 
-    def setMinimun(self, value):
+    def minimum(self) -> int:
+        """Return the current minimum value for the slider and value in textbox.
+
+        Returns
+        -------
+        int
+            The minimum value for the slider.
         """
+        return self._min_value
+
+    def setMinimum(self, value: int):
+        """Set the current minimum value for the slider and value in textbox.
+
+        Parameters
+        ----------
+        value : int
+            The minimum value for the slider.
         """
         value = int(value)
         if value < self._max_value:
             self._min_value = value
+            self._value = (
+                self._min_value
+                if self._value < self._min_value
+                else self._value
+            )
             self._slider_min_label.setText(str(value))
-            self._value = self._min_value if self._value < self._min_value else self._value
-            self.refresh()
+            self._slider.setMinimum(value)
+            self._update_validator()
+            self._refresh()
         else:
-            raise ValueError(f"Minimum value must be smaller than {self._max_value}")
+            raise ValueError(
+                trans._(
+                    "Minimum value must be smaller than {}".format(
+                        self._max_value
+                    )
+                )
+            )
 
-    def getMinimun(self, value):
-        """
-        """
-        return self._min_value
+    def maximum(self) -> int:
+        """Return the maximum value for the slider and value in textbox.
 
-    def setMaximum(self, value):
-        """
-        """
-        value = int(value)
-        if value > self._max_value:
-            self._max_value = value
-            self._slider_max_label.setText(str(value))
-            self._value = self._max_value if self._value > self._max_value else self._value
-            self._update_line_width()
-            self.refresh()
-        else:
-            raise ValueError(f"Maximum value must be larger than {self._min_value}")
-
-    def getMaximum(self, value):
-        """
+        Returns
+        -------
+        int
+            The maximum value for the slider.
         """
         return self._max_value
+
+    def setMaximum(self, value: int):
+        """Set the maximum value for the slider and value in textbox.
+
+        Parameters
+        ----------
+        value : int
+            The maximum value for the slider.
+        """
+        value = int(value)
+        if value > self._min_value:
+            self._max_value = value
+            self._value = (
+                self._max_value
+                if self._value > self._max_value
+                else self._value
+            )
+            self._slider_max_label.setText(str(value))
+            self._slider.setMaximum(value)
+            self._update_validator()
+            self._update_line_width()
+            self._refresh()
+        else:
+            raise ValueError(
+                trans._(
+                    "Maximum value must be larger than {}".format(
+                        self._min_value
+                    )
+                )
+            )
+
+    def value(self) -> int:
+        """Return the current widget value.
+
+        Returns
+        -------
+        int
+            The current value.
+        """
+        return self._value
+
+    def setValue(self, value: int):
+        """Set the current widget value.
+
+        Parameters
+        ----------
+        value : int
+            The current value.
+        """
+        self._update_value(value)

@@ -597,8 +597,6 @@ QtPluginSorter {
 
 
 QtFontSizePreview {
-  max-height: 80px;
-  max-width: 160px;
   border: 1px solid {{ foreground }};
   border-radius: 5px;
 }
