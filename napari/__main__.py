@@ -147,7 +147,8 @@ def _run():
     )
     parser.add_argument(
         '-w',
-        '--widget',
+        '--with',
+        dest='with_',
         nargs='+',
         metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
         help=(
@@ -245,13 +246,13 @@ def _run():
         runpy.run_path(args.paths[0])
 
     else:
-        if args.widget:
+        if args.with_:
             from . import plugins
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
             plugins.discover_dock_widgets()
-            pname, *wnames = args.widget
+            pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
                     plugins.get_plugin_widget(pname, wname)
@@ -277,8 +278,8 @@ def _run():
             **kwargs,
         )
 
-        if args.widget:
-            pname, *wnames = args.widget
+        if args.with_:
+            pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
                     viewer.window.add_plugin_dock_widget(pname, wname)
