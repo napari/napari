@@ -1019,7 +1019,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def displayed_coordinates(self):
-        """list: List of currently displayed coordinates."""
+        """list: List of currently displayed coordinates.
+
+        displayed_coordinates is deprecated and will be removed in version 0.4.9.
+        It should no longer be used as layers should will soon not know
+        which dimensions are displayed. Instead you should use
+        `[layer.coordinates[d] for d in viewer.dims.displayed]
+        """
+        warnings.warn(
+            "displayed_coordinates is deprecated and will be removed in version 0.4.9."
+            " It should no longer be used as layers should will soon not know"
+            " which dimensions are displayed. Instead you should use"
+            " [layer.coordinates[d] for d in viewer.dims.displayed]",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         coordinates = self.coordinates
         return [coordinates[i] for i in self._dims_displayed]
 
