@@ -392,15 +392,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
 
-        # For the labels layer we need to reset the undo/ redo
-        # history whenever the displayed slice changes. Once
-        # we have full undo/ redo functionality, this can be
-        # dropped.
-        if hasattr(layer, '_reset_history'):
-            self.dims.events.ndisplay.connect(layer._reset_history)
-            self.dims.events.order.connect(layer._reset_history)
-            self.dims.events.current_step.connect(layer._reset_history)
-
         # Make layer selected and unselect all others
         layer.selected = True
         self.layers.unselect_all(ignore=layer)
@@ -433,11 +424,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        # For the labels layer disconnect history resets
-        if hasattr(layer, '_reset_history'):
-            self.dims.events.ndisplay.disconnect(layer._reset_history)
-            self.dims.events.order.disconnect(layer._reset_history)
-            self.dims.events.current_step.disconnect(layer._reset_history)
         self._on_layers_change(None)
         self._on_grid_change(None)
 
@@ -733,7 +719,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     _path, kwargs, plugin=plugin, layer_type=layer_type
                 )
             )
-
         return added
 
     def _add_layers_with_plugins(

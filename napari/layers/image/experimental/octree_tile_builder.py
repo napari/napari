@@ -62,7 +62,7 @@ def create_downsampled_levels(
 
     Parameters
     ----------
-    image : np.darray
+    image : np.ndarray
         The full image to create levels from.
 
     Returns
@@ -74,6 +74,10 @@ def create_downsampled_levels(
 
     if image.ndim == 3:
         zoom.append(1)  # don't downsample the colors!
+
+    # ndi.zoom doesn't support float16, so convert to float32
+    if image.dtype == np.float16:
+        image = image.astype(np.float32)
 
     levels = []
     previous = image

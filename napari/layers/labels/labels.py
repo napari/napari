@@ -16,7 +16,7 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import sphere_indices
+from ._labels_utils import indices_in_shape, sphere_indices
 
 
 class Labels(_ImageBase):
@@ -708,27 +708,72 @@ class Labels(_ImageBase):
         ):
             self._undo_history.popleft()
 
-    def _save_history(self):
+    def _save_history(self, value):
+        """Save a history "atom" to the undo history.
+
+        A history "atom" is a single change operation to the array. A history
+        *item* is a collection of atoms that were applied together to make a
+        single change. For example, when dragging and painting, at each mouse
+        callback we create a history "atom", but we save all those atoms in
+        a single history item, since we would want to undo one drag in one
+        undo operation.
+
+        Parameters
+        ----------
+        value: 3-tuple of arrays
+            The value is a 3-tuple containing:
+
+            - a numpy multi-index, pointing to the array elements that were
+              changed
+            - the values corresponding to those elements before the change
+            - the value(s) after the change
+        """
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(self.data[self._slice_indices].copy())
+            self._undo_history.append([value])
             self._trim_history()
+        else:
+            self._undo_history[-1].append(value)
 
-    def _load_history(self, before, after):
+    def _load_history(self, before, after, undoing=True):
+        """Load a history item and apply it to the array.
+
+        Parameters
+        ----------
+        before : list of history items
+            The list of elements from which we want to load.
+        after : list of history items
+            The list of element to which to append the loaded element. In the
+            case of an undo operation, this is the redo queue, and vice versa.
+        undoing : bool
+            Whether we are undoing (default) or redoing. In the case of
+            redoing, we apply the "after change" element of a history element
+            (the third element of the history "atom").
+
+        See Also
+        --------
+        `Labels._save_history`
+        """
         if len(before) == 0:
             return
 
-        prev = before.pop()
-        after.append(self.data[self._slice_indices].copy())
-        self.data[self._slice_indices] = prev
+        history_item = before.pop()
+        after.append(list(reversed(history_item)))
+        for prev_indices, prev_values, next_values in reversed(history_item):
+            values = prev_values if undoing else next_values
+            self.data[prev_indices] = values
 
         self.refresh()
 
     def undo(self):
-        self._load_history(self._undo_history, self._redo_history)
+        self._load_history(
+            self._undo_history, self._redo_history, undoing=True
+        )
 
     def redo(self):
-        self._load_history(self._redo_history, self._undo_history)
+        self._load_history(
+            self._redo_history, self._undo_history, undoing=False
+        )
 
     def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
@@ -761,9 +806,6 @@ class Labels(_ImageBase):
         ):
             return
 
-        if refresh is True:
-            self._save_history()
-
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
@@ -783,12 +825,27 @@ class Labels(_ImageBase):
                     matches, labeled_matches == match_label
                 )
 
-        # Replace target pixels with new_label
-        labels[matches] = new_label
-
+        match_indices_local = np.nonzero(matches)
         if not (self.n_dimensional or self.ndim == 2):
-            # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self._slice_indices)] = labels
+            n_idx = len(match_indices_local[0])
+            match_indices = []
+            j = 0
+            for d in range(self.ndim):
+                if d in self._dims_not_displayed:
+                    match_indices.append(np.full(n_idx, int_coord[d]))
+                else:
+                    match_indices.append(match_indices_local[j])
+                    j += 1
+            match_indices = tuple(match_indices)
+        else:
+            match_indices = match_indices_local
+
+        self._save_history(
+            (match_indices, self.data[match_indices], new_label)
+        )
+
+        # Replace target pixels with new_label
+        self.data[match_indices] = new_label
 
         if refresh is True:
             self.refresh()
@@ -808,9 +865,7 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        if refresh is True:
-            self._save_history()
-
+        shape = self.data.shape
         if self.brush_shape == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if not self.n_dimensional and self.ndim > 2:
@@ -831,9 +886,10 @@ class Labels(_ImageBase):
                     coord, self.data.shape, brush_size_dims
                 )
             )
+            slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
+            slice_coord = indices_in_shape(slice_coord, shape)
         elif self.brush_shape == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
-            shape = self.data.shape
             if not self.n_dimensional and self.ndim > 2:
                 coord = [coord[i] for i in self._dims_displayed]
                 shape = [shape[i] for i in self._dims_displayed]
@@ -847,11 +903,7 @@ class Labels(_ImageBase):
             mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
 
             # discard candidate coordinates that are out of bounds
-            discard_coords = np.logical_and(
-                ~np.any(mask_indices < 0, axis=1),
-                ~np.any(mask_indices >= np.array(shape), axis=1),
-            )
-            mask_indices = mask_indices[discard_coords]
+            mask_indices = indices_in_shape(mask_indices, shape)
 
             # Transfer valid coordinates to slice_coord,
             # or expand coordinate if 3rd dim in 2D image
@@ -879,23 +931,21 @@ class Labels(_ImageBase):
         except ImportError:
             pass
 
-        # slice_coord from square brush is tuple of slices per dimension
-        # slice_coord from circle brush is tuple of coord. arrays per dimension
-
-        # update the labels image
-
-        if not self.preserve_labels:
-            self.data[slice_coord] = new_label
-        else:
+        # slice coord is a tuple of coordinate arrays per dimension
+        # subset it if we want to only paint into background/only erase
+        # current label
+        if self.preserve_labels:
             if new_label == self._background_label:
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
-            if self.brush_shape == "circle":
-                slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
-                self.data[slice_coord] = new_label
-            else:
-                self.data[slice_coord][keep_coords] = new_label
+            slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
+
+        # save the existing values to the history
+        self._save_history((slice_coord, self.data[slice_coord], new_label))
+
+        # update the labels image
+        self.data[slice_coord] = new_label
 
         if refresh is True:
             self.refresh()
