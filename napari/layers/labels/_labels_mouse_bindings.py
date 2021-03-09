@@ -22,8 +22,6 @@ def draw(layer, event):
     eraser
     """
     # on press
-    layer._save_history()
-    layer._block_saving = True
     if layer._mode == Mode.ERASE:
         new_label = layer._background_label
     else:
@@ -37,6 +35,7 @@ def draw(layer, event):
     last_cursor_coord = layer.coordinates
     yield
 
+    layer._block_saving = True
     # on move
     while event.type == 'mouse_move':
         interp_coord = interpolate_coordinates(
