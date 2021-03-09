@@ -10,8 +10,11 @@ def _ensure_ref(val):
     return ref(val) if not isinstance(val, ReferenceType) else val
 
 
-class EventedWeakSet(EventedSet['ReferenceType[_T]']):
+class EventedWeakSet(EventedSet[_T]):
     """An EventedSet variant that only stores weakrefs."""
+
+    def __init__(self, data: Iterable[Union[_T, 'ReferenceType[_T]']]):
+        super().__init__(data=data)
 
     def add(self, value: Union[_T, 'ReferenceType[_T]']) -> None:
         vref = _ensure_ref(value)
@@ -56,7 +59,12 @@ class EventedWeakSet(EventedSet['ReferenceType[_T]']):
         raise NotImplementedError("not all set methods available on weakset")
 
     def difference_update(self, others: Iterable[_T] = ()) -> None:
-        raise NotImplementedError("not all set methods available on weakset")
+        """Remove all elements of another set from this set."""
+        orefs = {_ensure_ref(o) for o in others}
+        to_remove = self._set.intersection(orefs)
+        if to_remove:
+            self._set.difference_update(to_remove)
+            self.events.removed(value={i() for i in to_remove})
 
     def intersection(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         raise NotImplementedError("not all set methods available on weakset")

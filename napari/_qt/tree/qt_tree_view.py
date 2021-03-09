@@ -26,21 +26,22 @@ class QtNodeTreeView(QTreeView):
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.setRoot(root)
 
-    def model(self) -> QtNodeTreeModel[Node]:
-        return super().model()
-
     def setRoot(self, root: Group[Node]):
-        self._root: Group[Node] = root
-        self.setModel(self.model_class(root, self))
+        self._root = root
+        model = self.model_class(root, self)
+        self.setModel(model)
 
         # connect model events
-        self.model().rowsRemoved.connect(self._redecorate_root)
-        self.model().rowsInserted.connect(self._redecorate_root)
+        model.rowsRemoved.connect(self._redecorate_root)
+        model.rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
 
         # connect selection events
         root.selection.events.connect(self._on_py_selection_model_event)
         self._sync_selection_models()
+
+    def model(self) -> QtNodeTreeModel[Node]:
+        return super().model()
 
     def _redecorate_root(self, parent=None, *_):
         """Add a branch/arrow column only if there are Groups in the root.
@@ -56,7 +57,7 @@ class QtNodeTreeView(QTreeView):
         sel_model = self.selectionModel()
         selection = QItemSelection()
         for i in self._root.selection:
-            idx = self.model().findIndex(i())
+            idx = self.model().findIndex(i)
             selection.select(idx, idx)
         sel_model.select(selection, sel_model.ClearAndSelect)
 
@@ -93,7 +94,7 @@ class QtNodeTreeView(QTreeView):
             return
         t = sel_model.Select if event.type == 'added' else sel_model.Deselect
         for idx in event.value:
-            model_idx = self.model().findIndex(idx())
+            model_idx = self.model().findIndex(idx)
             if not model_idx.isValid():
                 continue
             sel_model.select(model_idx, t)

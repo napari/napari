@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
 
-from ._set import EventedSet
+from ._weakset import EventedWeakSet
 
 if TYPE_CHECKING:
     from pydantic.fields import ModelField
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 
-class Selection(EventedSet[_T]):
+class Selection(EventedWeakSet[_T]):
     """An unordered collection of selected elements, with a `current` item.
 
     There can only be one 'current' item. There can be multiple selected items.
