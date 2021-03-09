@@ -4,13 +4,15 @@ import dask
 import numpy as np
 
 
-def calc_data_range(data):
+def calc_data_range(data, rgb=False):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
     ----------
     data : array
         Data to calculate range of values over.
+    rgb : bool
+        Flag if data is rgb.
 
     Returns
     -------
@@ -24,17 +26,32 @@ def calc_data_range(data):
     """
     if data.dtype == np.uint8:
         return [0, 255]
-    if np.prod(data.shape) > 1e6:
+    if np.prod(data.shape) > 1e7:
         # If data is very large take the average of the top, bottom, and
         # middle slices
-        bottom_plane_idx = (0,) * (data.ndim - 2)
-        middle_plane_idx = tuple(s // 2 for s in data.shape[:-2])
-        top_plane_idx = tuple(s - 1 for s in data.shape[:-2])
+        offset = 2 + int(rgb)
+        bottom_plane_idx = (0,) * (data.ndim - offset)
+        middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
+        top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
         idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
-        reduced_data = [
-            [np.max(data[idx]) for idx in idxs],
-            [np.min(data[idx]) for idx in idxs],
-        ]
+        # If each plane is also very large, look only at a subset of the image
+        if (
+            np.prod(data.shape[-offset:]) > 1e7
+            and data.shape[-offset] > 64
+            and data.shape[-offset + 1] > 64
+        ):
+            # Find a centeral patch of the image to take
+            center = [int(s // 2) for s in data.shape[-offset:]]
+            cental_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
+            reduced_data = [
+                [np.max(data[idx + cental_slice]) for idx in idxs],
+                [np.min(data[idx + cental_slice]) for idx in idxs],
+            ]
+        else:
+            reduced_data = [
+                [np.max(data[idx]) for idx in idxs],
+                [np.min(data[idx]) for idx in idxs],
+            ]
         # compute everything in one go
         reduced_data = dask.compute(*reduced_data)
     else:
