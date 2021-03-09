@@ -13,7 +13,7 @@ def _ensure_ref(val):
 class EventedWeakSet(EventedSet[_T]):
     """An EventedSet variant that only stores weakrefs."""
 
-    def __init__(self, data: Iterable[Union[_T, 'ReferenceType[_T]']]):
+    def __init__(self, data: Iterable[Union[_T, 'ReferenceType[_T]']] = ()):
         super().__init__(data=data)
 
     def add(self, value: Union[_T, 'ReferenceType[_T]']) -> None:
