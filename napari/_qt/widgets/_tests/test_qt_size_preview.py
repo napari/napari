@@ -1,11 +1,13 @@
 import pytest
 
-from napari._qt.widgets.qt_size_preview import QtSizeSliderPreviewWidget, QtFontSizePreview
+from napari._qt.widgets.qt_size_preview import (
+    QtFontSizePreview,
+    QtSizeSliderPreviewWidget,
+)
 
 
 @pytest.fixture
 def preview_widget(qtbot):
-
     def _preview_widget(**kwargs):
         widget = QtFontSizePreview(**kwargs)
         widget.show()
@@ -18,7 +20,6 @@ def preview_widget(qtbot):
 
 @pytest.fixture
 def font_size_preview_widget(qtbot):
-
     def _font_size_preview_widget(**kwargs):
         widget = QtSizeSliderPreviewWidget(**kwargs)
         widget.show()
@@ -101,7 +102,9 @@ def test_qt_size_slider_preview_widget_minimum(font_size_preview_widget):
     assert widget._lineedit.text() == "20"
 
 
-def test_qt_size_slider_preview_widget_minimum_invalid(font_size_preview_widget):
+def test_qt_size_slider_preview_widget_minimum_invalid(
+    font_size_preview_widget,
+):
     widget = font_size_preview_widget()
 
     with pytest.raises(ValueError):
@@ -129,7 +132,9 @@ def test_qt_size_slider_preview_widget_maximum(font_size_preview_widget):
     assert widget._slider_max_label.text() == "5"
 
 
-def test_qt_size_slider_preview_widget_maximum_invalid(font_size_preview_widget):
+def test_qt_size_slider_preview_widget_maximum_invalid(
+    font_size_preview_widget,
+):
     widget = font_size_preview_widget()
 
     with pytest.raises(ValueError):
@@ -145,7 +150,9 @@ def test_qt_size_slider_preview_widget_value(font_size_preview_widget):
     assert widget.value() == 5
 
 
-def test_qt_size_slider_preview_widget_value_invalid(font_size_preview_widget):
+def test_qt_size_slider_preview_widget_value_invalid(
+    qtbot, font_size_preview_widget
+):
     widget = font_size_preview_widget()
     widget.setMaximum(50)
     widget.setValue(51)
@@ -156,8 +163,6 @@ def test_qt_size_slider_preview_widget_value_invalid(font_size_preview_widget):
     widget.setValue(1)
     assert widget.value() == 5
     assert widget._lineedit.text() == "5"
-
-    qtbot.sendKeys(widget._linedit)
 
 
 def test_qt_size_slider_preview_signal(qtbot, font_size_preview_widget):
