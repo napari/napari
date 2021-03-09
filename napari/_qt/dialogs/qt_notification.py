@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
@@ -312,4 +313,13 @@ class NapariQtNotification(QDialog):
 
     @classmethod
     def show_notification(cls, notification: Notification):
-        cls.from_notification(notification).show()
+        from ...utils.settings import SETTINGS
+
+        # after https://github.com/napari/napari/issues/2370,
+        # the os.getenv can be removed (and NAPARI_CATCH_ERRORS retired)
+        if (
+            os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False')
+            and notification.severity
+            >= SETTINGS.application.gui_notification_level
+        ):
+            cls.from_notification(notification).show()
