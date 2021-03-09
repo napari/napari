@@ -19,7 +19,7 @@ viewer = napari.Viewer()
 
 # embed ipython and run the magic command to use the qt event loop
 sh = InteractiveShellEmbed()
-sh.run_cell('%gui qt')  # any valid python or ipython command can be run like this!
+sh.enable_gui('qt')  # equivalent to using the '%gui qt' magic
 sh()  # open the embedded shell
 
 # From there, you can access the script's scope, such as the variables `text` and `viewer`
