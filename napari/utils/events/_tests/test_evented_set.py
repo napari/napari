@@ -105,11 +105,11 @@ def test_weakset():
     class T:
         pass
 
-    a = EventedWeakSet()
+    a: EventedWeakSet[T] = EventedWeakSet()
     t1 = T()
     t2 = T()
     a.add(t1)
-    ref = list(a)[0]
+    ref = list(a._set)[0]
     a.add(t2)
     assert t1 in a
     assert t2 in a
