@@ -8,6 +8,8 @@ from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
 from .octree_util import OctreeDisplayOptions, spiral_index
 
+MAX_NUM_CHUNKS = 81
+
 
 class OctreeView(NamedTuple):
     """A view into the octree.
@@ -203,10 +205,17 @@ class OctreeIntersection:
         # every chunk within the view.
 
         # We use spiral indexing to get chunks from the center first
-        for row, col in spiral_index(self._row_range, self._col_range):
+        for i, (row, col) in enumerate(
+            spiral_index(self._row_range, self._col_range)
+        ):
             chunk = self.level.get_chunk(row, col, create=create)
             if chunk is not None:
                 chunks.append(chunk)
+            # We place a limit on the maximum number of chunks that
+            # we'll ever take from a level to deal with the single
+            # level tiled rendering case.
+            if i > MAX_NUM_CHUNKS:
+                break
         return chunks
 
     @property

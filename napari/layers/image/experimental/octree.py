@@ -67,17 +67,22 @@ class Octree:
 
         LOGGER.info("Multiscale data has %d levels.", len(self.levels))
 
-        # If root level contains more than one tile, add extra levels
-        # until the root does consist of a single tile. We have to do this
-        # because we cannot draw tiles larger than the standard size right now.
-        if self.levels[-1].info.num_tiles > 1:
+        # If there is more than one level and the root level contains more
+        # than one tile, add extra levels until the root does consist of a
+        # single tile. We have to do this because we cannot draw tiles larger
+        # than the standard size right now.
+        # If there is only one level than we'll only ever be able to show tiles
+        # from that level.
+        if len(self.data) > 1 and self.levels[-1].info.num_tiles > 1:
             self.levels.extend(self._get_extra_levels())
 
         LOGGER.info("Octree now has %d total levels:", len(self.levels))
         log_levels(self.levels)
 
-        # Now the root should definitely contain only a single tile.
-        assert self.levels[-1].info.num_tiles == 1
+        # Now the root should definitely contain only a single tile if there is
+        # more than one level
+        if len(self.data) > 1:
+            assert self.levels[-1].info.num_tiles == 1
 
         # This is now the total number of levels, including the extra ones.
         self.num_levels = len(self.data)

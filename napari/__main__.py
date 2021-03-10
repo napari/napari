@@ -25,8 +25,9 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from .plugins import plugin_manager
+        from .plugins import discover_dock_widgets, plugin_manager
 
+        discover_dock_widgets()
         errors = plugin_manager.get_errors()
         if errors:
             names = {e.plugin_name for e in errors}
@@ -40,8 +41,9 @@ class PluginInfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
-        from .plugins import plugin_manager
+        from .plugins import discover_dock_widgets, plugin_manager
 
+        discover_dock_widgets()
         print(plugin_manager)
 
         verbose = '-v' in sys.argv or '--verbose' in sys.argv
