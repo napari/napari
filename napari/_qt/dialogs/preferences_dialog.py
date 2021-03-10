@@ -18,7 +18,7 @@ trans = translator.load()
 
 
 class PreferencesDialog(QDialog):
-    """Preference Dialog that allows user to set their preferences for Napari"""
+    """Preferences Dialog for Napari user settings"""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -60,9 +60,7 @@ class PreferencesDialog(QDialog):
         self._default_restore.clicked.connect(self.restore_defaults)
 
     def restore_defaults(self):
-        """Launches a separate dialog that asks the user to confirm the restore
-        or to cancel.
-        """
+        """Launches dialog to confirm restore settings choice."""
 
         widget = ConfirmDialog(
             parent=self,
@@ -75,25 +73,32 @@ class PreferencesDialog(QDialog):
         self.close()
 
     def on_click_cancel(self):
-        """Restores the settings in place when the preference dialog was launched."""
+        """Restores the settings in place when dialog was launched."""
         self.check_differences(self._values_orig_set, self._values_set)
         self.close()
 
-    def add_page(self, schema, ui_schema):
-        """For each section in settings, a new preferences widget will be added to the dialog
-        on a separate page.
-        """
-        widget = self.get_preferences_dialog(schema, ui_schema)
+    def add_page(self, schema, values):
+        """Creates a new page for each section in preferences."""
+        widget = self.get_preferences_dialog(schema, values)
         self._list.addItem(schema["title"])
         self._stack.addWidget(widget)
 
     def get_preferences_dialog(self, schema, values):
-        """Builds the preferences widget using the json schema builder"""
+        """Builds the preferences widget using the json schema builder
+
+        Parameters
+        ----------
+        schema : dict
+            json schema including all information to build each page in the
+            preferences dialog
+        values : dict
+            dictionary of current values set in preferences
+
+        """
         self._values_orig_set = set(values.items())
         self._values_set = set(values.items())
 
         builder = WidgetBuilder()
-
         form = builder.create_form(schema, {})
         # set state values for widget
         form.widget.state = values
@@ -104,14 +109,17 @@ class PreferencesDialog(QDialog):
         return form
 
     def check_differences(self, new_set, values_set):
-        """Will check the differences in settings from the original values set and the new set.
-            For all values that are new, the value in SETTINGS will be updated.
+        """Changes settings in settings manager with changes from dialog.
 
         Parameters
         ----------
-        new_set: the set of new values
-        values_set: the set by which to compare
+        new_set : set
+            the set of new values, with tuples of key value pairs for each
+            setting
+        values_set : set
+            the old set of values
         """
+
         different_values = list(new_set - values_set)
 
         if len(different_values) > 0:
@@ -127,7 +135,7 @@ class PreferencesDialog(QDialog):
 
 
 class ConfirmDialog(QDialog):
-    """Dialog that confirms a user's choice to restore default settings."""
+    """Dialog to confirms a user's choice to restore default settings."""
 
     def __init__(
         self,
