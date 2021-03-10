@@ -43,7 +43,7 @@ dwidget_args = {
 # monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
 def test_dock_widget_registration(
-    arg, test_plugin_manager, add_implementation, monkeypatch, request, recwarn
+    arg, test_plugin_manager, monkeypatch, request, recwarn
 ):
     """Test that dock widgets get validated and registerd correctly."""
     test_plugin_manager.project_name = 'napari'
@@ -54,11 +54,13 @@ def test_dock_widget_registration(
         registered = {}
         m.setattr(plugins, "dock_widgets", registered)
 
-        @napari_hook_implementation
-        def napari_experimental_provide_dock_widget():
-            return arg
+        class Plugin:
+            @napari_hook_implementation
+            def napari_experimental_provide_dock_widget():
+                return arg
 
-        add_implementation(napari_experimental_provide_dock_widget)
+        test_plugin_manager.register(Plugin)
+
         hook.call_historic(
             result_callback=plugins.register_dock_widget, with_impl=True
         )
@@ -67,9 +69,9 @@ def test_dock_widget_registration(
             assert not registered
         else:
             assert len(recwarn) == 0
-            assert registered[(None, 'Widg1')][0] == Widg1
+            assert registered['Plugin']['Widg1'][0] == Widg1
             if 'tuple_list' in request.node.name:
-                assert registered[(None, 'Widg2')][0] == Widg2
+                assert registered['Plugin']['Widg2'][0] == Widg2
 
 
 @pytest.fixture
@@ -77,15 +79,12 @@ def test_plugin_widgets(monkeypatch):
     """A smattering of example registered dock widgets and function widgets."""
     with monkeypatch.context() as m:
         dock_widgets = {
-            ("TestP1", "Widg1"): (Widg1, {}),
-            ("TestP1", "Widg2"): (Widg2, {}),
-            ("TestP2", "Widg3"): (Widg3, {}),
+            "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
+            "TestP2": {"Widg3": (Widg3, {})},
         }
         m.setattr(plugins, "dock_widgets", dock_widgets)
 
-        function_widgets = {
-            ("TestP3", "magic"): magicfunc,
-        }
+        function_widgets = {'TestP3': {'magic': magicfunc}}
         m.setattr(plugins, "function_widgets", function_widgets)
         yield
 

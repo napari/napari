@@ -7,11 +7,14 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from napari import __version__
-
+from .. import __version__
 from ..utils import config, perf
+from ..utils.notifications import (
+    notification_manager,
+    show_console_notification,
+)
 from ..utils.perf import perf_config
-from .exceptions import ExceptionHandler
+from .dialogs.qt_notification import NapariQtNotification
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
@@ -132,6 +135,13 @@ def get_app(
         app.setWindowIcon(QIcon(kwargs.get('icon')))
         set_app_id(kwargs.get('app_id'))
 
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
+
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
@@ -215,8 +225,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
 
         splash = NapariSplashScreen()
         splash.close()
-
-    yield app
+    try:
+        yield app
+    except Exception:
+        notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
 
@@ -294,21 +306,5 @@ def run(
         )
         return
 
-    with _install_hooks(gui_exceptions):
+    with notification_manager:
         app.exec_()
-
-
-@contextmanager
-def _install_hooks(gui_exceptions=True):
-    """Install ExceptionHandler as sys.excepthook.
-
-    probably temporary until https://github.com/napari/napari/pull/2205
-    """
-    # instantiate the exception handler
-    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
-    orighook, sys.excepthook = sys.excepthook, exception_handler.handle
-    try:
-        yield
-    finally:
-        sys.excepthook = orighook
-        exception_handler.deleteLater()

@@ -9,6 +9,7 @@ from napari.utils.misc import (
     abspath_or_url,
     ensure_iterable,
     ensure_sequence_of_iterables,
+    pick_equality_operator,
 )
 
 ITERABLE = (0, 1, 2)
@@ -128,3 +129,23 @@ def test_abspath_or_url():
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})
+
+
+def test_equality_operator():
+    import operator
+
+    import dask.array as da
+    import numpy as np
+    import xarray as xr
+    import zarr
+
+    class MyNPArray(np.ndarray):
+        pass
+
+    assert pick_equality_operator(np.ones((1, 1))) == np.array_equal
+    assert pick_equality_operator(MyNPArray([1, 1])) == np.array_equal
+    assert pick_equality_operator(da.ones((1, 1))) == operator.is_
+    assert pick_equality_operator(zarr.ones((1, 1))) == operator.is_
+    assert (
+        pick_equality_operator(xr.DataArray(np.ones((1, 1)))) == np.array_equal
+    )

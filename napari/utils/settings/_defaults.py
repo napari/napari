@@ -6,8 +6,9 @@ from typing import List, Tuple
 
 from pydantic import BaseSettings, Field, validator
 
-from ...utils.events.evented_model import EventedModel
-from ...utils.theme import available_themes
+from ..events.evented_model import EventedModel
+from ..notifications import NotificationSeverity
+from ..theme import available_themes
 
 
 class QtBindingChoice(str, Enum):
@@ -59,6 +60,10 @@ class ApplicationSettings(BaseSettings, EventedModel):
     window_state: str = None
     window_statusbar: bool = True
     preferences_size: Tuple[int, int] = None
+    gui_notification_level: NotificationSeverity = NotificationSeverity.INFO
+    console_notification_level: NotificationSeverity = (
+        NotificationSeverity.NONE
+    )
 
     @validator('theme')
     def theme_must_be_registered(cls, v):

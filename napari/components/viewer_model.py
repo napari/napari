@@ -82,17 +82,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Contains axes, indices, dimensions and sliders.
     """
 
-    # After https://github.com/samuelcolvin/pydantic/pull/2196 is released
-    # make all of these fields with allow_mutation=False
-    axes: Axes = Axes()
-    camera: Camera = Camera()
-    cursor: Cursor = Cursor()
-    dims: Dims = Dims()
-    grid: GridCanvas = GridCanvas()
+    # Using allow_mutation=False means these attributes aren't settable and don't
+    # have an event emitter associated with them
+    axes: Axes = Field(default_factory=Axes, allow_mutation=False)
+    camera: Camera = Field(default_factory=Camera, allow_mutation=False)
+    cursor: Cursor = Field(default_factory=Cursor, allow_mutation=False)
+    dims: Dims = Field(default_factory=Dims, allow_mutation=False)
+    grid: GridCanvas = Field(default_factory=GridCanvas, allow_mutation=False)
     layers: LayerList = Field(
-        default_factory=LayerList
+        default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
-    scale_bar: ScaleBar = ScaleBar()
+    scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
 
     active_layer: Optional[
         Layer
@@ -392,15 +392,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
 
-        # For the labels layer we need to reset the undo/ redo
-        # history whenever the displayed slice changes. Once
-        # we have full undo/ redo functionality, this can be
-        # dropped.
-        if hasattr(layer, '_reset_history'):
-            self.dims.events.ndisplay.connect(layer._reset_history)
-            self.dims.events.order.connect(layer._reset_history)
-            self.dims.events.current_step.connect(layer._reset_history)
-
         # Make layer selected and unselect all others
         layer.selected = True
         self.layers.unselect_all(ignore=layer)
@@ -433,11 +424,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         disconnect_events(layer.events, self)
         disconnect_events(layer.events, self.layers)
 
-        # For the labels layer disconnect history resets
-        if hasattr(layer, '_reset_history'):
-            self.dims.events.ndisplay.disconnect(layer._reset_history)
-            self.dims.events.order.disconnect(layer._reset_history)
-            self.dims.events.current_step.disconnect(layer._reset_history)
         self._on_layers_change(None)
         self._on_grid_change(None)
 
@@ -733,7 +719,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                     _path, kwargs, plugin=plugin, layer_type=layer_type
                 )
             )
-
         return added
 
     def _add_layers_with_plugins(
