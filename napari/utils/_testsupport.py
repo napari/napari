@@ -70,7 +70,10 @@ def make_napari_viewer(_strict_qtbot, request):
 
     yield actual_factory
 
-    SETTINGS.reset()
+    try:
+        SETTINGS.reset()
+    except AttributeError:
+        pass
 
     for viewer in viewers:
         viewer.close()
