@@ -12,7 +12,10 @@ template = """def {name}{signature}:
 
 
 def create_func(cls, name=None, doc=None):
-    cls_name = cls.__name__
+    if cls.__name__ == 'OctreeLabels':
+        cls_name = 'Labels'
+    else:
+        cls_name = cls.__name__
 
     if name is None:
         name = camel_to_snake(cls_name)

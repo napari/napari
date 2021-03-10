@@ -1050,9 +1050,9 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
     return valid
 
 
-_get_labels_class()
+labels_class = _get_labels_class()
 for _layer in (
-    Labels,
+    labels_class,
     layers.Points,
     layers.Shapes,
     layers.Surface,
