@@ -284,3 +284,19 @@ def test_evented_model_serialization():
     assert raw == '{"obj": {"a": 1, "b": "hi"}, "shaped": [1.0, 2.0, 3.0]}'
     deserialized = Model.parse_raw(raw)
     assert deserialized == m
+
+
+def test_nested_evented_model_serialization():
+    """Test that encoders on nested sub-models can be used by top model."""
+
+    class NestedModel(EventedModel):
+        obj: MyObj
+
+    class Model(EventedModel):
+        nest: NestedModel
+
+    m = Model(nest={'obj': {"a": 1, "b": "hi"}})
+    raw = m.json()
+    assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
+    deserialized = Model.parse_raw(raw)
+    assert deserialized == m

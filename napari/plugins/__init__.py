@@ -1,15 +1,14 @@
-import os
 import sys
-from inspect import isclass, signature
+from inspect import signature
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     List,
-    Sequence,
+    Optional,
     Tuple,
-    Type,
     Union,
 )
 from warnings import warn
@@ -37,12 +36,11 @@ with plugin_manager.discovery_blocked():
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
 
-
+WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
 dock_widgets: Dict[
-    Tuple[str, str],
-    Tuple[Callable[..., Union['FunctionGui', 'QWidget']], dict],
+    str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
 ] = dict()
-function_widgets: Dict[Tuple[str, str], Callable] = dict()
+function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
 
 
 def register_dock_widget(
@@ -83,13 +81,71 @@ def register_dock_widget(
         # Get widget name
         name = str(kwargs.get('name', '')) or camel_to_spaces(_cls.__name__)
 
-        key = (plugin_name, name)
-        if key in dock_widgets:
+        if plugin_name not in dock_widgets:
+            # tried defaultdict(dict) but got odd KeyErrors...
+            dock_widgets[plugin_name] = {}
+        elif name in dock_widgets[plugin_name]:
             warn(
                 "Plugin '{}' has already registered a dock widget '{}' "
-                'which has now been overwritten'.format(*key)
+                'which has now been overwritten'.format(plugin_name, name)
             )
-        dock_widgets[key] = (_cls, kwargs)
+
+        dock_widgets[plugin_name][name] = (_cls, kwargs)
+
+
+def get_plugin_widget(
+    plugin_name: str, widget_name: Optional[str] = None
+) -> Tuple[WidgetCallable, Dict[str, Any]]:
+    """Get widget `widget_name` provided by plugin `plugin_name`.
+
+    Note: it's important that :func:`discover_dock_widgets` has been called
+    first, otherwise plugins may not be found yet.  (Typically, that is done
+    in qt_main_window)
+
+    Parameters
+    ----------
+    plugin_name : str
+        Name of a plugin providing a widget
+    widget_name : str, optional
+        Name of a widget provided by `plugin_name`. If `None`, and the
+        specified plugin provides only a single widget, that widget will be
+        returned, otherwise a ValueError will be raised, by default None
+
+    Returns
+    -------
+    plugin_widget : Tuple[Callable, dict]
+        Tuple of (widget_class, options).
+
+    Raises
+    ------
+    KeyError
+        If plugin `plugin_name` does not provide any widgets
+    KeyError
+        If plugin does not provide a widget named `widget_name`.
+    ValueError
+        If `widget_name` is not provided, but `plugin_name` provides more than
+        one widget
+    """
+    plg_wdgs = dock_widgets.get(plugin_name)
+    if not plg_wdgs:
+        raise KeyError(
+            f'Plugin {plugin_name!r} does not provide any dock widgets'
+        )
+
+    if not widget_name:
+        if len(plg_wdgs) > 1:
+            raise ValueError(
+                f'Plugin {plugin_name!r} provides more than 1 dock_widget. '
+                f'Must also provide "widget_name" from {set(plg_wdgs)}'
+            )
+        widget_name = list(plg_wdgs)[0]
+    else:
+        if widget_name not in plg_wdgs:
+            raise KeyError(
+                f'Plugin {plugin_name!r} does not provide '
+                f'a widget named {widget_name!r}'
+            )
+    return plg_wdgs[widget_name]
 
 
 _magicgui_sig = {
@@ -122,14 +178,16 @@ def register_function_widget(
         # Get function name
         name = func.__name__.replace('_', ' ')
 
-        key = (plugin_name, name)
-        if key in function_widgets:
+        if plugin_name not in function_widgets:
+            # tried defaultdict(dict) but got odd KeyErrors...
+            function_widgets[plugin_name] = {}
+        elif name in function_widgets[plugin_name]:
             warn(
                 "Plugin '{}' has already registered a function widget '{}' "
-                'which has now been overwritten'.format(*key)
+                'which has now been overwritten'.format(plugin_name, name)
             )
 
-        function_widgets[key] = func
+        function_widgets[plugin_name][name] = func
 
 
 def discover_dock_widgets():

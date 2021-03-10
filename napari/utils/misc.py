@@ -400,29 +400,19 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     type_ = type(obj) if not inspect.isclass(obj) else obj
 
-    if issubclass(type_, np.ndarray):
-        return np.array_equal
-
-    import dask.array
-
-    if issubclass(type_, dask.array.Array):
-        return operator.is_
-
-    try:
-        import zarr.core
-
-        if issubclass(type_, zarr.core.Array):
-            return operator.is_
-    except ImportError:
-        pass
-
-    try:
-        import xarray.core.dataarray
-
-        if issubclass(type_, xarray.core.dataarray.DataArray):
-            return np.array_equal
-    except ImportError:
-        pass
+    # yes, it's a little riskier, but we are checking namespaces instead of
+    # actual `issubclass` here to avoid slow import times
+    _known_arrays = {
+        'numpy.ndarray': np.array_equal,  # numpy.ndarray
+        'dask.Array': operator.is_,  # dask.array.core.Array
+        'zarr.Array': operator.is_,  # zarr.core.Array
+        'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
+    }
+    for base in type_.mro():
+        key = f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
+        func = _known_arrays.get(key)
+        if func:
+            return func
 
     return operator.eq
 

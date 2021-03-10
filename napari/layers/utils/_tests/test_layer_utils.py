@@ -6,12 +6,15 @@ from dask import array as da
 from napari.layers.utils.layer_utils import (
     calc_data_range,
     dataframe_to_properties,
-    guess_continuous,
     segment_normal,
 )
 
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
+)
+
+data_dask_plane = da.random.random(
+    size=(100_000, 100_000), chunks=(1000, 1000)
 )
 
 
@@ -72,6 +75,12 @@ def test_calc_data_range_fast_big():
     assert len(val) > 0
 
 
+@pytest.mark.timeout(2)
+def test_calc_data_range_fast_big_plane():
+    val = calc_data_range(data_dask_plane)
+    assert len(val) > 0
+
+
 def test_segment_normal_2d():
     a = np.array([1, 1])
     b = np.array([1, 10])
@@ -94,14 +103,3 @@ def test_dataframe_to_properties():
     properties_df = pd.DataFrame(properties)
     converted_properties, _ = dataframe_to_properties(properties_df)
     np.testing.assert_equal(converted_properties, properties)
-
-
-def test_guess_continuous():
-    continuous_annotation = np.array([1, 2, 3], dtype=np.float32)
-    assert guess_continuous(continuous_annotation)
-
-    categorical_annotation_1 = np.array([True, False], dtype=bool)
-    assert not guess_continuous(categorical_annotation_1)
-
-    categorical_annotation_2 = np.array([1, 2, 3], dtype=np.int)
-    assert not guess_continuous(categorical_annotation_2)
