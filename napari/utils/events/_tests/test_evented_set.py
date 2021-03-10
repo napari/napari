@@ -2,7 +2,7 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from napari.utils.events import EventedSet, EventedWeakSet
+from napari.utils.events import EventedSet
 
 
 @pytest.fixture
@@ -99,23 +99,3 @@ def test_set_new_objects(test_set, regular_set, meth):
     assert result is not test_set
 
     assert test_set.events.mock_calls == []
-
-
-def test_weakset():
-    class T:
-        pass
-
-    a: EventedWeakSet[T] = EventedWeakSet()
-    t1 = T()
-    t2 = T()
-    a.add(t1)
-    ref = list(a._set)[0]
-    a.add(t2)
-    assert t1 in a
-    assert t2 in a
-    assert len(a) == 2
-    del t1
-    assert len(a) == 1
-    del t2
-    assert len(a) == 0
-    assert ref() is None
