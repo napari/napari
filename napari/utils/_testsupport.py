@@ -70,7 +70,8 @@ def make_napari_viewer(_strict_qtbot, request):
 
     yield actual_factory
 
+    SETTINGS.reset()
+
     for viewer in viewers:
         viewer.close()
 
-    SETTINGS.reset()

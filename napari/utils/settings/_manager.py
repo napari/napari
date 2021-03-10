@@ -105,6 +105,7 @@ class SettingsManager:
         for plugin in CORE_SETTINGS:
             section = self._get_section_name(plugin)
             self._defaults[section] = plugin()
+            self._settings[section] = plugin()
             self._models[section] = plugin
 
         if path.is_file():
@@ -136,8 +137,6 @@ class SettingsManager:
                     model = self._models[section](**model_data)
                     model.events.connect(lambda x: self._save())
                     self._settings[section] = model
-        else:
-            self._settings = self._defaults
 
         self._save()
 
@@ -147,12 +146,12 @@ class SettingsManager:
 
     def reset(self):
         """Reset settings to default values."""
-
         for section in self._settings:
             for key, default_value in self._defaults[section].dict().items():
                 setattr(self._settings[section], key, default_value)
         # for section in self._settings:
         #     self._settings[section] = self._models[section]()
+        # print(self._to_dict())
 
         self._save()
 

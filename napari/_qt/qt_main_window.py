@@ -231,8 +231,8 @@ class Window:
         get_app()
 
         # Connect the Viewer and create the Main Window
-        self.qt_viewer = QtViewer(viewer)
         self._qt_window = _QtMainWindow()
+        self.qt_viewer = QtViewer(viewer)
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()

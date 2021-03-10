@@ -4,9 +4,10 @@
 from enum import Enum
 from typing import List, Tuple
 
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, validator
 
-from napari.utils.events.evented_model import EventedModel
+from ...utils.events.evented_model import EventedModel
+from ...utils.theme import available_themes
 
 
 class QtBindingChoice(str, Enum):
@@ -14,13 +15,6 @@ class QtBindingChoice(str, Enum):
 
     pyside2 = 'pyside2'
     pyqt5 = 'pyqt5'
-
-
-class ThemeChoice(str, Enum):
-    """Application color theme."""
-
-    dark = 'dark'
-    light = 'light'
 
 
 class ApplicationSettings(BaseSettings, EventedModel):
@@ -42,10 +36,9 @@ class ApplicationSettings(BaseSettings, EventedModel):
     # UI Elements
     highlight_thickness: int = 1
 
-    theme: ThemeChoice = Field(
-        ThemeChoice.dark,
+    theme: str = Field(
+        "dark",
         description="Theme selection.",
-        enum=[ThemeChoice.dark, ThemeChoice.light],
     )
 
     # Startup
@@ -66,6 +59,14 @@ class ApplicationSettings(BaseSettings, EventedModel):
     window_state: str = None
     window_statusbar: bool = True
     preferences_size: Tuple[int, int] = None
+
+    @validator('theme')
+    def theme_must_be_registered(cls, v):
+        themes = available_themes()
+        if v.lower() not in available_themes():
+            raise ValueError(f'must be one of {", ".join(themes)}')
+
+        return v.lower()
 
     class Config:
         # Pydantic specific configuration
