@@ -44,6 +44,11 @@ class Group(NestableEventedList[NodeType], Node):
     def selection(self) -> Selection[NodeType]:
         return self._selection
 
+    @selection.setter
+    def selection(self, new_selection) -> None:
+        self._selection.intersection_update(new_selection)
+        self._selection.update(new_selection)
+
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
         if isinstance(key, (int, tuple)):
