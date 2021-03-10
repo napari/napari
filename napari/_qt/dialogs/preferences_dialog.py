@@ -18,7 +18,7 @@ trans = translator.load()
 
 
 class PreferencesDialog(QDialog):
-    """Preferences Dialog for Napari user settings"""
+    """Preferences Dialog for Napari user settings."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,21 +78,31 @@ class PreferencesDialog(QDialog):
         self.close()
 
     def add_page(self, schema, values):
-        """Creates a new page for each section in preferences."""
+        """Creates a new page for each section in preferences.
+
+        Parameters
+        ----------
+        schema : dict
+            Json schema including all information to build each page in the
+            preferences dialog.
+        values : dict
+            Dictionary of current values set in preferences.
+
+        """
         widget = self.get_preferences_dialog(schema, values)
         self._list.addItem(schema["title"])
         self._stack.addWidget(widget)
 
     def get_preferences_dialog(self, schema, values):
-        """Builds the preferences widget using the json schema builder
+        """Builds the preferences widget using the json schema builder.
 
         Parameters
         ----------
         schema : dict
-            json schema including all information to build each page in the
-            preferences dialog
+            Json schema including all information to build each page in the
+            preferences dialog.
         values : dict
-            dictionary of current values set in preferences
+            Dictionary of current values set in preferences.
 
         """
         self._values_orig_set = set(values.items())
@@ -114,10 +124,10 @@ class PreferencesDialog(QDialog):
         Parameters
         ----------
         new_set : set
-            the set of new values, with tuples of key value pairs for each
-            setting
+            The set of new values, with tuples of key value pairs for each
+            setting.
         values_set : set
-            the old set of values
+            The old set of values.
         """
 
         different_values = list(new_set - values_set)
@@ -150,7 +160,6 @@ class ConfirmDialog(QDialog):
         self._button_cancel = QPushButton(trans._("Cancel"))
 
         # Widget set up
-
         self._question.setText(text)
 
         # Layout
@@ -165,15 +174,14 @@ class ConfirmDialog(QDialog):
         self.setLayout(main_layout)
 
         # Signals
-
         self._button_cancel.clicked.connect(self.on_click_cancel)
         self._button_restore.clicked.connect(self.on_click_restore)
 
     def on_click_cancel(self):
-        """Do not restore defaults.  Close window."""
+        """Do not restore defaults and close window."""
         self.close()
 
     def on_click_restore(self):
-        """Restore defaults.  Close window."""
+        """Restore defaults and close window."""
         SETTINGS.reset()
         self.close()

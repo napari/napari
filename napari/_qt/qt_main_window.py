@@ -268,9 +268,7 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        # SETTINGS.application.events.theme.connect(self._update_window)
         SETTINGS.application.events.theme.connect(self._update_theme)
-        # SETTINGS.application.events.connect(self._update_window)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -1080,7 +1078,6 @@ class Window:
     def _update_window(self, event=None):
         SETTINGS.reset()
         get_app()
-        # self._qt_window.repaint()
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
