@@ -18,7 +18,7 @@ import numpy as np
 from pydantic import Extra, Field, validator
 
 from .. import layers
-from ..layers import Image, Layer
+from ..layers import Image, Labels, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
 from ..utils import config
@@ -880,6 +880,16 @@ def _get_image_class() -> Image:
     return Image
 
 
+def _get_labels_class() -> Labels:
+    """Return Image or OctreeImage based config settings."""
+    if config.async_octree:
+        from ..layers.labels.experimental.octree_labels import OctreeLabels
+
+        return OctreeLabels
+
+    return Labels
+
+
 def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
@@ -1040,8 +1050,9 @@ def valid_add_kwargs() -> Dict[str, Set[str]]:
     return valid
 
 
+_get_labels_class()
 for _layer in (
-    layers.Labels,
+    Labels,
     layers.Points,
     layers.Shapes,
     layers.Surface,

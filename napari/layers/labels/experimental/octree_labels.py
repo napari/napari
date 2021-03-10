@@ -5,23 +5,21 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils.colormaps import (
+from ....utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
     low_discrepancy_image,
 )
-from ...utils.events import Event
-
-# from ..image.image import _ImageBase
-from ..image.experimental.octree_image import _OctreeImageBase
-from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import dataframe_to_properties
-from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
-from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import indices_in_shape, sphere_indices
+from ....utils.events import Event
+from ...image.experimental.octree_image import _OctreeImageBase
+from ...utils.color_transformations import transform_color
+from ...utils.layer_utils import dataframe_to_properties
+from .._labels_constants import LabelBrushShape, LabelColorMode, Mode
+from .._labels_mouse_bindings import draw, pick
+from .._labels_utils import indices_in_shape, sphere_indices
 
 
-class Labels(_OctreeImageBase):
+class OctreeLabels(_OctreeImageBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID

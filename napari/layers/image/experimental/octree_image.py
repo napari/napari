@@ -10,7 +10,7 @@ import numpy as np
 
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
-from ..image import Image
+from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
@@ -20,7 +20,7 @@ from .octree_util import OctreeDisplayOptions, OctreeMetadata
 LOGGER = logging.getLogger("napari.octree.image")
 
 
-class OctreeImage(Image):
+class _OctreeImageBase(_ImageBase):
     """Image layer rendered using an octree.
 
     Experimental variant of Image that renders using an octree. For 2D
@@ -492,3 +492,30 @@ class OctreeImage(Image):
             "tile_state": self._intersection.tile_state,
             "tile_config": self._intersection.tile_config,
         }
+
+
+class OctreeImage(_OctreeImageBase):
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'rgb': self.rgb,
+                'multiscale': self.multiscale,
+                'colormap': self.colormap.name,
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state

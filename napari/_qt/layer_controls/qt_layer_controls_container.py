@@ -22,10 +22,12 @@ layer_to_controls = {
 
 if config.async_loading:
     from ...layers.image.experimental.octree_image import OctreeImage
+    from ...layers.labels.experimental.octree_labels import OctreeLabels
 
     # The user visible layer controls for OctreeImage layers are identical
     # to the regular image layer controls, for now.
     layer_to_controls[OctreeImage] = QtImageControls
+    layer_to_controls[OctreeLabels] = QtLabelsControls
 
 
 def create_qt_layer_controls(layer):
