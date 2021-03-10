@@ -74,4 +74,3 @@ def make_napari_viewer(_strict_qtbot, request):
 
     for viewer in viewers:
         viewer.close()
-
