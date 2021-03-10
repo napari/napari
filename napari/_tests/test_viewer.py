@@ -85,21 +85,35 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
 }
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+# We unroll the layer data, with the all the methods of the layer that we are
+# going to test, so that if one method fails we know which one, as well as
+# remove potential issues that would be triggered by calling methods after each
+# other.
+
+
+unrolled_layer_data = []
+for layer_class, data, ndim in layer_test_data:
+    methods = _get_all_keybinding_methods(layer_class)
+    for func in methods:
+        unrolled_layer_data.append(
+            (layer_class, data, ndim, func, len(methods))
+        )
+
+
+@pytest.mark.parametrize(
+    'layer_class, data, ndim, func, Nmeth', unrolled_layer_data
+)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(make_napari_viewer, layer_class, data, ndim, visible):
+def test_add_layer(
+    make_napari_viewer, layer_class, data, ndim, func, Nmeth, visible
+):
     viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
-    methods = _get_all_keybinding_methods(type(layer))
-    # Run all class key bindings
-    for func in methods:
-        func(layer)
+    func(layer)
 
-    assert (
-        len(methods) == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
-    )
+    assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
