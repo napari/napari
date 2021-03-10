@@ -151,9 +151,6 @@ class SettingsManager:
         for section in self._settings:
             for key, default_value in self._defaults[section].dict().items():
                 setattr(self._settings[section], key, default_value)
-        # for section in self._settings:
-        #     self._settings[section] = self._models[section]()
-        # print(self._to_dict())
 
         self._save()
 

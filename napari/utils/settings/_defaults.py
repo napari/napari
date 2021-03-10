@@ -4,11 +4,39 @@
 from enum import Enum
 from typing import List, Tuple
 
-from pydantic import BaseSettings, Field, validator
+from pydantic import BaseSettings, Field
 
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
+
+
+class Theme(str):
+    """
+    Custom theme type to dyn amically load all installed themes.
+    """
+
+    # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        field_schema.update(enum=available_themes())
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise ValueError('must be a string')
+
+        value = v.lower()
+        themes = available_themes()
+        if value not in available_themes():
+            raise ValueError(f'must be one of {", ".join(themes)}')
+
+        return value
 
 
 class QtBindingChoice(str, Enum):
@@ -37,7 +65,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
     # UI Elements
     highlight_thickness: int = 1
 
-    theme: str = Field(
+    theme: Theme = Field(
         "dark",
         description="Theme selection.",
     )
@@ -60,18 +88,11 @@ class ApplicationSettings(BaseSettings, EventedModel):
     window_state: str = None
     window_statusbar: bool = True
     preferences_size: Tuple[int, int] = None
+    # TODO: Might be breaking preferences?
     gui_notification_level: NotificationSeverity = NotificationSeverity.INFO
     console_notification_level: NotificationSeverity = (
         NotificationSeverity.NONE
     )
-
-    @validator('theme')
-    def theme_must_be_registered(cls, v):
-        themes = available_themes()
-        if v.lower() not in available_themes():
-            raise ValueError(f'must be one of {", ".join(themes)}')
-
-        return v.lower()
 
     class Config:
         # Pydantic specific configuration
@@ -99,6 +120,8 @@ class ApplicationSettings(BaseSettings, EventedModel):
             "font_rich_family",
             "font_rich_size",
             "window_statusbar",
+            "gui_notification_level",
+            "console_notification_level",
         ]
 
 
