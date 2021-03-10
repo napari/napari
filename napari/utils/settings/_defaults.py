@@ -13,7 +13,7 @@ from ..theme import available_themes
 
 class Theme(str):
     """
-    Custom theme type to dyn amically load all installed themes.
+    Custom theme type to dynamically load all installed themes.
     """
 
     # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
@@ -61,7 +61,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
         QtBindingChoice.pyside2,
         description="Python Qt binding to use with the application.",
     )
-    # qt_binding: QtBindingChoice = QtBindingChoice.pyside2
+
     # UI Elements
     highlight_thickness: int = 1
 
