@@ -1090,7 +1090,11 @@ class Window:
             self.qt_viewer.viewer.theme = value
         else:
             value = self.qt_viewer.viewer.theme
-        self._qt_window.setStyleSheet(get_stylesheet(value))
+
+        try:
+            self._qt_window.setStyleSheet(get_stylesheet(value))
+        except AttributeError:
+            pass
 
     def _status_changed(self, event):
         """Update status bar.
