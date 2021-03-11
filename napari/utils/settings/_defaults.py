@@ -55,31 +55,16 @@ class ApplicationSettings(BaseSettings, EventedModel):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version = (0, 1, 0)
-    # Python
-    qt_binding: str = Field(
-        QtBindingChoice.pyside2,
-        description="Python Qt binding to use with the application.",
-    )
 
-    # UI Elements
-    highlight_thickness: int = 1
+    schema_version = (0, 1, 0)
 
     theme: Theme = Field(
         "dark",
         description="Theme selection.",
     )
 
-    # Startup
-    opt_in_telemetry: bool = Field(
-        False, description="Check to enable telemetry measurements"
-    )
     first_time: bool = True
-    # Fonts
-    font_plain_family: str = None
-    font_plain_size: int = None
-    font_rich_family: str = None
-    font_rich_size: int = 12
+
     # Window state, geometry and position
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
@@ -112,13 +97,6 @@ class ApplicationSettings(BaseSettings, EventedModel):
             "window_maximized",
             "window_fullscreen",
             "window_state",
-            "qt_binding",
-            "highlight_thickness",
-            "opt_in_telemetry",
-            "font_plain_family",
-            "font_plain_size",
-            "font_rich_family",
-            "font_rich_size",
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
