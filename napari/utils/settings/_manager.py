@@ -108,10 +108,11 @@ class SettingsManager:
             section = self._get_section_name(plugin)
             self._defaults[section] = plugin()
             self._models[section] = plugin
+            self._settings[section] = plugin()
 
         if path.is_file():
             with open(path) as fh:
-                data = safe_load(fh.read())
+                data = safe_load(fh.read()) or {}
 
             # Check with models
             for section, model_data in data.items():
@@ -138,8 +139,6 @@ class SettingsManager:
                     model = self._models[section](**model_data)
                     model.events.connect(lambda x: self._save())
                     self._settings[section] = model
-        else:
-            self._settings = self._defaults
 
         self._save()
 
