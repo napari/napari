@@ -41,7 +41,7 @@ del stats
 
 import os
 
-os.environ['SPARSE_AUTO_DENSIFY'] = '1'
+os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
 
 
 __all__ = [
