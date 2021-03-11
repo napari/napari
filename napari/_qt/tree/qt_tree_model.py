@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import Generic, List, Optional, Tuple, TypeVar, Union, cast
+from typing import Generic, List, Optional, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
@@ -157,8 +157,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
 
         parentItem = self.getItem(parent)
         if parentItem.is_group():
-            parentItem = cast(Group[NodeType], parentItem)
-            return self.createIndex(row, column, parentItem[row])
+            return self.createIndex(row, column, parentItem[row])  # type: ignore
         return QModelIndex()
 
     def mimeData(self, indices: List[QModelIndex]) -> Optional['NodeMimeData']:
@@ -219,7 +218,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         children of parent.
         """
         try:
-            return len(self.getItem(parent))  # type:ignore
+            return len(self.getItem(parent))  # type: ignore
         except TypeError:
             return 0
 
@@ -297,7 +296,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
     def _on_end_move(self, e):
         self.endMoveRows()
 
-    def getItem(self, index: QModelIndex) -> Node:
+    def getItem(self, index: QModelIndex) -> NodeType:
         """Return ``Node`` object for a given `QModelIndex`.
 
         A null or invalid ``QModelIndex`` will return the root Node.
@@ -308,7 +307,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
                 return item
         return self._root
 
-    def findIndex(self, obj: Node) -> QModelIndex:
+    def findIndex(self, obj: NodeType) -> QModelIndex:
         """Find the QModelIndex for a given ``Node`` object in the model."""
         hits = self.match(
             self.index(0),
@@ -319,7 +318,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         )
         if hits:
             return hits[0]
-        raise IndexError(f"Could not find node {obj!r} in the model")
+        return QModelIndex()
 
     def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
         """Return a QModelIndex for a given ``nested_index``."""
@@ -354,9 +353,9 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
 
 
 class NodeMimeData(QMimeData):
-    def __init__(self, nodes: Optional[List[Node]] = None):
+    def __init__(self, nodes: Optional[List[NodeType]] = None):
         super().__init__()
-        self.nodes: List[Node] = nodes or []
+        self.nodes: List[NodeType] = nodes or []
         if nodes:
             self.setData(NodeMIMEType, pickle.dumps(self.node_indices()))
             self.setText(" ".join([node._node_name() for node in nodes]))
