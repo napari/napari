@@ -187,6 +187,13 @@ class _QtMainWindow(QMainWindow):
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        # Close any floating dockwidgets
+        for dock in self.findChildren(QtViewerDockWidget):
+            try:
+                dock.setFloating(False)
+            except Exception:
+                pass
+
         self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
@@ -975,6 +982,14 @@ class Window:
         RuntimeError
             If the viewer.window has already been closed and deleted.
         """
+        try:
+            self._qt_window.show()
+        except (AttributeError, RuntimeError):
+            raise RuntimeError(
+                "This viewer has already been closed and deleted. "
+                "Please create a new one."
+            )
+
         if SETTINGS.application.first_time:
             SETTINGS.application.first_time = False
             try:
@@ -1000,14 +1015,6 @@ class Window:
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
-
-        try:
-            self._qt_window.show()
-        except (AttributeError, RuntimeError):
-            raise RuntimeError(
-                "This viewer has already been closed and deleted. "
-                "Please create a new one."
-            )
 
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
