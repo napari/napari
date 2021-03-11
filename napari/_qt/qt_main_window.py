@@ -189,10 +189,8 @@ class _QtMainWindow(QMainWindow):
         """
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
-            try:
+            if dock.isFloating():
                 dock.setFloating(False)
-            except Exception:
-                pass
 
         self._save_current_window_settings()
 
@@ -204,6 +202,8 @@ class _QtMainWindow(QMainWindow):
             for _i in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
+
+        quit_app()
         event.accept()
 
 
@@ -393,7 +393,7 @@ class Window:
         exitAction = QAction('Exit', self._qt_window)
         exitAction.setShortcut('Ctrl+Q')
         exitAction.setMenuRole(QAction.QuitRole)
-        exitAction.triggered.connect(quit_app)
+        exitAction.triggered.connect(self._qt_window.close)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
