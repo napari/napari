@@ -104,6 +104,8 @@ class ApplicationSettings(BaseSettings, EventedModel):
 
 
 class PluginSettings(BaseSettings, EventedModel):
+    """Plugin Settings."""
+
     schema_version = (0, 1, 0)
     plugins_call_order: List[str] = []
 
