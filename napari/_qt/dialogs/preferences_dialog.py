@@ -1,3 +1,6 @@
+import json
+
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -9,9 +12,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-
+from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...utils.settings import SETTINGS
+from ...utils.settings._defaults import ApplicationSettings, PluginSettings
 from ...utils.translations import translator
 
 trans = translator.load()
@@ -59,6 +62,31 @@ class PreferencesDialog(QDialog):
         self._button_ok.clicked.connect(self.on_click_ok)
         self._default_restore.clicked.connect(self.restore_defaults)
 
+        # Make widget
+
+        self.make_dialog()
+        self._list.setCurrentRow(0)
+
+    def make_dialog(self):
+        """Removes settings not to be exposed to user and creates dialog pages."""
+
+        settings_list = [ApplicationSettings(), PluginSettings()]
+        cnt = 0
+        for key, setting in SETTINGS.schemas().items():
+
+            schema = json.loads(setting['json_schema'])
+            # need to remove certain properties that will not be displayed on the GUI
+            properties = schema.pop('properties')
+            values = setting['model'].dict()
+            for val in settings_list[cnt].NapariConfig().preferences_exclude:
+                properties.pop(val)
+                values.pop(val)
+
+            cnt += 1
+            schema['properties'] = properties
+
+            self.add_page(schema, values)
+
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
 
@@ -66,7 +94,21 @@ class PreferencesDialog(QDialog):
             parent=self,
             text=trans._("Are you sure you want to restore default settings?"),
         )
+        widget.valueChanged.connect(self._reset_widgets)
         widget.show()
+
+    def _reset_widgets(self):
+        """Deletes the widgets and rebuilds with defaults."""
+        self.close()
+        self._list.clear()
+
+        for n in range(self._stack.count()):
+            widget = self._stack.removeWidget(self._stack.currentWidget())
+            del widget
+
+        self.make_dialog()
+        self._list.setCurrentRow(0)
+        self.show()
 
     def on_click_ok(self):
         """Keeps the selected preferences saved to SETTINGS."""
@@ -78,7 +120,7 @@ class PreferencesDialog(QDialog):
         self.close()
 
     def add_page(self, schema, values):
-        """Creates a new page for each section in preferences.
+        """Creates a new page for each section in dialog.
 
         Parameters
         ----------
@@ -87,13 +129,12 @@ class PreferencesDialog(QDialog):
             preferences dialog.
         values : dict
             Dictionary of current values set in preferences.
-
         """
-        widget = self.get_preferences_dialog(schema, values)
+        widget = self.build_page_dialog(schema, values)
         self._list.addItem(schema["title"])
         self._stack.addWidget(widget)
 
-    def get_preferences_dialog(self, schema, values):
+    def build_page_dialog(self, schema, values):
         """Builds the preferences widget using the json schema builder.
 
         Parameters
@@ -103,7 +144,6 @@ class PreferencesDialog(QDialog):
             preferences dialog.
         values : dict
             Dictionary of current values set in preferences.
-
         """
         self._values_orig_set = set(values.items())
         self._values_set = set(values.items())
@@ -130,15 +170,14 @@ class PreferencesDialog(QDialog):
             The old set of values.
         """
 
+        page = self._list.currentItem().text().split(" ")[0].lower()
         different_values = list(new_set - values_set)
 
         if len(different_values) > 0:
             # change the values in SETTINGS
             for val in different_values:
-                # to do -- reference proper page -- its hard coded for just 'application' right now
                 try:
-                    # need to validate so a wrong value is not saved at all...
-                    setattr(SETTINGS._settings['application'], val[0], val[1])
+                    setattr(SETTINGS._settings[page], val[0], val[1])
                     self._values_set = new_set
                 except:  # noqa: E722
                     continue
@@ -146,6 +185,8 @@ class PreferencesDialog(QDialog):
 
 class ConfirmDialog(QDialog):
     """Dialog to confirms a user's choice to restore default settings."""
+
+    valueChanged = Signal(bool)
 
     def __init__(
         self,
@@ -184,4 +225,5 @@ class ConfirmDialog(QDialog):
     def on_click_restore(self):
         """Restore defaults and close window."""
         SETTINGS.reset()
+        self.valueChanged.emit(True)
         self.close()

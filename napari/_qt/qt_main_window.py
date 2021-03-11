@@ -413,35 +413,8 @@ class Window:
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
-        import json
 
-        from napari.utils.settings._defaults import (
-            ApplicationSettings,
-            PluginSettings,
-        )
-
-        settings_list = [ApplicationSettings(), PluginSettings()]
         win = PreferencesDialog(parent=self._qt_window)
-        cnt = 0
-        for key, setting in SETTINGS.schemas().items():
-
-            if key == 'plugin':
-                continue
-            schema = json.loads(setting['json_schema'])
-            # need to remove certain properties that will not be displayed on the GUI
-            properties = schema.pop('properties')
-            properties['theme']['type'] = 'string'
-            values = setting['model'].dict()
-            for val in settings_list[cnt].NapariConfig().preferences_exclude:
-                properties.pop(val)
-                values.pop(val)
-
-            cnt += 1
-            schema['properties'] = properties
-            win.add_page(schema, values)
-
-        win._list.setCurrentRow(0)
-
         win.show()
 
     def _add_view_menu(self):

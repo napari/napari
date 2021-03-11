@@ -137,7 +137,7 @@ class PluginSettings(BaseSettings, EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = []
+        preferences_exclude = ['schema_version', 'plugins_call_order']
 
 
 CORE_SETTINGS = [ApplicationSettings, PluginSettings]
