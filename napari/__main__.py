@@ -25,8 +25,9 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from .plugins import plugin_manager
+        from .plugins import discover_dock_widgets, plugin_manager
 
+        discover_dock_widgets()
         errors = plugin_manager.get_errors()
         if errors:
             names = {e.plugin_name for e in errors}
@@ -40,8 +41,9 @@ class PluginInfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
-        from .plugins import plugin_manager
+        from .plugins import discover_dock_widgets, plugin_manager
 
+        discover_dock_widgets()
         print(plugin_manager)
 
         verbose = '-v' in sys.argv or '--verbose' in sys.argv
@@ -146,6 +148,18 @@ def _run():
         help="increase output verbosity",
     )
     parser.add_argument(
+        '-w',
+        '--with',
+        dest='with_',
+        nargs='+',
+        metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
+        help=(
+            "open napari with dock widget from specified plugin name."
+            "(If plugin provides multiple dock widgets, widget name must also "
+            "be provided)"
+        ),
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f'napari version {__version__}',
@@ -234,6 +248,18 @@ def _run():
         runpy.run_path(args.paths[0])
 
     else:
+        if args.with_:
+            from . import plugins
+
+            # if a plugin widget has been requested, this will fail immediately
+            # if the requested plugin/widget is not available.
+            plugins.discover_dock_widgets()
+            pname, *wnames = args.with_
+            if wnames:
+                for wname in wnames:
+                    plugins.get_plugin_widget(pname, wname)
+            else:
+                plugins.get_plugin_widget(pname)
 
         from ._qt.widgets.qt_splash_screen import NapariSplashScreen
 
@@ -246,13 +272,21 @@ def _run():
         # but in the meantime if the garbage collector runs;
         # it will collect it and hang napari at start time.
         # in a way that is machine, os, time (and likely weather dependant).
-        _viewer = view_path(  # noqa: F841
+        viewer = view_path(  # noqa: F841
             args.paths,
             stack=args.stack,
             plugin=args.plugin,
             layer_type=args.layer_type,
             **kwargs,
         )
+
+        if args.with_:
+            pname, *wnames = args.with_
+            if wnames:
+                for wname in wnames:
+                    viewer.window.add_plugin_dock_widget(pname, wname)
+            else:
+                viewer.window.add_plugin_dock_widget(pname)
 
         run(gui_exceptions=True)
 

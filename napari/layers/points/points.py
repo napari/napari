@@ -1,7 +1,7 @@
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -20,7 +20,7 @@ from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
-from ._points_utils import create_box, points_to_squares
+from ._points_utils import create_box, fix_data_points, points_to_squares
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -254,16 +254,10 @@ class Points(Layer):
         blending='translucent',
         visible=True,
     ):
-        if data is None:
-            if ndim is None:
-                ndim = 2
-            data = np.empty((0, ndim))
-        else:
-            data = np.atleast_2d(data)
-            data_ndim = data.shape[1]
-            if ndim is not None and ndim != data_ndim:
-                raise ValueError("Points dimensions must be equal to ndim")
-            ndim = data_ndim
+        if ndim is None and scale is not None:
+            ndim = len(scale)
+
+        data, ndim = fix_data_points(data, ndim)
 
         super().__init__(
             data,
@@ -414,60 +408,66 @@ class Points(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: Optional[np.ndarray]):
+        data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
 
         # Adjust the size array when the number of points has changed
-        if len(data) < cur_npoints:
-            # If there are now fewer points, remove the size and colors of the
-            # extra ones
-            with self.events.set_data.blocker():
-                if len(self._edge.colors) > len(data):
-                    self._edge._remove(
-                        np.arange(len(data), len(self._edge.colors))
-                    )
-                if len(self._face.colors) > len(data):
-                    self._face._remove(
-                        np.arange(len(data), len(self._face.colors))
-                    )
-                self._size = self._size[: len(data)]
+        with self.events.blocker_all():
+            with self._edge.events.blocker_all():
+                with self._face.events.blocker_all():
+                    if len(data) < cur_npoints:
+                        # If there are now fewer points, remove the size and colors of the
+                        # extra ones
+                        if len(self._edge.colors) > len(data):
+                            self._edge._remove(
+                                np.arange(len(data), len(self._edge.colors))
+                            )
+                        if len(self._face.colors) > len(data):
+                            self._face._remove(
+                                np.arange(len(data), len(self._face.colors))
+                            )
+                        self._size = self._size[: len(data)]
 
-                for k in self.properties:
-                    self.properties[k] = self.properties[k][: len(data)]
+                        for k in self.properties:
+                            self.properties[k] = self.properties[k][
+                                : len(data)
+                            ]
 
-        elif len(data) > cur_npoints:
-            # If there are now more points, add the size and colors of the
-            # new ones
-            with self.events.set_data.blocker():
-                adding = len(data) - cur_npoints
-                if len(self._size) > 0:
-                    new_size = copy(self._size[-1])
-                    for i in self._dims_displayed:
-                        new_size[i] = self.current_size
-                else:
-                    # Add the default size, with a value for each dimension
-                    new_size = np.repeat(
-                        self.current_size, self._size.shape[1]
-                    )
-                size = np.repeat([new_size], adding, axis=0)
+                    elif len(data) > cur_npoints:
+                        # If there are now more points, add the size and colors of the
+                        # new ones
+                        adding = len(data) - cur_npoints
+                        if len(self._size) > 0:
+                            new_size = copy(self._size[-1])
+                            for i in self._dims_displayed:
+                                new_size[i] = self.current_size
+                        else:
+                            # Add the default size, with a value for each dimension
+                            new_size = np.repeat(
+                                self.current_size, self._size.shape[1]
+                            )
+                        size = np.repeat([new_size], adding, axis=0)
 
-                for k in self.properties:
-                    new_property = np.repeat(
-                        self.current_properties[k], adding, axis=0
-                    )
-                    self.properties[k] = np.concatenate(
-                        (self.properties[k], new_property), axis=0
-                    )
+                        for k in self.properties:
+                            new_property = np.repeat(
+                                self.current_properties[k], adding, axis=0
+                            )
+                            self.properties[k] = np.concatenate(
+                                (self.properties[k], new_property), axis=0
+                            )
 
-                # add new colors
-                self._edge._add(n_colors=adding)
-                self._face._add(n_colors=adding)
+                        # add new colors
+                        self._edge._add(n_colors=adding)
+                        self._face._add(n_colors=adding)
 
-                self.size = np.concatenate((self._size, size), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
+                        self.size = np.concatenate((self._size, size), axis=0)
+                        self.selected_data = set(
+                            np.arange(cur_npoints, len(data))
+                        )
 
-                self.text.add(self.current_properties, adding)
+                        self.text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data(value=self.data)
