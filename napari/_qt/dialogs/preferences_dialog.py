@@ -87,7 +87,6 @@ class PreferencesDialog(QDialog):
             preferences dialog.
         values : dict
             Dictionary of current values set in preferences.
-
         """
         widget = self.get_preferences_dialog(schema, values)
         self._list.addItem(schema["title"])
