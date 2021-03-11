@@ -1048,10 +1048,6 @@ class Window:
         self._qt_window.raise_()  # for macOS
         self._qt_window.activateWindow()  # for Windows
 
-    def _update_window(self, event=None):
-        SETTINGS.reset()
-        get_app()
-
     def _update_theme(self, event=None):
         """Update widget color theme."""
         if event:

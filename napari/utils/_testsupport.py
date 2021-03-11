@@ -70,6 +70,7 @@ def make_napari_viewer(_strict_qtbot, request):
 
     yield actual_factory
 
+    # Some tests might have the viewer closed, so this call will not be able to access the window.
     try:
         SETTINGS.reset()
     except AttributeError:
