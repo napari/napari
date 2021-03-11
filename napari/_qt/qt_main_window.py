@@ -51,6 +51,8 @@ class _QtMainWindow(QMainWindow):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+
+        self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -182,6 +184,11 @@ class _QtMainWindow(QMainWindow):
         """Save preferences dialog size."""
         self._preferences_dialog_size = event.size()
 
+    def close(self, quit_app=False):
+        """Override to handle closing app or just the window."""
+        self._quit_app = quit_app
+        return super().close()
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
@@ -203,7 +210,9 @@ class _QtMainWindow(QMainWindow):
                 time.sleep(0.1)
                 QApplication.processEvents()
 
-        quit_app()
+        if self._quit_app:
+            quit_app()
+
         event.accept()
 
 
@@ -390,10 +399,16 @@ class Window:
 
         # OS X will rename this to Quit and put it in the app menu.
         # This quits the entire QApplication and all windows that may be open.
-        exitAction = QAction('Exit', self._qt_window)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setMenuRole(QAction.QuitRole)
-        exitAction.triggered.connect(self._qt_window.close)
+        quitAction = QAction('Exit', self._qt_window)
+        quitAction.setShortcut('Ctrl+Q')
+        quitAction.setMenuRole(QAction.QuitRole)
+        quitAction.triggered.connect(
+            lambda: self._qt_window.close(quit_app=True)
+        )
+
+        closeAction = QAction('Close window', self._qt_window)
+        closeAction.setShortcut('Ctrl+W')
+        closeAction.triggered.connect(self._qt_window.close)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
@@ -405,7 +420,8 @@ class Window:
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
-        self.file_menu.addAction(exitAction)
+        self.file_menu.addAction(closeAction)
+        self.file_menu.addAction(quitAction)
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
