@@ -1,6 +1,6 @@
 from typing import Generator, Iterable, List, TypeVar
 
-from ..events import NestableEventedList
+from ..events import NestableEventedList, Selection
 from ..events.containers._nested_list import MaybeNestedIndex
 from .node import Node
 
@@ -8,7 +8,7 @@ NodeType = TypeVar("NodeType", bound=Node)
 
 
 class Group(NestableEventedList[NodeType], Node):
-    """An object that contain other objects in a composite Tree pattern.
+    """An object that can contain other objects in a composite Tree pattern.
 
     The ``Group`` (aka composite) is an element that has sub-elements:
     which may be ``Nodes`` or other ``Groups``.  By inheriting from
@@ -30,14 +30,29 @@ class Group(NestableEventedList[NodeType], Node):
         A name/id for this group, by default "Group"
     """
 
-    def __init__(self, children: Iterable[NodeType] = (), name: str = "Group"):
-        NestableEventedList.__init__(self, children, basetype=Node)
+    def __init__(
+        self,
+        children: Iterable[NodeType] = (),
+        name: str = "Group",
+        basetype=Node,
+    ):
         Node.__init__(self, name=name)
+        NestableEventedList.__init__(self, data=children, basetype=basetype)
+        self._selection: Selection[NodeType] = Selection()
+
+    @property
+    def selection(self) -> Selection[NodeType]:
+        return self._selection
+
+    @selection.setter
+    def selection(self, new_selection) -> None:
+        self._selection.intersection_update(new_selection)
+        self._selection.update(new_selection)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
         if isinstance(key, (int, tuple)):
-            self[key].parent = None
+            self[key].parent = None  # type: ignore
         else:
             for item in self[key]:
                 item.parent = None

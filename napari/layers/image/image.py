@@ -318,7 +318,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             input_data = self.data[-1]
         else:
             input_data = self.data
-        return calc_data_range(input_data)
+        return calc_data_range(input_data, rgb=self.rgb)
 
     @property
     def dtype(self):

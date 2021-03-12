@@ -23,13 +23,14 @@ class NotebookScreenshot:
     --------
     ```
     import napari
+    from napari.utils import nbscreenshot
     from skimage.data import chelsea
 
     viewer = napari.view_image(chelsea(), name='chelsea-the-cat')
-    viewer.nbscreenshot()
+    nbscreenshot(viewer)
 
-    # screenshot just the canvas without the napari viewer framing it
-    viewer.nbscreenshot(with_viewer=False)
+    # screenshot just the canvas with the napari viewer framing it
+    nbscreenshot(viewer, canvas_only=False)
     ```
     """
 

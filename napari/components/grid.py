@@ -54,6 +54,8 @@ class GridCanvas(EventedModel):
             Number of rows and columns in the grid.
         """
         if self.enabled:
+            if nlayers == 0:
+                return (1, 1)
             n_row, n_column = self.shape
             n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
 

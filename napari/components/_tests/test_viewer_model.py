@@ -683,3 +683,24 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
         assert len(em.callbacks) == 1
+
+
+@pytest.mark.parametrize(
+    'field', ['camera', 'cursor', 'dims', 'grid', 'layers', 'scale_bar']
+)
+def test_not_mutable_fields(field):
+    """Test appropriate fields are not mutable."""
+    viewer = ViewerModel()
+
+    # Check attribute lives on the viewer
+    assert hasattr(viewer, field)
+    # Check attribute does not have an event emitter
+    assert not hasattr(viewer.events, field)
+
+    # Check attribute is not settable
+    with pytest.raises(TypeError) as err:
+        setattr(viewer, field, 'test')
+
+    assert 'has allow_mutation set to False and cannot be assigned' in str(
+        err.value
+    )

@@ -1,5 +1,3 @@
-import numpy as np
-
 from .viewer_model import ViewerModel
 
 
@@ -114,10 +112,7 @@ def reset_view(viewer):
 @ViewerModel.bind_key('Control-G')
 def toggle_grid(viewer):
     """Toggle grid mode."""
-    if np.all(viewer.grid_size == (1, 1)):
-        viewer.grid.enabled = True
-    else:
-        viewer.grid.enabled = False
+    viewer.grid.enabled = not viewer.grid.enabled
 
 
 @ViewerModel.bind_key('V')

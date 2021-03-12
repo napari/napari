@@ -34,7 +34,7 @@ fwidget_args = {
 # monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', fwidget_args.values(), ids=fwidget_args.keys())
 def test_function_widget_registration(
-    arg, test_plugin_manager, add_implementation, monkeypatch, request, recwarn
+    arg, test_plugin_manager, monkeypatch, request, recwarn
 ):
     """Test that function widgets get validated and registerd correctly."""
     test_plugin_manager.project_name = 'napari'
@@ -45,11 +45,12 @@ def test_function_widget_registration(
         registered = {}
         m.setattr(plugins, "function_widgets", registered)
 
-        @napari_hook_implementation
-        def napari_experimental_provide_function():
-            return arg
+        class Plugin:
+            @napari_hook_implementation
+            def napari_experimental_provide_function():
+                return arg
 
-        add_implementation(napari_experimental_provide_function)
+        test_plugin_manager.register(Plugin)
         hook.call_historic(
             result_callback=plugins.register_function_widget, with_impl=True
         )
@@ -57,10 +58,10 @@ def test_function_widget_registration(
             assert not registered
             assert len(recwarn) == 1
         else:
-            assert registered[(None, 'func')] == func
+            assert registered['Plugin']['func'] == func
             assert len(recwarn) == 0
             if 'list_func' in request.node.name:
-                assert registered[(None, 'func2')] == func2
+                assert registered['Plugin']['func2'] == func2
 
 
 # test_dock_widget_registration is done in `_qt._tests.test_plugin_widgets`

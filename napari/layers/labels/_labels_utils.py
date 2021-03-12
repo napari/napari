@@ -63,3 +63,43 @@ def sphere_indices(radius, sphere_dims):
     mask_indices = indices[distances_sq <= radius ** 2].astype(int)
 
     return mask_indices
+
+
+def indices_in_shape(idxs, shape):
+    """Return idxs after filtering out indices that are not in given shape.
+
+    Parameters
+    ----------
+    idxs : tuple of array of int, or 2D array of int
+        The input coordinates. These should be in one of two formats:
+
+        - a tuple of 1D arrays, as for NumPy fancy indexing, or
+        - a 2D array of shape (ncoords, ndim), as a list of coordinates
+
+    shape : tuple of int
+        The shape in which all indices must fit.
+
+    Returns
+    -------
+    idxs_filtered : tuple of array of int, or 2D array of int
+        The subset of the input idxs that falls within shape.
+
+    Examples
+    --------
+    >>> idxs0 = (np.array([5, 45, 2]), np.array([6, 5, -5]))
+    >>> indices_in_shape(idxs0, (10, 10))
+    (array([5]), array([6]))
+    >>> idxs1 = np.transpose(idxs0)
+    >>> indices_in_shape(idxs1, (10, 10))
+    array([[5, 6]])
+    """
+    np_index = isinstance(idxs, tuple)
+    if np_index:  # normalize to 2D coords array
+        idxs = np.transpose(idxs)
+    keep_coords = np.logical_and(
+        np.all(idxs >= 0, axis=1), np.all(idxs < np.array(shape), axis=1)
+    )
+    filtered = idxs[keep_coords]
+    if np_index:  # convert back to original format
+        filtered = tuple(filtered.T)
+    return filtered

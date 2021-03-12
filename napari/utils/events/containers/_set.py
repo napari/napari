@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Iterable, Iterator, MutableSet, TypeVar
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
 from napari.utils.events import EmitterGroup
 
 _T = TypeVar("_T")
+
+if TYPE_CHECKING:
+    from pydantic.fields import ModelField
 
 
 class EventedSet(MutableSet[_T]):
@@ -78,7 +81,7 @@ class EventedSet(MutableSet[_T]):
 
     def clear(self) -> None:
         if self._set:
-            values = set(self._set)
+            values = set(self)
             self._set.clear()
             self.events.removed(value=values)
 
@@ -94,22 +97,22 @@ class EventedSet(MutableSet[_T]):
 
     def copy(self) -> EventedSet[_T]:
         """Return a shallow copy of this set."""
-        return EventedSet(self._set)
+        return type(self)(self._set)
 
     def difference(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return set of all elements that are in this set but not other."""
-        return EventedSet(self._set.difference(others))
+        return type(self)(self._set.difference(others))
 
     def difference_update(self, others: Iterable[_T] = ()) -> None:
         """Remove all elements of another set from this set."""
         to_remove = self._set.intersection(others)
         if to_remove:
-            self._set.difference_update(others)
+            self._set.difference_update(to_remove)
             self.events.removed(value=to_remove)
 
     def intersection(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return all elements that are in both sets as a new set."""
-        return EventedSet(self._set.intersection(others))
+        return type(self)(self._set.intersection(others))
 
     def intersection_update(self, others: Iterable[_T] = ()) -> None:
         """Remove all elements of in this set that are not present in other."""
@@ -125,7 +128,7 @@ class EventedSet(MutableSet[_T]):
 
     def symmetric_difference(self, others: Iterable[_T]) -> EventedSet[_T]:
         """Returns set of elements that are in exactly one of the sets"""
-        return EventedSet(self._set.symmetric_difference(others))
+        return type(self)(self._set.symmetric_difference(others))
 
     def symmetric_difference_update(self, others: Iterable[_T]) -> None:
         """Update set to the symmetric difference of itself and another.
@@ -133,15 +136,40 @@ class EventedSet(MutableSet[_T]):
         This will remove any items in this set that are also in `other`, and
         add any items in others that are not present in this set.
         """
-        to_remove = self._set.intersection(others)
         to_add = set(others).difference(self)
-        if to_remove:
-            self._set.difference_update(others)
-            self.events.removed(value=to_remove)
-        if to_add:
-            self._set.update(to_add)
-            self.events.added(value=to_add)
+        self.difference_update(others)
+        self.update(to_add)
 
     def union(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return a set containing the union of sets"""
-        return EventedSet(self._set.union(others))
+        return type(self)(self._set.union(others))
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v, field: ModelField):
+        """Pydantic validator."""
+        from pydantic.utils import sequence_like
+
+        if not sequence_like(v):
+            raise TypeError(f'Value is not a valid sequence: {v}')
+        if not field.sub_fields:
+            return cls(v)
+
+        type_field = field.sub_fields[0]
+        errors = []
+        for i, v_ in enumerate(v):
+            valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            if error:
+                errors.append(error)
+        if errors:
+            from pydantic import ValidationError
+
+            raise ValidationError(errors, cls)  # type: ignore
+        return cls(v)
+
+    def _json_encode(self):
+        """Return an object that can be used by json.dumps."""
+        return list(self)
