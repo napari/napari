@@ -51,6 +51,8 @@ class _QtMainWindow(QMainWindow):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+
+        self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setUnifiedTitleAndToolBarOnMac(True)
@@ -182,11 +184,21 @@ class _QtMainWindow(QMainWindow):
         """Save preferences dialog size."""
         self._preferences_dialog_size = event.size()
 
+    def close(self, quit_app=False):
+        """Override to handle closing app or just the window."""
+        self._quit_app = quit_app
+        return super().close()
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        # Close any floating dockwidgets
+        for dock in self.findChildren(QtViewerDockWidget):
+            if dock.isFloating():
+                dock.setFloating(False)
+
         self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
@@ -197,6 +209,10 @@ class _QtMainWindow(QMainWindow):
             for _i in range(5):
                 time.sleep(0.1)
                 QApplication.processEvents()
+
+        if self._quit_app:
+            quit_app()
+
         event.accept()
 
 
@@ -383,10 +399,16 @@ class Window:
 
         # OS X will rename this to Quit and put it in the app menu.
         # This quits the entire QApplication and all windows that may be open.
-        exitAction = QAction('Exit', self._qt_window)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.setMenuRole(QAction.QuitRole)
-        exitAction.triggered.connect(quit_app)
+        quitAction = QAction('Exit', self._qt_window)
+        quitAction.setShortcut('Ctrl+Q')
+        quitAction.setMenuRole(QAction.QuitRole)
+        quitAction.triggered.connect(
+            lambda: self._qt_window.close(quit_app=True)
+        )
+
+        closeAction = QAction('Close window', self._qt_window)
+        closeAction.setShortcut('Ctrl+W')
+        closeAction.triggered.connect(self._qt_window.close)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
@@ -398,7 +420,8 @@ class Window:
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
-        self.file_menu.addAction(exitAction)
+        self.file_menu.addAction(closeAction)
+        self.file_menu.addAction(quitAction)
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
@@ -975,6 +998,14 @@ class Window:
         RuntimeError
             If the viewer.window has already been closed and deleted.
         """
+        try:
+            self._qt_window.show()
+        except (AttributeError, RuntimeError):
+            raise RuntimeError(
+                "This viewer has already been closed and deleted. "
+                "Please create a new one."
+            )
+
         if SETTINGS.application.first_time:
             SETTINGS.application.first_time = False
             try:
@@ -1000,14 +1031,6 @@ class Window:
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
-
-        try:
-            self._qt_window.show()
-        except (AttributeError, RuntimeError):
-            raise RuntimeError(
-                "This viewer has already been closed and deleted. "
-                "Please create a new one."
-            )
 
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
