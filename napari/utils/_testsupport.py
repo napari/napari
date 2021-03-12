@@ -54,6 +54,9 @@ def make_napari_viewer(_strict_qtbot, request):
     ...     assert len(viewer.layers) == 1
     """
     from napari import Viewer
+    from napari.utils.settings import SETTINGS
+
+    SETTINGS.reset()
 
     viewers: List[Viewer] = []
 
@@ -66,6 +69,12 @@ def make_napari_viewer(_strict_qtbot, request):
         return viewer
 
     yield actual_factory
+
+    # Some tests might have the viewer closed, so this call will not be able to access the window.
+    try:
+        SETTINGS.reset()
+    except AttributeError:
+        pass
 
     for viewer in viewers:
         viewer.close()

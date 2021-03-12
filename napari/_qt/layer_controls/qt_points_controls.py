@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
 
 from ...layers.points._points_constants import Mode, Symbol
 from ...utils.events import disconnect_events
+from ...utils.interactions import KEY_SYMBOLS
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -73,7 +74,13 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.current_edge_color.connect(
             self._on_current_edge_color_change
         )
+        self.layer._edge.events.current_color.connect(
+            self._on_current_edge_color_change
+        )
         self.layer.events.current_face_color.connect(
+            self._on_current_face_color_change
+        )
+        self.layer._face.events.current_color.connect(
             self._on_current_face_color_change
         )
         self.layer.events.editable.connect(self._on_editable_change)
@@ -116,19 +123,23 @@ class QtPointsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
 
         self.select_button = QtModeRadioButton(
-            layer, 'select_points', Mode.SELECT, tooltip='Select points'
+            layer, 'select_points', Mode.SELECT, tooltip='Select points (S)'
         )
         self.addition_button = QtModeRadioButton(
-            layer, 'add_points', Mode.ADD, tooltip='Add points'
+            layer, 'add_points', Mode.ADD, tooltip='Add points (P)'
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'pan_zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom', checked=True
+            layer,
+            'pan_zoom',
+            Mode.PAN_ZOOM,
+            tooltip='Pan/zoom (Z)',
+            checked=True,
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip='Delete selected points',
+            tooltip=f"Delete selected points ({KEY_SYMBOLS['Backspace']})",
         )
 
         text_disp_cb = QCheckBox()

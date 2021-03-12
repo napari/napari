@@ -17,6 +17,7 @@ from typing import Any, Dict, List
 from . import __version__, layers, run, view_path
 from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
+from .utils.settings import SETTINGS
 
 
 class InfoAction(argparse.Action):
@@ -24,6 +25,46 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
+        from .plugins import discover_dock_widgets, plugin_manager
+
+        discover_dock_widgets()
+        errors = plugin_manager.get_errors()
+        if errors:
+            names = {e.plugin_name for e in errors}
+            print("\n‼️  Errors were detected in the following plugins:")
+            print("(Run 'napari --plugin-info -v' for more details)")
+            print("\n".join([f"  - {n}" for n in names]))
+        sys.exit()
+
+
+class PluginInfoAction(argparse.Action):
+    def __call__(self, *args, **kwargs):
+        # prevent unrelated INFO logs when doing "napari --info"
+        logging.basicConfig(level=logging.WARNING)
+        from .plugins import discover_dock_widgets, plugin_manager
+
+        discover_dock_widgets()
+        print(plugin_manager)
+
+        verbose = '-v' in sys.argv or '--verbose' in sys.argv
+        errors = plugin_manager.get_errors()
+        if errors:
+            print("‼️  Some errors occurred:")
+            if not verbose:
+                print("   (use '-v') to show full tracebacks")
+            print("-" * 38)
+
+            for err in errors:
+                print(err.plugin_name)
+                print(f"  error: {err!r}")
+                print(f"  cause: {err.__cause__!r}")
+                if verbose:
+                    print("  traceback:")
+                    import traceback
+                    from textwrap import indent
+
+                    tb = traceback.format_tb(err.__cause__.__traceback__)
+                    print(indent("".join(tb), '   '))
         sys.exit()
 
 
@@ -107,6 +148,18 @@ def _run():
         help="increase output verbosity",
     )
     parser.add_argument(
+        '-w',
+        '--with',
+        dest='with_',
+        nargs='+',
+        metavar=('PLUGIN_NAME', 'WIDGET_NAME'),
+        help=(
+            "open napari with dock widget from specified plugin name."
+            "(If plugin provides multiple dock widgets, widget name must also "
+            "be provided)"
+        ),
+    )
+    parser.add_argument(
         '--version',
         action='version',
         version=f'napari version {__version__}',
@@ -116,6 +169,12 @@ def _run():
         action=InfoAction,
         nargs=0,
         help='show system information and exit',
+    )
+    parser.add_argument(
+        '--plugin-info',
+        action=PluginInfoAction,
+        nargs=0,
+        help='show information about plugins and exit',
     )
     parser.add_argument(
         '--citation',
@@ -141,6 +200,11 @@ def _run():
             f'one of {set(layers.NAMES)}'
         ),
     )
+    parser.add_argument(
+        '--reset',
+        action='store_true',
+        help='reset settings to default values.',
+    )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -158,6 +222,10 @@ def _run():
         format="%(asctime)s %(levelname)s %(message)s",
         datefmt='%H:%M:%S',
     )
+
+    if args.reset:
+        SETTINGS.reset()
+        sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:
         # make sure plugin is only used when files are specified
@@ -180,19 +248,46 @@ def _run():
         runpy.run_path(args.paths[0])
 
     else:
+        if args.with_:
+            from . import plugins
+
+            # if a plugin widget has been requested, this will fail immediately
+            # if the requested plugin/widget is not available.
+            plugins.discover_dock_widgets()
+            pname, *wnames = args.with_
+            if wnames:
+                for wname in wnames:
+                    plugins.get_plugin_widget(pname, wname)
+            else:
+                plugins.get_plugin_widget(pname)
 
         from ._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
 
-        view_path(
+        # viewer is unused but _must_  be kept around.
+        # it will be referenced by the global window only
+        # once napari has finished starting
+        # but in the meantime if the garbage collector runs;
+        # it will collect it and hang napari at start time.
+        # in a way that is machine, os, time (and likely weather dependant).
+        viewer = view_path(  # noqa: F841
             args.paths,
             stack=args.stack,
             plugin=args.plugin,
             layer_type=args.layer_type,
             **kwargs,
         )
+
+        if args.with_:
+            pname, *wnames = args.with_
+            if wnames:
+                for wname in wnames:
+                    viewer.window.add_plugin_dock_widget(pname, wname)
+            else:
+                viewer.window.add_plugin_dock_widget(pname)
+
         run(gui_exceptions=True)
 
 

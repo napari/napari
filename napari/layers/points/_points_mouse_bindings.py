@@ -58,15 +58,13 @@ def select(layer, cursor_event):
         if not modify_selection and len(layer.selected_data) > 0:
             layer._move(layer.selected_data, cursor_event.data_position)
         else:
-            displayed_coordinates = [
+            coord = [
                 cursor_event.data_position[i] for i in layer._dims_displayed
             ]
             layer._is_selecting = True
             if layer._drag_start is None:
-                layer._drag_start = displayed_coordinates
-            layer._drag_box = np.array(
-                [layer._drag_start, displayed_coordinates]
-            )
+                layer._drag_start = coord
+            layer._drag_box = np.array([layer._drag_start, coord])
             layer._set_highlight()
         yield
 

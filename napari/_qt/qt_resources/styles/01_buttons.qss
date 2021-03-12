@@ -27,6 +27,10 @@ QtViewerPushButton[mode="new_shapes"] {
   image: url(":/themes/{{ folder }}/new_shapes.svg");
 }
 
+QtViewerPushButton[mode="warning"] {
+  image: url(":/themes/{{ folder }}/warning.svg");
+}
+
 QtViewerPushButton[mode="new_labels"] {
   image: url(":/themes/{{ folder }}/new_labels.svg");
 }

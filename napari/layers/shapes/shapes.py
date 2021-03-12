@@ -16,17 +16,14 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
 from ..base import Layer
+from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -37,7 +34,6 @@ from ._shapes_constants import (
     ShapeType,
     shape_classes,
 )
-from ._shapes_models import Ellipse, Polygon, Rectangle
 from ._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
@@ -1993,23 +1989,17 @@ class Shapes(Layer):
         self._value = (None, None)
         self._moving_value = (None, None)
         if self._is_creating is True and self._mode == Mode.ADD_PATH:
-            vertices = self._data_view.displayed_vertices[
-                self._data_view.displayed_index == index
-            ]
+            vertices = self._data_view.shapes[index].data
             if len(vertices) <= 2:
                 self._data_view.remove(index)
             else:
-                data_full = self.expand_shape(vertices)
-                self._data_view.edit(index, data_full[:-1])
+                self._data_view.edit(index, vertices[:-1])
         if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
-            vertices = self._data_view.displayed_vertices[
-                self._data_view.displayed_index == index
-            ]
+            vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
             else:
-                data_full = self.expand_shape(vertices)
-                self._data_view.edit(index, data_full[:-1])
+                self._data_view.edit(index, vertices[:-1])
         self._is_creating = False
         self._update_dims()
 
@@ -2131,6 +2121,11 @@ class Shapes(Layer):
     def expand_shape(self, data):
         """Expand shape from 2D to the full data dims.
 
+        expand_shape is deprecated and will be removed in version 0.4.9.
+        It should no longer be used as layers should will soon not know
+        which dimensions are displayed. Instead you should work with
+        full nD shape data as much as possible.
+
         Parameters
         ----------
         data : array
@@ -2141,6 +2136,15 @@ class Shapes(Layer):
         data_full : array
             Full D dimensional data array of the shape.
         """
+        warnings.warn(
+            "expand_shape is deprecated and will be removed in version 0.4.9."
+            " It should no longer be used as layers should will soon not know"
+            " which dimensions are displayed. Instead you should work with"
+            " full nD shape data as much as possible.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+
         if self.ndim == 2:
             data_full = data[:, self._dims_displayed_order]
         else:
@@ -2304,187 +2308,6 @@ class Shapes(Layer):
             )
 
             self.move_to_front()
-
-    def _move(self, coord):
-        """Moves object at given mouse position and set of indices.
-
-        Parameters
-        ----------
-        coord : sequence of two int
-            Position of mouse cursor in image coordinates.
-        """
-        vertex = self._moving_value[1]
-        if self._mode in (
-            [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
-        ):
-            if len(self.selected_data) > 0:
-                self._is_moving = True
-                if vertex is None:
-                    # Check where dragging box from to move whole object
-                    if self._drag_start is None:
-                        center = self._selected_box[Box.CENTER]
-                        self._drag_start = coord - center
-                    center = self._selected_box[Box.CENTER]
-                    shift = coord - center - self._drag_start
-                    for index in self.selected_data:
-                        self._data_view.shift(index, shift)
-                    self._selected_box = self._selected_box + shift
-                    self.refresh()
-                elif vertex < Box.LEN:
-                    # Corner / edge vertex is being dragged so resize object
-                    box = self._selected_box
-                    if self._fixed_vertex is None:
-                        self._fixed_index = (vertex + 4) % Box.LEN
-                        self._fixed_vertex = box[self._fixed_index]
-
-                    size = (
-                        box[(self._fixed_index + 4) % Box.LEN]
-                        - box[self._fixed_index]
-                    )
-                    offset = box[Box.HANDLE] - box[Box.CENTER]
-                    offset = offset / np.linalg.norm(offset)
-                    offset_perp = np.array([offset[1], -offset[0]])
-
-                    fixed = self._fixed_vertex
-                    new = list(coord)
-
-                    if self._fixed_aspect and self._fixed_index % 2 == 0:
-                        if (new - fixed)[0] == 0:
-                            ratio = 1
-                        else:
-                            ratio = abs((new - fixed)[1] / (new - fixed)[0])
-                        if ratio > self._aspect_ratio:
-                            r = self._aspect_ratio / ratio
-                            new[1] = fixed[1] + (new[1] - fixed[1]) * r
-                        else:
-                            r = ratio / self._aspect_ratio
-                            new[0] = fixed[0] + (new[0] - fixed[0]) * r
-
-                    if size @ offset == 0:
-                        dist = 1
-                    else:
-                        dist = ((new - fixed) @ offset) / (size @ offset)
-
-                    if size @ offset_perp == 0:
-                        dist_perp = 1
-                    else:
-                        dist_perp = ((new - fixed) @ offset_perp) / (
-                            size @ offset_perp
-                        )
-
-                    if self._fixed_index % 2 == 0:
-                        # corner selected
-                        scale = np.array([dist_perp, dist])
-                    elif self._fixed_index % 4 == 3:
-                        # top selected
-                        scale = np.array([1, dist])
-                    else:
-                        # side selected
-                        scale = np.array([dist_perp, 1])
-
-                    # prevent box from shrinking below a threshold size
-                    threshold = self._vertex_size * self.scale_factor / 8
-                    scale[abs(scale * size[[1, 0]]) < threshold] = 1
-
-                    # check orientation of box
-                    angle = -np.arctan2(offset[0], -offset[1])
-                    c, s = np.cos(angle), np.sin(angle)
-                    if angle == 0:
-                        for index in self.selected_data:
-                            self._data_view.scale(
-                                index, scale, center=self._fixed_vertex
-                            )
-                        self._scale_box(scale, center=self._fixed_vertex)
-                    else:
-                        rotation = np.array([[c, s], [-s, c]])
-                        scale_mat = np.array([[scale[0], 0], [0, scale[1]]])
-                        inv_rot = np.array([[c, -s], [s, c]])
-                        transform = rotation @ scale_mat @ inv_rot
-                        for index in self.selected_data:
-                            self._data_view.shift(index, -self._fixed_vertex)
-                            self._data_view.transform(index, transform)
-                            self._data_view.shift(index, self._fixed_vertex)
-                        self._transform_box(
-                            transform, center=self._fixed_vertex
-                        )
-                    self.refresh()
-                elif vertex == 8:
-                    # Rotation handle is being dragged so rotate object
-                    handle = self._selected_box[Box.HANDLE]
-                    if self._drag_start is None:
-                        self._fixed_vertex = self._selected_box[Box.CENTER]
-                        offset = handle - self._fixed_vertex
-                        self._drag_start = -np.degrees(
-                            np.arctan2(offset[0], -offset[1])
-                        )
-
-                    new_offset = coord - self._fixed_vertex
-                    new_angle = -np.degrees(
-                        np.arctan2(new_offset[0], -new_offset[1])
-                    )
-                    fixed_offset = handle - self._fixed_vertex
-                    fixed_angle = -np.degrees(
-                        np.arctan2(fixed_offset[0], -fixed_offset[1])
-                    )
-
-                    if np.linalg.norm(new_offset) < 1:
-                        angle = 0
-                    elif self._fixed_aspect:
-                        angle = np.round(new_angle / 45) * 45 - fixed_angle
-                    else:
-                        angle = new_angle - fixed_angle
-
-                    for index in self.selected_data:
-                        self._data_view.rotate(
-                            index, angle, center=self._fixed_vertex
-                        )
-                    self._rotate_box(angle, center=self._fixed_vertex)
-                    self.refresh()
-            else:
-                self._is_selecting = True
-                if self._drag_start is None:
-                    self._drag_start = coord
-                self._drag_box = np.array([self._drag_start, coord])
-                self._set_highlight()
-        elif self._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
-            if len(self.selected_data) > 0:
-                if vertex is not None:
-                    self._is_moving = True
-                    index = self._moving_value[0]
-                    shape_type = type(self._data_view.shapes[index])
-                    if shape_type == Ellipse:
-                        # DIRECT vertex moving of ellipse not implemented
-                        pass
-                    else:
-                        if shape_type == Rectangle:
-                            new_type = Polygon
-                        else:
-                            new_type = None
-                        indices = self._data_view.displayed_index == index
-                        vertices = self._data_view.displayed_vertices[indices]
-                        vertices[vertex] = coord
-                        data_full = self.expand_shape(vertices)
-                        self._data_view.edit(
-                            index, data_full, new_type=new_type
-                        )
-                        shapes = self.selected_data
-                        self._selected_box = self.interaction_box(shapes)
-                        self.refresh()
-            else:
-                self._is_selecting = True
-                if self._drag_start is None:
-                    self._drag_start = coord
-                self._drag_box = np.array([self._drag_start, coord])
-                self._set_highlight()
-        elif self._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
-            if len(self.selected_data) > 0:
-                pass
-            else:
-                self._is_selecting = True
-                if self._drag_start is None:
-                    self._drag_start = coord
-                self._drag_box = np.array([self._drag_start, coord])
-                self._set_highlight()
 
     def to_masks(self, mask_shape=None):
         """Return an array of binary masks, one for each shape.

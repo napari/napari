@@ -4,10 +4,13 @@ that match the plugin naming convention, and retrieving related metadata.
 """
 import json
 import re
+import ssl
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Dict, Generator, List, NamedTuple, Optional
 from urllib import error, parse, request
+
+import certifi
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 
@@ -17,6 +20,9 @@ setup_py_entrypoint = re.compile(
 setup_py_pypi_name = re.compile(
     r"setup\s?\(.*name\s?=\s?['\"]([^'\"]+)['\"]", re.DOTALL
 )
+
+context = ssl.create_default_context(cafile=certifi.where())
+urlopen = partial(request.urlopen, context=context)
 
 
 class ProjectInfo(NamedTuple):
@@ -44,7 +50,7 @@ def get_packages_by_prefix(prefix: str) -> Dict[str, str]:
         {name: url} for all packages at pypi that start with ``prefix``
     """
 
-    with request.urlopen(PYPI_SIMPLE_API_URL) as response:
+    with urlopen(PYPI_SIMPLE_API_URL) as response:
         html = response.read().decode()
 
     return {
@@ -64,12 +70,19 @@ def get_packages_by_classifier(classifier: str) -> List[str]:
     name : str
         name of all packages at pypi that declare ``classifier``
     """
-
-    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}"
-    with request.urlopen(url) as response:
-        html = response.read().decode()
-
-    return re.findall('class="package-snippet__name">(.+)</span>', html)
+    packages = []
+    page = 1
+    pattern = re.compile('class="package-snippet__name">(.+)</span>')
+    url = f"https://pypi.org/search/?c={parse.quote_plus(classifier)}&page="
+    while True:
+        try:
+            with urlopen(f'{url}{page}') as response:
+                html = response.read().decode()
+                packages.extend(pattern.findall(html))
+            page += 1
+        except error.HTTPError:
+            break
+    return packages
 
 
 @lru_cache(maxsize=128)
@@ -86,7 +99,7 @@ def get_package_versions(name: str) -> List[str]:
     tuple
         versions available on pypi
     """
-    with request.urlopen(PYPI_SIMPLE_API_URL + name) as response:
+    with urlopen(PYPI_SIMPLE_API_URL + name) as response:
         html = response.read()
 
     return re.findall(f'>{name}-(.+).tar', html.decode())
@@ -98,7 +111,7 @@ def ensure_published_at_pypi(
 ) -> Optional[ProjectInfo]:
     """Return name if ``name`` is a package in PyPI with dev_status > min."""
     try:
-        with request.urlopen(f'https://pypi.org/pypi/{name}/json') as resp:
+        with urlopen(f'https://pypi.org/pypi/{name}/json') as resp:
             info = json.loads(resp.read().decode()).get("info")
     except error.HTTPError:
         return None

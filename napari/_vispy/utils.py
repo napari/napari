@@ -1,5 +1,14 @@
 from ..components.cursor_event import CursorEvent
-from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
+from ..layers import (
+    Image,
+    Labels,
+    Layer,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from ..utils.config import async_octree
 from ..utils.interactions import ReadOnlyWrapper
 from .vispy_base_layer import VispyBaseLayer
@@ -12,6 +21,7 @@ from .vispy_vectors_layer import VispyVectorsLayer
 
 layer_to_visual = {
     Image: VispyImageLayer,
+    Labels: VispyImageLayer,
     Points: VispyPointsLayer,
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
