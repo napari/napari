@@ -5,6 +5,7 @@ import pydantic
 import pytest
 
 from napari.utils.settings._manager import SettingsManager
+from napari.utils.theme import get_theme, register_theme
 
 
 @pytest.fixture
@@ -113,3 +114,24 @@ def test_settings_model(settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be a valid string
         settings.application.theme = "vaporwave"
+
+
+def test_custom_theme_settings(settings):
+    # See: https://github.com/napari/napari/issues/2340
+    custom_theme_name = "blue"
+
+    # No theme registered yet, this should fail
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        settings.application.theme = custom_theme_name
+
+    blue_theme = get_theme('dark')
+    blue_theme.update(
+        background='rgb(28, 31, 48)',
+        foreground='rgb(45, 52, 71)',
+        primary='rgb(80, 88, 108)',
+        current='rgb(184, 112, 0)',
+    )
+    register_theme(custom_theme_name, custom_theme_name)
+
+    # Theme registered, should pass validation
+    settings.application.theme = custom_theme_name
