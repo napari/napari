@@ -95,7 +95,7 @@ class PreferencesDialog(QDialog):
             text=trans._("Are you sure you want to restore default settings?"),
         )
         widget.valueChanged.connect(self._reset_widgets)
-        widget.show()
+        widget.exec_()
 
     def _reset_widgets(self):
         """Deletes the widgets and rebuilds with defaults."""
