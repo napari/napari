@@ -2,8 +2,9 @@
 """
 import logging
 import math
-from typing import List, Optional
+from typing import Callable, List, Optional
 
+from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_level import OctreeLevel, log_levels
@@ -46,17 +47,27 @@ class Octree:
         The underlying multi-scale data.
     meta : OctreeMetadata
         The base shape and other information.
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting to displaying data.
     """
 
-    def __init__(self, slice_id: int, data, meta: OctreeMetadata):
+    def __init__(
+        self,
+        slice_id: int,
+        data,
+        meta: OctreeMetadata,
+        image_converter: Callable[[ArrayLike], ArrayLike],
+    ):
         self.slice_id = slice_id
         self.data = data
         self.meta = meta
+        self.image_converter = image_converter
 
         _check_downscale_ratio(self.data)  # We expect a ratio of 2.
 
         self.levels = [
-            OctreeLevel(slice_id, data[i], meta, i) for i in range(len(data))
+            OctreeLevel(slice_id, data[i], meta, i, self.image_converter)
+            for i in range(len(data))
         ]
 
         if not self.levels:
@@ -359,6 +370,7 @@ class Octree:
                 new_data,
                 self.meta,
                 num_current + index,
+                self.image_converter,
             )
             for index, new_data in enumerate(new_levels)
         ]

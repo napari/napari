@@ -2,7 +2,7 @@
 """
 import logging
 import math
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import numpy as np
 
@@ -70,6 +70,8 @@ class OctreeLevel:
         The base image shape and other details.
     level_index : int
         Index of this specific level (0 is full resolution).
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting to displaying data.
 
     Attributes
     ----------
@@ -85,9 +87,11 @@ class OctreeLevel:
         data: ArrayLike,
         meta: OctreeMetadata,
         level_index: int,
+        image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.slice_id = slice_id
         self.data = data
+        self.image_converter = image_converter
 
         self.info = OctreeLevelInfo(meta, level_index)
         self._tiles: Dict[tuple, OctreeChunk] = {}
@@ -176,7 +180,7 @@ class OctreeLevel:
         geom = OctreeChunkGeom(pos, size)
 
         # Return the newly created chunk.
-        return OctreeChunk(data, location, geom)
+        return OctreeChunk(data, location, geom, self.image_converter)
 
     def _get_data(self, row: int, col: int) -> ArrayLike:
         """Get the chunk's data at this location.

@@ -1,7 +1,7 @@
 """OctreeChunkGeom, OctreeLocation and OctreeChunk classes.
 """
 import logging
-from typing import List, NamedTuple
+from typing import Callable, List, NamedTuple
 
 import numpy as np
 
@@ -89,6 +89,8 @@ class OctreeChunk:
         The location of this chunk, including the level_index, row, col.
     geom : OctreeChunkGeom
         The position and size of the chunk.
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting to displaying data.
 
     Attributes
     ----------
@@ -99,14 +101,22 @@ class OctreeChunk:
     """
 
     def __init__(
-        self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
+        self,
+        data: ArrayLike,
+        location: OctreeLocation,
+        geom: OctreeChunkGeom,
+        image_converter: Callable[[ArrayLike], ArrayLike],
     ):
-        self._data = data
+        # Convert any data
+        converted_data = image_converter(data)
+
+        self._data = converted_data
         self.location = location
         self.geom = geom
+        self.image_converter = image_converter
 
         self.loading = False  # Are we currently being loaded.
-        self._orig_data = data  # For clear(), this might go away.
+        self._orig_data = converted_data  # For clear(), this might go away.
 
     def __str__(self):
         return f"{self.location}"
@@ -140,7 +150,8 @@ class OctreeChunk:
         assert isinstance(data, np.ndarray)
 
         # Assign and note the loading process has now finished.
-        self._data = data
+        # Do any additional image conversion required.
+        self._data = self.image_converter(data)
         self.loading = False
 
     @property

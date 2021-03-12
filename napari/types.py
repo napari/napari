@@ -70,6 +70,7 @@ else:
 
 
 ImageData = NewType("ImageData", ArrayBase)
+OctreeimageData = NewType("OctreeimageData", ArrayBase)
 LabelsData = NewType("LabelsData", ArrayBase)
 PointsData = NewType("PointsData", ArrayBase)
 ShapesData = NewType("ShapesData", List[ArrayBase])

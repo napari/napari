@@ -5,6 +5,7 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...utils import config
 from ...utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
@@ -19,7 +20,20 @@ from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
 
-class Labels(_ImageBase):
+def _get_image_base_class() -> _ImageBase:
+    """Return Image or OctreeImage based config settings."""
+    if config.async_octree:
+        from ..image.experimental.octree_image import _OctreeImageBase
+
+        return _OctreeImageBase
+
+    return _ImageBase
+
+
+_image_base_class = _get_image_base_class()
+
+
+class Labels(_image_base_class):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID

@@ -53,7 +53,7 @@ class OctreeSlice:
         self._meta = meta
 
         slice_id = id(self)
-        self._octree = Octree(slice_id, data, meta)
+        self._octree = Octree(slice_id, data, meta, image_converter)
 
         self.loader: OctreeLoader = OctreeLoader(self._octree, layer_ref)
 
