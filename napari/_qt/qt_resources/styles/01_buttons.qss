@@ -51,46 +51,20 @@ QtViewerPushButton[mode="home"] {
   image: url(":/themes/{{ folder }}/home.svg");
 }
 
-QtBistateButton[mode="ndisplay_button"]::indicator:unchecked {
+QtStateButton[mode="ndisplay_button"]:checked {
   image: url(":/themes/{{ folder }}/3D.svg");
 }
 
-QtBistateButton[mode="ndisplay_button"]::indicator:checked {
+QtStateButton[mode="ndisplay_button"] {
   image: url(":/themes/{{ folder }}/2D.svg");
 }
 
-QtBistateButton{
-    background-color: {{ foreground }};
-    min-width : 28px;
-    max-width : 28px;
-    min-height : 28px;
-    max-height : 28px;
-    border-radius: 3px;
-    border: 0px;
-    padding: 0px;
-}
-
-QtBistateButton::indicator {
-    background-color: {{ foreground }};
-    min-width : 28px;
-    max-width : 28px;
-    min-height : 28px;
-    max-height : 28px;
-    border-radius: 3px;
-    border: 0px;
-    padding: 0px;
-}
-
-QCheckBox[mode="grid_view_button"]::indicator:unchecked {
+QtStateButton[mode="grid_view_button"]:checked {
   image: url(":/themes/{{ folder }}/square.svg");
 }
 
-QCheckBox[mode="grid_view_button"]::indicator:checked {
+QtStateButton[mode="grid_view_button"] {
   image: url(":/themes/{{ folder }}/grid.svg");
-}
-
-QtBistateButton::indicator:hover {
-  background-color: {{ primary }};
 }
 
 QtModeRadioButton {

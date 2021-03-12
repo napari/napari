@@ -1,5 +1,4 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
 
 from ...utils.interactions import KEY_SYMBOLS
 
@@ -85,9 +84,9 @@ class QtViewerButtons(QFrame):
         Button to transpose dimensions in the napari viewer.
     resetViewButton : QtViewerPushButton
         Button resetting the view of the rendered scene.
-    gridViewButton : QtBistateButton
+    gridViewButton : QtStateButton
         Button to toggle grid view mode of layers on and off.
-    ndisplayButton : QtBistateButton
+    ndisplayButton : QtStateButton
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -122,7 +121,7 @@ class QtViewerButtons(QFrame):
             lambda: self.viewer.reset_view(),
         )
 
-        self.gridViewButton = QtBistateButton(
+        self.gridViewButton = QtStateButton(
             'grid_view_button',
             self.viewer.grid,
             'enabled',
@@ -132,13 +131,13 @@ class QtViewerButtons(QFrame):
             f"Toggle grid view ({KEY_SYMBOLS['Control']}-G)"
         )
 
-        self.ndisplayButton = QtBistateButton(
+        self.ndisplayButton = QtStateButton(
             "ndisplay_button",
             self.viewer.dims,
             'ndisplay',
             self.viewer.dims.events.ndisplay,
-            3,
             2,
+            3,
         )
         self.ndisplayButton.setToolTip(
             f"Toggle number of displayed dimensions ({KEY_SYMBOLS['Control']}-Y)"
@@ -251,24 +250,14 @@ class QtViewerPushButton(QPushButton):
             self.clicked.connect(slot)
 
 
-class QtBistateButton(QCheckBox):
+class QtStateButton(QtViewerPushButton):
     """Button to toggle between two states.
-
-    A checkbox in disguise; that act like a button that will have two icons.
 
     Parameters
     ----------
-    mode : str
+    button_name : str
         A string that will be used in qss to style the button with the
-        QtBistateButton[mode=...] selector
-
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-
-    Attributes
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
+        QtStateButton[mode=...] selector,
     target : object
         object on which you want to change the property when button pressed.
     attribute:
@@ -280,13 +269,20 @@ class QtBistateButton(QCheckBox):
         this button
     offstate: Any
         value to use for ``setattr(object, attribute, offstate)`` when clicking
-        this button
+        this button.
     """
 
     def __init__(
-        self, mode, target, attribute, events, onstate=True, offstate=False
+        self,
+        button_name,
+        target,
+        attribute,
+        events,
+        onstate=True,
+        offstate=False,
     ):
-        super().__init__()
+        super().__init__(target, button_name)
+        self.setCheckable(True)
 
         self._target = target
         self._attribute = attribute
@@ -294,10 +290,10 @@ class QtBistateButton(QCheckBox):
         self._offstate = offstate
         self._events = events
         self._events.connect(self._on_change)
-        self.stateChanged.connect(self.change)
+        self.clicked.connect(self.change)
         self._on_change()
 
-    def change(self, state):
+    def change(self):
         """Toggle between the multiple states of this button.
 
         Parameters
@@ -305,11 +301,10 @@ class QtBistateButton(QCheckBox):
         state : qtpy.QtCore.Qt.CheckState
             State of the checkbox.
         """
-        if state == Qt.Checked:
-            newstate = self._offstate
-        else:
+        if self.isChecked():
             newstate = self._onstate
-
+        else:
+            newstate = self._offstate
         setattr(self._target, self._attribute, newstate)
 
     def _on_change(self, event=None):
@@ -321,6 +316,7 @@ class QtBistateButton(QCheckBox):
             Event from the Qt context.
         """
         with self._events.blocker():
-            self.setChecked(
-                not (getattr(self._target, self._attribute) == self._onstate)
-            )
+            if self.isChecked() != (
+                getattr(self._target, self._attribute) == self._onstate
+            ):
+                self.toggle()
