@@ -9,7 +9,7 @@ from typing import List
 from vispy.scene.visuals import create_visual_node
 
 from ...layers.image.experimental import OctreeChunk
-from ...layers.image.experimental.octree_image import OctreeImage
+from ...layers.image.image import Image
 from ...utils.events import EmitterGroup
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
@@ -63,7 +63,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     Parameters
     ----------
-    layer : OctreeImage
+    layer : Image
         The layer we are drawing.
 
     Attributes
@@ -72,7 +72,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         Optional grid outlining the tiles.
     """
 
-    def __init__(self, layer: OctreeImage):
+    def __init__(self, layer: Image):
 
         # All tiles are stored in a single TileImageVisual.
         visual = TiledImageNode(tile_shape=layer.tile_shape)

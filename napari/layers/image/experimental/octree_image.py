@@ -492,29 +492,3 @@ class _OctreeImageBase(_ImageBase):
             "tile_state": self._intersection.tile_state,
             "tile_config": self._intersection.tile_config,
         }
-
-
-class OctreeImage(_OctreeImageBase):
-    def _get_state(self):
-        """Get dictionary of layer state.
-        Returns
-        -------
-        state : dict
-            Dictionary of layer state.
-        """
-        state = self._get_base_state()
-        state.update(
-            {
-                'rgb': self.rgb,
-                'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
-                'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
-                'rendering': self.rendering,
-                'iso_threshold': self.iso_threshold,
-                'attenuation': self.attenuation,
-                'gamma': self.gamma,
-                'data': self.data,
-            }
-        )
-        return state
