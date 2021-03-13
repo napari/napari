@@ -14,8 +14,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        node = Mesh()
-
+        node = Mesh(shading=layer.shading)
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -23,6 +22,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             self._on_contrast_limits_change
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.shading.connect(self._on_shading_change)
 
         self.reset()
         self._on_data_change()
@@ -72,6 +72,9 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def _on_gamma_change(self, event=None):
         self._on_colormap_change()
+
+    def _on_shading_change(self, event=None):
+        self.node.shading = self.layer.shading
 
     def reset(self, event=None):
         self._reset_base()

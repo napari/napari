@@ -124,6 +124,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         affine=None,
         opacity=1,
         blending='translucent',
+        shading='flat',
         visible=True,
     ):
 
@@ -144,7 +145,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
         )
 
-        self.events.add(interpolation=Event, rendering=Event)
+        self.events.add(interpolation=Event, rendering=Event, shading=Event)
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -168,6 +169,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+        # Shading mode
+        self._shading = shading
 
     def _calc_data_range(self):
         return calc_data_range(self.vertex_values)
@@ -249,6 +253,25 @@ class Surface(IntensityVisualizationMixin, Layer):
                 maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
             extrema = np.vstack([mins, maxs])
         return extrema
+
+    @property
+    def shading(self):
+        return self._shading
+
+    @shading.setter
+    def shading(self, shading_mode):
+        if shading_mode in self._shading_modes:
+            self._shading = shading_mode
+            self.events.shading(value=shading_mode)
+
+    @property
+    def _shading_modes(self):
+        modes = (
+            'none',
+            'flat',
+            'smooth',
+        )
+        return modes
 
     def _get_state(self):
         """Get dictionary of layer state.
