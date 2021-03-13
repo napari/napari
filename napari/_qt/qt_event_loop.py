@@ -53,6 +53,7 @@ def get_app(
     org_name: str = None,
     org_domain: str = None,
     app_id: str = None,
+    ipy_interactive: bool = True,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -78,6 +79,9 @@ def get_app(
         Set organization domain (if creating for the first time).  Will be
         passed to set_app_id (which may also be called independently), by
         default NAPARI_APP_ID
+    ipy_interactive : bool, optional
+        Use the IPython Qt event loop ('%gui qt' magic) if running in an
+        interactive IPython terminal.
 
     Returns
     -------
@@ -142,11 +146,14 @@ def get_app(
             show_console_notification
         )
 
+    _try_enable_ipython_gui('qt' if ipy_interactive else None)
+
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
 
     if not _app_ref:  # running get_app for the first time
+
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
@@ -246,6 +253,18 @@ def _ipython_has_eventloop() -> bool:
         return get_ipython().active_eventloop == 'qt'
     except (ImportError, AttributeError):
         return False
+
+
+def _try_enable_ipython_gui(gui='qt'):
+    """Start %gui qt the eventloop."""
+    try:
+        from IPython import get_ipython
+    except ImportError:
+        return
+
+    shell = get_ipython()
+    if shell and type(shell).__name__ == 'TerminalInteractiveShell':
+        shell.enable_gui(gui)
 
 
 def run(

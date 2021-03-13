@@ -25,6 +25,9 @@ class Viewer(ViewerModel):
         Dimension names. by default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
+    ipy_interactive : bool, optional
+        Use the IPython Qt event loop ('%gui qt' magic) if running in an
+        interactive IPython terminal.  By default, True.
     """
 
     # Create private variable for window
@@ -38,6 +41,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
+        ipy_interactive=True,
     ):
         super().__init__(
             title=title,
@@ -49,7 +53,7 @@ class Viewer(ViewerModel):
         # instantiating the first Viewer.
         from .window import Window
 
-        self._window = Window(self, show=show)
+        self._window = Window(self, show=show, ipy_interactive=ipy_interactive)
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
