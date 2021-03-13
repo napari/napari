@@ -16,12 +16,13 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     Parameters
     ----------
-    data : 3-tuple of array
+    data : 2-tuple or 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (K0, ..., KL, N)
-        array of values used to color vertices where the additional L
-        dimensions are used to color the same mesh with different values.
+        of the mesh triangles. The third optional third element is the
+        (K0, ..., KL, N) array of values used to color vertices where the
+        additional L dimensions are used to color the same mesh with
+        different values. If not provided, it defaults to ones.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -146,10 +147,24 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self.events.add(interpolation=Event, rendering=Event)
 
+        # assign mesh data and establish default behavior
+        if len(data) not in (2, 3):
+            raise ValueError(
+                'Surface data tuple must be 2 or 3, specifying'
+                'verictes, faces, and optionally vertex values,'
+                f'instead got length {len(data)}.'
+            )
+        self._vertices = data[0]
+        self._faces = data[1]
+        if len(data) == 3:
+            self._vertex_values = data[2]
+        else:
+            self._vertex_values = np.ones(len(self._vertices))
+
         # Set contrast_limits and colormaps
         self._gamma = gamma
         if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(data[2])
+            self._contrast_limits_range = calc_data_range(self._vertex_values)
         else:
             self._contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self._contrast_limits_range)
@@ -160,11 +175,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._data_view = np.zeros((0, self._ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
-
-        # assign mesh data and establish default behavior
-        self._vertices = data[0]
-        self._faces = data[1]
-        self._vertex_values = data[2]
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
