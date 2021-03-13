@@ -122,8 +122,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Cursor position in world coordinates.
     ndim : int
         Dimensionality of the layer.
-    selected : bool
-        Flag if layer is selected in the viewer or not.
     thumbnail : (N, M, 4) array
         Array of thumbnail data for the layer.
     status : str
@@ -179,7 +177,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._selected = True
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -260,8 +257,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             blending=Event,
             opacity=Event,
             visible=Event,
-            select=Event,
-            deselect=Event,
             scale=Event,
             translate=Event,
             rotate=Event,
@@ -709,22 +704,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def ndim(self):
         """int: Number of dimensions in the data."""
         return self._ndim
-
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        return self._selected
-
-    @selected.setter
-    def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
 
     @property
     def status(self):
