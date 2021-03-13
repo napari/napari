@@ -14,6 +14,7 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
+from ..utils.settings import SETTINGS
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
@@ -53,7 +54,7 @@ def get_app(
     org_name: str = None,
     org_domain: str = None,
     app_id: str = None,
-    ipy_interactive: bool = True,
+    ipy_interactive: bool = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -107,6 +108,7 @@ def get_app(
 
     app = QApplication.instance()
     if app:
+        set_values.discard("ipy_interactive")
         if set_values:
 
             warn(
@@ -145,8 +147,9 @@ def get_app(
         notification_manager.notification_ready.connect(
             show_console_notification
         )
-
-    _try_enable_ipython_gui('qt' if ipy_interactive else None)
+    if ipy_interactive is None:
+        ipy_interactive = SETTINGS.application.ipy_interactive
+    _try_enable_ipython_gui(ipy_interactive and 'qt')
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -263,7 +266,7 @@ def _try_enable_ipython_gui(gui='qt'):
         return
 
     shell = get_ipython()
-    if shell and type(shell).__name__ == 'TerminalInteractiveShell':
+    if hasattr(shell, 'enable_gui') and shell.active_eventloop != gui:
         shell.enable_gui(gui)
 
 

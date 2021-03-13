@@ -27,7 +27,7 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     ipy_interactive : bool, optional
         Use the IPython Qt event loop ('%gui qt' magic) if running in an
-        interactive IPython terminal.  By default, True.
+        interactive IPython terminal.  By default, uses SETTINGS preferences.
     """
 
     # Create private variable for window
@@ -41,7 +41,7 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-        ipy_interactive=True,
+        ipy_interactive=None,
     ):
         super().__init__(
             title=title,
