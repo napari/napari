@@ -1,5 +1,5 @@
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QModelIndex, Qt
 
 from napari._qt.tree import QtNodeTreeModel, QtNodeTreeView
 from napari.utils.events._tests.test_evented_list import POS_INDICES
@@ -115,7 +115,33 @@ def test_find_nodes():
     assert not qt_tree.findIndex(Node(name='new node')).isValid()
 
 
-def test_view_smoketest(qtbot):
+def test_view(qtbot):
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
     view = QtNodeTreeView(root)
+    qmodel = view.model()
+    qsel = view.selectionModel()
     qtbot.addWidget(view)
+
+    # update selection in python
+    root.selection.update([root[0], root[2, 0]])
+    assert root[2, 0] in root.selection
+
+    # check selection in Qt
+    idx = {qmodel.getItem(i).index_from_root() for i in qsel.selectedIndexes()}
+    assert idx == {(0,), (2, 0)}
+
+    # clear selection in Qt
+    qsel.clearSelection()
+    # check selection in python
+    assert not root.selection
+
+    # update current in python
+    root.selection.current = root[2, 1, 0]
+    # check current in Qt
+    assert root.selection.current == root[2, 1, 0]
+    assert qmodel.getItem(qsel.currentIndex()).index_from_root() == (2, 1, 0)
+
+    # clear current in Qt
+    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
+    # check current in python
+    assert root.selection.current is None
