@@ -262,7 +262,7 @@ class QtStateButton(QtViewerPushButton):
         object on which you want to change the property when button pressed.
     attribute:
         name of attribute on `object` you wish to change.
-    event: EventEmitter
+    events: EventEmitter
         event emitter that will trigger when value is changed
     onstate: Any
         value to use for ``setattr(object, attribute, onstate)`` when clicking
