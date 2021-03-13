@@ -10,8 +10,8 @@ from .qt_tree_model import QtNodeTreeModel
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-    from ...utils.events import Event
-    from ...utils.tree import Group, Node
+    from ....utils.events import Event
+    from ....utils.tree import Group, Node
 
 
 class QtNodeTreeView(QTreeView):

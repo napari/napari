@@ -1,7 +1,7 @@
 import pytest
 from qtpy.QtCore import QModelIndex, Qt
 
-from napari._qt.tree import QtNodeTreeModel, QtNodeTreeView
+from napari._qt.containers import QtNodeTreeModel, QtNodeTreeView
 from napari.utils.events._tests.test_evented_list import POS_INDICES
 from napari.utils.tree import Group, Node
 
