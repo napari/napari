@@ -6,14 +6,13 @@ from typing import List, Optional
 import numpy as np
 
 from ..layers import Layer
-from ..utils.events import EventedList
-from ..utils.events.containers import Selectable
+from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
 
 
-class LayerList(EventedList[Layer], Selectable[Layer]):
+class LayerList(SelectableEventedList[Layer]):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
@@ -28,6 +27,12 @@ class LayerList(EventedList[Layer], Selectable[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+        self.selection.events.connect(self._on_selection)
+
+    def _on_selection(self, event):
+        selected = event.type == 'added'
+        for layer in event.value:
+            layer._on_selection(selected)
 
     def __newlike__(self, data):
         return LayerList(data)
@@ -137,7 +142,7 @@ class LayerList(EventedList[Layer], Selectable[Layer]):
                 selected.append(i)
         # if anything is selected
         if len(selected) > 0:
-            
+
             if selected[-1] == len(self) - 1:
                 if shift is False:
                     self.unselect_all(ignore=self[selected[-1]])
@@ -168,7 +173,7 @@ class LayerList(EventedList[Layer], Selectable[Layer]):
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
         for layer in self:
-            if layer.selected:
+            if layer in self.selection:
                 layer.visible = not layer.visible
 
     @property

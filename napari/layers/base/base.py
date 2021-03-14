@@ -1076,3 +1076,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    def _on_selection(self, selected: bool):
+        pass
