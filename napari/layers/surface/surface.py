@@ -19,7 +19,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     data : 2-tuple or 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third optional third element is the
+        of the mesh triangles. The optional third element is the
         (K0, ..., KL, N) array of values used to color vertices where the
         additional L dimensions are used to color the same mesh with
         different values. If not provided, it defaults to ones.
