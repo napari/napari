@@ -75,7 +75,10 @@ class VispyTiledImageLayer(VispyImageLayer):
     def __init__(self, layer: Image):
 
         # All tiles are stored in a single TileImageVisual.
-        visual = TiledImageNode(tile_shape=layer.tile_shape)
+        visual = TiledImageNode(
+            tile_shape=layer.tile_shape,
+            image_converter=layer._raw_to_displayed,
+        )
 
         # Pass our TiledImageVisual to the base class, it will become our
         # self.node which VispyBaseImage holds.

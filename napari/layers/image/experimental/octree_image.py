@@ -444,7 +444,6 @@ class _OctreeImageBase(_ImageBase):
             slice_data,
             layer_ref,
             meta,
-            self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:
