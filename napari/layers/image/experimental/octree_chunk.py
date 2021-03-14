@@ -99,12 +99,8 @@ class OctreeChunk:
     """
 
     def __init__(
-        self,
-        data: ArrayLike,
-        location: OctreeLocation,
-        geom: OctreeChunkGeom,
+        self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
     ):
-        # Convert any data
 
         self._data = data
         self.location = location
