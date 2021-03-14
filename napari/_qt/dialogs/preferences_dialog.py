@@ -119,10 +119,16 @@ class PreferencesDialog(QDialog):
 
     def on_click_cancel(self):
         """Restores the settings in place when dialog was launched."""
-        self.check_differences(
-            self._values_orig_set_list[self._list.currentIndex().row()],
-            self._values_set_list[self._list.currentIndex().row()],
-        )
+        # Need to check differences for each page.
+        for n in range(self._stack.count()):
+            # Must set the current row so that the proper set list is updated
+            # in check differences.
+            self._list.setCurrentRow(n)
+            self.check_differences(
+                self._values_orig_set_list[n],
+                self._values_set_list[n],
+            )
+        self._list.setCurrentRow(0)
         self.close()
 
     def add_page(self, schema, values):
