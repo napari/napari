@@ -39,6 +39,9 @@ from .._vispy import (  # isort:skip
     create_vispy_visual,
 )
 
+if TYPE_CHECKING:
+    from ..viewer import Viewer
+
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -83,7 +86,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer, welcome=False):
+    def __init__(self, viewer: 'Viewer', welcome=False):
 
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
@@ -340,7 +343,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.active_layer
+        active_layer = self.viewer.layers.selection.current
 
         if self._active_layer in self._key_map_handler.keymap_providers:
             self._key_map_handler.keymap_providers.remove(self._active_layer)
@@ -658,7 +661,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_wheel_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.selection.current
         if layer is not None:
             mouse_wheel_callbacks(layer, event)
 
@@ -677,7 +680,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.selection.current
         if layer is not None:
             mouse_press_callbacks(layer, event)
 
@@ -695,7 +698,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.selection.current
         if layer is not None:
             mouse_move_callbacks(layer, event)
 
@@ -713,7 +716,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.selection.current
         if layer is not None:
             mouse_release_callbacks(layer, event)
 

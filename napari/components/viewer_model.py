@@ -134,6 +134,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
+        self.layers.selection.events.connect(self._update_active_layer)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -272,11 +273,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # iteration goes backwards to find top most selected layer if any
         # if multiple layers are selected sets the active layer to None
 
+        # TODO: remove this in favor of directly setting selection.current.
         active_layer = None
         for layer in self.layers:
-            if active_layer is None and layer.selected:
+            if active_layer is None and layer in self.layers.selection:
                 active_layer = layer
-            elif active_layer is not None and layer.selected:
+            elif active_layer is not None and layer in self.layers.selection:
                 active_layer = None
                 break
 
@@ -284,13 +286,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
-            self.active_layer = None
+            self.layers.selection.current = None
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-            self.active_layer = active_layer
+            self.layers.selection.current = active_layer
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -306,7 +308,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.cursor.position = (0,) * self.dims.ndim
         self.events.layers_change()
-        self._update_active_layer(event)
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -326,11 +327,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
-        if self.active_layer is not None:
-            self.status = self.active_layer.get_status(
+        if self.layers.selection.current is not None:
+            self.status = self.layers.selection.current.get_status(
                 self.cursor.position, world=True
             )
-            self.help = self.active_layer.help
+            self.help = self.layers.selection.current.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
@@ -379,8 +380,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer = event.value
 
         # Connect individual layer events to viewer events
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
@@ -393,7 +392,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.name.connect(self.layers._update_name)
 
         # Make layer selected and unselect all others
-        layer.selected = True
+        self.layers.selection.add(layer)
         self.layers.unselect_all(ignore=layer)
 
         # Update dims and grid model

@@ -49,6 +49,10 @@ class Selection(EventedSet[_T]):
         clsname = type(self).__name__
         return f"{clsname}({repr(self._set)}, current={self.current})"
 
+    def toggle(self, obj: _T):
+        """Toggle selection state of obj."""
+        self.symmetric_difference_update({obj})
+
     @property
     def current(self) -> Optional[_T]:
         return self._current

@@ -462,18 +462,24 @@ def test_selection():
     """Test only last added is selected."""
     viewer = ViewerModel()
     viewer.add_image(np.random.random((10, 10)))
-    assert viewer.layers[0].selected is True
+    assert viewer.layers[0] in viewer.layers.selection
 
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay.selected for lay in viewer.layers] == [False, True]
+    assert [lay in viewer.layers.selection for lay in viewer.layers] == [
+        False,
+        True,
+    ]
 
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay.selected for lay in viewer.layers] == [False] * 2 + [True]
+    assert [lay in viewer.layers.selection for lay in viewer.layers] == [
+        False
+    ] * 2 + [True]
 
-    for lay in viewer.layers:
-        lay.selected = True
+    viewer.layers.selection.update(viewer.layers)
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay.selected for lay in viewer.layers] == [False] * 3 + [True]
+    assert [lay in viewer.layers.selection for lay in viewer.layers] == [
+        False
+    ] * 3 + [True]
 
 
 def test_add_delete_layers():
@@ -496,29 +502,29 @@ def test_active_layer():
     viewer = ViewerModel()
     np.random.seed(0)
     # Check no active layer present
-    assert viewer.active_layer is None
+    assert viewer.layers.selection.current is None
 
     # Check added layer is active
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     assert len(viewer.layers) == 1
-    assert viewer.active_layer == viewer.layers[0]
+    assert viewer.layers.selection.current == viewer.layers[0]
 
     # Check newly added layer is active
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.current == viewer.layers[1]
 
     # Check no active layer after unselecting all
     viewer.layers.unselect_all()
-    assert viewer.active_layer is None
+    assert viewer.layers.selection.current is None
 
     # Check selected layer is active
-    viewer.layers[0].selected = True
-    assert viewer.active_layer == viewer.layers[0]
+    viewer.layers.selection.add(viewer.layers[0])
+    assert viewer.layers.selection.current == viewer.layers[0]
 
     # Check no layer is active if both layers are selected
-    viewer.layers[1].selected = True
-    assert viewer.active_layer is None
+    viewer.layers.selection.add(viewer.layers[1])
+    assert viewer.layers.selection.current is None
 
 
 def test_active_layer_status_update():
@@ -528,10 +534,10 @@ def test_active_layer_status_update():
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.current == viewer.layers[1]
 
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.active_layer.get_status(
+    assert viewer.status == viewer.layers.selection.current.get_status(
         viewer.cursor.position, world=True
     )
 
@@ -546,7 +552,7 @@ def test_active_layer_cursor_size():
 
     viewer.add_labels(np.random.random((10, 10)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.current == viewer.layers[1]
 
     viewer.layers[1].mode = 'paint'
     # Labels layer has a default cursor size of 10

@@ -541,21 +541,8 @@ class Shapes(Layer):
         self.events.data(value=self.data)
         self._set_editable()
 
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        return self._selected
-
-    @selected.setter
-    def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+    def _on_selection(self, selected: bool):
+        if not selected:
             self._finish_drawing()
 
     @property
