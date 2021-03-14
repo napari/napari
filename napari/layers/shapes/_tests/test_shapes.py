@@ -240,11 +240,11 @@ def test_nd_text():
 
     layer._slice_dims(point=[0, 10, 0, 0], ndisplay=2)
     np.testing.assert_equal(layer._indices_view, [0])
-    np.testing.assert_equal(layer._view_text_coords[0], [15, 15])
+    np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
 
     layer._slice_dims(point=[1, 0, 0, 0], ndisplay=3)
     np.testing.assert_equal(layer._indices_view, [1])
-    np.testing.assert_equal(layer._view_text_coords[0], [20, 45, 45])
+    np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
 
 
 def test_rectangles():
