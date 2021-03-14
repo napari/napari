@@ -600,3 +600,70 @@ QtFontSizePreview {
   border: 1px solid {{ foreground }};
   border-radius: 5px;
 }
+
+/*  TreeView Styles */
+
+QtListView {
+  margin-right: 4px;
+  min-width: 200px;
+}
+
+QtListView::item {
+  padding: 4px;
+}
+
+QtLayerList {
+  background: {{ background }};
+}
+
+QtLayerList::item {
+  margin: 2px 0px 2px 32px;
+  background-color: {{ foreground }};
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border: 1px solid {{ foreground }};
+}
+
+QtLayerList::item:hover {
+  border: 1px solid {{ highlight }};
+}
+
+QtLayerList::item::text {
+  font-size: 8px;
+}
+
+
+QtLayerList::item:selected:active{
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
+}
+
+QtLayerList::item:selected:!active {
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
+}
+
+QtLayerList::indicator{
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  left: 0px;
+}
+
+QtLayerList QLineEdit {
+  background-color: {{ darken(current, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+  font-size: 12px;
+}
+
+/* the first one is the "partially checked" state */
+QtLayerList::indicator {
+  image: url(":/themes/{{ folder }}/visibility_off.svg");
+}
+
+QtLayerList::indicator:unchecked {
+  image: url(":/themes/{{ folder }}/2D.svg");
+}
+
+QtLayerList::indicator:checked {
+  image: url(":/themes/{{ folder }}/visibility.svg");
+}
+
