@@ -38,6 +38,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from qtpy import QtCore
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
@@ -51,7 +52,7 @@ if TYPE_CHECKING:
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
 
-class _LayerDelegate(QStyledItemDelegate):
+class LayerDelegate(QStyledItemDelegate):
     def paint(
         self,
         painter: QPainter,
@@ -96,10 +97,33 @@ class _LayerDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ) -> QWidget:
+        """User has double clicked on layer name."""
         # necessary for geometry, otherwise editor takes up full space.
         self._get_option_icon(option, index)
         editor = super().createEditor(parent, option, index)
         editor.setAlignment(Qt.Alignment(index.data(Qt.TextAlignmentRole)))
         editor.setObjectName("editor")
-
         return editor
+
+    def editorEvent(
+        self,
+        event: QtCore.QEvent,
+        model: QtCore.QAbstractItemModel,
+        option: 'QStyleOptionViewItem',
+        index: QtCore.QModelIndex,
+    ) -> bool:
+        # intercepting double click event to enable fast visibility changing
+        if event.type() == event.MouseButtonDblClick:
+            self.initStyleOption(option, index)
+            style = option.widget.style()
+            check_rect = style.subElementRect(
+                style.SE_ItemViewItemCheckIndicator, option, option.widget
+            )
+            if check_rect.contains(event.pos()):
+                cur_state = index.data(Qt.CheckStateRole)
+                if model.flags(index) & Qt.ItemIsUserTristate:
+                    state = Qt.CheckState((cur_state + 1) % 3)
+                else:
+                    state = Qt.Unchecked if cur_state else Qt.Checked
+                return model.setData(index, state, Qt.CheckStateRole)
+        return super().editorEvent(event, model, option, index)

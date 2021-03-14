@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 from ....layers import Layer
 from ...containers.list import QtListView
 from ._layer_model import QtLayerListModel
-from .delegate import _LayerDelegate
+from .delegate import LayerDelegate
 
 if TYPE_CHECKING:
 
@@ -19,7 +19,7 @@ class QtLayerList(QtListView[Layer]):
 
     def __init__(self, root: 'LayerList', parent: QWidget = None):
         super().__init__(root, parent)
-        self.setItemDelegate(_LayerDelegate())
+        self.setItemDelegate(LayerDelegate())
         fnt = QFont()
         fnt.setPixelSize(12)
         self.setFont(fnt)

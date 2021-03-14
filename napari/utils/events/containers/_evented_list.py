@@ -25,7 +25,8 @@ cover this in test_evented_list.py)
 import logging
 from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
-from ..event import EmitterGroup
+from ..event import EmitterGroup, Event
+from ..types import SupportsEvents
 from ._typed import _L, _T, Index, TypedMutableSequence
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,7 @@ class EventedList(TypedMutableSequence[_T]):
         # delete from the end
         for parent, index in sorted(self._delitem_indices(key), reverse=True):
             parent.events.removing(index=index)
+            self._disconnect_child_emitters(parent[index])
             item = parent._list.pop(index)
             parent.events.removed(index=index, value=item)
 
@@ -157,6 +159,28 @@ class EventedList(TypedMutableSequence[_T]):
         self.events.inserting(index=index)
         super().insert(index, value)
         self.events.inserted(index=index, value=value)
+        self._connect_child_emitters(value)
+
+    def _reemit_child_event(self, event: Event):
+        """An item in the list emitted an event.  Re-emit with index"""
+        if not hasattr(event, 'index'):
+            setattr(event, 'index', self.index(event.source))
+        # reemit with this object's EventEmitter of the same type if present
+        # otherwise just emit with the EmitterGroup itself
+        getattr(self.events, event.type, self.events)(event)
+
+    def _disconnect_child_emitters(self, child: _T):
+        """Disconnect all events from the child from the reemitter."""
+        if isinstance(child, SupportsEvents):
+            child.events.disconnect(self._reemit_child_event)
+
+    def _connect_child_emitters(self, child: _T):
+        """Connect all events from the child to be reemitted."""
+        if isinstance(child, SupportsEvents):
+            # make sure the event source has been set on the child
+            if child.events.source is None:
+                child.events.source = child
+            child.events.connect(self._reemit_child_event)
 
     def move(self, src_index: int, dest_index: int = 0) -> bool:
         """Insert object at ``src_index`` before ``dest_index``.
