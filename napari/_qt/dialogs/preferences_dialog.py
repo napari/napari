@@ -72,8 +72,10 @@ class PreferencesDialog(QDialog):
 
         settings_list = [ApplicationSettings(), PluginSettings()]
         cnt = 0
+        # Because there are multiple pages, need to keep a list of values sets.
+        self._values_orig_set_list = []
+        self._values_set_list = []
         for key, setting in SETTINGS.schemas().items():
-
             schema = json.loads(setting['json_schema'])
             # need to remove certain properties that will not be displayed on the GUI
             properties = schema.pop('properties')
@@ -84,7 +86,8 @@ class PreferencesDialog(QDialog):
 
             cnt += 1
             schema['properties'] = properties
-
+            self._values_orig_set_list.append(set(values.items()))
+            self._values_set_list.append(set(values.items()))
             self.add_page(schema, values)
 
     def restore_defaults(self):
@@ -116,7 +119,10 @@ class PreferencesDialog(QDialog):
 
     def on_click_cancel(self):
         """Restores the settings in place when dialog was launched."""
-        self.check_differences(self._values_orig_set, self._values_set)
+        self.check_differences(
+            self._values_orig_set_list[self._list.currentIndex().row()],
+            self._values_set_list[self._list.currentIndex().row()],
+        )
         self.close()
 
     def add_page(self, schema, values):
@@ -145,15 +151,16 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-        self._values_orig_set = set(values.items())
-        self._values_set = set(values.items())
 
         builder = WidgetBuilder()
         form = builder.create_form(schema, {})
         # set state values for widget
         form.widget.state = values
         form.widget.on_changed.connect(
-            lambda d: self.check_differences(set(d.items()), self._values_set)
+            lambda d: self.check_differences(
+                set(d.items()),
+                self._values_set_list[self._list.currentIndex().row()],
+            )
         )
 
         return form
@@ -171,6 +178,7 @@ class PreferencesDialog(QDialog):
         """
 
         page = self._list.currentItem().text().split(" ")[0].lower()
+        # values_set = self.new_values
         different_values = list(new_set - values_set)
 
         if len(different_values) > 0:
@@ -178,7 +186,9 @@ class PreferencesDialog(QDialog):
             for val in different_values:
                 try:
                     setattr(SETTINGS._settings[page], val[0], val[1])
-                    self._values_set = new_set
+                    self._values_set_list[
+                        self._list.currentIndex().row()
+                    ] = new_set
                 except:  # noqa: E722
                     continue
 
