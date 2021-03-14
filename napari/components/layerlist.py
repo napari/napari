@@ -136,41 +136,41 @@ class LayerList(SelectableEventedList[Layer]):
         #     elif first_to_delete > 0:
         #         self[first_to_delete - 1].selected = True
 
-    # def select_next(self, shift=False):
-    #     """Selects next item from list."""
-    #     selected = []
-    #     for i in range(len(self)):
-    #         if self[i].selected:
-    #             selected.append(i)
-    #     # if anything is selected
-    #     if len(selected) > 0:
+    def select_next(self, shift=False):
+        """Selects next item from list."""
+        selected = []
+        for i in range(len(self)):
+            if self[i].selected:
+                selected.append(i)
+        # if anything is selected
+        if len(selected) > 0:
 
-    #         if selected[-1] == len(self) - 1:
-    #             if shift is False:
-    #                 self.unselect_all(ignore=self[selected[-1]])
-    #         elif selected[-1] < len(self) - 1:
-    #             if shift is False:
-    #                 self.unselect_all(ignore=self[selected[-1] + 1])
-    #             self[selected[-1] + 1].selected = True
-    #     elif len(self) > 0:
-    #         self[-1].selected = True
+            if selected[-1] == len(self) - 1:
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[-1]])
+            elif selected[-1] < len(self) - 1:
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[-1] + 1])
+                self[selected[-1] + 1].selected = True
+        elif len(self) > 0:
+            self[-1].selected = True
 
-    # def select_previous(self, shift=False):
-    #     """Selects previous item from list."""
-    #     selected = []
-    #     for i in range(len(self)):
-    #         if self[i].selected:
-    #             selected.append(i)
-    #     if len(selected) > 0:
-    #         if selected[0] == 0:
-    #             if shift is False:
-    #                 self.unselect_all(ignore=self[0])
-    #         elif selected[0] > 0:
-    #             if shift is False:
-    #                 self.unselect_all(ignore=self[selected[0] - 1])
-    #             self[selected[0] - 1].selected = True
-    #     elif len(self) > 0:
-    #         self[0].selected = True
+    def select_previous(self, shift=False):
+        """Selects previous item from list."""
+        selected = []
+        for i in range(len(self)):
+            if self[i].selected:
+                selected.append(i)
+        if len(selected) > 0:
+            if selected[0] == 0:
+                if shift is False:
+                    self.unselect_all(ignore=self[0])
+            elif selected[0] > 0:
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[0] - 1])
+                self[selected[0] - 1].selected = True
+        elif len(self) > 0:
+            self[0].selected = True
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""

@@ -22,13 +22,13 @@ from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 
-# from .widgets.qt_layerlist import QtLayerList
-from .containers.layers.qt_layer_list import QtLayerList
+# from .containers.layers.qt_layer_list import QtLayerList as NewQLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
