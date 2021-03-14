@@ -115,7 +115,7 @@ def test_find_nodes():
     assert not qt_tree.findIndex(Node(name='new node')).isValid()
 
 
-def test_view(qtbot):
+def test_node_tree_view(qtbot):
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
     view = QtNodeTreeView(root)
     qmodel = view.model()

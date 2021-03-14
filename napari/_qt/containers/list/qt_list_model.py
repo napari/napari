@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import Any, Generic, Iterable, List, Optional, Tuple, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar
 
 from qtpy.QtCore import QAbstractListModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
@@ -10,7 +10,7 @@ from ....utils.events.containers import SelectableEventedList
 
 logger = logging.getLogger(__name__)
 ItemType = TypeVar("ItemType")
-ListItemMIMEType = "application/x-list-item"
+ListIndexMIMEType = "application/x-list-index"
 
 
 class QtListModel(QAbstractListModel, Generic[ItemType]):
@@ -80,12 +80,8 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
         if index.isValid():
             return self._list[index.row()]
 
-    def mimeData(self, indexes: Iterable[QModelIndex]) -> 'QMimeData':
-        print("mimeData")
-        return super().mimeData(indexes)
-
     def mimeTypes(self) -> List[str]:
-        return [ListItemMIMEType, "text/plain"]
+        return [ListIndexMIMEType, "text/plain"]
 
     def dropMimeData(
         self,
@@ -95,27 +91,45 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
         col: int,
         parent: QModelIndex,
     ) -> bool:
-        """Handles ``data`` from a drag and drop operation that ended with ``action``.
+        """Handles `data` from a drag and drop operation ending with `action`.
 
-        The specified row, column and parent indicate the location of an item in the model
-        where the operation ended. It is the responsibility of the model to complete the
-        action at the correct location.
+        The specified row, column and parent indicate the location of an item
+        in the model where the operation ended. It is the responsibility of the
+        model to complete the action at the correct location.
 
         Returns
         -------
-        bool
-            ``True`` if the ``data`` and ``action`` were handled by the model;
+        bool ``True`` if the ``data`` and ``action`` were handled by the model;
             otherwise returns ``False``.
         """
-        print("dropMimeData")
         if not data or action != Qt.MoveAction:
             return False
         if not data.hasFormat(self.mimeTypes()[0]):
             return False
 
+        if isinstance(data, ItemMimeData):
+            moving_indices = data.indices
+
+            logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
+
+            if len(moving_indices) == 1:
+                self._list.move(moving_indices[0], destRow)
+            else:
+                self._list.move_multiple(moving_indices, destRow)
+            return True
+        return False
+
+    def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
+        """Return an object containing serialized data from `indices`."""
+        # If the list of indexes is empty, or there are no supported MIME types,
+        # nullptr is returned rather than a serialized empty list.
+        if not indices:
+            return 0
+        items, indices = zip(*[(self.getItem(i), i.row()) for i in indices])
+        return ItemMimeData(items, indices)
+
     def supportedDropActions(self) -> Qt.DropActions:
         """Returns the drop actions supported by this model."""
-        print("supportedDropActions")
         return Qt.MoveAction
 
     # ##########################
@@ -169,14 +183,10 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
 
         See Qt documentation: https://doc.qt.io/qt-5/qabstractitemmodel.html#beginMoveRows
         """
-        src_par, src_idx = self._split_nested_index(event.index)
-        dest_par, dest_idx = self._split_nested_index(event.new_index)
+        src_par, src_idx = QModelIndex(), event.index
+        dest_par, dest_idx = QModelIndex(), event.new_index
 
-        logger.debug(
-            f"beginMoveRows({self.getItem(src_par)}, {src_idx}, "
-            f"{self.getItem(dest_par)}, {dest_idx})"
-        )
-
+        logger.debug(f"beginMoveRows, {src_idx}->{dest_idx})")
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
     def _on_end_move(self, e):
@@ -197,18 +207,13 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
 
 
 class ItemMimeData(QMimeData):
-    def __init__(self, nodes: Optional[List[ItemType]] = None):
+    def __init__(self, items, indices):
         super().__init__()
-        self.nodes: List[ItemType] = nodes or []
-        if nodes:
-            self.setData(ListItemMIMEType, pickle.dumps(self.node_indices()))
-            self.setText(" ".join([node._node_name() for node in nodes]))
+        self.items = items
+        self.indices = indices
+        if items:
+            self.setData(ListIndexMIMEType, pickle.dumps(self.indices))
+            self.setText(" ".join([str(item) for item in items]))
 
     def formats(self) -> List[str]:
-        return [ListItemMIMEType, "text/plain"]
-
-    def node_indices(self) -> List[Tuple[int, ...]]:
-        return [node.index_from_root() for node in self.nodes]
-
-    def node_names(self) -> List[str]:
-        return [node._node_name() for node in self.nodes]
+        return [ListIndexMIMEType, "text/plain"]

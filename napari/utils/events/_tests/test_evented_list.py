@@ -152,6 +152,7 @@ def test_move(test_list):
         ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
         ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
         ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
+        ([1, 3, 5, 7], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # same as above
         ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
         ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
         ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
@@ -173,8 +174,8 @@ def test_move_multiple(sources, dest, expectation):
 
     el.move_multiple(sources, dest)
     assert el == expectation
-    el.events.moving.assert_called_once()
-    el.events.moved.assert_called_once()
+    el.events.moving.assert_called()
+    el.events.moved.assert_called()
     el.events.reordered.assert_called_with(value=expectation)
 
 
@@ -191,12 +192,8 @@ def test_move_multiple_mimics_slice_reorder():
     data[:] = [data[i] for i in new_order]
     assert el == new_order
     assert el == data
-    el.events.moving.assert_called_with(index=new_order, new_index=0)
-    el.events.moved.assert_called_with(
-        index=new_order,
-        new_index=0,
-        value=new_order,
-    )
+    el.events.moving.assert_called()
+    el.events.moved.assert_called()
     el.events.reordered.assert_called_with(value=new_order)
 
     # move_multiple also works omitting the insertion index

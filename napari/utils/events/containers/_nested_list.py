@@ -264,7 +264,7 @@ class NestableEventedList(EventedList[_T]):
                 dest_index += len(destination_group) + 1
         return dest_index
 
-    def _nested_move_plan(
+    def _move_plan(
         self, sources: Iterable[NestedIndex], dest_index: NestedIndex
     ) -> Generator[tuple[NestedIndex, NestedIndex], None, None]:
         """Prepared indices for a complicated nested multi-move.
@@ -280,7 +280,7 @@ class NestableEventedList(EventedList[_T]):
 
         Parameters
         ----------
-        sources : Iterable[tuple[int, ...ƒ]]
+        sources : Iterable[tuple[int, ...]]
             An iterable of tuple[int] that should be moved to ``dest_index``.
             (Note: currently, the order of ``sources`` will NOT be maintained.)
         dest_index : Tuple[int]
@@ -349,35 +349,6 @@ class NestableEventedList(EventedList[_T]):
             yield src_par + (src_i,), dest_par + (dest_i - ddec,)
             popped[src_par].append(src_i)
             dumped.append(dest_i - ddec)
-
-    def move_multiple(
-        self, sources: Iterable[NestedIndex], dest_index: NestedIndex
-    ) -> int:
-        """Move a batch of nested indices, to a single destination.
-
-        Parameters
-        ----------
-        sources : Iterable[tuple[int, ...ƒ]]
-            An iterable of tuple[int] that should be moved to ``dest_index``.
-            (Note: currently, the order of ``sources`` will NOT be maintained.)
-        dest_index : Tuple[int]
-            The destination for sources.
-        """
-        logger.debug(
-            f"move_multiple(sources={sources}, dest_index={dest_index})"
-        )
-
-        # calling list here makes sure that there are no index errors up front
-        move_plan = list(self._nested_move_plan(sources, dest_index))
-
-        # more complicated when moving multiple objects.
-        # don't assume index adjacency ... so move one at a time
-        with self.events.reordered.blocker():
-            for src, dest in move_plan:
-                self.move(src, dest)
-
-        self.events.reordered(value=self)
-        return len(move_plan)
 
     def move(
         self,

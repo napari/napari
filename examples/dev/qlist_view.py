@@ -30,7 +30,7 @@ ResetDim = "\033[22m"
 red = "\033[0;31m"
 green = "\033[0;32m"
 colorlog_format = f'{green}%(levelname)6s:{end} {Dim}%(name)43s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
-# logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
+logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
 
 get_app()
 
@@ -43,9 +43,7 @@ class T:
         return self.name
 
 
-root: SelectableEventedList[T] = SelectableEventedList(
-    [T('a'), T('b'), T('c')]
-)
+root: SelectableEventedList[T] = SelectableEventedList(map(T, 'abcdef'))
 # pretty repr makes nested tree structure more interpretable
 print(root)
 root.events.reordered.connect(lambda e: print(e.value))

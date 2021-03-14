@@ -23,7 +23,7 @@ cover this in test_evented_list.py)
 """
 
 import logging
-from typing import Callable, Dict, Iterable, Sequence, Tuple, Type, Union
+from typing import Callable, Dict, Iterable, List, Sequence, Tuple, Type, Union
 
 from ..event import EmitterGroup
 from ._typed import _L, _T, Index, TypedMutableSequence
@@ -166,18 +166,20 @@ class EventedList(TypedMutableSequence[_T]):
         """
         if dest_index < 0:
             dest_index += len(self) + 1
+        if dest_index in (src_index, src_index + 1):
+            return False
+
+        self.events.moving(index=src_index, new_index=dest_index)
+        item = self._list.pop(src_index)
         if dest_index > src_index:
             dest_index -= 1
-
-        self.events.moving(index=src_index, dest_index=dest_index)
-        item = self._list.pop(src_index)
         self._list.insert(dest_index, item)
-        self.events.moved(index=src_index, dest_index=dest_index, value=item)
+        self.events.moved(index=src_index, new_index=dest_index, value=item)
         self.events.reordered(value=self)
         return True
 
     def move_multiple(
-        self, sources: Sequence[Index], dest_index: int = 0
+        self, sources: Iterable[Index], dest_index: int = 0
     ) -> int:
         """Move a batch of indices, to a single destination.
 
@@ -206,10 +208,46 @@ class EventedList(TypedMutableSequence[_T]):
             If the destination index is a slice, or any of the source indices
             are not ``int`` or ``slice``.
         """
+        logger.debug(
+            f"move_multiple(sources={sources}, dest_index={dest_index})"
+        )
+
+        # calling list here makes sure that there are no index errors up front
+        move_plan = list(self._move_plan(sources, dest_index))
+
+        # don't assume index adjacency ... so move one at a time
+        # this *could* be simplified with an intermediate list ... but this
+        # provides any listening objects to note each moving object
+        with self.events.reordered.blocker():
+            for src, dest in move_plan:
+                self.move(src, dest)
+
+        self.events.reordered(value=self)
+        return len(move_plan)
+
+    def _move_plan(self, sources: Iterable[Index], dest_index: int):
+        """Prepared indices for a multi-move.
+
+        Given a set of ``sources`` from anywhere in the list,
+        and a single ``dest_index``, this function computes and yields
+        ``(from_index, to_index)`` tuples that can be used sequentially in
+        single move operations.  It keeps track of what has moved where and
+        updates the source and destination indices to reflect the model at each
+        point in the process.
+
+        This is useful for a drag-drop operation with a QtModel/View.
+
+        Parameters
+        ----------
+        sources : Iterable[tuple[int, ...]]
+            An iterable of tuple[int] that should be moved to ``dest_index``.
+        dest_index : Tuple[int]
+            The destination for sources.
+        """
         if isinstance(dest_index, slice):
             raise TypeError("Destination index may not be a slice")
 
-        to_move = []
+        to_move: List[int] = []
         for idx in sources:
             if isinstance(idx, slice):
                 to_move.extend(list(range(*idx.indices(len(self)))))
@@ -218,27 +256,38 @@ class EventedList(TypedMutableSequence[_T]):
             else:
                 raise TypeError("Can only move integer or slice indices")
 
-        # remove duplicates while maintaing order, python 3.7+
         to_move = list(dict.fromkeys(to_move))
 
         if dest_index < 0:
             dest_index += len(self) + 1
-        dest_index -= len([i for i in to_move if i < dest_index])
 
-        self.events.moving(index=to_move, new_index=dest_index)
-        items = [self[i] for i in to_move]
-        for i in sorted(to_move, reverse=True):
-            self._list.pop(i)
-        for item in items[::-1]:
-            self._list.insert(dest_index, item)
-        self.events.moved(index=to_move, new_index=dest_index, value=items)
-        self.events.reordered(value=self)
-        return len(to_move)
+        d_inc = 0
+        popped: List[int] = []
+        for i, src in enumerate(to_move):
+            if src != dest_index:
+                # we need to decrement the src_i by 1 for each time we have
+                # previously pulled items out from in front of the src_i
+                src -= sum(map(_le(src), popped))
+                # if source is past the insertion point, increment for each
+                # previous insertion
+                if src >= dest_index:
+                    src += i
+                yield src, dest_index + d_inc
+
+            popped.append(src)
+            # if we moved up, move back the destination index
+            if dest_index <= src:
+                d_inc += 1
 
     def reverse(self) -> None:
         """Reverse list *IN PLACE*."""
         # reimplementing this method to emit a change event
-        # If this method were removed, .reverse() would still be availalbe,
+        # If this method were removed, .reverse() would still be available,
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
+
+
+def _le(y):
+    # create a new function that accepts a single value x, returns x < y
+    return lambda x: x <= y
