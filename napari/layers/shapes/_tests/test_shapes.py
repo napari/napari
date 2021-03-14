@@ -141,6 +141,11 @@ def test_data_setter_with_properties():
     layer.data = new_data_2
     assert len(layer.properties['shape_type']) == n_new_shapes_2
 
+    # test setting to data with same shapes
+    new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    layer.data = new_data_3
+    assert len(layer.properties['shape_type']) == n_new_shapes_2
+
 
 def test_properties_dataframe():
     """Test if properties can be provided as a DataFrame"""
@@ -266,6 +271,11 @@ def test_data_setter_with_text(properties):
     n_new_shapes_2 = 6
     new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
     layer.data = new_data_2
+    assert len(layer.text.values) == n_new_shapes_2
+
+    # test setting to data with same shapes
+    new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    layer.data = new_data_3
     assert len(layer.text.values) == n_new_shapes_2
 
 
