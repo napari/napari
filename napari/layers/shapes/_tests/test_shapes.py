@@ -256,11 +256,6 @@ def test_data_setter_with_text(properties):
     data = 20 * np.random.random(shape)
     layer = Shapes(data, properties=copy(properties), text='shape_type')
 
-    # add properties
-    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer.properties = properties
-    np.testing.assert_equal(layer.properties, properties)
-
     # test setting to data with fewer shapes
     n_new_shapes = 4
     new_data = 20 * np.random.random((n_new_shapes, 4, 2))
