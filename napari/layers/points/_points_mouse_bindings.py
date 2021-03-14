@@ -82,19 +82,24 @@ def select(layer, event):
     layer._set_highlight(force=True)
 
 
+DRAG_THRESHOLD = 5
+
+
 def add(layer, event):
     """Add a new point at the clicked position."""
     # on press
-    dragged = False
     yield
 
     # on move
     while event.type == 'mouse_move':
-        dragged = True
         yield
 
     # on release
-    if not dragged:
+    d = 0
+    trail = event.trail()
+    if trail is not None:
+        d = np.linalg.norm(trail[0] - trail[-1])
+    if d < DRAG_THRESHOLD:
         layer.add(layer.coordinates)
 
 
