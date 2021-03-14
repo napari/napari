@@ -253,6 +253,26 @@ def test_refresh_text():
     np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
 
 
+def test_nd_text():
+    """Test slicing of text coords with nD shapes"""
+    shapes_data = [
+        [[0, 10, 10, 10], [0, 10, 20, 20], [0, 10, 10, 20], [0, 10, 20, 10]],
+        [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
+    ]
+    properties = {'shape_type': ['A', 'B']}
+    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
+    assert layer.ndim == 4
+
+    layer._slice_dims(point=[0, 10, 0, 0], ndisplay=2)
+    np.testing.assert_equal(layer._indices_view, [0])
+    np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
+
+    layer._slice_dims(point=[1, 0, 0, 0], ndisplay=3)
+    np.testing.assert_equal(layer._indices_view, [1])
+    np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
+
+
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_data_setter_with_text(properties):
     """Test layer data on a layer with text via the data setter"""

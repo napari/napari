@@ -1290,8 +1290,19 @@ class Shapes(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
+        # get the coordinates of the vertices for the shapes in view
+        in_view_shapes_coords = [
+            self._data_view.data[i] for i in self._indices_view
+        ]
+
+        # get the coordinates for the dimensions being displayed
+        sliced_in_view_coords = [
+            position[:, self._dims_displayed]
+            for position in in_view_shapes_coords
+        ]
+
         return self.text.compute_text_coords(
-            self._data_view.data, self._ndisplay
+            sliced_in_view_coords, self._ndisplay
         )
 
     @property
