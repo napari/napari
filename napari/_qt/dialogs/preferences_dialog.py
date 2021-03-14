@@ -178,7 +178,6 @@ class PreferencesDialog(QDialog):
         """
 
         page = self._list.currentItem().text().split(" ")[0].lower()
-        # values_set = self.new_values
         different_values = list(new_set - values_set)
 
         if len(different_values) > 0:
