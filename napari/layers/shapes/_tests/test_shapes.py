@@ -122,7 +122,7 @@ def test_adding_properties(attribute):
 
 
 def test_data_setter_with_properties():
-    """Test adding properties to an existing layer"""
+    """Test layer data on a layer with properties via the data setter"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -255,7 +255,7 @@ def test_refresh_text():
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_data_setter_with_text(properties):
-    """Test adding properties to an existing layer"""
+    """Test layer data on a layer with text via the data setter"""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
