@@ -7,6 +7,7 @@ from ...utils.events import Event
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
+from ._surface_constants import Shading
 
 
 # Mixin must come before Layer
@@ -256,22 +257,12 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def shading(self):
-        return self._shading
+        return str(self._shading)
 
     @shading.setter
-    def shading(self, shading_mode):
-        if shading_mode in self._shading_modes:
-            self._shading = shading_mode
-            self.events.shading(value=shading_mode)
-
-    @property
-    def _shading_modes(self):
-        modes = (
-            'none',
-            'flat',
-            'smooth',
-        )
-        return modes
+    def shading(self, shading):
+        self._shading = Shading(shading)
+        self.events.shading(value=self._shading)
 
     def _get_state(self):
         """Get dictionary of layer state.
