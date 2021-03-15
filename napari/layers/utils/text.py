@@ -115,6 +115,10 @@ class TextManager:
                 self._text_format_string = text
                 self._mode = text_mode
                 self._values = formatted_text
+            else:
+                self._mode = TextMode.NONE
+                self._text_format_string = ''
+                self._values = np.empty(0)
 
         else:
             self._set_text(text=text, n_text=n_text, properties=properties)
@@ -125,7 +129,7 @@ class TextManager:
         if len(properties) == 0 or n_text == 0 or text is None:
             self._mode = TextMode.NONE
             self._text_format_string = ''
-            self._values = None
+            self._values = np.empty(0)
         else:
             formatted_text, text_mode = format_text_properties(
                 text, n_text, properties
@@ -303,7 +307,7 @@ class TextManager:
         anchor_y : str
             THe vispy text anchor for the y axis
         """
-        if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+        if len(self.values) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self._anchor
             )
