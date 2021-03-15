@@ -440,13 +440,10 @@ class Vectors(Layer):
                     self._edge_color_property
                 ]
                 if update_color_mapping:
-                    self.edge_color_cycle_map = {
-                        k: c
-                        for k, c in zip(
+                    self.edge_color_cycle_map = dict(zip(
                             np.unique(edge_color_properties),
                             self._edge_color_cycle,
-                        )
-                    }
+                        ))
                 else:
                     # add properties if they are not in the colormap
                     # and update_color_mapping==False
