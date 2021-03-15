@@ -127,7 +127,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         """Callback when data changes."""
         # Remove all drawn tiles - TODO only remove tiles where data has changed
         self.node.prune_tiles({})
-        # Draw all the possible tiles
+        # Draw all the requested tiles in this field of view
         while self._update_view() > 0:
             pass
 
