@@ -96,13 +96,28 @@ class TextManager:
         self._blending = self._check_blending_mode(blending)
         self._visible = visible
 
-        self._set_text(text, n_text, properties)
+        self._initialize_text(text, n_text, properties)
         self.events.unblock_all()
 
     @property
     def values(self):
         """np.ndarray: the text values to be displayed"""
         return self._values
+
+    def _initialize_text(
+        self, text: Union[None, str], n_text: int, properties: dict = {}
+    ):
+        if n_text == 0:
+            if text is not None:
+                formatted_text, text_mode = format_text_properties(
+                    text, n_text, properties
+                )
+                self._text_format_string = text
+                self._mode = text_mode
+                self._values = formatted_text
+
+        else:
+            self._set_text(text=text, n_text=n_text, properties=properties)
 
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
