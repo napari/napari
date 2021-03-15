@@ -80,18 +80,26 @@ class TileGrid:
         line.parent = self.parent
         return line
 
-    def update_grid(self, chunks: List[OctreeChunk]) -> None:
-        """Update grid for this set of chunks.
+    def update_grid(self, chunks: List[OctreeChunk], base_shape=None) -> None:
+        """Update grid for this set of chunks and the whole boundary.
 
         Parameters
         ----------
         chunks : List[ImageChunks]
             Add a grid that outlines these chunks.
+        base_shape : List[int], optional
+            Height and width of the full resolution level.
         """
         verts = np.zeros((0, 2), dtype=np.float32)
         for octree_chunk in chunks:
             chunk_verts = _chunk_outline(octree_chunk)
             verts = np.vstack([verts, chunk_verts])
+
+        # Add in the base shape outline if provided
+        if base_shape is not None:
+            outline = _OUTLINE.copy()  # Copy and modify in place.
+            outline[:, :2] *= base_shape[::-1]
+            verts = np.vstack([verts, outline])
 
         self.line.set_data(verts)
 
