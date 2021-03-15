@@ -80,6 +80,9 @@ class VispyTiledImageLayer(VispyImageLayer):
             image_converter=layer._raw_to_displayed,
         )
 
+        # An optional grid that shows tile borders.
+        self.grid = TileGrid(visual)
+
         # Pass our TiledImageVisual to the base class, it will become our
         # self.node which VispyBaseImage holds.
         super().__init__(layer, visual)
@@ -89,9 +92,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         # totally quiet, no mouse movement, no in-progress loading. We need
         # to get the polling going so we can load the chunks over time.
         self.events = EmitterGroup(source=self, auto_connect=True, loaded=None)
-
-        # An optional grid that shows tile borders.
-        self.grid = TileGrid(self.node)
 
         # So we redraw when the layer loads new data.
         self.layer.events.loaded.connect(self._on_loaded)
@@ -122,6 +122,14 @@ class VispyTiledImageLayer(VispyImageLayer):
             Always raises this.
         """
         raise NotImplementedError()
+
+    def _on_data_change(self, event=None):
+        """Callback when data changes."""
+        # Remove all drawn tiles - TODO only remove tiles where data has changed
+        self.node.prune_tiles({})
+        # Draw all the possible tiles
+        while self._update_view() > 0:
+            pass
 
     def _update_tile_shape(self) -> None:
         """If the tile shape was changed, update our node."""
