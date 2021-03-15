@@ -234,6 +234,7 @@ class Labels(_ImageBase):
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
+        self._all_vals = []
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -616,6 +617,13 @@ class Labels(_ImageBase):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+        max_val = np.max(raw)
+        if max_val > len(self._all_vals):
+            self._all_vals = low_discrepancy_image(
+                np.arange(max_val), self._seed
+            )
+            self._all_vals[0] = 0
+
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -633,19 +641,17 @@ class Labels(_ImageBase):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = np.where(
-                raw > 0, low_discrepancy_image(raw, self._seed), 0
-            )
+            image = self._all_vals[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            selected = self._selected_label
-            image = np.where(
-                raw == selected,
-                low_discrepancy_image(selected, self._seed),
-                0,
+            selected_color = low_discrepancy_image(
+                self._selected_label, self._seed
             )
+            colors = np.zeros(len(self._all_vals))
+            colors[self.selected_label] = selected_color
+            image = colors[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -677,9 +683,7 @@ class Labels(_ImageBase):
                 raw, footprint=struct_elem
             ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
             image[boundaries] = raw[boundaries]
-            image = np.where(
-                image > 0, low_discrepancy_image(image, self._seed), 0
-            )
+            image = self._all_vals[image]
         elif self.contour > 0 and raw.ndim > 2:
             warnings.warn("Contours are not displayed during 3D rendering")
 
