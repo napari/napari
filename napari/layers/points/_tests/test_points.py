@@ -122,15 +122,18 @@ def test_empty_layer_with_edge_colormap():
 def test_empty_layer_with_text_properties():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'point_type', 'color': 'red'}
     layer = Points(
         properties=default_properties,
-        text='point_type',
+        text=text_kwargs,
     )
     np.testing.assert_equal(layer.text.values, np.empty(0))
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
     np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
 
 def test_empty_layer_with_text_formatted():
