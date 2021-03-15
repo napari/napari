@@ -119,6 +119,34 @@ def test_empty_layer_with_edge_colormap():
     np.testing.assert_allclose(layer._edge.current_color, edge_color)
 
 
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    layer = Points(
+        properties=default_properties,
+        text='point_type',
+    )
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    layer = Points(
+        properties=default_properties,
+        text='point_type: {point_type:.2f}',
+    )
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['point_type: 1.50'])
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
