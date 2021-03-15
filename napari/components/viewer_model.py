@@ -94,9 +94,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     )  # Need to create custom JSON encoder for layer!
     scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
 
-    active_layer: Optional[
-        Layer
-    ] = None  # Would be nice to remove this/ make it layer name instead of layer?
     help: str = ''
     status: str = 'Ready'
     theme: str = DEFAULT_THEME
@@ -293,6 +290,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
             self.layers.selection.current = active_layer
+
+    @property
+    def active_layer(self):
+        return self.layers.selection.current
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
