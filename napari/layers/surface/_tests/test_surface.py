@@ -22,6 +22,22 @@ def test_random_surface():
     assert layer._view_vertex_values.ndim == 1
 
 
+def test_random_surface_no_values():
+    """Test instantiating Surface layer with random 2D data but no vertex values."""
+    np.random.seed(0)
+    vertices = np.random.random((10, 2))
+    faces = np.random.randint(10, size=(6, 3))
+    data = (vertices, faces)
+    layer = Surface(data)
+    assert layer.ndim == 2
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert np.all(layer.vertices == vertices)
+    assert np.all(layer.faces == faces)
+    assert np.all(layer.vertex_values == np.ones(len(vertices)))
+    assert layer._data_view.shape[1] == 2
+    assert layer._view_vertex_values.ndim == 1
+
+
 def test_random_3D_surface():
     """Test instantiating Surface layer with random 3D data."""
     np.random.seed(0)
