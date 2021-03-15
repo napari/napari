@@ -338,7 +338,7 @@ def makeMappingArray(N, data, gamma=1.0):
     return np.clip(lut, 0.0, 1.0)
 
 
-class Colormap(object):
+class Colormap:
     """
     Baseclass for all scalar to RGBA mappings.
 
@@ -779,7 +779,7 @@ class ListedColormap(Colormap):
         return ListedColormap(colors_r, name=name, N=self.N)
 
 
-class Normalize(object):
+class Normalize:
     """
     A class which, when called, can normalize data into
     the ``[0.0, 1.0]`` interval.
@@ -1364,7 +1364,7 @@ def _vector_magnitude(arr):
     return np.sqrt(sum_sq)
 
 
-class LightSource(object):
+class LightSource:
     """
     Create a light source coming from the specified azimuth and elevation.
     Angles are in degrees, with the azimuth measured
