@@ -74,7 +74,11 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_colormap_change()
 
     def _on_shading_change(self, event=None):
-        self.node.shading = self.layer.shading
+        if self.layer.shading == 'none':
+            self.node.shading = None
+        else:
+            self.node.shading = self.layer.shading
+        self.node.mesh_data_changed()
 
     def reset(self, event=None):
         self._reset_base()
