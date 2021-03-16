@@ -159,6 +159,39 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    layer = Shapes(
+        properties=default_properties,
+        text=text_kwargs,
+    )
+    assert layer.text.mode == 'property'
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+    # add a shape and check that the appropriate text value was added
+    layer.add(np.random.random((1, 4, 2)))
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    layer = Shapes(
+        properties=default_properties,
+        text='shape_type: {shape_type:.2f}',
+    )
+    assert layer.text.mode == 'formatted'
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a shape and check that the appropriate text value was added
+    layer.add(np.random.random((1, 4, 2)))
+    np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
+
+
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""

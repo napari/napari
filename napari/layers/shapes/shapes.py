@@ -2272,8 +2272,8 @@ class Shapes(Layer):
                 },
                 'indices': self._slice_indices,
             }
-            if self.text.values is None:
-                self._clipboard['text'] = None
+            if len(self.text.values) == 0:
+                self._clipboard['text'] = np.empty(0)
             else:
                 self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
@@ -2309,7 +2309,7 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            if self._clipboard['text'] is not None:
+            if len(self._clipboard['text']) > 0:
                 self.text._values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
