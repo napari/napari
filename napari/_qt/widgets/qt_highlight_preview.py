@@ -27,13 +27,13 @@ class QtStar(QFrame):
 
     def __init__(
         self,
-        parent,
+        parent: QWidget = None,
         value: int = None,
     ):
         super().__init__(parent)
         # self.max_value = max_value
         # self.min_value = min_value
-        self.value = value
+        self._value = value
 
     def sizeHint(self):
         """Override Qt sizeHint."""
@@ -48,25 +48,25 @@ class QtStar(QFrame):
         qp = QPainter()
         qp.begin(self)
 
-        self.drawStar(qp, self.value)
+        self.drawStar(qp)
         qp.end()
 
-    def getValue(self):
+    def value(self):
         """Return value of star widget."""
-        return self.value
+        return self._value
 
-    def setValue(self, value):
+    def setValue(self, value: int):
         """Set value of star widget."""
-        self.value = value
+        self._value = value
         self.update()
 
-    def drawStar(self, qp, value):
+    def drawStar(self, qp):
         """Draw a star in the preview pane."""
 
         width = self.rect().width()
         height = self.rect().height()
         col = QColor(135, 206, 235)
-        pen = QPen(col, value)
+        pen = QPen(col, self._value)
         pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
         qp.setPen(pen)
 
@@ -128,21 +128,21 @@ class QtTriangle(QFrame):
 
     def __init__(
         self,
-        parent,
-        value: int = None,
+        parent: QWidget = None,
+        value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
     ):
         super().__init__(parent)
-        self.max_value = max_value
-        self.min_value = min_value
-        self.value = value
+        self._max_value = max_value
+        self._min_value = min_value
+        self._value = value
 
     def mousePressEvent(self, event):
         """When mouse is clicked, adjust to new values."""
         # set value based on position of event
         perc = event.pos().x() / self.rect().width()
-        value = ((self.max_value - self.min_value) * perc) + self.min_value
+        value = ((self._max_value - self._min_value) * perc) + self._min_value
         self.setValue(value)
 
     def paintEvent(self, e):
@@ -150,8 +150,8 @@ class QtTriangle(QFrame):
         qp = QPainter()
         qp.begin(self)
         self.drawTriangle(qp)
-        perc = (self.value - self.min_value) / (
-            self.max_value - self.min_value
+        perc = (self._value - self._min_value) / (
+            self._max_value - self._min_value
         )
         self.drawLine(qp, self.rect().width() * perc)
         qp.end()
@@ -169,14 +169,12 @@ class QtTriangle(QFrame):
         width = self.rect().width()
         height = self.rect().height()
 
-        # col = QColor('white')
         col = QColor(135, 206, 235)
         qp.setPen(QPen(col, 1))
         qp.setBrush(col)
         path = QPainterPath()
 
         height = 10
-        # height = height * 0.85
         path.moveTo(0, height)
 
         path.lineTo(width, height)
@@ -186,16 +184,37 @@ class QtTriangle(QFrame):
 
         qp.drawPath(path)
 
-    def getValue(self):
+    def value(self):
         """Return value of triangle widget."""
-        return self.value
+        return self._value
 
     def setValue(self, value):
         """Set value for triangle widget."""
-        self.value = value
+        self._value = value
         self.update()
 
-    def drawLine(self, qp, value):
+    def minimum(self):
+        """Return minimum value."""
+        return self._min_value
+
+    def maximum(self):
+        """Return maximum value."""
+        return self._max_value
+
+    def setMinimum(self, value: int):
+        """Set minimum value"""
+        self._min_value = value
+        if self._value < value:
+            self._value = value
+
+    def setMaximum(self, value: int):
+        """Set maximum value."""
+        self._max_value = value
+
+        if self._value > value:
+            self._value = value
+
+    def drawLine(self, qp, value: int):
         """Draw line on triangle indicating value."""
         col = QColor('white')
         qp.setPen(QPen(col, 2))
@@ -207,10 +226,10 @@ class QtTriangle(QFrame):
         path.closeSubpath()
 
         qp.drawPath(path)
-        self.valueChanged.emit(self.value)
+        self.valueChanged.emit(self._value)
 
 
-class HighlightSizePreviewWidget(QDialog):
+class QtHighlightSizePreviewWidget(QDialog):
     """Creates custom widget to set highlight size.
     Parameters
     ----------
@@ -232,7 +251,7 @@ class HighlightSizePreviewWidget(QDialog):
         self,
         parent: QWidget = None,
         description: str = "",
-        value: int = None,
+        value: int = 1,
         min_value: int = 1,
         max_value: int = 10,
         unit: str = "px",
@@ -249,12 +268,13 @@ class HighlightSizePreviewWidget(QDialog):
         self._description = QLabel(self)
         self._unit = QLabel(self)
         self._slider = QSlider(Qt.Horizontal)
-        self._triangle = QtTriangle(
-            self, value=value, min_value=min_value, max_value=max_value
-        )
+        self._triangle = QtTriangle(self)
+        # self._triangle = QtTriangle(
+        # self, value=value, min_value=min_value, max_value=max_value
+        # )
         self._slider_min_label = QLabel(self)
         self._slider_max_label = QLabel(self)
-        self._preview = QtStar(self, value)
+        self._preview = QtStar(self)
         self._preview_label = QLabel(self)
         self._validator = QIntValidator(min_value, max_value, self)
 
@@ -272,15 +292,19 @@ class HighlightSizePreviewWidget(QDialog):
         self._slider_max_label.setAlignment(Qt.AlignBottom)
         self._slider.setMinimum(min_value)
         self._slider.setMaximum(max_value)
+        self._preview.setValue(value)
+        self._triangle.setValue(value)
+        self._triangle.setMinimum(min_value)
+        self._triangle.setMaximum(max_value)
         self._preview_label.setText(trans._("Preview"))
         self._preview_label.setAlignment(Qt.AlignHCenter)
         self._preview_label.setAlignment(Qt.AlignBottom)
         self._preview.setStyleSheet('border: 1px solid white;')
 
         # Signals
-        self._slider.valueChanged.connect(self.update_value)
-        self._lineedit.textChanged.connect(self.update_value)
-        self._triangle.valueChanged.connect(self.update_value)
+        self._slider.valueChanged.connect(self._update_value)
+        self._lineedit.textChanged.connect(self._update_value)
+        self._triangle.valueChanged.connect(self._update_value)
 
         # Layout
 
@@ -325,21 +349,27 @@ class HighlightSizePreviewWidget(QDialog):
 
         self.setLayout(layout)
 
-        self.refresh()
+        self._refresh()
 
-    def setMinimum(self, value):
-        """Set slider mininum value."""
-        self._slider.setMinimum(value)
-
-    def update_value(self, value):
+    def _update_value(self, value):
         """Update highlight value."""
         if value == "":
             value = int(self._value)
 
-        self._value = int(value)
-        self.refresh()
+        value = int(value)
 
-    def refresh(self):
+        if value > self._max_value:
+            value = self._max_value
+        elif value < self._min_value:
+            value = self._min_value
+
+        if value != self._value:
+            self.valueChanged.emit(value)
+
+        self._value = value
+        self._refresh()
+
+    def _refresh(self):
         """Set every widget value to the new set value."""
         self.blockSignals(True)
         self._lineedit.setText(str(self._value))
@@ -349,77 +379,73 @@ class HighlightSizePreviewWidget(QDialog):
         self.blockSignals(False)
         self.valueChanged.emit(self._value)
 
-    def getValue(self):
+    def value(self):
         """Return current value."""
         return self._value
 
     def setValue(self, value):
         """Set new value and update widget."""
-        self.update_value(value)
-        self.refresh()
+        self._update_value(value)
+        self._refresh()
 
-    def getDescription(self):
+    def description(self):
         """Return the description text."""
-        return self._desctiption_label.text()
+        return self._description.text()
 
     def setDescription(self, text):
         """Set the description text."""
-        self._desctiption_label.setText(text)
+        self._description.setText(text)
 
-    def getPreviewText(self):
-        """Return text for preview pane."""
-        return self._preview.text()
-
-    def setPreviewText(self, text):
-        """Set text for preview pane."""
-        self._preview.setText(text)
-
-    def getUnit(self):
+    def unit(self):
         """Return highlight value unit."""
-        return self._unit_label.text()
+        return self._unit.text()
 
     def setUnit(self, text):
         """Set highlight value unit."""
-        self._unit_label.setText(text)
+        self._unit.setText(text)
 
-    def setMinimun(self, value):
-        """Set minimum highlight value."""
+    def setMinimum(self, value):
+        """Set minimum highlight value for star, triangle, text and slider."""
         value = int(value)
         if value < self._max_value:
             self._min_value = value
             self._slider_min_label.setText(str(value))
+            self._slider.setMinimum(value)
+            self._triangle.setMinimum(value)
             self._value = (
                 self._min_value
                 if self._value < self._min_value
                 else self._value
             )
-            self.refresh()
+            self._refresh()
         else:
             raise ValueError(
                 f"Minimum value must be smaller than {self._max_value}"
             )
 
-    def getMinimun(self, value):
+    def minimum(self):
         """Return minimum highlight value."""
         return self._min_value
 
     def setMaximum(self, value):
         """Set maximum highlight value."""
         value = int(value)
-        if value > self._max_value:
+        if value > self._min_value:
             self._max_value = value
             self._slider_max_label.setText(str(value))
+            self._slider.setMaximum(value)
+            self._triangle.setMaximum(value)
             self._value = (
                 self._max_value
                 if self._value > self._max_value
                 else self._value
             )
-            self.refresh()
+            self._refresh()
         else:
             raise ValueError(
                 f"Maximum value must be larger than {self._min_value}"
             )
 
-    def getMaximum(self, value):
+    def maximum(self):
         """Return maximum highlight value."""
         return self._max_value
