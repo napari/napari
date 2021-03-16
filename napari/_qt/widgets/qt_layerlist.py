@@ -108,11 +108,15 @@ class QtLayerList(QScrollArea):
     def _on_selection(self, event):
         if event.type == 'added':
             for layer in event.value:
-                self._find_widget(layer).setSelected(True)
+                w = self._find_widget(layer)
+                if w:
+                    w.setSelected(True)
             self._ensure_visible(list(event.value)[-1])
         elif event.type == 'removed':
             for layer in event.value:
-                self._find_widget(layer).setSelected(False)
+                w = self._find_widget(layer)
+                if w:
+                    w.setSelected(False)
 
     def _find_widget(self, layer):
         for i in range(self.vbox_layout.count()):
