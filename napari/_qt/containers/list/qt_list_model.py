@@ -25,18 +25,15 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
         self.setRoot(root)
 
     def rowCount(self, parent: QModelIndex = None) -> int:
-        """Returns the number of rows under the given parent.
-
-        When the parent is valid it means that rowCount is returning the number
-        of children of parent.
-        """
+        """Returns the number of rows in the model."""
         return len(self._list)
 
     def data(self, index: QModelIndex, role: int) -> Any:
         """Return data stored under ``role`` for the item at ``index``.
 
         A given class:`QModelIndex` can store multiple types of data, each
-        with its own "ItemDataRole".
+        with its own "ItemDataRole".  ItemType-specific subclasses will likely
+        want to customize this method for different data roles.
         """
         if role == Qt.DisplayRole:
             return str(self.getItem(index))
@@ -44,16 +41,15 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
             return self.getItem(index)
         return None
 
-    def headerData(self, section, orientation, role) -> Any:
-        # item-type specific subclasses may reimplement
-        return super().headerData(section, orientation, role=role)
-
     def setData(self, index: QModelIndex, value: Any, role: int) -> bool:
-        # item-type specific subclasses should reimplement
+        # iItemType-specific subclasses should reimplement
         return super().setData(index, value, role=role)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        # editable models must return a value containing Qt::ItemIsEditable.
+        """Returns the item flags for the given index.
+
+        Editable models must return a value containing Qt::ItemIsEditable.
+        """
         if (
             not index.isValid()
             or index.row() >= len(self._list)
@@ -72,15 +68,13 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
         )
         return base_flags
 
-    def getItem(self, index: QModelIndex) -> ItemType:
-        """Return item for a given `QModelIndex`.
-
-        A null or invalid ``QModelIndex`` will return the root Node.
-        """
-        if index.isValid():
-            return self._list[index.row()]
-
     def mimeTypes(self) -> List[str]:
+        """Returns the list of allowed MIME types.
+
+        When implementing drag and drop support in a custom model, if you will
+        return data in formats other than the default internal MIME type,
+        reimplement this function to return your list of MIME types.
+        """
         return [ListIndexMIMEType, "text/plain"]
 
     def dropMimeData(
@@ -113,18 +107,19 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
             logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
 
             if len(moving_indices) == 1:
-                self._list.move(moving_indices[0], destRow)
+                return self._list.move(moving_indices[0], destRow)
             else:
-                self._list.move_multiple(moving_indices, destRow)
-            return True
+                return bool(self._list.move_multiple(moving_indices, destRow))
         return False
 
     def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
-        """Return an object containing serialized data from `indices`."""
-        # If the list of indexes is empty, or there are no supported MIME types,
-        # nullptr is returned rather than a serialized empty list.
+        """Return an object containing serialized data from `indices`.
+
+        If the list of indexes is empty, or there are no supported MIME types,
+        None is returned rather than a serialized empty list.
+        """
         if not indices:
-            return 0
+            return None
         items, indices = zip(*[(self.getItem(i), i.row()) for i in indices])
         return ItemMimeData(items, indices)
 
@@ -132,7 +127,7 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
         """Returns the drop actions supported by this model."""
         return Qt.MoveAction
 
-    # ##########################
+    # Custom Methods (Not re-implementing Qt) ###########################
 
     def setRoot(self, root: SelectableEventedList[ItemType]):
         if not isinstance(root, SelectableEventedList):
@@ -153,6 +148,25 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
         self._list.events.moving.connect(self._on_begin_moving)
         self._list.events.moved.connect(self._on_end_move)
         self._list.events.connect(self._process_event)
+
+    def getItem(self, index: QModelIndex) -> Optional[ItemType]:
+        """Return item for a given `QModelIndex`."""
+        if index.isValid():
+            return self._list[index.row()]
+        return None
+
+    def findIndex(self, obj: ItemType) -> QModelIndex:
+        """Find the QModelIndex for a given object in the model."""
+        hits = self.match(
+            self.index(0),
+            Qt.UserRole,
+            obj,
+            1,
+            Qt.MatchExactly | Qt.MatchRecursive,
+        )
+        if hits:
+            return hits[0]
+        return QModelIndex()
 
     def _process_event(self, event):
         # for subclasses to handle ItemType-specific data
@@ -192,21 +206,10 @@ class QtListModel(QAbstractListModel, Generic[ItemType]):
     def _on_end_move(self, e):
         self.endMoveRows()
 
-    def findIndex(self, obj: ItemType) -> QModelIndex:
-        """Find the QModelIndex for a given object in the model."""
-        hits = self.match(
-            self.index(0),
-            Qt.UserRole,
-            obj,
-            1,
-            Qt.MatchExactly | Qt.MatchRecursive,
-        )
-        if hits:
-            return hits[0]
-        return QModelIndex()
-
 
 class ItemMimeData(QMimeData):
+    """Custom MimeData to hold list indices."""
+
     def __init__(self, items, indices):
         super().__init__()
         self.items = items
