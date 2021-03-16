@@ -50,18 +50,27 @@ class OctreeLocation(ChunkLocation):
         self.col: int = col
 
     def __str__(self):
-        return f"location=({self.level_index}, {self.row}, {self.col}) "
+        return f"location=({self.slice_id}, {self.level_index}, {self.row}, {self.col}) "
 
     def __eq__(self, other) -> bool:
         return (
-            self.slice_id == other.slice_id
+            super().__eq__(other)
+            and self.slice_id == other.slice_id
             and self.level_index == other.level_index
             and self.row == other.row
             and self.col == other.col
         )
 
     def __hash__(self) -> int:
-        return hash((self.slice_id, self.level_index, self.row, self.col))
+        return hash(
+            (
+                self.layer_ref.layer_id,
+                self.slice_id,
+                self.level_index,
+                self.row,
+                self.col,
+            )
+        )
 
 
 class OctreeChunk:
