@@ -65,8 +65,21 @@ class Colormap(EventedModel):
             return np.linspace(0, 1, n_controls)
         return v
 
+    @property
+    def vispy_controls(self):
+        controls = [x for x in self.controls if 0 <= x <= 1]
+        if len(controls) == 0 or controls[0] != 0:
+            controls.insert(0, 0)
+        if controls[-1] != 1:
+            controls.append(1)
+        return controls
+
+    @property
+    def vispy_colors(self):
+        return self.map(self.vispy_controls)
+
     def __iter__(self):
-        yield from (self.colors, self.controls, self.interpolation)
+        yield from (self.vispy_colors, self.controls, self.interpolation)
 
     def map(self, values):
         values = np.atleast_1d(values)

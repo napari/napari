@@ -121,3 +121,11 @@ def test_can_accept_colormap_dict():
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors)
     assert cmap.name == 'special_name'
+
+
+def test_border_coords():
+    """Test if borders are properly handled and Vispy Colormap is properly created"""
+    colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
+    coords = [0.1, 0.5, 0.9]
+    cmap = Colormap(colors=colors, coords=coords)
+    VispyColormap(*cmap)
