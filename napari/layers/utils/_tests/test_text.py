@@ -4,6 +4,39 @@ import pytest
 from napari.layers.utils.text import TextManager
 
 
+def test_empty_text_manager_property():
+    """Test creating an empty text manager in property mode.
+    This is for creating an empty layer with text initialized.
+    """
+    properties = {'confidence': np.empty(0, dtype=np.float)}
+    text_manager = TextManager(
+        text='confidence', n_text=0, properties=properties
+    )
+    assert text_manager.mode == 'property'
+    np.testing.assert_equal(text_manager.values, np.empty(0))
+
+    # add a text element
+    new_properties = {'confidence': np.array([0.5])}
+    text_manager.add(new_properties, 1)
+    np.testing.assert_equal(text_manager.values, ['0.5'])
+
+
+def test_empty_text_manager_format():
+    """Test creating an empty text manager in formatted mode.
+    This is for creating an empty layer with text initialized.
+    """
+    properties = {'confidence': np.empty(0, dtype=np.float)}
+    text = 'confidence: {confidence:.2f}'
+    text_manager = TextManager(text=text, n_text=0, properties=properties)
+    assert text_manager.mode == 'formatted'
+    np.testing.assert_equal(text_manager.values, np.empty(0))
+
+    # add a text element
+    new_properties = {'confidence': np.array([0.5])}
+    text_manager.add(new_properties, 1)
+    np.testing.assert_equal(text_manager.values, ['confidence: 0.50'])
+
+
 def test_text_manager_property():
     n_text = 3
     text = 'class'
