@@ -174,6 +174,10 @@ class Labels(_ImageBase):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors)
+        self._all_vals = low_discrepancy_image(
+            np.arange(self.num_colors), self._seed
+        )
+        self._all_vals[0] = 0
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
@@ -234,7 +238,6 @@ class Labels(_ImageBase):
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
-        self._all_vals = []
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -617,12 +620,8 @@ class Labels(_ImageBase):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        max_val = np.max(raw)
-        if max_val > len(self._all_vals):
-            self._all_vals = low_discrepancy_image(
-                np.arange(max_val), self._seed
-            )
-            self._all_vals[0] = 0
+        if raw.dtype == bool:
+            raw = raw.view(dtype=np.uint8)
 
         if (
             not self.show_selected_label
@@ -641,7 +640,15 @@ class Labels(_ImageBase):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._all_vals[raw]
+            try:
+                image = self._all_vals[raw]
+            except IndexError:
+                max_val = np.max(raw)
+                self._all_vals = low_discrepancy_image(
+                    np.arange(max_val + 1), self._seed
+                )
+                self._all_vals[0] = 0
+                image = self._all_vals[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
