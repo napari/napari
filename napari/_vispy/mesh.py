@@ -194,6 +194,7 @@ class MeshVisual(BaseMeshVisual):
 
     @shading.setter
     def shading(self, shading):
+        print(shading)
         known_shading_modes = (None, 'flat', 'smooth')
         if shading not in known_shading_modes:
             raise ValueError(
@@ -201,6 +202,7 @@ class MeshVisual(BaseMeshVisual):
             )
         self.shader = self._shading_to_shader(shading)
         self._shading = shading
+        self._update_shared_program()
 
     def _shading_to_shader(self, shading):
         """Infer which shader to use from shading mode"""
@@ -248,10 +250,23 @@ class MeshVisual(BaseMeshVisual):
         for v in common_variables:
             self.shared_program[v] = None
 
+    def _update_shaders(self):
+        self.shared_program.frag = shader_dict[self._shader]['frag']
+        self.shared_program.vert = shader_dict[self._shader]['vert']
+
+    def _update_shared_program(self):
+        if hasattr(self, 'shared_program'):
+            self._cleanup_shared_program()
+            self._update_shaders()
+            self._prepare_transforms(self)
+
     @staticmethod
     def _prepare_transforms(view):
-        tr = view.transforms.get_transform()
+        if not hasattr(view, '_program'):
+            return
+
         if 'transform' in view.view_program.vert.template_vars:
+            tr = view.transforms.get_transform()
             view.view_program.vert['transform'] = tr  # .simplified
 
         if view.shading is not None:
