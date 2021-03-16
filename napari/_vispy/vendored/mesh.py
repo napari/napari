@@ -12,7 +12,7 @@ from __future__ import division
 import numpy as np
 
 from vispy.visuals.visual import Visual
-from from vispy.visuals.shaders import Function, FunctionChain
+from vispy.visuals.shaders import Function, FunctionChain
 from vispy.gloo import VertexBuffer
 from vispy.geometry import MeshData
 from vispy.color import Color, get_colormap
