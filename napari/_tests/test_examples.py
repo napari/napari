@@ -38,6 +38,7 @@ def qapp():
     yield app
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
