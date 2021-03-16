@@ -131,7 +131,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         for chunk in list(self.node.chunk_set):
             chunk.clear()
             # Clear chunks from the cache too
-            del chunk_loader.cache.chunks[chunk.location]
+            if chunk.location in chunk_loader.cache.chunks:
+                del chunk_loader.cache.chunks[chunk.location]
 
         self.node.prune_tiles({})
         # Draw all the requested tiles in this field of view
