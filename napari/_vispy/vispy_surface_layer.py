@@ -1,7 +1,7 @@
 import numpy as np
 from vispy.color import Colormap as VispyColormap
-from vispy.scene.visuals import Mesh
 
+from .mesh import Mesh
 from .vispy_base_layer import VispyBaseLayer
 
 
@@ -14,7 +14,7 @@ class VispySurfaceLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        node = Mesh(shading=layer.shading)
+        node = Mesh()
         super().__init__(layer, node)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
