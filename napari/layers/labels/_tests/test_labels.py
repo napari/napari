@@ -417,7 +417,10 @@ def test_n_dimensional():
                 dtype=np.int_,
             ),
         ),
-        (5 * np.ones((9, 10)), np.zeros((9, 10))),
+        (
+            5 * np.ones((9, 10), dtype=np.uint32),
+            np.zeros((9, 10), dtype=np.uint32),
+        ),
     ],
 )
 def test_contour(input_data, expected_data_view):
@@ -542,7 +545,7 @@ def test_paint():
 
 def test_paint_with_preserve_labels():
     """Test painting labels with square brush while preserving existing labels."""
-    data = np.zeros((15, 10))
+    data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
     layer.brush_shape = 'square'
@@ -563,7 +566,7 @@ def test_paint_with_preserve_labels():
 )
 def test_paint_2d(brush_shape, expected_sum):
     """Test painting labels with circle/square brush."""
-    data = np.zeros((40, 40))
+    data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = brush_shape
@@ -596,7 +599,7 @@ def test_paint_2d(brush_shape, expected_sum):
 )
 def test_paint_2d_xarray(brush_shape, expected_sum):
     """Test the memory usage of painting an xarray indirectly via timeout."""
-    data = xr.DataArray(np.zeros((3, 3, 1024, 1024)))
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
     layer.brush_size = 12
@@ -613,7 +616,7 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 )
 def test_paint_3d(brush_shape, expected_sum):
     """Test painting labels with circle/square brush on 3D image."""
-    data = np.zeros((30, 40, 40))
+    data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = brush_shape
