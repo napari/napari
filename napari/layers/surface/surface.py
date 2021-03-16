@@ -125,7 +125,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         affine=None,
         opacity=1,
         blending='translucent',
-        shading='flat',
+        shading='none',
         visible=True,
     ):
 
