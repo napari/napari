@@ -42,6 +42,8 @@ def qapp():
 @pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
+    if fname == "embed_ipython.py":
+        pytest.skip("reading from stdin while output is captured")
 
     from napari._qt.qt_main_window import Window
 

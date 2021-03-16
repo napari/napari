@@ -76,10 +76,12 @@ class Colormap(EventedModel):
 
     @property
     def vispy_colors(self):
-        return self.map(self.vispy_controls)
+        if self.interpolation == ColormapInterpolationMode.LINEAR:
+            return self.map(self.vispy_controls)
+        return self.map(self.vispy_controls[:-1])
 
     def __iter__(self):
-        yield from (self.vispy_colors, self.controls, self.interpolation)
+        yield from (self.vispy_colors, self.vispy_controls, self.interpolation)
 
     def map(self, values):
         values = np.atleast_1d(values)
