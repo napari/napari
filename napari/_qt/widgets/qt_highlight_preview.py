@@ -19,6 +19,7 @@ trans = translator.load()
 
 class QtStar(QFrame):
     """Creates a star for the preview pane in the highlight widget.
+
     Parameters
     ----------
     value : int
@@ -31,8 +32,6 @@ class QtStar(QFrame):
         value: int = None,
     ):
         super().__init__(parent)
-        # self.max_value = max_value
-        # self.min_value = min_value
         self._value = value
 
     def sizeHint(self):
@@ -52,17 +51,35 @@ class QtStar(QFrame):
         qp.end()
 
     def value(self):
-        """Return value of star widget."""
+        """Return value of star widget.
+
+        Returns
+        -------
+        int
+            The value of the star widget.
+
+        """
         return self._value
 
     def setValue(self, value: int):
-        """Set value of star widget."""
+        """Set line width value of star widget.
+
+        Parameters
+        ----------
+        value: int
+            line width value for star
+        """
+
         self._value = value
         self.update()
 
     def drawStar(self, qp):
-        """Draw a star in the preview pane."""
+        """Draw a star in the preview pane.
 
+        Parameters
+        ----------
+        qp: QPainter object
+        """
         width = self.rect().width()
         height = self.rect().height()
         col = QColor(135, 206, 235)
@@ -165,7 +182,12 @@ class QtTriangle(QFrame):
         return QSize(75, 30)
 
     def drawTriangle(self, qp):
-        """Draw triangle."""
+        """Draw triangle.
+
+        Parameters
+        ----------
+        qp: QPainter object
+        """
         width = self.rect().width()
         height = self.rect().height()
 
@@ -185,37 +207,80 @@ class QtTriangle(QFrame):
         qp.drawPath(path)
 
     def value(self):
-        """Return value of triangle widget."""
+        """Return value of triangle widget.
+
+        Returns
+        -------
+        int
+            Current value of triangle widget.
+        """
         return self._value
 
     def setValue(self, value):
-        """Set value for triangle widget."""
+        """Set value for triangle widget.
+
+        Parameters
+        ----------
+        value: int
+            Value to use for line in triangle widget.
+        """
         self._value = value
         self.update()
 
     def minimum(self):
-        """Return minimum value."""
+        """Return minimum value.
+
+        Returns
+        -------
+        int
+            Mininum value of triangle widget.
+        """
         return self._min_value
 
     def maximum(self):
-        """Return maximum value."""
+        """Return maximum value.
+
+        Returns
+        -------
+        int
+            Maximum value of triangle widget.
+        """
         return self._max_value
 
     def setMinimum(self, value: int):
-        """Set minimum value"""
+        """Set minimum value
+
+        Parameters
+        ----------
+        value: int
+            Minimum value of triangle.
+        """
         self._min_value = value
         if self._value < value:
             self._value = value
 
     def setMaximum(self, value: int):
-        """Set maximum value."""
+        """Set maximum value.
+
+        Parameters
+        ----------
+        value: int
+            Maximum value of triangle.
+        """
         self._max_value = value
 
         if self._value > value:
             self._value = value
 
     def drawLine(self, qp, value: int):
-        """Draw line on triangle indicating value."""
+        """Draw line on triangle indicating value.
+
+        Parameters
+        ----------
+        qp: QPainter object
+        value: int
+            Value of highlight thickness.
+        """
         col = QColor('white')
         qp.setPen(QPen(col, 2))
         qp.setBrush(col)
@@ -231,6 +296,7 @@ class QtTriangle(QFrame):
 
 class QtHighlightSizePreviewWidget(QDialog):
     """Creates custom widget to set highlight size.
+
     Parameters
     ----------
     description : str
@@ -269,9 +335,6 @@ class QtHighlightSizePreviewWidget(QDialog):
         self._unit = QLabel(self)
         self._slider = QSlider(Qt.Horizontal)
         self._triangle = QtTriangle(self)
-        # self._triangle = QtTriangle(
-        # self, value=value, min_value=min_value, max_value=max_value
-        # )
         self._slider_min_label = QLabel(self)
         self._slider_max_label = QLabel(self)
         self._preview = QtStar(self)
@@ -307,7 +370,6 @@ class QtHighlightSizePreviewWidget(QDialog):
         self._triangle.valueChanged.connect(self._update_value)
 
         # Layout
-
         triangle_layout = QHBoxLayout()
         triangle_layout.addWidget(self._triangle)
         triangle_layout.setContentsMargins(6, 35, 6, 0)
@@ -352,7 +414,13 @@ class QtHighlightSizePreviewWidget(QDialog):
         self._refresh()
 
     def _update_value(self, value):
-        """Update highlight value."""
+        """Update highlight value.
+
+        Parameters
+        ----------
+        value: int
+            Highlight value.
+        """
         if value == "":
             value = int(self._value)
 
@@ -380,32 +448,74 @@ class QtHighlightSizePreviewWidget(QDialog):
         self.valueChanged.emit(self._value)
 
     def value(self):
-        """Return current value."""
+        """Return current value.
+
+        Returns
+        -------
+        int
+            Current value of highlight widget.
+        """
         return self._value
 
     def setValue(self, value):
-        """Set new value and update widget."""
+        """Set new value and update widget.
+
+        Parameters
+        ----------
+        value: int
+            Highlight value.
+        """
         self._update_value(value)
         self._refresh()
 
     def description(self):
-        """Return the description text."""
+        """Return the description text.
+
+        Returns
+        -------
+        str
+            Current text in description.
+        """
         return self._description.text()
 
     def setDescription(self, text):
-        """Set the description text."""
+        """Set the description text.
+
+        Parameters
+        ----------
+        text: str
+            Text to use in description box.
+        """
         self._description.setText(text)
 
     def unit(self):
-        """Return highlight value unit."""
+        """Return highlight value unit text.
+
+        Returns
+        -------
+        str
+            Current text in unit text.
+        """
         return self._unit.text()
 
     def setUnit(self, text):
-        """Set highlight value unit."""
+        """Set highlight value unit.
+
+        Parameters
+        ----------
+        text: str
+            Text used to describe units.
+        """
         self._unit.setText(text)
 
     def setMinimum(self, value):
-        """Set minimum highlight value for star, triangle, text and slider."""
+        """Set minimum highlight value for star, triangle, text and slider.
+
+        Parameters
+        ----------
+        value: int
+            Minimum highlight value.
+        """
         value = int(value)
         if value < self._max_value:
             self._min_value = value
@@ -424,11 +534,23 @@ class QtHighlightSizePreviewWidget(QDialog):
             )
 
     def minimum(self):
-        """Return minimum highlight value."""
+        """Return minimum highlight value.
+
+        Returns
+        -------
+        int
+            Minimum value of highlight widget.
+        """
         return self._min_value
 
     def setMaximum(self, value):
-        """Set maximum highlight value."""
+        """Set maximum highlight value.
+
+        Parameters
+        ----------
+        value: int
+            Maximum highlight value.
+        """
         value = int(value)
         if value > self._min_value:
             self._max_value = value
@@ -447,5 +569,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             )
 
     def maximum(self):
-        """Return maximum highlight value."""
+        """Return maximum highlight value.
+
+        Returns
+        -------
+        int
+            Maximum value of highlight widget.
+        """
         return self._max_value
