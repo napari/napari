@@ -27,6 +27,8 @@ def test_cli_works(monkeypatch, capsys):
 
 def test_cli_shows_plugins(monkeypatch, capsys):
     """Test the cli --info runs and shows plugins"""
+    monkeypatch.setattr(napari.plugins, 'dock_widgets', dict())
+    monkeypatch.setattr(napari.plugins, 'function_widgets', dict())
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
         __main__._run()
