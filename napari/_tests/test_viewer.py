@@ -61,7 +61,7 @@ def test_viewer(make_napari_viewer):
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
-    assert view.layers.vbox_layout.count() == 2
+    assert view.layers.model().rowCount() == 0
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim

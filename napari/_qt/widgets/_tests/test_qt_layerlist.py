@@ -56,13 +56,13 @@ def test_adding_layers(qtbot):
 
     qtbot.addWidget(view)
 
-    # Check that new layer and divider get added to vbox_layout
+    # Check that new layer and divider get added to view
     layer_a = Image(np.random.random((10, 10)))
     layers.append(layer_a)
     assert view.model().rowCount() == len(layers)
     assert check_layout_layers(view, layers)
 
-    # Check that new layers and dividers get added to vbox_layout
+    # Check that new layers and dividers get added to view
     layer_b = Image(np.random.random((15, 15)))
     layer_c = Image(np.random.random((15, 15)))
     layer_d = Image(np.random.random((15, 15)))

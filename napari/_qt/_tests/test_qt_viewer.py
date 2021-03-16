@@ -1,10 +1,12 @@
 import os
+from typing import Callable
 from unittest import mock
 
 import numpy as np
 import pytest
 from qtpy.QtWidgets import QMessageBox
 
+from napari import Viewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -12,8 +14,10 @@ from napari._tests.utils import (
 )
 from napari.utils.io import imread
 
+ViewerMaker = Callable[..., Viewer]
 
-def test_qt_viewer(make_napari_viewer):
+
+def test_qt_viewer(make_napari_viewer: ViewerMaker):
     """Test instantiating viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
@@ -24,14 +28,14 @@ def test_qt_viewer(make_napari_viewer):
     assert view._console is None
 
     assert len(viewer.layers) == 0
-    assert view.layers.vbox_layout.count() == 2
+    assert view.layers.model().rowCount() == 0
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_qt_viewer_with_console(make_napari_viewer):
+def test_qt_viewer_with_console(make_napari_viewer: ViewerMaker):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
@@ -42,7 +46,7 @@ def test_qt_viewer_with_console(make_napari_viewer):
     assert view.dockConsole.widget() is view.console
 
 
-def test_qt_viewer_toggle_console(make_napari_viewer):
+def test_qt_viewer_toggle_console(make_napari_viewer: ViewerMaker):
     """Test instantiating console from viewer."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
@@ -63,7 +67,7 @@ def test_add_layer(make_napari_viewer, layer_class, data, ndim):
     check_viewer_functioning(viewer, view, data, ndim)
 
 
-def test_new_labels(make_napari_viewer):
+def test_new_labels(make_napari_viewer: ViewerMaker):
     """Test adding new labels layer."""
     # Add labels to empty viewer
     viewer = make_napari_viewer()
@@ -72,7 +76,7 @@ def test_new_labels(make_napari_viewer):
     viewer._new_labels()
     assert np.max(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -88,14 +92,14 @@ def test_new_labels(make_napari_viewer):
     viewer._new_labels()
     assert np.max(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_new_points(make_napari_viewer):
+def test_new_points(make_napari_viewer: ViewerMaker):
     """Test adding new points layer."""
     # Add labels to empty viewer
     viewer = make_napari_viewer()
@@ -104,7 +108,7 @@ def test_new_points(make_napari_viewer):
     viewer.add_points()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -120,14 +124,14 @@ def test_new_points(make_napari_viewer):
     viewer.add_points()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_new_shapes_empty_viewer(make_napari_viewer):
+def test_new_shapes_empty_viewer(make_napari_viewer: ViewerMaker):
     """Test adding new shapes layer."""
     # Add labels to empty viewer
     viewer = make_napari_viewer()
@@ -136,7 +140,7 @@ def test_new_shapes_empty_viewer(make_napari_viewer):
     viewer.add_shapes()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -152,14 +156,14 @@ def test_new_shapes_empty_viewer(make_napari_viewer):
     viewer.add_shapes()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_z_order_adding_removing_images(make_napari_viewer):
+def test_z_order_adding_removing_images(make_napari_viewer: ViewerMaker):
     """Test z order is correct after adding/ removing images."""
     data = np.ones((10, 10))
 
@@ -192,7 +196,7 @@ def test_z_order_adding_removing_images(make_napari_viewer):
     np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
-def test_screenshot(make_napari_viewer):
+def test_screenshot(make_napari_viewer: ViewerMaker):
     "Test taking a screenshot"
     viewer = make_napari_viewer()
 
@@ -291,7 +295,9 @@ def test_qt_viewer_data_integrity(make_napari_viewer, dtype):
     assert datamean == imean
 
 
-def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
+def test_points_layer_display_correct_slice_on_scale(
+    make_napari_viewer: ViewerMaker,
+):
     viewer = make_napari_viewer()
     data = np.zeros((60, 60, 60))
     viewer.add_image(data, scale=[0.29, 0.26, 0.26])
