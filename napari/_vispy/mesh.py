@@ -232,11 +232,13 @@ class MeshVisual(BaseMeshVisual):
                 f'Shader should be in {known_shaders}, not {shader}'
             )
         self._shader = shader
-        self._cleanup_shared_program()
 
-        self.shared_program.frag = shader_dict[shader]['frag']
-        self.shared_program.vert = shader_dict[shader]['vert']
-        self.update()
+        # need to check if shared program has been created yet
+        if getattr(self, 'shared_program', None):
+            self._cleanup_shared_program()
+            self.shared_program.frag = shader_dict[shader]['frag']
+            self.shared_program.vert = shader_dict[shader]['vert']
+            self.update()
 
     def _cleanup_shared_program(self):
         """Remove extra variables which may become invalid on shader change"""
