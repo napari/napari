@@ -57,6 +57,7 @@ def test_notification_display(mock_show, severity, monkeypatch):
     """
     from napari.utils.settings import SETTINGS
 
+    monkeypatch.delenv('NAPARI_CATCH_ERRORS')
     monkeypatch.setattr(SETTINGS.application, 'gui_notification_level', 'info')
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)

@@ -13,6 +13,7 @@ skip = [
     '3d_kymograph.py',  # needs tqdm
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
+    'embed_ipython.py',  # fails without monkeypatch
 ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
