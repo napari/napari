@@ -8,6 +8,7 @@ from typing import List
 
 from vispy.scene.visuals import create_visual_node
 
+from ...components.experimental.chunk import chunk_loader
 from ...layers.image.experimental import OctreeChunk
 from ...layers.image.image import Image
 from ...utils.events import EmitterGroup
@@ -126,6 +127,12 @@ class VispyTiledImageLayer(VispyImageLayer):
     def _on_data_change(self, event=None):
         """Callback when data changes."""
         # Remove all drawn tiles - TODO only remove tiles where data has changed
+        # Clear all drawn data from memory
+        for chunk in list(self.node.chunk_set):
+            chunk.clear()
+            # Clear chunks from the cache too
+            del chunk_loader.cache.chunks[chunk.location]
+
         self.node.prune_tiles({})
         # Draw all the requested tiles in this field of view
         while self._update_view() > 0:

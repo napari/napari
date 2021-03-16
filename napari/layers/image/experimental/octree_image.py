@@ -70,6 +70,8 @@ class _OctreeImageBase(_ImageBase):
         self._intersection: OctreeIntersection = None
         self._display = OctreeDisplayOptions()
 
+        self._stored_indices = None
+
         # super().__init__ will call our _set_view_slice() which is kind
         # of annoying since we are aren't fully constructed yet.
         super().__init__(*args, **kwargs)
@@ -408,18 +410,19 @@ class _OctreeImageBase(_ImageBase):
         else:
             multilevel_data = [self.data]
 
-        if self._slice is not None:
-            # For now bail out so we don't nuke an existing slice which
-            # contains an existing octree. Soon we'll need to figure out
-            # if we are really changing slices (and need a new octree).
-            return
-
         indices = np.array(self._slice_indices)
         if self._outside_data_range(indices):
             return
 
         # Indices to get at the data we are currently viewing.
         indices = self._get_slice_indices()
+
+        # Store indices so as to not reslice if not needed
+        # which happens during labels painting for example
+        if indices == self._stored_indices:
+            return
+        else:
+            self._stored_indices = indices
 
         # TODO_OCTREE: easier way to do this?
         base_shape = multilevel_data[0].shape
