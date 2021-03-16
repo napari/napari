@@ -96,7 +96,7 @@ class TextManager:
         self._blending = self._check_blending_mode(blending)
         self._visible = visible
 
-        self._initialize_text(text, n_text, properties)
+        self._set_text(text, n_text, properties)
         self.events.unblock_all()
 
     @property
@@ -104,29 +104,21 @@ class TextManager:
         """np.ndarray: the text values to be displayed"""
         return self._values
 
-    def _initialize_text(
-        self, text: Union[None, str], n_text: int, properties: dict = {}
-    ):
-        if n_text == 0:
-            if text is not None:
-                formatted_text, text_mode = format_text_properties(
-                    text, n_text, properties
-                )
-                self._text_format_string = text
-                self._mode = text_mode
-                self._values = formatted_text
-            else:
-                self._mode = TextMode.NONE
-                self._text_format_string = ''
-                self._values = np.empty(0)
-
-        else:
-            self._set_text(text=text, n_text=n_text, properties=properties)
-
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
     ):
-        if len(properties) == 0 or n_text == 0 or text is None:
+        if text is None:
+            text = np.empty(0)
+        if n_text == 0 and len(text) != 0:
+            # initialize text but don't add text elements
+            formatted_text, text_mode = format_text_properties(
+                text, n_text, properties
+            )
+            self._text_format_string = text
+            self._mode = text_mode
+            self._values = formatted_text
+        elif len(properties) == 0 or len(text) == 0:
+            # set text mode to NONE if no props/text are provided
             self._mode = TextMode.NONE
             self._text_format_string = ''
             self._values = np.empty(0)
