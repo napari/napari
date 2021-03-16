@@ -248,5 +248,19 @@ class MeshVisual(BaseMeshVisual):
         for v in common_variables:
             self.shared_program[v] = None
 
+    @staticmethod
+    def _prepare_transforms(view):
+        tr = view.transforms.get_transform()
+        if 'transform' in view.view_program.vert.template_vars:
+            view.view_program.vert['transform'] = tr  # .simplified
+
+        if view.shading is not None:
+            visual2scene = view.transforms.get_transform('visual', 'scene')
+            scene2doc = view.transforms.get_transform('scene', 'document')
+            doc2scene = view.transforms.get_transform('document', 'scene')
+            view.shared_program.vert['visual2scene'] = visual2scene
+            view.shared_program.vert['scene2doc'] = scene2doc
+            view.shared_program.vert['doc2scene'] = doc2scene
+
 
 Mesh = create_visual_node(MeshVisual)
