@@ -13,6 +13,7 @@ skip = [
     '3d_kymograph.py',  # needs tqdm
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
+    'embed_ipython.py',  # fails without monkeypatch
 ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
@@ -37,6 +38,7 @@ def qapp():
     yield app
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
