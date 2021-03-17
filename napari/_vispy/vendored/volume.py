@@ -213,9 +213,11 @@ void main() {{
     view_ray = normalize(farpos.xyz - nearpos.xyz);
 
     // Compute the distance to the front surface or near clipping plane
+    float x_min = 25;
+    float x_max = 100;
     float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
-                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((x_min -0.5 - v_position.x) / view_ray.x,
+                            (x_max - 0.5 - v_position.x) / view_ray.x));
     distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
                             (u_shape.y - 0.5 - v_position.y) / view_ray.y));
     distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
@@ -224,14 +226,26 @@ void main() {{
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
 
+        // Compute the distance to the front surface or near clipping plane
+    float distance_to_back = dot(nearpos-v_position, view_ray);
+    
+    distance_to_back = max(distance_to_back, min((x_min - 0.5 - front.x) / -view_ray.x,
+                            (x_max - 0.5 - front.x) / -view_ray.x));
+    distance_to_back = max(distance_to_back, min((-0.5 - front.y) / -view_ray.y,
+                            (u_shape.y - 0.5 - front.y) / -view_ray.y));
+    distance_to_back = max(distance_to_back, min((-0.5 - front.z) / -view_ray.z,
+                            (u_shape.z - 0.5 - front.z) / -view_ray.z));
+
     // Decide how many steps to take
-    int nsteps = int(-distance / u_relative_step_size + 0.5);
+    int nsteps = int(-distance_to_back / u_relative_step_size + 0.5);
+
+    vec3 back = front - view_ray * distance_to_back;
     float f_nsteps = float(nsteps);
     if( nsteps < 1 )
         discard;
 
     // Get starting location and step vector in texture coordinates
-    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
+    vec3 step = ((back - front) / u_shape) / f_nsteps;
     vec3 start_loc = front / u_shape;
 
     // For testing: show the number of steps. This helps to establish
