@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins import plugin_manager as napari_plugin_manager
+from ...utils.translations import trans
 from ..utils import drag_with_pixmap
 from ..widgets.qt_eliding_label import ElidingLabel
 
@@ -77,7 +78,7 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        self.setToolTip("Click and drag to change call order")
+        self.setToolTip(trans._("Click and drag to change call order"))
         self.plugin_name_label = ElidingLabel(parent=self)
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
@@ -92,7 +93,9 @@ class ImplementationListItem(QFrame):
         )
 
         self.enabled_checkbox = QCheckBox(self)
-        self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
+        self.enabled_checkbox.setToolTip(
+            trans._("Uncheck to disable this plugin")
+        )
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
         self.enabled_checkbox.setChecked(
             getattr(item.hook_implementation, 'enabled', True)
@@ -269,7 +272,7 @@ class QtPluginSorter(QWidget):
         implementations for the currently selected hook.
     """
 
-    NULL_OPTION = 'select hook... '
+    NULL_OPTION = trans._('select hook... ')
 
     def __init__(
         self,
@@ -300,18 +303,20 @@ class QtPluginSorter(QWidget):
                 name.replace("napari_", ""), hook_caller
             )
         self.hook_combo_box.setToolTip(
-            "select the hook specification to reorder"
+            trans._("select the hook specification to reorder")
         )
         self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
 
-        title = QLabel('Plugin Sorter')
+        title = QLabel(trans._('Plugin Sorter'))
         title.setObjectName("h3")
 
         instructions = QLabel(
-            'Select a hook to rearrange, then drag and '
-            'drop plugins into the desired call order.\n\n'
-            'Disable plugins for a specific hook by unchecking their checkbox.'
+            trans._(
+                'Select a hook to rearrange, then drag and '
+                'drop plugins into the desired call order.\n\n'
+                'Disable plugins for a specific hook by unchecking their checkbox.'
+            )
         )
         instructions.setWordWrap(True)
 

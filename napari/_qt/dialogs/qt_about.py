@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils import citation_text, sys_info
+from ...utils.translations import trans
 
 
 class QtAbout(QDialog):
@@ -46,7 +47,9 @@ class QtAbout(QDialog):
 
         # Description
         title_label = QLabel(
-            "<b>napari: a multi-dimensional image viewer for python</b>"
+            trans._(
+                "<b>napari: a multi-dimensional image viewer for python</b>"
+            )
         )
         title_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.layout.addWidget(title_label)
@@ -69,7 +72,7 @@ class QtAbout(QDialog):
             min(self.infoTextBox.document().size().height() + 10, 500),
         )
 
-        self.layout.addWidget(QLabel('<b>citation information:</b>'))
+        self.layout.addWidget(QLabel(trans._('<b>citation information:</b>')))
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
         self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
@@ -94,7 +97,7 @@ class QtAbout(QDialog):
         """
         d = QtAbout(parent)
         d.setObjectName('QtAbout')
-        d.setWindowTitle('About')
+        d.setWindowTitle(trans._('About'))
         d.setWindowModality(Qt.ApplicationModal)
         d.exec_()
 
@@ -117,7 +120,7 @@ class QtCopyToClipboardButton(QPushButton):
         super().__init__()
         self.setObjectName("QtCopyToClipboardButton")
         self.text_edit = text_edit
-        self.setToolTip("Copy to clipboard")
+        self.setToolTip(trans._("Copy to clipboard"))
         self.clicked.connect(self.copyToClipboard)
 
     def copyToClipboard(self):
