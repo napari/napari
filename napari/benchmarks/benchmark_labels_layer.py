@@ -39,7 +39,8 @@ class Labels2DSuite:
 
     def time_save_history(self, n):
         """Time to save history."""
-        self.layer._save_history()
+        coords = [int(coord) for coord in self.layer.coordinates]
+        self.layer._save_history((coords, self.data[coords], 1))
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
