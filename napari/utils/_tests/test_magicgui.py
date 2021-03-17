@@ -106,7 +106,11 @@ def test_magicgui_add_layer_data_tuple(make_napari_viewer):
 
     @magicgui
     def add_layer() -> types.LayerDataTuple:
-        data = (np.random.rand(10, 10), {'name': 'hi'}, 'labels')
+        data = (
+            np.random.randint(0, 10, size=(10, 10)),
+            {'name': 'hi'},
+            'labels',
+        )
         # it works fine to just return `data`
         # but this will avoid mypy/linter errors and has no runtime burden
         return types.LayerDataTuple(data)
@@ -123,7 +127,11 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     @magicgui
     def add_layer() -> List[types.LayerDataTuple]:
         data1 = (np.random.rand(10, 10), {'name': 'hi'})
-        data2 = (np.random.rand(10, 10), {'name': 'hi2'}, 'labels')
+        data2 = (
+            np.random.randint(0, 10, size=(10, 10)),
+            {'name': 'hi2'},
+            'labels',
+        )
         return [data1, data2]  # type: ignore
 
     viewer.window.add_dock_widget(add_layer)
