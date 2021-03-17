@@ -175,7 +175,8 @@ class OctreeLoader:
         # of view before the load was even started. We need to cancel those
         # loads or it will tie up the loader loading chunks we aren't even
         # going to display.
-        self._cancel_unseen(seen)
+        # Temporaily disable to support multiple layers
+        # self._cancel_unseen(seen)
 
         drawable = []
 
