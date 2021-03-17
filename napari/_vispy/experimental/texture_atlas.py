@@ -2,12 +2,13 @@
 
 A texture atlas is a large texture that stores many smaller tile textures.
 """
-from typing import NamedTuple, Optional, Tuple
+from typing import Callable, NamedTuple, Optional, Tuple
 
 import numpy as np
 from vispy.gloo import Texture2D
 
 from ...layers.image.experimental import OctreeChunk
+from ...types import ArrayLike
 from ..utils_gl import fix_data_dtype
 
 # Two triangles which cover a [0..1, 0..1] quad.
@@ -143,12 +144,15 @@ class TextureAtlas2D(Texture2D):
         The (height, width) of one tile in texels.
     shape_in_tiles : Tuple[int, int]
         The (height, width) of the full texture in terms of tiles.
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting raw to displayed data.
     """
 
     def __init__(
         self,
         tile_shape: tuple,
         shape_in_tiles: Tuple[int, int],
+        image_converter: Callable[[ArrayLike], ArrayLike],
         **kwargs,
     ):
         # Each tile's shape in texels, for example (256, 256, 3).
@@ -179,6 +183,9 @@ class TextureAtlas2D(Texture2D):
             self._calc_tex_coords(tile_index, tile_shape)
             for tile_index in range(self.num_slots_total)
         ]
+
+        # Store an image converter that will convert from raw to displayed image
+        self.image_converter = image_converter
 
         super().__init__(shape=tuple(self.full_shape), **kwargs)
 
@@ -272,6 +279,11 @@ class TextureAtlas2D(Texture2D):
             The AtlasTile if the tile was successfully added.
         """
         data = octree_chunk.data
+
+        # Transform data from raw to displayed
+        # Ideally this should be removed and all transforming
+        # should happen on GPU
+        data = self.image_converter(data)
 
         # normalize by contrast limits if provided. This normalization
         # will not be required after https://github.com/vispy/vispy/pull/1920/

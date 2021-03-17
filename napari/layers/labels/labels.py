@@ -11,15 +11,17 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
-from ..image.image import _ImageBase
+from ..image.image import _get_image_base_class
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
+_image_base_class = _get_image_base_class()
 
-class Labels(_ImageBase):
+
+class Labels(_image_base_class):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
