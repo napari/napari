@@ -477,6 +477,17 @@ class Labels(_image_base_class):
     @property
     def brush_shape(self):
         """str: Paintbrush shape"""
+
+        if str(self._brush_shape) == 'square':
+            warnings.warn(
+                (
+                    "The square brush shape is deprecated and will be removed in version 0.4.9."
+                    "Afterward, only the circle brush shape will be available."
+                ),
+                category=FutureWarning,
+                stacklevel=2,
+            )
+
         return str(self._brush_shape)
 
     @brush_shape.setter
