@@ -1,6 +1,6 @@
 import json
 
-from qtpy.QtCore import Signal
+from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -22,6 +22,8 @@ trans = translator.load()
 
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
+
+    resized = Signal(QSize)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -66,6 +68,11 @@ class PreferencesDialog(QDialog):
 
         self.make_dialog()
         self._list.setCurrentRow(0)
+
+    def resizeEvent(self, event):
+        """Override to emit signal."""
+        self.resized.emit(event.size())
+        super().resizeEvent(event)
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
