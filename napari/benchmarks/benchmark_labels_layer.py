@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
+from skimage.draw import disk
 
 from napari.layers import Labels
 
@@ -39,8 +40,11 @@ class Labels2DSuite:
 
     def time_save_history(self, n):
         """Time to save history."""
-        coords = [int(coord) for coord in self.layer.coordinates]
-        self.layer._save_history((coords, self.data[coords], 1))
+        coords = tuple([n // 2 for _ in range(2)])
+        rr, cc = disk(center=coords, radius=3)
+        self.layer._save_history(
+            ((rr, cc), self.data[rr, cc], self.layer.selected_label)
+        )
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
@@ -105,7 +109,16 @@ class Labels3DSuite:
 
     def time_save_history(self, n):
         """Time to save history."""
-        self.layer._save_history()
+        current_slice = int(self.layer.coordinates[0])
+        coords = tuple([n // 2 for _ in range(2)])
+        rr, cc = disk(center=coords, radius=3)
+        self.layer._save_history(
+            (
+                (current_slice, rr, cc),
+                self.data[current_slice, rr, cc],
+                self.layer.selected_label,
+            )
+        )
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
