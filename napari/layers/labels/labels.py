@@ -480,8 +480,9 @@ class Labels(_image_base_class):
 
         warnings.warn(
             (
-                "The square brush shape is deprecated and will be removed in version 0.4.9."
-                "Afterward, only the circle brush shape will be available."
+                "The square brush shape is deprecated and will be removed in version 0.4.9. "
+                "Afterward, only the circle brush shape will be available, "
+                "and the layer.brush_shape attribute will be removed."
             ),
             category=FutureWarning,
             stacklevel=2,
@@ -495,8 +496,9 @@ class Labels(_image_base_class):
 
         warnings.warn(
             (
-                "The square brush shape is deprecated and will be removed in version 0.4.9."
-                "Afterward, only the circle brush shape will be available."
+                "The square brush shape is deprecated and will be removed in version 0.4.9. "
+                "Afterward, only the circle brush shape will be available, "
+                "and the layer.brush_shape attribute will be removed."
             ),
             category=FutureWarning,
             stacklevel=2,
