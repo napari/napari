@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 
 import numpy as np
@@ -72,9 +73,15 @@ class Colormap(EventedModel):
         colors = values['colors']
         controls = values['controls']
         if controls[0] != 0:
+            warnings.warn(
+                "colormap need to have first coord equal to 0", RuntimeWarning
+            )
             controls = np.concatenate(([0], controls))
             colors = np.concatenate(([colors[0]], colors))
         if controls[-1] != 1:
+            warnings.warn(
+                "colormap need to have last coord equal to 1", RuntimeWarning
+            )
             controls = np.concatenate((controls, [1]))
             colors = np.concatenate((colors, [colors[-1]]))
         values['colors'] = colors

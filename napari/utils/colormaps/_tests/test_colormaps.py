@@ -125,8 +125,22 @@ def test_can_accept_colormap_dict():
 
 def test_border_coords():
     """Test if borders are properly handled and Vispy Colormap is properly created"""
+    coords = [0.1, 0.5, 1]
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
-    coords = [0.1, 0.5, 0.9]
-    cmap = Colormap(colors=colors, controls=coords, name="test")
+    coords1 = [0, 0.5, 0.9]
+    with pytest.warns(
+        RuntimeWarning, match="colormap need to have first coord equal to 0"
+    ):
+        cmap = Colormap(colors=colors, controls=coords, name="test")
+    assert len(cmap.controls) == 4
+    with pytest.warns(
+        RuntimeWarning, match="colormap need to have last coord equal to 1"
+    ):
+        cmap = Colormap(colors=colors, controls=coords1, name="test")
+    assert len(cmap.controls) == 4
+    coords2 = [0.1, 0.5, 0.9]
+    with pytest.warns(RuntimeWarning) as records:
+        cmap = Colormap(colors=colors, controls=coords2, name="test")
+    assert len(records) == 2
     assert len(cmap.controls) == 5
     VispyColormap(*cmap)
