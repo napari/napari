@@ -109,7 +109,7 @@ class Labels3DSuite:
 
     def time_save_history(self, n):
         """Time to save history."""
-        current_slice = int(self.layer.coordinates[0])
+        current_slice = n // 2
         coords = tuple([n // 2 for _ in range(2)])
         rr, cc = disk(center=coords, radius=3)
         self.layer._save_history(
