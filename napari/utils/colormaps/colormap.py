@@ -1,7 +1,7 @@
 from enum import Enum
 
 import numpy as np
-from pydantic import validator
+from pydantic import root_validator, validator
 
 from ..events import EventedModel
 from ..events.custom_types import Array
@@ -63,25 +63,26 @@ class Colormap(EventedModel):
                 values['interpolation'] == ColormapInterpolationMode.ZERO
             )
             return np.linspace(0, 1, n_controls)
+        if not np.array_equal(v, sorted(v)):
+            raise ValueError("Coords needs to be sorted in ascending order")
         return v
 
-    @property
-    def vispy_controls(self):
-        controls = [x for x in self.controls if 0 <= x <= 1]
-        if len(controls) == 0 or controls[0] != 0:
-            controls.insert(0, 0)
+    @root_validator
+    def check_bound_coords(cls, values):
+        colors = values['colors']
+        controls = values['controls']
+        if controls[0] != 0:
+            controls = np.concatenate(([0], controls))
+            colors = np.concatenate(([colors[0]], colors))
         if controls[-1] != 1:
-            controls.append(1)
-        return controls
-
-    @property
-    def vispy_colors(self):
-        if self.interpolation == ColormapInterpolationMode.LINEAR:
-            return self.map(self.vispy_controls)
-        return self.map(self.vispy_controls[:-1])
+            controls = np.concatenate((controls, [1]))
+            colors = np.concatenate((colors, [colors[-1]]))
+        values['colors'] = colors
+        values['controls'] = controls
+        return values
 
     def __iter__(self):
-        yield from (self.vispy_colors, self.vispy_controls, self.interpolation)
+        yield from (self.colors, self.controls, self.interpolation)
 
     def map(self, values):
         values = np.atleast_1d(values)

@@ -128,6 +128,5 @@ def test_border_coords():
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     coords = [0.1, 0.5, 0.9]
     cmap = Colormap(colors=colors, controls=coords, name="test")
-    _, controls, _ = cmap
-    assert len(controls) == 5
+    assert len(cmap.controls) == 5
     VispyColormap(*cmap)
