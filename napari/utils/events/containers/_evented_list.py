@@ -205,11 +205,11 @@ class EventedList(TypedMutableSequence[_T]):
     def move_multiple(
         self, sources: Iterable[Index], dest_index: int = 0
     ) -> int:
-        """Move a batch of indices, to a single destination.
+        """Move a batch of `sources` indices, to a single destination.
 
-        Note, if the dest_index is higher than any of the source indices, then
+        Note, if `dest_index` is higher than any of the `sources`, then
         the resulting position of the moved objects after the move operation
-        is complete will be lower than ``dest_index``.
+        is complete will be lower than `dest_index`.
 
         Parameters
         ----------
@@ -239,9 +239,14 @@ class EventedList(TypedMutableSequence[_T]):
         # calling list here makes sure that there are no index errors up front
         move_plan = list(self._move_plan(sources, dest_index))
 
-        # don't assume index adjacency ... so move one at a time
-        # this *could* be simplified with an intermediate list ... but this
-        # provides any listening objects to note each moving object
+        # don't assume index adjacency ... so move objects one at a time
+        # this *could* be simplified with an intermediate list ... but this way
+        # allows any views (such as QtViews) to update themselves more easily.
+        # If this needs to be changed in the future for performance reasons,
+        # then the associated QtListView will need to changed from using
+        # `beginMoveRows` & `endMoveRows` to using `layoutAboutToBeChanged` &
+        # `layoutChanged` while *manually* updating model indices with
+        # `changePersistentIndexList`.
         with self.events.reordered.blocker():
             for src, dest in move_plan:
                 self.move(src, dest)
