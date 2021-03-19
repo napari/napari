@@ -60,6 +60,6 @@ def test_colormap_equality():
     colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
     cmap_1 = Colormap(colors, name='testing', controls=[0, 0.75, 1])
     cmap_2 = Colormap(colors, name='testing', controls=[0, 0.75, 1])
-    cmap_3 = Colormap(colors, name='testing', controls=[0, 1])
+    cmap_3 = Colormap(colors[:2], name='testing', controls=[0, 1])
     assert cmap_1 == cmap_2
     assert cmap_1 != cmap_3
