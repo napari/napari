@@ -1,3 +1,4 @@
+import numpy as np
 from vispy.color import get_colormap
 from vispy.scene.visuals import create_visual_node
 from vispy.visuals.shaders import Function
@@ -83,6 +84,7 @@ frag_dict['average'] = AVG_FRAG_SHADER
 class Volume(BaseVolume):
     def __init__(self, *args, **kwargs):
         self._attenuation = 1.0
+        self._xlims = None
         super().__init__(*args, **kwargs)
 
     @property
@@ -124,3 +126,83 @@ class Volume(BaseVolume):
         self._attenuation = float(value)
         self.shared_program['u_attenuation'] = self._attenuation
         self.update()
+
+    @property
+    def xlims(self):
+        return self._xlims
+
+    @xlims.setter
+    def xlims(self, xlims):
+        self._xlims = float(xlims[0]), float(xlims[1])
+        self.shared_program['u_x_min'] = self._xlims[0]
+        self.shared_program['u_x_max'] = self._xlims[1]
+        self.update()
+
+    def set_data(self, vol, clim=None, copy=True):
+        """Set the volume data.
+
+        Parameters
+        ----------
+        vol : ndarray
+            The 3D volume.
+        clim : tuple | None
+            Colormap limits to use. None will use the min and max values.
+        copy : bool | True
+            Whether to copy the input volume prior to applying clim normalization.
+        """
+        # Check volume
+        if not isinstance(vol, np.ndarray):
+            raise ValueError('Volume visual needs a numpy array.')
+        if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
+            raise ValueError('Volume visual needs a 3D image.')
+
+        # Handle clim
+        if clim is not None:
+            clim = np.array(clim, float)
+            if not (clim.ndim == 1 and clim.size == 2):
+                raise ValueError('clim must be a 2-element array-like')
+            self._clim = tuple(clim)
+        if self._clim is None:
+            self._clim = vol.min(), vol.max()
+
+        # store clims used to normalize _tex data for use in clim_normalized
+        self._texture_limits = self._clim
+        # store volume in case it needs to be renormalized by clim.setter
+        self._last_data = vol
+        self.shared_program['clim'] = self.clim_normalized
+
+        # Apply clim (copy data by default... see issue #1727)
+        vol = np.array(vol, dtype='float32', copy=copy)
+        if self._clim[1] == self._clim[0]:
+            if self._clim[0] != 0.0:
+                vol *= 1.0 / self._clim[0]
+        elif self._clim[0] > self._clim[1]:
+            vol *= -1
+            vol += self._clim[1]
+            vol /= self._clim[1] - self._clim[0]
+        else:
+            vol -= self._clim[0]
+            vol /= self._clim[1] - self._clim[0]
+
+        # Apply to texture
+        self._tex.set_data(vol)  # will be efficient if vol is same shape
+        self.shared_program['u_shape'] = (
+            vol.shape[2],
+            vol.shape[1],
+            vol.shape[0],
+        )
+        if self.xlims is None:
+            bbox = 0, vol.shape[2]
+        else:
+            bbox = self.xlims
+        self.shared_program['u_x_min'] = bbox[0]
+        self.shared_program['u_x_max'] = bbox[1]
+
+        shape = vol.shape[:3]
+        if self._vol_shape != shape:
+            self._vol_shape = shape
+            self._need_vertex_update = True
+        self._vol_shape = shape
+
+        # Get some stats
+        self._kb_for_texture = np.prod(self._vol_shape) / 1024
