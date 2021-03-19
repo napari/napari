@@ -200,6 +200,7 @@ def bundle():
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
 
+    # the briefcase calls need to happen while the pyproject toml is patched
     with patched_toml():
         # create
         cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
