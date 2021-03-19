@@ -82,6 +82,9 @@ FRAG_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
+uniform float u_x_min;
+uniform float u_x_max;
+
 uniform vec2 clim;
 uniform float gamma;
 uniform float u_threshold;
@@ -211,13 +214,10 @@ void main() {{
     // Calculate unit vector pointing in the view direction through this
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
-
     // Compute the distance to the front surface or near clipping plane
-    float x_min = 25;
-    float x_max = 100;
     float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((x_min -0.5 - v_position.x) / view_ray.x,
-                            (x_max - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((u_x_min - 0.5 - v_position.x) / view_ray.x,
+                            (u_x_max - 0.5 - v_position.x) / view_ray.x));
     distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
                             (u_shape.y - 0.5 - v_position.y) / view_ray.y));
     distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
@@ -226,11 +226,11 @@ void main() {{
     // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
 
-        // Compute the distance to the front surface or near clipping plane
+    // Compute the distance to the front surface or near clipping plane
     float distance_to_back = dot(nearpos-v_position, view_ray);
     
-    distance_to_back = max(distance_to_back, min((x_min - 0.5 - front.x) / -view_ray.x,
-                            (x_max - 0.5 - front.x) / -view_ray.x));
+    distance_to_back = max(distance_to_back, min((u_x_min - 0.5 - front.x) / -view_ray.x,
+                            (u_x_max - 0.5 - front.x) / -view_ray.x));
     distance_to_back = max(distance_to_back, min((-0.5 - front.y) / -view_ray.y,
                             (u_shape.y - 0.5 - front.y) / -view_ray.y));
     distance_to_back = max(distance_to_back, min((-0.5 - front.z) / -view_ray.z,
