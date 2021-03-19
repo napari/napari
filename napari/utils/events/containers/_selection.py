@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Iterable, Optional, TypeVar
+from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
 from ._set import EventedSet
 
@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from pydantic.fields import ModelField
 
 _T = TypeVar("_T")
+_S = TypeVar("_S")
 
 
 class Selection(EventedSet[_T]):
@@ -50,14 +51,20 @@ class Selection(EventedSet[_T]):
 
     @property
     def current(self) -> Optional[_T]:
+        """Get current item."""
         return self._current
 
     @current.setter
     def current(self, index: Optional[_T]):
+        """Set current item."""
         if index == self._current:
             return
         previous, self._current = self._current, index
         self.events.current(value=index, previous=previous)
+
+    def toggle(self, obj: _T):
+        """Toggle selection state of obj."""
+        self.symmetric_difference_update({obj})
 
     @classmethod
     def __get_validators__(cls):
@@ -106,3 +113,22 @@ class Selection(EventedSet[_T]):
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         return {'data': super()._json_encode(), 'current': self.current}
+
+
+class Selectable(Generic[_S]):
+    """Mixin that adds a selection model to an object."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)  # type: ignore
+        self._selection: Selection[_S] = Selection()
+
+    @property
+    def selection(self) -> Selection[_S]:
+        """Get current selection."""
+        return self._selection
+
+    @selection.setter
+    def selection(self, new_selection) -> None:
+        """Set selection, without deleting selection model object."""
+        self._selection.intersection_update(new_selection)
+        self._selection.update(new_selection)
