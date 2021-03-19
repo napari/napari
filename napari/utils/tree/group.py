@@ -14,7 +14,7 @@ class Group(NestableEventedList[NodeType], Node, Selectable[NodeType]):
     The ``Group`` (aka composite) is an element that has sub-elements:
     which may be ``Nodes`` or other ``Groups``.  By inheriting from
     :class:`NestableEventedList`, ``Groups`` have basic python list-like
-    behavior and emit events when modified.  The main additions in this class
+    behavior and emit events when modified.  The main addition in this class
     is that when objects are added to a ``Group``, they are assigned a
     ``.parent`` attribute pointing to the group, which is removed upon
     deletion from the group.
