@@ -298,7 +298,7 @@ class EventedList(TypedMutableSequence[_T]):
             if src != dest_index:
                 # we need to decrement the src_i by 1 for each time we have
                 # previously pulled items out from in front of the src_i
-                src -= sum(map(_le(src), popped))
+                src -= sum([x <= src for x in popped])
                 # if source is past the insertion point, increment src for each
                 # previous insertion
                 if src >= dest_index:
@@ -317,8 +317,3 @@ class EventedList(TypedMutableSequence[_T]):
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
-
-
-def _le(y):
-    """create a new function that accepts a single value x, returns x < y."""
-    return lambda x: x <= y
