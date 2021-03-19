@@ -146,3 +146,23 @@ def test_border_coords():
     assert len(records) == 2
     assert len(cmap.controls) == 5
     VispyColormap(*cmap)
+
+
+def test_ascending_order():
+    controls = [0.2, 0.1, 1]
+    colors = np.array([[0, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]])
+    with pytest.raises(
+        ValueError, match="Coords needs to be sorted in ascending order"
+    ):
+        Colormap(colors=colors, controls=controls, name="test")
+
+    controls = [-0.2, 0.1, 1]
+    with pytest.warns(RuntimeWarning) as records:
+        with pytest.raises(ValueError) as exec_info:
+            Colormap(colors=colors, controls=controls, name="test")
+    assert len(records) == 1
+    assert (
+        exec_info.value.args[0][0]
+        .exc.args[0]
+        .endswith("Coords needs to be in range [0, 1]")
+    )

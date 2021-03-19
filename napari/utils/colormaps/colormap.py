@@ -68,7 +68,7 @@ class Colormap(EventedModel):
             raise ValueError("Coords needs to be sorted in ascending order")
         return v
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def check_bound_coords(cls, values):
         colors = values['colors']
         controls = values['controls']
@@ -86,6 +86,15 @@ class Colormap(EventedModel):
             )
             controls = np.concatenate((controls, [1]))
             colors = np.concatenate((colors, [colors[-1]]))
+        if controls.size != colors.shape[0] + int(
+            values['interpolation'] == ColormapInterpolationMode.ZERO
+        ):
+            raise ValueError(
+                "Number of colors does not match with length of controls"
+            )
+        if not np.array_equal(controls, sorted(controls)):
+            # To find examples like [-2, 0.5 ,7]
+            raise ValueError("Coords needs to be in range [0, 1]")
         values['colors'] = colors
         values['controls'] = controls
         return values
