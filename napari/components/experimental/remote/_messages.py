@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Dict
 
-from ....layers.image.experimental.octree_image import OctreeImage
+from ....layers.image.experimental.octree_image import _OctreeImageBase
 from ...layerlist import LayerList
 from ..monitor import monitor
 
@@ -52,7 +52,7 @@ class RemoteMessages:
         layers: Dict[int, dict] = {}
 
         for layer in self.layers:
-            if isinstance(layer, OctreeImage):
+            if isinstance(layer, _OctreeImageBase):
                 layers[id(layer)] = layer.remote_messages
 
         monitor.add_data({"poll": {"layers": layers}})
