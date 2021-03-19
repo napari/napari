@@ -147,7 +147,9 @@ def test_move(test_list):
         ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
         ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
         ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
+        ([3, 0, 2], 6, [1, 4, 5, 3, 0, 2, 6, 7]),  # move back reorder
         ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
+        ([7, 4], 1, [0, 7, 4, 1, 2, 3, 5, 6]),  # move forward reorder
         ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
         ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
         ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
