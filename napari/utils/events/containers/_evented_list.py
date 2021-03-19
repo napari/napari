@@ -298,7 +298,7 @@ class EventedList(TypedMutableSequence[_T]):
             if src != dest_index:
                 # we need to decrement the src_i by 1 for each time we have
                 # previously pulled items out from in front of the src_i
-                src -= sum([x <= src for x in popped])
+                src -= sum(x <= src for x in popped)
                 # if source is past the insertion point, increment src for each
                 # previous insertion
                 if src >= dest_index:

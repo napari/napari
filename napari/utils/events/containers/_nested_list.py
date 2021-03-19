@@ -303,7 +303,7 @@ class NestableEventedList(EventedList[_T]):
                     raise NotImplementedError(
                         "Can't yet deal with slice source indices in multimove"
                     )
-                _idx[_parlen] += sum([x <= _idx[_parlen] for x in dumped])
+                _idx[_parlen] += sum(x <= _idx[_parlen] for x in dumped)
                 idx = tuple(_idx)
 
             src_par, src_i = split_nested_index(idx)
@@ -314,11 +314,11 @@ class NestableEventedList(EventedList[_T]):
 
             # we need to decrement the src_i by 1 for each time we have
             # previously pulled items out from in front of the src_i
-            src_i -= sum([x <= src_i for x in popped.get(src_par, [])])
+            src_i -= sum(x <= src_i for x in popped.get(src_par, []))
 
             # we need to decrement the dest_i by 1 for each time we have
             # previously pulled items out from in front of the dest_i
-            ddec = sum([x <= dest_i for x in popped.get(dest_par, [])])
+            ddec = sum(x <= dest_i for x in popped.get(dest_par, []))
 
             # skip noop
             if src_par == dest_par and src_i == dest_i - ddec:
