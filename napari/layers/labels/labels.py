@@ -183,11 +183,14 @@ class Labels(_ImageBase):
         self._show_selected_label = False
         self._contour = 0
 
-        if np.issubdtype(data.dtype, np.floating):
+        data = [data] if not isinstance(data, list) else data
+        if any(np.issubdtype(d.dtype, np.floating) for d in data):
             warnings.warn(
                 "Float dtypes are not supported for Labels layers. Converting data to integers..."
             )
-            data = data.astype(np.int32)
+            data = [d.astype(np.int32) for d in data]
+
+        data = data[0] if len(data) == 1 else data
 
         if properties is None:
             self._properties = {}

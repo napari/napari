@@ -53,6 +53,16 @@ def test_3D_labels():
     assert layer.mode == 'pan_zoom'
 
 
+def test_float_labels():
+    """Test instantiating labels layer with floats"""
+    shape = (10, 10)
+    np.random.seed(0)
+    data = np.random.uniform(0, 20, size=shape)
+    with pytest.warns(UserWarning):
+        layer = Labels(data)
+        assert np.issubdtype(layer.data.dtype, np.integer)
+
+
 def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
