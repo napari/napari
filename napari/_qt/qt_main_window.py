@@ -200,7 +200,8 @@ class _QtMainWindow(QMainWindow):
             if dock.isFloating():
                 dock.setFloating(False)
 
-        self._save_current_window_settings()
+        if SETTINGS.application.save_window_geometry:
+            self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
@@ -1038,9 +1039,10 @@ class Window:
                 )
         else:
             try:
-                self._qt_window._set_window_settings(
-                    *self._qt_window._load_window_settings()
-                )
+                if SETTINGS.application.save_window_geometry:
+                    self._qt_window._set_window_settings(
+                        *self._qt_window._load_window_settings()
+                    )
             except Exception as err:
                 import warnings
 

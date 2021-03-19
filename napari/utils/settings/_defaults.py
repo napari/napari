@@ -66,6 +66,9 @@ class ApplicationSettings(BaseSettings, EventedModel):
     first_time: bool = True
 
     # Window state, geometry and position
+    save_window_geometry: bool = Field(
+        True, description="Save window size and position."
+    )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
     window_maximized: bool = None
