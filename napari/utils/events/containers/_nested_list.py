@@ -19,7 +19,7 @@ from typing import (
 )
 
 from ..event import Event
-from ._evented_list import EventedList, Index
+from ._evented_list import EventedList, Index, _le
 
 logger = logging.getLogger(__name__)
 
@@ -414,8 +414,3 @@ class NestableEventedList(EventedList[_T]):
                         yield i
         else:
             yield from super()._iter_indices(start, stop)
-
-
-def _le(y):
-    # create a new function that accepts a single value x, returns x < y
-    return lambda x: x <= y

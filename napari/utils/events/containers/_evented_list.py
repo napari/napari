@@ -191,6 +191,7 @@ class EventedList(TypedMutableSequence[_T]):
         if dest_index < 0:
             dest_index += len(self) + 1
         if dest_index in (src_index, src_index + 1):
+            # this is a no-op
             return False
 
         self.events.moving(index=src_index, new_index=dest_index)
@@ -246,7 +247,8 @@ class EventedList(TypedMutableSequence[_T]):
         # then the associated QtListView will need to changed from using
         # `beginMoveRows` & `endMoveRows` to using `layoutAboutToBeChanged` &
         # `layoutChanged` while *manually* updating model indices with
-        # `changePersistentIndexList`.
+        # `changePersistentIndexList`.  That becomes much harder to do with
+        # nested tree-like models.
         with self.events.reordered.blocker():
             for src, dest in move_plan:
                 self.move(src, dest)
@@ -297,14 +299,14 @@ class EventedList(TypedMutableSequence[_T]):
                 # we need to decrement the src_i by 1 for each time we have
                 # previously pulled items out from in front of the src_i
                 src -= sum(map(_le(src), popped))
-                # if source is past the insertion point, increment for each
+                # if source is past the insertion point, increment src for each
                 # previous insertion
                 if src >= dest_index:
                     src += i
                 yield src, dest_index + d_inc
 
             popped.append(src)
-            # if we moved up, move back the destination index
+            # if the item moved up, icrement the destination index
             if dest_index <= src:
                 d_inc += 1
 
@@ -318,5 +320,5 @@ class EventedList(TypedMutableSequence[_T]):
 
 
 def _le(y):
-    # create a new function that accepts a single value x, returns x < y
+    """create a new function that accepts a single value x, returns x < y."""
     return lambda x: x <= y
