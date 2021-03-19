@@ -85,7 +85,9 @@ class ColorProperties:
         if isinstance(other, ColorProperties):
             name_eq = self.name == other.name
             values_eq = np.array_equal(self.values, other.values)
-            current_value_eq = self.current_value == other.current_value
+            current_value_eq = np.array_equal(
+                self.current_value, other.current_value
+            )
 
             return np.all([name_eq, values_eq, current_value_eq])
         else:

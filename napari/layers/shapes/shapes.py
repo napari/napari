@@ -534,9 +534,6 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
 
-        n_new_shapes = number_of_shapes(data)
-        self.text.add(self.current_properties, n_new_shapes)
-
         self._update_dims()
         self.events.data(value=self.data)
         self._set_editable()
@@ -1293,8 +1290,19 @@ class Shapes(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
+        # get the coordinates of the vertices for the shapes in view
+        in_view_shapes_coords = [
+            self._data_view.data[i] for i in self._indices_view
+        ]
+
+        # get the coordinates for the dimensions being displayed
+        sliced_in_view_coords = [
+            position[:, self._dims_displayed]
+            for position in in_view_shapes_coords
+        ]
+
         return self.text.compute_text_coords(
-            self._data_view.data, self._ndisplay
+            sliced_in_view_coords, self._ndisplay
         )
 
     @property
@@ -1487,14 +1495,30 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            for k in self.properties:
-                new_property = np.repeat(
-                    self.current_properties[k], n_new_shapes, axis=0
-                )
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], new_property), axis=0
-                )
-            self.text.add(self.current_properties, n_new_shapes)
+            if len(self.properties) > 0:
+                first_prop_key = next(iter(self.properties))
+                n_prop_values = len(self.properties[first_prop_key])
+            else:
+                n_prop_values = 0
+            total_shapes = n_new_shapes + self.nshapes
+            if total_shapes > n_prop_values:
+                n_props_to_add = total_shapes - n_prop_values
+                for k in self.properties:
+                    new_property = np.repeat(
+                        self.current_properties[k], n_props_to_add, axis=0
+                    )
+                    self.properties[k] = np.concatenate(
+                        (self.properties[k], new_property), axis=0
+                    )
+                self.text.add(self.current_properties, n_props_to_add)
+            if total_shapes < n_prop_values:
+                for k in self.properties:
+                    self.properties[k] = self.properties[k][:total_shapes]
+                n_props_to_remove = n_prop_values - total_shapes
+                indices_to_remove = np.arange(n_prop_values)[
+                    -n_props_to_remove:
+                ]
+                self.text.remove(indices_to_remove)
 
             self._add_shapes(
                 data,
@@ -2261,8 +2285,8 @@ class Shapes(Layer):
                 },
                 'indices': self._slice_indices,
             }
-            if self.text.values is None:
-                self._clipboard['text'] = None
+            if len(self.text.values) == 0:
+                self._clipboard['text'] = np.empty(0)
             else:
                 self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
@@ -2298,7 +2322,7 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            if self._clipboard['text'] is not None:
+            if len(self._clipboard['text']) > 0:
                 self.text._values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )

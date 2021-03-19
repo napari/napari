@@ -150,7 +150,7 @@ def format_text_properties(text: str, n_text: int, properties: dict = {}):
 
     # If the text value is a property key, the text is the property values
     if text in properties:
-        formatted_text = np.array([str(v) for v in properties[text]])
+        formatted_text = np.resize([str(v) for v in properties[text]], n_text)
         text_mode = TextMode.PROPERTY
     elif ('{' in text) and ('}' in text):
         format_keys = _get_format_keys(text, properties)

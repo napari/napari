@@ -107,10 +107,21 @@ class TextManager:
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
     ):
-        if len(properties) == 0 or n_text == 0 or text is None:
+        if text is None:
+            text = np.empty(0)
+        if n_text == 0 and len(text) != 0:
+            # initialize text but don't add text elements
+            formatted_text, text_mode = format_text_properties(
+                text, n_text, properties
+            )
+            self._text_format_string = text
+            self._mode = text_mode
+            self._values = formatted_text
+        elif len(properties) == 0 or len(text) == 0:
+            # set text mode to NONE if no props/text are provided
             self._mode = TextMode.NONE
             self._text_format_string = ''
-            self._values = None
+            self._values = np.empty(0)
         else:
             formatted_text, text_mode = format_text_properties(
                 text, n_text, properties
@@ -288,7 +299,7 @@ class TextManager:
         anchor_y : str
             THe vispy text anchor for the y axis
         """
-        if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+        if len(self.values) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self._anchor
             )

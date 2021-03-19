@@ -28,6 +28,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.settings import SETTINGS
 from ..utils.translations import translator
+from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -245,8 +246,8 @@ class Window:
         get_app()
 
         # Connect the Viewer and create the Main Window
-        self.qt_viewer = QtViewer(viewer)
         self._qt_window = _QtMainWindow()
+        self.qt_viewer = QtViewer(viewer)
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
@@ -282,6 +283,8 @@ class Window:
             self.qt_viewer.dockLayerList, tabify=False
         )
         self.window_menu.addSeparator()
+
+        SETTINGS.application.events.theme.connect(self._update_theme)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -365,6 +368,12 @@ class Window:
         open_folder.setStatusTip('Open a folder')
         open_folder.triggered.connect(self.qt_viewer._open_folder_dialog)
 
+        # OS X will rename this to Quit and put it in the app menu.
+        preferences = QAction('Preferences', self._qt_window)
+        preferences.setShortcut('Ctrl+Shift+P')
+        preferences.setStatusTip('Open preferences dialog')
+        preferences.triggered.connect(self._open_preferences)
+
         save_selected_layers = QAction(
             'Save Selected Layer(s)...', self._qt_window
         )
@@ -415,6 +424,8 @@ class Window:
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addSeparator()
+        self.file_menu.addAction(preferences)
+        self.file_menu.addSeparator()
         self.file_menu.addAction(save_selected_layers)
         self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
@@ -422,6 +433,12 @@ class Window:
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
         self.file_menu.addAction(quitAction)
+
+    def _open_preferences(self):
+        """Edit preferences from the menubar."""
+
+        win = PreferencesDialog(parent=self._qt_window)
+        win.show()
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
@@ -1056,11 +1073,17 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
-        theme_name = self.qt_viewer.viewer.theme
-        self._qt_window.setStyleSheet(get_stylesheet(theme_name))
-
         if event:
-            SETTINGS.application.theme = event.value
+            value = event.value
+            SETTINGS.application.theme = value
+            self.qt_viewer.viewer.theme = value
+        else:
+            value = self.qt_viewer.viewer.theme
+
+        try:
+            self._qt_window.setStyleSheet(get_stylesheet(value))
+        except AttributeError:
+            pass
 
     def _status_changed(self, event):
         """Update status bar.

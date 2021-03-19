@@ -259,7 +259,14 @@ class VispyTiledImageLayer(VispyImageLayer):
         # The grid is only for debugging and demos, yet it's quite useful
         # otherwise you can't really see the borders between the tiles.
         if self.layer.display.show_grid:
-            self.grid.update_grid(self.node.octree_chunks)
+            # If a only a single scale octree then show the outline of the base shape too
+            if self.layer._slice._meta.num_levels == 1:
+                base_shape = self.layer._slice._meta.base_shape
+            else:
+                base_shape = None
+            self.grid.update_grid(
+                self.node.octree_chunks, base_shape=base_shape
+            )
         else:
             self.grid.clear()
 
