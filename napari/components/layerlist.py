@@ -6,13 +6,13 @@ from typing import List, Optional
 import numpy as np
 
 from ..layers import Layer
-from ..utils.events import EventedList
+from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
 
 
-class LayerList(EventedList):
+class LayerList(SelectableEventedList[Layer]):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
@@ -27,6 +27,14 @@ class LayerList(EventedList):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+        self.selection.events.connect(self._on_selection_event)
+
+    def _on_selection_event(self, event):
+        if event.type == 'current':
+            return
+        selected = event.type == 'added'
+        for layer in event.value:
+            layer._on_selection(selected)
 
     def __newlike__(self, data):
         return LayerList(data)
@@ -72,7 +80,8 @@ class LayerList(EventedList):
     @property
     def selected(self):
         """List of selected layers."""
-        return [layer for layer in self if layer.selected]
+        # XXX: deprecate? change selectable attribute to selected?
+        return self.selection
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
@@ -91,12 +100,12 @@ class LayerList(EventedList):
         insert : int
             Index that item(s) will be inserted at
         """
-        if not self[index].selected:
+        if not self[index] in self.selection:
             self.unselect_all()
-            self[index].selected = True
-            moving = (index,)
+            self.selection.add(self[index])
+            moving = [index]
         else:
-            moving = [i for i, item in enumerate(self) if item.selected]
+            moving = [i for i, x in enumerate(self) if x in self.selection]
         offset = insert >= index
         self.move_multiple(moving, insert + offset)
 
@@ -108,70 +117,60 @@ class LayerList(EventedList):
         ignore : Layer | None
             Layer that should not be unselected if specified.
         """
-        for layer in self:
-            if layer.selected and layer != ignore:
-                layer.selected = False
+        self.selection.intersection_update({ignore} if ignore else {})
 
     def select_all(self):
         """Selects all layers."""
-        for layer in self:
-            if not layer.selected:
-                layer.selected = True
+        self.selection.update(self)
 
     def remove_selected(self):
         """Removes selected items from list."""
-        to_delete = []
-        for i in range(len(self)):
-            if self[i].selected:
-                to_delete.append(i)
-        to_delete.reverse()
-        for i in to_delete:
-            self.pop(i)
-        if len(to_delete) > 0:
-            first_to_delete = to_delete[-1]
-            if first_to_delete == 0 and len(self) > 0:
-                self[0].selected = True
-            elif first_to_delete > 0:
-                self[first_to_delete - 1].selected = True
+        for i in reversed(self):
+            if i in self.selection:
+                self.remove(i)
+
+        # FIXME
+        # if len(to_delete) > 0:
+        #     first_to_delete = to_delete[-1]
+        #     if first_to_delete == 0 and len(self) > 0:
+        #         self[0].selected = True
+        #     elif first_to_delete > 0:
+        #         self[first_to_delete - 1].selected = True
 
     def select_next(self, shift=False):
         """Selects next item from list."""
-        selected = []
-        for i in range(len(self)):
-            if self[i].selected:
-                selected.append(i)
-        if len(selected) > 0:
-            if selected[-1] == len(self) - 1:
+        selected_idx = [i for i, x in enumerate(self) if x in self.selection]
+        # if anything is selected
+        if selected_idx:
+            if selected_idx[-1] == len(self) - 1:
                 if shift is False:
-                    self.unselect_all(ignore=self[selected[-1]])
-            elif selected[-1] < len(self) - 1:
+                    self.unselect_all(ignore=self[selected_idx[-1]])
+            elif selected_idx[-1] < len(self) - 1:
                 if shift is False:
-                    self.unselect_all(ignore=self[selected[-1] + 1])
-                self[selected[-1] + 1].selected = True
+                    self.unselect_all(ignore=self[selected_idx[-1] + 1])
+                self.selection.add(self[selected_idx[-1] + 1])
         elif len(self) > 0:
-            self[-1].selected = True
+            self.selection.add(self[-1])
 
     def select_previous(self, shift=False):
         """Selects previous item from list."""
-        selected = []
-        for i in range(len(self)):
-            if self[i].selected:
-                selected.append(i)
-        if len(selected) > 0:
-            if selected[0] == 0:
+        selected_idx = [i for i, x in enumerate(self) if x in self.selection]
+
+        if selected_idx:
+            if selected_idx[0] == 0:
                 if shift is False:
                     self.unselect_all(ignore=self[0])
-            elif selected[0] > 0:
+            elif selected_idx[0] > 0:
                 if shift is False:
-                    self.unselect_all(ignore=self[selected[0] - 1])
-                self[selected[0] - 1].selected = True
+                    self.unselect_all(ignore=self[selected_idx[0] - 1])
+                self.selection.add(self[selected_idx[0] - 1])
         elif len(self) > 0:
-            self[0].selected = True
+            self.selection.add(self[0])
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
         for layer in self:
-            if layer.selected:
+            if layer in self.selection:
                 layer.visible = not layer.visible
 
     @property
