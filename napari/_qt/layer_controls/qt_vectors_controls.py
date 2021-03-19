@@ -3,6 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
 
 from ...layers.vectors._vectors_constants import ColorMode
+from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from .qt_layer_controls_base import QtLayerControls
@@ -57,15 +58,17 @@ class QtVectorsControls(QtLayerControls):
         color_prop_box.activated[str].connect(self.change_edge_color_property)
         color_prop_box.addItems(color_properties)
         self.color_prop_box = color_prop_box
-        self.edge_prop_label = QLabel('edge property:')
+        self.edge_prop_label = QLabel(trans._('edge property:'))
 
         # vector direct color mode adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.edge_color,
-            tooltip='click to set current edge color',
+            tooltip=trans._(
+                'click to set current edge color',
+            ),
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
-        self.edge_color_label = QLabel('edge color:')
+        self.edge_color_label = QLabel(trans._('edge color:'))
         self._on_edge_color_change()
 
         # dropdown to select the edge color mode
@@ -93,15 +96,15 @@ class QtVectorsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
         self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('width:'), 1, 0)
+        self.grid_layout.addWidget(QLabel(trans._('width:')), 1, 0)
         self.grid_layout.addWidget(self.widthSpinBox, 1, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('length:'), 2, 0)
+        self.grid_layout.addWidget(QLabel(trans._('length:')), 2, 0)
         self.grid_layout.addWidget(self.lengthSpinBox, 2, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
         self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('edge color mode:'), 4, 0)
+        self.grid_layout.addWidget(QLabel(trans._('edge color mode:')), 4, 0)
         self.grid_layout.addWidget(self.color_mode_comboBox, 4, 1, 1, 2)
         self.grid_layout.addWidget(self.edge_color_label, 5, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)

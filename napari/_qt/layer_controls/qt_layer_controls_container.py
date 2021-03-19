@@ -2,6 +2,7 @@ from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
 from ...utils import config
+from ...utils.translations import trans
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
 from .qt_points_controls import QtPointsControls
@@ -48,7 +49,11 @@ def create_qt_layer_controls(layer):
             return controls(layer)
 
     raise TypeError(
-        f'Could not find QtControls for layer of type {type(layer)}'
+        trans._(
+            'Could not find QtControls for layer of type {type_}'.format(
+                type_=type(layer)
+            )
+        )
     )
 
 

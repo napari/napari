@@ -9,6 +9,7 @@ from pydantic import BaseSettings, Field
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
+from ..translations import trans
 
 
 class Theme(str):
@@ -29,12 +30,14 @@ class Theme(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError('must be a string')
+            raise ValueError(trans._('must be a string'))
 
         value = v.lower()
         themes = available_themes()
         if value not in available_themes():
-            raise ValueError(f'must be one of {", ".join(themes)}')
+            raise ValueError(
+                trans._('must be one of {}'.format(", ".join(themes)))
+            )
 
         return value
 
@@ -60,7 +63,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
 
     theme: Theme = Field(
         "dark",
-        description="Theme selection.",
+        description=trans._("Theme selection."),
     )
 
     first_time: bool = True
