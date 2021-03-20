@@ -21,8 +21,9 @@ def select(layer, event):
     """
     shift = 'Shift' in event.modifiers
     # on press
-    layer._moving_value = copy(layer._value)
-    shape_under_cursor, vertex_under_cursor = layer._value
+    value = layer.get_value(event.position, world=True)
+    layer._moving_value = copy(value)
+    shape_under_cursor, vertex_under_cursor = value
     if vertex_under_cursor is None:
         if shift and shape_under_cursor is not None:
             if shape_under_cursor in layer.selected_data:
@@ -42,11 +43,12 @@ def select(layer, event):
 
     # on move
     while event.type == 'mouse_move':
+        coordinates = layer.world_to_data(event.position)
         # Drag any selected shapes
         if len(layer.selected_data) == 0:
-            _drag_selection_box(layer, layer.coordinates)
+            _drag_selection_box(layer, coordinates)
         else:
-            _move(layer, layer.coordinates)
+            _move(layer, coordinates)
 
         # if a shape is being moved, update the thumbnail
         if layer._is_moving:
@@ -83,7 +85,8 @@ def add_line(layer, event):
     for i in layer._dims_displayed:
         full_size[i] = size
 
-    corner = np.array(layer.coordinates)
+    coordinates = layer.world_to_data(event.position)
+    corner = np.array(coordinates)
     data = np.array([corner, corner + full_size])
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
@@ -98,7 +101,8 @@ def add_ellipse(layer, event):
     size_v = np.zeros(layer.ndim, dtype=float)
     size_v[layer._dims_displayed[1]] = size
 
-    corner = np.array(layer.coordinates)
+    coordinates = layer.world_to_data(event.position)
+    corner = np.array(coordinates)
     data = np.array(
         [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
     )
@@ -115,7 +119,8 @@ def add_rectangle(layer, event):
     size_v = np.zeros(layer.ndim, dtype=float)
     size_v[layer._dims_displayed[1]] = size
 
-    corner = np.array(layer.coordinates)
+    coordinates = layer.world_to_data(event.position)
+    corner = np.array(coordinates)
     data = np.array(
         [corner, corner + size_v, corner + size_h + size_v, corner + size_h]
     )
@@ -140,7 +145,8 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        _move(layer, layer.coordinates)
+        coordinates = layer.world_to_data(event.position)
+        _move(layer, coordinates)
         yield
 
     # on release
@@ -150,9 +156,10 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
 def add_path_polygon(layer, event):
     """Add a path or polygon."""
     # on press
+    coordinates = layer.world_to_data(event.position)
     if layer._is_creating is False:
         # Start drawing a path
-        data = np.array([layer.coordinates, layer.coordinates])
+        data = np.array([coordinates, coordinates])
         layer.add(data, shape_type='path')
         layer.selected_data = {layer.nshapes - 1}
         layer._value = (layer.nshapes - 1, 1)
@@ -167,9 +174,10 @@ def add_path_polygon(layer, event):
         else:
             new_type = None
         vertices = layer._data_view.shapes[index].data
-        vertices = np.concatenate((vertices, [layer.coordinates]), axis=0)
+        vertices = np.concatenate((vertices, [coordinates]), axis=0)
         # Change the selected vertex
-        layer._value = (layer._value[0], layer._value[1] + 1)
+        value = layer.get_value(event.position, world=True)
+        layer._value = (value[0], value[1] + 1)
         layer._moving_value = copy(layer._value)
         layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
@@ -178,7 +186,8 @@ def add_path_polygon(layer, event):
 def add_path_polygon_creating(layer, event):
     """While a path or polygon move next vertex to be added."""
     if layer._is_creating:
-        _move(layer, layer.coordinates)
+        coordinates = layer.world_to_data(event.position)
+        _move(layer, coordinates)
 
 
 def vertex_insert(layer, event):
@@ -222,7 +231,8 @@ def vertex_insert(layer, event):
         return
 
     # Determine the closet edge to the current cursor coordinate
-    coord = [layer.coordinates[i] for i in layer._dims_displayed]
+    coordinates = layer.world_to_data(event.position)
+    coord = [coordinates[i] for i in layer._dims_displayed]
     ind, loc = point_to_lines(coord, all_edges)
     index = all_edges_shape[ind][0]
     ind = all_edges_shape[ind][1] + 1
@@ -244,7 +254,7 @@ def vertex_insert(layer, event):
             ind = ind + 1
 
     # Insert new vertex at appropriate place in vertices of target shape
-    vertices = np.insert(vertices, ind, [layer.coordinates], axis=0)
+    vertices = np.insert(vertices, ind, [coordinates], axis=0)
     with layer.events.set_data.blocker():
         layer._data_view.edit(index, vertices, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
@@ -258,7 +268,8 @@ def vertex_remove(layer, event):
     the shape to shrink to a size that no longer is valid remove the whole
     shape.
     """
-    shape_under_cursor, vertex_under_cursor = layer._value
+    value = layer.get_value(event.position, world=True)
+    shape_under_cursor, vertex_under_cursor = value
     if vertex_under_cursor is None:
         # No vertex was clicked on so return
         return
