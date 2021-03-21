@@ -27,9 +27,16 @@ class LayerList(SelectableEventedList[Layer]):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+
+        # temporary: see note in _on_selection_event
         self.selection.events.connect(self._on_selection_event)
 
     def _on_selection_event(self, event):
+        # This method is a temporary workaround to the fact that the Points
+        # layer needs to know when its selection state changes so that it can
+        # update the highlight state.  This (and the layer._on_selection
+        # method) can be removed once highlighting logic has been removed from
+        # the layer model.
         if event.type == 'current':
             return
         selected = event.type == 'added'
@@ -82,7 +89,9 @@ class LayerList(SelectableEventedList[Layer]):
         """List of selected layers."""
         warnings.warn(
             "'layers.selected' is deprecated and will be removed in >=v0.4.9.  "
-            "Please use 'layers.selection'"
+            "Please use 'layers.selection'",
+            category=DeprecationWarning,
+            stacklevel=2,
         )
         return self.selection
 
@@ -124,7 +133,9 @@ class LayerList(SelectableEventedList[Layer]):
             "'layers.unselect_all()' is deprecated and will be removed in "
             ">=v0.4.9. Please use 'layers.selection.clear()'.  To unselect "
             "everything but a set of ignored layers, use "
-            r"'layers.selection.intersection_update({ignored})'"
+            r"'layers.selection.intersection_update({ignored})'",
+            category=DeprecationWarning,
+            stacklevel=2,
         )
         self.selection.intersection_update({ignore} if ignore else {})
 
