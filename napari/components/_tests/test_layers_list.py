@@ -147,11 +147,11 @@ def test_unselect_all():
     layers.append(layer_c)
 
     layers.unselect_all()
-    assert [lay in layers.selection for lay in layers] == [False] * 3
+    assert not layers.selection
 
     layers.selection.update(layers)
     layers.unselect_all(ignore=layer_b)
-    assert [lay in layers.selection for lay in layers] == [False, True, False]
+    assert layers.selection == {layer_b}
 
 
 def test_remove_selected():
@@ -250,56 +250,33 @@ def test_move_selected():
     layers.unselect_all()
     layers.move_selected(2, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_c}
 
     # Move middle element to front of list and back
     layers.unselect_all()
     layers.move_selected(2, 0)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        True,
-        False,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_c}
+
     layers.unselect_all()
     layers.move_selected(0, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_c}
 
     # Move middle element to end of list and back
     layers.unselect_all()
     layers.move_selected(2, 3)
     assert list(layers) == [layer_a, layer_b, layer_d, layer_c]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        False,
-        True,
-    ]
+    assert layers.selection == {layer_c}
+
     layers.unselect_all()
     layers.move_selected(3, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_c}
 
     # Select first two layers only
-    for layer, s in zip(layers, [True, True, False, False]):
-        layers.selection.add(layer) if s else layers.selection.discard(layer)
+    layers.selection = layers[:2]
+
     # Move unselected middle element to front of list even if others selected
     layers.move_selected(2, 0)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
@@ -308,113 +285,61 @@ def test_move_selected():
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
 
     # Select first two layers only
-    for layer, s in zip(layers, [True, True, False, False]):
-        layers.selection.add(layer) if s else layers.selection.discard(layer)
+    layers.selection = layers[:2]
     # Check nothing moves if given same insert and origin and multiple selected
     layers.move_selected(0, 0)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        True,
-        True,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_b}
 
     # Check nothing moves if given same insert and origin and multiple selected
     layers.move_selected(1, 1)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        True,
-        True,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move first two selected to middle of list
     layers.move_selected(0, 2)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        True,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move middle selected to front of list
     layers.move_selected(2, 0)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        True,
-        True,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move first two selected to middle of list
     layers.move_selected(1, 2)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        True,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_b}
 
     # Move middle selected to front of list
     layers.move_selected(1, 0)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        True,
-        True,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_b}
 
     # Select first and third layers only
-    for layer, s in zip(layers, [True, False, True, False]):
-        layers.selection.add(layer) if s else layers.selection.discard(layer)
+    layers.selection = layers[::2]
     # Move selection together to middle
     layers.move_selected(2, 2)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        True,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to middle
     layers.move_selected(0, 1)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        True,
-        True,
-        False,
-    ]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to end
     layers.move_selected(2, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        True,
-        True,
-    ]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((2, 0, 3, 1), 0)
 
     # Move selection together to end
     layers.move_selected(0, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        True,
-        True,
-    ]
+    assert layers.selection == {layer_a, layer_c}
     layers.move_multiple((2, 0, 3, 1), 0)
 
     layer_e = Image(np.random.random((15, 15)))
@@ -431,8 +356,7 @@ def test_move_selected():
         layer_f,
     ]
     # Select second and firth layers only
-    for layer, s in zip(layers, [False, True, False, False, True, False]):
-        layers.selection.add(layer) if s else layers.selection.discard(layer)
+    layers.selection = {layers[1], layers[4]}
 
     # Move selection together to middle
     layers.move_selected(1, 2)
@@ -444,14 +368,7 @@ def test_move_selected():
         layer_d,
         layer_f,
     ]
-    assert [lay in layers.selection for lay in layers] == [
-        False,
-        False,
-        True,
-        True,
-        False,
-        False,
-    ]
+    assert layers.selection == {layer_b, layer_e}
 
 
 def test_toggle_visibility():
