@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os.path
 import warnings
 from pathlib import Path
@@ -87,7 +89,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer: 'Viewer', welcome=False):
+    def __init__(self, viewer: Viewer, welcome=False):
 
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
