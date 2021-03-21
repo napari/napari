@@ -12,3 +12,6 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.events.removed.connect(lambda e: self.selection.discard(e.value))
+
+    # TODO: add strict check to make sure that things added to
+    # selection/current are in the list?

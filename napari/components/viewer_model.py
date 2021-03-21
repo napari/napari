@@ -1,6 +1,7 @@
 import inspect
 import itertools
 import os
+import warnings
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -24,6 +25,7 @@ from ..layers.utils.stack_utils import split_channels
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
@@ -134,6 +136,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+
+        self.events.add(
+            active_layer=WarningEmitter(
+                "'viewer.events.active_layer' is deprecated and will be "
+                "removed in napari v0.4.9, use "
+                "'viewer.layers.selection.events.current' instead"
+            )
+        )
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -292,7 +302,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     @property
     def active_layer(self):
+        warnings.warn(
+            "'viewer.active_layer' is deprecated and will be removed in napari"
+            " v0.4.9.  Please use 'viewer.layers.selection.current' instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return self.layers.selection.current
+
+    @active_layer.setter
+    def active_layer(self, layer):
+        warnings.warn(
+            "'viewer.active_layer' is deprecated and will be removed in napari"
+            " v0.4.9.  Please use 'viewer.layers.selection.current' instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.layers.selection.current = layer
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
