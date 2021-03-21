@@ -106,6 +106,17 @@ class ErrorNotification(Notification):
         super().__init__(msg, NotificationSeverity.ERROR, actions)
         self.exception = exception
 
+    def as_html(self):
+        from ._tracebacks import get_tb_formatter
+
+        fmt = get_tb_formatter()
+        exc_info = (
+            self.exception.__class__,
+            self.exception,
+            self.exception.__traceback__,
+        )
+        return fmt(exc_info, as_html=True)
+
     def __str__(self):
         from ._tracebacks import get_tb_formatter
 
