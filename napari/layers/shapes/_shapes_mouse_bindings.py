@@ -44,6 +44,9 @@ def select(layer, event):
     # on move
     while event.type == 'mouse_move':
         coordinates = layer.world_to_data(event.position)
+        # ToDo: Need to pass moving_coordinates to allow fixed aspect ratio
+        # keybinding to work, this should be dropped
+        layer._moving_coordinates = coordinates
         # Drag any selected shapes
         if len(layer.selected_data) == 0:
             _drag_selection_box(layer, coordinates)
