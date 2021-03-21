@@ -281,6 +281,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         # if multiple layers are selected sets the active layer to None
 
         # TODO: remove this in favor of directly setting selection.current.
+        # This will be handled directly by the new QtLayerList, so this method
+        # can likely be removed at that time.
         active_layer = None
         for layer in self.layers:
             if active_layer is None and layer in self.layers.selection:
