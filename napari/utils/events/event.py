@@ -674,7 +674,6 @@ class WarningEmitter(EventEmitter):
 
         import warnings
 
-        print('warn')
         warnings.warn(
             self._message, category=self._category, stacklevel=self._stacklevel
         )
@@ -877,7 +876,8 @@ class EmitterGroup(EventEmitter):
         # while simultaneously eliminating the overhead if nobody is listening.
         if connect:
             for emitter in self:
-                self[emitter].connect(self)
+                if not isinstance(self[emitter], WarningEmitter):
+                    self[emitter].connect(self)
         else:
             for emitter in self:
                 self[emitter].disconnect(self)

@@ -8,6 +8,7 @@ import numpy as np
 
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
+from ...utils.events.event import WarningEmitter
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -273,6 +274,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             _ndisplay=Event,
+            select=WarningEmitter(
+                "'layer.events.select' is deprecated and will be "
+                "removed in napari v0.4.9, use "
+                "'viewer.layers.selection.events.added' instead",
+                type='select',
+            ),
+            deselect=WarningEmitter(
+                "'layer.events.deselect' is deprecated and will be "
+                "removed in napari v0.4.9, use "
+                "'viewer.layers.selection.events.removed' instead",
+                type='deselect',
+            ),
         )
         self.name = name
 
@@ -706,6 +719,36 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._ndim
 
     @property
+    def selected(self):
+        """bool: Whether this layer is selected or not."""
+        warnings.warn(
+            "'layer.selected' is deprecated and will be removed in v0.4.9. "
+            "Please use `layer in viewer.layers.selection`",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        layers = getattr(self, '_deprecated_layerlist', None)
+        if layers is not None:
+            return self in layers.selection
+        return False
+
+    @selected.setter
+    def selected(self, selected):
+        warnings.warn(
+            "'layer.selected' is deprecated and will be removed in v0.4.9. "
+            "Please use `viewer.layers.selection.add(layer)` or "
+            "`viewer.layers.selection.remove(layer)`",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        layers = getattr(self, '_deprecated_layerlist', None)
+        if layers is not None:
+            if selected:
+                layers.selection.add(self)
+            else:
+                layers.selection.discard(self)
+
+    @property
     def status(self):
         """str: displayed in status bar bottom left."""
         warnings.warn(
@@ -1078,4 +1121,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return save_layers(path, [self], plugin=plugin)
 
     def _on_selection(self, selected: bool):
-        pass
+        # This method is a temporary workaround to the fact that the Points
+        # layer needs to know when its selection state changes so that it can
+        # update the highlight state.  This, along with the events.select and
+        # events.deselect emitters, (and the LayerList._on_selection_event
+        # method) can be removed once highlighting logic has been removed from
+        # the layer model.
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()

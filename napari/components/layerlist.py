@@ -87,6 +87,9 @@ class LayerList(SelectableEventedList[Layer]):
         self.selection.clear()
         self.selection.add(new_layer)
 
+        # required for deprecated layer.selected property.  remove after 0.4.9
+        new_layer._deprecated_layerlist = self
+
     @property
     def selected(self):
         """List of selected layers."""

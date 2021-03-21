@@ -141,7 +141,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             active_layer=WarningEmitter(
                 "'viewer.events.active_layer' is deprecated and will be "
                 "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.current' instead"
+                "'viewer.layers.selection.events.current' instead",
+                type='active_layer',
             )
         )
 
