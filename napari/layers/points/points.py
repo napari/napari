@@ -474,6 +474,7 @@ class Points(Layer):
         self._set_editable()
 
     def _on_selection(self, selected):
+        # this method is slated for removal.  don't add anything new.
         if selected:
             self._set_highlight()
         else:

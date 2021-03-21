@@ -542,6 +542,7 @@ class Shapes(Layer):
         self._set_editable()
 
     def _on_selection(self, selected: bool):
+        # this method is slated for removal.  don't add anything new.
         if not selected:
             self._finish_drawing()
 
