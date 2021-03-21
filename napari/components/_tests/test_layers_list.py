@@ -135,79 +135,23 @@ def test_clearing_layerlist():
 
 
 def test_remove_selected():
-    """
-    Test removing selected layers
-    """
+    """Test removing selected layers."""
     layers = LayerList()
     layer_a = Image(np.random.random((10, 10)))
     layer_b = Image(np.random.random((15, 15)))
     layer_c = Image(np.random.random((15, 15)))
-    layer_d = Image(np.random.random((15, 15)))
     layers.append(layer_a)
     layers.append(layer_b)
     layers.append(layer_c)
 
     # remove last added layer as only one selected
-    layers.selection.discard(layer_a)
-    layers.selection.discard(layer_b)
+    layers.selection.clear()
     layers.selection.add(layer_c)
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 
-    # TODO: this just fixes the test...
-    layers.selection.add(layer_b)
-
-    # check that the next to last layer is now selected
-    assert [lay in layers.selection for lay in layers] == [False, True]
-
-    layers.remove_selected()
-    assert list(layers) == [layer_a]
-    # TODO: this just fixes the test...
-    layers.selection.add(layer_a)
-    assert [lay in layers.selection for lay in layers] == [True]
-
-    # select and remove first layer only
-    layers.append(layer_b)
-    layers.append(layer_c)
-    assert list(layers) == [layer_a, layer_b, layer_c]
-    layers.selection.add(layer_a)
-    layers.selection.discard(layer_b)
-    layers.selection.discard(layer_c)
-    layers.remove_selected()
-    # TODO: this just fixes the test...
-    layers.selection.add(layer_b)
-    assert list(layers) == [layer_b, layer_c]
-    assert [lay in layers.selection for lay in layers] == [True, False]
-
-    # select and remove first and last layer of four
-    layers.append(layer_a)
-    layers.append(layer_d)
-    assert list(layers) == [layer_b, layer_c, layer_a, layer_d]
-    layers.selection.discard(layer_a)
-    layers.selection.add(layer_b)
-    layers.selection.discard(layer_c)
-    layers.selection.add(layer_d)
-    layers.remove_selected()
-    assert list(layers) == [layer_c, layer_a]
-    # TODO: this just fixes the test...
-    layers.selection.add(layer_c)
-    assert [lay in layers.selection for lay in layers] == [True, False]
-
-    # select and remove middle two layers of four
-    layers.append(layer_b)
-    layers.append(layer_d)
-    layers.selection.add(layer_a)
-    layers.selection.add(layer_b)
-    layers.selection.discard(layer_c)
-    layers.selection.discard(layer_d)
-    layers.remove_selected()
-    assert list(layers) == [layer_c, layer_d]
-    # TODO: this just fixes the test...
-    layers.selection.add(layer_c)
-    assert [lay in layers.selection for lay in layers] == [True, False]
-
     # select and remove all layersay
-    layers.selection.update(layers)
+    layers.select_all()
     layers.remove_selected()
     assert len(layers) == 0
 
