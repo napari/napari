@@ -80,7 +80,10 @@ class LayerList(SelectableEventedList[Layer]):
     @property
     def selected(self):
         """List of selected layers."""
-        # XXX: deprecate? change selectable attribute to selected?
+        warnings.warn(
+            "'layers.selected' is deprecated and will be removed in >=v0.4.9.  "
+            "Please use 'layers.selection'"
+        )
         return self.selection
 
     def move_selected(self, index, insert):
@@ -117,6 +120,12 @@ class LayerList(SelectableEventedList[Layer]):
         ignore : Layer | None
             Layer that should not be unselected if specified.
         """
+        warnings.warn(
+            "'layers.unselect_all()' is deprecated and will be removed in "
+            ">=v0.4.9. Please use 'layers.selection.clear()'.  To unselect "
+            "everything but a set of ignored layers, use "
+            r"'layers.selection.intersection_update({ignored})'"
+        )
         self.selection.intersection_update({ignore} if ignore else {})
 
     def select_all(self):
@@ -125,17 +134,8 @@ class LayerList(SelectableEventedList[Layer]):
 
     def remove_selected(self):
         """Removes selected items from list."""
-        for i in reversed(self):
-            if i in self.selection:
-                self.remove(i)
-
-        # FIXME
-        # if len(to_delete) > 0:
-        #     first_to_delete = to_delete[-1]
-        #     if first_to_delete == 0 and len(self) > 0:
-        #         self[0].selected = True
-        #     elif first_to_delete > 0:
-        #         self[first_to_delete - 1].selected = True
+        for i in list(self.selection):
+            self.remove(i)
 
     def select_next(self, shift=False):
         """Selects next item from list."""
@@ -144,11 +144,13 @@ class LayerList(SelectableEventedList[Layer]):
         if selected_idx:
             if selected_idx[-1] == len(self) - 1:
                 if shift is False:
-                    self.unselect_all(ignore=self[selected_idx[-1]])
+                    next = self[selected_idx[-1]]
+                    self.selection.intersection_update({next})
             elif selected_idx[-1] < len(self) - 1:
+                next = self[selected_idx[-1] + 1]
                 if shift is False:
-                    self.unselect_all(ignore=self[selected_idx[-1] + 1])
-                self.selection.add(self[selected_idx[-1] + 1])
+                    self.selection.intersection_update({next})
+                self.selection.add(next)
         elif len(self) > 0:
             self.selection.add(self[-1])
 
@@ -169,9 +171,8 @@ class LayerList(SelectableEventedList[Layer]):
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
-        for layer in self:
-            if layer in self.selection:
-                layer.visible = not layer.visible
+        for layer in self.selection:
+            layer.visible = not layer.visible
 
     @property
     def _extent_world(self) -> np.ndarray:
@@ -336,7 +337,7 @@ class LayerList(SelectableEventedList[Layer]):
         """
         from ..plugins.io import save_layers
 
-        layers = self.selected if selected else list(self)
+        layers = list(self.selection) if selected else list(self)
 
         if not layers:
             warnings.warn(f"No layers {'selected' if selected else 'to save'}")

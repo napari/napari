@@ -456,7 +456,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-def test_layers_save_seleteced(tmpdir, layer_data_and_types):
+def test_layers_save_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
