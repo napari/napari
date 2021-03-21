@@ -465,21 +465,14 @@ def test_selection():
     assert viewer.layers[0] in viewer.layers.selection
 
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay in viewer.layers.selection for lay in viewer.layers] == [
-        False,
-        True,
-    ]
+    assert viewer.layers.selection == {viewer.layers[-1]}
 
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay in viewer.layers.selection for lay in viewer.layers] == [
-        False
-    ] * 2 + [True]
+    assert viewer.layers.selection == {viewer.layers[-1]}
 
     viewer.layers.selection.update(viewer.layers)
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay in viewer.layers.selection for lay in viewer.layers] == [
-        False
-    ] * 3 + [True]
+    assert viewer.layers.selection == {viewer.layers[-1]}
 
 
 def test_add_delete_layers():
