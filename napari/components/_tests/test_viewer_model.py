@@ -4,6 +4,7 @@ import pytest
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
+from napari.utils.events.event import WarningEmitter
 
 
 def test_viewer_model():
@@ -665,7 +666,8 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -681,7 +683,8 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     # Check that all internal callbacks have been removed
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
 
 @pytest.mark.parametrize(

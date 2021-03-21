@@ -3,6 +3,7 @@ import pytest
 
 from napari._tests.utils import layer_test_data
 from napari.layers import Image
+from napari.utils.events.event import WarningEmitter
 
 
 def test_layers_removed_on_close(make_napari_viewer):
@@ -104,7 +105,8 @@ def test_add_remove_layer_external_callbacks(
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -119,4 +121,5 @@ def test_add_remove_layer_external_callbacks(
     # Check that all internal callbacks have been removed
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
