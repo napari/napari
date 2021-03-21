@@ -297,10 +297,16 @@ def test_drag_shape(create_known_shapes_layer, Event):
     layer, n_shapes, _ = create_known_shapes_layer
 
     layer.mode = 'select'
+    # Zoom in so as to not select any vertices
+    layer.scale_factor = 0.01
     orig_data = layer.data[0].copy()
     assert len(layer.selected_data) == 0
 
     position = tuple(np.mean(layer.data[0], axis=0))
+
+    # Check shape under cursor
+    value = layer.get_value(position, world=True)
+    assert value == (0, None)
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -325,6 +331,10 @@ def test_drag_shape(create_known_shapes_layer, Event):
 
     assert len(layer.selected_data) == 1
     assert layer.selected_data == {0}
+
+    # Check shape but not vertex under cursor
+    value = layer.get_value(event.position, world=True)
+    assert value == (0, None)
 
     # Simulate click
     event = ReadOnlyWrapper(
