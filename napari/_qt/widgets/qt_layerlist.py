@@ -303,7 +303,7 @@ class QtLayerList(QScrollArea):
         """
         if self._drag_name is None:
             # Unselect all the layers if not dragging a layer
-            self.layers.unselect_all()
+            self.layers.selection.clear()
             return
 
         modifiers = event.modifiers()
@@ -325,7 +325,7 @@ class QtLayerList(QScrollArea):
             self.layers.selection.toggle(layer)
         else:
             # If otherwise unselect all and leave clicked one selected
-            self.layers.unselect_all(ignore=layer)
+            self.layers.selection.clear()
             self.layers.selection.add(layer)
 
     def mouseMoveEvent(self, event):

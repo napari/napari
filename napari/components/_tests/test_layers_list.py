@@ -134,26 +134,6 @@ def test_clearing_layerlist():
     assert len(layers) == 0
 
 
-def test_unselect_all():
-    """
-    Test unselecting
-    """
-    layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
-    layers.append(layer_a)
-    layers.append(layer_b)
-    layers.append(layer_c)
-
-    layers.unselect_all()
-    assert not layers.selection
-
-    layers.selection.update(layers)
-    layers.unselect_all(ignore=layer_b)
-    assert layers.selection == {layer_b}
-
-
 def test_remove_selected():
     """
     Test removing selected layers
@@ -247,29 +227,29 @@ def test_move_selected():
     layers.append(layer_d)
 
     # Check nothing moves if given same insert and origin
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(2, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
     assert layers.selection == {layer_c}
 
     # Move middle element to front of list and back
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(2, 0)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
     assert layers.selection == {layer_c}
 
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(0, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
     assert layers.selection == {layer_c}
 
     # Move middle element to end of list and back
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(2, 3)
     assert list(layers) == [layer_a, layer_b, layer_d, layer_c]
     assert layers.selection == {layer_c}
 
-    layers.unselect_all()
+    layers.selection.clear()
     layers.move_selected(3, 2)
     assert list(layers) == [layer_a, layer_b, layer_c, layer_d]
     assert layers.selection == {layer_c}
@@ -433,7 +413,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
-    layers.unselect_all()
+    layers.selection.clear()
 
     path = os.path.join(tmpdir, 'layers_folder')
 
@@ -460,7 +440,7 @@ def test_layers_save_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
-    layers.unselect_all()
+    layers.selection.clear()
     layers.selection.update({layers[0], layers[2]})
 
     path = os.path.join(tmpdir, 'layers_folder')

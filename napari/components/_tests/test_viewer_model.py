@@ -508,7 +508,7 @@ def test_active_layer():
     assert viewer.layers.selection.current == viewer.layers[1]
 
     # Check no active layer after unselecting all
-    viewer.layers.unselect_all()
+    viewer.layers.selection.clear()
     assert viewer.layers.selection.current is None
 
     # Check selected layer is active

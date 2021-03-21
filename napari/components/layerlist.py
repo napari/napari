@@ -83,6 +83,9 @@ class LayerList(SelectableEventedList[Layer]):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)
+        # Make layer selected and unselect all others
+        self.selection.clear()
+        self.selection.add(new_layer)
 
     @property
     def selected(self):
@@ -113,7 +116,7 @@ class LayerList(SelectableEventedList[Layer]):
             Index that item(s) will be inserted at
         """
         if not self[index] in self.selection:
-            self.unselect_all()
+            self.selection.clear()
             self.selection.add(self[index])
             moving = [index]
         else:
@@ -172,11 +175,12 @@ class LayerList(SelectableEventedList[Layer]):
         if selected_idx:
             if selected_idx[0] == 0:
                 if shift is False:
-                    self.unselect_all(ignore=self[0])
+                    self.selection.intersection_update({self[0]})
             elif selected_idx[0] > 0:
+                new = self[selected_idx[0] - 1]
                 if shift is False:
-                    self.unselect_all(ignore=self[selected_idx[0] - 1])
-                self.selection.add(self[selected_idx[0] - 1])
+                    self.selection.intersection_update({new})
+                self.selection.add(new)
         elif len(self) > 0:
             self.selection.add(self[0])
 

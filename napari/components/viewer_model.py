@@ -417,10 +417,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
 
-        # Make layer selected and unselect all others
-        self.layers.selection.add(layer)
-        self.layers.unselect_all(ignore=layer)
-
         # Update dims and grid model
         self._on_layers_change(None)
         self._on_grid_change(None)

@@ -119,8 +119,8 @@ class Selectable(Generic[_S]):
     """Mixin that adds a selection model to an object."""
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore
         self._selection: Selection[_S] = Selection()
+        super().__init__(*args, **kwargs)  # type: ignore
 
     @property
     def selection(self) -> Selection[_S]:
