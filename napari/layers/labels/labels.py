@@ -11,6 +11,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..image.image import _get_image_base_class
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -241,7 +242,7 @@ class Labels(_image_base_class):
         self._mode_history = self._mode
         self._status = self.mode
         self._preserve_labels = False
-        self._help = 'enter paint or fill mode to edit labels'
+        self._help = trans._('enter paint or fill mode to edit labels')
 
         self._block_saving = False
         self._reset_history()
@@ -416,7 +417,7 @@ class Labels(_image_base_class):
     @selected_label.setter
     def selected_label(self, selected_label):
         if selected_label < 0:
-            raise ValueError('cannot reduce selected label below 0')
+            raise ValueError(trans._('cannot reduce selected label below 0'))
         if selected_label == self.selected_label:
             return
 
@@ -454,7 +455,7 @@ class Labels(_image_base_class):
             self.colormap = self._random_colormap
 
         else:
-            raise ValueError("Unsupported Color Mode")
+            raise ValueError(trans._("Unsupported Color Mode"))
 
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
@@ -529,11 +530,13 @@ class Labels(_image_base_class):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter paint or fill mode to edit labels'
+            self.help = trans._('enter paint or fill mode to edit labels')
         elif mode == Mode.PICK:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, click to pick a label'
+            self.help = trans._(
+                'hold <space> to pan/zoom, click to pick a label'
+            )
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor = self.brush_shape
@@ -544,7 +547,7 @@ class Labels(_image_base_class):
             )
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
-            self.help = (
+            self.help = trans._(
                 'hold <space> to pan/zoom, '
                 'hold <shift> to toggle preserve_labels, '
                 'hold <control> to fill, '
@@ -555,7 +558,9 @@ class Labels(_image_base_class):
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, click to fill a label'
+            self.help = trans._(
+                'hold <space> to pan/zoom, click to fill a label'
+            )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor = self.brush_shape
@@ -566,10 +571,12 @@ class Labels(_image_base_class):
             )
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, drag to erase a label'
+            self.help = trans._(
+                'hold <space> to pan/zoom, drag to erase a label'
+            )
             self.mouse_drag_callbacks.append(draw)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(trans._("Mode not recognized"))
 
         self._mode = mode
 

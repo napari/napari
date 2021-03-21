@@ -21,6 +21,7 @@ from ..utils.interactions import (
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
+from ..utils.translations import trans
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
@@ -121,24 +122,27 @@ class QtViewer(QSplitter):
         self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
-            name='layer list',
+            name=trans._('layer list'),
             area='left',
             allowed_areas=['left', 'right'],
+            object_name='layer list',
         )
         self.dockLayerControls = QtViewerDockWidget(
             self,
             self.controls,
-            name='layer controls',
+            name=trans._('layer controls'),
             area='left',
             allowed_areas=['left', 'right'],
+            object_name='layer controls',
         )
         self.dockConsole = QtViewerDockWidget(
             self,
             QWidget(),
-            name='console',
+            name=trans._('console'),
             area='bottom',
             allowed_areas=['top', 'bottom'],
             shortcut='Ctrl+Shift+C',
+            object_name='console',
         )
         self.dockConsole.setVisible(False)
         # because the console is loaded lazily in the @getter, this line just
@@ -225,7 +229,7 @@ class QtViewer(QSplitter):
             from .qt_resources import get_stylesheet
 
             warnings.warn(
-                (
+                trans._(
                     "The 'raw_stylesheet' attribute is deprecated and will be"
                     "removed in version 0.4.7.  Please use "
                     "`napari.qt.get_stylesheet` instead"
@@ -296,7 +300,7 @@ class QtViewer(QSplitter):
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
-                name='performance',
+                name=trans._('performance'),
                 area='bottom',
                 shortcut='Ctrl+Shift+P',
             )
@@ -312,8 +316,10 @@ class QtViewer(QSplitter):
                 self.console = QtConsole(self.viewer)
             except ImportError:
                 warnings.warn(
-                    'napari-console not found. It can be installed with'
-                    ' "pip install napari_console"'
+                    trans._(
+                        'napari-console not found. It can be installed with'
+                        ' "pip install napari_console"'
+                    )
                 )
                 self._console = None
         return self._console
@@ -434,18 +440,19 @@ class QtViewer(QSplitter):
         """
         msg = ''
         if not len(self.viewer.layers):
-            msg = "There are no layers in the viewer to save"
+            msg = trans._("There are no layers in the viewer to save")
         elif selected and not len(self.viewer.layers.selected):
-            msg = (
+            msg = trans._(
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise OSError("Nothing to save")
+            raise OSError(trans._("Nothing to save"))
 
+        msg = trans._("selected") if selected else trans._("all")
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
-            caption=f'Save {"selected" if selected else "all"} layers',
+            caption=trans._('Save {msg} layers'.format(msg=msg)),
             directory=self._last_visited_dir,  # home dir by default
         )
 
@@ -457,7 +464,11 @@ class QtViewer(QSplitter):
                 )
             if not saved:
                 raise OSError(
-                    f"File {filename} save failed.\n{error_messages}"
+                    trans._(
+                        "File {filename} save failed.\n{error_messages}".format(
+                            filename=filename, error_messages=error_messages
+                        )
+                    )
                 )
 
     def screenshot(self, path=None):
@@ -489,7 +500,7 @@ class QtViewer(QSplitter):
         """Add files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select file(s)...',
+            caption=trans._('Select file(s)...'),
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
@@ -499,7 +510,7 @@ class QtViewer(QSplitter):
         """Add files as a stack, from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select files...',
+            caption=trans._('Select files...'),
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
@@ -509,7 +520,7 @@ class QtViewer(QSplitter):
         """Add a folder of files from the menubar."""
         folder = QFileDialog.getExistingDirectory(
             parent=self,
-            caption='Select folder...',
+            caption=trans._('Select folder...'),
             directory=self._last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:

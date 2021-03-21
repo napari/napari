@@ -444,4 +444,6 @@ class _Translator:
         return trans
 
 
+# Default translator
+trans = _Translator.load("napari")
 translator = _Translator

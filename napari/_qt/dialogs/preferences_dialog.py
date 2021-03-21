@@ -15,9 +15,7 @@ from qtpy.QtWidgets import (
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...utils.settings import SETTINGS
 from ...utils.settings._defaults import ApplicationSettings, PluginSettings
-from ...utils.translations import translator
-
-trans = translator.load()
+from ...utils.translations import trans
 
 
 class PreferencesDialog(QDialog):

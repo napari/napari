@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
 
 from ...utils import config
 from ...utils.events import disconnect_events
+from ...utils.translations import trans
 
 if TYPE_CHECKING:
     from ...components.layerlist import LayerList
@@ -92,7 +93,7 @@ class QtLayerList(QScrollArea):
         self._scroll_up = True
         self._min_scroll_region = 24
         self.setAcceptDrops(True)
-        self.setToolTip('Layer list')
+        self.setToolTip(trans._('Layer list'))
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         self.layers.events.inserted.connect(self._add)
@@ -542,14 +543,14 @@ class QtLayerWidget(QFrame):
 
         tb = QLabel(self)
         tb.setObjectName('thumbnail')
-        tb.setToolTip('Layer thumbnail')
+        tb.setToolTip(trans._('Layer thumbnail'))
         self.thumbnailLabel = tb
         self._on_thumbnail_change()
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
-        cb.setToolTip('Layer visibility')
+        cb.setToolTip(trans._('Layer visibility'))
         cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
         cb.stateChanged.connect(self.changeVisible)
@@ -570,11 +571,11 @@ class QtLayerWidget(QFrame):
         layer_type = type(layer).__name__
         ltb.setObjectName(layer_type)
         ltb.setProperty('layer_type_label', True)
-        ltb.setToolTip('Layer type')
+        ltb.setToolTip(trans._('Layer type'))
         self.typeLabel = ltb
         self.layout.addWidget(ltb)
 
-        msg = 'Click to select\nDrag to rearrange'
+        msg = trans._('Click to select\nDrag to rearrange')
         self.setToolTip(msg)
         self.setSelected(selected)
 
