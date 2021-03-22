@@ -51,8 +51,14 @@ class EventedSet(MutableSet[_T]):
     def __len__(self) -> int:
         return len(self._set)
 
+    def _pre_add_hook(self, value):
+        # for subclasses to potentially check value before adding
+        return value
+
     def add(self, value: _T) -> None:
+        """Add an element to the set, if not already present."""
         if value not in self:
+            value = self._pre_add_hook(value)
             self._set.add(value)
             self.events.changed(added={value}, removed={})
 
@@ -89,6 +95,7 @@ class EventedSet(MutableSet[_T]):
         """Update this set with the union of this set and others"""
         to_add = set(others).difference(self._set)
         if to_add:
+            to_add = {self._pre_add_hook(i) for i in to_add}
             self._set.update(to_add)
             self.events.changed(added=set(to_add), removed={})
 

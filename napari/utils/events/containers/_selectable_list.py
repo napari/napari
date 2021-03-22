@@ -13,9 +13,15 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         self.activate_on_insert = True
         super().__init__(*args, **kwargs)
         self.events.removed.connect(lambda e: self.selection.discard(e.value))
+        self.selection._pre_add_hook = self._preselect_hook
 
-    # TODO: add strict check to make sure that things added to
-    # selection/current are in the list?
+    def _preselect_hook(self, value):
+        """Called before adding an item to the selection."""
+        if value not in self:
+            raise ValueError(
+                f"Cannot selection item that is not in list: {value!r}"
+            )
+        return value
 
     def insert(self, index: int, value: _T):
         super().insert(index, value)
