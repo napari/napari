@@ -62,6 +62,13 @@ def test_float_labels():
         layer = Labels(data)
         assert np.issubdtype(layer.data.dtype, np.integer)
 
+    data0 = np.random.uniform(20, size=(20, 20))
+    data1 = data0[::2, ::2].astype(np.int32)
+    data = [data0, data1]
+    with pytest.warns(UserWarning):
+        layer = Labels(data)
+        assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
+
 
 def test_changing_labels():
     """Test changing Labels data."""

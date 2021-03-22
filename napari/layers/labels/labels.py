@@ -11,6 +11,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -183,14 +184,7 @@ class Labels(_ImageBase):
         self._show_selected_label = False
         self._contour = 0
 
-        data = [data] if not isinstance(data, list) else data
-        if any(np.issubdtype(d.dtype, np.floating) for d in data):
-            warnings.warn(
-                "Float dtypes are not supported for Labels layers. Converting data to integers..."
-            )
-            data = [d.astype(np.int32) for d in data]
-
-        data = data[0] if len(data) == 1 else data
+        data = self._ensure_int_labels(data)
 
         if properties is None:
             self._properties = {}
@@ -375,6 +369,29 @@ class Labels(_ImageBase):
 
         self._color = colors
         self.color_mode = color_mode
+
+    def _ensure_int_labels(self, data):
+        """Ensure data is integer by converting from float if required"""
+        looks_multiscale, data = guess_multiscale(data)
+        if not looks_multiscale:
+            data = [data]
+        if any(np.issubdtype(d.dtype, np.floating) for d in data):
+            warnings.warn(
+                "Float dtypes are not supported for Labels layers. Converting data to integers..."
+            )
+            int_data = []
+            for d in data:
+                if d.dtype == np.float64:
+                    int_data.append(d.astype(np.int64))
+                elif d.dtype == np.float32:
+                    int_data.append(d.astype(np.int32))
+                else:
+                    int_data.append(d)
+            data = int_data
+
+        if not looks_multiscale:
+            data = data[0]
+        return data
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
