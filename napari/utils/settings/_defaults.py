@@ -36,7 +36,9 @@ class Theme(str):
         themes = available_themes()
         if value not in available_themes():
             raise ValueError(
-                trans._('must be one of {}'.format(", ".join(themes)))
+                trans._('must be one of {themes}').format(
+                    themes=", ".join(themes)
+                )
             )
 
         return value
