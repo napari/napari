@@ -21,8 +21,8 @@ def test_selection():
     assert 1 in t.sel
     assert t.sel.current == 1
 
-    assert t.json() == r'{"sel": {"data": [1], "current": 1}}'
-    assert T(sel={"data": [1], "current": 1}) == t
+    assert t.json() == r'{"sel": {"selection": [1], "current": 1}}'
+    assert T(sel={"selection": [1], "current": 1}) == t
 
     t.sel.remove(1)
     assert not t.sel
@@ -31,4 +31,4 @@ def test_selection():
         T(sel=['asdf'])
 
     with pytest.raises(ValidationError):
-        T(sel={"data": [1], "current": 'asdf'})
+        T(sel={"selection": [1], "current": 'asdf'})
