@@ -135,3 +135,7 @@ def test_custom_theme_settings(settings):
 
     # Theme registered, should pass validation
     settings.application.theme = custom_theme_name
+
+
+def test_settings_string(settings):
+    assert 'application:\n' in str(settings)

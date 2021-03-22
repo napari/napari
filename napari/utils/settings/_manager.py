@@ -75,6 +75,9 @@ class SettingsManager:
         """Add setting keys to make tab completion works."""
         return super().__dir__() + list(self._settings)
 
+    def __str__(self):
+        return safe_dump(self._to_dict())
+
     @staticmethod
     def _get_section_name(settings) -> str:
         """
@@ -99,7 +102,7 @@ class SettingsManager:
         if self._save_to_disk:
             path = self.path / self._FILENAME
             with open(path, "w") as fh:
-                fh.write(safe_dump(self._to_dict()))
+                fh.write(str(self))
 
     def _load(self):
         """Read configuration from disk."""
