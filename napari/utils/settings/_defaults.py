@@ -51,9 +51,7 @@ class QtBindingChoice(str, Enum):
     pyqt5 = 'pyqt5'
 
 
-class ApplicationSettings(BaseSettings, EventedModel):
-    """Main application settings."""
-
+class AppearanceSettings(BaseSettings, EventedModel):
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
     # 2. If you want to *remove* options that are no longer needed in the codebase,
@@ -67,6 +65,31 @@ class ApplicationSettings(BaseSettings, EventedModel):
         "dark",
         description=trans._("Theme selection."),
     )
+
+    class Config:
+        # Pydantic specific configuration
+        env_prefix = 'napari_'
+        title = trans._("Appearance")
+        use_enum_values = True
+        validate_all = True
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ["schema_version"]
+
+
+class ApplicationSettings(BaseSettings, EventedModel):
+    # 1. If you want to *change* the default value of a current option, you need to
+    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+    # 2. If you want to *remove* options that are no longer needed in the codebase,
+    #    or if you want to *rename* options, then you need to do a MAJOR update in
+    #    version, e.g. from 3.0.0 to 4.0.0
+    # 3. You don't need to touch this value if you're just adding a new option
+
+    schema_version = (0, 1, 0)
+
+    first_time: bool = True
+
     ipy_interactive: bool = Field(
         default=True,
         title='IPython interactive',
@@ -75,7 +98,6 @@ class ApplicationSettings(BaseSettings, EventedModel):
             'napari Viewers in IPython'
         ),
     )
-    first_time: bool = True
 
     # Window state, geometry and position
     save_window_geometry: bool = Field(
@@ -97,7 +119,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Application settings"
+        title = trans._("Application")
         use_enum_values = True
         validate_all = True
 
@@ -118,16 +140,14 @@ class ApplicationSettings(BaseSettings, EventedModel):
         ]
 
 
-class PluginSettings(BaseSettings, EventedModel):
-    """Plugin Settings."""
-
+class PluginsSettings(BaseSettings, EventedModel):
     schema_version = (0, 1, 0)
     plugins_call_order: List[str] = []
 
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Plugin settings"
+        title = trans._("Plugins")
         use_enum_values = True
 
     class NapariConfig:
@@ -135,4 +155,4 @@ class PluginSettings(BaseSettings, EventedModel):
         preferences_exclude = ['schema_version', 'plugins_call_order']
 
 
-CORE_SETTINGS = [ApplicationSettings, PluginSettings]
+CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

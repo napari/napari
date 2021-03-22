@@ -14,7 +14,6 @@ from qtpy.QtWidgets import (
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...utils.settings import SETTINGS
-from ...utils.settings._defaults import CORE_SETTINGS
 from ...utils.translations import trans
 
 
@@ -74,7 +73,6 @@ class PreferencesDialog(QDialog):
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-        cnt = 0
         # Because there are multiple pages, need to keep a list of values sets.
         self._values_orig_set_list = []
         self._values_set_list = []
@@ -84,16 +82,19 @@ class PreferencesDialog(QDialog):
             properties = schema.pop('properties')
             model = setting['model']
             values = model.dict()
-            # for val in CORE_SETTINGS[cnt].NapariConfig().preferences_exclude:
-            for val in model.NapariConfig.preferences_exclude:
-                properties.pop(val)
-                values.pop(val)
+            napari_config = getattr(model, "NapariConfig", None)
+            if napari_config is not None:
+                for val in napari_config.preferences_exclude:
+                    properties.pop(val)
+                    values.pop(val)
 
-            cnt += 1
             schema['properties'] = properties
             self._values_orig_set_list.append(set(values.items()))
             self._values_set_list.append(set(values.items()))
-            self.add_page(schema, values)
+
+            # Only add pages if there are any properties to add.
+            if properties:
+                self.add_page(schema, values)
 
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
