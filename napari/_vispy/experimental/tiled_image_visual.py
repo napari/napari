@@ -10,11 +10,12 @@ Instead, we'll probably just have a function signature that takes things
 like the pos, size and depth of each tile as separate arguments. But
 for now the visual and Octree both depend on OctreeChunk.
 """
-from typing import List, Set
+from typing import Callable, List, Set
 
 import numpy as np
 
 from ...layers.image.experimental import OctreeChunk
+from ...types import ArrayLike
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
@@ -76,10 +77,19 @@ class TiledImageVisual(ImageVisual):
     ----------
     tile_shape : np.ndarray
         The shape of one tile like (256, 256, 3).
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting raw to displayed data.
     """
 
-    def __init__(self, tile_shape: np.ndarray, *args, **kwargs):
+    def __init__(
+        self,
+        tile_shape: np.ndarray,
+        image_converter: Callable[[ArrayLike], ArrayLike],
+        *args,
+        **kwargs,
+    ):
         self.tile_shape = tile_shape
+        self.image_converter = image_converter
 
         self._tiles: TileSet = TileSet()  # The tiles we are drawing.
 
@@ -113,7 +123,12 @@ class TiledImageVisual(ImageVisual):
             The newly created texture atlas.
         """
         interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
-        return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
+        return TextureAtlas2D(
+            tile_shape,
+            SHAPE_IN_TILES,
+            interpolation=interp,
+            image_converter=self.image_converter,
+        )
 
     def set_data(self, image) -> None:
         """Set data of the ImageVisual.

@@ -107,6 +107,7 @@ class SettingsManager:
         for plugin in CORE_SETTINGS:
             section = self._get_section_name(plugin)
             self._defaults[section] = plugin()
+            self._settings[section] = plugin()
             self._models[section] = plugin
             self._settings[section] = plugin()
 
@@ -149,7 +150,8 @@ class SettingsManager:
     def reset(self):
         """Reset settings to default values."""
         for section in self._settings:
-            self._settings[section] = self._models[section]()
+            for key, default_value in self._defaults[section].dict().items():
+                setattr(self._settings[section], key, default_value)
 
         self._save()
 

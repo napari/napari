@@ -10,7 +10,7 @@ import numpy as np
 
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
-from ..image import Image
+from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
@@ -20,7 +20,7 @@ from .octree_util import OctreeDisplayOptions, OctreeMetadata
 LOGGER = logging.getLogger("napari.octree.image")
 
 
-class OctreeImage(Image):
+class _OctreeImageBase(_ImageBase):
     """Image layer rendered using an octree.
 
     Experimental variant of Image that renders using an octree. For 2D
@@ -444,7 +444,6 @@ class OctreeImage(Image):
             slice_data,
             layer_ref,
             meta,
-            self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:

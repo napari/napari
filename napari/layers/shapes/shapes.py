@@ -15,6 +15,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
+from ...utils.translations import trans
 from ..base import Layer
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
@@ -326,7 +327,9 @@ class Shapes(Layer):
         else:
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError("Shape dimensions must be equal to ndim")
+                raise ValueError(
+                    trans._("Shape dimensions must be equal to ndim")
+                )
             ndim = data_ndim
 
         super().__init__(
@@ -391,7 +394,7 @@ class Shapes(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError('text should be a string, array, or dict')
+            raise TypeError(trans._('text should be a string, array, or dict'))
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -429,7 +432,7 @@ class Shapes(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
-        self._help = 'enter a selection mode to edit shape properties'
+        self._help = trans._('enter a selection mode to edit shape properties')
 
         self._init_shapes(
             data,
@@ -533,9 +536,6 @@ class Shapes(Layer):
         self._finish_drawing()
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
-
-        n_new_shapes = number_of_shapes(data)
-        self.text.add(self.current_properties, n_new_shapes)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -1293,8 +1293,19 @@ class Shapes(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
+        # get the coordinates of the vertices for the shapes in view
+        in_view_shapes_coords = [
+            self._data_view.data[i] for i in self._indices_view
+        ]
+
+        # get the coordinates for the dimensions being displayed
+        sliced_in_view_coords = [
+            position[:, self._dims_displayed]
+            for position in in_view_shapes_coords
+        ]
+
         return self.text.compute_text_coords(
-            self._data_view.data, self._ndisplay
+            sliced_in_view_coords, self._ndisplay
         )
 
     @property
@@ -1350,20 +1361,23 @@ class Shapes(Layer):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter a selection mode to edit shape properties'
+            self.help = trans._(
+                'enter a selection mode to edit shape properties'
+            )
         elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = (
-                'hold <space> to pan/zoom, '
-                f'press <{BACKSPACE}> to remove selected'
+            self.help = trans._(
+                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected'.format(
+                    BACKSPACE=BACKSPACE
+                )
             )
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.VERTEX_INSERT:
                 self.mouse_drag_callbacks.append(vertex_insert)
             else:
@@ -1372,7 +1386,7 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.ADD_RECTANGLE:
                 self.mouse_drag_callbacks.append(add_rectangle)
             elif mode == Mode.ADD_ELLIPSE:
@@ -1382,13 +1396,13 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = (
+            self.help = trans._(
                 'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
             )
             self.mouse_drag_callbacks.append(add_path_polygon)
             self.mouse_move_callbacks.append(add_path_polygon_creating)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(trans._("Mode not recognized"))
 
         self._mode = mode
 
@@ -1487,14 +1501,30 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            for k in self.properties:
-                new_property = np.repeat(
-                    self.current_properties[k], n_new_shapes, axis=0
-                )
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], new_property), axis=0
-                )
-            self.text.add(self.current_properties, n_new_shapes)
+            if len(self.properties) > 0:
+                first_prop_key = next(iter(self.properties))
+                n_prop_values = len(self.properties[first_prop_key])
+            else:
+                n_prop_values = 0
+            total_shapes = n_new_shapes + self.nshapes
+            if total_shapes > n_prop_values:
+                n_props_to_add = total_shapes - n_prop_values
+                for k in self.properties:
+                    new_property = np.repeat(
+                        self.current_properties[k], n_props_to_add, axis=0
+                    )
+                    self.properties[k] = np.concatenate(
+                        (self.properties[k], new_property), axis=0
+                    )
+                self.text.add(self.current_properties, n_props_to_add)
+            if total_shapes < n_prop_values:
+                for k in self.properties:
+                    self.properties[k] = self.properties[k][:total_shapes]
+                n_props_to_remove = n_prop_values - total_shapes
+                indices_to_remove = np.arange(n_prop_values)[
+                    -n_props_to_remove:
+                ]
+                self.text.remove(indices_to_remove)
 
             self._add_shapes(
                 data,
@@ -2261,8 +2291,8 @@ class Shapes(Layer):
                 },
                 'indices': self._slice_indices,
             }
-            if self.text.values is None:
-                self._clipboard['text'] = None
+            if len(self.text.values) == 0:
+                self._clipboard['text'] = np.empty(0)
             else:
                 self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
@@ -2298,7 +2328,7 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            if self._clipboard['text'] is not None:
+            if len(self._clipboard['text']) > 0:
                 self.text._values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )

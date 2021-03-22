@@ -11,16 +11,19 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
-from ..image.image import _ImageBase
+from ..image.image import _get_image_base_class
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
+_image_base_class = _get_image_base_class()
 
-class Labels(_ImageBase):
+
+class Labels(_image_base_class):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -246,7 +249,7 @@ class Labels(_ImageBase):
         self._mode_history = self._mode
         self._status = self.mode
         self._preserve_labels = False
-        self._help = 'enter paint or fill mode to edit labels'
+        self._help = trans._('enter paint or fill mode to edit labels')
 
         self._block_saving = False
         self._reset_history()
@@ -444,7 +447,7 @@ class Labels(_ImageBase):
     @selected_label.setter
     def selected_label(self, selected_label):
         if selected_label < 0:
-            raise ValueError('cannot reduce selected label below 0')
+            raise ValueError(trans._('cannot reduce selected label below 0'))
         if selected_label == self.selected_label:
             return
 
@@ -482,7 +485,7 @@ class Labels(_ImageBase):
             self.colormap = self._random_colormap
 
         else:
-            raise ValueError("Unsupported Color Mode")
+            raise ValueError(trans._("Unsupported Color Mode"))
 
         self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
@@ -504,11 +507,37 @@ class Labels(_ImageBase):
     @property
     def brush_shape(self):
         """str: Paintbrush shape"""
+
+        warnings.warn(
+            (
+                trans._(
+                    "The square brush shape is deprecated and will be removed in version 0.4.9. "
+                    "Afterward, only the circle brush shape will be available, "
+                    "and the layer.brush_shape attribute will be removed."
+                )
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
         return str(self._brush_shape)
 
     @brush_shape.setter
     def brush_shape(self, brush_shape):
         """Set current brush shape."""
+
+        warnings.warn(
+            (
+                trans._(
+                    "The square brush shape is deprecated and will be removed in version 0.4.9. "
+                    "Afterward, only the circle brush shape will be available, "
+                    "and the layer.brush_shape attribute will be removed."
+                )
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
         self._brush_shape = LabelBrushShape(brush_shape)
         self.cursor = self.brush_shape
 
@@ -557,11 +586,13 @@ class Labels(_ImageBase):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter paint or fill mode to edit labels'
+            self.help = trans._('enter paint or fill mode to edit labels')
         elif mode == Mode.PICK:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, click to pick a label'
+            self.help = trans._(
+                'hold <space> to pan/zoom, click to pick a label'
+            )
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor = self.brush_shape
@@ -572,7 +603,7 @@ class Labels(_ImageBase):
             )
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
-            self.help = (
+            self.help = trans._(
                 'hold <space> to pan/zoom, '
                 'hold <shift> to toggle preserve_labels, '
                 'hold <control> to fill, '
@@ -583,7 +614,9 @@ class Labels(_ImageBase):
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, click to fill a label'
+            self.help = trans._(
+                'hold <space> to pan/zoom, click to fill a label'
+            )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor = self.brush_shape
@@ -594,10 +627,12 @@ class Labels(_ImageBase):
             )
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, drag to erase a label'
+            self.help = trans._(
+                'hold <space> to pan/zoom, drag to erase a label'
+            )
             self.mouse_drag_callbacks.append(draw)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(trans._("Mode not recognized"))
 
         self._mode = mode
 
