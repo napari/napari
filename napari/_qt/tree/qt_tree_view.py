@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain, repeat
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
@@ -93,13 +94,11 @@ class QtNodeTreeView(QTreeView):
                 sel_model.setCurrentIndex(idx, sel_model.Current)
             return
         elif event.type == 'changed':
-            for idx in event.added:
+            for idx, sel in chain(
+                zip(event.added, repeat(sel_model.Select)),
+                zip(event.removed, repeat(sel_model.DeSelect)),
+            ):
                 model_idx = self.model().findIndex(idx)
                 if not model_idx.isValid():
                     continue
-                sel_model.select(model_idx, sel_model.Select)
-            for idx in event.removed:
-                model_idx = self.model().findIndex(idx)
-                if not model_idx.isValid():
-                    continue
-                sel_model.select(model_idx, sel_model.Deselect)
+                sel_model.select(model_idx, sel)
