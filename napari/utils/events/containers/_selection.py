@@ -101,7 +101,7 @@ class Selection(EventedSet[_T]):
         """
         if len(self) == 1:
             self.active = list(self)[0]
-        elif len(self):
+        else:
             if self._active is not None:
                 self._active = None
                 self.events.active(value=None)
