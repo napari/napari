@@ -153,7 +153,9 @@ def get_app(
             show_console_notification
         )
 
-    app.setWindowIcon(QIcon(kwargs.get('icon')))
+    if app.windowIcon().isNull():
+        app.setWindowIcon(QIcon(kwargs.get('icon')))
+
     if ipy_interactive is None:
         ipy_interactive = SETTINGS.application.ipy_interactive
     _try_enable_ipython_gui(ipy_interactive and 'qt')
