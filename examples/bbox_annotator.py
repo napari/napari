@@ -1,5 +1,5 @@
-import napari
 from magicgui.widgets import ComboBox, Container
+import napari
 import numpy as np
 
 
@@ -8,6 +8,7 @@ box_annotations = ['person', 'sky', 'camera']
 text_property = 'box_label'
 text_color = 'green'
 text_size = 30
+
 
 # create the GUI for selecting the values
 def create_label_menu(shapes_layer, label_property, labels):
