@@ -147,10 +147,8 @@ class QtPointsControls(QtLayerControls):
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip=trans._(
-                "Delete selected points ({key})".format(
-                    key=KEY_SYMBOLS['Backspace']
-                )
+            tooltip=trans._("Delete selected points ({key})").format(
+                key=KEY_SYMBOLS['Backspace']
             ),
         )
 

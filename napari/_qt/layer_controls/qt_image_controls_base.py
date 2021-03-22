@@ -228,10 +228,8 @@ def create_range_popup(layer, attr, parent=None):
         raise AttributeError(
             trans._(
                 'Layer {layer} must have attribute {range_attr} '
-                'to use "create_range_popup"'.format(
-                    layer=layer, range_attr=range_attr
-                )
-            )
+                'to use "create_range_popup"'
+            ).format(layer=layer, range_attr=range_attr)
         )
     is_integer_type = np.issubdtype(layer.dtype, np.integer)
 

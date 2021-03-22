@@ -306,10 +306,8 @@ class QtSizeSliderPreviewWidget(QWidget):
             self._refresh()
         else:
             raise ValueError(
-                trans._(
-                    "Minimum value must be smaller than {}".format(
-                        self._max_value
-                    )
+                trans._("Minimum value must be smaller than {}").format(
+                    self._max_value
                 )
             )
 
@@ -346,10 +344,8 @@ class QtSizeSliderPreviewWidget(QWidget):
             self._refresh()
         else:
             raise ValueError(
-                trans._(
-                    "Maximum value must be larger than {}".format(
-                        self._min_value
-                    )
+                trans._("Maximum value must be larger than {}").format(
+                    self._min_value
                 )
             )
 

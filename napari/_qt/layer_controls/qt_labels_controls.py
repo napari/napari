@@ -166,20 +166,16 @@ class QtLabelsControls(QtLayerControls):
             layer,
             'fill',
             Mode.FILL,
-            tooltip=trans._(
-                "Fill mode (F) \nToggle with {key}".format(
-                    key=KEY_SYMBOLS['Control']
-                )
+            tooltip=trans._("Fill mode (F) \nToggle with {key}").format(
+                key=KEY_SYMBOLS['Control']
             ),
         )
         self.erase_button = QtModeRadioButton(
             layer,
             'erase',
             Mode.ERASE,
-            tooltip=trans._(
-                "Erase mode (E) \nToggle with {key}".format(
-                    key=KEY_SYMBOLS['Alt']
-                )
+            tooltip=trans._("Erase mode (E) \nToggle with {key}").format(
+                key=KEY_SYMBOLS['Alt']
             ),
         )
 

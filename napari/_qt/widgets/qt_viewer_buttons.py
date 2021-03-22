@@ -136,8 +136,8 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.events,
         )
         self.gridViewButton.setToolTip(
-            trans._(
-                "Toggle grid view ({key}-G)".format(key=KEY_SYMBOLS['Control'])
+            trans._("Toggle grid view ({key}-G)").format(
+                key=KEY_SYMBOLS['Control']
             )
         )
 
@@ -150,10 +150,8 @@ class QtViewerButtons(QFrame):
             3,
         )
         self.ndisplayButton.setToolTip(
-            trans._(
-                "Toggle number of displayed dimensions ({key}-Y)".format(
-                    key=KEY_SYMBOLS['Control']
-                )
+            trans._("Toggle number of displayed dimensions ({key}-Y)").format(
+                key=KEY_SYMBOLS['Control']
             )
         )
 
@@ -190,10 +188,8 @@ class QtDeleteButton(QPushButton):
 
         self.viewer = viewer
         self.setToolTip(
-            trans._(
-                "Delete selected layers ({key1}-{key2})".format(
-                    key1=KEY_SYMBOLS['Control'], key2=KEY_SYMBOLS['Backspace']
-                )
+            trans._("Delete selected layers ({key1}-{key2})").format(
+                key1=KEY_SYMBOLS['Control'], key2=KEY_SYMBOLS['Backspace']
             )
         )
         self.setAcceptDrops(True)
