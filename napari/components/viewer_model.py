@@ -132,7 +132,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
-        self.layers.selection.events.active.connect(self._update_active_layer)
+        self.layers.selection.events.active.connect(self._on_active_layer)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -267,16 +267,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
-    def _update_active_layer(self, event):
-        """Set the active layer by iterating over the layers list and
-        finding the first selected layer. If multiple layers are selected the
-        iteration stops and the active layer is set to be None
-
-        Parameters
-        ----------
-        event : Event
-            No Event parameters are used
-        """
+    def _on_active_layer(self, event):
+        """Update viewer state for a new active layer."""
         active_layer = event.value
         if active_layer is None:
             self.help = ''
@@ -299,6 +291,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return self.layers.selection.active
 
     def __setattr__(self, name: str, value: Any) -> None:
+        # this method is only for the deprecation warning, because pydantic
+        # prevents using @active_layer.setter
         if name == 'active_layer':
             warnings.warn(
                 "'viewer.active_layer' is deprecated and will be removed in napari"
