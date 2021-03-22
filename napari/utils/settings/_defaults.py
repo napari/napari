@@ -51,6 +51,28 @@ class QtBindingChoice(str, Enum):
     pyqt5 = 'pyqt5'
 
 
+class AppearanceSettings(BaseSettings, EventedModel):
+    """Appearance Settings."""
+
+    schema_version = (0, 1, 0)
+
+    theme: Theme = Field(
+        "dark",
+        title=trans._("Theme"),
+        description=trans._("Theme selection."),
+    )
+
+    class Config:
+        # Pydantic specific configuration
+        env_prefix = 'napari_'
+        title = "Plugin settings"
+        use_enum_values = True
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version']
+
+
 class ApplicationSettings(BaseSettings, EventedModel):
     """Main application settings."""
 
@@ -62,12 +84,6 @@ class ApplicationSettings(BaseSettings, EventedModel):
     # 3. You don't need to touch this value if you're just adding a new option
 
     schema_version = (0, 1, 0)
-
-    theme: Theme = Field(
-        "dark",
-        title=trans._("Theme"),
-        description=trans._("Theme selection."),
-    )
 
     first_time: bool = True
 
@@ -123,8 +139,8 @@ class ApplicationSettings(BaseSettings, EventedModel):
         ]
 
 
-class PluginSettings(BaseSettings, EventedModel):
-    """Plugin Settings."""
+class PluginsSettings(BaseSettings, EventedModel):
+    """Plugins Settings."""
 
     schema_version = (0, 1, 0)
     plugins_call_order: List[str] = []
@@ -140,4 +156,4 @@ class PluginSettings(BaseSettings, EventedModel):
         preferences_exclude = ['schema_version', 'plugins_call_order']
 
 
-CORE_SETTINGS = [ApplicationSettings, PluginSettings]
+CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]
