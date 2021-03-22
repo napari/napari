@@ -337,12 +337,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
-        active_layer = self.layers.selection.active
-        if active_layer is not None:
-            self.status = active_layer.get_status(
-                self.cursor.position, world=True
-            )
-            self.help = active_layer.help
+        active = self.layers.selection.active
+        if active is not None:
+            self.status = active.get_status(self.cursor.position, world=True)
+            self.help = active.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
