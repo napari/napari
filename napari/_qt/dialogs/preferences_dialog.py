@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...utils.settings import SETTINGS
-from ...utils.settings._defaults import ApplicationSettings, PluginSettings
+from ...utils.settings._defaults import CORE_SETTINGS
 from ...utils.translations import trans
 
 
@@ -29,6 +29,8 @@ class PreferencesDialog(QDialog):
         self._list = QListWidget(self)
         self._stack = QStackedWidget(self)
 
+        self._list.setObjectName("Preferences")
+
         # Set up buttons
         self._button_cancel = QPushButton(trans._("Cancel"))
         self._button_ok = QPushButton(trans._("OK"))
@@ -38,20 +40,18 @@ class PreferencesDialog(QDialog):
         self.setWindowTitle(trans._("Preferences"))
 
         # Layout
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(self._list)
+        left_layout.addStretch()
+        left_layout.addWidget(self._default_restore)
+        left_layout.addWidget(self._button_cancel)
+        left_layout.addWidget(self._button_ok)
+
         main_layout = QHBoxLayout()
-        main_layout.addWidget(self._list)
-        main_layout.addWidget(self._stack)
+        main_layout.addLayout(left_layout, 1)
+        main_layout.addWidget(self._stack, 3)
 
-        buttons_layout = QHBoxLayout()
-        buttons_layout.addWidget(self._button_cancel)
-        buttons_layout.addWidget(self._button_ok)
-
-        layout = QVBoxLayout()
-        layout.addLayout(main_layout)
-        layout.addWidget(self._default_restore)
-        layout.addLayout(buttons_layout)
-
-        self.setLayout(layout)
+        self.setLayout(main_layout)
 
         # Signals
 
@@ -74,18 +74,18 @@ class PreferencesDialog(QDialog):
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-
-        settings_list = [ApplicationSettings(), PluginSettings()]
         cnt = 0
         # Because there are multiple pages, need to keep a list of values sets.
         self._values_orig_set_list = []
         self._values_set_list = []
-        for key, setting in SETTINGS.schemas().items():
+        for _key, setting in SETTINGS.schemas().items():
             schema = json.loads(setting['json_schema'])
-            # need to remove certain properties that will not be displayed on the GUI
+            # Need to remove certain properties that will not be displayed on the GUI
             properties = schema.pop('properties')
-            values = setting['model'].dict()
-            for val in settings_list[cnt].NapariConfig().preferences_exclude:
+            model = setting['model']
+            values = model.dict()
+            # for val in CORE_SETTINGS[cnt].NapariConfig().preferences_exclude:
+            for val in model.NapariConfig.preferences_exclude:
                 properties.pop(val)
                 values.pop(val)
 
