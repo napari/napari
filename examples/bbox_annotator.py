@@ -57,8 +57,11 @@ def create_label_menu(shapes_layer, label_property, labels):
 
 
 with napari.gui_qt():
+    # create a viewer with a fake t+2D image
     viewer = napari.view_image(np.random.random((5, 200, 200)))
 
+    # create an empty shapes layer initialized with
+    # text set to display the box label
     text_kwargs = {
         'text': text_property,
         'size': text_size,
@@ -78,7 +81,7 @@ with napari.gui_qt():
         labels=box_annotations
     )
     # add the label selection gui to the viewer as a dock widget
-    viewer.window.add_dock_widget(label_widget, area='right')
+    viewer.window.add_dock_widget(label_widget, area='right', name='label_widget')
 
     # set the shapes layer mode to adding rectangles
     shapes.mode = 'add_rectangle'
