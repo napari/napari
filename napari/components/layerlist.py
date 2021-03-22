@@ -37,7 +37,7 @@ class LayerList(SelectableEventedList[Layer]):
         # update the highlight state.  This (and the layer._on_selection
         # method) can be removed once highlighting logic has been removed from
         # the layer model.
-        if event.type == 'current':
+        if event.type not in ('added', 'removed'):
             return
         selected = event.type == 'added'
         for layer in event.value:

@@ -132,7 +132,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
-        self.layers.selection.events.current.connect(self._update_active_layer)
+        self.layers.selection.events.active.connect(self._update_active_layer)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -141,7 +141,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             active_layer=WarningEmitter(
                 "'viewer.events.active_layer' is deprecated and will be "
                 "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.current' instead",
+                "'viewer.layers.selection.events.active' instead",
                 type='active_layer',
             )
         )
@@ -292,22 +292,21 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def active_layer(self):
         warnings.warn(
             "'viewer.active_layer' is deprecated and will be removed in napari"
-            " v0.4.9.  Please use 'viewer.layers.selection.current' instead.",
+            " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )
-        return self.layers.selection.current
+        return self.layers.selection.active
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'active_layer':
             warnings.warn(
                 "'viewer.active_layer' is deprecated and will be removed in napari"
-                " v0.4.9.  Please use 'viewer.layers.selection.current' instead.",
+                " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
-            print('set current to', value)
-            self.layers.selection.current = value
+            self.layers.selection.active = value
         else:
             return super().__setattr__(name, value)
 
@@ -344,11 +343,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
-        if self.layers.selection.current is not None:
-            self.status = self.layers.selection.current.get_status(
+        active_layer = self.layers.selection.active
+        if active_layer is not None:
+            self.status = active_layer.get_status(
                 self.cursor.position, world=True
             )
-            self.help = self.layers.selection.current.help
+            self.help = active_layer.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""

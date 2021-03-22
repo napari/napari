@@ -25,8 +25,13 @@ class Selection(EventedSet[_T]):
     ----------
     data : iterable, optional
         Elements to initialize the set with.
+    active : Any, optional
+        The active item, if any.
+
+    Attributes
+    ----------
     current : Any, optional
-        The current item.
+        The current item, if any.
 
     Events
     ------
@@ -36,14 +41,19 @@ class Selection(EventedSet[_T]):
     removed (value: Set[_T])
         emitted after an item or items are removed from the set.
         Will not be emitted if the item was not in the set when discarded.
-    current (value: _T, previous: _T)
+    current (value: _T)
+        emitted when the current item has changed.
+    active (value: _T)
         emitted when the current item has changed.
     """
 
-    def __init__(self, data: Iterable[_T] = (), current: Optional[_T] = None):
+    def __init__(self, data: Iterable[_T] = (), active: Optional[_T] = None):
         super().__init__(data=data)
-        self.events.add(current=None)
-        self._current = current
+        self.events.added.connect(self._update_active)
+        self.events.removed.connect(self._update_active)
+        self.events.add(current=None, active=None)
+        self._active = active
+        self._current: Optional[_T] = None
 
     def __repr__(self) -> str:
         clsname = type(self).__name__
@@ -59,8 +69,24 @@ class Selection(EventedSet[_T]):
         """Set current item."""
         if index == self._current:
             return
-        previous, self._current = self._current, index
-        self.events.current(value=index, previous=previous)
+        self._current = index
+        self.events.current(value=index)
+
+    def _update_active(self, event=None):
+        self.active = list(self)[0] if len(self) == 1 else None
+
+    @property
+    def active(self) -> Optional[_T]:
+        return self._active
+
+    @active.setter
+    def active(self, value: Optional[_T]):
+        if value == self._active:
+            return
+        self._active = value
+        self.select_only(value) if value else self.clear()
+        self.current = value
+        self.events.active(value=value)
 
     def clear(self, keep_current: bool = False) -> None:
         super().clear()
@@ -71,7 +97,7 @@ class Selection(EventedSet[_T]):
         """Toggle selection state of obj."""
         self.symmetric_difference_update({obj})
 
-    def select_only(self, obj: _S):
+    def select_only(self, obj: _T):
         """Unselect everything but `obj`. Add to selection if not present."""
         self.add(obj)
         self.intersection_update({obj})

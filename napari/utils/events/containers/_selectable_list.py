@@ -21,12 +21,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         super().insert(index, value)
         if self.activate_on_insert:
             # Make layer selected and unselect all others
-            self.activate(value)
-
-    def activate(self, value: _T):
-        """Set `value` as the current and only selected item."""
-        self.selection.select_only(value)
-        self.selection.current = value
+            self.selection.active = value
 
     def select_all(self):
         """Select all items in the list."""

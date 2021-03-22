@@ -189,7 +189,7 @@ class QtViewer(QSplitter):
 
         self._on_active_layer_change()
 
-        viewer.layers.selection.events.current.connect(
+        viewer.layers.selection.events.active.connect(
             self._on_active_layer_change
         )
         self.viewer.camera.events.interactive.connect(self._on_interactive)
@@ -353,7 +353,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.layers.selection.current
+        active_layer = self.viewer.layers.selection.active
         if self._active_layer in self._key_map_handler.keymap_providers:
             self._key_map_handler.keymap_providers.remove(self._active_layer)
 
@@ -675,7 +675,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_wheel_callbacks(self.viewer, event)
 
-        layer = self.viewer.layers.selection.current
+        layer = self.viewer.layers.selection.active
         if layer is not None:
             mouse_wheel_callbacks(layer, event)
 
@@ -694,7 +694,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
-        layer = self.viewer.layers.selection.current
+        layer = self.viewer.layers.selection.active
         if layer is not None:
             mouse_press_callbacks(layer, event)
 
@@ -712,7 +712,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
-        layer = self.viewer.layers.selection.current
+        layer = self.viewer.layers.selection.active
         if layer is not None:
             mouse_move_callbacks(layer, event)
 
@@ -730,7 +730,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
-        layer = self.viewer.layers.selection.current
+        layer = self.viewer.layers.selection.active
         if layer is not None:
             mouse_release_callbacks(layer, event)
 
