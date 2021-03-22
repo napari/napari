@@ -389,6 +389,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer = event.value
 
         # Connect individual layer events to viewer events
+        # TODO: in a future PR, we should now be able to connect viewer *only*
+        # to viewer.layers.events... and avoid direct viewer->layer connections
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
