@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.labels._labels_constants import (
-    LABEL_BRUSH_SHAPE_TRANSLATIONS,
     LABEL_COLOR_MODE_TRANSLATIONS,
     Mode,
 )
