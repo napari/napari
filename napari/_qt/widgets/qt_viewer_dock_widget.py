@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
 
 
@@ -47,6 +48,7 @@ class QtViewerDockWidget(QDockWidget):
         area: str = 'bottom',
         allowed_areas: Optional[List[str]] = None,
         shortcut=None,
+        object_name: str = '',
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
@@ -77,7 +79,8 @@ class QtViewerDockWidget(QDockWidget):
         self.setAllowedAreas(allowed_areas)
         self.setMinimumHeight(50)
         self.setMinimumWidth(50)
-        self.setObjectName(name)
+        # FIXME:
+        self.setObjectName(object_name or name)
 
         widget = combine_widgets(widget, vertical=area in {'left', 'right'})
         self.setWidget(widget)
@@ -151,20 +154,20 @@ class QtCustomTitleBar(QLabel):
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))
         self.vertical = vertical
-        self.setToolTip('drag to move. double-click to float')
+        self.setToolTip(trans._('drag to move. double-click to float'))
 
         line = QFrame(self)
         line.setObjectName("QtCustomTitleBarLine")
 
         self.close_button = QPushButton(self)
-        self.close_button.setToolTip('hide this panel')
+        self.close_button.setToolTip(trans._('hide this panel'))
         self.close_button.setObjectName("QTitleBarCloseButton")
         self.close_button.setCursor(Qt.ArrowCursor)
         self.close_button.clicked.connect(
             lambda: self.parent().toggleViewAction().trigger()
         )
         self.float_button = QPushButton(self)
-        self.float_button.setToolTip('float this panel')
+        self.float_button.setToolTip(trans._('float this panel'))
         self.float_button.setObjectName("QTitleBarFloatButton")
         self.float_button.setCursor(Qt.ArrowCursor)
         self.float_button.clicked.connect(

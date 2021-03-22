@@ -84,6 +84,7 @@ filterwarnings = [
   "ignore:pythonw executable not found:UserWarning:",
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
   "ignore:For best performance with Dask arrays in napari:UserWarning:",
+  "ignore:The square brush shape is deprecated and will be removed:FutureWarning",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",

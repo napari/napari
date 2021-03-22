@@ -11,9 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import translator
-
-trans = translator.load()
+from ...utils.translations import trans
 
 
 class QtFontSizePreview(QFrame):

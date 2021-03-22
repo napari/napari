@@ -1,6 +1,7 @@
 from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
 
 from ...utils.interactions import KEY_SYMBOLS
+from ...utils.translations import trans
 
 
 class QtLayerButtons(QFrame):
@@ -33,7 +34,7 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             self.viewer,
             'new_points',
-            'New points layer',
+            trans._('New points layer'),
             lambda: self.viewer.add_points(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -43,7 +44,7 @@ class QtLayerButtons(QFrame):
         self.newShapesButton = QtViewerPushButton(
             self.viewer,
             'new_shapes',
-            'New shapes layer',
+            trans._('New shapes layer'),
             lambda: self.viewer.add_shapes(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -52,7 +53,7 @@ class QtLayerButtons(QFrame):
         self.newLabelsButton = QtViewerPushButton(
             self.viewer,
             'new_labels',
-            'New labels layer',
+            trans._('New labels layer'),
             lambda: self.viewer._new_labels(),
         )
 
@@ -99,25 +100,38 @@ class QtViewerButtons(QFrame):
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
-            f"Open IPython terminal ({KEY_SYMBOLS['Control']}-{KEY_SYMBOLS['Shift']}-C)",
+            trans._(
+                "Open IPython terminal ({key1}-{key2}-C)".format(
+                    key1=KEY_SYMBOLS['Control'],
+                    key2=KEY_SYMBOLS['Shift'],
+                )
+            ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            f"Roll dimensions order for display ({KEY_SYMBOLS['Control']}-E)",
+            trans._(
+                "Roll dimensions order for display ({key}-E)".format(
+                    key=KEY_SYMBOLS['Control']
+                )
+            ),
             lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            f"Transpose displayed dimensions ({KEY_SYMBOLS['Control']}-T)",
+            trans._(
+                "Transpose displayed dimensions ({key}-T)".format(
+                    key=KEY_SYMBOLS['Control']
+                )
+            ),
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
             self.viewer,
             'home',
-            f"Reset view ({KEY_SYMBOLS['Control']}-R)",
+            trans._("Reset view ({key}-R)".format(key=KEY_SYMBOLS['Control'])),
             lambda: self.viewer.reset_view(),
         )
 
@@ -128,7 +142,9 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.events,
         )
         self.gridViewButton.setToolTip(
-            f"Toggle grid view ({KEY_SYMBOLS['Control']}-G)"
+            trans._(
+                "Toggle grid view ({key}-G)".format(key=KEY_SYMBOLS['Control'])
+            )
         )
 
         self.ndisplayButton = QtStateButton(
@@ -140,7 +156,11 @@ class QtViewerButtons(QFrame):
             3,
         )
         self.ndisplayButton.setToolTip(
-            f"Toggle number of displayed dimensions ({KEY_SYMBOLS['Control']}-Y)"
+            trans._(
+                "Toggle number of displayed dimensions ({key}-Y)".format(
+                    key=KEY_SYMBOLS['Control']
+                )
+            )
         )
 
         layout = QHBoxLayout()
@@ -176,7 +196,11 @@ class QtDeleteButton(QPushButton):
 
         self.viewer = viewer
         self.setToolTip(
-            f"Delete selected layers ({KEY_SYMBOLS['Control']}-{KEY_SYMBOLS['Backspace']})"
+            trans._(
+                "Delete selected layers ({key1}-{key2})".format(
+                    key1=KEY_SYMBOLS['Control'], key2=KEY_SYMBOLS['Backspace']
+                )
+            )
         )
         self.setAcceptDrops(True)
         self.clicked.connect(lambda: self.viewer.layers.remove_selected())

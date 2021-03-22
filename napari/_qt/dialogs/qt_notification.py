@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils.notifications import Notification, NotificationSeverity
+from ...utils.translations import trans
 from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
@@ -100,7 +101,9 @@ class NapariQtNotification(QDialog):
         self.severity_icon.setText(NotificationSeverity(severity).as_icon())
         self.message.setText(message)
         if source:
-            self.source_label.setText(f'Source: {source}')
+            self.source_label.setText(
+                trans._('Source: {source}'.format(source=source))
+            )
 
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
