@@ -159,7 +159,6 @@ def test_kwargs_passed(monkeypatch):
             order=(),
             axis_labels=(),
             show=True,
-            ipy_interactive=None,
         ),
         call().open(
             path='some/path',
