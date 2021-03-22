@@ -115,8 +115,7 @@ class LayerList(SelectableEventedList[Layer]):
             Index that item(s) will be inserted at
         """
         if not self[index] in self.selection:
-            self.selection.clear()
-            self.selection.add(self[index])
+            self.selection.select_only(self[index])
             moving = [index]
         else:
             moving = [i for i, x in enumerate(self) if x in self.selection]
