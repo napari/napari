@@ -20,19 +20,16 @@ class EventedSet(MutableSet[_T]):
 
     Events
     ------
-    added (value: Set[_T])
-        emitted after an item or items are added to the set.
-        Will not be emitted if item was already in the set when added.
-    removed (value: Set[_T])
-        emitted after an item or items are removed from the set.
-        Will not be emitted if the item was not in the set when discarded.
+    changed (added: Set[_T], removed: Set[_T])
+        Emitted when the set changes, includes item(s) that have been added
+        and/or removed from the set.
     """
 
     events: EmitterGroup
 
     def __init__(self, data: Iterable[_T] = ()):
 
-        _events = {'added': None, 'removed': None}
+        _events = {'changed': None}
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
@@ -57,7 +54,7 @@ class EventedSet(MutableSet[_T]):
     def add(self, value: _T) -> None:
         if value not in self:
             self._set.add(value)
-            self.events.added(value={value})
+            self.events.changed(added={value}, removed={})
 
     def discard(self, value: _T) -> None:
         """Remove an element from a set if it is a member.
@@ -66,7 +63,7 @@ class EventedSet(MutableSet[_T]):
         """
         if value in self:
             self._set.discard(value)
-            self.events.removed(value={value})
+            self.events.changed(added={}, removed={value})
 
     # #### END Required Abstract Methods
 
@@ -83,7 +80,7 @@ class EventedSet(MutableSet[_T]):
         if self._set:
             values = set(self)
             self._set.clear()
-            self.events.removed(value=values)
+            self.events.changed(added={}, removed=values)
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self._set)})"
@@ -93,7 +90,7 @@ class EventedSet(MutableSet[_T]):
         to_add = set(others).difference(self._set)
         if to_add:
             self._set.update(to_add)
-            self.events.added(value=to_add)
+            self.events.changed(added=set(to_add), removed={})
 
     def copy(self) -> EventedSet[_T]:
         """Return a shallow copy of this set."""
@@ -108,7 +105,7 @@ class EventedSet(MutableSet[_T]):
         to_remove = self._set.intersection(others)
         if to_remove:
             self._set.difference_update(to_remove)
-            self.events.removed(value=to_remove)
+            self.events.changed(added={}, removed=set(to_remove))
 
     def intersection(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return all elements that are in both sets as a new set."""
@@ -136,9 +133,11 @@ class EventedSet(MutableSet[_T]):
         This will remove any items in this set that are also in `other`, and
         add any items in others that are not present in this set.
         """
-        to_add = set(others).difference(self)
-        self.difference_update(others)
-        self.update(to_add)
+        to_add = set(others).difference(self._set)
+        to_remove = self._set.intersection(others)
+        self._set.difference_update(to_remove)
+        self._set.update(to_add)
+        self.events.changed(added=to_add, removed=to_remove)
 
     def union(self, others: Iterable[_T] = ()) -> EventedSet[_T]:
         """Return a set containing the union of sets"""

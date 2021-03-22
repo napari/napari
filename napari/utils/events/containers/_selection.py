@@ -35,12 +35,9 @@ class Selection(EventedSet[_T]):
 
     Events
     ------
-    added (value: Set[_T])
-        emitted after an item or items are added to the set.
-        Will not be emitted if item was already in the set when added.
-    removed (value: Set[_T])
-        emitted after an item or items are removed from the set.
-        Will not be emitted if the item was not in the set when discarded.
+    changed (added: Set[_T], removed: Set[_T])
+        Emitted when the set changes, includes item(s) that have been added
+        and/or removed from the set.
     current (value: _T)
         emitted when the current item has changed.
     active (value: _T)
@@ -49,8 +46,7 @@ class Selection(EventedSet[_T]):
 
     def __init__(self, data: Iterable[_T] = (), active: Optional[_T] = None):
         super().__init__(data=data)
-        self.events.added.connect(self._update_active)
-        self.events.removed.connect(self._update_active)
+        self.events.changed.connect(self._update_active)
         self.events.add(current=None, active=None)
         self._active = active
         self._current: Optional[_T] = None
