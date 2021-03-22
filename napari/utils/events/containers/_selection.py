@@ -62,9 +62,19 @@ class Selection(EventedSet[_T]):
         previous, self._current = self._current, index
         self.events.current(value=index, previous=previous)
 
+    def clear(self, keep_current: bool = False) -> None:
+        super().clear()
+        if not keep_current:
+            self.current = None
+
     def toggle(self, obj: _T):
         """Toggle selection state of obj."""
         self.symmetric_difference_update({obj})
+
+    def select_only(self, obj: _S):
+        """Unselect everything but `obj`. Add to selection if not present."""
+        self.add(obj)
+        self.intersection_update({obj})
 
     @classmethod
     def __get_validators__(cls):
@@ -128,7 +138,7 @@ class Selectable(Generic[_S]):
         return self._selection
 
     @selection.setter
-    def selection(self, new_selection) -> None:
+    def selection(self, new_selection: Iterable[_S]) -> None:
         """Set selection, without deleting selection model object."""
         self._selection.intersection_update(new_selection)
         self._selection.update(new_selection)

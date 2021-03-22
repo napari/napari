@@ -132,7 +132,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
-        self.layers.selection.events.connect(self._update_active_layer)
+        self.layers.selection.events.current.connect(self._update_active_layer)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
@@ -277,31 +277,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         event : Event
             No Event parameters are used
         """
-        # iteration goes backwards to find top most selected layer if any
-        # if multiple layers are selected sets the active layer to None
-
-        # TODO: remove this in favor of directly setting selection.current.
-        # This will be handled directly by the new QtLayerList, so this method
-        # can likely be removed at that time.
-        active_layer = None
-        for layer in self.layers:
-            if active_layer is None and layer in self.layers.selection:
-                active_layer = layer
-            elif active_layer is not None and layer in self.layers.selection:
-                active_layer = None
-                break
-
+        active_layer = event.value
         if active_layer is None:
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
-            self.layers.selection.current = None
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-            self.layers.selection.current = active_layer
 
     @property
     def active_layer(self):
@@ -313,15 +298,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         )
         return self.layers.selection.current
 
-    @active_layer.setter
-    def active_layer(self, layer):
-        warnings.warn(
-            "'viewer.active_layer' is deprecated and will be removed in napari"
-            " v0.4.9.  Please use 'viewer.layers.selection.current' instead.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        self.layers.selection.current = layer
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'active_layer':
+            warnings.warn(
+                "'viewer.active_layer' is deprecated and will be removed in napari"
+                " v0.4.9.  Please use 'viewer.layers.selection.current' instead.",
+                category=DeprecationWarning,
+                stacklevel=2,
+            )
+            print('set current to', value)
+            self.layers.selection.current = value
+        else:
+            return super().__setattr__(name, value)
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
