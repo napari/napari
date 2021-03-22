@@ -327,6 +327,20 @@ def test_custom_color_dict():
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
+def test_add_colors():
+    """Test adding new colors"""
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    assert len(layer._all_vals) == layer.num_colors
+
+    layer.selected_label = 51
+    assert len(layer._all_vals) == 52
+
+    layer.show_selected_label = True
+    layer.selected_label = 60
+    assert len(layer._all_vals) == 61
+
+
 def test_metadata():
     """Test setting labels metadata."""
     np.random.seed(0)

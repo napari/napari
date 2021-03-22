@@ -682,16 +682,12 @@ class Labels(_ImageBase):
             selected_color = low_discrepancy_image(
                 self._selected_label, self._seed
             )
-            colors = np.zeros(len(self._all_vals))
-            try:
-                colors[self.selected_label] = selected_color
-            except IndexError:
-                max_val = np.max(raw)
+            if self.selected_label > len(self._all_vals):
                 self._all_vals = low_discrepancy_image(
-                    np.arange(max_val + 1), self._seed
+                    np.arange(self.selected_label + 1), self._seed
                 )
-                self._all_vals[0] = 0
-                colors = np.zeros(len(self._all_vals))
+            colors = np.zeros(len(self._all_vals))
+            colors[self.selected_label] = selected_color
             image = colors[raw]
         elif (
             self.show_selected_label
