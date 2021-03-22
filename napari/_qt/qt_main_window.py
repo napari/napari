@@ -223,11 +223,6 @@ class Window:
     ----------
     viewer : napari.components.ViewerModel
         Contained viewer widget.
-    show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
-    ipy_interactive : bool, optional
-        Use the IPython Qt event loop ('%gui qt' magic) if running in an
-        interactive IPython terminal.  By default, uses SETTINGS preferences.
 
     Attributes
     ----------
@@ -245,9 +240,9 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer, *, show: bool = True, ipy_interactive=None):
+    def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
-        get_app(ipy_interactive=ipy_interactive)
+        get_app()
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow()

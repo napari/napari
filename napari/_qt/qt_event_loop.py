@@ -259,13 +259,14 @@ def _ipython_has_eventloop() -> bool:
 
 def _try_enable_ipython_gui(gui='qt'):
     """Start %gui qt the eventloop."""
-    try:
-        from IPython import get_ipython
-    except ImportError:
+    ipy_module = sys.modules.get("IPython")
+    if not ipy_module:
         return
 
-    shell = get_ipython()
-    if hasattr(shell, 'enable_gui') and shell.active_eventloop != gui:
+    shell = ipy_module.get_ipython()  # type: ignore
+    if not shell:
+        return
+    if shell.active_eventloop != gui:
         shell.enable_gui(gui)
 
 
