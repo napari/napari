@@ -32,35 +32,20 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         for i in list(self.selection):
             self.remove(i)
 
-    def select_next(self, shift=False):
+    def select_next(self, step=1, shift=False):
         """Selects next item from list."""
-        selected_idx = [i for i, x in enumerate(self) if x in self.selection]
-        # if anything is selected
-        if selected_idx:
-            if selected_idx[-1] == len(self) - 1:
-                if shift is False:
-                    next = self[selected_idx[-1]]
-                    self.selection.intersection_update({next})
-            elif selected_idx[-1] < len(self) - 1:
-                next = self[selected_idx[-1] + 1]
-                if shift is False:
-                    self.selection.intersection_update({next})
-                self.selection.add(next)
+        if self.selection:
+            idx = self.index(self.selection.current) + step
+            if len(self) > idx >= 0:
+                next_layer = self[idx]
+                if shift:
+                    self.selection.add(next_layer)
+                    self.selection.current = next_layer
+                else:
+                    self.selection.active = next_layer
         elif len(self) > 0:
-            self.selection.add(self[-1])
+            self.selection.active = self[-1 if step > 0 else 0]
 
     def select_previous(self, shift=False):
         """Selects previous item from list."""
-        selected_idx = [i for i, x in enumerate(self) if x in self.selection]
-
-        if selected_idx:
-            if selected_idx[0] == 0:
-                if shift is False:
-                    self.selection.intersection_update({self[0]})
-            elif selected_idx[0] > 0:
-                new = self[selected_idx[0] - 1]
-                if shift is False:
-                    self.selection.intersection_update({new})
-                self.selection.add(new)
-        elif len(self) > 0:
-            self.selection.add(self[0])
+        self.select_next(-1, shift=shift)

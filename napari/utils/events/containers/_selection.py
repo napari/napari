@@ -76,13 +76,6 @@ class Selection(EventedSet[_T]):
         self._current = index
         self.events.current(value=index)
 
-    def _update_active(self, event=None):
-        """On a selection event, update the active item.
-
-        (An active item is a single selected item).
-        """
-        self.active = list(self)[0] if len(self) == 1 else None
-
     @property
     def active(self) -> Optional[_T]:
         """Return the currently active item or None."""
@@ -100,6 +93,18 @@ class Selection(EventedSet[_T]):
         self.clear() if value is None else self.select_only(value)
         self.current = value
         self.events.active(value=value)
+
+    def _update_active(self, event=None):
+        """On a selection event, update the active item based on selection.
+
+        (An active item is a single selected item).
+        """
+        if len(self) == 1:
+            self.active = list(self)[0]
+        elif len(self):
+            if self._active is not None:
+                self._active = None
+                self.events.active(value=None)
 
     def clear(self, keep_current: bool = False) -> None:
         """Clear the selection."""

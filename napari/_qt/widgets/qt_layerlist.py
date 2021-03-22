@@ -306,26 +306,20 @@ class QtLayerList(QScrollArea):
             return
 
         modifiers = event.modifiers()
-        layer = self.layers[self._drag_name]
+        clicked_layer = self.layers[self._drag_name]
         if modifiers == Qt.ShiftModifier:
-            # If shift select all layers in between currently selected one and
-            # clicked one
-            index = self.layers.index(layer)
-            lastSelected = None
-            for i, lay in enumerate(self.layers):
-                if lay in self.layers.selection:
-                    lastSelected = i
-            r = [index, lastSelected]
-            r.sort()
-            for i in range(r[0], r[1] + 1):
-                self.layers.selection.add(self.layers[i])
-            self.layers.selection.current = layer
+            # shift-click: select all layers between current and clicked
+            clicked = self.layers.index(clicked_layer)
+            current = self.layers.index(self.layers.selection.current)
+            selection = self.layers[slice(*sorted([clicked, current]))]
+            self.layers.selection.update(selection)
+            self.layers.selection.current = clicked_layer
         elif modifiers == Qt.ControlModifier:
-            # If control click toggle selected state
-            self.layers.selection.toggle(layer)
+            # If control click toggle selected state of clicked layer
+            self.layers.selection.toggle(clicked_layer)
         else:
             # If otherwise unselect all and leave clicked one selected
-            self.layers.selection.active = layer
+            self.layers.selection.active = clicked_layer
 
     def mouseMoveEvent(self, event):
         """Drag and drop layer with mouse movement.
