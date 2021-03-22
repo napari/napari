@@ -83,7 +83,7 @@ def test_multiscale_screenshot(make_napari_viewer):
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
 
     screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -119,7 +119,7 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
     assert viewer.layers[0].data_level == 0
 
     screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
@@ -150,7 +150,7 @@ def test_image_screenshot_zoomed(make_napari_viewer):
     viewer.window.qt_viewer.on_draw(None)
 
     screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 

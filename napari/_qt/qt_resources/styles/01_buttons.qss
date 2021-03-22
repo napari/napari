@@ -51,70 +51,20 @@ QtViewerPushButton[mode="home"] {
   image: url(":/themes/{{ folder }}/home.svg");
 }
 
-QtNDisplayButton {
-    background-color: {{ foreground }};
-    min-width : 28px;
-    max-width : 28px;
-    min-height : 28px;
-    max-height : 28px;
-    border-radius: 3px;
-    border: 0px;
-    padding: 0px;
-}
-
-QtNDisplayButton::indicator {
-    min-width : 28px;
-    max-width : 28px;
-    min-height : 28px;
-    max-height : 28px;
-    border: 0px;
-    padding: 0px;
-}
-
-QtNDisplayButton::indicator:unchecked {
+QtStateButton[mode="ndisplay_button"]:checked {
   image: url(":/themes/{{ folder }}/3D.svg");
 }
 
-QtNDisplayButton::indicator:checked {
+QtStateButton[mode="ndisplay_button"] {
   image: url(":/themes/{{ folder }}/2D.svg");
 }
 
-QtNDisplayButton::indicator:hover {
-  background-color: {{ primary }};
-}
-
-QtGridViewButton {
-    background-color: {{ foreground }};
-    min-width : 28px;
-    max-width : 28px;
-    min-height : 28px;
-    max-height : 28px;
-    border-radius: 3px;
-    border: 0px;
-    padding: 0px;
-}
-
-QtGridViewButton::indicator {
-    background-color: {{ foreground }};
-    min-width : 28px;
-    max-width : 28px;
-    min-height : 28px;
-    max-height : 28px;
-    border-radius: 3px;
-    border: 0px;
-    padding: 0px;
-}
-
-QtGridViewButton::indicator:unchecked {
+QtStateButton[mode="grid_view_button"]:checked {
   image: url(":/themes/{{ folder }}/square.svg");
 }
 
-QtGridViewButton::indicator:checked {
+QtStateButton[mode="grid_view_button"] {
   image: url(":/themes/{{ folder }}/grid.svg");
-}
-
-QtGridViewButton::indicator:hover {
-  background-color: {{ primary }};
 }
 
 QtModeRadioButton {

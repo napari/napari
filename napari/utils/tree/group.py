@@ -1,19 +1,20 @@
 from typing import Generator, Iterable, List, TypeVar
 
-from ..events import NestableEventedList, Selection
+from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
+from ..events.containers._selection import Selectable
 from .node import Node
 
 NodeType = TypeVar("NodeType", bound=Node)
 
 
-class Group(NestableEventedList[NodeType], Node):
+class Group(NestableEventedList[NodeType], Node, Selectable[NodeType]):
     """An object that can contain other objects in a composite Tree pattern.
 
     The ``Group`` (aka composite) is an element that has sub-elements:
     which may be ``Nodes`` or other ``Groups``.  By inheriting from
     :class:`NestableEventedList`, ``Groups`` have basic python list-like
-    behavior and emit events when modified.  The main additions in this class
+    behavior and emit events when modified.  The main addition in this class
     is that when objects are added to a ``Group``, they are assigned a
     ``.parent`` attribute pointing to the group, which is removed upon
     deletion from the group.
@@ -38,16 +39,7 @@ class Group(NestableEventedList[NodeType], Node):
     ):
         Node.__init__(self, name=name)
         NestableEventedList.__init__(self, data=children, basetype=basetype)
-        self._selection: Selection[NodeType] = Selection()
-
-    @property
-    def selection(self) -> Selection[NodeType]:
-        return self._selection
-
-    @selection.setter
-    def selection(self, new_selection) -> None:
-        self._selection.intersection_update(new_selection)
-        self._selection.update(new_selection)
+        Selectable.__init__(self)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""

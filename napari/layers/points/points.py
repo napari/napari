@@ -1415,8 +1415,10 @@ class Points(Layer):
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
-            self._edge._remove(indices_to_remove=index)
-            self._face._remove(indices_to_remove=index)
+            with self._edge.events.blocker_all():
+                self._edge._remove(indices_to_remove=index)
+            with self._face.events.blocker_all():
+                self._face._remove(indices_to_remove=index)
             for k in self.properties:
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
@@ -1488,7 +1490,7 @@ class Points(Layer):
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
 
-            if self._clipboard['text'] is not None:
+            if len(self._clipboard['text']) > 0:
                 self.text._values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
@@ -1510,8 +1512,8 @@ class Points(Layer):
                 'indices': self._slice_indices,
             }
 
-            if self.text.values is None:
-                self._clipboard['text'] = None
+            if len(self.text.values) == 0:
+                self._clipboard['text'] = np.empty(0)
 
             else:
                 self._clipboard['text'] = deepcopy(self.text.values[index])
