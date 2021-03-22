@@ -92,9 +92,14 @@ class QtNodeTreeView(QTreeView):
                 idx = self.model().findIndex(event.value)
                 sel_model.setCurrentIndex(idx, sel_model.Current)
             return
-        t = sel_model.Select if event.type == 'added' else sel_model.Deselect
-        for idx in event.value:
-            model_idx = self.model().findIndex(idx)
-            if not model_idx.isValid():
-                continue
-            sel_model.select(model_idx, t)
+        elif event.type == 'changed':
+            for idx in event.added:
+                model_idx = self.model().findIndex(idx)
+                if not model_idx.isValid():
+                    continue
+                sel_model.select(model_idx, sel_model.Select)
+            for idx in event.removed:
+                model_idx = self.model().findIndex(idx)
+                if not model_idx.isValid():
+                    continue
+                sel_model.select(model_idx, sel_model.Deselect)

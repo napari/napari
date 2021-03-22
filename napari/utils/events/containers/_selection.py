@@ -10,9 +10,16 @@ _S = TypeVar("_S")
 
 
 class Selection(EventedSet[_T]):
-    """An unordered collection of selected elements, with a `current` item.
+    """An model of selected items, with a `active` and `current` item.
 
-    There can only be one 'current' item. There can be multiple selected items.
+    There can only be one `active` and one `current` item, but there can be
+    multiple selected items.  An "active" item is defined as a single selected
+    item (if multiple items are selected, there is no active item).  The
+    "current" item is mostly useful for (e.g.) keyboard actions: even with
+    multiple items selected, you may only have one current item, and keyboard
+    events (like up and down) can modify that current item.  It's possible to
+    have a current item without an active item, but an active item will almost
+    always be the current item.
 
     An item can be the current item and selected at the same time. Qt views
     will ensure that there is always a current item as keyboard navigation,
@@ -25,13 +32,13 @@ class Selection(EventedSet[_T]):
     ----------
     data : iterable, optional
         Elements to initialize the set with.
-    active : Any, optional
-        The active item, if any.
+    current : Any, optional
+        The current item, if any.
 
     Attributes
     ----------
-    current : Any, optional
-        The current item, if any.
+    active : Any, optional
+        The active item, if any.
 
     Events
     ------
@@ -44,12 +51,13 @@ class Selection(EventedSet[_T]):
         emitted when the current item has changed.
     """
 
-    def __init__(self, data: Iterable[_T] = (), active: Optional[_T] = None):
+    def __init__(self, data: Iterable[_T] = (), current: Optional[_T] = None):
+        self._active: Optional[_T] = None
+        self._current = current
         super().__init__(data=data)
-        self.events.changed.connect(self._update_active)
         self.events.add(current=None, active=None)
-        self._active = active
-        self._current: Optional[_T] = None
+        self.events.changed.connect(self._update_active)
+        self._update_active()
 
     def __repr__(self) -> str:
         clsname = type(self).__name__
@@ -69,25 +77,35 @@ class Selection(EventedSet[_T]):
         self.events.current(value=index)
 
     def _update_active(self, event=None):
+        """On a selection event, update the active item.
+
+        (An active item is a single selected item).
+        """
         self.active = list(self)[0] if len(self) == 1 else None
 
     @property
     def active(self) -> Optional[_T]:
+        """Return the currently active item or None."""
         return self._active
 
     @active.setter
     def active(self, value: Optional[_T]):
+        """Set the active item.
+
+        This make `value` the only selected item, and make it current.
+        """
         if value == self._active:
             return
         self._active = value
-        self.select_only(value) if value else self.clear()
+        self.clear() if value is None else self.select_only(value)
         self.current = value
         self.events.active(value=value)
 
     def clear(self, keep_current: bool = False) -> None:
-        super().clear()
+        """Clear the selection."""
         if not keep_current:
             self.current = None
+        super().clear()
 
     def toggle(self, obj: _T):
         """Toggle selection state of obj."""
@@ -95,8 +113,8 @@ class Selection(EventedSet[_T]):
 
     def select_only(self, obj: _T):
         """Unselect everything but `obj`. Add to selection if not present."""
-        self.add(obj)
         self.intersection_update({obj})
+        self.add(obj)
 
     @classmethod
     def __get_validators__(cls):
@@ -108,7 +126,7 @@ class Selection(EventedSet[_T]):
         from pydantic.utils import sequence_like
 
         if isinstance(v, dict):
-            data = v.get("data", [])
+            data = v.get("selection", [])
             current = v.get("current", None)
         elif isinstance(v, Selection):
             data = v._set
@@ -144,7 +162,8 @@ class Selection(EventedSet[_T]):
 
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
-        return {'data': super()._json_encode(), 'current': self.current}
+        # we don't serialize active, as it's gleaned from the selection.
+        return {'selection': super()._json_encode(), 'current': self.current}
 
 
 class Selectable(Generic[_S]):

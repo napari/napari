@@ -29,19 +29,18 @@ class LayerList(SelectableEventedList[Layer]):
         )
 
         # temporary: see note in _on_selection_event
-        self.selection.events.connect(self._on_selection_event)
+        self.selection.events.changed.connect(self._on_selection_changed)
 
-    def _on_selection_event(self, event):
+    def _on_selection_changed(self, event):
         # This method is a temporary workaround to the fact that the Points
         # layer needs to know when its selection state changes so that it can
         # update the highlight state.  This (and the layer._on_selection
         # method) can be removed once highlighting logic has been removed from
         # the layer model.
-        if event.type not in ('added', 'removed'):
-            return
-        selected = event.type == 'added'
-        for layer in event.value:
-            layer._on_selection(selected)
+        for layer in event.added:
+            layer._on_selection(True)
+        for layer in event.removed:
+            layer._on_selection(False)
 
     def __newlike__(self, data):
         return LayerList(data)

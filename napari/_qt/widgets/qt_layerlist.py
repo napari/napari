@@ -99,25 +99,24 @@ class QtLayerList(QScrollArea):
         self.layers.events.inserted.connect(self._add)
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
-        self.layers.selection.events.connect(self._on_selection)
+        self.layers.selection.events.changed.connect(self._on_selection_change)
 
         self._drag_start_position = np.zeros(2)
         self._drag_name = None
 
         self.chunk_receiver = _create_chunk_receiver(self)
 
-    def _on_selection(self, event):
-        if event.type == 'added':
-            for layer in event.value:
-                w = self._find_widget(layer)
-                if w:
-                    w.setSelected(True)
-            self._ensure_visible(list(event.value)[-1])
-        elif event.type == 'removed':
-            for layer in event.value:
-                w = self._find_widget(layer)
-                if w:
-                    w.setSelected(False)
+    def _on_selection_change(self, event):
+        for layer in event.added:
+            w = self._find_widget(layer)
+            if w:
+                w.setSelected(True)
+        for layer in event.removed:
+            w = self._find_widget(layer)
+            if w:
+                w.setSelected(False)
+        if event.added:
+            self._ensure_visible(list(event.added)[-1])
 
     def _find_widget(self, layer):
         for i in range(self.vbox_layout.count()):
