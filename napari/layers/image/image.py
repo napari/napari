@@ -484,7 +484,21 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @_bounding_box.setter
     def _bounding_box(self, bounding_box):
         self._bounding_box_lims = bounding_box
-        self.events.bounding_box
+        self.events.bounding_box()
+
+    def _set_xlim(self, xlim):
+        self._bounding_box = np.vstack((xlim, self._bounding_box_lims[1:, :]))
+        self.events.bounding_box()
+
+    def _set_ylim(self, ylim):
+        self._bounding_box = np.vstack(
+            (self._bounding_box[0, :], ylim, self._bounding_box_lims[2, :])
+        )
+        self.events.bounding_box()
+
+    def _set_zlim(self, zlim):
+        self._bounding_box = np.vstack((self._bounding_box[:2, :], zlim))
+        self.events.bounding_box()
 
     @property
     def loaded(self):
