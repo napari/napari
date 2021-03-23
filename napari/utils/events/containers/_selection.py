@@ -63,6 +63,10 @@ class Selection(EventedSet[_T]):
         clsname = type(self).__name__
         return f"{clsname}({repr(self._set)}, current={self.current})"
 
+    def __hash__(self) -> int:
+        """Make selection hashable."""
+        return id(self)
+
     @property
     def current(self) -> Optional[_T]:
         """Get current item."""
