@@ -7,6 +7,7 @@ from qtpy.QtWidgets import QPushButton
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari.utils.notifications import (
+    ErrorNotification,
     Notification,
     NotificationSeverity,
     notification_manager,
@@ -73,3 +74,22 @@ def test_notification_display(mock_show, severity, monkeypatch):
     dialog.toggle_expansion()
     assert not dialog.property('expanded')
     dialog.close()
+
+
+@patch('napari._qt.dialogs.qt_notification.QDialog.show')
+def test_notification_error(mock_show, monkeypatch):
+    from napari.utils.settings import SETTINGS
+
+    monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
+    monkeypatch.setattr(SETTINGS.application, 'gui_notification_level', 'info')
+    try:
+        raise ValueError('error!')
+    except ValueError as e:
+        notif = ErrorNotification(e)
+
+    dialog = NapariQtNotification.from_notification(notif)
+    bttn = dialog.row2_widget.findChild(QPushButton)
+    assert bttn.text() == 'View Traceback'
+    mock_show.assert_not_called()
+    bttn.click()
+    mock_show.assert_called_once()
