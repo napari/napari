@@ -100,38 +100,32 @@ class QtViewerButtons(QFrame):
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
-            trans._(
-                "Open IPython terminal ({key1}-{key2}-C)".format(
-                    key1=KEY_SYMBOLS['Control'],
-                    key2=KEY_SYMBOLS['Shift'],
-                )
+            trans._("Open IPython terminal ({key1}-{key2}-C)").format(
+                key1=KEY_SYMBOLS['Control'],
+                key2=KEY_SYMBOLS['Shift'],
             ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._(
-                "Roll dimensions order for display ({key}-E)".format(
-                    key=KEY_SYMBOLS['Control']
-                )
+            trans._("Roll dimensions order for display ({key}-E)").format(
+                key=KEY_SYMBOLS['Control']
             ),
             lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._(
-                "Transpose displayed dimensions ({key}-T)".format(
-                    key=KEY_SYMBOLS['Control']
-                )
+            trans._("Transpose displayed dimensions ({key}-T)").format(
+                key=KEY_SYMBOLS['Control']
             ),
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
             self.viewer,
             'home',
-            trans._("Reset view ({key}-R)".format(key=KEY_SYMBOLS['Control'])),
+            trans._("Reset view ({key}-R)").format(key=KEY_SYMBOLS['Control']),
             lambda: self.viewer.reset_view(),
         )
 
