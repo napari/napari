@@ -1,6 +1,6 @@
 import napari
 import skimage.data as data
-from magicgui.widgets import Container, FloatSlider
+from magicgui.widgets import Container
 from napari._qt.widgets.qt_range_slider import QHRangeSlider
 import numpy as np
 
@@ -24,10 +24,29 @@ with napari.gui_qt():
         x_range = event
         print(x_range)
 
-        volume_node = viewer.window.qt_viewer.layer_to_visual[layer].node
-        volume_node.bounding_box_xlim = x_range
+        layer._set_xlim(np.asarray(x_range))
+    
+    def update_y_range(event):
+        y_range = event
+        print(y_range)
 
-    slider_widget = QHRangeSlider((0, 299), data_range=(0, 299))
-    slider_widget.valuesChanged.connect(update_x_range)
+        layer._set_ylim(np.asarray(y_range))
 
-    viewer.window.add_dock_widget(slider_widget)
+    def update_z_range(event):
+        z_range = event
+        print(z_range)
+
+        layer._set_zlim(np.asarray(z_range))
+
+    x_lim_slider = QHRangeSlider((0, 299), data_range=(0, 299))
+    x_lim_slider.valuesChanged.connect(update_x_range)
+
+    y_lim_slider = QHRangeSlider((0, 199), data_range=(0, 199))
+    y_lim_slider.valuesChanged.connect(update_y_range)
+
+    z_lim_slider = QHRangeSlider((0, 99), data_range=(0, 99))
+    z_lim_slider.valuesChanged.connect(update_z_range)
+
+    viewer.window.add_dock_widget(x_lim_slider, area='right')
+    viewer.window.add_dock_widget(y_lim_slider, area='right')
+    viewer.window.add_dock_widget(z_lim_slider, area='right')
