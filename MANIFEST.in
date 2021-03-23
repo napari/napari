@@ -1,5 +1,6 @@
 include LICENSE
 graft napari/_vendor
+recursive-include napari *.pyi
 recursive-include napari _tests/*.py
 recursive-include napari *.png *.jpeg *.jpg *.svg *.qss *.gif
 exclude napari/resources/_qt_resources*.py
