@@ -105,6 +105,12 @@ See below for the full list of changes.
 
 ## API Changes
 
+- Using `layer.get_status()` without an argument was deprecated in version
+  0.4.4 and is removed in this version. Instead, use
+  `layer.get_status(viewer.cursor.position, world=True)` (#2443).
+- `layer.status` was deprecated in version 0.4.4 and is removed in this
+  version. Instead, use `layer.get_status(viewer.cursor.position, world=True)`
+  (#2443).
 
 ## Deprecations
 
