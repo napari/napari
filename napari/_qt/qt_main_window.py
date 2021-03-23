@@ -271,7 +271,7 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self.qt_viewer.viewer.theme = SETTINGS.application.theme
+        self.qt_viewer.viewer.theme = SETTINGS.appearance.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -283,7 +283,7 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        SETTINGS.application.events.theme.connect(self._update_theme)
+        SETTINGS.appearance.events.theme.connect(self._update_theme)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -1107,7 +1107,7 @@ class Window:
         """Update widget color theme."""
         if event:
             value = event.value
-            SETTINGS.application.theme = value
+            SETTINGS.appearance.theme = value
             self.qt_viewer.viewer.theme = value
         else:
             value = self.qt_viewer.viewer.theme
