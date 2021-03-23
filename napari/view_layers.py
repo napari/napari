@@ -161,7 +161,7 @@ def _generate_stubs(output=__file__.replace(".py", ".pyi")):
     pyi = '# flake8: noqa\n'
     pyi += 'from typing import List, Sequence, Union\n\n'
     pyi += 'import napari\n\n'
-    for _layer in list(layers.NAMES) + ['path']:
+    for _layer in sorted(list(layers.NAMES) + ['path']):
         fname = f'view_{_layer}'
         func = globals()[fname]
         pyi += f'def {fname}{inspect.signature(func)}: ...\n\n'
