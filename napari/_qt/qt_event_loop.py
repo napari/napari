@@ -158,7 +158,8 @@ def get_app(
 
     if ipy_interactive is None:
         ipy_interactive = SETTINGS.application.ipy_interactive
-    _try_enable_ipython_gui(ipy_interactive and 'qt')
+    if ipy_interactive:
+        _try_enable_ipython_gui('qt')
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
