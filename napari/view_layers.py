@@ -25,6 +25,7 @@ import typing
 
 from numpydoc.docscrape import NumpyDocString
 
+from . import layers
 from .viewer import Viewer
 
 VIEW_DOC = NumpyDocString(Viewer.__doc__)
@@ -146,15 +147,37 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     view_func.__doc__ = merge_docs(add_method, layer_string)
 
 
-for _layer in (
-    'image',
-    'points',
-    'labels',
-    'shapes',
-    'surface',
-    'vectors',
-    'tracks',
-):
+for _layer in layers.NAMES:
     _generate_view_function(_layer)
 
 _generate_view_function('path', 'open')
+
+
+def _generate_stubs(output=__file__.replace(".py", ".pyi")):
+    """Generat type stubs for view_* functions declared in this file."""
+
+    pyi = '# flake8: noqa\n'
+    pyi += 'from typing import List, Sequence, Union\n\n'
+    pyi += 'import napari\n\n'
+    for _layer in list(layers.NAMES) + ['path']:
+        fname = f'view_{_layer}'
+        func = globals()[fname]
+        pyi += f'def {fname}{inspect.signature(func)}: ...\n\n'
+
+    pyi = pyi.replace("NoneType", "None")
+
+    try:
+        import black
+    except ImportError:
+        pass
+    else:
+        pyi = black.format_str(
+            pyi, mode=black.FileMode(line_length=79, is_pyi=True)
+        )
+
+    with open(output, 'w') as f:
+        f.write(pyi)
+
+
+if __name__ == '__main__':
+    _generate_stubs()
