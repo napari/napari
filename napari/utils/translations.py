@@ -413,7 +413,7 @@ class _Translator:
             cls._LOCALE = locale
 
             if locale.split("_")[0] != DEFAULT_LOCALE:
-                translator._update_env(locale)
+                _Translator._update_env(locale)
 
             for __, bundle in cls._TRANSLATORS.items():
                 bundle._update_locale(locale)
@@ -445,5 +445,7 @@ class _Translator:
 
 
 # Default translator
+# FIXME: Load the config
+_Translator._set_locale(os.environ.get("NAPARI_LANG", "en_US"))
 trans = _Translator.load("napari")
 translator = _Translator
