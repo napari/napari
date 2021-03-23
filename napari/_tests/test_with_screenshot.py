@@ -355,7 +355,7 @@ def test_changing_image_attenuation(make_napari_viewer):
 @skip_local_popups
 def test_labels_painting(make_napari_viewer):
     """Test painting labels updates image."""
-    data = np.zeros((100, 100))
+    data = np.zeros((100, 100), dtype=np.int32)
 
     viewer = make_napari_viewer(show=True)
     viewer.add_labels(data)

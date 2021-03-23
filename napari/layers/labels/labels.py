@@ -12,6 +12,7 @@ from ...utils.colormaps import (
 )
 from ...utils.events import Event
 from ...utils.translations import trans
+from ..image._image_utils import guess_multiscale
 from ..image.image import _get_image_base_class
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -177,10 +178,16 @@ class Labels(_image_base_class):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors)
+        self._all_vals = low_discrepancy_image(
+            np.arange(self.num_colors), self._seed
+        )
+        self._all_vals[0] = 0
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
         self._contour = 0
+
+        data = self._ensure_int_labels(data)
 
         if properties is None:
             self._properties = {}
@@ -365,6 +372,29 @@ class Labels(_image_base_class):
 
         self._color = colors
         self.color_mode = color_mode
+
+    def _ensure_int_labels(self, data):
+        """Ensure data is integer by converting from float if required"""
+        looks_multiscale, data = guess_multiscale(data)
+        if not looks_multiscale:
+            data = [data]
+        if any(np.issubdtype(d.dtype, np.floating) for d in data):
+            warnings.warn(
+                "Float dtypes are not supported for Labels layers. Converting data to integers..."
+            )
+            int_data = []
+            for d in data:
+                if d.dtype == np.float64:
+                    int_data.append(d.astype(np.int64))
+                elif d.dtype == np.float32:
+                    int_data.append(d.astype(np.int32))
+                else:
+                    int_data.append(d)
+            data = int_data
+
+        if not looks_multiscale:
+            data = data[0]
+        return data
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
@@ -651,6 +681,9 @@ class Labels(_image_base_class):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+        if raw.dtype == bool:
+            raw = raw.view(dtype=np.uint8)
+
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -668,19 +701,29 @@ class Labels(_image_base_class):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = np.where(
-                raw > 0, low_discrepancy_image(raw, self._seed), 0
-            )
+            try:
+                image = self._all_vals[raw]
+            except IndexError:
+                max_val = np.max(raw)
+                self._all_vals = low_discrepancy_image(
+                    np.arange(max_val + 1), self._seed
+                )
+                self._all_vals[0] = 0
+                image = self._all_vals[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            selected = self._selected_label
-            image = np.where(
-                raw == selected,
-                low_discrepancy_image(selected, self._seed),
-                0,
+            selected_color = low_discrepancy_image(
+                self._selected_label, self._seed
             )
+            if self.selected_label > len(self._all_vals):
+                self._all_vals = low_discrepancy_image(
+                    np.arange(self.selected_label + 1), self._seed
+                )
+            colors = np.zeros(len(self._all_vals))
+            colors[self.selected_label] = selected_color
+            image = colors[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -712,9 +755,7 @@ class Labels(_image_base_class):
                 raw, footprint=struct_elem
             ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
             image[boundaries] = raw[boundaries]
-            image = np.where(
-                image > 0, low_discrepancy_image(image, self._seed), 0
-            )
+            image = self._all_vals[image]
         elif self.contour > 0 and raw.ndim > 2:
             warnings.warn("Contours are not displayed during 3D rendering")
 
@@ -727,6 +768,8 @@ class Labels(_image_base_class):
         """Return the color corresponding to a specific label."""
         if label == 0:
             col = None
+        elif label is None:
+            col = self.colormap.map([0, 0, 0, 0])[0]
         else:
             val = self._raw_to_displayed(np.array([label]))
             col = self.colormap.map(val)[0]
