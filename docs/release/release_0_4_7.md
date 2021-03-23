@@ -28,6 +28,12 @@ We've also continued to make improvements to our experimental octree support,
 which now supports single scale tiled loading (#2372, #2391). It is still
 2D-only but continues to improve!
 
+Last but not least, this is the first release since we launched our new website
+at https://napari.org, powered by Jupyter Book! Check it out! Huge thanks to
+Kira Evans, Talley Lambert, Lia Prins, Genevieve Buckley, and others who
+contributed (and continue to contribute) to our efforts to improve our
+documentation.
+
 See below for the full list of changes.
 
 ## New Features
@@ -41,6 +47,7 @@ See below for the full list of changes.
 - Broken link fixed for Handling Code of Conduct Reports (#2342)
 - Update nbscreenshot docstring (#2395)
 - Clarify benchmark docs (#2431)
+- Make structural doc changes to better align with sitemap (#2404)
 
 ## Improvements
 - ColorManager take 2 (w/ pydantic) (#2204)
@@ -106,7 +113,6 @@ See below for the full list of changes.
 
 ## Build Tools and Support
 - Add environment flag for sparse library (#2396)
-- Make structural doc changes to better align with sitemap (#2404)
 - re-add plausible (#2433)
 
 
