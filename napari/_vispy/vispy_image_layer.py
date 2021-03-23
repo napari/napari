@@ -48,6 +48,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
+        # self.layer.events.bounding_box.connect(self._on_bounding_box_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -141,6 +142,10 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_attenuation_change(self, event=None):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
+
+    def _on_bounding_box_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node._bounding_box = self.layer._bounding_box
 
     def reset(self, event=None):
         self._reset_base()

@@ -82,8 +82,12 @@ FRAG_SHADER = """
 // uniforms
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
-uniform float u_x_min;
-uniform float u_x_max;
+uniform float u_bbox_x_min;
+uniform float u_bbox_x_max;
+uniform float u_bbox_y_min;
+uniform float u_bbox_y_max;
+uniform float u_bbox_z_min;
+uniform float u_bbox_z_max;
 
 uniform vec2 clim;
 uniform float gamma;
@@ -214,32 +218,33 @@ void main() {{
     // Calculate unit vector pointing in the view direction through this
     // fragment.
     view_ray = normalize(farpos.xyz - nearpos.xyz);
+
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((u_x_min - 0.5 - v_position.x) / view_ray.x,
-                            (u_x_max - 0.5 - v_position.x) / view_ray.x));
-    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
-                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
-    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
-                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
+    distance = max(distance, min((u_bbox_x_min - 0.5 - v_position.x) / view_ray.x,
+                            (u_bbox_x_max - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((u_bbox_y_min - 0.5 - v_position.y) / view_ray.y,
+                            (u_bbox_y_max - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((u_bbox_z_min - 0.5 - v_position.z) / view_ray.z,
+                            (u_bbox_z_max - 0.5 - v_position.z) / view_ray.z));
 
-    // Now we have the starting position on the front surface
+    // Now we have the starting position on the front surface of the volume
     vec3 front = v_position + view_ray * distance;
 
-    // Compute the distance to the front surface or near clipping plane
-    float distance_to_back = dot(nearpos-v_position, view_ray);
+    // Compute the distance to the front surface of the bounding box
+    float distance_to_bbox = dot(nearpos-v_position, view_ray);
     
-    distance_to_back = max(distance_to_back, min((u_x_min - 0.5 - front.x) / -view_ray.x,
-                            (u_x_max - 0.5 - front.x) / -view_ray.x));
-    distance_to_back = max(distance_to_back, min((-0.5 - front.y) / -view_ray.y,
-                            (u_shape.y - 0.5 - front.y) / -view_ray.y));
-    distance_to_back = max(distance_to_back, min((-0.5 - front.z) / -view_ray.z,
-                            (u_shape.z - 0.5 - front.z) / -view_ray.z));
+    distance_to_bbox = max(distance_to_bbox, min((u_bbox_x_min - 0.5 - front.x) / -view_ray.x,
+                            (u_bbox_x_max - 0.5 - front.x) / -view_ray.x));
+    distance_to_bbox = max(distance_to_bbox, min((u_bbox_y_min - 0.5 - front.y) / -view_ray.y,
+                            (u_bbox_y_max - 0.5 - front.y) / -view_ray.y));
+    distance_to_bbox = max(distance_to_bbox, min((u_bbox_z_min - 0.5 - front.z) / -view_ray.z,
+                            (u_bbox_z_max - 0.5 - front.z) / -view_ray.z));
 
     // Decide how many steps to take
-    int nsteps = int(-distance_to_back / u_relative_step_size + 0.5);
+    int nsteps = int(-distance_to_bbox / u_relative_step_size + 0.5);
 
-    vec3 back = front - view_ray * distance_to_back;
+    vec3 back = front - view_ray * distance_to_bbox;
     float f_nsteps = float(nsteps);
     if( nsteps < 1 )
         discard;

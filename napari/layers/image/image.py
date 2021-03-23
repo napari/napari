@@ -227,6 +227,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
+            bounding_box=Event,
         )
 
         # Set data
@@ -273,6 +274,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
+
+        self._bounding_box_lims = np.column_stack(
+            (np.zeros(data.ndim), data.shape)
+        )
+        self._bounding_box_lims[:, 1] = self._bounding_box_lims[:, 1] - 1
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -470,6 +476,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
+
+    @property
+    def _bounding_box(self):
+        return self._bounding_box_lims
+
+    @_bounding_box.setter
+    def _bounding_box(self, bounding_box):
+        self._bounding_box_lims = bounding_box
+        self.events.bounding_box
 
     @property
     def loaded(self):
