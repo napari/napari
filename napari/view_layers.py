@@ -171,12 +171,12 @@ def _generate_stubs(output=__file__.replace(".py", ".pyi")):
 
     try:
         import black
-    except ImportError:
-        pass
-    else:
+
         pyi = black.format_str(
             pyi, mode=black.FileMode(line_length=79, is_pyi=True)
         )
+    except ImportError:
+        pass
 
     with open(output, 'w') as f:
         f.write(pyi)
