@@ -9,6 +9,7 @@ from pydantic import BaseSettings, Field
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
+from ..translations import trans
 
 
 class Theme(str):
@@ -29,12 +30,16 @@ class Theme(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError('must be a string')
+            raise ValueError(trans._('must be a string'))
 
         value = v.lower()
         themes = available_themes()
         if value not in available_themes():
-            raise ValueError(f'must be one of {", ".join(themes)}')
+            raise ValueError(
+                trans._('must be one of {themes}').format(
+                    themes=", ".join(themes)
+                )
+            )
 
         return value
 
@@ -44,6 +49,28 @@ class QtBindingChoice(str, Enum):
 
     pyside2 = 'pyside2'
     pyqt5 = 'pyqt5'
+
+
+class AppearanceSettings(BaseSettings, EventedModel):
+    """Appearance Settings."""
+
+    schema_version = (0, 1, 0)
+
+    theme: Theme = Field(
+        "dark",
+        title=trans._("Theme"),
+        description=trans._("Theme selection."),
+    )
+
+    class Config:
+        # Pydantic specific configuration
+        env_prefix = 'napari_'
+        title = "Appearance"
+        use_enum_values = True
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version']
 
 
 class ApplicationSettings(BaseSettings, EventedModel):
@@ -58,14 +85,23 @@ class ApplicationSettings(BaseSettings, EventedModel):
 
     schema_version = (0, 1, 0)
 
-    theme: Theme = Field(
-        "dark",
-        description="Theme selection.",
-    )
-
     first_time: bool = True
 
+    ipy_interactive: bool = Field(
+        default=True,
+        title='IPython interactive',
+        description=(
+            r'Use interactive %gui qt event loop when creating '
+            'napari Viewers in IPython'
+        ),
+    )
+
     # Window state, geometry and position
+    save_window_geometry: bool = Field(
+        True,
+        title=trans._("Save Window Geometry"),
+        description="Save window size and position.",
+    )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
     window_maximized: bool = None
@@ -82,7 +118,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Application settings"
+        title = "Application"
         use_enum_values = True
         validate_all = True
 
@@ -103,8 +139,8 @@ class ApplicationSettings(BaseSettings, EventedModel):
         ]
 
 
-class PluginSettings(BaseSettings, EventedModel):
-    """Plugin Settings."""
+class PluginsSettings(BaseSettings, EventedModel):
+    """Plugins Settings."""
 
     schema_version = (0, 1, 0)
     plugins_call_order: List[str] = []
@@ -112,7 +148,7 @@ class PluginSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Plugin settings"
+        title = "Plugins"
         use_enum_values = True
 
     class NapariConfig:
@@ -120,4 +156,4 @@ class PluginSettings(BaseSettings, EventedModel):
         preferences_exclude = ['schema_version', 'plugins_call_order']
 
 
-CORE_SETTINGS = [ApplicationSettings, PluginSettings]
+CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

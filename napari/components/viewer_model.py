@@ -1,6 +1,7 @@
 import inspect
 import itertools
 import os
+import warnings
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -21,7 +22,6 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -322,8 +322,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_cursor_position_change(self, event):
         """Set the layer cursor position."""
-        for layer in self.layers:
-            layer.position = self.cursor.position
+        with warnings.catch_warnings():
+            # Catch the deprecation warning on layer.position
+            warnings.filterwarnings(
+                'ignore', message='layer.position is deprecated'
+            )
+            for layer in self.layers:
+                layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
         if self.active_layer is not None:
@@ -627,9 +632,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'metadata',
         }
 
-        # Image or OctreeImage.
-        image_class = _get_image_class()
-
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
             kwargs['blending'] = kwargs['blending'] or 'translucent'
@@ -641,7 +643,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         f"Received sequence for argument '{k}', "
                         "did you mean to specify a 'channel_axis'? "
                     )
-            layer = image_class(data, **kwargs)
+            layer = Image(data, **kwargs)
             self.layers.append(layer)
 
             return layer
@@ -650,7 +652,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = image_class(image, **i_kwargs)
+                layer = Image(image, **i_kwargs)
                 self.layers.append(layer)
                 layer_list.append(layer)
 
@@ -868,16 +870,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 raise exc
 
         return layer
-
-
-def _get_image_class() -> Image:
-    """Return Image or OctreeImage based config settings."""
-    if config.async_octree:
-        from ..layers.image.experimental.octree_image import OctreeImage
-
-        return OctreeImage
-
-    return Image
 
 
 def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':

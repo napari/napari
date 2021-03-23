@@ -600,3 +600,8 @@ QtFontSizePreview {
   border: 1px solid {{ foreground }};
   border-radius: 5px;
 }
+
+
+QListWidget#Preferences {
+ background: {{ background }}; 
+}

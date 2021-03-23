@@ -33,6 +33,7 @@ from ...plugins.pypi import (
 )
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
+from ...utils.translations import trans
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter
@@ -119,7 +120,7 @@ class PluginListItem(QFrame):
             self.package_name.setText(f"{package_name} {version}")
             self.summary.setText(summary)
             self.package_author.setText(author)
-            self.action_button.setText("remove")
+            self.action_button.setText(trans._("remove"))
             self.action_button.setObjectName("remove_button")
             self.enabled_checkbox.setChecked(enabled)
             if PluginError.get(plugin_name=plugin_name):
@@ -129,7 +130,7 @@ class PluginListItem(QFrame):
                         parent=self._get_dialog(), initial_plugin=plugin_name
                     )
                     rep.setWindowFlags(Qt.Sheet)
-                    close = QPushButton("close", rep)
+                    close = QPushButton(trans._("close"), rep)
                     rep.layout.addWidget(close)
                     rep.plugin_combo.hide()
                     close.clicked.connect(rep.close)
@@ -145,7 +146,7 @@ class PluginListItem(QFrame):
             self.package_name.setText(version)
             self.summary.setText(summary)
             self.package_author.setText(author)
-            self.action_button.setText("install")
+            self.action_button.setText(trans._("install"))
             self.enabled_checkbox.hide()
 
     def _get_dialog(self) -> QDialog:
@@ -163,7 +164,7 @@ class PluginListItem(QFrame):
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(True)
         self.enabled_checkbox.setDisabled(True)
-        self.enabled_checkbox.setToolTip("enable/disable")
+        self.enabled_checkbox.setToolTip(trans._("enable/disable"))
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -278,7 +279,9 @@ class QPluginList(QListWidget):
                 continue
             item.outdated = True
             widg = self.itemWidget(item)
-            update_btn = QPushButton(f"update (v{latest})", widg)
+            update_btn = QPushButton(
+                trans._("update (v{latest})".format(latest=latest)), widg
+            )
             update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             update_btn.clicked.connect(
                 lambda: self.installer.install([item.text()])
@@ -374,14 +377,14 @@ class QtPluginDialog(QDialog):
         installed = QWidget(self.v_splitter)
         lay = QVBoxLayout(installed)
         lay.setContentsMargins(0, 2, 0, 2)
-        lay.addWidget(QLabel("Installed Plugins"))
+        lay.addWidget(QLabel(trans._("Installed Plugins")))
         self.installed_list = QPluginList(installed, self.installer)
         lay.addWidget(self.installed_list)
 
         uninstalled = QWidget(self.v_splitter)
         lay = QVBoxLayout(uninstalled)
         lay.setContentsMargins(0, 2, 0, 2)
-        self.avail_label = QLabel("Available Plugins")
+        self.avail_label = QLabel(trans._("Available Plugins"))
         lay.addWidget(self.avail_label)
         self.available_list = QPluginList(uninstalled, self.installer)
         lay.addWidget(self.available_list)
@@ -392,7 +395,7 @@ class QtPluginDialog(QDialog):
         self.stdout_text.hide()
 
         buttonBox = QHBoxLayout()
-        self.working_indicator = QLabel("loading ...", self)
+        self.working_indicator = QLabel(trans._("loading ..."), self)
         sp = self.working_indicator.sizePolicy()
         sp.setRetainSizeWhenHidden(True)
         self.working_indicator.setSizePolicy(sp)
@@ -408,15 +411,15 @@ class QtPluginDialog(QDialog):
         self.direct_entry_edit = QLineEdit(self)
         self.direct_entry_edit.installEventFilter(self)
         self.direct_entry_edit.setPlaceholderText(
-            'install by name/url, or drop file...'
+            trans._('install by name/url, or drop file...')
         )
-        self.direct_entry_btn = QPushButton("Install", self)
+        self.direct_entry_btn = QPushButton(trans._("Install"), self)
         self.direct_entry_btn.clicked.connect(self._install_packages)
 
-        self.show_status_btn = QPushButton("Show Status", self)
+        self.show_status_btn = QPushButton(trans._("Show Status"), self)
         self.show_status_btn.setFixedWidth(100)
-        self.show_sorter_btn = QPushButton("<< Show Sorter", self)
-        self.close_btn = QPushButton("Close", self)
+        self.show_sorter_btn = QPushButton(trans._("<< Show Sorter"), self)
+        self.close_btn = QPushButton(trans._("Close"), self)
         self.close_btn.clicked.connect(self.reject)
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
@@ -442,7 +445,9 @@ class QtPluginDialog(QDialog):
 
     def _update_count_in_label(self):
         count = self.available_list.count()
-        self.avail_label.setText(f"Available Plugins ({count})")
+        self.avail_label.setText(
+            trans._("Available Plugins ({count})".format(count=count))
+        )
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.DragEnter:
@@ -459,18 +464,18 @@ class QtPluginDialog(QDialog):
 
     def _toggle_sorter(self, show):
         if show:
-            self.show_sorter_btn.setText(">> Hide Sorter")
+            self.show_sorter_btn.setText(trans._(">> Hide Sorter"))
             self.plugin_sorter.show()
         else:
-            self.show_sorter_btn.setText("<< Show Sorter")
+            self.show_sorter_btn.setText(trans._("<< Show Sorter"))
             self.plugin_sorter.hide()
 
     def _toggle_status(self, show):
         if show:
-            self.show_status_btn.setText("Hide Status")
+            self.show_status_btn.setText(trans._("Hide Status"))
             self.stdout_text.show()
         else:
-            self.show_status_btn.setText("Show Status")
+            self.show_status_btn.setText(trans._("Show Status"))
             self.stdout_text.hide()
 
     def _install_packages(self, packages: Sequence[str] = ()):

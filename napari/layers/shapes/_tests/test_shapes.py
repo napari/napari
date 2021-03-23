@@ -159,6 +159,39 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    layer = Shapes(
+        properties=default_properties,
+        text=text_kwargs,
+    )
+    assert layer.text.mode == 'property'
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+    # add a shape and check that the appropriate text value was added
+    layer.add(np.random.random((1, 4, 2)))
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    layer = Shapes(
+        properties=default_properties,
+        text='shape_type: {shape_type:.2f}',
+    )
+    assert layer.text.mode == 'formatted'
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a shape and check that the appropriate text value was added
+    layer.add(np.random.random((1, 4, 2)))
+    np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
+
+
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_text_from_property_value(properties):
     """Test setting text from a property value"""
@@ -1420,17 +1453,16 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     layer = Shapes(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0,) * 2)
     assert value == (9, None)
 
     layer.mode = 'select'
     layer.selected_data = {9}
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0,) * 2)
     assert value == (9, 7)
 
     layer = Shapes(data + 5)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0,) * 2)
     assert value == (None, None)
 
 
@@ -1440,7 +1472,7 @@ def test_message():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 

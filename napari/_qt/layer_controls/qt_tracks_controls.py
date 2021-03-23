@@ -3,6 +3,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.translations import trans
 from .qt_layer_controls_base import QtLayerControls
 
 MAX_TAIL_LENGTH = 300
@@ -76,23 +77,23 @@ class QtTracksControls(QtLayerControls):
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
 
-        self.grid_layout.addWidget(QLabel('color by:'), 0, 0)
+        self.grid_layout.addWidget(QLabel(trans._('color by:')), 0, 0)
         self.grid_layout.addWidget(self.color_by_combobox, 0, 1)
-        self.grid_layout.addWidget(QLabel('colormap:'), 1, 0)
+        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 1, 0)
         self.grid_layout.addWidget(self.colormap_combobox, 1, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 2, 0)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 2, 0)
         self.grid_layout.addWidget(self.blendComboBox, 2, 1)
-        self.grid_layout.addWidget(QLabel('opacity:'), 3, 0)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 3, 0)
         self.grid_layout.addWidget(self.opacitySlider, 3, 1)
-        self.grid_layout.addWidget(QLabel('tail width:'), 4, 0)
+        self.grid_layout.addWidget(QLabel(trans._('tail width:')), 4, 0)
         self.grid_layout.addWidget(self.tail_width_slider, 4, 1)
-        self.grid_layout.addWidget(QLabel('tail length:'), 5, 0)
+        self.grid_layout.addWidget(QLabel(trans._('tail length:')), 5, 0)
         self.grid_layout.addWidget(self.tail_length_slider, 5, 1)
-        self.grid_layout.addWidget(QLabel('tail:'), 6, 0)
+        self.grid_layout.addWidget(QLabel(trans._('tail:')), 6, 0)
         self.grid_layout.addWidget(self.tail_checkbox, 6, 1)
-        self.grid_layout.addWidget(QLabel('show ID:'), 7, 0)
+        self.grid_layout.addWidget(QLabel(trans._('show ID:')), 7, 0)
         self.grid_layout.addWidget(self.id_checkbox, 7, 1)
-        self.grid_layout.addWidget(QLabel('graph:'), 8, 0)
+        self.grid_layout.addWidget(QLabel(trans._('graph:')), 8, 0)
         self.grid_layout.addWidget(self.graph_checkbox, 8, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)

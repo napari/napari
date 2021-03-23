@@ -21,5 +21,4 @@ repos:
     rev: v2.7.4
     hooks:
     - id: pyupgrade
-      args: ["--py37-plus"]
       exclude: _vendor|vendored|examples

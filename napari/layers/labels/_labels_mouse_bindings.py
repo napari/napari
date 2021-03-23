@@ -21,6 +21,7 @@ def draw(layer, event):
     pixels will be changed to background and this tool functions like an
     eraser
     """
+    coordinates = layer.world_to_data(event.position)
     # on press
     if layer._mode == Mode.ERASE:
         new_label = layer._background_label
@@ -28,18 +29,19 @@ def draw(layer, event):
         new_label = layer.selected_label
 
     if layer._mode in [Mode.PAINT, Mode.ERASE]:
-        layer.paint(layer.coordinates, new_label)
+        layer.paint(coordinates, new_label)
     elif layer._mode == Mode.FILL:
-        layer.fill(layer.coordinates, new_label)
+        layer.fill(coordinates, new_label)
 
-    last_cursor_coord = layer.coordinates
+    last_cursor_coord = coordinates
     yield
 
     layer._block_saving = True
     # on move
     while event.type == 'mouse_move':
+        coordinates = layer.world_to_data(event.position)
         interp_coord = interpolate_coordinates(
-            last_cursor_coord, layer.coordinates, layer.brush_size
+            last_cursor_coord, coordinates, layer.brush_size
         )
         for c in interp_coord:
             if layer._mode in [Mode.PAINT, Mode.ERASE]:
@@ -47,7 +49,7 @@ def draw(layer, event):
             elif layer._mode == Mode.FILL:
                 layer.fill(c, new_label, refresh=False)
         layer.refresh()
-        last_cursor_coord = layer.coordinates
+        last_cursor_coord = coordinates
         yield
 
     # on release
@@ -57,4 +59,4 @@ def draw(layer, event):
 def pick(layer, event):
     """Change the selected label to the same as the region clicked."""
     # on press
-    layer.selected_label = layer._value or 0
+    layer.selected_label = layer.get_value(event.position, world=True) or 0

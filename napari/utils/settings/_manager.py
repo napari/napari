@@ -8,7 +8,12 @@ from appdirs import user_config_dir
 from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
-from ._defaults import CORE_SETTINGS, ApplicationSettings, PluginSettings
+from ._defaults import (
+    CORE_SETTINGS,
+    AppearanceSettings,
+    ApplicationSettings,
+    PluginsSettings,
+)
 
 
 class SettingsManager:
@@ -47,8 +52,11 @@ class SettingsManager:
     _FILENAME = "settings.yaml"
     _APPNAME = "Napari"
     _APPAUTHOR = "Napari"
+
+    # Convenience for IDE integration and completion
+    appearance: AppearanceSettings
     application: ApplicationSettings
-    plugin: PluginSettings
+    plugins: PluginsSettings
 
     def __init__(self, config_path: str = None, save_to_disk: bool = True):
         self._config_path = (
@@ -75,16 +83,15 @@ class SettingsManager:
         """Add setting keys to make tab completion works."""
         return super().__dir__() + list(self._settings)
 
+    def __str__(self):
+        return safe_dump(self._to_dict())
+
     @staticmethod
-    def _get_section_name(settings) -> str:
+    def _get_section_name(setting) -> str:
         """
         Return the normalized name of a section based on its config title.
         """
-        section = settings.Config.title.replace(" ", "_").lower()
-        if section.endswith("_settings"):
-            section = section.replace("_settings", "")
-
-        return section
+        return setting.__name__.replace("Settings", "").lower()
 
     def _to_dict(self) -> dict:
         """Convert the settings to a dictionary."""
@@ -99,17 +106,17 @@ class SettingsManager:
         if self._save_to_disk:
             path = self.path / self._FILENAME
             with open(path, "w") as fh:
-                fh.write(safe_dump(self._to_dict()))
+                fh.write(str(self))
 
     def _load(self):
         """Read configuration from disk."""
         path = self.path / self._FILENAME
-        for plugin in CORE_SETTINGS:
-            section = self._get_section_name(plugin)
-            self._defaults[section] = plugin()
-            self._settings[section] = plugin()
-            self._models[section] = plugin
-            self._settings[section] = plugin()
+        for setting in CORE_SETTINGS:
+            section = self._get_section_name(setting)
+            self._defaults[section] = setting()
+            self._settings[section] = setting()
+            self._models[section] = setting
+            self._settings[section] = setting()
 
         if path.is_file():
             with open(path) as fh:

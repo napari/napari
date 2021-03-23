@@ -23,7 +23,7 @@ def Event():
         NamedTuple object with fields "type", "is_dragging", and "modifiers".
     """
     return collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging', 'modifiers']
+        'Event', field_names=['type', 'is_dragging', 'modifiers', 'position']
     )
 
 
@@ -61,13 +61,23 @@ def test_not_adding_or_selecting_point(create_known_points_layer, Event):
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=(0, 0),
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=(0, 0),
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -82,17 +92,26 @@ def test_add_point(create_known_points_layer, Event):
 
     # Add point at location where non exists
     layer.mode = 'add'
-    layer.position = known_non_point
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -108,26 +127,39 @@ def test_drag_in_add_mode(create_known_points_layer, Event):
     # Add point at location where non exists
     layer.mode = 'add'
     layer.interactive = True
-    layer.position = known_non_point
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     known_non_point_end = [40, 60]
-    layer.position = known_non_point_end
 
     # Simulate drag end
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=known_non_point_end,
+        )
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point_end,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -140,17 +172,27 @@ def test_select_point(create_known_points_layer, Event):
     layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = tuple(layer.data[0])
+    position = tuple(layer.data[0])
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -165,17 +207,27 @@ def test_after_in_add_mode_point(create_known_points_layer, Event):
 
     layer.mode = 'add'
     layer.mode = 'pan_zoom'
-    layer.position = tuple(layer.data[0])
+    position = tuple(layer.data[0])
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -190,17 +242,27 @@ def test_after_in_select_mode_point(create_known_points_layer, Event):
 
     layer.mode = 'select'
     layer.mode = 'pan_zoom'
-    layer.position = tuple(layer.data[0])
+    position = tuple(layer.data[0])
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -214,18 +276,28 @@ def test_unselect_select_point(create_known_points_layer, Event):
     layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = tuple(layer.data[0])
+    position = tuple(layer.data[0])
     layer.selected_data = {2, 3}
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=position,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -239,18 +311,28 @@ def test_add_select_point(create_known_points_layer, Event):
     layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = tuple(layer.data[0])
+    position = tuple(layer.data[0])
     layer.selected_data = {2, 3}
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=['Shift'])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=['Shift'],
+            position=position,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=['Shift'])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=['Shift'],
+            position=position,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -264,18 +346,28 @@ def test_remove_select_point(create_known_points_layer, Event):
     layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = tuple(layer.data[0])
+    position = tuple(layer.data[0])
     layer.selected_data = {0, 2, 3}
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=['Shift'])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=['Shift'],
+            position=position,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=['Shift'])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=['Shift'],
+            position=position,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -289,17 +381,26 @@ def test_not_selecting_point(create_known_points_layer, Event):
     layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = known_non_point
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -312,19 +413,28 @@ def test_unselecting_points(create_known_points_layer, Event):
     layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = known_non_point
     layer.selected_data = {2, 3}
     assert len(layer.selected_data) == 2
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -337,30 +447,45 @@ def test_selecting_all_points_with_drag(create_known_points_layer, Event):
     layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = known_non_point
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_move_callbacks(layer, event)
 
-    layer.position = [0, 0]
     # Simulate drag end
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_move', is_dragging=True, modifiers=[], position=(0, 0)
+        )
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=True,
+            modifiers=[],
+            position=(0, 0),
+        )
     )
     mouse_release_callbacks(layer, event)
 
@@ -373,30 +498,48 @@ def test_selecting_no_points_with_drag(create_known_points_layer, Event):
     layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
-    layer.position = known_non_point
 
     # Simulate click
     event = ReadOnlyWrapper(
-        Event(type='mouse_press', is_dragging=False, modifiers=[])
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_press_callbacks(layer, event)
 
     # Simulate drag start
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=known_non_point,
+        )
     )
     mouse_move_callbacks(layer, event)
 
-    layer.position = [50, 60]
     # Simulate drag end
     event = ReadOnlyWrapper(
-        Event(type='mouse_move', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            modifiers=[],
+            position=(50, 60),
+        )
     )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
     event = ReadOnlyWrapper(
-        Event(type='mouse_release', is_dragging=True, modifiers=[])
+        Event(
+            type='mouse_release',
+            is_dragging=True,
+            modifiers=[],
+            position=(50, 60),
+        )
     )
     mouse_release_callbacks(layer, event)
 

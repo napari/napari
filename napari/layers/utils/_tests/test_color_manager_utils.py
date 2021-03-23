@@ -13,7 +13,7 @@ def test_guess_continuous():
     categorical_annotation_1 = np.array([True, False], dtype=bool)
     assert not guess_continuous(categorical_annotation_1)
 
-    categorical_annotation_2 = np.array([1, 2, 3], dtype=np.int)
+    categorical_annotation_2 = np.array([1, 2, 3], dtype=int)
     assert not guess_continuous(categorical_annotation_2)
 
 
