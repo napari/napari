@@ -595,7 +595,7 @@ class Labels(_image_base_class):
             )
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
-            self.cursor = self.brush_shape
+            self.cursor = str(self._brush_shape)
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
@@ -619,7 +619,7 @@ class Labels(_image_base_class):
             )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
-            self.cursor = self.brush_shape
+            self.cursor = str(self._brush_shape)
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
@@ -944,7 +944,7 @@ class Labels(_image_base_class):
             calls.
         """
         shape = self.data.shape
-        if self.brush_shape == "square":
+        if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if not self.n_dimensional and self.ndim > 2:
                 for i in self._dims_not_displayed:
@@ -966,7 +966,7 @@ class Labels(_image_base_class):
             )
             slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
             slice_coord = indices_in_shape(slice_coord, shape)
-        elif self.brush_shape == "circle":
+        elif str(self._brush_shape) == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
             if not self.n_dimensional and self.ndim > 2:
                 coord = [coord[i] for i in self._dims_displayed]
