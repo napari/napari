@@ -1053,6 +1053,9 @@ if __name__ == '__main__':
 
     imports = [
         'from typing import Any, Dict, List, Sequence, Union',
-        'import napari',
+        'import napari.layers',
+        'import napari.utils.events',
+        'import napari.utils.key_bindings',
+        'import napari.utils.mouse_bindings',
     ]
     _generate_cls_stubs(ViewerModel, __file__.replace(".py", ".pyi"), imports)

@@ -1,7 +1,7 @@
 # flake8: noqa
 from typing import List, Sequence, Union
 
-import napari
+import napari.viewer
 
 def view_image(
     data=None,
