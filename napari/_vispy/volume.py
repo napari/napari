@@ -84,7 +84,7 @@ frag_dict['average'] = AVG_FRAG_SHADER
 class Volume(BaseVolume):
     def __init__(self, *args, **kwargs):
         self._attenuation = 1.0
-        self._xlims = None
+        self._bounding_box_lims = None
         super().__init__(*args, **kwargs)
 
     @property
@@ -128,15 +128,81 @@ class Volume(BaseVolume):
         self.update()
 
     @property
-    def xlims(self):
-        return self._xlims
+    def _bounding_box(self):
+        return self._bounding_box_lims
 
-    @xlims.setter
-    def xlims(self, xlims):
-        self._xlims = float(xlims[0]), float(xlims[1])
-        self.shared_program['u_x_min'] = self._xlims[0]
-        self.shared_program['u_x_max'] = self._xlims[1]
+    @_bounding_box.setter
+    def _bounding_box(self, bounding_box):
+        if bounding_box is not None:
+            self._bounding_box_lims = np.asarray(
+                bounding_box, dtype=np.float32
+            )
+            self.bounding_box_xlim = (
+                self._bounding_box_lims[0, 0],
+                self._bounding_box_lims[0, 1],
+            )
+            self.bounding_box_ylim = (
+                self._bounding_box_lims[1, 0],
+                self._bounding_box_lims[1, 1],
+            )
+            self.bounding_box_zlim = (
+                self._bounding_box_lims[2, 0],
+                self._bounding_box_lims[2, 1],
+            )
+            self.update()
+        else:
+            self._bounding_box_lims = bounding_box
+
+    @property
+    def bounding_box_xlim(self):
+        return self._bounding_box_xlim
+
+    @bounding_box_xlim.setter
+    def bounding_box_xlim(self, xlim):
+        """sequence of 2 floats"""
+        self._bounding_box_xlim = float(xlim[0]), float(xlim[1])
+        self.shared_program['u_bbox_x_min'] = self._bounding_box_xlim[0]
+        self.shared_program['u_bbox_x_max'] = self._bounding_box_xlim[1]
         self.update()
+
+    @property
+    def bounding_box_ylim(self):
+        return self._bounding_box_ylim
+
+    @bounding_box_ylim.setter
+    def bounding_box_ylim(self, ylim):
+        """sequence of 2 floats"""
+        self._bounding_box_ylim = float(ylim[0]), float(ylim[1])
+        self.shared_program['u_bbox_y_min'] = self._bounding_box_ylim[0]
+        self.shared_program['u_bbox_y_max'] = self._bounding_box_ylim[1]
+        self.update()
+
+    @property
+    def bounding_box_zlim(self):
+        return self._bounding_box_zlim
+
+    @bounding_box_zlim.setter
+    def bounding_box_zlim(self, zlim):
+        """sequence of 2 floats"""
+        self._bounding_box_zlim = float(zlim[0]), float(zlim[1])
+        self.shared_program['u_bbox_z_min'] = self._bounding_box_zlim[0]
+        self.shared_program['u_bbox_z_max'] = self._bounding_box_zlim[1]
+        self.update()
+
+    def _initialize_bounding_box(self):
+        """Initialize a bounding box to the full extent of the volume texture"""
+        # save to private variable to bypass self.update() call
+        self._bounding_box_xlim = 0, self._vol_shape[0]
+        self._bounding_box_ylim = 0, self._vol_shape[1]
+        self._bounding_box_zlim = 0, self._vol_shape[2]
+
+        self._bounding_box_lims = np.asarray(
+            (
+                self._bounding_box_xlim,
+                self._bounding_box_ylim,
+                self._bounding_box_zlim,
+            )
+        )
 
     def set_data(self, vol, clim=None, copy=True):
         """Set the volume data.
@@ -191,18 +257,24 @@ class Volume(BaseVolume):
             vol.shape[1],
             vol.shape[0],
         )
-        if self.xlims is None:
-            bbox = 0, vol.shape[2]
-        else:
-            bbox = self.xlims
-        self.shared_program['u_x_min'] = bbox[0]
-        self.shared_program['u_x_max'] = bbox[1]
 
         shape = vol.shape[:3]
         if self._vol_shape != shape:
             self._vol_shape = shape
             self._need_vertex_update = True
         self._vol_shape = shape
+
+        # if self._bounding_box is None:
+        self._initialize_bounding_box()
+
+        print(self._bounding_box)
+
+        self.shared_program['u_bbox_x_min'] = self._bounding_box[0, 0]
+        self.shared_program['u_bbox_x_max'] = self._bounding_box[0, 1]
+        self.shared_program['u_bbox_y_min'] = self._bounding_box[1, 0]
+        self.shared_program['u_bbox_y_max'] = self._bounding_box[1, 1]
+        self.shared_program['u_bbox_z_min'] = self._bounding_box[2, 0]
+        self.shared_program['u_bbox_z_max'] = self._bounding_box[2, 1]
 
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024

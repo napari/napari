@@ -12,31 +12,22 @@ blobs = np.asarray(
     ]
 )
 
-points = np.array([[0,0,0],
-                  [0,0,1],
-                   [0,1,0],
-                   [1,0,0],
-                   [0,1,1],
-                   [1,0,1],
-                   [1,1,0],
-                   [1,1,1]]) * 128
-viewer = napari.Viewer(ndisplay=3)
-
-
 # add the volume
 with napari.gui_qt():
-    layer = viewer.add_image(blobs)
-    viewer.add_points(points, face_color='cornflowerblue')
+    viewer = napari.Viewer(ndisplay=3)
+    viewer.window.qt_viewer.viewer.axes.visible = True
+    data = np.random.random((100, 200, 300))
+    layer = viewer.add_image(data)
 
-    def update_x_range(event):
-        x_range = event
-        print(x_range)
+    # def update_x_range(event):
+    #     x_range = event
+    #     print(x_range)
 
-        volume_node = viewer.window.qt_viewer.layer_to_visual[layer].node
-        volume_node.xlims = x_range
+    #     volume_node = viewer.window.qt_viewer.layer_to_visual[layer].node
+    #     volume_node.bounding_box_zlim = x_range
 
-    slider_widget = QHRangeSlider((0, 128), data_range=(0, 128))
-    slider_widget.valuesChanged.connect(update_x_range)
+    # slider_widget = QHRangeSlider((0, 128), data_range=(0, 128))
+    # slider_widget.valuesChanged.connect(update_x_range)
 
 
-    viewer.window.add_dock_widget(slider_widget)
+    # viewer.window.add_dock_widget(slider_widget)
