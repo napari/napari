@@ -192,9 +192,9 @@ class Volume(BaseVolume):
     def _initialize_bounding_box(self):
         """Initialize a bounding box to the full extent of the volume texture"""
         # save to private variable to bypass self.update() call
-        self._bounding_box_xlim = 0, self._vol_shape[0]
+        self._bounding_box_xlim = 0, self._vol_shape[2]
         self._bounding_box_ylim = 0, self._vol_shape[1]
-        self._bounding_box_zlim = 0, self._vol_shape[2]
+        self._bounding_box_zlim = 0, self._vol_shape[0]
 
         self._bounding_box_lims = np.asarray(
             (
