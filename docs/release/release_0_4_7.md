@@ -24,6 +24,12 @@ side-benefit of this work, undo when painting labels now works across the full
 volume rather than only in the currently-visible plane. (#2339, #2396,
 pydata/sparse#435 and related PRs)
 
+We've also continued to make improvements to our experimental octree support,
+which now supports single scale tiled loading (#2372, #2391). It is still
+2D-only but continues to improve!
+
+See below for the full list of changes.
+
 ## New Features
 - Notification Manager  (#2205)
 - Add preference dialog (#2211)
