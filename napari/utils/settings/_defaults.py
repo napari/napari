@@ -65,7 +65,14 @@ class ApplicationSettings(BaseSettings, EventedModel):
         "dark",
         description=trans._("Theme selection."),
     )
-
+    ipy_interactive: bool = Field(
+        default=True,
+        title='IPython interactive',
+        description=(
+            r'Use interactive %gui qt event loop when creating '
+            'napari Viewers in IPython'
+        ),
+    )
     first_time: bool = True
 
     # Window state, geometry and position
