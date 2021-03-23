@@ -374,24 +374,48 @@ def test_labels_painting(make_napari_viewer):
 
     # Simulate click
     Event = collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging']
+        'Event', field_names=['type', 'is_dragging', 'position']
     )
 
     # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_press_callbacks(layer, event)
 
     viewer.cursor.position = (100, 100)
 
     # Simulate drag
-    event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_release_callbacks(layer, event)
 
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_press_callbacks(layer, event)
 
     screenshot = viewer.screenshot(canvas_only=True)

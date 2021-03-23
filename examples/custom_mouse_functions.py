@@ -27,8 +27,9 @@ with napari.gui_qt():
 
     @labels_layer.mouse_drag_callbacks.append
     def get_connected_component_shape(layer, event):
-        cords = np.round(layer.coordinates).astype(int)
-        val = layer.get_value(layer.coordinates)
+        data_coordinates = layer.world_to_data(event.position)
+        cords = np.round(data_coordinates).astype(int)
+        val = layer.get_value(data_coordinates)
         if val is None:
             return
         if val != 0:
@@ -50,7 +51,6 @@ with napari.gui_qt():
             msg = f'clicked at {cords} on background which is ignored'
         print(msg)
 
-
     # Handle click or drag events separately
     @labels_layer.mouse_drag_callbacks.append
     def click_drag(layer, event):
@@ -59,7 +59,7 @@ with napari.gui_qt():
         yield
         # on move
         while event.type == 'mouse_move':
-            print(event.pos)
+            print(event.position)
             dragged = True
             yield
         # on release
