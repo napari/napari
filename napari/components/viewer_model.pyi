@@ -83,7 +83,7 @@ class ViewerModel(
         blending="translucent",
         visible=True,
         multiscale=None
-    ): ...
+    ) -> napari.layers.labels.labels.Labels: ...
     def add_layer(
         self, layer: napari.layers.base.base.Layer
     ) -> napari.layers.base.base.Layer: ...
@@ -116,7 +116,7 @@ class ViewerModel(
         opacity=1,
         blending="translucent",
         visible=True
-    ): ...
+    ) -> napari.layers.points.points.Points: ...
     def add_shapes(
         self,
         data=None,
@@ -145,7 +145,7 @@ class ViewerModel(
         opacity=0.7,
         blending="translucent",
         visible=True
-    ): ...
+    ) -> napari.layers.shapes.shapes.Shapes: ...
     def add_surface(
         self,
         data,
@@ -163,7 +163,7 @@ class ViewerModel(
         opacity=1,
         blending="translucent",
         visible=True
-    ): ...
+    ) -> napari.layers.surface.surface.Surface: ...
     def add_tracks(
         self,
         data,
@@ -185,7 +185,7 @@ class ViewerModel(
         colormap="turbo",
         color_by="track_id",
         colormaps_dict=None
-    ): ...
+    ) -> napari.layers.tracks.tracks.Tracks: ...
     def add_vectors(
         self,
         data,
@@ -207,7 +207,7 @@ class ViewerModel(
         opacity=0.7,
         blending="translucent",
         visible=True
-    ): ...
+    ) -> napari.layers.vectors.vectors.Vectors: ...
     def open(
         self,
         path: Union[str, Sequence[str]],

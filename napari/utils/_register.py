@@ -1,3 +1,4 @@
+import sys
 from inspect import Parameter, getdoc, signature
 
 from .misc import camel_to_snake
@@ -38,7 +39,8 @@ def create_func(cls, name=None, doc=None):
     sig = signature(cls)
     new_sig = sig.replace(
         parameters=[Parameter('self', Parameter.POSITIONAL_OR_KEYWORD)]
-        + list(sig.parameters.values())
+        + list(sig.parameters.values()),
+        return_annotation=cls,
     )
     src = template.format(
         name=name,
@@ -46,7 +48,7 @@ def create_func(cls, name=None, doc=None):
         cls_name=cls_name,
     )
 
-    execdict = {cls_name: cls}
+    execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
     exec(src, execdict)
     func = execdict[name]
 

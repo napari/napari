@@ -113,7 +113,9 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     new_params = list(add_sig.parameters.values())[1:]  # [1:] to remove self
     new_params += view_sig.parameters.values()
     new_params = sorted(new_params, key=lambda p: p.kind)
-    combo_sig = add_sig.replace(parameters=new_params)
+    combo_sig = add_sig.replace(
+        parameters=new_params, return_annotation=Viewer
+    )
 
     # make new function string with the combined signature
     fakefunc = f"def view_{layer_string}{combo_sig}:"

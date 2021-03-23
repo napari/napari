@@ -31,59 +31,7 @@ def view_image(
     order=(),
     axis_labels=(),
     show=True
-) -> Union[
-    napari.layers.image.image.Image, List[napari.layers.image.image.Image]
-]: ...
-def view_labels(
-    data,
-    *,
-    num_colors=50,
-    properties=None,
-    color=None,
-    seed=0.5,
-    name=None,
-    metadata=None,
-    scale=None,
-    translate=None,
-    rotate=None,
-    shear=None,
-    affine=None,
-    opacity=0.7,
-    blending="translucent",
-    visible=True,
-    multiscale=None,
-    title="napari",
-    ndisplay=2,
-    order=(),
-    axis_labels=(),
-    show=True
-): ...
-def view_vectors(
-    data,
-    *,
-    properties=None,
-    edge_width=1,
-    edge_color="red",
-    edge_color_cycle=None,
-    edge_colormap="viridis",
-    edge_contrast_limits=None,
-    length=1,
-    name=None,
-    metadata=None,
-    scale=None,
-    translate=None,
-    rotate=None,
-    shear=None,
-    affine=None,
-    opacity=0.7,
-    blending="translucent",
-    visible=True,
-    title="napari",
-    ndisplay=2,
-    order=(),
-    axis_labels=(),
-    show=True
-): ...
+) -> napari.viewer.Viewer: ...
 def view_tracks(
     data,
     *,
@@ -109,7 +57,40 @@ def view_tracks(
     order=(),
     axis_labels=(),
     show=True
-): ...
+) -> napari.viewer.Viewer: ...
+def view_shapes(
+    data=None,
+    *,
+    ndim=None,
+    properties=None,
+    text=None,
+    shape_type="rectangle",
+    edge_width=1,
+    edge_color="black",
+    edge_color_cycle=None,
+    edge_colormap="viridis",
+    edge_contrast_limits=None,
+    face_color="white",
+    face_color_cycle=None,
+    face_colormap="viridis",
+    face_contrast_limits=None,
+    z_index=0,
+    name=None,
+    metadata=None,
+    scale=None,
+    translate=None,
+    rotate=None,
+    shear=None,
+    affine=None,
+    opacity=0.7,
+    blending="translucent",
+    visible=True,
+    title="napari",
+    ndisplay=2,
+    order=(),
+    axis_labels=(),
+    show=True
+) -> napari.viewer.Viewer: ...
 def view_points(
     data=None,
     *,
@@ -143,24 +124,17 @@ def view_points(
     order=(),
     axis_labels=(),
     show=True
-): ...
-def view_shapes(
-    data=None,
+) -> napari.viewer.Viewer: ...
+def view_vectors(
+    data,
     *,
-    ndim=None,
     properties=None,
-    text=None,
-    shape_type="rectangle",
     edge_width=1,
-    edge_color="black",
+    edge_color="red",
     edge_color_cycle=None,
     edge_colormap="viridis",
     edge_contrast_limits=None,
-    face_color="white",
-    face_color_cycle=None,
-    face_colormap="viridis",
-    face_contrast_limits=None,
-    z_index=0,
+    length=1,
     name=None,
     metadata=None,
     scale=None,
@@ -176,7 +150,31 @@ def view_shapes(
     order=(),
     axis_labels=(),
     show=True
-): ...
+) -> napari.viewer.Viewer: ...
+def view_labels(
+    data,
+    *,
+    num_colors=50,
+    properties=None,
+    color=None,
+    seed=0.5,
+    name=None,
+    metadata=None,
+    scale=None,
+    translate=None,
+    rotate=None,
+    shear=None,
+    affine=None,
+    opacity=0.7,
+    blending="translucent",
+    visible=True,
+    multiscale=None,
+    title="napari",
+    ndisplay=2,
+    order=(),
+    axis_labels=(),
+    show=True
+) -> napari.viewer.Viewer: ...
 def view_surface(
     data,
     *,
@@ -198,7 +196,7 @@ def view_surface(
     order=(),
     axis_labels=(),
     show=True
-): ...
+) -> napari.viewer.Viewer: ...
 def view_path(
     path: Union[str, Sequence[str]],
     *,
@@ -211,4 +209,4 @@ def view_path(
     axis_labels=(),
     show=True,
     **kwargs
-) -> List[napari.layers.base.base.Layer]: ...
+) -> napari.viewer.Viewer: ...
