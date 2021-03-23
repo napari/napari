@@ -107,9 +107,16 @@ See below for the full list of changes.
 
 
 ## Deprecations
-- Deprecate displayed coordinates (#2327)
-- Deprecate layer.position and layer.coordinates (#2443)
 
+We are moving to a model in which layers don't know about the cursor or current
+view, resulting in the following two deprecations:
+
+- `layer.displayed_coordinates` is deprecated (#2327). Instead, use
+  `[layer.coordinates[d] for d in viewer.dims.displayed]`
+- `layer.position` and `layer.coordinates` are deprecated (#2443). Instead, use
+  `viewer.cursor.position` for the position in world coordinates, and
+  `layer.world_to_data(viewer.cursor.position)` for the position in data
+  coordinates.
 
 ## Build Tools and Support
 - Add environment flag for sparse library (#2396)
