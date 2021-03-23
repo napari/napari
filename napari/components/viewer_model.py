@@ -793,7 +793,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: Optional[str] = None
+        self,
+        data,
+        meta: Dict[str, Any] = None,
+        layer_type: Optional[str] = None,
     ) -> Union[Layer, List[Layer]]:
         """Add arbitrary layer data to the viewer.
 
@@ -1042,3 +1045,41 @@ for _layer in (
 ):
     func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)
+
+
+def _generate_cls_stubs(cls, output):
+    import textwrap
+
+    from ..utils.misc import get_subclass_methods
+
+    bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
+
+    pyi = '# flake8: noqa\n'
+    pyi += 'from typing import Dict, List, Sequence, Union\n\n'
+    pyi += 'import napari\n\n'
+    pyi += f'class {cls.__name__}({bases}):\n'
+
+    methods = []
+    for methname in get_subclass_methods(cls):
+        meth = getattr(cls, methname)
+        if callable(meth):
+            methods.append(f"def {methname}{inspect.signature(meth)}:...")
+
+    pyi += textwrap.indent("\n".join(methods), '    ')
+    pyi = pyi.replace("NoneType", "None")
+
+    try:
+        import black
+    except ImportError:
+        pass
+    else:
+        pyi = black.format_str(
+            pyi, mode=black.FileMode(line_length=79, is_pyi=True)
+        )
+
+    with open(output, 'w') as f:
+        f.write(pyi)
+
+
+if __name__ == '__main__':
+    _generate_cls_stubs(ViewerModel, __file__.replace(".py", ".pyi"))

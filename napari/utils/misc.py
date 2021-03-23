@@ -16,6 +16,7 @@ from typing import (
     Callable,
     Optional,
     Sequence,
+    Set,
     Type,
     TypeVar,
     Union,
@@ -338,6 +339,13 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def get_subclass_methods(cls: Type[Any]) -> Set[str]:
+    """Return the set of method names that defined (only) on a subclass."""
+    all_methods = set(dir(cls))
+    base_methods = (dir(base()) for base in cls.__bases__)
+    return all_methods.difference(*base_methods)
 
 
 def ensure_n_tuple(val, n, fill=0):
