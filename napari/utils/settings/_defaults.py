@@ -65,7 +65,7 @@ class AppearanceSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Plugin settings"
+        title = "Appearance"
         use_enum_values = True
 
     class NapariConfig:
@@ -118,7 +118,7 @@ class ApplicationSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Application settings"
+        title = "Application"
         use_enum_values = True
         validate_all = True
 
@@ -148,7 +148,7 @@ class PluginsSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
-        title = "Plugin settings"
+        title = "Plugins"
         use_enum_values = True
 
     class NapariConfig:
