@@ -35,6 +35,12 @@ See below for the full list of changes.
 - Add preference dialog (#2211)
 - Make napari strings localizable (#2429)
 
+## Documentation
+- Add profiling documentation (#1998)
+- Add release note about pydantic viewermodel (#2334)
+- Broken link fixed for Handling Code of Conduct Reports (#2342)
+- Update nbscreenshot docstring (#2395)
+- Clarify benchmark docs (#2431)
 
 ## Improvements
 - ColorManager take 2 (w/ pydantic) (#2204)
@@ -99,13 +105,8 @@ See below for the full list of changes.
 
 
 ## Build Tools and Support
-- Add profiling documentation (#1998)
-- Add release note about pydantic viewermodel (#2334)
-- Broken link fixed for Handling Code of Conduct Reports (#2342)
-- Update nbscreenshot docstring (#2395)
 - Add environment flag for sparse library (#2396)
 - Make structural doc changes to better align with sitemap (#2404)
-- Clarify benchmark docs (#2431)
 - re-add plausible (#2433)
 
 
