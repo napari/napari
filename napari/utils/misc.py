@@ -449,3 +449,48 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
                 _hash.update(''.join(fparts).encode())
 
     return _hash.hexdigest()
+
+
+def _generate_cls_stubs(cls, output, imports: Sequence[str] = ()) -> str:
+    """Generate pyi-format type stubs for a class."""
+    import textwrap
+
+    from ..utils.misc import get_subclass_methods
+
+    bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
+
+    pyi = '# flake8: noqa\n'
+    pyi += "\n".join(imports) + "\n"
+    pyi += f'class {cls.__name__}({bases}):\n'
+
+    methods = []
+    for methname in get_subclass_methods(cls):
+        meth = getattr(cls, methname)
+        if callable(meth):
+            methods.append(f"def {methname}{inspect.signature(meth)}:...")
+
+    pyi += textwrap.indent("\n".join(methods), '    ')
+    pyi = pyi.replace("NoneType", "None")
+
+    try:
+        import isort.api
+
+        pyi = isort.api.sort_code_string(
+            pyi, profile="black", float_to_top=True
+        )
+    except ImportError:
+        pass
+
+    try:
+        import black
+
+        pyi = black.format_str(
+            pyi, mode=black.FileMode(line_length=79, is_pyi=True)
+        )
+    except ImportError:
+        pass
+
+    with open(output, 'w') as f:
+        f.write(pyi)
+
+    return pyi

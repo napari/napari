@@ -1047,39 +1047,11 @@ for _layer in (
     setattr(ViewerModel, func.__name__, func)
 
 
-def _generate_cls_stubs(cls, output):
-    import textwrap
-
-    from ..utils.misc import get_subclass_methods
-
-    bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
-
-    pyi = '# flake8: noqa\n'
-    pyi += 'from typing import Dict, List, Sequence, Union\n\n'
-    pyi += 'import napari\n\n'
-    pyi += f'class {cls.__name__}({bases}):\n'
-
-    methods = []
-    for methname in get_subclass_methods(cls):
-        meth = getattr(cls, methname)
-        if callable(meth):
-            methods.append(f"def {methname}{inspect.signature(meth)}:...")
-
-    pyi += textwrap.indent("\n".join(methods), '    ')
-    pyi = pyi.replace("NoneType", "None")
-
-    try:
-        import black
-    except ImportError:
-        pass
-    else:
-        pyi = black.format_str(
-            pyi, mode=black.FileMode(line_length=79, is_pyi=True)
-        )
-
-    with open(output, 'w') as f:
-        f.write(pyi)
-
-
 if __name__ == '__main__':
-    _generate_cls_stubs(ViewerModel, __file__.replace(".py", ".pyi"))
+    from ..utils.misc import _generate_cls_stubs
+
+    imports = [
+        'from typing import Dict, List, Sequence, Union',
+        'import napari',
+    ]
+    _generate_cls_stubs(ViewerModel, __file__.replace(".py", ".pyi"), imports)
