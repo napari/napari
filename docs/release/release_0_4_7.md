@@ -81,7 +81,8 @@ pydata/sparse#435 and related PRs)
 - Fix Labels `save_history` benchmark (#2430)
 - Fix packaging (#2436)
 - Fix numpy warnings (#2438)
-
+- PR: Remove extra remove window action from window menu and use file menu
+  instead (#2454)
 
 ## API Changes
 
