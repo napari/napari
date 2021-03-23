@@ -342,7 +342,7 @@ def all_subclasses(cls: Type) -> set:
 
 
 def get_subclass_methods(cls: Type[Any]) -> Set[str]:
-    """Return the set of method names that defined (only) on a subclass."""
+    """Return the set of method names defined (only) on a subclass."""
     all_methods = set(dir(cls))
     base_methods = (dir(base()) for base in cls.__bases__)
     return all_methods.difference(*base_methods)
