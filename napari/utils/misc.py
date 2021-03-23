@@ -451,7 +451,7 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
     return _hash.hexdigest()
 
 
-def _generate_cls_stubs(cls, output, imports: Sequence[str] = ()) -> str:
+def _generate_cls_stubs(cls, output_file, imports: Sequence[str] = ()) -> str:
     """Generate pyi-format type stubs for a class."""
     import textwrap
 
@@ -468,7 +468,13 @@ def _generate_cls_stubs(cls, output, imports: Sequence[str] = ()) -> str:
     for methname in sorted(get_subclass_methods(cls)):
         meth = getattr(cls, methname)
         if callable(meth):
-            methods.append(f"def {methname}{inspect.signature(meth)}:...")
+            mstr = f"def {methname}{inspect.signature(meth)}:"
+            if meth.__doc__:
+                mstr += textwrap.indent(f'"""{meth.__doc__}"""', '    ') + "\n"
+            else:
+                mstr += '    ...\n'
+
+            methods.append(mstr)
 
     pyi += textwrap.indent("\n".join(methods), '    ')
     pyi = pyi.replace("NoneType", "None")
@@ -491,7 +497,7 @@ def _generate_cls_stubs(cls, output, imports: Sequence[str] = ()) -> str:
     except ImportError:
         pass
 
-    with open(output, 'w') as f:
+    with open(output_file, 'w') as f:
         f.write(pyi)
 
     return pyi
