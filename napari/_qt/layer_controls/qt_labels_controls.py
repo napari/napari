@@ -374,17 +374,6 @@ class QtLabelsControls(QtLayerControls):
         """
         self.layer.color_mode = self.colorModeComboBox.currentData()
 
-    def change_brush_shape(self, brush_shape):
-        """Change paintbrush shape of label layer.
-
-        Parameters
-        ----------
-        brush_shape : str
-            CIRCLE (default) uses circle paintbrush (case insensitive).
-            SQUARE uses square paintbrush (case insensitive).
-        """
-        self.layer.brush_shape = self.brushShapeComboBox.currentData()
-
     def _on_contour_change(self, event=None):
         """Receive layer model contour value change event and update spinbox.
 
