@@ -422,7 +422,7 @@ class Window:
             lambda: self._qt_window.close(quit_app=True)
         )
 
-        closeAction = QAction(trans._('Close window'), self._qt_window)
+        closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
@@ -573,11 +573,6 @@ class Window:
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
-        close_action = QAction(trans._("Close Window"), self._qt_window)
-        close_action.setShortcut("Ctrl+W")
-        close_action.setStatusTip(trans._('Close napari window'))
-        close_action.triggered.connect(self._qt_window.close)
-
         clear_action = QAction(trans._("Remove Dock Widgets"), self._qt_window)
         clear_action.setStatusTip(trans._('Remove all dock widgets'))
         clear_action.triggered.connect(
@@ -585,7 +580,6 @@ class Window:
         )
 
         self.window_menu = self.main_menu.addMenu(trans._('&Window'))
-        self.window_menu.addAction(close_action)
         self.window_menu.addAction(clear_action)
         self.window_menu.addSeparator()
 
