@@ -14,85 +14,82 @@ https://github.com/napari/napari
 
 
 ## New Features
+- Notification Manager  (#2205)
+- Add preference dialog (#2211)
+- Make napari strings localizable (#2429)
 
 
 ## Improvements
-
-
-## Bug Fixes
-
-
-## API Changes
-
-
-## Deprecations
-
-
-## Build Tools
-
-
-## Other Pull Requests
-
-- Add profiling documentation (#1998)
 - ColorManager take 2 (w/ pydantic) (#2204)
-- Notification Manager  (#2205)
-- Add preference dialog (#2211)
 - Add basic selection model (#2293)
 - Tooltips2 (#2310)
-- PR: Add a font size preview slider widget (#2318)
-- Deprecate displayed coordinates (#2327)
-- Add release note about pydantic viewermodel (#2334)
+- Add a font size preview slider widget (#2318)
 - Read multiple page from pypi (#2335)
 - Use fancy indexing rather than full slices for label editing undo (#2339)
-- Fix initialization of an empty Points layer (#2341)
-- Broken link fixed for Handling Code of Conduct Reports (#2342)
 - Consolidate polygon base object (#2344)
 - Use not mutable fields on Viewer where appropriate (#2346)
-- Fix octree clim (#2349)
-- Fix json encoder inheritance on nested submodels for pydantic>=1.8.0 (#2357)
-- Fix Shortcut to toggle grid. (#2358)
 - Generic Button to toggle state. (#2359)
 - Make `add_plugin_dock_widget` public, add CLI option (#2360)
-- Fix rgb for octree (#2362)
 - Add spiral indexing to bring in tiles at center of FOV first (#2363)
 - Improve octree coverage process (#2366)
 - Single scale tiled rendering (#2372)
 - Add notification settings, add back console notifications (#2377)
 - ipython embed example (#2378)
 - Add contrast limits estimate for large plane (#2381)
-- Fix deleting points data in viewer (#2383)
-- discover dock widgets during get info (#2385)
+- Discover dock widgets during get info (#2385)
 - Add example of 2D, single-scale tiled rendering (#2391)
-- update nbscreenshot docstring (#2395)
-- Add environment flag for sparse library (#2396)
-- PR: Close floating docks on close event (#2397)
-- PR: Handle None settings on load (#2398)
 - Preference screen size (#2399)
 - Add support for octree labels (#2403)
-- make structural doc changes to better align with sitemap (#2404)
-- [Preference] Auto-enable gui qt when in IPython (#2406)
+- Auto-enable gui qt when in IPython (#2406)
 - Allow no vertex values to be passed to surface layer (#2408)
+- Add base shape outline for single scale tiled (#2414)
+- Change raw_to_displayed to only compute colours for all labels when required (#2415)
+- Highlight widget (#2424)
+- Remove brush shape from label UI (#2426)
+- Remember Preferences dialog size. (#2434)
+- `Selectable` mixin and `SelectableEventedList` (#2439)
+- Unify evented/nestedEvented list APIs (#2440)
+- Pretty-settings (#2448)
+
+
+## Bug Fixes
+- Fix initialization of an empty Points layer (#2341)
+- Fix octree clim (#2349)
+- Fix json encoder inheritance on nested submodels for pydantic>=1.8.0 (#2357)
+- Fix shortcut to toggle grid. (#2358)
+- Fix rgb for octree (#2362)
+- Fix deleting points data in viewer (#2383)
+- Close floating docks on close event (#2397)
+- Handle None settings on load (#2398)
 - Fix preference cancel (#2410)
 - Fix shapes data setter (#2411)
 - Fix nd text on shapes layer (#2412)
-- Add base shape outline for single scale tiled (#2414)
-- Change raw_to_displayed to only compute colours for all labels when required (#2415)
-- fix points delete (#2419)
+- Fix points delete (#2419)
 - Fix empty layer text (#2420)
-- fix env-dependent test errors, remove warnings (#2421)
-- Highlight widget (#2424)
-- Remove brush shape from label UI (#2426)
-- PR: Make napari strings localizable (#2429)
+- Fix env-dependent test errors, remove warnings (#2421)
 - Fix Labels `save_history` benchmark (#2430)
+- Fix packaging (#2436)
+- Fix numpy warnings (#2438)
+
+
+## API Changes
+
+
+## Deprecations
+- Deprecate displayed coordinates (#2327)
+- Deprecate layer.position and layer.coordinates (#2443)
+
+
+## Build Tools and Support
+- Add profiling documentation (#1998)
+- Add release note about pydantic viewermodel (#2334)
+- Broken link fixed for Handling Code of Conduct Reports (#2342)
+- Update nbscreenshot docstring (#2395)
+- Add environment flag for sparse library (#2396)
+- Make structural doc changes to better align with sitemap (#2404)
 - Clarify benchmark docs (#2431)
 - re-add plausible (#2433)
-- PR: Remember Preferences dialog size. (#2434)
-- Fix packaging (#2436)
-- fix numpy warnings (#2438)
-- `Selectable` mixin and `SelectableEventedList` (#2439)
-- Unify evented/nestedEvented list APIs (#2440)
-- Deprecate layer.position and layer.coordinates (#2443)
-- pretty-settings (#2448)
+
 
 ## 14 authors added to this release (alphabetical)
 
