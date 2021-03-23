@@ -464,7 +464,7 @@ def _generate_cls_stubs(cls, output, imports: Sequence[str] = ()) -> str:
     pyi += f'class {cls.__name__}({bases}):\n'
 
     methods = []
-    for methname in get_subclass_methods(cls):
+    for methname in sorted(get_subclass_methods(cls)):
         meth = getattr(cls, methname)
         if callable(meth):
             methods.append(f"def {methname}{inspect.signature(meth)}:...")

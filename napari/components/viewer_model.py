@@ -1051,7 +1051,7 @@ if __name__ == '__main__':
     from ..utils.misc import _generate_cls_stubs
 
     imports = [
-        'from typing import Dict, List, Sequence, Union',
+        'from typing import Any, Dict, List, Sequence, Union',
         'import napari',
     ]
     _generate_cls_stubs(ViewerModel, __file__.replace(".py", ".pyi"), imports)
