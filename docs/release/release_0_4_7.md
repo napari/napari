@@ -17,6 +17,13 @@ After nearly a year of planning, thanks to help from the fine folks at
 (#2211). It's a little sparse at the moment but we look forward to meeting all
 your customization needs!
 
+You can now use PyData/Sparse arrays as labels layers, thanks to work by Draga
+Doncila Pop (across both napari and sparse itself) and Juan Nunez-Iglesias.
+This is useful when painting labels across large volumes/time series. As a
+side-benefit of this work, undo when painting labels now works across the full
+volume rather than only in the currently-visible plane. (#2339,
+pydata/sparse#435 and related PRs)
+
 ## New Features
 - Notification Manager  (#2205)
 - Add preference dialog (#2211)
