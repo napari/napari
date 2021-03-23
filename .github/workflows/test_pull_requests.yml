@@ -56,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-      - name: Check Manifest
+      - name: Check localization formatting
         run: |
           pip install --upgrade pip semgrep
           # f"..." and f'...' are the same for semgrep
