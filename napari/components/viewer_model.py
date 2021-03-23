@@ -1048,6 +1048,7 @@ for _layer in (
 
 
 if __name__ == '__main__':
+    # make type stubs
     from ..utils.misc import _generate_cls_stubs
 
     imports = [

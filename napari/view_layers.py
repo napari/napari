@@ -182,4 +182,5 @@ def _generate_stubs(output=__file__.replace(".py", ".pyi")):
 
 
 if __name__ == '__main__':
+    # make type stubs
     _generate_stubs()
