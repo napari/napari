@@ -88,5 +88,8 @@ def test_notification_error(mock_show, monkeypatch):
         notif = ErrorNotification(e)
 
     dialog = NapariQtNotification.from_notification(notif)
-    bttn = dialog.row2_widget.children()[2]
+    bttn = dialog.row2_widget.findChild(QPushButton)
     assert bttn.text() == 'View Traceback'
+    mock_show.assert_not_called()
+    bttn.click()
+    mock_show.assert_called_once()
