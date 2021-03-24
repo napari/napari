@@ -8,7 +8,7 @@ from skimage import data
 box_annotations = ['person', 'sky', 'camera']
 text_property = 'box_label'
 text_color = 'green'
-text_size = 30
+text_size = 20
 
 
 # create the GUI for selecting the values
