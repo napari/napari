@@ -1,6 +1,7 @@
 from magicgui.widgets import ComboBox, Container
 import napari
 import numpy as np
+from skimage import data
 
 
 # set up the annotation values and text display properties
@@ -56,9 +57,18 @@ def create_label_menu(shapes_layer, label_property, labels):
     return label_widget
 
 
+# create a stack with the camera image shifted in each slice
+n_slices = 5
+base_image = data.camera()
+image = np.zeros((n_slices, base_image.shape[0], base_image.shape[1]), dtype=base_image.dtype)
+for slice_idx in range(n_slices):
+    shift = 1 + 10 * slice_idx
+    image[slice_idx, ...] = np.pad(base_image, ((0, 0), (shift, 0)), mode='constant')[:, :-shift]
+
+
 with napari.gui_qt():
     # create a viewer with a fake t+2D image
-    viewer = napari.view_image(np.random.random((5, 200, 200)))
+    viewer = napari.view_image(image)
 
     # create an empty shapes layer initialized with
     # text set to display the box label
