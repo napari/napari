@@ -278,6 +278,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._bounding_box_lims = np.column_stack(
             (np.zeros(data.ndim), data.shape)
         )
+        # self._bounding_box_lims = np.array([[0, 100], [0, 200], [0, 300]])
         self._bounding_box_lims[:, 1] = self._bounding_box_lims[:, 1] - 1
 
         # Trigger generation of view slice and thumbnail
@@ -487,18 +488,26 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.bounding_box()
 
     def _set_xlim(self, xlim):
-        self._bounding_box = np.vstack((xlim, self._bounding_box_lims[1:, :]))
-        self.events.bounding_box()
+        self._bounding_box = np.vstack(
+            (self._bounding_box_lims[:2, :], xlim)
+        ).astype(
+            np.float32
+        )  # reorder these to zyx?
 
     def _set_ylim(self, ylim):
         self._bounding_box = np.vstack(
             (self._bounding_box[0, :], ylim, self._bounding_box_lims[2, :])
-        )
-        self.events.bounding_box()
+        ).astype(np.float32)
 
     def _set_zlim(self, zlim):
-        self._bounding_box = np.vstack((self._bounding_box[:2, :], zlim))
-        self.events.bounding_box()
+        self._bounding_box = np.vstack(
+            (zlim, self._bounding_box[1:, :])
+        ).astype(np.float32)
+
+    @property
+    def _view_bounding_box(self):
+        """Returns the bounding box sliced according to the displayed dimensions"""
+        return self._bounding_box[self._dims_displayed]
 
     @property
     def loaded(self):

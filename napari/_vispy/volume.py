@@ -137,70 +137,81 @@ class Volume(BaseVolume):
             self._bounding_box_lims = np.asarray(
                 bounding_box, dtype=np.float32
             )
-            self.bounding_box_xlim = (
-                self._bounding_box_lims[0, 0],
-                self._bounding_box_lims[0, 1],
-            )
-            self.bounding_box_ylim = (
-                self._bounding_box_lims[1, 0],
-                self._bounding_box_lims[1, 1],
-            )
-            self.bounding_box_zlim = (
-                self._bounding_box_lims[2, 0],
-                self._bounding_box_lims[2, 1],
-            )
+            print('node: ', self._bounding_box_lims)
+            self.shared_program['u_bbox_x_min'] = self._bounding_box_lims[0, 0]
+            self.shared_program['u_bbox_x_max'] = self._bounding_box_lims[0, 1]
+
+            self.shared_program['u_bbox_y_min'] = self._bounding_box_lims[1, 0]
+            self.shared_program['u_bbox_y_max'] = self._bounding_box_lims[1, 1]
+
+            self.shared_program['u_bbox_z_min'] = self._bounding_box_lims[2, 0]
+            self.shared_program['u_bbox_z_max'] = self._bounding_box_lims[2, 1]
+
+            # self.bounding_box_xlim = (
+            #     self._bounding_box_lims[0, 0],
+            #     self._bounding_box_lims[0, 1],
+            # )
+            # self.bounding_box_ylim = (
+            #     self._bounding_box_lims[1, 0],
+            #     self._bounding_box_lims[1, 1],
+            # )
+
+            # self.bounding_box_zlim = (
+            #     self._bounding_box_lims[2, 0],
+            #     self._bounding_box_lims[2, 1],
+            # )
             self.update()
         else:
             self._bounding_box_lims = bounding_box
 
-    @property
-    def bounding_box_xlim(self):
-        return self._bounding_box_xlim
+    # @property
+    # def bounding_box_xlim(self):
+    #     return self._bounding_box[0, :]
 
-    @bounding_box_xlim.setter
-    def bounding_box_xlim(self, xlim):
-        """sequence of 2 floats"""
-        self._bounding_box_xlim = float(xlim[0]), float(xlim[1])
-        self.shared_program['u_bbox_x_min'] = self._bounding_box_xlim[0]
-        self.shared_program['u_bbox_x_max'] = self._bounding_box_xlim[1]
-        self.update()
+    # @bounding_box_xlim.setter
+    # def bounding_box_xlim(self, xlim):
+    #     """sequence of 2 floats"""
+    #     self._bounding_box_lims[0, :] = xlim[0], xlim[1]
+    #     self.shared_program['u_bbox_x_min'] = self._bounding_box[0, 0]
+    #     self.shared_program['u_bbox_x_max'] = self._bounding_box[0, 1]
+    #     self.update()
 
-    @property
-    def bounding_box_ylim(self):
-        return self._bounding_box_ylim
+    # @property
+    # def bounding_box_ylim(self):
+    #     return self._bounding_box[1, :]
 
-    @bounding_box_ylim.setter
-    def bounding_box_ylim(self, ylim):
-        """sequence of 2 floats"""
-        self._bounding_box_ylim = float(ylim[0]), float(ylim[1])
-        self.shared_program['u_bbox_y_min'] = self._bounding_box_ylim[0]
-        self.shared_program['u_bbox_y_max'] = self._bounding_box_ylim[1]
-        self.update()
+    # @bounding_box_ylim.setter
+    # def bounding_box_ylim(self, ylim):
+    #     """sequence of 2 floats"""
+    #     self._bounding_box_lims[1, :] = ylim[0], ylim[1]
+    #     self.shared_program['u_bbox_y_min'] = self._bounding_box_lims[1, 0]
+    #     self.shared_program['u_bbox_y_max'] = self._bounding_box_lims[1, 1]
+    #     self.update()
 
-    @property
-    def bounding_box_zlim(self):
-        return self._bounding_box_zlim
+    # @property
+    # def bounding_box_zlim(self):
+    #     return self._bounding_box[2, :]
 
-    @bounding_box_zlim.setter
-    def bounding_box_zlim(self, zlim):
-        """sequence of 2 floats"""
-        self._bounding_box_zlim = float(zlim[0]), float(zlim[1])
-        self.shared_program['u_bbox_z_min'] = self._bounding_box_zlim[0]
-        self.shared_program['u_bbox_z_max'] = self._bounding_box_zlim[1]
-        self.update()
+    # @bounding_box_zlim.setter
+    # def bounding_box_zlim(self, zlim):
+    #     """sequence of 2 floats"""
+    #     self._bounding_box_lims[2, :] = zlim[0], zlim[1]
+    #     self.shared_program['u_bbox_z_min'] = self._bounding_box_lims[2, 0]
+    #     self.shared_program['u_bbox_z_max'] = self._bounding_box_lims[2, 1]
+    #     self.update()
 
     def _initialize_bounding_box(self):
         """Initialize a bounding box to the full extent of the volume texture"""
         # save to private variable to bypass self.update() call
-        self._bounding_box_xlim = 0, self._vol_shape[2]
-        self._bounding_box_ylim = 0, self._vol_shape[1]
-        self._bounding_box_zlim = 0, self._vol_shape[0]
+        bounding_box_xlim = 0, self._vol_shape[2]
+        bounding_box_ylim = 0, self._vol_shape[1]
+        bounding_box_zlim = 0, self._vol_shape[0]
 
         self._bounding_box_lims = np.asarray(
             (
-                self._bounding_box_xlim,
-                self._bounding_box_ylim,
-                self._bounding_box_zlim,
+                bounding_box_xlim,
+                bounding_box_ylim,
+                bounding_box_zlim,
             )
         )
 
