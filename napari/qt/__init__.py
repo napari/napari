@@ -11,7 +11,8 @@ from .threading import create_worker, thread_worker
 class QtNDisplayButton(QtStateButton):
     def __init__(self, viewer):
         warnings.warn(
-            "QtNDisplayButton is deprecated and will be removed in 0.4.9"
+            "QtNDisplayButton is deprecated and will be removed in 0.4.9",
+            stacklevel=2,
         )
         super().__init__(
             "ndisplay_button",
