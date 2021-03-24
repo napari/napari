@@ -8,6 +8,7 @@ from appdirs import user_config_dir
 from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
+from .._base import _APPAUTHOR, _APPNAME, _FILENAME
 from ._defaults import (
     CORE_SETTINGS,
     AppearanceSettings,
@@ -49,11 +50,9 @@ class SettingsManager:
       models.
     """
 
-    _FILENAME = "settings.yaml"
-    _APPNAME = "Napari"
-    _APPAUTHOR = "Napari"
-
-    # Convenience for IDE integration and completion
+    _FILENAME = _FILENAME
+    _APPNAME = _APPNAME
+    _APPAUTHOR = _APPAUTHOR
     appearance: AppearanceSettings
     application: ApplicationSettings
     plugins: PluginsSettings
