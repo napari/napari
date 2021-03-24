@@ -2,7 +2,8 @@
 """
 
 from enum import Enum
-from typing import Tuple
+from pathlib import Path
+from typing import List, Tuple
 
 from pydantic import BaseSettings, Field
 
@@ -247,6 +248,8 @@ class ApplicationSettings(BaseNapariSettings):
         NotificationSeverity.NONE
     )
 
+    last_visited_dir: str = str(Path.home())
+
     class Config:
         # Pydantic specific configuration
         title = trans._("Application")
@@ -265,6 +268,7 @@ class ApplicationSettings(BaseNapariSettings):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
+            "last_visited_dir",
         ]
 
 

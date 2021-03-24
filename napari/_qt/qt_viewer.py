@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os.path
 import warnings
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -22,6 +21,7 @@ from ..utils.interactions import (
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
+from ..utils.settings import SETTINGS
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
@@ -177,7 +177,7 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
 
-        self._last_visited_dir = str(Path.home())
+        self._last_visited_dir = SETTINGS.application.last_visited_dir
 
         self._cursors = {
             'cross': Qt.CrossCursor,
@@ -469,6 +469,8 @@ class QtViewer(QSplitter):
                 error_messages = "\n".join(
                     [str(x.message.args[0]) for x in wa]
                 )
+                self._update_last_visited_dir(os.path.dir(saved[0]))
+
             if not saved:
                 raise OSError(
                     trans._(
@@ -478,6 +480,10 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
+
+    def _update_last_visited_dir(self, path):
+        self._last_visited_dir = path
+        SETTINGS.application.last_visited_dir = path
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -502,7 +508,9 @@ class QtViewer(QSplitter):
         """Save screenshot of current display, default .png"""
         dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            self._update_last_visited_dir(
+                os.path.dirname(dial.selectedFiles()[0])
+            )
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
@@ -513,6 +521,7 @@ class QtViewer(QSplitter):
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
+            self._update_last_visited_dir(os.path.dirname(filenames[0]))
 
     def _open_files_dialog_as_stack_dialog(self):
         """Add files as a stack, from the menubar."""
@@ -523,6 +532,7 @@ class QtViewer(QSplitter):
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
+            self._update_last_visited_dir(os.path.dirname(filenames[0]))
 
     def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
@@ -533,6 +543,7 @@ class QtViewer(QSplitter):
         )
         if folder not in {'', None}:
             self.viewer.open([folder])
+            self._update_last_visited_dir(os.path.dirname(folder))
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
