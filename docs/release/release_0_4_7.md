@@ -111,6 +111,7 @@ See below for the full list of changes.
   instead (#2454)
 - Fix translation II (#2455)
 - Fix for constant warning when using label brush (#2460)
+- Restore QtNDisplayButton (#2464)
 
 ## API Changes
 
@@ -132,6 +133,9 @@ view, resulting in the following two deprecations:
   `viewer.cursor.position` for the position in world coordinates, and
   `layer.world_to_data(viewer.cursor.position)` for the position in data
   coordinates.
+
+We have also deprecated the `napari.qt.QtNDisplayButton`. Instead a more general
+`napari.qt.QtStateButton` is provided.
 
 ## Build Tools and Support
 - Add environment flag for sparse library (#2396)
