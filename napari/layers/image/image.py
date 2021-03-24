@@ -494,23 +494,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._bounding_box_lims[axis, :] = np.asarray(lims, dtype=float)
         self.events.bounding_box()
 
-    # def _set_xlim(self, xlim):
-    #     self._bounding_box = np.vstack(
-    #         (self._bounding_box_lims[:2, :], xlim)
-    #     ).astype(
-    #         np.float32
-    #     )
-
-    # def _set_ylim(self, ylim):
-    #     self._bounding_box = np.vstack(
-    #         (self._bounding_box[0, :], ylim, self._bounding_box_lims[2, :])
-    #     ).astype(np.float32)
-
-    # def _set_zlim(self, zlim):
-    #     self._bounding_box = np.vstack(
-    #         (zlim, self._bounding_box[1:, :])
-    #     ).astype(np.float32)
-
     @property
     def _view_bounding_box(self):
         """Returns the bounding box sliced according to the displayed dimensions"""
