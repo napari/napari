@@ -275,10 +275,12 @@ class Volume(BaseVolume):
             self._need_vertex_update = True
         self._vol_shape = shape
 
-        # if self._bounding_box is None:
-        self._initialize_bounding_box()
-
         print(self._bounding_box)
+        default_bbox = [[0, 1], [0, 1], [0, 1]]
+        if self._bounding_box is None:
+            self._initialize_bounding_box()
+        elif np.allclose(self._bounding_box, default_bbox):
+            self._initialize_bounding_box()
 
         self.shared_program['u_bbox_x_min'] = self._bounding_box[0, 0]
         self.shared_program['u_bbox_x_max'] = self._bounding_box[0, 1]
