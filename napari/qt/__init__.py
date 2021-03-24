@@ -5,13 +5,16 @@ from .._qt.qt_main_window import Window
 from .._qt.qt_resources import compile_qt_svgs, get_stylesheet
 from .._qt.qt_viewer import QtViewer
 from .._qt.widgets.qt_viewer_buttons import QtStateButton, QtViewerButtons
+from ..utils.translations import trans
 from .threading import create_worker, thread_worker
 
 
 class QtNDisplayButton(QtStateButton):
     def __init__(self, viewer):
         warnings.warn(
-            "QtNDisplayButton is deprecated and will be removed in 0.4.9",
+            trans._(
+                "QtNDisplayButton is deprecated and will be removed in 0.4.9"
+            ),
             stacklevel=2,
         )
         super().__init__(
