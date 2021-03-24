@@ -17,6 +17,10 @@ After nearly a year of planning, thanks to help from the fine folks at
 (#2211). It's a little sparse at the moment but we look forward to meeting all
 your customization needs!
 
+Thanks to Matthias Bussonnier and Talley Lambert, we've also improved our
+notification handling and can now show tracebacks in our error notifcations in
+the GUI!
+
 You can now use PyData/Sparse arrays as labels layers, thanks to work by Draga
 Doncila Pop (across both napari and sparse itself) and Juan Nunez-Iglesias.
 This is useful when painting labels across large volumes/time series. As a
@@ -80,7 +84,8 @@ See below for the full list of changes.
 - `Selectable` mixin and `SelectableEventedList` (#2439)
 - Unify evented/nestedEvented list APIs (#2440)
 - Pretty-settings (#2448)
-
+- Add a button to Qt Error Notification to show tracebacks (#2452)
+- Update preferences dialog style to match designs (#2456)
 
 ## Bug Fixes
 - Fix initialization of an empty Points layer (#2341)
@@ -94,14 +99,18 @@ See below for the full list of changes.
 - Fix preference cancel (#2410)
 - Fix shapes data setter (#2411)
 - Fix nd text on shapes layer (#2412)
+- Fix overly sensitive Points layer dragging (#2413)
 - Fix points delete (#2419)
 - Fix empty layer text (#2420)
 - Fix env-dependent test errors, remove warnings (#2421)
 - Fix Labels `save_history` benchmark (#2430)
 - Fix packaging (#2436)
 - Fix numpy warnings (#2438)
-- PR: Remove extra remove window action from window menu and use file menu
+- Fix some translation formatting (#2453)
+- Remove extra remove window action from window menu and use file menu
   instead (#2454)
+- Fix translation II (#2455)
+- Fix for constant warning when using label brush (#2460)
 
 ## API Changes
 
