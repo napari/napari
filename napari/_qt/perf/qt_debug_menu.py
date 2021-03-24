@@ -12,6 +12,7 @@ from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
 from ...utils import perf
+from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 
 
@@ -95,7 +96,7 @@ class PerformanceSubMenu:
         filename, _ = QFileDialog.getSaveFileName(
             parent=viewer,
             caption=trans._('Record performance trace file'),
-            directory=viewer._last_visited_dir,
+            directory=SETTINGS.application.last_visited_dir,
             filter=trans._("Trace Files (*.json)"),
         )
         if filename:

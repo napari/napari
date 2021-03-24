@@ -177,8 +177,6 @@ class QtViewer(QSplitter):
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
 
-        self._last_visited_dir = SETTINGS.application.last_visited_dir
-
         self._cursors = {
             'cross': Qt.CrossCursor,
             'forbidden': Qt.ForbiddenCursor,
@@ -460,7 +458,7 @@ class QtViewer(QSplitter):
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=SETTINGS.application.last_visited_dir,  # home dir by default
         )
 
         if filename:
@@ -469,7 +467,9 @@ class QtViewer(QSplitter):
                 error_messages = "\n".join(
                     [str(x.message.args[0]) for x in wa]
                 )
-                self._update_last_visited_dir(os.path.dir(saved[0]))
+                SETTINGS.application.last_visited_dir = os.path.dirname(
+                    saved[0]
+                )
 
             if not saved:
                 raise OSError(
@@ -480,10 +480,6 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
-
-    def _update_last_visited_dir(self, path):
-        self._last_visited_dir = path
-        SETTINGS.application.last_visited_dir = path
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -506,44 +502,46 @@ class QtViewer(QSplitter):
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
-        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        dial = ScreenshotDialog(
+            self.screenshot, self, SETTINGS.application.last_visited_dir
+        )
         if dial.exec_():
-            self._update_last_visited_dir(
-                os.path.dirname(dial.selectedFiles()[0])
-            )
+            SETTINGS.application.last_visited_dir = dial.selectedFiles()[0]
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption=trans._('Select file(s)...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=SETTINGS.application.last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
-            self._update_last_visited_dir(os.path.dirname(filenames[0]))
+            SETTINGS.application.last_visited_dir = filenames[0]
 
     def _open_files_dialog_as_stack_dialog(self):
         """Add files as a stack, from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
             caption=trans._('Select files...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=SETTINGS.application.last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
-            self._update_last_visited_dir(os.path.dirname(filenames[0]))
+            SETTINGS.application.last_visited_dir = os.path.dirname(
+                filenames[0]
+            )
 
     def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
         folder = QFileDialog.getExistingDirectory(
             parent=self,
             caption=trans._('Select folder...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=SETTINGS.application.last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:
             self.viewer.open([folder])
-            self._update_last_visited_dir(os.path.dirname(folder))
+            SETTINGS.application.last_visited_dir = os.path.dirname(folder)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""

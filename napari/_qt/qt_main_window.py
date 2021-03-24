@@ -1203,10 +1203,14 @@ class Window:
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
         dial = ScreenshotDialog(
-            self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir
+            self.screenshot,
+            self.qt_viewer,
+            SETTINGS.application.last_visited_dir,
         )
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            SETTINGS.application.last_visited_dir = os.path.dirname(
+                dial.selectedFiles()[0]
+            )
 
     def _restart(self):
         """Restart the napari application."""
