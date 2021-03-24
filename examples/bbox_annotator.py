@@ -44,7 +44,7 @@ def create_label_menu(shapes_layer, label_property, labels):
     shapes_layer.events.current_properties.connect(update_label_menu)
 
     def label_changed(event):
-        """This is acallback that update the current properties on the Shapes layer
+        """This is a callback that update the current properties on the Shapes layer
         when the label menu selection changes
         """
         selected_label = event.value
