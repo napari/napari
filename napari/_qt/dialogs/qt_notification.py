@@ -103,7 +103,7 @@ class NapariQtNotification(QDialog):
         self.message.setText(message)
         if source:
             self.source_label.setText(
-                trans._('Source: {source}'.format(source=source))
+                trans._('Source: {source}').format(source=source)
             )
 
         self.close_button.clicked.connect(self.close)
