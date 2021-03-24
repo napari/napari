@@ -145,8 +145,12 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_bounding_box_change(self, event=None):
         if isinstance(self.node, VolumeNode):
-            print(self.layer._bounding_box)
-            self.node._bounding_box = self.layer._bounding_box
+            bounding_box = self.layer._view_bounding_box
+            print('bbox: ', bounding_box)
+            # reorder the bounding box to be aligned with the axes in vispy
+            reordered_bounding_box = bounding_box[[2, 1, 0], :]
+            print('reordered: ', reordered_bounding_box)
+            self.node._bounding_box = reordered_bounding_box
 
     def reset(self, event=None):
         self._reset_base()
