@@ -65,7 +65,7 @@ class QtViewerDockWidget(QDockWidget):
             raise ValueError(f'area argument must be in {list(areas.keys())}')
         self.area = area
         self.qt_area = areas[area]
-        self.shortcut = shortcut
+        self._shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
@@ -93,6 +93,11 @@ class QtViewerDockWidget(QDockWidget):
         self.title = QtCustomTitleBar(self, title=self.name)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+    @property
+    def shortcut(self):
+        return self._shortcut
+        raise ValueError
 
     def setFeatures(self, features):
         super().setFeatures(features)

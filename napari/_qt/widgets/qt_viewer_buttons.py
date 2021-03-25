@@ -1,6 +1,14 @@
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from qtpy.QtCore import QPropertyAnimation
+from qtpy.QtGui import QColor
+from qtpy.QtWidgets import (
+    QFrame,
+    QGraphicsColorizeEffect,
+    QHBoxLayout,
+    QPushButton,
+)
 
 from ...utils.interactions import KEY_SYMBOLS
+from ...utils.key_bindings import action_manager
 from ...utils.translations import trans
 
 
@@ -109,24 +117,25 @@ class QtViewerButtons(QFrame):
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._("Roll dimensions order for display ({key}-E)").format(
-                key=KEY_SYMBOLS['Control']
-            ),
-            lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._("Transpose displayed dimensions ({key}-T)").format(
-                key=KEY_SYMBOLS['Control']
-            ),
-            lambda: self.viewer.dims._transpose(),
         )
-        self.resetViewButton = QtViewerPushButton(
-            self.viewer,
-            'home',
-            trans._("Reset view ({key}-R)").format(key=KEY_SYMBOLS['Control']),
-            lambda: self.viewer.reset_view(),
+
+        action_manager.bind_button(
+            'transpose_axes', self.transposeDimsButton, viewer
+        )
+        action_manager.bind_button('roll_axes', self.rollDimsButton, viewer)
+
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+
+        print('binding button to', type(self.viewer).reset_view)
+        action_manager.register_action(
+            'home', type(self.viewer).reset_view, 'Reset View', None, self
+        )
+        action_manager.bind_button(
+            'reset_view', self.resetViewButton, self.viewer
         )
 
         self.gridViewButton = QtStateButton(
@@ -135,11 +144,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        self.gridViewButton.setToolTip(
-            trans._("Toggle grid view ({key}-G)").format(
-                key=KEY_SYMBOLS['Control']
-            )
-        )
+        action_manager.bind_button('toggle_grid', self.gridViewButton, viewer)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -149,10 +154,9 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setToolTip(
-            trans._("Toggle number of displayed dimensions ({key}-Y)").format(
-                key=KEY_SYMBOLS['Control']
-            )
+
+        action_manager.bind_button(
+            'toggle_ndisplay', self.ndisplayButton, viewer
         )
 
         layout = QHBoxLayout()
@@ -240,6 +244,21 @@ class QtDeleteButton(QPushButton):
             self.viewer.layers.remove_selected()
 
 
+def _add_flash_animation(button):
+    effect = QGraphicsColorizeEffect(button)
+    button.setGraphicsEffect(effect)
+
+    button._animation = QPropertyAnimation(effect, b"color")
+
+    button._animation.setStartValue(QColor(0, 0, 0, 0))
+    button._animation.setKeyValueAt(0.1, QColor(255, 255, 255, 255))
+    button._animation.setEndValue(QColor(0, 0, 0, 0))
+
+    button._animation.setLoopCount(1)
+    button._animation.setDuration(250)
+    button._animation.start()
+
+
 class QtViewerPushButton(QPushButton):
     """Push button.
 
@@ -256,6 +275,8 @@ class QtViewerPushButton(QPushButton):
 
     def __init__(self, viewer, button_name, tooltip=None, slot=None):
         super().__init__()
+
+        _add_flash_animation(self)
 
         self.viewer = viewer
         self.setToolTip(tooltip or button_name)
@@ -297,6 +318,7 @@ class QtStateButton(QtViewerPushButton):
     ):
         super().__init__(target, button_name)
         self.setCheckable(True)
+        _add_flash_animation(self)
 
         self._target = target
         self._attribute = attribute

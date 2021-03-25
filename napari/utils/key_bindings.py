@@ -35,9 +35,13 @@ To create a keymap that will block others, ``bind_key(..., ...)```.
 import inspect
 import re
 import types
-from collections import ChainMap
+from collections import ChainMap, defaultdict
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from vispy.util import keys
+
+from .interactions import format_shortcut
 
 SPECIAL_KEYS = [
     keys.SHIFT,
@@ -182,6 +186,230 @@ def normalize_key_combo(key_combo):
 UNDEFINED = object()
 
 
+@dataclass
+class Action:
+    command: Callable
+    description: str
+    instance: Any
+    icons: Tuple[Optional[Any]]
+    # not sure if that will fit well with configurability.
+    predicates: Tuple[Callable]
+    keymappable: Any
+
+    def __iter__(self):
+        yield self.command
+        yield self.description
+        yield self.instance
+        yield self.icons
+        yield self.predicates
+        yield self.keymappable
+
+
+class ActionManager:
+    """
+    Manage the bindings between buttons; shortcuts and callbacks.
+
+    The action manager is aware of the various buttons, keybindings and other
+    elements that may trigger an action and is able to synchronise all of those.
+    Thus when a shortcut is bound; this should be capable of updating the
+    buttons tooltip to show the shortcuts.
+
+    """
+
+    _actions: Dict[str, Action]
+
+    def __init__(self):
+        # map associating a name/id with a Comm
+        self._actions = {}
+        self._buttons = defaultdict(lambda: [])
+        self._shortcuts = {}
+        self._orphans = {}
+
+    def register_action(
+        self, name, command, description, instance, keymappable
+    ):
+        """
+        Register a command for future usage
+
+        A command is generally an, callback associated with a name (unique), a
+        description and an instance that need to be passed to it when
+        called.
+
+        Commands can then be later bound/unbound from button elements, and
+        shortcuts; and the action manager will take care of modifying the keymap
+        of instances to handle shortcuts; and UI elements to have tooltips with
+        descriptions and shortcuts;
+
+        Parameters
+        ----------
+
+        name: str
+            unique name/id of the command that can be used to refer to this
+            command
+        command: callable
+            take 0, or 1 parameter; is `instance` is not None, will be called
+            `instance` as first parameter.
+        description: str
+            Long string to describe what the command does, will be used in
+            tooltips.
+        instance: Any
+            Instance of object that should handle the shortcut when bound,
+            this is used to mange which command should be triggered depending on
+            which object is in focus.
+
+        """
+        assert name not in self._actions
+        self._actions[name] = Action(
+            command, description, instance, (), (), keymappable
+        )
+        self._update_buttons_tooltips(name)
+        self._update_shortcut_bindings(name)
+        # shortcuts may have been bound before the command was actually
+        # registered, remove it from orphan and bind shortcuts.
+        if command in self._orphans:
+            # print('Found orphan shortcut')
+            sht = self._orphans.pop(command)
+            self.bind_shortcut(name, sht)
+
+    def _shortcut_notify(self, function, shortcut):
+        """
+        Workaround bind_key API, command might not have names.
+
+        The current @Viewer.bind_key decorator approach have some drawbacks, and
+        we try to workaround them.
+
+        Mostly we try to keep an instance of "function" around and see if it's
+        reused to register_action; this is not always the case as most call to
+        bind_key return a thow away function.
+
+        We use that to create an internal list of all bind shortcuts that are
+        not going through the shortcut manager
+
+        """
+        return
+        assert not isinstance(function, str)
+        assert isinstance(shortcut, str)
+        if function in self._orphans:
+            return
+        for k, v in self._actions.items():
+            if function == v.command:
+                # print('this is an already existing command !')
+                self.bind_shortcut(k, shortcut)
+                return
+        # print('add', function, 'to orphans')
+        self._orphans[function] = shortcut
+
+    def _update_buttons_tooltips(self, name):
+        if name not in self._actions:
+            return
+        buttons = self._buttons[name]
+        desc = self._actions[name].description
+
+        if name in self._shortcuts:
+            sht = self._shortcuts[name]
+            desc += f' [{format_shortcut(sht)}]'
+        for button, instances in buttons:
+            button.setToolTip(desc)
+
+    def _update_shortcut_bindings(self, name):
+        if name not in self._actions:
+            return
+        action = self._actions[name]
+        if name not in self._shortcuts:
+            return
+        sht = self._shortcuts.get(name)
+        keymappable = action.keymappable
+        if hasattr(keymappable, 'bind_key'):
+
+            def flash(*args):
+                action.command(*args)
+                for (b, _) in self._buttons.get(name, []):
+                    b._animation.start()
+
+            keymappable.bind_key(sht)(flash)
+
+    def bind_button(self, name, button, instance):
+        """
+        Bind `button` to trigger Action `name` on click.
+        """
+        (
+            command,
+            description,
+            _,
+            _icons,
+            _predicates,
+            keymappable,
+        ) = self._actions[name]
+
+        button.clicked.connect(lambda: command(instance))
+
+        self._buttons[name].append((button, instance))
+        self._update_buttons_tooltips(name)
+
+    def bind_shortcut(self, name, shortcut):
+        """
+        bind shortcut `shortcut` to trigger action `name`
+        """
+        self._shortcuts[name] = shortcut
+        self._update_buttons_tooltips(name)
+        self._update_shortcut_bindings(name)
+
+    def unbind_shortcut(self, name, shortcut):
+        action = self._actions[name]
+        sht = self._shortcuts.get(name)
+        keymappable = action.keymappable
+        if hasattr(keymappable, 'bind_key'):
+            keymappable.bind_key(sht)(None)
+        del self._shortcuts[name]
+        self._update_buttons_tooltips(name)
+
+    def play(self, seq):
+        for action_name in seq:
+            (
+                command,
+                description,
+                _,
+                _icons,
+                _predicates,
+                keymappable,
+            ) = self._actions[action_name]
+            for (b, _) in self._buttons.get(action_name, []):
+                b._animation.start()
+                # command(instance)
+            import time
+
+            time.sleep(0.5)
+
+
+action_manager = ActionManager()
+
+
+_actions = {
+    'V': 'toggle_selected_visibility',
+    'Control-G': 'toggle_grid',
+    'Shift-Down': 'also_select_layer_below',
+    'Shift-Up': 'also_select_layer_above',
+    'Down': 'select_layer_below',
+    'Up': 'select_layer_above',
+    'Control-A': 'select_all',
+    'Control-T': 'transpose_axes',
+    'Control-R': 'reset_view',
+    'Control-E': 'roll_axes',
+    'Alt-Down': 'focus_axes_down',
+    'Alt-Up': 'focus_axes_up',
+    'Right': 'increment_dims_right',
+    'Left': 'increment_dims_left',
+    'Control-Y': 'toggle_ndisplay',
+    'Control-Shift-Backspace': 'remove_all_layers',
+    'Control-Shift-Delete': 'remove_all_layers',
+    'Control-Backspace': 'remove_selected',
+    'Control-Delete': 'remove_selected',
+}
+
+for (shortcut, action_name) in _actions.items():
+    action_manager.bind_shortcut(action_name, shortcut)
+
+
 def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     """Bind a key combination to a keymap.
 
@@ -249,7 +477,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
             return func
 
         return inner
-
+    assert key is not Ellipsis
     if key is not Ellipsis:
         key = normalize_key_combo(key)
 
@@ -315,6 +543,19 @@ class KeymapProvider:
             cls.class_keymap = {}
 
     bind_key = KeybindingDescriptor(bind_key)
+
+    @classmethod
+    def register_action(cls, function):
+        """
+        Convenient decorator to register an action with the current KeymapProvider
+
+        It will use the function name as the action name, and the function docstring as
+        the function description.
+        """
+        name = function.__name__
+        description = function.__doc__
+        action_manager.register_action(name, function, description, None, cls)
+        return function
 
 
 def _bind_keymap(keymap, instance):

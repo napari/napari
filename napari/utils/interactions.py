@@ -210,13 +210,35 @@ KEY_SYMBOLS = {
     'Enter': '↵',
 }
 
-
+joinchar = '-'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
         {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
     )
+    joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
+
+
+def format_shortcut(sht: str) -> str:
+    """
+    Format the given shortcut for the current platform.
+
+    Replace Cmd, Ctrl, Meta...etc by appropriate symbols if relevant for the
+    given platform.
+
+    Parameters
+    ----------
+    sht: string
+        shortcut to format in the form of dash separated keys to press
+
+    Returns
+    -------
+    string
+        Shortcut formatted to be displayed on current paltform.
+    """
+
+    return joinchar.join(KEY_SYMBOLS.get(x, x) for x in sht.split('-'))
 
 
 def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
