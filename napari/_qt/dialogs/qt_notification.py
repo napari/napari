@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from time import localtime, strftime
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
@@ -15,9 +16,12 @@ from qtpy.QtCore import (
 from qtpy.QtWidgets import (
     QApplication,
     QDialog,
+    QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
     QMainWindow,
     QPushButton,
     QSizePolicy,
@@ -31,6 +35,88 @@ from ...utils.translations import trans
 from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+
+
+class QNotificationListItem(QFrame):
+    def __init__(
+        self,
+        notification: Notification,
+        *,
+        parent: QWidget = None,
+        enabled: bool = True,
+    ):
+        super().__init__(parent)
+        self.setObjectName("QNotificationListItem")
+        self.setup_ui()
+        self.severity_icon.setText(
+            NotificationSeverity(notification.severity).as_icon()
+        )
+        self.message.setText(notification.message)
+        self.when.setText(
+            strftime("%H:%M:%S", localtime(notification.date.timestamp()))
+        )
+        self.source_label.setText(f'Source: {str(notification.source)}')
+
+    def _get_dialog(self) -> QDialog:
+        p = self.parent()
+        while not isinstance(p, QDialog) and p.parent():
+            p = p.parent()
+        return p
+
+    def setup_ui(self):
+        self.verticalLayout = QVBoxLayout(self)
+        self.verticalLayout.setContentsMargins(-1, 4, 0, -1)
+        self.verticalLayout.setSpacing(8)
+
+        self.row1_widget = QWidget(self)
+        self.row1 = QHBoxLayout(self.row1_widget)
+        self.row1.setSpacing(8)
+
+        self.severity_icon = QLabel(self.row1_widget)
+        self.severity_icon.setObjectName("severity_icon")
+        self.severity_icon.setMinimumWidth(30)
+        self.severity_icon.setMaximumWidth(30)
+
+        self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
+        self.message = QLabel(self.row1_widget)
+        self.row1.addWidget(self.message, alignment=Qt.AlignTop)
+
+        self.when = QLabel(self.row1_widget)
+        self.when.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.row1.addWidget(self.when, alignment=Qt.AlignRight)
+
+        self.verticalLayout.addWidget(self.row1_widget, 1)
+
+        self.row2_widget = QWidget(self)
+        self.row2 = QHBoxLayout(self.row2_widget)
+        self.row2.setSpacing(8)
+        self.source_label = QLabel(self.row2_widget)
+        self.source_label.setObjectName("source_label")
+        self.row2.addWidget(self.source_label, alignment=Qt.AlignTop)
+        self.row2.addStretch()
+        self.row2.setContentsMargins(-1, 4, 0, -1)
+        self.row2_widget.setMaximumHeight(34)
+        self.verticalLayout.addWidget(self.row2_widget, 0)
+
+
+class QNotificationList(QListWidget):
+    def __init__(self, notification_manager, parent: QWidget):
+        super().__init__(parent)
+        self.notification_manager = notification_manager
+        self.setSortingEnabled(True)
+        self.notification_manager.notification_ready.connect(self.addItem)
+
+    # @Slot(Notification)
+    def addItem(self, notif: Notification):
+        pass
+        # don't add duplicates
+        widg = QNotificationListItem(notif, parent=self)
+        item = QListWidgetItem(parent=self)
+        super().addItem(item)
+        self.setItemWidget(item, widg)
+
+        item.setSizeHint(widg.sizeHint())
+        self.setItemWidget(item, widg)
 
 
 class NapariQtNotification(QDialog):

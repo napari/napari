@@ -28,10 +28,12 @@ from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
+from ..utils.notifications import notification_manager
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
+from .dialogs.qt_notification import QNotificationList
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
@@ -330,6 +332,13 @@ class Window:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
+
+        self.notification_area = QNotificationList(
+            notification_manager, parent=self._qt_window
+        )
+        self.add_dock_widget(
+            self.notification_area, area="right", name='Notifications area'
+        )
 
         if show:
             self.show()

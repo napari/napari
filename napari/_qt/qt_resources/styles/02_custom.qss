@@ -490,11 +490,11 @@ NapariQtNotification #severity_icon {
 
 /* ------------ Plugin Dialog ------------ */
 
-QPluginList {
+QPluginList, QNotificationList {
   background: {{ console }};
 }
 
-PluginListItem {
+PluginListItem, #QNotificationListItem {
   background: {{ darken(foreground, 20) }};
   padding: 0;
   margin: 2px 4px;
