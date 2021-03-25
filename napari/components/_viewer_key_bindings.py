@@ -1,7 +1,15 @@
+from ..utils.key_bindings import action_manager
 from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
+
+action_manager.register_action(
+    'reset_view',
+    lambda viewer: ViewerModel.reset_view(viewer),
+    trans._("Reset view to original state."),
+    ViewerModel,
+)
 
 
 @ViewerModel.bind_key('Control')
@@ -18,16 +26,12 @@ def reset_scroll_progress(viewer):
 reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 
-@ViewerModel.bind_key('Control-Y')
+@ViewerModel.register_action(description=trans._("Toggle ndisplay."))
 def toggle_ndisplay(viewer):
-    """Toggle ndisplay."""
     if viewer.dims.ndisplay == 3:
         viewer.dims.ndisplay = 2
     else:
         viewer.dims.ndisplay = 3
-
-
-toggle_ndisplay.__doc__ = trans._("Toggle ndisplay.")
 
 
 @ViewerModel.bind_key('Control-Shift-T')
@@ -43,92 +47,106 @@ def toggle_theme(viewer):
     SETTINGS.appearance.theme = themes[idx]
 
 
-@ViewerModel.bind_key('Left')
+@ViewerModel.register_action(
+    description=trans._("Increment dimensions slider to the left.")
+)
 def increment_dims_left(viewer):
-    """Increment dimensions slider to the left."""
     viewer.dims._increment_dims_left()
 
 
-increment_dims_left.__doc__ = trans._(
-    "Increment dimensions slider to the left."
+@ViewerModel.register_action(
+    description=trans._("Increment dimensions slider to the right.")
 )
-
-
-@ViewerModel.bind_key('Right')
 def increment_dims_right(viewer):
     """Increment dimensions slider to the right."""
     viewer.dims._increment_dims_right()
 
 
-increment_dims_right.__doc__ = trans._(
-    "Increment dimensions slider to the right."
+@ViewerModel.register_action(
+    description=trans._("Move focus of dimensions slider up.")
 )
-
-
-@ViewerModel.bind_key('Alt-Up')
 def focus_axes_up(viewer):
     """Move focus of dimensions slider up."""
     viewer.dims._focus_up()
 
 
-focus_axes_up.__doc__ = trans._("Move focus of dimensions slider up.")
-
-
-@ViewerModel.bind_key('Alt-Down')
+@ViewerModel.register_action(
+    description=trans._("Move focus of dimensions slider down.")
+)
 def focus_axes_down(viewer):
     """Move focus of dimensions slider down."""
     viewer.dims._focus_down()
 
 
-focus_axes_down.__doc__ = trans._("Move focus of dimensions slider down.")
-
-
-@ViewerModel.bind_key('Control-E')
+@ViewerModel.register_action(
+    description=trans._(
+        "Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."
+    )
+)
 def roll_axes(viewer):
-    """Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."""
+    """Roll dimensions order for display"""
     viewer.dims._roll()
 
 
-roll_axes.__doc__ = trans._(
-    "Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."
+@ViewerModel.register_action(
+    description=trans._(
+        "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
+    )
 )
-
-
-@ViewerModel.bind_key('Control-T')
 def transpose_axes(viewer):
-    """Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."""
     viewer.dims._transpose()
 
 
-transpose_axes.__doc__ = trans._(
-    "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
-)
+@ViewerModel.register_action(description=trans._("Remove selected layers."))
+def remove_selected(viewer):
+    """Remove selected layers."""
+    viewer.layers.remove_selected()
 
 
-@ViewerModel.bind_key('Control-R')
-def reset_view(viewer):
-    """Reset view to original state."""
-    viewer.reset_view()
+@ViewerModel.register_action(description=trans._("Selected all layers."))
+def select_all(viewer):
+    """Selected all layers."""
+    viewer.layers.select_all()
 
 
-reset_view.__doc__ = trans._("Reset view to original state.")
+@ViewerModel.register_action(description=trans._("Remove all layers."))
+def remove_all_layers(viewer):
+    """Remove all layers."""
+    viewer.layers.clear()
 
 
-@ViewerModel.bind_key('Control-G')
+@ViewerModel.register_action(description=trans._("Select layer above."))
+def select_layer_above(viewer):
+    """Select layer above."""
+    viewer.layers.select_next()
+
+
+@ViewerModel.register_action(description=trans._("Select layer below."))
+def select_layer_below(viewer):
+    """Select layer below."""
+    viewer.layers.select_previous()
+
+
+@ViewerModel.register_action(description=trans._("Also select layer above."))
+def also_select_layer_above(viewer):
+    """Also select layer above."""
+    viewer.layers.select_next(shift=True)
+
+
+@ViewerModel.register_action(description=trans._("Also select layer below."))
+def also_select_layer_below(viewer):
+    """Also select layer below."""
+    viewer.layers.select_previous(shift=True)
+
+
+@ViewerModel.register_action(description=trans._("Toggle grid mode."))
 def toggle_grid(viewer):
     """Toggle grid mode."""
     viewer.grid.enabled = not viewer.grid.enabled
 
 
-toggle_grid.__doc__ = trans._("Toggle grid mode.")
-
-
-@ViewerModel.bind_key('V')
-def toggle_selected_visibility(viewer):
-    """Toggle visibility of selected layers"""
-    viewer.layers.toggle_selected_visibility()
-
-
-toggle_selected_visibility.__doc__ = trans._(
-    "Toggle visibility of selected layers"
+@ViewerModel.register_action(
+    description=trans._("Toggle visibility of selected layers")
 )
+def toggle_selected_visibility(viewer):
+    viewer.layers.toggle_selected_visibility()

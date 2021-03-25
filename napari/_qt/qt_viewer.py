@@ -25,7 +25,7 @@ from ..utils.interactions import (
     mouse_wheel_callbacks,
 )
 from ..utils.io import imsave
-from ..utils.key_bindings import KeymapHandler
+from ..utils.key_bindings import KeymapHandler, action_manager
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
@@ -147,7 +147,6 @@ class QtViewer(QSplitter):
             name=trans._('console'),
             area='bottom',
             allowed_areas=['top', 'bottom'],
-            shortcut='Ctrl+Shift+C',
             object_name='console',
         )
         self.dockConsole.setVisible(False)
@@ -165,8 +164,14 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        self.viewerButtons.consoleButton.clicked.connect(
-            self.toggle_console_visibility
+        action_manager.register_action(
+            "toggle_console_visibility",
+            self.toggle_console_visibility,
+            "Show/Hide IPython console",
+            self.viewer,
+        )
+        action_manager.bind_button(
+            'toggle_console_visibility', self.viewerButtons.consoleButton
         )
 
         self._create_canvas()
@@ -617,7 +622,7 @@ class QtViewer(QSplitter):
         _ = self.console
 
         viz = not self.dockConsole.isVisible()
-        # modulate visibility at the dock widget level as console is docakable
+        # modulate visibility at the dock widget level as console is dockable
         self.dockConsole.setVisible(viz)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)

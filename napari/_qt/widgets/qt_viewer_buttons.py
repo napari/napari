@@ -1,6 +1,14 @@
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from qtpy.QtCore import QPropertyAnimation
+from qtpy.QtGui import QColor
+from qtpy.QtWidgets import (
+    QFrame,
+    QGraphicsColorizeEffect,
+    QHBoxLayout,
+    QPushButton,
+)
 
 from ...utils.interactions import KEY_SYMBOLS
+from ...utils.key_bindings import action_manager
 from ...utils.translations import trans
 
 
@@ -110,27 +118,20 @@ class QtViewerButtons(QFrame):
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._(
-                "Roll dimensions order for display ({key}-E)",
-                key=KEY_SYMBOLS['Control'],
-            ),
-            lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._(
-                "Transpose displayed dimensions ({key}-T)",
-                key=KEY_SYMBOLS['Control'],
-            ),
-            lambda: self.viewer.dims._transpose(),
         )
-        self.resetViewButton = QtViewerPushButton(
-            self.viewer,
-            'home',
-            trans._("Reset view ({key}-R)", key=KEY_SYMBOLS['Control']),
-            lambda: self.viewer.reset_view(),
-        )
+
+        action_manager.context['viewer'] = viewer
+
+        action_manager.bind_button('transpose_axes', self.transposeDimsButton)
+        action_manager.bind_button('roll_axes', self.rollDimsButton)
+
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+
+        action_manager.bind_button('reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -138,9 +139,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        self.gridViewButton.setToolTip(
-            trans._("Toggle grid view ({key}-G)", key=KEY_SYMBOLS['Control'])
-        )
+        action_manager.bind_button('toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -150,12 +149,8 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setToolTip(
-            trans._(
-                "Toggle number of displayed dimensions ({key}-Y)",
-                key=KEY_SYMBOLS['Control'],
-            )
-        )
+
+        action_manager.bind_button('toggle_ndisplay', self.ndisplayButton)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -244,6 +239,29 @@ class QtDeleteButton(QPushButton):
             self.viewer.layers.remove_selected()
 
 
+def _add_flash_animation(button):
+    effect = QGraphicsColorizeEffect(button)
+    button.setGraphicsEffect(effect)
+
+    button._flash_animation = QPropertyAnimation(effect, b"color")
+
+    button._flash_animation.setStartValue(QColor(0, 0, 0, 0))
+    button._flash_animation.setEndValue(QColor(0, 0, 0, 0))
+
+    button._flash_animation.setLoopCount(1)
+
+    # animation need to cycle one to not mess up button color.
+    # set to 0; cycle once, it will be invisible to user.
+    button._flash_animation.setDuration(0)
+    button._flash_animation.start()
+
+    # now  set an actual time for the flashing;
+    # and an intermediate color.
+
+    button._flash_animation.setDuration(150)
+    button._flash_animation.setKeyValueAt(0.1, QColor(255, 255, 255, 255))
+
+
 class QtViewerPushButton(QPushButton):
     """Push button.
 
@@ -260,6 +278,8 @@ class QtViewerPushButton(QPushButton):
 
     def __init__(self, viewer, button_name, tooltip=None, slot=None):
         super().__init__()
+
+        _add_flash_animation(self)
 
         self.viewer = viewer
         self.setToolTip(tooltip or button_name)
@@ -301,6 +321,7 @@ class QtStateButton(QtViewerPushButton):
     ):
         super().__init__(target, button_name)
         self.setCheckable(True)
+        _add_flash_animation(self)
 
         self._target = target
         self._attribute = attribute
@@ -308,7 +329,7 @@ class QtStateButton(QtViewerPushButton):
         self._offstate = offstate
         self._events = events
         self._events.connect(self._on_change)
-        self.clicked.connect(self.change)
+        # self.clicked.connect(self.change)
         self._on_change()
 
     def change(self):
