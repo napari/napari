@@ -11,6 +11,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
+from ..utils.action_manager import action_manager
 from ..utils.history import (
     get_open_history,
     get_save_history,
@@ -148,7 +149,6 @@ class QtViewer(QSplitter):
             name=trans._('console'),
             area='bottom',
             allowed_areas=['top', 'bottom'],
-            shortcut='Ctrl+Shift+C',
             object_name='console',
         )
         self.dockConsole.setVisible(False)
@@ -166,8 +166,17 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        self.viewerButtons.consoleButton.clicked.connect(
-            self.toggle_console_visibility
+        action_manager.register_action(
+            "toggle_console_visibility",
+            self.toggle_console_visibility,
+            "Show/Hide IPython console",
+            self.viewer,
+        )
+        action_manager.bind_button(
+            'toggle_console_visibility', self.viewerButtons.consoleButton
+        )
+        action_manager.bind_shortcut(
+            'toggle_console_visibility', 'Control-Shift-C'
         )
 
         self._create_canvas()
@@ -626,7 +635,7 @@ class QtViewer(QSplitter):
         _ = self.console
 
         viz = not self.dockConsole.isVisible()
-        # modulate visibility at the dock widget level as console is docakable
+        # modulate visibility at the dock widget level as console is dockable
         self.dockConsole.setVisible(viz)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)

@@ -32,6 +32,8 @@ into two statements with the yield keyword::
 To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
+from __future__ import annotations
+
 import inspect
 import re
 import types
@@ -263,7 +265,6 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
             return func
 
         return inner
-
     if key is not Ellipsis:
         key = normalize_key_combo(key)
 

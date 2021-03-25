@@ -5,6 +5,7 @@ wrap.
 import inspect
 import sys
 import time
+import warnings
 from itertools import chain, repeat
 from typing import Dict
 
@@ -26,6 +27,7 @@ from qtpy.QtWidgets import (
 from .. import plugins
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
+from ..utils.action_manager import action_manager
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
@@ -40,7 +42,12 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
-from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_viewer_dock_widget import (
+    _SHORTCUT_DEPRECATION_STRING,
+    QtViewerDockWidget,
+)
+
+_sentinel = object()
 
 
 class _QtMainWindow(QMainWindow):
@@ -336,6 +343,16 @@ class Window:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
+
+        for name, action in action_manager._actions.items():
+            qa = QAction(self.qt_viewer)
+            action_manager.bind_qaction(name, qa)
+            # Note: do not bind shortcut here.
+            # while it would be nice to have the shortcut in the menu, this does
+            # bind the shortctut at the window level and will bypass custom handling
+            # of shortcuts at the KeymapProvider level. While it could work for
+            # globals instances, like viewer; it wont for others like layers.
+            self.window_menu.addAction(qa)
 
         if show:
             self.show()
@@ -901,7 +918,7 @@ class Window:
         name: str = '',
         area: str = 'bottom',
         allowed_areas=None,
-        shortcut=None,
+        shortcut=_sentinel,
         add_vertical_stretch=True,
     ):
         """Convenience method to add a QDockWidget to the main window.
@@ -929,6 +946,12 @@ class Window:
             widgets up towards the top of the allotted area, instead of letting
             them distribute across the vertical space).  By default, True.
 
+            .. deprecated:: 0.4.8
+
+                The shortcut parameter is deprecated since version 0.4.8, please use
+                the action and shortcut manager APIs. The new action manager and
+                shortcut API allow user configuration and localisation.
+
         Returns
         -------
         dock_widget : QtViewerDockWidget
@@ -944,6 +967,28 @@ class Window:
                 )
 
             self._unnamed_dockwidget_count += 1
+        if shortcut is not _sentinel:
+            warnings.warn(
+                _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            dock_widget = QtViewerDockWidget(
+                self.qt_viewer,
+                widget,
+                name=name,
+                area=area,
+                allowed_areas=allowed_areas,
+                shortcut=shortcut,
+            )
+        else:
+            dock_widget = QtViewerDockWidget(
+                self.qt_viewer,
+                widget,
+                name=name,
+                area=area,
+                allowed_areas=allowed_areas,
+            )
 
         dock_widget = QtViewerDockWidget(
             self.qt_viewer,
@@ -1009,8 +1054,14 @@ class Window:
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
-        if dock_widget.shortcut is not None:
-            action.setShortcut(dock_widget.shortcut)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            # deprecating with 0.4.8, but let's try to keep compatibility.
+            sht = dock_widget.shortcut
+        if sht is not None:
+            action.setShortcut(sht)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget: QWidget):
@@ -1068,7 +1119,7 @@ class Window:
         name: str = '',
         area=None,
         allowed_areas=None,
-        shortcut=None,
+        shortcut=_sentinel,
     ):
         """Turn a function into a dock widget via magicgui.
 
@@ -1117,14 +1168,21 @@ class Window:
 
         if allowed_areas is None:
             allowed_areas = [area]
-
-        return self.add_dock_widget(
-            widget,
-            name=name or function.__name__.replace('_', ' '),
-            area=area,
-            allowed_areas=allowed_areas,
-            shortcut=shortcut,
-        )
+        if shortcut is not _sentinel:
+            return self.add_dock_widget(
+                widget,
+                name=name or function.__name__.replace('_', ' '),
+                area=area,
+                allowed_areas=allowed_areas,
+                shortcut=shortcut,
+            )
+        else:
+            return self.add_dock_widget(
+                widget,
+                name=name or function.__name__.replace('_', ' '),
+                area=area,
+                allowed_areas=allowed_areas,
+            )
 
     def resize(self, width, height):
         """Resize the window.
