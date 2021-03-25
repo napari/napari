@@ -375,6 +375,7 @@ class Window:
         preferences = QAction(trans._('Preferences'), self._qt_window)
         preferences.setShortcut('Ctrl+Shift+P')
         preferences.setStatusTip(trans._('Open preferences dialog'))
+        preferences.setMenuRole(QAction.PreferencesRole)
         preferences.triggered.connect(self._open_preferences)
 
         save_selected_layers = QAction(
