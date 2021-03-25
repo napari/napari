@@ -66,6 +66,10 @@ QStatusBar {
   background-color: {{ foreground }};
 }
 
+#QtCustomTitleBar > QLabel {
+  color: {{ primary }};
+}
+
 #QTitleBarCloseButton{
     width: 12px;
     height: 12px;
