@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -89,7 +90,7 @@ class QtViewerDockWidget(QDockWidget):
         self.dockLocationChanged.connect(self._set_title_orientation)
 
         # custom title bar
-        self.title = QtCustomTitleBar(self)
+        self.title = QtCustomTitleBar(self, title=self.name)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
 
@@ -130,7 +131,7 @@ class QtViewerDockWidget(QDockWidget):
             self.setTitleBarWidget(None)
             if not self.isFloating():
                 self.title = QtCustomTitleBar(
-                    self, vertical=not self.is_vertical
+                    self, title=self.name, vertical=not self.is_vertical
                 )
                 self.setTitleBarWidget(self.title)
 
@@ -145,11 +146,13 @@ class QtCustomTitleBar(QLabel):
     ----------
     parent : QDockWidget
         The QtViewerDockWidget to which this titlebar belongs
+    title : str
+        A string to put in the titlebar.
     vertical : bool
         Whether this titlebar is oriented vertically or not.
     """
 
-    def __init__(self, parent, vertical=False):
+    def __init__(self, parent, title: str = '', vertical=False):
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))
@@ -173,6 +176,10 @@ class QtCustomTitleBar(QLabel):
         self.float_button.clicked.connect(
             lambda: self.parent().setFloating(not self.parent().isFloating())
         )
+        self.title = QLabel(title, self)
+        self.title.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        )
 
         if vertical:
             layout = QVBoxLayout()
@@ -182,6 +189,7 @@ class QtCustomTitleBar(QLabel):
             layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
             layout.addWidget(line, 0, Qt.AlignHCenter)
+            self.title.hide()
 
         else:
             layout = QHBoxLayout()
@@ -191,6 +199,7 @@ class QtCustomTitleBar(QLabel):
             layout.addWidget(self.close_button)
             layout.addWidget(self.float_button)
             layout.addWidget(line)
+            layout.addWidget(self.title)
 
         self.setLayout(layout)
         self.setCursor(Qt.OpenHandCursor)
