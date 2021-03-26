@@ -456,6 +456,8 @@ class Window:
             self._qt_window._preferences_dialog = win
             win.closed.connect(self._on_preferences_closed)
             win.show()
+        else:
+            self._qt_window._preferences_dialog.raise_()
 
     def _on_preferences_closed(self):
         """Reset preferences dialog variable."""
