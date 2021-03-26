@@ -224,6 +224,7 @@ class ActionManager:
         self._buttons = defaultdict(lambda: [])
         self._shortcuts = {}
         self._orphans = {}
+        self.context = {}
 
     def register_action(
         self, name, command, description, instance, keymappable
@@ -308,7 +309,7 @@ class ActionManager:
         if name in self._shortcuts:
             sht = self._shortcuts[name]
             desc += f' [{format_shortcut(sht)}]'
-        for button, instances in buttons:
+        for button, name in buttons:
             button.setToolTip(desc)
 
     def _update_shortcut_bindings(self, name):
@@ -322,13 +323,13 @@ class ActionManager:
         if hasattr(keymappable, 'bind_key'):
 
             def flash(*args):
-                action.command(*args)
+                action.command(**self.context)
                 for (b, _) in self._buttons.get(name, []):
                     b._animation.start()
 
             keymappable.bind_key(sht)(flash)
 
-    def bind_button(self, name, button, instance):
+    def bind_button(self, name, button, target):
         """
         Bind `button` to trigger Action `name` on click.
         """
@@ -341,9 +342,9 @@ class ActionManager:
             keymappable,
         ) = self._actions[name]
 
-        button.clicked.connect(lambda: command(instance))
+        button.clicked.connect(lambda: command(self.context[target]))
 
-        self._buttons[name].append((button, instance))
+        self._buttons[name].append((button, target))
         self._update_buttons_tooltips(name)
 
     def bind_shortcut(self, name, shortcut):

@@ -123,19 +123,20 @@ class QtViewerButtons(QFrame):
             'transpose',
         )
 
+        action_manager.context['viewer'] = viewer
+
         action_manager.bind_button(
-            'transpose_axes', self.transposeDimsButton, viewer
+            'transpose_axes', self.transposeDimsButton, 'viewer'
         )
-        action_manager.bind_button('roll_axes', self.rollDimsButton, viewer)
+        action_manager.bind_button('roll_axes', self.rollDimsButton, 'viewer')
 
         self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
 
-        print('binding button to', type(self.viewer).reset_view)
         action_manager.register_action(
             'home', type(self.viewer).reset_view, 'Reset View', None, self
         )
         action_manager.bind_button(
-            'reset_view', self.resetViewButton, self.viewer
+            'reset_view', self.resetViewButton, 'viewer'
         )
 
         self.gridViewButton = QtStateButton(
@@ -144,7 +145,9 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        action_manager.bind_button('toggle_grid', self.gridViewButton, viewer)
+        action_manager.bind_button(
+            'toggle_grid', self.gridViewButton, 'viewer'
+        )
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -156,7 +159,7 @@ class QtViewerButtons(QFrame):
         )
 
         action_manager.bind_button(
-            'toggle_ndisplay', self.ndisplayButton, viewer
+            'toggle_ndisplay', self.ndisplayButton, 'viewer'
         )
 
         layout = QHBoxLayout()
@@ -251,12 +254,20 @@ def _add_flash_animation(button):
     button._animation = QPropertyAnimation(effect, b"color")
 
     button._animation.setStartValue(QColor(0, 0, 0, 0))
-    button._animation.setKeyValueAt(0.1, QColor(255, 255, 255, 255))
     button._animation.setEndValue(QColor(0, 0, 0, 0))
 
     button._animation.setLoopCount(1)
-    button._animation.setDuration(250)
+
+    # animation need to cycle one to not mess up button color.
+    # set to 0; cycle once, it will be invisible to user.
+    button._animation.setDuration(0)
     button._animation.start()
+
+    # now  set an actual time for the flashing;
+    # and an intermediate color.
+
+    button._animation.setDuration(150)
+    button._animation.setKeyValueAt(0.1, QColor(255, 255, 255, 255))
 
 
 class QtViewerPushButton(QPushButton):
