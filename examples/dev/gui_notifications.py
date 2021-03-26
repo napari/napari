@@ -2,20 +2,14 @@ import warnings
 from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 import napari
 
-
-def raise_():
-    raise ValueError("error!")
+from napari.utils.key_bindings import action_manager
 
 
-def warn_():
-    warnings.warn("warning!")
+def replay():
+    action_manager.play(['reset_view','transpose_axes', 'transpose_axes', 'transpose_axes'])
 
-
-viewer = napari.Viewer()
 layer_buttons = viewer.window.qt_viewer.layerButtons
-err_btn = QtViewerPushButton(None, 'warning', 'new Error', raise_)
-warn_btn = QtViewerPushButton(None, 'warning', 'new Warn', warn_)
-layer_buttons.layout().insertWidget(3, warn_btn)
-layer_buttons.layout().insertWidget(3, err_btn)
+play_button = QtViewerPushButton(None, 'play', 'Play', replay)
+layer_buttons.layout().insertWidget(3, play_button)
 
 napari.run()

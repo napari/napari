@@ -39,6 +39,7 @@ from collections import ChainMap, defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Tuple
 
+from qtpy import QtCore
 from vispy.util import keys
 
 from .interactions import format_shortcut
@@ -365,7 +366,7 @@ class ActionManager:
         self._update_buttons_tooltips(name)
 
     def play(self, seq):
-        for action_name in seq:
+        for i, action_name in enumerate(seq):
             (
                 command,
                 description,
@@ -375,11 +376,17 @@ class ActionManager:
                 keymappable,
             ) = self._actions[action_name]
             for (b, _) in self._buttons.get(action_name, []):
-                b._animation.start()
-                # command(instance)
-            import time
 
-            time.sleep(0.5)
+                def loc(cmd, b):
+                    def inner():
+                        print('calling', cmd)
+                        b._animation.start()
+                        cmd(self.context['viewer'])
+
+                    return inner
+
+                print('scheduling in', i * 950, command, i)
+                QtCore.QTimer.singleShot(i * 950, loc(command, b))
 
 
 action_manager = ActionManager()
