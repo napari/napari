@@ -116,7 +116,7 @@ class AppearanceSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = "Appearance"
+        title = trans._("Appearance")
 
     class NapariConfig:
         # Napari specific configuration
@@ -139,7 +139,7 @@ class ApplicationSettings(BaseNapariSettings):
 
     ipy_interactive: bool = Field(
         default=True,
-        title='IPython interactive',
+        title=trans._('IPython interactive'),
         description=(
             r'Use interactive %gui qt event loop when creating '
             'napari Viewers in IPython'
@@ -156,7 +156,7 @@ class ApplicationSettings(BaseNapariSettings):
     save_window_geometry: bool = Field(
         True,
         title=trans._("Save Window Geometry"),
-        description="Save window size and position.",
+        description=trans._("Save window size and position."),
     )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
@@ -173,7 +173,7 @@ class ApplicationSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = "Application"
+        title = trans._("Application")
 
     class NapariConfig:
         # Napari specific configuration
@@ -196,11 +196,15 @@ class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
     schema_version = (0, 1, 0)
-    plugins_call_order: List[str] = []
+    plugins_call_order: List[str] = Field(
+        [],
+        title=trans._("Plugin call order"),
+        description=trans._("Sort plugins call order"),
+    )
 
     class Config:
         # Pydantic specific configuration
-        title = "Plugins"
+        title = trans._("Plugins")
 
     class NapariConfig:
         # Napari specific configuration
