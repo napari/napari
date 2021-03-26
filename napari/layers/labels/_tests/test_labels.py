@@ -258,6 +258,17 @@ def test_properties():
     assert layer_message.endswith('Class 12')
 
 
+def test_default_properties_assignment():
+    """Test that the default properties value can be assigned to properties
+    see https://github.com/napari/napari/issues/2477
+    """
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    layer.properties = layer.properties
+
+
 def test_multiscale_properties():
     """Test adding labels with multiscale properties."""
     np.random.seed(0)
