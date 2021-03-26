@@ -94,7 +94,7 @@ begin with `test_*` and which are contained in one of the `_tests` directories.
 
 Property-based tests allow you to test that "for any X, ..." - with a much nicer
 developer experience than using truly random data.  We use Hypothesis for unit or
-integration tests where there are simple properties like "x == load(save(x))` or
+integration tests where there are simple properties like `x == load(save(x))` or
 when Napari implements a function we can check against the equivalent in a trusted
 library for at least some inputs.
 
