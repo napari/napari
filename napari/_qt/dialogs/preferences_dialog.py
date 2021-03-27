@@ -21,6 +21,7 @@ class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
     resized = Signal(QSize)
+    closed = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -65,6 +66,11 @@ class PreferencesDialog(QDialog):
 
         self.make_dialog()
         self._list.setCurrentRow(0)
+
+    def closeEvent(self, event):
+        """Override to emit signal."""
+        self.closed.emit()
+        super().closeEvent(event)
 
     def resizeEvent(self, event):
         """Override to emit signal."""

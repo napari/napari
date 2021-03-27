@@ -61,6 +61,7 @@ class _QtMainWindow(QMainWindow):
         self.setCentralWidget(center)
 
         self._maximized_flag = False
+        self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
 
@@ -443,13 +444,24 @@ class Window:
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
-        win = PreferencesDialog(parent=self._qt_window)
-        win.resized.connect(self._qt_window._update_preferences_dialog_size)
+        if self._qt_window._preferences_dialog is None:
+            win = PreferencesDialog(parent=self._qt_window)
+            win.resized.connect(
+                self._qt_window._update_preferences_dialog_size
+            )
 
-        if self._qt_window._preferences_dialog_size:
-            win.resize(self._qt_window._preferences_dialog_size)
+            if self._qt_window._preferences_dialog_size:
+                win.resize(self._qt_window._preferences_dialog_size)
 
-        win.show()
+            self._qt_window._preferences_dialog = win
+            win.closed.connect(self._on_preferences_closed)
+            win.show()
+        else:
+            self._qt_window._preferences_dialog.raise_()
+
+    def _on_preferences_closed(self):
+        """Reset preferences dialog variable."""
+        self._qt_window._preferences_dialog = None
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
