@@ -266,7 +266,8 @@ def test_default_properties_assignment():
     data = np.random.randint(20, size=(10, 15))
 
     layer = Labels(data)
-    layer.properties = layer.properties
+    layer.properties = {}
+    assert layer.properties == {}
 
 
 def test_multiscale_properties():
