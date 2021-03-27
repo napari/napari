@@ -98,7 +98,7 @@ class EventTypes:
         try:
             return self.string_name[event]
         except KeyError:
-            return trans._("UnknownEvent:{event}".format(event=event))
+            return trans._("UnknownEvent:{event}").format(event=event)
 
 
 EVENT_TYPES = EventTypes()

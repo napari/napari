@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.labels._labels_constants import (
-    LABEL_BRUSH_SHAPE_TRANSLATIONS,
     LABEL_COLOR_MODE_TRANSLATIONS,
     Mode,
 )
@@ -167,20 +166,16 @@ class QtLabelsControls(QtLayerControls):
             layer,
             'fill',
             Mode.FILL,
-            tooltip=trans._(
-                "Fill mode (F) \nToggle with {key}".format(
-                    key=KEY_SYMBOLS['Control']
-                )
+            tooltip=trans._("Fill mode (F) \nToggle with {key}").format(
+                key=KEY_SYMBOLS['Control']
             ),
         )
         self.erase_button = QtModeRadioButton(
             layer,
             'erase',
             Mode.ERASE,
-            tooltip=trans._(
-                "Erase mode (E) \nToggle with {key}".format(
-                    key=KEY_SYMBOLS['Alt']
-                )
+            tooltip=trans._("Erase mode (E) \nToggle with {key}").format(
+                key=KEY_SYMBOLS['Alt']
             ),
         )
 
@@ -202,19 +197,6 @@ class QtLabelsControls(QtLayerControls):
         button_row.addWidget(self.panzoom_button)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
-
-        brush_shape_comboBox = QComboBox(self)
-        for index, (data, text) in enumerate(
-            LABEL_BRUSH_SHAPE_TRANSLATIONS.items()
-        ):
-            data = data.value
-            brush_shape_comboBox.addItem(text, data)
-            if self.layer.brush_shape == data:
-                brush_shape_comboBox.setCurrentIndex(index)
-
-        brush_shape_comboBox.activated[str].connect(self.change_brush_shape)
-        self.brushShapeComboBox = brush_shape_comboBox
-        self._on_brush_shape_change()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
@@ -244,8 +226,6 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 3)
         self.grid_layout.addWidget(QLabel(trans._('brush size:')), 3, 0, 1, 1)
         self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel(trans._('brush shape:')), 4, 0, 1, 1)
-        self.grid_layout.addWidget(self.brushShapeComboBox, 4, 1, 1, 3)
         self.grid_layout.addWidget(QLabel(trans._('blending:')), 5, 0, 1, 1)
         self.grid_layout.addWidget(self.blendComboBox, 5, 1, 1, 3)
         self.grid_layout.addWidget(QLabel(trans._('color mode:')), 6, 0, 1, 1)
@@ -390,17 +370,6 @@ class QtLabelsControls(QtLayerControls):
         """
         self.layer.color_mode = self.colorModeComboBox.currentData()
 
-    def change_brush_shape(self, brush_shape):
-        """Change paintbrush shape of label layer.
-
-        Parameters
-        ----------
-        brush_shape : str
-            CIRCLE (default) uses circle paintbrush (case insensitive).
-            SQUARE uses square paintbrush (case insensitive).
-        """
-        self.layer.brush_shape = self.brushShapeComboBox.currentData()
-
     def _on_contour_change(self, event=None):
         """Receive layer model contour value change event and update spinbox.
 
@@ -486,23 +455,6 @@ class QtLabelsControls(QtLayerControls):
                     index
                 ):
                     self.colorModeComboBox.setCurrentIndex(index)
-                    break
-
-    def _on_brush_shape_change(self, event=None):
-        """Receive brush shape change event and update dropdown menu.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        with self.layer.events.brush_shape.blocker():
-            # `self.brushShapeComboBox.findData` is not returning the correct index.
-            for index in range(self.brushShapeComboBox.count()):
-                if self.layer.brush_shape == self.brushShapeComboBox.itemData(
-                    index
-                ):
-                    self.brushShapeComboBox.setCurrentIndex(index)
                     break
 
     def _on_editable_change(self, event=None):

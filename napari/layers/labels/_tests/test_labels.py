@@ -53,6 +53,23 @@ def test_3D_labels():
     assert layer.mode == 'pan_zoom'
 
 
+def test_float_labels():
+    """Test instantiating labels layer with floats"""
+    shape = (10, 10)
+    np.random.seed(0)
+    data = np.random.uniform(0, 20, size=shape)
+    with pytest.warns(UserWarning):
+        layer = Labels(data)
+        assert np.issubdtype(layer.data.dtype, np.integer)
+
+    data0 = np.random.uniform(20, size=(20, 20))
+    data1 = data0[::2, ::2].astype(np.int32)
+    data = [data0, data1]
+    with pytest.warns(UserWarning):
+        layer = Labels(data)
+        assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
+
+
 def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
@@ -224,19 +241,19 @@ def test_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value(layer.coordinates)
-    layer_message = layer.get_status(layer.position)
+    current_label = layer.get_value((0, 0))
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -259,19 +276,19 @@ def test_multiscale_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value(layer.coordinates)[1]
-    layer_message = layer.get_status(layer.position)
+    current_label = layer.get_value((0, 0))[1]
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -308,6 +325,20 @@ def test_custom_color_dict():
     # should not initialize as white since we are using random.seed
     layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
+def test_add_colors():
+    """Test adding new colors"""
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    assert len(layer._all_vals) == layer.num_colors
+
+    layer.selected_label = 51
+    assert len(layer._all_vals) == 52
+
+    layer.show_selected_label = True
+    layer.selected_label = 60
+    assert len(layer._all_vals) == 61
 
 
 def test_metadata():
@@ -417,7 +448,10 @@ def test_n_dimensional():
                 dtype=np.int_,
             ),
         ),
-        (5 * np.ones((9, 10)), np.zeros((9, 10))),
+        (
+            5 * np.ones((9, 10), dtype=np.uint32),
+            np.zeros((9, 10), dtype=np.uint32),
+        ),
     ],
 )
 def test_contour(input_data, expected_data_view):
@@ -542,7 +576,7 @@ def test_paint():
 
 def test_paint_with_preserve_labels():
     """Test painting labels with square brush while preserving existing labels."""
-    data = np.zeros((15, 10))
+    data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
     layer.brush_shape = 'square'
@@ -563,7 +597,7 @@ def test_paint_with_preserve_labels():
 )
 def test_paint_2d(brush_shape, expected_sum):
     """Test painting labels with circle/square brush."""
-    data = np.zeros((40, 40))
+    data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = brush_shape
@@ -596,7 +630,7 @@ def test_paint_2d(brush_shape, expected_sum):
 )
 def test_paint_2d_xarray(brush_shape, expected_sum):
     """Test the memory usage of painting an xarray indirectly via timeout."""
-    data = xr.DataArray(np.zeros((3, 3, 1024, 1024)))
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
     layer.brush_size = 12
@@ -613,7 +647,7 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 )
 def test_paint_3d(brush_shape, expected_sum):
     """Test painting labels with circle/square brush on 3D image."""
-    data = np.zeros((30, 40, 40))
+    data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = brush_shape
@@ -656,8 +690,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0, 0))
     assert value == data[0, 0]
 
 
@@ -666,7 +699,7 @@ def test_message():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0, 0))
     assert type(msg) == str
 
 

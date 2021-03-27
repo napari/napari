@@ -544,7 +544,7 @@ def test_active_layer_cursor_size():
     # Base layer has a default cursor size of 1
     assert viewer.cursor.size == 1
 
-    viewer.add_labels(np.random.random((10, 10)))
+    viewer.add_labels(np.random.randint(0, 10, size=(10, 10)))
     assert len(viewer.layers) == 2
     assert viewer.layers.selection.active == viewer.layers[1]
 

@@ -333,8 +333,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_cursor_position_change(self, event):
         """Set the layer cursor position."""
-        for layer in self.layers:
-            layer.position = self.cursor.position
+        with warnings.catch_warnings():
+            # Catch the deprecation warning on layer.position
+            warnings.filterwarnings(
+                'ignore', message='layer.position is deprecated'
+            )
+            for layer in self.layers:
+                layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
         active = self.layers.selection.active

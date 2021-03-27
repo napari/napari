@@ -448,7 +448,7 @@ class QtViewer(QSplitter):
         msg = trans._("selected") if selected else trans._("all")
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
-            caption=trans._('Save {msg} layers'.format(msg=msg)),
+            caption=trans._('Save {msg} layers').format(msg=msg),
             directory=self._last_visited_dir,  # home dir by default
         )
 
@@ -461,10 +461,8 @@ class QtViewer(QSplitter):
             if not saved:
                 raise OSError(
                     trans._(
-                        "File {filename} save failed.\n{error_messages}".format(
-                            filename=filename, error_messages=error_messages
-                        )
-                    )
+                        "File {filename} save failed.\n{error_messages}"
+                    ).format(filename=filename, error_messages=error_messages)
                 )
 
     def screenshot(self, path=None):
@@ -655,78 +653,71 @@ class QtViewer(QSplitter):
         """
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
+    def _process_mouse_event(self, mouse_callbacks, event):
+        """Called whenever mouse pressed in canvas.
+        Parameters
+        ----------
+        mouse_callbacks : function
+            Mouse callbacks function.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
+        """
+        if event.pos is None:
+            return
+
+        # Update the cursor position
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+
+        # Add the cursor position to the event
+        event.position = self.viewer.cursor.position
+
+        # Put a read only wrapper on the event
+        event = ReadOnlyWrapper(event)
+        mouse_callbacks(self.viewer, event)
+
+        layer = self.viewer.layers.selection.active
+        if layer is not None:
+            mouse_callbacks(layer, event)
+
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        event = ReadOnlyWrapper(event)
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_wheel_callbacks(self.viewer, event)
-
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_wheel_callbacks(layer, event)
+        self._process_mouse_event(mouse_wheel_callbacks, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        event = ReadOnlyWrapper(event)
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_press_callbacks(self.viewer, event)
-
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_press_callbacks(layer, event)
+        self._process_mouse_event(mouse_press_callbacks, event)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_move_callbacks(self.viewer, event)
-
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_move_callbacks(layer, event)
+        self._process_mouse_event(mouse_move_callbacks, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_release_callbacks(self.viewer, event)
-
-        layer = self.viewer.layers.selection.active
-        if layer is not None:
-            mouse_release_callbacks(layer, event)
+        self._process_mouse_event(mouse_release_callbacks, event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.

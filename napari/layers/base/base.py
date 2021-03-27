@@ -472,15 +472,30 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def position(self):
         """tuple: Cursor position in world slice coordinates."""
+        warnings.warn(
+            "layer.position is deprecated and will be removed in version 0.4.9."
+            " It should no longer be used as layers should no longer know where the"
+            " cursor position is. You can get the cursor position in world coordinates"
+            " from viewer.cursor.position.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return self._position
 
     @position.setter
     def position(self, position):
+        warnings.warn(
+            "layer.position is deprecated and will be removed in version 0.4.9."
+            " It should no longer be used as layers should no longer know where the"
+            " cursor position is. You can get the cursor position in world coordinates"
+            " from viewer.cursor.position.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         _position = position[-self.ndim :]
         if self._position == _position:
             return
         self._position = _position
-        self._value = self.get_value(self.position, world=True)
 
     @property
     def _dims_displayed(self):
@@ -536,7 +551,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndim = ndim
 
         self.refresh()
-        self._value = self.get_value(self.position, world=True)
 
     @property
     @abstractmethod
@@ -749,27 +763,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 layers.selection.discard(self)
 
     @property
-    def status(self):
-        """str: displayed in status bar bottom left."""
-        warnings.warn(
-            (
-                "The status attribute is deprecated and will be removed in version 0.4.6."
-                " Instead you should use the get_status method with the position where you"
-                " want to get the status from."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        if status == self.status:
-            return
-        self.events.status(status=status)
-        self._status = status
-
-    @property
     def help(self):
         """str: displayed in status bar bottom right."""
         return self._help
@@ -907,8 +900,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         raise NotImplementedError()
 
-    def get_value(self, position=None, *, world=False):
+    def get_value(self, position, *, world=False):
         """Value of the data at a position.
+
+        If the layer is not visible, return None.
 
         Parameters
         ----------
@@ -921,24 +916,18 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Returns
         -------
         value : tuple, None
-            Value of the data.
+            Value of the data. If the layer is not visible return None.
         """
         if self.visible:
-            if position is None:
-                warnings.warn(
-                    (
-                        "The position argument of get_value will no longer be optional in 0.4.6."
-                        " Instead you should provide the position where you want to get the value."
-                    ),
-                    category=FutureWarning,
-                    stacklevel=2,
-                )
-                position = self.coordinates
-            elif world:
-                position = self._world_to_data(position)
-            return self._get_value(position=tuple(position))
+            if world:
+                position = self.world_to_data(position)
+            value = self._get_value(position=tuple(position))
         else:
-            return None
+            value = None
+        # This should be removed as soon as possible, it is still
+        # used in Points and Shapes.
+        self._value = value
+        return value
 
     @contextmanager
     def block_update_properties(self):
@@ -962,16 +951,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
-            self._value = self.get_value(self.position, world=True)
             self._set_highlight(force=True)
 
     @property
     def coordinates(self):
         """Cursor position in data coordinates."""
+        warnings.warn(
+            "layer.coordinates is deprecated and will be removed in version 0.4.9."
+            " It should no longer be used as layers should no longer know where the"
+            " cursor position is. You can get the cursor position in world coordinates"
+            " from viewer.cursor.position. You can then transform that into data"
+            " coordinates using the layer.world_to_data method.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         # Note we ignore the first transform which is tile2data
-        return self._world_to_data(self.position)
+        return self.world_to_data(self._position)
 
-    def _world_to_data(self, position):
+    def world_to_data(self, position):
         """Convert from world coordinates to data coordinates.
 
         Parameters
@@ -1056,10 +1053,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             category=DeprecationWarning,
             stacklevel=2,
         )
-        coordinates = self.coordinates
+        coordinates = self.world_to_data(self._position)
         return [coordinates[i] for i in self._dims_displayed]
 
-    def get_status(self, position=None, *, world=False):
+    def get_status(self, position, *, world=False):
         """Status message of the data at a coordinate position.
 
         Parameters
@@ -1077,25 +1074,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         value = self.get_value(position, world=world)
         return generate_layer_status(self.name, position, value)
-
-    def get_message(self):
-        """Generate a status message based on the coordinates and value
-
-        Returns
-        -------
-        msg : string
-            String containing a message that can be used as a status update.
-        """
-        warnings.warn(
-            (
-                "The get_message method is deprecated and will be removed in version 0.4.6."
-                " Instead you should use the get_status method with the position where you"
-                " want to get the status from."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return generate_layer_status(self.name, self.coordinates, self._value)
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.

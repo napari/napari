@@ -1364,12 +1364,11 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0, 0))
     assert value == 9
 
     layer.data = layer.data + 20
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0, 0))
     assert value is None
 
 
@@ -1380,7 +1379,7 @@ def test_message():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 

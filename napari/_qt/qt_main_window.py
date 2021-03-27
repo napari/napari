@@ -61,6 +61,7 @@ class _QtMainWindow(QMainWindow):
         self.setCentralWidget(center)
 
         self._maximized_flag = False
+        self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
 
@@ -271,7 +272,7 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self.qt_viewer.viewer.theme = SETTINGS.application.theme
+        self.qt_viewer.viewer.theme = SETTINGS.appearance.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -283,7 +284,7 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        SETTINGS.application.events.theme.connect(self._update_theme)
+        SETTINGS.appearance.events.theme.connect(self._update_theme)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -375,6 +376,7 @@ class Window:
         preferences = QAction(trans._('Preferences'), self._qt_window)
         preferences.setShortcut('Ctrl+Shift+P')
         preferences.setStatusTip(trans._('Open preferences dialog'))
+        preferences.setMenuRole(QAction.PreferencesRole)
         preferences.triggered.connect(self._open_preferences)
 
         save_selected_layers = QAction(
@@ -422,7 +424,7 @@ class Window:
             lambda: self._qt_window.close(quit_app=True)
         )
 
-        closeAction = QAction(trans._('Close window'), self._qt_window)
+        closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
@@ -443,13 +445,24 @@ class Window:
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
-        win = PreferencesDialog(parent=self._qt_window)
-        win.resized.connect(self._qt_window._update_preferences_dialog_size)
+        if self._qt_window._preferences_dialog is None:
+            win = PreferencesDialog(parent=self._qt_window)
+            win.resized.connect(
+                self._qt_window._update_preferences_dialog_size
+            )
 
-        if self._qt_window._preferences_dialog_size:
-            win.resize(self._qt_window._preferences_dialog_size)
+            if self._qt_window._preferences_dialog_size:
+                win.resize(self._qt_window._preferences_dialog_size)
 
-        win.show()
+            self._qt_window._preferences_dialog = win
+            win.closed.connect(self._on_preferences_closed)
+            win.show()
+        else:
+            self._qt_window._preferences_dialog.raise_()
+
+    def _on_preferences_closed(self):
+        """Reset preferences dialog variable."""
+        self._qt_window._preferences_dialog = None
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
@@ -573,11 +586,6 @@ class Window:
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
-        close_action = QAction(trans._("Close Window"), self._qt_window)
-        close_action.setShortcut("Ctrl+W")
-        close_action.setStatusTip(trans._('Close napari window'))
-        close_action.triggered.connect(self._qt_window.close)
-
         clear_action = QAction(trans._("Remove Dock Widgets"), self._qt_window)
         clear_action.setStatusTip(trans._('Remove all dock widgets'))
         clear_action.triggered.connect(
@@ -585,7 +593,6 @@ class Window:
         )
 
         self.window_menu = self.main_menu.addMenu(trans._('&Window'))
-        self.window_menu.addAction(close_action)
         self.window_menu.addAction(clear_action)
         self.window_menu.addSeparator()
 
@@ -933,10 +940,8 @@ class Window:
             else:
                 raise LookupError(
                     trans._(
-                        "Could not find a dock widget containing: {widget}".format(
-                            widget=widget
-                        )
-                    )
+                        "Could not find a dock widget containing: {widget}"
+                    ).format(widget=widget)
                 )
         else:
             _dw = widget
@@ -1079,10 +1084,8 @@ class Window:
                 warnings.warn(
                     trans._(
                         "The window geometry settings could not be "
-                        "loaded due to the following error: {err}".format(
-                            err=err
-                        )
-                    ),
+                        "loaded due to the following error: {err}"
+                    ).format(err=err),
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
@@ -1113,7 +1116,7 @@ class Window:
         """Update widget color theme."""
         if event:
             value = event.value
-            SETTINGS.application.theme = value
+            SETTINGS.appearance.theme = value
             self.qt_viewer.viewer.theme = value
         else:
             value = self.qt_viewer.viewer.theme

@@ -21,6 +21,7 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QPushButton,
     QSizePolicy,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -102,7 +103,7 @@ class NapariQtNotification(QDialog):
         self.message.setText(message)
         if source:
             self.source_label.setText(
-                trans._('Source: {source}'.format(source=source))
+                trans._('Source: {source}').format(source=source)
             )
 
         self.close_button.clicked.connect(self.close)
@@ -307,11 +308,38 @@ class NapariQtNotification(QDialog):
     def from_notification(
         cls, notification: Notification
     ) -> NapariQtNotification:
+
+        from ...utils.notifications import ErrorNotification
+
+        actions = notification.actions
+
+        if isinstance(notification, ErrorNotification):
+
+            def show_tb(parent):
+                tbdialog = QDialog(parent=parent.parent())
+                tbdialog.setModal(True)
+                # this is about the minimum width to not get rewrap
+                # and the minimum height to not have scrollbar
+                tbdialog.resize(650, 270)
+                tbdialog.setLayout(QVBoxLayout())
+
+                text = QTextEdit()
+                text.setHtml(notification.as_html())
+                text.setReadOnly(True)
+                tbdialog.layout().addWidget(text)
+                tbdialog.show()
+
+            actions = tuple(notification.actions) + (
+                (trans._('View Traceback'), show_tb),
+            )
+        else:
+            actions = notification.actions
+
         return cls(
             message=notification.message,
             severity=notification.severity,
             source=notification.source,
-            actions=notification.actions,
+            actions=actions,
         )
 
     @classmethod

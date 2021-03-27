@@ -422,6 +422,9 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+        # _moving_coordinates are needed for fixing aspect ratio during
+        # a resize
+        self._moving_coordinates = None
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -1356,10 +1359,8 @@ class Shapes(Layer):
             self.cursor = 'pointing'
             self.interactive = False
             self.help = trans._(
-                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected'.format(
-                    BACKSPACE=BACKSPACE
-                )
-            )
+                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected'
+            ).format(BACKSPACE=BACKSPACE)
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
