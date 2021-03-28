@@ -66,7 +66,6 @@ def napari_provide_sample_data() -> Dict[
     layers).  If the value is a string, it will be opened with
     :meth:`napari.Viewer.open`.
 
-
     Examples
     --------
     Here's a minimal example of a plugin that provides two samples: random data
