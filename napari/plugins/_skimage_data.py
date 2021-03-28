@@ -3,11 +3,10 @@ from napari_plugin_engine import napari_hook_implementation
 # fmt: off
 SKIMAGE_DATA = [
     'astronaut', 'binary_blobs', 'brain', 'brick', 'camera', 'cat', 'cell',
-    'checkerboard', 'clock', 'coffee', 'coins',
-    'colorwheel', 'eagle', 'grass', 'gravel', 'horse', 'hubble_deep_field',
-    'human_mitosis', 'immunohistochemistry', 'kidney', 'lfw_subset', 'lily',
-    'microaneurysms', 'moon', 'page', 'retina', 'rocket',
-    'shepp_logan_phantom', 'skin', 'text'
+    'cells3d', 'checkerboard', 'clock', 'coffee', 'coins', 'colorwheel',
+    'eagle', 'grass', 'gravel', 'horse', 'hubble_deep_field', 'human_mitosis',
+    'immunohistochemistry', 'kidney', 'lfw_subset', 'lily', 'microaneurysms',
+    'moon', 'page', 'retina', 'rocket', 'shepp_logan_phantom', 'skin', 'text'
 ]
 # fmt: on
 
