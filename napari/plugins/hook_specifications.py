@@ -51,7 +51,48 @@ from ..types import AugmentedWidget, LayerData, ReaderFunction, WriterFunction
 def napari_provide_sample_data() -> Dict[
     str, Union[str, Callable[..., Iterable[LayerData]]]
 ]:
-    ...
+    """Provide sample data.
+
+    Plugins may implement this hook to provide sample data for use in napari.
+    Sample data is accessible in the `File > Open Sample` menu, or
+    programmatically, with :meth:`napari.Viewer.load_sample_data`.
+
+    Plugins implementing this hook specification must return a ``dict``, where
+    each key is a `sample_name` (the string that will appear in the
+    `Open Sample` menu), and the value is either a string, or
+    a callable that returns an iterable of ``LayerData`` tuples, where each
+    tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
+    meta, layer_type)`` (thus, an individual sample-loader may provide multiple
+    layers).  If the value is a string, it will be opened with
+    :meth:`napari.Viewer.open`.
+
+
+    Examples
+    --------
+    Here's a minimal example of a plugin that provides two samples: random data
+    from numpy, and a random image pulled from the internet.
+
+    .. code-block:: python
+
+        import numpy as np
+        from napari_plugin_engine import napari_hook_implementation
+
+        def _generate_random_data(shape=(512, 512)):
+            data = np.random.rand(*shape)
+            return [(data, {'name': 'random data'})]
+
+        @napari_hook_implementation
+        def napari_provide_sample_data():
+            return {
+                'random data': _generate_random_data,
+                'random image': 'https://picsum.photos/1024'
+            }
+
+    Returns
+    -------
+    Dict[ str, Union[str, Callable[..., Iterable[LayerData]]] ]
+        A mapping of `sample_name` to `data_loader`
+    """
 
 
 @napari_hook_specification(firstresult=True)
