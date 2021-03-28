@@ -311,8 +311,9 @@ class QtLayerList(QScrollArea):
             # shift-click: select all layers between current and clicked
             clicked = self.layers.index(clicked_layer)
             current = self.layers.index(self.layers.selection.current)
-            selection = self.layers[slice(*sorted([clicked, current]))]
-            self.layers.selection.update(selection)
+            from_, to_ = sorted([clicked, current])
+            _to_select = self.layers[slice(from_, to_ + 1)]  # inclusive range
+            self.layers.selection.update(_to_select)
             self.layers.selection.current = clicked_layer
         elif modifiers == Qt.ControlModifier:
             # If control click toggle selected state of clicked layer
