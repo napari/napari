@@ -47,7 +47,7 @@ dock_widgets: Dict[
 ] = dict()
 function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
 sample_data: Dict[
-    str, Dict[str, Callable[..., Union[str, Iterable[LayerData]]]]
+    str, Dict[str, Union[str, Callable[..., Iterable[LayerData]]]]
 ] = dict()
 
 
@@ -199,7 +199,7 @@ def register_function_widget(
 
 
 def register_sample_data(
-    data: Dict[str, Callable[..., Union[str, Iterable[LayerData]]]],
+    data: Dict[str, Union[str, Callable[..., Iterable[LayerData]]]],
     hookimpl: HookImplementation,
 ):
     from qtpy.QtWidgets import QWidget
@@ -212,6 +212,7 @@ def register_sample_data(
             ': data ignored.'
         )
         return
+    _data = data.copy()
     for name, dfunc in list(data.items()):
         if not callable(dfunc) and not isinstance(dfunc, str):
             warn(
@@ -219,9 +220,9 @@ def register_sample_data(
                 f'object for key {name} in the dict returned by {hook_name}. '
                 'Ignoring.'
             )
-            data.pop(name)
+            _data.pop(name)
 
-    sample_data[plugin_name] = data
+    sample_data[plugin_name] = _data
 
 
 def discover_dock_widgets():

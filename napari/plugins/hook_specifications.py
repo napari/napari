@@ -49,7 +49,7 @@ from ..types import AugmentedWidget, LayerData, ReaderFunction, WriterFunction
 
 @napari_hook_specification(historic=True)
 def napari_provide_sample_data() -> Dict[
-    str, Callable[..., Iterable[LayerData]]
+    str, Union[str, Callable[..., Iterable[LayerData]]]
 ]:
     ...
 
