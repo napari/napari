@@ -341,8 +341,8 @@ class Labels(_image_base_class):
             properties, label_index = dataframe_to_properties(properties)
             if label_index is None:
                 label_index = self._map_index(properties)
+            self._label_index = label_index
         self._properties = self._validate_properties(properties)
-        self._label_index = label_index
         self.events.properties()
 
     @property
