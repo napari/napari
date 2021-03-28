@@ -202,8 +202,6 @@ def register_sample_data(
     data: Dict[str, Union[str, Callable[..., Iterable[LayerData]]]],
     hookimpl: HookImplementation,
 ):
-    from qtpy.QtWidgets import QWidget
-
     plugin_name = hookimpl.plugin_name
     hook_name = '`napari_provide_sample_data`'
     if not isinstance(data, dict):
