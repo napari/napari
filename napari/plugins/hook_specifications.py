@@ -36,15 +36,22 @@ For more general background on the plugin hook calling mechanism, see the
 # imperative!
 
 from types import FunctionType
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import AugmentedWidget, ReaderFunction, WriterFunction
+from ..types import AugmentedWidget, LayerData, ReaderFunction, WriterFunction
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
 # -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_provide_sample_data() -> Dict[
+    str, Callable[..., Iterable[LayerData]]
+]:
+    ...
 
 
 @napari_hook_specification(firstresult=True)

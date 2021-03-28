@@ -428,10 +428,34 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
+        open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+        for plugin_name, samples in plugins.sample_data.items():
+            multiprovider = len(samples) > 1
+            if multiprovider:
+                menu = QMenu(plugin_name, self._qt_window)
+                open_sample_menu.addMenu(menu)
+            else:
+                menu = open_sample_menu
+
+            for samp_name in samples:
+                key = (plugin_name, samp_name)
+                if multiprovider:
+                    action = QAction(samp_name, parent=self._qt_window)
+                else:
+                    full_name = plugins.menu_item_template.format(*key)
+                    action = QAction(full_name, parent=self._qt_window)
+
+                def _add_sample(*args, key=key):
+                    self.add_sample_data(*key)
+
+                menu.addAction(action)
+                action.triggered.connect(_add_sample)
+
         self.file_menu = self.main_menu.addMenu(trans._('&File'))
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addMenu(open_sample_menu)
         self.file_menu.addSeparator()
         self.file_menu.addAction(preferences)
         self.file_menu.addSeparator()
@@ -744,6 +768,14 @@ class Window:
         else:
             axis = self.qt_viewer.viewer.dims.last_used or 0
             self.qt_viewer.dims.play(axis)
+
+    def add_sample_data(self, plugin_name: str, sample_name: str = None):
+        data = plugins.sample_data[plugin_name][sample_name]
+        if callable(data):
+            for datum in data():
+                self.qt_viewer.viewer._add_layer_from_data(*datum)
+        elif isinstance(data, str):
+            self.qt_viewer.viewer.open(data)
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None

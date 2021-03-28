@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -16,7 +17,7 @@ from warnings import warn
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
 
-from ..types import AugmentedWidget
+from ..types import AugmentedWidget, LayerData
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from . import _builtins, hook_specifications
@@ -41,6 +42,7 @@ dock_widgets: Dict[
     str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
 ] = dict()
 function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
+sample_data: Dict[str, Dict[str, Callable[..., Iterable[LayerData]]]] = dict()
 
 
 def register_dock_widget(
@@ -190,6 +192,31 @@ def register_function_widget(
         function_widgets[plugin_name][name] = func
 
 
+def register_sample_data(
+    data: Dict[str, Callable[..., List[LayerData]]],
+    hookimpl: HookImplementation,
+):
+    from qtpy.QtWidgets import QWidget
+
+    plugin_name = hookimpl.plugin_name
+    hook_name = '`napari_provide_sample_data`'
+    if not isinstance(data, dict):
+        warn(
+            f'Plugin {plugin_name!r} provided a non-dict object to {hook_name}'
+            ': data ignored.'
+        )
+        return
+    for name, dfunc in list(data.items()):
+        if not callable(dfunc):
+            warn(
+                f'Plugin {plugin_name!r} provided a non-callable object for '
+                f'key {name} in the dict returned by {hook_name}.  Ignored.'
+            )
+            data.pop(name)
+
+    sample_data[plugin_name] = data
+
+
 def discover_dock_widgets():
     """Trigger discovery of dock_widgets plugins"""
     dw_hook = plugin_manager.hook.napari_experimental_provide_dock_widget
@@ -200,7 +227,21 @@ def discover_dock_widgets():
     )
 
 
+def discover_sample_data():
+    """Trigger discovery of sample data."""
+    sd_hook = plugin_manager.hook.napari_provide_sample_data
+    sd_hook.call_historic(result_callback=register_sample_data, with_impl=True)
+
+
+discover_sample_data()
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
 
-__all__ = ["PluginManager", "plugin_manager", 'menu_item_template']
+__all__ = [
+    "PluginManager",
+    "plugin_manager",
+    'menu_item_template',
+    'dock_widgets',
+    'function_widgets',
+    'sample_data',
+]
