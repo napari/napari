@@ -658,6 +658,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return layer_list
 
+    def load_sample_data(self, plugin_name: str, sample_name: str, **kwargs):
+        from ..plugins import _sample_data
+
+        try:
+            data = _sample_data[plugin_name][sample_name]
+        except KeyError:
+            raise KeyError(
+                f"Plugin {plugin_name!r} does not provide sample data "
+                f"named {sample_name!r}."
+            )
+
+        if callable(data):
+            for datum in data(**kwargs):
+                self._add_layer_from_data(*datum)
+        elif isinstance(data, str):
+            self.open(data)
+
     def open(
         self,
         path: Union[str, Sequence[str]],

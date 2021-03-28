@@ -428,8 +428,10 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
+        from ..plugins import _sample_data
+
         open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
-        for plugin_name, samples in plugins.sample_data.items():
+        for plugin_name, samples in _sample_data.items():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -446,7 +448,7 @@ class Window:
                     action = QAction(full_name, parent=self._qt_window)
 
                 def _add_sample(*args, key=key):
-                    self.add_sample_data(*key)
+                    self.qt_viewer.viewer.load_sample_data(*key)
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
@@ -768,14 +770,6 @@ class Window:
         else:
             axis = self.qt_viewer.viewer.dims.last_used or 0
             self.qt_viewer.dims.play(axis)
-
-    def add_sample_data(self, plugin_name: str, sample_name: str):
-        data = plugins.sample_data[plugin_name][sample_name]
-        if callable(data):
-            for datum in data():
-                self.qt_viewer.viewer._add_layer_from_data(*datum)
-        elif isinstance(data, str):
-            self.qt_viewer.viewer.open(data)
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None

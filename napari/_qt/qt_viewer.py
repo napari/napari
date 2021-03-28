@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os.path
 import warnings
 from pathlib import Path
@@ -39,6 +41,9 @@ from .._vispy import (  # isort:skip
     VispyWelcomeVisual,
     create_vispy_visual,
 )
+
+if TYPE_CHECKING:
+    from ..viewer import Viewer
 
 
 class QtViewer(QSplitter):
@@ -84,7 +89,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer, welcome=False):
+    def __init__(self, viewer: Viewer, welcome=False):
 
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer

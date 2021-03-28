@@ -46,7 +46,7 @@ dock_widgets: Dict[
     str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
 ] = dict()
 function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
-sample_data: Dict[
+_sample_data: Dict[
     str, Dict[str, Union[str, Callable[..., Iterable[LayerData]]]]
 ] = dict()
 
@@ -222,7 +222,7 @@ def register_sample_data(
             )
             _data.pop(name)
 
-    sample_data[plugin_name] = _data
+    _sample_data[plugin_name] = _data
 
 
 def discover_dock_widgets():
@@ -241,6 +241,10 @@ def discover_sample_data():
     sd_hook.call_historic(result_callback=register_sample_data, with_impl=True)
 
 
+def available_sample_data():
+    return tuple((p, s) for p in _sample_data for s in _sample_data[p])
+
+
 discover_sample_data()
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
@@ -251,5 +255,5 @@ __all__ = [
     'menu_item_template',
     'dock_widgets',
     'function_widgets',
-    'sample_data',
+    'available_sample_data',
 ]
