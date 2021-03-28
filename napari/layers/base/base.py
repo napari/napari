@@ -277,13 +277,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             select=WarningEmitter(
                 "'layer.events.select' is deprecated and will be "
                 "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.added' instead",
+                "'viewer.layers.selection.events.changed' instead, and inspect"
+                " the 'added' attribute on the event.",
                 type='select',
             ),
             deselect=WarningEmitter(
                 "'layer.events.deselect' is deprecated and will be "
                 "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.removed' instead",
+                "'viewer.layers.selection.events.changed' instead, and inspect"
+                " the 'removed' attribute on the event.",
                 type='deselect',
             ),
         )
