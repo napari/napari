@@ -34,13 +34,13 @@ toggle_ndisplay.__doc__ = trans._("Toggle ndisplay.")
 def toggle_theme(viewer):
     """Toggle theme for viewer"""
     themes = available_themes()
-    current_theme = SETTINGS.application.theme
+    current_theme = SETTINGS.appearance.theme
     idx = themes.index(current_theme)
     idx += 1
     if idx == len(themes):
         idx = 0
 
-    SETTINGS.application.theme = themes[idx]
+    SETTINGS.appearance.theme = themes[idx]
 
 
 @ViewerModel.bind_key('Left')
