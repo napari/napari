@@ -1,3 +1,4 @@
+import importlib
 import sys
 from inspect import signature
 from types import FunctionType
@@ -16,11 +17,12 @@ from warnings import warn
 
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
+from numpy import isin
 
 from ..types import AugmentedWidget, LayerData
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from . import _builtins, hook_specifications
+from . import _builtins, _skimage_data, hook_specifications
 
 if sys.platform.startswith('linux') and running_as_bundled_app():
     sys.path.append(user_site_packages())
@@ -36,13 +38,17 @@ plugin_manager = PluginManager('napari', discover_entry_point='napari.plugin')
 with plugin_manager.discovery_blocked():
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
+    if importlib.util.find_spec("skimage") is not None:
+        plugin_manager.register(_skimage_data, name='scikit-image')
 
 WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
 dock_widgets: Dict[
     str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
 ] = dict()
 function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
-sample_data: Dict[str, Dict[str, Callable[..., Iterable[LayerData]]]] = dict()
+sample_data: Dict[
+    str, Dict[str, Callable[..., Union[str, Iterable[LayerData]]]]
+] = dict()
 
 
 def register_dock_widget(
@@ -193,7 +199,7 @@ def register_function_widget(
 
 
 def register_sample_data(
-    data: Dict[str, Callable[..., List[LayerData]]],
+    data: Dict[str, Callable[..., Union[str, Iterable[LayerData]]]],
     hookimpl: HookImplementation,
 ):
     from qtpy.QtWidgets import QWidget
@@ -207,10 +213,11 @@ def register_sample_data(
         )
         return
     for name, dfunc in list(data.items()):
-        if not callable(dfunc):
+        if not callable(dfunc) and not isinstance(dfunc, str):
             warn(
-                f'Plugin {plugin_name!r} provided a non-callable object for '
-                f'key {name} in the dict returned by {hook_name}.  Ignored.'
+                f'Plugin {plugin_name!r} provided a non-callable, non-string, '
+                f'object for key {name} in the dict returned by {hook_name}. '
+                'Ignoring.'
             )
             data.pop(name)
 

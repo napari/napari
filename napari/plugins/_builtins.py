@@ -354,14 +354,3 @@ def write_layer_data_with_plugins(
             shutil.rmtree(path, ignore_errors=True)
         raise exc
     return written
-
-
-def _load_cells3d():
-    import skimage.data
-
-    return [(skimage.data.cells3d(), {'channel_axis': 1, 'name': ['a', 'b']})]
-
-
-@napari_hook_implementation
-def napari_provide_sample_data():
-    return {'3D cells': _load_cells3d}

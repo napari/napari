@@ -769,7 +769,7 @@ class Window:
             axis = self.qt_viewer.viewer.dims.last_used or 0
             self.qt_viewer.dims.play(axis)
 
-    def add_sample_data(self, plugin_name: str, sample_name: str = None):
+    def add_sample_data(self, plugin_name: str, sample_name: str):
         data = plugins.sample_data[plugin_name][sample_name]
         if callable(data):
             for datum in data():
