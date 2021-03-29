@@ -472,10 +472,6 @@ class Window:
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip(trans._('Hide Menubar'))
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
-        toggle_theme = QAction(trans._('Toggle Theme'), self._qt_window)
-        toggle_theme.setShortcut('Ctrl+Shift+T')
-        toggle_theme.setStatusTip(trans._('Toggle theme'))
-        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         toggle_fullscreen = QAction(
             trans._('Toggle Full Screen'), self._qt_window
         )
@@ -490,7 +486,6 @@ class Window:
         self.view_menu = self.main_menu.addMenu(trans._('&View'))
         self.view_menu.addAction(toggle_fullscreen)
         self.view_menu.addAction(toggle_visible)
-        self.view_menu.addAction(toggle_theme)
         self.view_menu.addAction(toggle_play)
         self.view_menu.addSeparator()
 
