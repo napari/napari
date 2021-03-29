@@ -1,5 +1,5 @@
 import logging
-from typing import Generic, Tuple, TypeVar, Union
+from typing import Any, Generic, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
@@ -35,6 +35,19 @@ class _BaseItemModel(QAbstractItemModel, Generic[ItemType]):
         self._root.events.moving.connect(self._on_begin_moving)
         self._root.events.moved.connect(self._on_end_move)
         self._root.events.connect(self._process_event)
+
+    def data(self, index: QModelIndex, role: int) -> Any:
+        """Return data stored under ``role`` for the item at ``index``.
+
+        A given class:`QModelIndex` can store multiple types of data, each
+        with its own "ItemDataRole".  ItemType-specific subclasses will likely
+        want to customize this method for different data roles.
+        """
+        if role == Qt.DisplayRole:
+            return str(self.getItem(index))
+        if role == Qt.UserRole:
+            return self.getItem(index)
+        return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         """Returns the item flags for the given index.

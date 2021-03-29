@@ -47,7 +47,11 @@ root = Group(
 # pretty repr makes nested tree structure more interpretable
 print(root)
 root.events.reordered.connect(lambda e: print(e.value))
-root.selection.events.connect(lambda e: print("selection", e.type, e.value))
+root.selection.events.changed.connect(
+    lambda e: print(
+        f"selection changed.  added: {e.added}, removed: {e.removed}"
+    )
+)
 view = QtNodeTreeView(root)
 
 view.show()

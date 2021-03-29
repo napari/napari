@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -11,18 +11,8 @@ ListIndexMIMEType = "application/x-list-index"
 
 
 class QtListModel(_BaseItemModel):
-    def data(self, index: QModelIndex, role: int) -> Any:
-        """Return data stored under ``role`` for the item at ``index``.
-
-        A given class:`QModelIndex` can store multiple types of data, each
-        with its own "ItemDataRole".  ItemType-specific subclasses will likely
-        want to customize this method for different data roles.
-        """
-        if role == Qt.DisplayRole:
-            return str(self.getItem(index))
-        if role == Qt.UserRole:
-            return self.getItem(index)
-        return None
+    def parent(self, index):
+        return QModelIndex()
 
     def mimeTypes(self) -> List[str]:
         """Returns the list of allowed MIME types.
@@ -67,9 +57,6 @@ class QtListModel(_BaseItemModel):
             else:
                 return bool(self._root.move_multiple(moving_indices, destRow))
         return False
-
-    def parent(self, index):
-        return QModelIndex()
 
     def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
         """Return an object containing serialized data from `indices`.

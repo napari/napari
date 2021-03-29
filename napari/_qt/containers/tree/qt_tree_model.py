@@ -4,6 +4,7 @@ from typing import Generic, List, Optional, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
+from ....utils.events import NestableEventedList
 from ....utils.tree import Group, Node
 from .._base_item_model import _BaseItemModel
 
@@ -53,7 +54,7 @@ class QtNodeTreeModel(_BaseItemModel, Generic[NodeType]):
         bool
             Whether we can accept a drop of data at ``row``, ``column``, ``parent``
         """
-        return self.getItem(parent).is_group()
+        return isinstance(self.getItem(parent), NestableEventedList)
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``.
