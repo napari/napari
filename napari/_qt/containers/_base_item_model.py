@@ -55,9 +55,14 @@ class _BaseItemModel(QAbstractItemModel, Generic[ItemType]):
         return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        """Returns the item flags for the given index.
+        """Returns the item flags for the given ``index``.
 
+        This describes the properties of a given item in the model.  We set them to be
+        editable, checkable, dragable, droppable, etc...
+        If index is not a list, we additional set ``Qt.ItemNeverHasChildren``
         Editable models must return a value containing Qt::ItemIsEditable.
+
+        See Qt::ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         """
         if (
             not index.isValid()
@@ -67,14 +72,16 @@ class _BaseItemModel(QAbstractItemModel, Generic[ItemType]):
             # we allow drops outside the items
             return Qt.ItemIsDropEnabled
 
-        return (
+        base_flags = (
             Qt.ItemIsSelectable
             | Qt.ItemIsEditable
             | Qt.ItemIsUserCheckable
             | Qt.ItemIsDragEnabled
             | Qt.ItemIsEnabled
-            | Qt.ItemNeverHasChildren
         )
+        if isinstance(self.getItem(index), EventedList):
+            return base_flags | Qt.ItemIsDropEnabled
+        return base_flags | Qt.ItemNeverHasChildren
 
     def _split_nested_index(
         self, nested_index: Union[int, Tuple[int, ...]]

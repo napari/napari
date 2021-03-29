@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import MutableSequence
 from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QTreeView
@@ -26,28 +27,19 @@ class QtNodeTreeView(QTreeView, _BaseItemView):
         self.setRoot(root)
 
     def setRoot(self, root: Group[Node]):
-        self._root = root
-        model = self.model_class(root, self)
-        self.setModel(model)
+        super().setRoot(root)
 
-        # connect model events
-        model.rowsRemoved.connect(self._redecorate_root)
-        model.rowsInserted.connect(self._redecorate_root)
+        # make tree look like a list if it contains no lists.
+        self.model().rowsRemoved.connect(self._redecorate_root)
+        self.model().rowsInserted.connect(self._redecorate_root)
         self._redecorate_root()
-
-        # connect selection events
-        root.selection.events.changed.connect(self._on_py_selection_change)
-        root.selection.events.current.connect(self._on_py_current_change)
-        self._sync_selection_models()
-
-    def model(self) -> QtNodeTreeModel[Node]:
-        return super().model()
 
     def _redecorate_root(self, parent=None, *_):
         """Add a branch/arrow column only if there are Groups in the root.
 
         This makes the tree fall back to looking like a simple list if there
-        are no groups in the root level.
+        are no lists in the root level.
         """
         if not parent or not parent.isValid():
-            self.setRootIsDecorated(self.model().hasGroups())
+            hasgroup = any(isinstance(i, MutableSequence) for i in self._root)
+            self.setRootIsDecorated(hasgroup)

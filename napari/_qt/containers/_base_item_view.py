@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
+from ._factory import create_model
+
 ItemType = TypeVar("ItemType")
 
 if TYPE_CHECKING:
@@ -17,8 +19,8 @@ if TYPE_CHECKING:
 class _BaseItemView(QAbstractItemView, Generic[ItemType]):
     def setRoot(self, root):
         self._root = root
-        model = self.model_class(root, self)
-        self.setModel(model)
+        self.setModel(create_model(root, self))
+
         # connect selection events
         root.selection.events.changed.connect(self._on_py_selection_change)
         root.selection.events.current.connect(self._on_py_current_change)

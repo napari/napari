@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import Generic, List, Optional, Tuple, TypeVar, Union
+from typing import Generic, List, Optional, Tuple, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -110,26 +110,6 @@ class QtNodeTreeModel(_BaseItemModel, Generic[NodeType]):
             return True
         return False
 
-    def flags(self, index: QModelIndex) -> Union[Qt.ItemFlag, Qt.ItemFlags]:
-        """Returns the item flags for the given ``index``.
-
-        This describes the properties of a given item in the model.  We set them to be
-        editable, checkable, dragable, droppable, etc...
-        If not a Group, we additional set ``Qt.ItemNeverHasChildren``
-
-        See Qt::ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
-        """
-        if not index.isValid():
-            # for root
-            return Qt.ItemIsDropEnabled
-
-        base_flags = super().flags(index)
-        if self.getItem(index).is_group():
-            return (
-                base_flags | Qt.ItemIsDropEnabled
-            ) & ~Qt.ItemNeverHasChildren
-        return base_flags
-
     def mimeData(self, indices: List[QModelIndex]) -> Optional['NodeMimeData']:
         """Return an object containing serialized data corresponding to specified indexes.
 
@@ -197,10 +177,6 @@ class QtNodeTreeModel(_BaseItemModel, Generic[NodeType]):
         else:
             raise TypeError("nested_index must be an int or tuple of int.")
         return self.index(child, 0, parent)
-
-    def hasGroups(self) -> bool:
-        """Return true if the root has any Groups."""
-        return any(node.is_group() for node in self._root)
 
 
 class NodeMimeData(QMimeData):
