@@ -60,7 +60,7 @@ class QtListView(QListView, Generic[ItemType]):
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
-        self._list.selection.current = self.model().getItem(current)
+        self._list.selection.current = current.internalPointer()
         return super().currentChanged(current, previous)
 
     def selectionChanged(
@@ -68,10 +68,8 @@ class QtListView(QListView, Generic[ItemType]):
     ):
         """The Qt Selection has changed. Update the python model."""
         s = self._list.selection
-        s.difference_update(
-            self.model().getItem(i) for i in deselected.indexes()
-        )
-        s.update(self.model().getItem(i) for i in selected.indexes())
+        s.difference_update(i.internalPointer() for i in deselected.indexes())
+        s.update(i.internalPointer() for i in selected.indexes())
         return super().selectionChanged(selected, deselected)
 
     def _on_py_current_change(self, event: Event):
