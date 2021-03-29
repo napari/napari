@@ -307,14 +307,14 @@ class QtLayerList(QScrollArea):
 
         modifiers = event.modifiers()
         clicked_layer = self.layers[self._drag_name]
-        if modifiers == Qt.ShiftModifier and self.layers.selection.current:
+        if modifiers == Qt.ShiftModifier and self.layers.selection._current:
             # shift-click: select all layers between current and clicked
             clicked = self.layers.index(clicked_layer)
-            current = self.layers.index(self.layers.selection.current)
+            current = self.layers.index(self.layers.selection._current)
             from_, to_ = sorted([clicked, current])
             _to_select = self.layers[slice(from_, to_ + 1)]  # inclusive range
             self.layers.selection.update(_to_select)
-            self.layers.selection.current = clicked_layer
+            self.layers.selection._current = clicked_layer
         elif modifiers == Qt.ControlModifier:
             # If control click toggle selected state of clicked layer
             self.layers.selection.toggle(clicked_layer)

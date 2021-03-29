@@ -32,13 +32,14 @@ class Selection(EventedSet[_T]):
     ----------
     data : iterable, optional
         Elements to initialize the set with.
-    current : Any, optional
-        The current item, if any.
 
     Attributes
     ----------
     active : Any, optional
-        The active item, if any.
+        The active item, if any.  An active item is the one being edited.
+    _current : Any, optional
+        The current item, if any.  This is used primarily by GUI views when
+        handling mouse/key events.
 
     Events
     ------
@@ -51,34 +52,33 @@ class Selection(EventedSet[_T]):
         emitted when the current item has changed.
     """
 
-    def __init__(self, data: Iterable[_T] = (), current: Optional[_T] = None):
+    def __init__(self, data: Iterable[_T] = ()):
         self._active: Optional[_T] = None
-        self._current = current
+        self.__current = None
         super().__init__(data=data)
-        self.events.add(current=None, active=None)
+        self.events.add(_current=None, active=None)
         self.events.changed.connect(self._update_active)
         self._update_active()
 
     def __repr__(self) -> str:
-        clsname = type(self).__name__
-        return f"{clsname}({repr(self._set)}, current={self.current})"
+        return f"{type(self).__name__}({repr(self._set)})"
 
     def __hash__(self) -> int:
         """Make selection hashable."""
         return id(self)
 
     @property
-    def current(self) -> Optional[_T]:
+    def _current(self) -> Optional[_T]:
         """Get current item."""
-        return self._current
+        return self.__current
 
-    @current.setter
-    def current(self, index: Optional[_T]):
+    @_current.setter
+    def _current(self, index: Optional[_T]):
         """Set current item."""
-        if index == self._current:
+        if index == self.__current:
             return
-        self._current = index
-        self.events.current(value=index)
+        self.__current = index
+        self.events._current(value=index)
 
     @property
     def active(self) -> Optional[_T]:
@@ -95,7 +95,7 @@ class Selection(EventedSet[_T]):
             return
         self._active = value
         self.clear() if value is None else self.select_only(value)
-        self.current = value
+        self._current = value
         self.events.active(value=value)
 
     def _update_active(self, event=None):
@@ -110,10 +110,10 @@ class Selection(EventedSet[_T]):
                 self._active = None
                 self.events.active(value=None)
 
-    def clear(self, keep_current: bool = False) -> None:
+    def clear(self, keep__current: bool = False) -> None:
         """Clear the selection."""
-        if not keep_current:
-            self.current = None
+        if not keep__current:
+            self._current = None
         super().clear()
 
     def toggle(self, obj: _T):
@@ -136,10 +136,10 @@ class Selection(EventedSet[_T]):
 
         if isinstance(v, dict):
             data = v.get("selection", [])
-            current = v.get("current", None)
+            current = v.get("_current", None)
         elif isinstance(v, Selection):
             data = v._set
-            current = v.current
+            current = v._current
         else:
             data = v
             current = None
@@ -149,7 +149,9 @@ class Selection(EventedSet[_T]):
 
         # no type parameter was provided, just return
         if not field.sub_fields:
-            return cls(data=data, current=current)
+            obj = cls(data=data)
+            obj.__current = current
+            return obj
 
         # Selection[type] parameter was provided.  Validate contents
         type_field = field.sub_fields[0]
@@ -167,12 +169,14 @@ class Selection(EventedSet[_T]):
             from pydantic import ValidationError
 
             raise ValidationError(errors, cls)  # type: ignore
-        return cls(data=data, current=current)
+        obj = cls(data=data)
+        obj.__current = current
+        return obj
 
     def _json_encode(self):
         """Return an object that can be used by json.dumps."""
         # we don't serialize active, as it's gleaned from the selection.
-        return {'selection': super()._json_encode(), 'current': self.current}
+        return {'selection': super()._json_encode(), '_current': self._current}
 
 
 class Selectable(Generic[_S]):

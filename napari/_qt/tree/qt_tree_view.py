@@ -71,7 +71,7 @@ class QtNodeTreeView(QTreeView):
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
-        self._root.selection.current = current.internalPointer()
+        self._root.selection._current = current.internalPointer()
         return super().currentChanged(current, previous)
 
     def selectionChanged(
