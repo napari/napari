@@ -14,6 +14,8 @@ class T:
 
 def test_list_view(qtbot):
     root: SelectableEventedList[T] = SelectableEventedList(map(T, range(5)))
+    root.selection.clear()
+    assert not root.selection
     view = QtListView(root)
     qmodel = view.model()
     qsel = view.selectionModel()
@@ -23,7 +25,6 @@ def test_list_view(qtbot):
     _selection = {root[0], root[2]}
     root.selection.update(_selection)
     assert root[2] in root.selection
-
     # check selection in Qt
     idx = {qmodel.getItem(i) for i in qsel.selectedIndexes()}
     assert idx == _selection

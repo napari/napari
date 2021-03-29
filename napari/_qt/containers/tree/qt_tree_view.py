@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain, repeat
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
@@ -37,7 +38,8 @@ class QtNodeTreeView(QTreeView):
         self._redecorate_root()
 
         # connect selection events
-        root.selection.events.connect(self._on_py_selection_model_event)
+        root.selection.events.changed.connect(self._on_py_selection_change)
+        root.selection.events.current.connect(self._on_py_current_change)
         self._sync_selection_models()
 
     def model(self) -> QtNodeTreeModel[Node]:
@@ -82,19 +84,22 @@ class QtNodeTreeView(QTreeView):
         s.update(i.internalPointer() for i in selected.indexes())
         return super().selectionChanged(selected, deselected)
 
-    def _on_py_selection_model_event(self, event: Event):
+    def _on_py_current_change(self, event: Event):
+        """The python model current item has changed.  Update the Qt view."""
+        sm = self.selectionModel()
+        if not event.value:
+            sm.clearCurrentIndex()
+        else:
+            idx = self.model().findIndex(event.value)
+            sm.setCurrentIndex(idx, sm.Current)
+
+    def _on_py_selection_change(self, event: Event):
         """The python model selection has changed.  Update the Qt view."""
-        sel_model = self.selectionModel()
-        if event.type == 'current':
-            if not event.value:
-                sel_model.clearCurrentIndex()
-            else:
-                idx = self.model().findIndex(event.value)
-                sel_model.setCurrentIndex(idx, sel_model.Current)
-            return
-        t = sel_model.Select if event.type == 'added' else sel_model.Deselect
-        for idx in event.value:
+        sm = self.selectionModel()
+        for is_selected, idx in chain(
+            zip(repeat(sm.Select), event.added),
+            zip(repeat(sm.Deselect), event.removed),
+        ):
             model_idx = self.model().findIndex(idx)
-            if not model_idx.isValid():
-                continue
-            sel_model.select(model_idx, t)
+            if model_idx.isValid():
+                sm.select(model_idx, is_selected)
