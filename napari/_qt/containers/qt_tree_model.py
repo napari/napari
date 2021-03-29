@@ -4,9 +4,9 @@ from typing import Generic, List, Optional, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ....utils.events import NestableEventedList
-from ....utils.tree import Group, Node
-from .._base_item_model import _BaseItemModel
+from ...utils.events import NestableEventedList
+from ...utils.tree import Group, Node
+from ._base_item_model import _BaseItemModel
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)

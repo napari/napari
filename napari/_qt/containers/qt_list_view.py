@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtWidgets import QListView
 
-from .._base_item_view import _BaseItemView
+from ._base_item_view import _BaseItemView
 from .qt_list_model import QtListModel
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
-    from ....utils.events.containers import SelectableEventedList
+    from ...utils.events.containers import SelectableEventedList
 
 ItemType = TypeVar("ItemType")
 
