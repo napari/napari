@@ -5,8 +5,8 @@ from typing import Generic, List, Optional, Tuple, TypeVar, Union
 from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
 
-from ...utils.events import disconnect_events
-from ...utils.tree import Group, Node
+from ....utils.events import disconnect_events
+from ....utils.tree import Group, Node
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)
