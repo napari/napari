@@ -4,12 +4,12 @@ from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
-from qtpy.QtGui import QKeyEvent
 from qtpy.QtWidgets import QAbstractItemView
 
 ItemType = TypeVar("ItemType")
 
 if TYPE_CHECKING:
+    from qtpy.QtGui import QKeyEvent
 
     from ...utils.events import Event
 

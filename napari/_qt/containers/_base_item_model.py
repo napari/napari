@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Generic, Tuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
-from qtpy.QtWidgets import QWidget
 
 from ...utils.events import disconnect_events
 from ...utils.events.containers import EventedList, SelectableEventedList
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
 
 ItemType = TypeVar("ItemType")
 logger = logging.getLogger(__name__)
