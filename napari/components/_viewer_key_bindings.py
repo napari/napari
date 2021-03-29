@@ -1,3 +1,5 @@
+from ..utils.settings import SETTINGS
+from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
 
@@ -26,6 +28,19 @@ def toggle_ndisplay(viewer):
 
 
 toggle_ndisplay.__doc__ = trans._("Toggle ndisplay.")
+
+
+@ViewerModel.bind_key('Control-Shift-T')
+def toggle_theme(viewer):
+    """Toggle theme for viewer"""
+    themes = available_themes()
+    current_theme = SETTINGS.appearance.theme
+    idx = themes.index(current_theme)
+    idx += 1
+    if idx == len(themes):
+        idx = 0
+
+    SETTINGS.appearance.theme = themes[idx]
 
 
 @ViewerModel.bind_key('Left')

@@ -261,12 +261,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
 
-    def _toggle_theme(self):
-        """Switch to next theme in list of themes"""
-        theme_names = available_themes()
-        cur_theme = theme_names.index(self.theme)
-        self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
-
     def _on_active_layer(self, event):
         """Update viewer state for a new active layer."""
         active_layer = event.value
@@ -293,16 +287,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     def __setattr__(self, name: str, value: Any) -> None:
         # this method is only for the deprecation warning, because pydantic
         # prevents using @active_layer.setter
-        if name == 'active_layer':
-            warnings.warn(
-                "'viewer.active_layer' is deprecated and will be removed in napari"
-                " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            self.layers.selection.active = value
-        else:
+        if name != 'active_layer':
             return super().__setattr__(name, value)
+
+        warnings.warn(
+            "'viewer.active_layer' is deprecated and will be removed in napari"
+            " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.layers.selection.active = value
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:

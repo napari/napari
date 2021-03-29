@@ -21,7 +21,7 @@ def guess_rgb(shape):
     ndim = len(shape)
     last_dim = shape[-1]
 
-    return ndim > 2 and last_dim < 5
+    return ndim > 2 and last_dim in (3, 4)
 
 
 def guess_multiscale(data):
