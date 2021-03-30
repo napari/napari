@@ -18,8 +18,8 @@ if TYPE_CHECKING:
     from ._base_item_model import _BaseEventedItemModel
 
 
-class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
-    """A QAbstractItemView desigend to work with `SelectableEventedList`.
+class _BaseEventedItemView(Generic[ItemType]):
+    """A QAbstractItemView mixin desigend to work with `SelectableEventedList`.
 
     :class:`~napari.utils.events.SelectableEventedList` is our pure python
     model of a mutable sequence that supports the concept of "currently
@@ -57,13 +57,17 @@ class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
             return
         return super().keyPressEvent(e)
 
-    def currentChanged(self, current: QModelIndex, previous: QModelIndex):
+    def currentChanged(
+        self: QAbstractItemView, current: QModelIndex, previous: QModelIndex
+    ):
         """The Qt current item has changed. Update the python model."""
         self._root.selection._current = current.internalPointer()
         return super().currentChanged(current, previous)
 
     def selectionChanged(
-        self, selected: QItemSelection, deselected: QItemSelection
+        self: QAbstractItemView,
+        selected: QItemSelection,
+        deselected: QItemSelection,
     ):
         """The Qt Selection has changed. Update the python model."""
         s = self._root.selection

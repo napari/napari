@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 NodeType = TypeVar("NodeType", bound=Node)
 
 
-class QtNodeTreeView(QTreeView, _BaseEventedItemView[NodeType]):
+class QtNodeTreeView(_BaseEventedItemView[NodeType], QTreeView):
     """A QListView for a :class:`~napari.utils.tree.Group`.
 
     Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
