@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins import plugin_manager as napari_plugin_manager
+from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
 from ..widgets.qt_eliding_label import ElidingLabel
@@ -165,8 +166,15 @@ class QtHookImplementationListWidget(QListWidget):
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
         self.order_changed.connect(self.permute_hook)
+        self.order_changed.connect(self._order_change)
         self.hook_caller: Optional[HookCaller] = None
         self.set_hook_caller(hook_caller)
+
+    def _order_change(self):
+        print('changing order!')
+        # set the new order in settings?
+        # SETTINGS.plugins.plugins_call_order = self.value()
+        # print(self.value())
 
     def set_hook_caller(self, hook_caller: Optional[HookCaller]):
         """Set the list widget to show hook implementations for ``hook_caller``.
@@ -307,6 +315,7 @@ class QtPluginSorter(QWidget):
         )
         self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
+        self.hook_list.order_changed.connect(self._change_plugins)
 
         title = QLabel(trans._('Plugin Sorter'))
         title.setObjectName("h3")
@@ -343,6 +352,12 @@ class QtPluginSorter(QWidget):
         if initial_hook is not None:
             self.set_hookname(initial_hook)
 
+    def _change_plugins(self):
+        print('changing order again!')
+        # set the new order in settings?
+        print(self.value())
+        SETTINGS.plugins.plugins_call_order = self.value()
+
     def set_hookname(self, hook: str):
         """Change the hook specification shown in the list widget.
 
@@ -374,3 +389,28 @@ class QtPluginSorter(QWidget):
 
     def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())
+
+    def setValue(self):
+        """"""
+        # set value of the plugin sorter widget to the value saved in settings.
+
+    def value(self):
+        """
+        state = (
+            ("get_writer", "svg", True),
+            ("get_writer", "builtins", True)
+            ("get_reader", "svg", True),
+            ...
+        )
+        """
+        plugin_sort_order = []
+        for name, hook_caller in self.plugin_manager.hooks.items():
+            for hook_implementation in reversed(hook_caller._nonwrappers):
+                plugin_sort_order.append(
+                    (
+                        name,
+                        hook_implementation.plugin_name,
+                        hook_implementation.enabled,
+                    )
+                )
+        return tuple(plugin_sort_order)

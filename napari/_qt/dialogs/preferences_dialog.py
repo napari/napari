@@ -20,6 +20,10 @@ from ...utils.translations import trans
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
+    ui_schema = {
+        "plugins_call_order": {"ui:widget": "plugins"},
+    }
+
     resized = Signal(QSize)
     closed = Signal()
 
@@ -80,8 +84,9 @@ class PreferencesDialog(QDialog):
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
         # Because there are multiple pages, need to keep a list of values sets.
-        self._values_orig_set_list = []
-        self._values_set_list = []
+        self._values_orig_dict = {}
+        self._values_dict = {}
+        self._setting_changed_dict = {}
         for _key, setting in SETTINGS.schemas().items():
             schema = json.loads(setting['json_schema'])
             # Need to remove certain properties that will not be displayed on the GUI
@@ -95,8 +100,9 @@ class PreferencesDialog(QDialog):
                     values.pop(val)
 
             schema['properties'] = properties
-            self._values_orig_set_list.append(set(values.items()))
-            self._values_set_list.append(set(values.items()))
+            self._setting_changed_dict[schema["title"].lower()] = {}
+            self._values_orig_dict[schema["title"].lower()] = values
+            self._values_dict[schema["title"].lower()] = values
 
             # Only add pages if there are any properties to add.
             if properties:
@@ -136,9 +142,10 @@ class PreferencesDialog(QDialog):
             # Must set the current row so that the proper set list is updated
             # in check differences.
             self._list.setCurrentRow(n)
+            page = self._list.currentItem().text().split(" ")[0].lower()
             self.check_differences(
-                self._values_orig_set_list[n],
-                self._values_set_list[n],
+                self._values_orig_dict[page],
+                self._values_dict[page],
             )
         self._list.setCurrentRow(0)
         self.close()
@@ -171,41 +178,51 @@ class PreferencesDialog(QDialog):
         """
 
         builder = WidgetBuilder()
-        form = builder.create_form(schema, {})
+        form = builder.create_form(schema, self.ui_schema)
         # set state values for widget
         form.widget.state = values
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
-                set(d.items()),
-                self._values_set_list[self._list.currentIndex().row()],
+                d,
+                self._values_dict[schema["title"].lower()],
+                # self._values_dict[self._list.currentIndex().row()],
             )
         )
 
         return form
 
-    def check_differences(self, new_set, values_set):
+    def _values_changed(self, page, new_dict, old_dict):
+        """"""
+        for setting_name, value in new_dict.items():
+            if value != old_dict[setting_name]:
+                self._setting_changed_dict[page][setting_name] = value
+            elif (
+                value == old_dict[setting_name]
+                and setting_name in self._setting_changed_dict[page]
+            ):
+                self._setting_changed_dict[page].pop(setting_name)
+
+    def check_differences(self, new_dict, old_dict):
         """Changes settings in settings manager with changes from dialog.
 
         Parameters
         ----------
-        new_set : set
-            The set of new values, with tuples of key value pairs for each
+        new_list : list
+            The list of new values, with tuples of key value pairs for each
             setting.
-        values_set : set
-            The old set of values.
+        values_list : list
+            The old list of values.
         """
-
         page = self._list.currentItem().text().split(" ")[0].lower()
-        different_values = list(new_set - values_set)
+        self._values_changed(page, new_dict, old_dict)
+        different_values = self._setting_changed_dict[page]
 
         if len(different_values) > 0:
             # change the values in SETTINGS
-            for val in different_values:
+            for setting_name, value in different_values.items():
                 try:
-                    setattr(SETTINGS._settings[page], val[0], val[1])
-                    self._values_set_list[
-                        self._list.currentIndex().row()
-                    ] = new_set
+                    setattr(SETTINGS._settings[page], setting_name, value)
+                    self._values_dict[page] = new_dict
                 except:  # noqa: E722
                     continue
 

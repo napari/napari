@@ -23,6 +23,8 @@ from qtpy.QtWidgets import (
 )
 
 from .. import plugins
+
+# from ..plugins import load_plugin_manager_settings
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -64,6 +66,10 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
+
+        plugins.load_plugin_manager_settings(
+            SETTINGS.plugins.plugins_call_order
+        )
 
     def _load_window_settings(self):
         """

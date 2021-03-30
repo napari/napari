@@ -2,7 +2,7 @@
 """
 
 from enum import Enum
-from typing import List, Tuple
+from typing import Tuple
 
 from pydantic import BaseSettings, Field
 
@@ -196,10 +196,13 @@ class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
     schema_version = (0, 1, 0)
-    plugins_call_order: List[str] = Field(
-        [],
-        title=trans._("Plugin call order"),
-        description=trans._("Sort plugins call order"),
+
+    plugins_call_order: dict = Field(
+        None,
+        title=trans._("Plugin sort order"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called."
+        ),
     )
 
     class Config:

@@ -299,6 +299,32 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
 
 discover_sample_data()
+def load_plugin_manager_settings(plugins_call_order):
+    """
+    plugins_call_order : tuple of tuples
+        (
+            (spec_name, plugin_name, enabled),
+            (spec_name, plugin_name, enabled),
+        )
+    """
+    # plugins_call_order = SETTINGS.plugins.plugins_call_order
+    if plugins_call_order is not None:
+        # (("get_write", "svg", True), ("get_writer", "builtins", True))
+        for name, hook_caller in plugin_manager.hooks.items():
+            # order: List of hook implementations
+            order = []
+            for spec_name, plugin_name, enabled in plugins_call_order:
+                for hook_implementation in reversed(hook_caller._nonwrappers):
+                    if (
+                        spec_name == name
+                        and hook_implementation.plugin_name == plugin_name
+                    ):
+                        hook_implementation.enabled = enabled
+                        order.append(hook_implementation)
+                if order:
+                    hook_caller.bring_to_front(order)
+
+
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
 

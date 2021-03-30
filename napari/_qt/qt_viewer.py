@@ -291,6 +291,12 @@ class QtViewer(QSplitter):
             )
             self.viewer.events.theme.connect(self.welcome._on_theme_change)
             self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+            self.viewer.events.plugins_call_order.connect(
+                self._on_plugins_change
+            )
+
+    def _on_plugins_change(self):
+        print('change plugins!')
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
