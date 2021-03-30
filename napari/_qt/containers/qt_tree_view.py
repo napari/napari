@@ -18,6 +18,20 @@ NodeType = TypeVar("NodeType", bound=Node)
 
 
 class QtNodeTreeView(QTreeView, _BaseEventedItemView[NodeType]):
+    """A QListView for a :class:`~napari.utils.tree.Group`.
+
+    Designed to work with :class:`~napari._qt.containers.QtNodeTreeModel`.
+
+    This class is an adapter between :class:`~napari.utils.tree.Group` and Qt's
+    `QAbstractItemView` interface (see `Qt Model/View Programming
+    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    users to interact with a list of lists in the "usual" python ways, updating
+    any Qt Views that may be connected, and also updates the python list object
+    if any GUI events occur in the view.
+
+    See docstring of :class:`_BaseEventedItemView` for additional background.
+    """
+
     _root: Group[Node]
 
     def __init__(self, root: Group[Node], parent: QWidget = None):

@@ -12,6 +12,14 @@ ItemType = TypeVar("ItemType")
 
 
 class QtListModel(_BaseEventedItemModel[ItemType]):
+    """A QItemModel for a :class:`~napari.utils.events.SelectableEventedList`.
+
+    Designed to work with :class:`~napari._qt.containers.QtListView`.
+
+    See docstring of :class:`_BaseEventedItemModel` and
+    :class:`~napari._qt.containers.QtListView` for additional background.
+    """
+
     def mimeTypes(self) -> List[str]:
         """Returns the list of allowed MIME types.
 
@@ -20,6 +28,17 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
         reimplement this function to return your list of MIME types.
         """
         return [ListIndexMIMEType, "text/plain"]
+
+    def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
+        """Return an object containing serialized data from `indices`.
+
+        If the list of indexes is empty, or there are no supported MIME types,
+        None is returned rather than a serialized empty list.
+        """
+        if not indices:
+            return None
+        items, indices = zip(*[(self.getItem(i), i.row()) for i in indices])
+        return ItemMimeData(items, indices)
 
     def dropMimeData(
         self,
@@ -37,7 +56,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 
         Returns
         -------
-        bool ``True`` if the ``data`` and ``action`` were handled by the model;
+        bool ``True`` if the `data` and `action` were handled by the model;
             otherwise returns ``False``.
         """
         if not data or action != Qt.MoveAction:
@@ -56,20 +75,9 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
                 return bool(self._root.move_multiple(moving_indices, destRow))
         return False
 
-    def mimeData(self, indices: List[QModelIndex]) -> Optional['QMimeData']:
-        """Return an object containing serialized data from `indices`.
-
-        If the list of indexes is empty, or there are no supported MIME types,
-        None is returned rather than a serialized empty list.
-        """
-        if not indices:
-            return None
-        items, indices = zip(*[(self.getItem(i), i.row()) for i in indices])
-        return ItemMimeData(items, indices)
-
 
 class ItemMimeData(QMimeData):
-    """Custom MimeData to hold list indices."""
+    """An object to store list indices data during a drag operation."""
 
     def __init__(self, items, indices):
         super().__init__()
