@@ -14,52 +14,47 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QKeyEvent
 
     from ...utils.events import Event
+    from ...utils.events.containers import SelectableEventedList
+    from ._base_item_model import _BaseEventedItemModel
 
 
 class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
-    def setRoot(self, root):
-        self._root = root
-        self.setModel(create_model(root, self))
+    """A QAbstractItemView desigend to work with `SelectableEventedList`.
 
-        # connect selection events
-        root.selection.events.changed.connect(self._on_py_selection_change)
-        root.selection.events._current.connect(self._on_py_current_change)
-        self._sync_selection_models()
+    :class:`~napari.utils.events.SelectableEventedList` is our pure python
+    model of a mutable sequence that supports the concept of "currently
+    selected/active items".  It emits events when the list is altered (e.g.,
+    by appending, inserting, removing items), or when the selection model is
+    altered.
 
-    def _on_py_current_change(self, event: Event):
-        """The python model current item has changed.  Update the Qt view."""
-        sm = self.selectionModel()
-        if not event.value:
-            sm.clearCurrentIndex()
-        else:
-            idx = self.model().findIndex(event.value)
-            sm.setCurrentIndex(idx, sm.Current)
+    This class is an adapter between that interface and Qt's
+    `QAbstractItemView` interface (see `Qt Model/View Programming
+    <https://doc.qt.io/qt-5/model-view-programming.html>`_). It allows python
+    users to interact with the list in the "usual" python ways, while updating
+    any Qt Views that may be connected, and also updates the python list object
+    if any GUI events occur in the view.
 
-    def _on_py_selection_change(self, event: Event):
-        """The python model selection has changed.  Update the Qt view."""
-        sm = self.selectionModel()
-        for is_selected, idx in chain(
-            zip(repeat(sm.Select), event.added),
-            zip(repeat(sm.Deselect), event.removed),
-        ):
-            model_idx = self.model().findIndex(idx)
-            if model_idx.isValid():
-                sm.select(model_idx, is_selected)
+    For a "plain" (flat) list, use the
+    :class:`napari._qt.containers.QtListView` subclass.
+    For a nested list-of-lists using the Group/Node classes, use the
+    :class:`napari._qt.containers.QtNodeTreeView` subclass.
 
-    def _sync_selection_models(self):
-        """Clear and re-sync the Qt selection view from the python selection."""
-        sel_model = self.selectionModel()
-        selection = QItemSelection()
-        for i in self._root.selection:
-            idx = self.model().findIndex(i)
-            selection.select(idx, idx)
-        sel_model.select(selection, sel_model.ClearAndSelect)
+    For convenience, the :func:`napari._qt.containers.create_view` factory
+    function will return the appropriate `_BaseEventedItemView` instance given
+    a python `EventedList` object.
+    """
+
+    # ########## Reimplemented Public Qt Functions ##################
+
+    def model(self) -> _BaseEventedItemModel:  # for type hints
+        return super().model()
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
-        """delete items with delete key."""
+        """Delete items with delete key."""
         if e.key() in (Qt.Key_Backspace, Qt.Key_Delete):
             for i in self.selectionModel().selectedIndexes():
                 self._root.remove(i.internalPointer())
+            return
         return super().keyPressEvent(e)
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
@@ -75,3 +70,44 @@ class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
         s.difference_update(i.internalPointer() for i in deselected.indexes())
         s.update(i.internalPointer() for i in selected.indexes())
         return super().selectionChanged(selected, deselected)
+
+    # ###### Non-Qt methods added for SelectableEventedList Model ############
+
+    def setRoot(self, root: SelectableEventedList[ItemType]):
+        """Call during __init__, to set the python model."""
+        self._root = root
+        self.setModel(create_model(root, self))
+
+        # connect selection events
+        root.selection.events.changed.connect(self._on_py_selection_change)
+        root.selection.events._current.connect(self._on_py_current_change)
+        self._sync_selection_models()
+
+    def _on_py_current_change(self, event: Event):
+        """The python model current item has changed. Update the Qt view."""
+        sm = self.selectionModel()
+        if not event.value:
+            sm.clearCurrentIndex()
+        else:
+            idx = self.model().indexOf(event.value)
+            sm.setCurrentIndex(idx, sm.Current)
+
+    def _on_py_selection_change(self, event: Event):
+        """The python model selection has changed. Update the Qt view."""
+        sm = self.selectionModel()
+        for is_selected, idx in chain(
+            zip(repeat(sm.Select), event.added),
+            zip(repeat(sm.Deselect), event.removed),
+        ):
+            model_idx = self.model().indexOf(idx)
+            if model_idx.isValid():
+                sm.select(model_idx, is_selected)
+
+    def _sync_selection_models(self):
+        """Clear and re-sync the Qt selection view from the python selection."""
+        sel_model = self.selectionModel()
+        selection = QItemSelection()
+        for i in self._root.selection:
+            idx = self.model().indexOf(i)
+            selection.select(idx, idx)
+        sel_model.select(selection, sel_model.ClearAndSelect)

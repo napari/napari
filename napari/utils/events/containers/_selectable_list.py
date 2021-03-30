@@ -8,7 +8,38 @@ _T = TypeVar("_T")
 
 
 class SelectableEventedList(Selectable[_T], EventedList[_T]):
-    """List model that also supports selection."""
+    """List model that also supports selection.
+
+    Events
+    ------
+    inserting (index: int)
+        emitted before an item is inserted at ``index``
+    inserted (index: int, value: T)
+        emitted after ``value`` is inserted at ``index``
+    removing (index: int)
+        emitted before an item is removed at ``index``
+    removed (index: int, value: T)
+        emitted after ``value`` is removed at ``index``
+    moving (index: int, new_index: int)
+        emitted before an item is moved from ``index`` to ``new_index``
+    moved (index: int, new_index: int, value: T)
+        emitted after ``value`` is moved from ``index`` to ``new_index``
+    changed (index: int, old_value: T, value: T)
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    reordered (value: self)
+        emitted when the list is reordered (eg. moved/reversed).
+
+    selection.changed (added: Set[_T], removed: Set[_T])
+        Emitted when the set changes, includes item(s) that have been added
+        and/or removed from the set.
+    selection.active (value: _T)
+        emitted when the current item has changed.
+    selection._current (value: _T)
+        emitted when the current item has changed. (Private event)
+
+    """
 
     def __init__(self, *args, **kwargs) -> None:
         self._activate_on_insert = True

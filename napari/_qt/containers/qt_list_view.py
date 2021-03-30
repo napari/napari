@@ -16,7 +16,6 @@ ItemType = TypeVar("ItemType")
 
 
 class QtListView(QListView, _BaseEventedItemView[ItemType]):
-    model_class = QtListModel
     _root: SelectableEventedList[ItemType]
 
     def __init__(

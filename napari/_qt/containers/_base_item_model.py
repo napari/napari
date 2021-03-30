@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
+from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 
 from ...utils.events import disconnect_events
-from ...utils.events.containers import EventedList, SelectableEventedList
+from ...utils.events.containers import SelectableEventedList
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
@@ -17,36 +18,73 @@ logger = logging.getLogger(__name__)
 
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
+    """A QAbstractItemModel desigend to work with `SelectableEventedList`.
+
+    :class:`~napari.utils.events.SelectableEventedList` is our pure python
+    model of a mutable sequence that supports the concept of "currently
+    selected/active items".  It emits events when the list is altered (e.g.,
+    by appending, inserting, removing items), or when the selection model is
+    altered.
+
+    This class is an adapter between that interface and Qt's
+    `QAbstractItemModel` interface.  It allows python users to interact with
+    the list in the "usual" python ways, updating any Qt Views that may
+    be connected, and also updates the python list object if any GUI events
+    occur in the view.
+
+    For a "plain" (flat) list, use the
+    :class:`napari._qt.containers.QtListModel` subclass.
+    For a nested list-of-lists using the Group/Node classes, use the
+    :class:`napari._qt.containers.QtNodeTreeModel` subclass.
+
+    For convenience, the :func:`napari._qt.containers.create_model` factory
+    function will return the appropriate `_BaseEventedItemModel` instance given
+    a python `EventedList` object.
+
+    .. note::
+
+        In most cases, if you want a "GUI widget" to go along with an
+        ``EventedList`` object, it will not be necessary to instantiate the
+        ``EventedItemModel`` directly.  Instead, use one of the
+        :class:`napari._qt.containers.QtListView` or
+        :class:`napari._qt.containers.QtNodeTreeView` views, or the
+        :func:`napari._qt.containers.create_view` factory function.
+
+    Key concepts and references:
+        - Qt `Model/View Programming
+          <https://doc.qt.io/qt-5/model-view-programming.html>`_
+        - Qt `Model Subclassing Reference
+          <https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference>`_
+        - `Model Index <https://doc.qt.io/qt-5/model-view-programming.html#model-indexes>`_
+        - `Simple Tree Model Example
+          <https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html>`_
+    """
+
+    _root: SelectableEventedList[ItemType]
+
+    # ########## Reimplemented Public Qt Functions ##################
+
     def __init__(
         self, root: SelectableEventedList[ItemType], parent: QWidget = None
     ):
         super().__init__(parent=parent)
         self.setRoot(root)
 
-    def setRoot(self, root: SelectableEventedList[ItemType]):
-        if not isinstance(root, EventedList):
-            raise TypeError(f"root node must be an instance of {EventedList}")
-        current_root = getattr(self, "_root", None)
-        if root is current_root:
-            return
-        elif current_root is not None:
-            disconnect_events(self._root.events, self)
+    def parent(self, index):
+        """Return the parent of the model item with the given ``index``.
 
-        self._root = root
-        self._root.events.removing.connect(self._on_begin_removing)
-        self._root.events.removed.connect(self._on_end_remove)
-        self._root.events.inserting.connect(self._on_begin_inserting)
-        self._root.events.inserted.connect(self._on_end_insert)
-        self._root.events.moving.connect(self._on_begin_moving)
-        self._root.events.moved.connect(self._on_end_move)
-        self._root.events.connect(self._process_event)
+        (The parent in a basic list is always the root, Tree models will need
+        to reimplement)
+        """
+        return QModelIndex()
 
     def data(self, index: QModelIndex, role: int) -> Any:
-        """Return data stored under ``role`` for the item at ``index``.
+        """Returns data stored under `role` for the item at `index`.
 
-        A given class:`QModelIndex` can store multiple types of data, each
+        A given `QModelIndex` can store multiple types of data, each
         with its own "ItemDataRole".  ItemType-specific subclasses will likely
-        want to customize this method for different data roles.
+        want to customize this method (and likely `setData` as well) for
+        different data roles.
         """
         if role == Qt.DisplayRole:
             return str(self.getItem(index))
@@ -54,15 +92,39 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             return self.getItem(index)
         return None
 
+    def canDropMimeData(
+        self,
+        data: QMimeData,
+        action: Qt.DropAction,
+        row: int,
+        column: int,
+        parent: QModelIndex,
+    ) -> bool:
+        """Returns True if the model can accept a drop of `data` at `row`.
+
+        The default implementation only checks if data has at least one format
+        in the list of mimeTypes() and if `action` is among the model's
+        supportedDropActions().
+
+        Here, we reimplement to check that `parent` is a MutableSequence.
+
+        Returns
+        -------
+        bool
+            Whether we can accept a drop of data at `row`, `column`, `parent`
+        """
+        return isinstance(self.getItem(parent), MutableSequence)
+
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        """Returns the item flags for the given ``index``.
+        """Returns the item flags for the given `index`.
 
-        This describes the properties of a given item in the model.  We set them to be
-        editable, checkable, dragable, droppable, etc...
-        If index is not a list, we additional set ``Qt.ItemNeverHasChildren``
-        Editable models must return a value containing Qt::ItemIsEditable.
+        This describes the properties of a given item in the model.  We set
+        them to be editable, checkable, dragable, droppable, etc...
+        If index is not a list, we additionally set `Qt.ItemNeverHasChildren`
+        (for optimization). Editable models must return a value containing
+        `Qt.ItemIsEditable`.
 
-        See Qt::ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
+        See Qt.ItemFlags https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         """
         if (
             not index.isValid()
@@ -79,42 +141,117 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
             | Qt.ItemIsDragEnabled
             | Qt.ItemIsEnabled
         )
-        if isinstance(self.getItem(index), EventedList):
+        if isinstance(self.getItem(index), MutableSequence):
             return base_flags | Qt.ItemIsDropEnabled
         return base_flags | Qt.ItemNeverHasChildren
+
+    def columnCount(self, parent: QModelIndex) -> int:
+        """Return the number of columns for the children of the given `parent`.
+
+        In a list view, and most tree views, the number of columns is always 1.
+        """
+        return 1
+
+    def rowCount(self, parent: QModelIndex) -> int:
+        """Returns the number of rows under the given parent.
+
+        When the parent is valid it means that rowCount is returning the number
+        of children of parent.
+        """
+        try:
+            return len(self.getItem(parent))
+        except TypeError:
+            return 0
+
+    def index(
+        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
+    ) -> QModelIndex:
+        """Return a QModelIndex for item at `row`, `column` and `parent`."""
+        return (
+            self.createIndex(row, column, self.getItem(parent)[row])
+            if self.hasIndex(row, column, parent)
+            else QModelIndex()  # instead of index error, Qt wants null index
+        )
+
+    def supportedDropActions(self) -> Qt.DropActions:
+        """Returns the drop actions supported by this model.
+
+        The default implementation returns `Qt.CopyAction`. We re-implement to
+        support only `Qt.MoveAction`. See also dropMimeData(), which must
+        handle each supported drop action type.
+        """
+        return Qt.MoveAction
+
+    # ###### Non-Qt methods added for SelectableEventedList Model ############
+
+    def setRoot(self, root: SelectableEventedList[ItemType]):
+        """Call during __init__, to set the python model and connections"""
+        if not isinstance(root, SelectableEventedList):
+            raise TypeError(
+                f"root must be an instance of {SelectableEventedList}"
+            )
+        current_root = getattr(self, "_root", None)
+        if root is current_root:
+            return
+
+        if current_root is not None:
+            # we're changing roots... disconnect previous root
+            disconnect_events(self._root.events, self)
+
+        self._root = root
+        self._root.events.removing.connect(self._on_begin_removing)
+        self._root.events.removed.connect(self._on_end_remove)
+        self._root.events.inserting.connect(self._on_begin_inserting)
+        self._root.events.inserted.connect(self._on_end_insert)
+        self._root.events.moving.connect(self._on_begin_moving)
+        self._root.events.moved.connect(self._on_end_move)
+        self._root.events.connect(self._process_event)
 
     def _split_nested_index(
         self, nested_index: Union[int, Tuple[int, ...]]
     ) -> Tuple[QModelIndex, int]:
-        """Given a nested index, return (nested_parent_index, row)."""
+        """Return (parent_index, row) for a given index."""
         if isinstance(nested_index, int):
             return QModelIndex(), nested_index
+        # Tuple indexes are used in NestableEventedList, so we support them
+        # here so that subclasses needn't reimplmenet our _on_begin_* methods
         par = QModelIndex()
         *_p, idx = nested_index
         for i in _p:
             par = self.index(i, 0, par)
         return par, idx
 
-    def _on_begin_removing(self, event):
-        """Begins a row removal operation.
-
-        See Qt documentation: https://doc.qt.io/qt-5/qabstractitemmodel.html#beginRemoveRows
-        """
-        par, idx = self._split_nested_index(event.index)
-        self.beginRemoveRows(par, idx, idx)
-
     def _on_begin_inserting(self, event):
         """Begins a row insertion operation.
 
-        See Qt documentation: https://doc.qt.io/qt-5/qabstractitemmodel.html#beginInsertRows
+        See Qt documentation:
+        https://doc.qt.io/qt-5/qabstractitemmodel.html#beginInsertRows
         """
         par, idx = self._split_nested_index(event.index)
         self.beginInsertRows(par, idx, idx)
 
+    def _on_end_insert(self, e):
+        """Must be called after insert operation to update model."""
+        self.endInsertRows()
+
+    def _on_begin_removing(self, event):
+        """Begins a row removal operation.
+
+        See Qt documentation:
+        https://doc.qt.io/qt-5/qabstractitemmodel.html#beginRemoveRows
+        """
+        par, idx = self._split_nested_index(event.index)
+        self.beginRemoveRows(par, idx, idx)
+
+    def _on_end_remove(self, e):
+        """Must be called after remove operation to update model."""
+        self.endRemoveRows()
+
     def _on_begin_moving(self, event):
         """Begins a row move operation.
 
-        See Qt documentation: https://doc.qt.io/qt-5/qabstractitemmodel.html#beginMoveRows
+        See Qt documentation:
+        https://doc.qt.io/qt-5/qabstractitemmodel.html#beginMoveRows
         """
         src_par, src_idx = self._split_nested_index(event.index)
         dest_par, dest_idx = self._split_nested_index(event.new_index)
@@ -126,53 +263,20 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
-    def _on_end_insert(self, e):
-        self.endInsertRows()
-
-    def _on_end_remove(self, e):
-        self.endRemoveRows()
-
     def _on_end_move(self, e):
+        """Must be called after move operation to update model."""
         self.endMoveRows()
 
-    def columnCount(self, parent: QModelIndex) -> int:
-        """Returns the number of columns for the children of the given ``parent``.
-
-        In a tree and a list view, the number of columns is always 1.
-        """
-        return 1
-
-    def findIndex(self, obj: ItemType) -> QModelIndex:
-        """Find the QModelIndex for a given object in the model."""
-        hits = self.match(
-            self.index(0, 0),
-            Qt.UserRole,
-            obj,
-            1,
-            Qt.MatchExactly | Qt.MatchRecursive,
-        )
-        if hits:
-            return hits[0]
-        return QModelIndex()
-
-    def _process_event(self, event):
-        # for subclasses to handle ItemType-specific data
-        pass
-
-    def index(
-        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
-    ) -> QModelIndex:
-        """Return index of the item specified by ``row``, ``column`` and ``parent`` index."""
-        return (
-            self.createIndex(row, column, self.getItem(parent)[row])
-            if self.hasIndex(row, column, parent)
-            else QModelIndex()
-        )
+    def indexOf(self, obj: ItemType) -> QModelIndex:
+        """Find the `QModelIndex` for a given object in the model."""
+        fl = Qt.MatchExactly | Qt.MatchRecursive
+        hits = self.match(self.index(0, 0), Qt.UserRole, obj, hits=1, flags=fl)
+        return hits[0] if hits else QModelIndex()
 
     def getItem(self, index: QModelIndex) -> ItemType:
-        """Return ``Node`` object for a given `QModelIndex`.
+        """Return python object for a given `QModelIndex`.
 
-        A null or invalid ``QModelIndex`` will return the root Node.
+        An invalid `QModelIndex` will return the root object.
         """
         if index.isValid():
             item = index.internalPointer()
@@ -180,21 +284,6 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
                 return item
         return self._root
 
-    def rowCount(self, parent: QModelIndex) -> int:
-        """Returns the number of rows under the given parent.
-
-        When the parent is valid it means that rowCount is returning the number of
-        children of parent.
-        """
-        try:
-            return len(self.getItem(parent))
-        except TypeError:
-            return 0
-
-    def supportedDropActions(self) -> Qt.DropActions:
-        """Returns the drop actions supported by this model.
-
-        The default implementation returns Qt::CopyAction. We re-implement to support only
-        MoveAction. See also dropMimeData(), which must handles each operation.
-        """
-        return Qt.MoveAction
+    def _process_event(self, event):
+        # for subclasses to handle ItemType-specific data
+        pass

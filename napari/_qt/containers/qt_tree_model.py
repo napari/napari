@@ -1,10 +1,9 @@
 import logging
 import pickle
-from typing import Generic, List, Optional, Tuple, TypeVar
+from typing import List, Optional, Tuple, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ...utils.events import NestableEventedList
 from ...utils.tree import Group, Node
 from ._base_item_model import _BaseEventedItemModel
 
@@ -13,7 +12,7 @@ NodeType = TypeVar("NodeType", bound=Node)
 NodeMIMEType = "application/x-tree-node"
 
 
-class QtNodeTreeModel(_BaseEventedItemModel, Generic[NodeType]):
+class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
     """A concrete QItemModel for a tree of ``Node`` and ``Group`` objects.
 
     Key concepts and references:
@@ -26,35 +25,14 @@ class QtNodeTreeModel(_BaseEventedItemModel, Generic[NodeType]):
           <https://doc.qt.io/qt-5/qtwidgets-itemviews-simpletreemodel-example.html>`_
     """
 
+    _root: Group[NodeType]
+
     # ########## Reimplemented Public Qt Functions ##################
+
     def setRoot(self, root: Group[NodeType]):
         if not isinstance(root, Group):
             raise TypeError(f"root node must be an instance of {Group}")
         super().setRoot(root)
-
-    def canDropMimeData(
-        self,
-        data: QMimeData,
-        action: Qt.DropAction,
-        row: int,
-        column: int,
-        parent: QModelIndex,
-    ) -> bool:
-        """Returns true if a model can accept a drop of the data.
-
-        The default implementation only checks if data has at least one format in the list
-        of mimeTypes() and if action is among the model's supportedDropActions().
-
-        Reimplementing this function lets us test whether the data can be dropped at
-        ``row``, ``column``, ``parent`` with ``action``.  Here, we just check that
-        ``parent`` is a :class:`Group`.
-
-        Returns
-        -------
-        bool
-            Whether we can accept a drop of data at ``row``, ``column``, ``parent``
-        """
-        return isinstance(self.getItem(parent), NestableEventedList)
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``.
@@ -145,7 +123,7 @@ class QtNodeTreeModel(_BaseEventedItemModel, Generic[NodeType]):
         return [NodeMIMEType, "text/plain"]
 
     def parent(self, index: QModelIndex) -> QModelIndex:
-        """Returns the parent of the model item with the given ``index``.
+        """Return the parent of the model item with the given ``index``.
 
         If the item has no parent, an invalid QModelIndex is returned.
         """

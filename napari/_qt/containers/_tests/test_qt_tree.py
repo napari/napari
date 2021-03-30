@@ -111,8 +111,8 @@ def test_find_nodes():
     _assert_models_synced(root, qt_tree)
     node = Node(name='212')
     root[2, 1].append(node)
-    assert qt_tree.findIndex(node).row() == 2
-    assert not qt_tree.findIndex(Node(name='new node')).isValid()
+    assert qt_tree.indexOf(node).row() == 2
+    assert not qt_tree.indexOf(Node(name='new node')).isValid()
 
 
 def test_node_tree_view(qtbot):

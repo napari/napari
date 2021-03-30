@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import List, Optional
+from typing import List, Optional, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -8,12 +8,10 @@ from ._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = "application/x-list-index"
+ItemType = TypeVar("ItemType")
 
 
-class QtListModel(_BaseEventedItemModel):
-    def parent(self, index):
-        return QModelIndex()
-
+class QtListModel(_BaseEventedItemModel[ItemType]):
     def mimeTypes(self) -> List[str]:
         """Returns the list of allowed MIME types.
 
