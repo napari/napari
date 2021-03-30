@@ -1,41 +1,27 @@
-"""Example of using low-level QtNodeTreeView with Node and Group
+"""Example of using low-level `QtListView` with SelectableEventedList
 
-:class:`napari.utils.tree.Node` is a class that may be used as a mixin that
-allows an object to be a member of a "tree".
+:class:`napari.utils.events.SelectableEventedList` is a mutable sequence that
+emits events when modified.  It also has a selection model (tracking which
+items are selected).
 
-:class:`napari.utils.tree.Group` is a (nestable) mutable sequence of Nodes, and
-is also itself a Node (this is the "composite" patter):
-https://refactoring.guru/design-patterns/composite/python/example
-
-These two classes may be used to create tree-like data structures that behave
-like pure python lists of lists.
-
-This examples shows that :class:`napari._qt.containers.QtNodeTreeView`
-is capable of providing a basic GUI for any tree structure based on
-`napari.utils.tree.Group`.
+:class:`napari._qt.containers.QtListView` adapts the `EventedList` to the
+QAbstractItemModel/QAbstractItemView interface used by the QtFramework.  This
+allows you to create an interactive GUI view onto a python model that stays
+up to date, and can modify the python object... while maintining the python
+object as the single "source of truth".
 """
 import napari
 from napari.qt import get_app
 from napari._qt.containers import QtListView
-from napari.utils.events.containers import SelectableEventedList
+from napari.utils.events import SelectableEventedList
 
-import logging
-
-# create some readable logging.  Drag and drop the items in the tree to
-# see what sort of events are happening in the background.
-end = "\033[0m"
-Bold = "\033[1m"
-Dim = "\033[2m"
-ResetDim = "\033[22m"
-red = "\033[0;31m"
-green = "\033[0;32m"
-colorlog_format = f'{green}%(levelname)6s:{end} {Dim}%(name)43s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
-logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
 
 get_app()
 
 
-class T:
+class MyObject:
+    """generic object."""
+
     def __init__(self, name):
         self.name = name
 
@@ -43,17 +29,24 @@ class T:
         return self.name
 
 
-root: SelectableEventedList[T] = SelectableEventedList(map(T, 'abcdef'))
-# pretty repr makes nested tree structure more interpretable
-print(root)
-root.events.reordered.connect(lambda e: print(e.value))
+# create our evented list
+root = SelectableEventedList([MyObject(x) for x in 'abcdefg'])
+# create Qt view onto the list
+view = QtListView(root)
+# show the view
+view.show()
+
+
+# spy on events
+root.events.reordered.connect(lambda e: print("reordered to: ", e.value))
 root.selection.events.changed.connect(
     lambda e: print(
         f"selection changed.  added: {e.added}, removed: {e.removed}"
     )
 )
-view = QtListView(root)
+root.selection.events._current.connect(
+    lambda e: print(f"current item changed to: {e.value}")
+)
 
-view.show()
 
 napari.run()
