@@ -293,7 +293,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         warnings.warn(
             "'viewer.active_layer' is deprecated and will be removed in napari"
             " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         self.layers.selection.active = value
