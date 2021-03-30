@@ -331,6 +331,19 @@ class Labels(_image_base_class):
         self.events.selected_label()
 
     @property
+    def data(self):
+        """array: Image data."""
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        data = self._ensure_int_labels(data)
+        self._data = data
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._set_editable()
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
         return self._properties
