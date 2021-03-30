@@ -108,28 +108,6 @@ QtConsole > QTextEdit {
 .in-prompt { color: #6ab825; }
 .out-prompt { color: #b72121; }
 
-/* ------------- Narrow scrollbar for qtlayer list --------- */
-
-QtLayerList QScrollBar:vertical {
-  max-width: 8px;
-  margin: 12px 0px;
-}
-
-QtLayerList QScrollBar::add-line:vertical,
-QtLayerList QScrollBar::sub-line:vertical  {
-    height: 10px;
-    width: 8px;
-}
-
-
-QtLayerList QScrollBar:up-arrow,
-QtLayerList QScrollBar:down-arrow {
-  min-height: 6px;
-  min-width: 6px;
-  max-height: 6px;
-  max-width: 6px;
-}
-
 
 /* controls the area around the canvas */
 QSplitter {
@@ -605,7 +583,90 @@ QtFontSizePreview {
   border-radius: 5px;
 }
 
-
 QListWidget#Preferences {
  background: {{ background }}; 
+}
+
+
+/* ------------- Narrow scrollbar for qtlayer list --------- */
+
+QtLayerList {
+  background: {{ background }};
+}
+
+QtLayerList QScrollBar:vertical {
+  max-width: 8px;
+}
+
+QtLayerList QScrollBar::add-line:vertical,
+QtLayerList QScrollBar::sub-line:vertical  {
+  height: 10px;
+  width: 8px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtLayerList QScrollBar:up-arrow,
+QtLayerList QScrollBar:down-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+}
+
+QtListView::item {
+  padding: 4px;
+}
+
+
+QtLayerList::item {
+  margin: 2px 2px 2px 32px;
+  background-color: {{ foreground }};
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border: 1px solid {{ foreground }};
+}
+
+QtLayerList::item:hover {
+  background-color: {{ lighten(foreground, 3) }};
+}
+
+QtLayerList::item::text {
+  font-size: 8px;
+}
+
+
+QtLayerList::item:selected:active{
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
+}
+
+
+QtLayerList::item:selected:!active {
+  background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
+}
+
+QtLayerList::indicator{
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  left: 0px;
+}
+
+QtLayerList QLineEdit {
+  background-color: {{ darken(current, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+  font-size: 12px;
+}
+
+/* the first one is the "partially checked" state */
+QtLayerList::indicator {
+  image: url(":/themes/{{ folder }}/visibility_off.svg");
+}
+
+QtLayerList::indicator:unchecked {
+  image: url(":/themes/{{ folder }}/2D.svg");
+}
+
+QtLayerList::indicator:checked {
+  image: url(":/themes/{{ folder }}/visibility.svg");
 }

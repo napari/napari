@@ -134,40 +134,40 @@ def remove_all_layers(viewer):
 remove_all_layers.__doc__ = trans._("Remove all layers.")
 
 
-@ViewerModel.bind_key('Up')
-def select_layer_above(viewer):
-    """Select layer above."""
-    viewer.layers.select_next()
+# @ViewerModel.bind_key('Up')
+# def select_layer_above(viewer):
+#     """Select layer above."""
+#     viewer.layers.select_next()
 
 
-select_layer_above.__doc__ = trans._("Select layer above.")
+# select_layer_above.__doc__ = trans._("Select layer above.")
 
 
-@ViewerModel.bind_key('Down')
-def select_layer_below(viewer):
-    """Select layer below."""
-    viewer.layers.select_previous()
+# @ViewerModel.bind_key('Down')
+# def select_layer_below(viewer):
+#     """Select layer below."""
+#     viewer.layers.select_previous()
 
 
-select_layer_below.__doc__ = trans._("Select layer below.")
+# select_layer_below.__doc__ = trans._("Select layer below.")
 
 
-@ViewerModel.bind_key('Shift-Up')
-def also_select_layer_above(viewer):
-    """Also select layer above."""
-    viewer.layers.select_next(shift=True)
+# @ViewerModel.bind_key('Shift-Up')
+# def also_select_layer_above(viewer):
+#     """Also select layer above."""
+#     viewer.layers.select_next(shift=True)
 
 
-also_select_layer_above.__doc__ = trans._("Also select layer above.")
+# also_select_layer_above.__doc__ = trans._("Also select layer above.")
 
 
-@ViewerModel.bind_key('Shift-Down')
-def also_select_layer_below(viewer):
-    """Also select layer below."""
-    viewer.layers.select_previous(shift=True)
+# @ViewerModel.bind_key('Shift-Down')
+# def also_select_layer_below(viewer):
+#     """Also select layer below."""
+#     viewer.layers.select_previous(shift=True)
 
 
-also_select_layer_below.__doc__ = trans._("Also select layer below.")
+# also_select_layer_below.__doc__ = trans._("Also select layer below.")
 
 
 @ViewerModel.bind_key('Control-R')
