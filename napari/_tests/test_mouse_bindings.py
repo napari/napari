@@ -87,7 +87,7 @@ def test_layer_mouse_bindings(make_napari_viewer):
         viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
-    layer.selected = True
+    viewer.layers.selection.add(layer)
 
     mock_press = Mock()
     mock_drag = Mock()
@@ -162,7 +162,7 @@ def test_unselected_layer_mouse_bindings(make_napari_viewer):
         viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
-    layer.selected = False
+    viewer.layers.selection.remove(layer)
 
     mock_press = Mock()
     mock_drag = Mock()

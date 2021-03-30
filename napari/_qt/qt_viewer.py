@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os.path
 import warnings
 from pathlib import Path
@@ -39,6 +41,9 @@ from .._vispy import (  # isort:skip
     VispyWelcomeVisual,
     create_vispy_visual,
 )
+
+if TYPE_CHECKING:
+    from ..viewer import Viewer
 
 
 class QtViewer(QSplitter):
@@ -84,7 +89,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer, welcome=False):
+    def __init__(self, viewer: Viewer, welcome=False):
 
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
@@ -105,7 +110,6 @@ class QtViewer(QSplitter):
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
         self._key_bindings_dialog = None
-        self._active_layer = None
         self._console = None
 
         layerList = QWidget()
@@ -182,9 +186,8 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._on_active_layer_change()
-
-        self.viewer.events.active_layer.connect(self._on_active_layer_change)
+        self._on_active_change()
+        viewer.layers.selection.events.active.connect(self._on_active_change)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -338,7 +341,7 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _on_active_layer_change(self, event=None):
+    def _on_active_change(self, event=None):
         """When active layer changes change keymap handler.
 
         Parameters
@@ -346,15 +349,12 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.active_layer
-
-        if self._active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(self._active_layer)
+        active_layer = self.viewer.layers.selection.active
+        if active_layer in self._key_map_handler.keymap_providers:
+            self._key_map_handler.keymap_providers.remove(active_layer)
 
         if active_layer is not None:
             self._key_map_handler.keymap_providers.insert(0, active_layer)
-
-        self._active_layer = active_layer
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -675,7 +675,7 @@ class QtViewer(QSplitter):
         event = ReadOnlyWrapper(event)
         mouse_callbacks(self.viewer, event)
 
-        layer = self.viewer.active_layer
+        layer = self.viewer.layers.selection.active
         if layer is not None:
             mouse_callbacks(layer, event)
 

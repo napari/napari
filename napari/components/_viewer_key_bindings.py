@@ -128,8 +128,7 @@ select_all.__doc__ = trans._("Selected all layers.")
 @ViewerModel.bind_key('Control-Shift-Delete')
 def remove_all_layers(viewer):
     """Remove all layers."""
-    viewer.layers.select_all()
-    viewer.layers.remove_selected()
+    viewer.layers.clear()
 
 
 remove_all_layers.__doc__ = trans._("Remove all layers.")

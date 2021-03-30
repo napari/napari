@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain, repeat
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
@@ -70,7 +71,7 @@ class QtNodeTreeView(QTreeView):
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
-        self._root.selection.current = current.internalPointer()
+        self._root.selection._current = current.internalPointer()
         return super().currentChanged(current, previous)
 
     def selectionChanged(
@@ -92,9 +93,12 @@ class QtNodeTreeView(QTreeView):
                 idx = self.model().findIndex(event.value)
                 sel_model.setCurrentIndex(idx, sel_model.Current)
             return
-        t = sel_model.Select if event.type == 'added' else sel_model.Deselect
-        for idx in event.value:
-            model_idx = self.model().findIndex(idx)
-            if not model_idx.isValid():
-                continue
-            sel_model.select(model_idx, t)
+        elif event.type == 'changed':
+            for idx, sel in chain(
+                zip(event.added, repeat(sel_model.Select)),
+                zip(event.removed, repeat(sel_model.DeSelect)),
+            ):
+                model_idx = self.model().findIndex(idx)
+                if not model_idx.isValid():
+                    continue
+                sel_model.select(model_idx, sel)
