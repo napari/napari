@@ -224,13 +224,37 @@ class Action:
 
 class ActionManager:
     """
-    Manage the bindings between buttons; shortcuts and callbacks.
+    Manage the bindings between buttons; shortcuts, callbacks gui elements...
 
     The action manager is aware of the various buttons, keybindings and other
     elements that may trigger an action and is able to synchronise all of those.
     Thus when a shortcut is bound; this should be capable of updating the
-    buttons tooltip to show the shortcuts.
+    buttons tooltip menus etc to show the shortcuts, descriptions...
 
+    In most cases this should also allow to bind non existing shortcuts,
+    actions, buttons, in which case they will be bound only once the actions are
+    registered.
+
+    As the action manager also knows about all the UI elements that can trigger
+    an action, it can also be used to flash the buttons when the action is
+    triggered separately.
+
+    For actions that need access to a global element (a viewer, a plugin, ... ),
+    you want to give this item a unique name, and add it to the action manager
+    `context` object.
+
+    >>> action_manager.context['number'] = 1
+    ... action_manager.context['qtv'] = viewer.qt_viewer
+
+    >>> def callback(qtv, number):
+    ...     qtv.dims[number] +=1
+
+    >>> action_manager.register_action('bump one', callback,
+    ...     'Add one to dims',
+    ...     None)
+
+    The callback signature is going to be inspected and required globals passed
+    in.
     """
 
     _actions: Dict[str, Action]
@@ -274,7 +298,6 @@ class ActionManager:
         """
         assert name not in self._actions, name
         self._actions[name] = Action(command, description, keymappable)
-        self._update_gui_elements(name)
         self._update_shortcut_bindings(name)
         # shortcuts may have been bound before the command was actually
         # registered, remove it from orphan and bind shortcuts.
@@ -282,8 +305,12 @@ class ActionManager:
             # print('Found orphan shortcut')
             sht = self._orphans.pop(command)
             self.bind_shortcut(name, sht)
+        self._update_gui_elements(name)
 
     def _update_gui_elements(self, name):
+        """
+        Update the description and shortcuts of all the (known) gui elements.
+        """
         if name not in self._actions:
             return
         buttons = self._buttons[name]
@@ -307,9 +334,12 @@ class ActionManager:
             qaction.setText(action.description)
             qaction.setStatusTip(action.description)
 
-        # update q
-
     def _update_shortcut_bindings(self, name):
+        """
+        Update the key mappable for given action name
+        to trigger the action within the given context and
+        make all the corresponding UI element flash if possible.
+        """
         if name not in self._actions:
             return
         action = self._actions[name]
@@ -348,6 +378,13 @@ class ActionManager:
         self._update_gui_elements(name)
 
     def bind_qaction(self, name, qaction):
+        """
+        Bind the given qaction to an action.
+
+        This will also update the description and shortcut when those changes.
+
+        Same as for shortcut; make ui element flash when action is triggered.
+        """
         self._qactions[name] = qaction
         action = self._actions[name]
 
@@ -360,6 +397,9 @@ class ActionManager:
         self._update_gui_elements(name)
 
     def unbind_shortcut(self, name):
+        """
+        unbind shortcut for action name
+        """
         action = self._actions[name]
         sht = self._shortcuts.get(name)
         if hasattr(action.keymappable, 'bind_key'):
@@ -381,6 +421,7 @@ _actions = {
     'Control-A': 'select_all',
     'Control-T': 'transpose_axes',
     'Control-R': 'reset_view',
+    'Ctrl+Shift+C': 'toggle_console_visibility',
     'Control-E': 'roll_axes',
     'Alt-Down': 'focus_axes_down',
     'Alt-Up': 'focus_axes_up',
