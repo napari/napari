@@ -70,7 +70,7 @@ class Selection(EventedSet[_T]):
     @property
     def _current(self) -> Optional[_T]:
         """Get current item."""
-        return self.__current
+        return self._current_
 
     @_current.setter
     def _current(self, index: Optional[_T]):
