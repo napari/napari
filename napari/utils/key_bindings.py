@@ -39,7 +39,6 @@ from collections import ChainMap, defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Tuple
 
-from qtpy import QtCore
 from qtpy.QtGui import QKeySequence
 from vispy.util import keys
 
@@ -278,10 +277,6 @@ class ActionManager:
         description: str
             Long string to describe what the command does, will be used in
             tooltips.
-        instance: Any
-            Instance of object that should handle the shortcut when bound,
-            this is used to mange which command should be triggered depending on
-            which object is in focus.
 
         """
         assert name not in self._actions, name
@@ -294,34 +289,6 @@ class ActionManager:
             # print('Found orphan shortcut')
             sht = self._orphans.pop(command)
             self.bind_shortcut(name, sht)
-
-    def _shortcut_notify(self, function, shortcut):
-        """
-        Workaround bind_key API, command might not have names.
-
-        The current @Viewer.bind_key decorator approach have some drawbacks, and
-        we try to workaround them.
-
-        Mostly we try to keep an instance of "function" around and see if it's
-        reused to register_action; this is not always the case as most call to
-        bind_key return a thow away function.
-
-        We use that to create an internal list of all bind shortcuts that are
-        not going through the shortcut manager
-
-        """
-        return
-        assert not isinstance(function, str)
-        assert isinstance(shortcut, str)
-        if function in self._orphans:
-            return
-        for k, v in self._actions.items():
-            if function == v.command:
-                # print('this is an already existing command !')
-                self.bind_shortcut(k, shortcut)
-                return
-        # print('add', function, 'to orphans')
-        self._orphans[function] = shortcut
 
     def _update_gui_elements(self, name):
         if name not in self._actions:
@@ -412,26 +379,6 @@ class ActionManager:
             keymappable.bind_key(sht)(None)
         del self._shortcuts[name]
         self._update_gui_elements(name)
-
-    def play(self, seq):
-        for i, action_name in enumerate(seq):
-            (
-                command,
-                description,
-                _icons,
-                keymappable,
-            ) = self._actions[action_name]
-            for b in self._buttons.get(action_name, []):
-
-                def loc(cmd, b):
-                    def inner():
-                        b._animation.start()
-                        call_with_context(cmd, self.context)
-
-                    return inner
-
-                print('scheduling in', i * 950, command, i)
-                QtCore.QTimer.singleShot(i * 950, loc(command, b))
 
 
 action_manager = ActionManager()
