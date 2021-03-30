@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from qtpy.QtWidgets import QTreeView
 
-from ._base_item_view import _BaseItemView
+from ._base_item_view import _BaseEventedItemView
 from .qt_tree_model import QtNodeTreeModel
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from ...utils.tree import Group, Node
 
 
-class QtNodeTreeView(QTreeView, _BaseItemView):
+class QtNodeTreeView(QTreeView, _BaseEventedItemView):
     model_class = QtNodeTreeModel
     _root: Group[Node]
 

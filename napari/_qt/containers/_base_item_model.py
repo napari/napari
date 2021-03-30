@@ -16,7 +16,7 @@ ItemType = TypeVar("ItemType")
 logger = logging.getLogger(__name__)
 
 
-class _BaseItemModel(QAbstractItemModel, Generic[ItemType]):
+class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     def __init__(
         self, root: SelectableEventedList[ItemType], parent: QWidget = None
     ):

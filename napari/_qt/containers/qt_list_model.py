@@ -4,13 +4,13 @@ from typing import List, Optional
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
-from ._base_item_model import _BaseItemModel
+from ._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
 ListIndexMIMEType = "application/x-list-index"
 
 
-class QtListModel(_BaseItemModel):
+class QtListModel(_BaseEventedItemModel):
     def parent(self, index):
         return QModelIndex()
 

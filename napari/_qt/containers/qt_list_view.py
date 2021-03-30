@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, TypeVar
 
 from qtpy.QtWidgets import QListView
 
-from ._base_item_view import _BaseItemView
+from ._base_item_view import _BaseEventedItemView
 from .qt_list_model import QtListModel
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 ItemType = TypeVar("ItemType")
 
 
-class QtListView(QListView, _BaseItemView[ItemType]):
+class QtListView(QListView, _BaseEventedItemView[ItemType]):
     model_class = QtListModel
     _root: SelectableEventedList[ItemType]
 

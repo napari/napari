@@ -29,7 +29,7 @@ ResetDim = "\033[22m"
 red = "\033[0;31m"
 green = "\033[0;32m"
 colorlog_format = f'{green}%(levelname)6s:{end} {Dim}%(name)43s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
-logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
+# logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
 
 get_app()
 

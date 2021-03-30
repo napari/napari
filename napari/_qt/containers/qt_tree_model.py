@@ -6,14 +6,14 @@ from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
 from ...utils.events import NestableEventedList
 from ...utils.tree import Group, Node
-from ._base_item_model import _BaseItemModel
+from ._base_item_model import _BaseEventedItemModel
 
 logger = logging.getLogger(__name__)
 NodeType = TypeVar("NodeType", bound=Node)
 NodeMIMEType = "application/x-tree-node"
 
 
-class QtNodeTreeModel(_BaseItemModel, Generic[NodeType]):
+class QtNodeTreeModel(_BaseEventedItemModel, Generic[NodeType]):
     """A concrete QItemModel for a tree of ``Node`` and ``Group`` objects.
 
     Key concepts and references:

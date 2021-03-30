@@ -1,6 +1,7 @@
 from typing import TypeVar
 
 from ._evented_list import EventedList
+from ._nested_list import NestableEventedList
 from ._selection import Selectable
 
 _T = TypeVar("_T")
@@ -55,3 +56,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def select_previous(self, shift=False):
         """Selects previous item from list."""
         self.select_next(-1, shift=shift)
+
+
+class SelectableNestableEventedList(
+    SelectableEventedList[_T], NestableEventedList[_T]
+):
+    pass

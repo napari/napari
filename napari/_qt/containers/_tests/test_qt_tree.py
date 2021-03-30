@@ -117,6 +117,8 @@ def test_find_nodes():
 
 def test_node_tree_view(qtbot):
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
+    root.selection.clear()
+    assert not root.selection
     view = QtNodeTreeView(root)
     qmodel = view.model()
     qsel = view.selectionModel()

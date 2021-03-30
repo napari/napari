@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from ...utils.events import Event
 
 
-class _BaseItemView(QAbstractItemView, Generic[ItemType]):
+class _BaseEventedItemView(QAbstractItemView, Generic[ItemType]):
     def setRoot(self, root):
         self._root = root
         self.setModel(create_model(root, self))
