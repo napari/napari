@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
@@ -14,7 +13,6 @@ if TYPE_CHECKING:
 
 
 ItemType = TypeVar("ItemType")
-logger = logging.getLogger(__name__)
 
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
@@ -258,11 +256,6 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         src_par, src_idx = self._split_nested_index(event.index)
         dest_par, dest_idx = self._split_nested_index(event.new_index)
-
-        # logger.debug(
-        #     f"beginMoveRows({self.getItem(src_par)}, {src_idx}, "
-        #     f"{self.getItem(dest_par)}, {dest_idx})"
-        # )
 
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
