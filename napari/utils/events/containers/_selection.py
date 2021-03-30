@@ -54,7 +54,7 @@ class Selection(EventedSet[_T]):
 
     def __init__(self, data: Iterable[_T] = ()):
         self._active: Optional[_T] = None
-        self.__current = None
+        self._current_ = None
         super().__init__(data=data)
         self.events.add(_current=None, active=None)
         self.events.changed.connect(self._update_active)
@@ -75,9 +75,9 @@ class Selection(EventedSet[_T]):
     @_current.setter
     def _current(self, index: Optional[_T]):
         """Set current item."""
-        if index == self.__current:
+        if index == self._current_:
             return
-        self.__current = index
+        self._current_ = index
         self.events._current(value=index)
 
     @property
@@ -110,9 +110,9 @@ class Selection(EventedSet[_T]):
                 self._active = None
                 self.events.active(value=None)
 
-    def clear(self, keep__current: bool = False) -> None:
+    def clear(self, keep_current: bool = False) -> None:
         """Clear the selection."""
-        if not keep__current:
+        if not keep_current:
             self._current = None
         super().clear()
 
@@ -150,7 +150,7 @@ class Selection(EventedSet[_T]):
         # no type parameter was provided, just return
         if not field.sub_fields:
             obj = cls(data=data)
-            obj.__current = current
+            obj._current_ = current
             return obj
 
         # Selection[type] parameter was provided.  Validate contents
@@ -170,7 +170,7 @@ class Selection(EventedSet[_T]):
 
             raise ValidationError(errors, cls)  # type: ignore
         obj = cls(data=data)
-        obj.__current = current
+        obj._current_ = current
         return obj
 
     def _json_encode(self):
