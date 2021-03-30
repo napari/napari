@@ -5,12 +5,19 @@ from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
 from ...layers import Layer
 from ...utils import config
+from ...utils.translations import trans
 from ._layer_delegate import LayerDelegate
 from .qt_layer_model import QtLayerListModel
 from .qt_list_view import QtListView
 
 if TYPE_CHECKING:
     from ...components.layerlist import LayerList
+
+# translations from the old qt layer list
+# tb.setToolTip(trans._('Layer thumbnail'))
+# cb.setToolTip(trans._('Layer visibility'))
+# ltb.setToolTip(trans._('Layer type'))
+# msg = trans._('Click to select\nDrag to rearrange')
 
 
 class QtLayerList(QtListView[Layer]):
@@ -23,6 +30,7 @@ class QtLayerList(QtListView[Layer]):
         fnt = QFont()
         fnt.setPixelSize(12)
         self.setFont(fnt)
+        self.setToolTip(trans._('Layer list'))
 
         if config.async_loading:
             from ..experimental.qt_chunk_receiver import QtChunkReceiver
