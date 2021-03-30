@@ -38,7 +38,6 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         emitted when the current item has changed.
     selection._current (value: _T)
         emitted when the current item has changed. (Private event)
-
     """
 
     def __init__(self, *args, **kwargs) -> None:
