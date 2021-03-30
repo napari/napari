@@ -125,19 +125,15 @@ class QtViewerButtons(QFrame):
 
         action_manager.context['viewer'] = viewer
 
-        action_manager.bind_button(
-            'transpose_axes', self.transposeDimsButton, 'viewer'
-        )
-        action_manager.bind_button('roll_axes', self.rollDimsButton, 'viewer')
+        action_manager.bind_button('transpose_axes', self.transposeDimsButton)
+        action_manager.bind_button('roll_axes', self.rollDimsButton)
 
-        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+        self.resetViewButton = QtViewerPushButton(self.viewer)
 
         action_manager.register_action(
             'home', type(self.viewer).reset_view, 'Reset View', None, self
         )
-        action_manager.bind_button(
-            'reset_view', self.resetViewButton, 'viewer'
-        )
+        action_manager.bind_button('reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -145,9 +141,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        action_manager.bind_button(
-            'toggle_grid', self.gridViewButton, 'viewer'
-        )
+        action_manager.bind_button('toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -158,9 +152,7 @@ class QtViewerButtons(QFrame):
             3,
         )
 
-        action_manager.bind_button(
-            'toggle_ndisplay', self.ndisplayButton, 'viewer'
-        )
+        action_manager.bind_button('toggle_ndisplay', self.ndisplayButton)
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

@@ -187,14 +187,40 @@ def normalize_key_combo(key_combo):
 UNDEFINED = object()
 
 
+def call_with_context(function, context):
+    """
+    call function `function` with the corresponding value taken from context
+
+    This is use in the action manager to pass the rights instances to the actions,
+    without having the need for them to take a **kwarg, and is mostly needed when
+    triggering actions via buttons, or to record.
+
+    If we went a declarative way to trigger action we cannot refer to instances
+    or objects that must be passed to the action, or at least this is
+    problematic.
+
+    We circumvent this by having a context (dictionary of str:instance) in
+    the action manager, and anything can tell the action manager "this is the
+    current instance a key". When an action is triggered; we inspect the
+    signature look at which instances it may need and pass this as parameters.
+    """
+    from inspect import signature
+
+    context_keys = [
+        k
+        for k, v in signature(function).parameters.items()
+        if v.kind not in (v.VAR_POSITIONAL, v.VAR_KEYWORD)
+    ]
+    ctx = {k: v for k, v in context.items() if k in context_keys}
+    return function(**ctx)
+
+
 @dataclass
 class Action:
     command: Callable
     description: str
     instance: Any
     icons: Tuple[Optional[Any]]
-    # not sure if that will fit well with configurability.
-    predicates: Tuple[Callable]
     keymappable: Any
 
     def __iter__(self):
@@ -202,7 +228,6 @@ class Action:
         yield self.description
         yield self.instance
         yield self.icons
-        yield self.predicates
         yield self.keymappable
 
 
@@ -231,13 +256,16 @@ class ActionManager:
         self, name, command, description, instance, keymappable
     ):
         """
-        Register a command for future usage
+        Register an action for future usage
 
-        A command is generally an, callback associated with a name (unique), a
-        description and an instance that need to be passed to it when
-        called.
+        An action is generally a callback associated with
+         - a name (unique),
+         - a description
+         - an instance (I believe we can remove that) that need to be passed to it when
+            called.
+         - A keymapable (easier for focus and backward compatibility).
 
-        Commands can then be later bound/unbound from button elements, and
+        Actions can then be later bound/unbound from button elements, and
         shortcuts; and the action manager will take care of modifying the keymap
         of instances to handle shortcuts; and UI elements to have tooltips with
         descriptions and shortcuts;
@@ -260,9 +288,9 @@ class ActionManager:
             which object is in focus.
 
         """
-        assert name not in self._actions
+        assert name not in self._actions, name
         self._actions[name] = Action(
-            command, description, instance, (), (), keymappable
+            command, description, instance, (), keymappable
         )
         self._update_buttons_tooltips(name)
         self._update_shortcut_bindings(name)
@@ -310,7 +338,7 @@ class ActionManager:
         if name in self._shortcuts:
             sht = self._shortcuts[name]
             desc += f' [{format_shortcut(sht)}]'
-        for button, name in buttons:
+        for button in buttons:
             button.setToolTip(desc)
 
     def _update_shortcut_bindings(self, name):
@@ -324,13 +352,13 @@ class ActionManager:
         if hasattr(keymappable, 'bind_key'):
 
             def flash(*args):
-                action.command(**self.context)
-                for (b, _) in self._buttons.get(name, []):
+                call_with_context(action.command, self.context)
+                for b in self._buttons.get(name, []):
                     b._animation.start()
 
             keymappable.bind_key(sht)(flash)
 
-    def bind_button(self, name, button, target):
+    def bind_button(self, name, button):
         """
         Bind `button` to trigger Action `name` on click.
         """
@@ -339,13 +367,14 @@ class ActionManager:
             description,
             _,
             _icons,
-            _predicates,
             keymappable,
         ) = self._actions[name]
 
-        button.clicked.connect(lambda: command(self.context[target]))
+        button.clicked.connect(
+            lambda: call_with_context(command, self.context)
+        )
 
-        self._buttons[name].append((button, target))
+        self._buttons[name].append(button)
         self._update_buttons_tooltips(name)
 
     def bind_shortcut(self, name, shortcut):
@@ -372,16 +401,15 @@ class ActionManager:
                 description,
                 _,
                 _icons,
-                _predicates,
                 keymappable,
             ) = self._actions[action_name]
-            for (b, _) in self._buttons.get(action_name, []):
+            for b in self._buttons.get(action_name, []):
 
                 def loc(cmd, b):
                     def inner():
                         print('calling', cmd)
                         b._animation.start()
-                        cmd(self.context['viewer'])
+                        call_with_context(cmd, self.context)
 
                     return inner
 
@@ -553,17 +581,26 @@ class KeymapProvider:
     bind_key = KeybindingDescriptor(bind_key)
 
     @classmethod
-    def register_action(cls, function):
+    def register_action(cls, *, description=None, name=None):
         """
         Convenient decorator to register an action with the current KeymapProvider
 
         It will use the function name as the action name, and the function docstring as
         the function description.
         """
-        name = function.__name__
-        description = function.__doc__
-        action_manager.register_action(name, function, description, None, cls)
-        return function
+
+        def _inner(func):
+            nonlocal name
+            nonlocal description
+            if name is None:
+                name = func.__name__
+            assert name is not None
+            if description is None:
+                description = func.__doc__
+            action_manager.register_action(name, func, description, None, cls)
+            return func
+
+        return _inner
 
 
 def _bind_keymap(keymap, instance):
