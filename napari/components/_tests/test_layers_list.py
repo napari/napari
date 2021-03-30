@@ -526,17 +526,17 @@ def test_deprecated_selection():
     layer = Image(np.random.random((10, 15)))
     events = []
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.events.select.connect(lambda e: events.append(e))
         layer.events.deselect.connect(lambda e: events.append(e))
 
     layers.append(layer)
     assert events[-1].type == 'select'
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         assert layer.selected is True
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(FutureWarning):
         layer.selected = False
 
     assert events[-1].type == 'deselect'
