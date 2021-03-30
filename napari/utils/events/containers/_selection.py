@@ -18,8 +18,8 @@ class Selection(EventedSet[_T]):
     "current" item is mostly useful for (e.g.) keyboard actions: even with
     multiple items selected, you may only have one current item, and keyboard
     events (like up and down) can modify that current item.  It's possible to
-    have a current item without an active item, but an active item will almost
-    always be the current item.
+    have a current item without an active item, but an active item will always
+    be the current item.
 
     An item can be the current item and selected at the same time. Qt views
     will ensure that there is always a current item as keyboard navigation,
@@ -46,10 +46,10 @@ class Selection(EventedSet[_T]):
     changed (added: Set[_T], removed: Set[_T])
         Emitted when the set changes, includes item(s) that have been added
         and/or removed from the set.
-    current (value: _T)
-        emitted when the current item has changed.
     active (value: _T)
         emitted when the current item has changed.
+    _current (value: _T)
+        emitted when the current item has changed. (Private event)
     """
 
     def __init__(self, data: Iterable[_T] = ()):

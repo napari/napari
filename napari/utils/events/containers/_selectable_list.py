@@ -10,7 +10,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     """List model that also supports selection."""
 
     def __init__(self, *args, **kwargs) -> None:
-        self.activate_on_insert = True
+        self._activate_on_insert = True
         super().__init__(*args, **kwargs)
         self.events.removed.connect(lambda e: self.selection.discard(e.value))
         self.selection._pre_add_hook = self._preselect_hook
@@ -25,7 +25,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
 
     def insert(self, index: int, value: _T):
         super().insert(index, value)
-        if self.activate_on_insert:
+        if self._activate_on_insert:
             # Make layer selected and unselect all others
             self.selection.active = value
 

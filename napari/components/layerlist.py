@@ -90,9 +90,9 @@ class LayerList(SelectableEventedList[Layer]):
     def selected(self):
         """List of selected layers."""
         warnings.warn(
-            "'layers.selected' is deprecated and will be removed in >=v0.4.9.  "
-            "Please use 'layers.selection'",
-            category=DeprecationWarning,
+            "'viewer.layers.selected' is deprecated and will be removed in or "
+            "after v0.4.9. Please use 'viewer.layers.selection'",
+            category=FutureWarning,
             stacklevel=2,
         )
         return self.selection
@@ -114,7 +114,7 @@ class LayerList(SelectableEventedList[Layer]):
         insert : int
             Index that item(s) will be inserted at
         """
-        if not self[index] in self.selection:
+        if self[index] not in self.selection:
             self.selection.select_only(self[index])
             moving = [index]
         else:
@@ -131,11 +131,11 @@ class LayerList(SelectableEventedList[Layer]):
             Layer that should not be unselected if specified.
         """
         warnings.warn(
-            "'layers.unselect_all()' is deprecated and will be removed in "
-            ">=v0.4.9. Please use 'layers.selection.clear()'.  To unselect "
-            "everything but a set of ignored layers, use "
-            r"'layers.selection.intersection_update({ignored})'",
-            category=DeprecationWarning,
+            "'viewer.layers.unselect_all()' is deprecated and will be removed "
+            "in or after v0.4.9. Please use 'viewer.layers.selection.clear()'."
+            " To unselect everything but a set of ignored layers, use "
+            r"'viewer.layers.selection.intersection_update({ignored})'",
+            category=FutureWarning,
             stacklevel=2,
         )
         self.selection.intersection_update({ignore} if ignore else {})
