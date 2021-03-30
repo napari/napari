@@ -740,7 +740,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         warnings.warn(
             "'layer.selected' is deprecated and will be removed in v0.4.9. "
             "Please use `layer in viewer.layers.selection`",
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         layers = getattr(self, '_deprecated_layerlist', None)
@@ -754,7 +754,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             "'layer.selected' is deprecated and will be removed in v0.4.9. "
             "Please use `viewer.layers.selection.add(layer)` or "
             "`viewer.layers.selection.remove(layer)`",
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         layers = getattr(self, '_deprecated_layerlist', None)

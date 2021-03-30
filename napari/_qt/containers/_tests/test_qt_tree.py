@@ -136,12 +136,12 @@ def test_node_tree_view(qtbot):
     assert not root.selection
 
     # update current in python
-    root.selection.current = root[2, 1, 0]
+    root.selection._current = root[2, 1, 0]
     # check current in Qt
-    assert root.selection.current == root[2, 1, 0]
+    assert root.selection._current == root[2, 1, 0]
     assert qmodel.getItem(qsel.currentIndex()).index_from_root() == (2, 1, 0)
 
     # clear current in Qt
     qsel.setCurrentIndex(QModelIndex(), qsel.Current)
     # check current in python
-    assert root.selection.current is None
+    assert root.selection._current is None

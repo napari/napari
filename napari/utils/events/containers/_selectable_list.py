@@ -10,7 +10,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     """List model that also supports selection."""
 
     def __init__(self, *args, **kwargs) -> None:
-        self.activate_on_insert = True
+        self._activate_on_insert = True
         super().__init__(*args, **kwargs)
         self.events.removed.connect(lambda e: self.selection.discard(e.value))
         self.selection._pre_add_hook = self._preselect_hook
@@ -19,13 +19,13 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """Called before adding an item to the selection."""
         if value not in self:
             raise ValueError(
-                f"Cannot selection item that is not in list: {value!r}"
+                f"Cannot select item that is not in list: {value!r}"
             )
         return value
 
     def insert(self, index: int, value: _T):
         super().insert(index, value)
-        if self.activate_on_insert:
+        if self._activate_on_insert:
             # Make layer selected and unselect all others
             self.selection.active = value
 
@@ -41,12 +41,12 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
     def select_next(self, step=1, shift=False):
         """Selects next item from list."""
         if self.selection:
-            idx = self.index(self.selection.current) + step
+            idx = self.index(self.selection._current) + step
             if len(self) > idx >= 0:
                 next_layer = self[idx]
                 if shift:
                     self.selection.add(next_layer)
-                    self.selection.current = next_layer
+                    self.selection._current = next_layer
                 else:
                     self.selection.active = next_layer
         elif len(self) > 0:

@@ -645,7 +645,7 @@ class WarningEmitter(EventEmitter):
     def __init__(
         self,
         message,
-        category=DeprecationWarning,
+        category=FutureWarning,
         stacklevel=3,
         *args,
         **kwargs,

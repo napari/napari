@@ -23,7 +23,7 @@ class _BaseItemView(QAbstractItemView, Generic[ItemType]):
 
         # connect selection events
         root.selection.events.changed.connect(self._on_py_selection_change)
-        root.selection.events.current.connect(self._on_py_current_change)
+        root.selection.events._current.connect(self._on_py_current_change)
         self._sync_selection_models()
 
     def _on_py_current_change(self, event: Event):
@@ -64,7 +64,7 @@ class _BaseItemView(QAbstractItemView, Generic[ItemType]):
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
-        self._root.selection.current = current.internalPointer()
+        self._root.selection._current = current.internalPointer()
         return super().currentChanged(current, previous)
 
     def selectionChanged(
