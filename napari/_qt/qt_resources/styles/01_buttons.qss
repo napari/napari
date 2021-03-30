@@ -31,10 +31,6 @@ QtViewerPushButton[mode="warning"] {
   image: url(":/themes/{{ folder }}/warning.svg");
 }
 
-QtViewerPushButton[mode="play"] {
-  image: url(":/themes/{{ folder }}/right_arrow.svg");
-}
-
 QtViewerPushButton[mode="new_labels"] {
   image: url(":/themes/{{ folder }}/new_labels.svg");
 }
