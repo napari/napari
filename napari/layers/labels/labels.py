@@ -229,6 +229,7 @@ class Labels(_image_base_class):
             preserve_labels=Event,
             properties=Event,
             n_dimensional=Event,
+            n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
@@ -237,7 +238,7 @@ class Labels(_image_base_class):
             contour=Event,
         )
 
-        self._n_dimensional = False
+        self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
 
@@ -271,12 +272,40 @@ class Labels(_image_base_class):
     @property
     def n_dimensional(self):
         """bool: paint and fill edits labels across all dimensions."""
-        return self._n_dimensional
+        warnings.warn(
+            trans._(
+                'Labels.n_dimensional is deprecated. '
+                'Use Labels.n_edit_dimensions instead.'
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._n_edit_dimensions == self.ndim
 
     @n_dimensional.setter
     def n_dimensional(self, n_dimensional):
-        self._n_dimensional = n_dimensional
+        warnings.warn(
+            trans._(
+                'Labels.n_dimensional is deprecated. '
+                'Use Labels.n_edit_dimensions instead.'
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        if n_dimensional:
+            self._n_edit_dimensions = self.ndim
+        else:
+            self._n_edit_dimensions = 2
         self.events.n_dimensional()
+
+    @property
+    def n_edit_dimensions(self):
+        return self._n_edit_dimensions
+
+    @n_edit_dimensions.setter
+    def n_edit_dimensions(self, n_edit_dimensions):
+        self._n_edit_dimensions = n_edit_dimensions
+        self.events.n_edit_dimensions()
 
     @property
     def contour(self):
