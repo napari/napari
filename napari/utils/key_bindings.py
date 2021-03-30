@@ -37,7 +37,7 @@ import re
 import types
 from collections import ChainMap, defaultdict
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict
 
 from qtpy.QtGui import QKeySequence
 from vispy.util import keys
@@ -219,14 +219,7 @@ def call_with_context(function, context):
 class Action:
     command: Callable
     description: str
-    icons: Tuple[Optional[Any]]
     keymappable: Any
-
-    def __iter__(self):
-        yield self.command
-        yield self.description
-        yield self.icons
-        yield self.keymappable
 
 
 class ActionManager:
@@ -280,7 +273,7 @@ class ActionManager:
 
         """
         assert name not in self._actions, name
-        self._actions[name] = Action(command, description, (), keymappable)
+        self._actions[name] = Action(command, description, keymappable)
         self._update_gui_elements(name)
         self._update_shortcut_bindings(name)
         # shortcuts may have been bound before the command was actually
@@ -337,15 +330,10 @@ class ActionManager:
         """
         Bind `button` to trigger Action `name` on click.
         """
-        (
-            command,
-            description,
-            _icons,
-            keymappable,
-        ) = self._actions[name]
+        action = self._actions[name]
 
         button.clicked.connect(
-            lambda: call_with_context(command, self.context)
+            lambda: call_with_context(action.command, self.context)
         )
 
         self._buttons[name].append(button)
@@ -374,9 +362,8 @@ class ActionManager:
     def unbind_shortcut(self, name):
         action = self._actions[name]
         sht = self._shortcuts.get(name)
-        keymappable = action.keymappable
-        if hasattr(keymappable, 'bind_key'):
-            keymappable.bind_key(sht)(None)
+        if hasattr(action.keymappable, 'bind_key'):
+            action.keymappable.bind_key(sht)(None)
         del self._shortcuts[name]
         self._update_gui_elements(name)
 
