@@ -40,6 +40,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Tuple
 
 from qtpy import QtCore
+from qtpy.QtGui import QKeySequence
 from vispy.util import keys
 
 from .interactions import format_shortcut
@@ -219,14 +220,12 @@ def call_with_context(function, context):
 class Action:
     command: Callable
     description: str
-    instance: Any
     icons: Tuple[Optional[Any]]
     keymappable: Any
 
     def __iter__(self):
         yield self.command
         yield self.description
-        yield self.instance
         yield self.icons
         yield self.keymappable
 
@@ -248,21 +247,18 @@ class ActionManager:
         # map associating a name/id with a Comm
         self._actions = {}
         self._buttons = defaultdict(lambda: [])
+        self._qactions = defaultdict(lambda: [])
         self._shortcuts = {}
         self._orphans = {}
         self.context = {}
 
-    def register_action(
-        self, name, command, description, instance, keymappable
-    ):
+    def register_action(self, name, command, description, keymappable):
         """
         Register an action for future usage
 
         An action is generally a callback associated with
          - a name (unique),
          - a description
-         - an instance (I believe we can remove that) that need to be passed to it when
-            called.
          - A keymapable (easier for focus and backward compatibility).
 
         Actions can then be later bound/unbound from button elements, and
@@ -289,10 +285,8 @@ class ActionManager:
 
         """
         assert name not in self._actions, name
-        self._actions[name] = Action(
-            command, description, instance, (), keymappable
-        )
-        self._update_buttons_tooltips(name)
+        self._actions[name] = Action(command, description, (), keymappable)
+        self._update_gui_elements(name)
         self._update_shortcut_bindings(name)
         # shortcuts may have been bound before the command was actually
         # registered, remove it from orphan and bind shortcuts.
@@ -329,17 +323,31 @@ class ActionManager:
         # print('add', function, 'to orphans')
         self._orphans[function] = shortcut
 
-    def _update_buttons_tooltips(self, name):
+    def _update_gui_elements(self, name):
         if name not in self._actions:
             return
         buttons = self._buttons[name]
         desc = self._actions[name].description
 
+        # update buttons with shortcut and description
         if name in self._shortcuts:
             sht = self._shortcuts[name]
-            desc += f' [{format_shortcut(sht)}]'
+            sht_str = f' ({format_shortcut(sht)})'
+        else:
+            sht = ''
+            sht_str = ''
         for button in buttons:
-            button.setToolTip(desc)
+            button.setToolTip(desc + sht_str)
+        if name in self._qactions:
+            action = self._actions[name]
+            qaction = self._qactions[name]
+            qaction.setShortcut(
+                QKeySequence(sht.replace('-', '+').replace('Control', 'Ctrl'))
+            )
+            qaction.setText(action.description)
+            qaction.setStatusTip(action.description)
+
+        # update q
 
     def _update_shortcut_bindings(self, name):
         if name not in self._actions:
@@ -365,7 +373,6 @@ class ActionManager:
         (
             command,
             description,
-            _,
             _icons,
             keymappable,
         ) = self._actions[name]
@@ -375,31 +382,42 @@ class ActionManager:
         )
 
         self._buttons[name].append(button)
-        self._update_buttons_tooltips(name)
+        self._update_gui_elements(name)
 
     def bind_shortcut(self, name, shortcut):
         """
         bind shortcut `shortcut` to trigger action `name`
         """
         self._shortcuts[name] = shortcut
-        self._update_buttons_tooltips(name)
         self._update_shortcut_bindings(name)
+        self._update_gui_elements(name)
 
-    def unbind_shortcut(self, name, shortcut):
+    def bind_qaction(self, name, qaction):
+        self._qactions[name] = qaction
+        action = self._actions[name]
+
+        def flash(*args):
+            call_with_context(action.command, self.context)
+            for b in self._buttons.get(name, []):
+                b._animation.start()
+
+        qaction.triggered.connect(flash)
+        self._update_gui_elements(name)
+
+    def unbind_shortcut(self, name):
         action = self._actions[name]
         sht = self._shortcuts.get(name)
         keymappable = action.keymappable
         if hasattr(keymappable, 'bind_key'):
             keymappable.bind_key(sht)(None)
         del self._shortcuts[name]
-        self._update_buttons_tooltips(name)
+        self._update_gui_elements(name)
 
     def play(self, seq):
         for i, action_name in enumerate(seq):
             (
                 command,
                 description,
-                _,
                 _icons,
                 keymappable,
             ) = self._actions[action_name]
@@ -407,7 +425,6 @@ class ActionManager:
 
                 def loc(cmd, b):
                     def inner():
-                        print('calling', cmd)
                         b._animation.start()
                         call_with_context(cmd, self.context)
 
@@ -597,7 +614,7 @@ class KeymapProvider:
             assert name is not None
             if description is None:
                 description = func.__doc__
-            action_manager.register_action(name, func, description, None, cls)
+            action_manager.register_action(name, func, description, cls)
             return func
 
         return _inner

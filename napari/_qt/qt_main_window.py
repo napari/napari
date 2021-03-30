@@ -304,13 +304,8 @@ class Window:
             'toggle_console_visibility', 'Ctrl+Shift+C'
         )
         for name, action in action_manager._actions.items():
-            qa = QAction(action.instance)
-            qa.setText(name)
-            qa.setStatusTip(action.description)
-            qa.triggered.connect(action.command)
-            sht = action_manager._shortcuts.get(name, None)
-            if sht is not None:
-                qa.setShortcut(sht)
+            qa = QAction(self.qt_viewer)
+            action_manager.bind_qaction(name, qa)
             self.window_menu.addAction(qa)
 
         # action = dock_widget.toggleViewAction()

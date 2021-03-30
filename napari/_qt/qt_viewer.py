@@ -165,10 +165,9 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility,
             "Show/Hide IPython console",
             self,
-            self,
         )
         action_manager.bind_button(
-            'toggle_console_visibility', self.viewerButtons.consoleButton, self
+            'toggle_console_visibility', self.viewerButtons.consoleButton
         )
 
         self._create_canvas()

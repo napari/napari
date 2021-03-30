@@ -128,10 +128,13 @@ class QtViewerButtons(QFrame):
         action_manager.bind_button('transpose_axes', self.transposeDimsButton)
         action_manager.bind_button('roll_axes', self.rollDimsButton)
 
-        self.resetViewButton = QtViewerPushButton(self.viewer)
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
 
         action_manager.register_action(
-            'home', type(self.viewer).reset_view, 'Reset View', None, self
+            'home',
+            lambda viewer: type(self.viewer).reset_view,
+            'Reset View',
+            self,
         )
         action_manager.bind_button('reset_view', self.resetViewButton)
 

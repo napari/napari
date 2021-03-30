@@ -8,7 +8,6 @@ action_manager.register_action(
     'reset_view',
     lambda viewer: ViewerModel.reset_view(viewer),
     trans._("Reset view to original state."),
-    None,
     ViewerModel,
 )
 
