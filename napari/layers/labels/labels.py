@@ -931,14 +931,13 @@ class Labels(_image_base_class):
         ):
             return
 
-        if self.n_dimensional or self.ndim == 2:
-            # work with entire image
-            labels = self.data
-            slice_coord = tuple(int_coord)
-        else:
-            # work with just the sliced image
-            labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self._dims_displayed)
+        dims_to_fill = self._dims_order[-self.n_edit_dimensions :]
+        data_slice_list = list(int_coord)
+        for dim in dims_to_fill:
+            data_slice_list[dim] = slice(None)
+        data_slice = tuple(data_slice_list)
+        labels = self.data[data_slice]
+        slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
         matches = labels == old_label
         if self.contiguous:
@@ -951,16 +950,16 @@ class Labels(_image_base_class):
                 )
 
         match_indices_local = np.nonzero(matches)
-        if not (self.n_dimensional or self.ndim == 2):
+        if self.ndim not in {2, self.n_edit_dimensions}:
             n_idx = len(match_indices_local[0])
             match_indices = []
             j = 0
-            for d in range(self.ndim):
-                if d in self._dims_not_displayed:
-                    match_indices.append(np.full(n_idx, int_coord[d]))
-                else:
+            for d in data_slice:
+                if isinstance(d, slice):
                     match_indices.append(match_indices_local[j])
                     j += 1
+                else:
+                    match_indices.append(np.full(n_idx, d, dtype=np.intp))
             match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
