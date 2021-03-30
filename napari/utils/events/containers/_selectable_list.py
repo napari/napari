@@ -19,7 +19,7 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """Called before adding an item to the selection."""
         if value not in self:
             raise ValueError(
-                f"Cannot selection item that is not in list: {value!r}"
+                f"Cannot select item that is not in list: {value!r}"
             )
         return value
 
