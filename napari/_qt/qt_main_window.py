@@ -25,6 +25,7 @@ from qtpy.QtWidgets import (
 from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
+from ..utils.key_bindings import action_manager
 from ..utils.misc import in_jupyter
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
@@ -298,22 +299,10 @@ class Window:
         else:
             self._debug_menu = None
 
-        from .qt_viewer import action_manager
-
-        action_manager.bind_shortcut(
-            'toggle_console_visibility', 'Ctrl+Shift+C'
-        )
         for name, action in action_manager._actions.items():
             qa = QAction(self.qt_viewer)
             action_manager.bind_qaction(name, qa)
             self.window_menu.addAction(qa)
-
-        # action = dock_widget.toggleViewAction()
-        # action.setStatusTip(dock_widget.name)
-        # action.setText(dock_widget.name)
-        # if dock_widget.shortcut is not None:
-        #    action.setShortcut(dock_widget.shortcut)
-        # self.window_menu.addAction(action)
 
         if show:
             self.show()
