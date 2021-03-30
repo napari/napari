@@ -1,6 +1,6 @@
 import logging
 import pickle
-from typing import List, Optional, TypeVar
+from typing import List, Optional, Sequence, TypeVar
 
 from qtpy.QtCore import QMimeData, QModelIndex, Qt
 
@@ -79,7 +79,7 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 class ItemMimeData(QMimeData):
     """An object to store list indices data during a drag operation."""
 
-    def __init__(self, items, indices):
+    def __init__(self, items: Sequence[ItemType], indices: Sequence[int]):
         super().__init__()
         self.items = items
         self.indices = indices

@@ -4,7 +4,7 @@ import logging
 from collections.abc import MutableSequence
 from typing import TYPE_CHECKING, Any, Generic, Tuple, TypeVar, Union
 
-from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
+from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from ...utils.events import disconnect_events
 from ...utils.events.containers import SelectableEventedList
@@ -78,42 +78,22 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return QModelIndex()
 
-    def data(self, index: QModelIndex, role: int) -> Any:
+    def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
         """Returns data stored under `role` for the item at `index`.
 
         A given `QModelIndex` can store multiple types of data, each
         with its own "ItemDataRole".  ItemType-specific subclasses will likely
         want to customize this method (and likely `setData` as well) for
         different data roles.
+
+        see: https://doc.qt.io/qt-5/qt.html#ItemDataRole-enum
+
         """
         if role == Qt.DisplayRole:
             return str(self.getItem(index))
         if role == Qt.UserRole:
             return self.getItem(index)
         return None
-
-    def canDropMimeData(
-        self,
-        data: QMimeData,
-        action: Qt.DropAction,
-        row: int,
-        column: int,
-        parent: QModelIndex,
-    ) -> bool:
-        """Returns True if the model can accept a drop of `data` at `row`.
-
-        The default implementation only checks if data has at least one format
-        in the list of mimeTypes() and if `action` is among the model's
-        supportedDropActions().
-
-        Here, we reimplement to check that `parent` is a MutableSequence.
-
-        Returns
-        -------
-        bool
-            Whether we can accept a drop of data at `row`, `column`, `parent`
-        """
-        return isinstance(self.getItem(parent), MutableSequence)
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         """Returns the item flags for the given `index`.
@@ -167,6 +147,29 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
     ) -> QModelIndex:
         """Return a QModelIndex for item at `row`, `column` and `parent`."""
+
+        # NOTE: the use of `self.createIndex(row, col, object)`` will create a
+        # model index that stores a pointer to the object, which can be
+        # retrieved later with index.internalPointer().  That's convenient and
+        # performant, and very important tree structures, but it causes a bug
+        # if integers (or perhaps values that get garbage collected?) are in
+        # the list, because `createIndex` is an overloaded function and
+        # `self.createIndex(row, col, <int>)` will assume that the third
+        # argument *is* the id of the object (not the object itself).  This
+        # will then cause a segfault if `index.internalPointer()` is used
+        # later.
+
+        # so we need to either:
+        #   1. refuse store integers in this model
+        #   2. never store the object (and incur the penalty of
+        #      self.getItem(idx) each time you want to get the value of an idx)
+        #   3. Have special treatment when we encounter integers in the model
+        #   4. Wrap every object in *another* object (which is basically what
+        #      Qt does with QAbstractItem)... ugh.
+        #
+        # Unfortunately, all of those come at a cost... as this is a very
+        # frequently called function :/
+
         return (
             self.createIndex(row, column, self.getItem(parent)[row])
             if self.hasIndex(row, column, parent)
@@ -256,10 +259,10 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         src_par, src_idx = self._split_nested_index(event.index)
         dest_par, dest_idx = self._split_nested_index(event.new_index)
 
-        logger.debug(
-            f"beginMoveRows({self.getItem(src_par)._node_name()}, {src_idx}, "
-            f"{self.getItem(dest_par)._node_name()}, {dest_idx})"
-        )
+        # logger.debug(
+        #     f"beginMoveRows({self.getItem(src_par)}, {src_idx}, "
+        #     f"{self.getItem(dest_par)}, {dest_idx})"
+        # )
 
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
@@ -278,11 +281,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
 
         An invalid `QModelIndex` will return the root object.
         """
-        if index.isValid():
-            item = index.internalPointer()
-            if item is not None:
-                return item
-        return self._root
+        return self._root[index.row()] if index.isValid() else self._root
 
     def _process_event(self, event):
         # for subclasses to handle ItemType-specific data

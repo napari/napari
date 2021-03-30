@@ -39,6 +39,44 @@ class QtNodeTreeModel(_BaseEventedItemModel[NodeType]):
             return self.getItem(index)
         return None
 
+    def index(
+        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
+    ) -> QModelIndex:
+        """Return a QModelIndex for item at `row`, `column` and `parent`."""
+
+        # NOTE: self.createIndex(row, col, object) will create a model index
+        # that *stores* a pointer to the object, which can be retrieved later
+        # with index.internalPointer().  That's convenient and performant, but
+        # it comes with a bug if integers are in the list, because
+        # `createIndex` is overloaded and `self.createIndex(row, col, <int>)`
+        # will assume that the third argument *is* the id of the object (not
+        # the object itself).  This will then cause a segfault if
+        # `index.internalPointer()` is used later.
+
+        # XXX: discuss
+        # so we need to either:
+        #   1. refuse store integers in this model
+        #   2. never store the object (and incur the penalty of
+        #      self.getItem(idx) each time you want to get the value of an idx)
+        #   3. Have special treatment when we encounter integers in the model
+
+        return (
+            self.createIndex(row, column, self.getItem(parent)[row])
+            if self.hasIndex(row, column, parent)
+            else QModelIndex()  # instead of index error, Qt wants null index
+        )
+
+    def getItem(self, index: QModelIndex) -> NodeType:
+        """Return python object for a given `QModelIndex`.
+
+        An invalid `QModelIndex` will return the root object.
+        """
+        if index.isValid():
+            item = index.internalPointer()
+            if item is not None:
+                return item
+        return self._root
+
     def parent(self, index: QModelIndex) -> QModelIndex:
         """Return the parent of the model item with the given ``index``.
 
