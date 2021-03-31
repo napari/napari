@@ -85,6 +85,7 @@ def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
     shape_b = (20, 12)
+    shape_c = (10, 10)
     np.random.seed(0)
     data_a = np.random.randint(20, size=shape_a)
     data_b = np.random.randint(20, size=shape_b)
@@ -94,6 +95,14 @@ def test_changing_labels():
     assert layer.ndim == len(shape_b)
     np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
+
+    data_c = np.zeros(shape_c, dtype=bool)
+    layer.data = data_c
+    assert np.issubdtype(layer.data.dtype, np.integer)
+
+    data_c = data_c.astype(np.float32)
+    with pytest.raises(TypeError):
+        layer.data = data_c
 
 
 def test_changing_labels_dims():
