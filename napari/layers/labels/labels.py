@@ -32,7 +32,7 @@ class Labels(_image_base_class):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or multiscale.
+        Labels data as an array or multiscale. Must be integer type or bools
     num_colors : int
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
@@ -85,7 +85,7 @@ class Labels(_image_base_class):
     Attributes
     ----------
     data : array
-        Integer valued label data. Can be N dimensional. Every pixel contains
+        Integer label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
     multiscale : bool
@@ -387,24 +387,21 @@ class Labels(_image_base_class):
         self.color_mode = color_mode
 
     def _ensure_int_labels(self, data):
-        """Ensure data is integer by converting from float if required"""
+        """Ensure data is integer by converting from bool if required, raising an error otherwise"""
         looks_multiscale, data = guess_multiscale(data)
         if not looks_multiscale:
             data = [data]
-        if any(np.issubdtype(d.dtype, np.floating) for d in data):
-            warnings.warn(
-                "Float dtypes are not supported for Labels layers. Converting data to integers..."
-            )
-            int_data = []
-            for d in data:
-                if d.dtype == np.float64:
-                    int_data.append(d.astype(np.int64))
-                elif d.dtype == np.float32:
-                    int_data.append(d.astype(np.int32))
-                else:
-                    int_data.append(d)
-            data = int_data
-
+        int_data = []
+        for d in data:
+            if np.issubdtype(d.dtype, np.floating):
+                raise TypeError(
+                    f"Only integer types are supported for Labels layers, but data contains {d.dtype}."
+                )
+            if d.dtype == bool:
+                int_data.append(d.astype(np.int8))
+            else:
+                int_data.append(d)
+        data = int_data
         if not looks_multiscale:
             data = data[0]
         return data

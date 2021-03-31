@@ -3,6 +3,7 @@ import itertools
 import numpy as np
 import pytest
 import xarray as xr
+from numpy.core.numerictypes import issubdtype
 from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -55,19 +56,29 @@ def test_3D_labels():
 
 def test_float_labels():
     """Test instantiating labels layer with floats"""
-    shape = (10, 10)
     np.random.seed(0)
-    data = np.random.uniform(0, 20, size=shape)
-    with pytest.warns(UserWarning):
-        layer = Labels(data)
-        assert np.issubdtype(layer.data.dtype, np.integer)
+    data = np.random.uniform(0, 20, size=(10, 10))
+    with pytest.raises(TypeError):
+        Labels(data)
 
     data0 = np.random.uniform(20, size=(20, 20))
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
-    with pytest.warns(UserWarning):
-        layer = Labels(data)
-        assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
+    with pytest.raises(TypeError):
+        Labels(data)
+
+
+def test_bool_labels():
+    """Test instantiating labels layer with bools"""
+    data = np.zeros((10, 10), dtype=bool)
+    layer = Labels(data)
+    assert issubdtype(layer.data.dtype, np.integer)
+
+    data0 = np.zeros((20, 20), dtype=bool)
+    data1 = data0[::2, ::2].astype(np.int32)
+    data = [data0, data1]
+    layer = Labels(data)
+    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
 
 
 def test_changing_labels():
