@@ -239,7 +239,28 @@ def discover_sample_data():
     sd_hook.call_historic(result_callback=register_sample_data, with_impl=True)
 
 
-def available_sample_data():
+def available_samples() -> Tuple[Tuple[str, str], ...]:
+    """Return a tuple of sample data keys provided by plugins.
+
+    Returns
+    -------
+    sample_keys : Tuple[Tuple[str, str], ...]
+        A sequence of 2-tuples ``(plugin_name, sample_name)`` showing available
+        sample data provided by plugins.  To load sample data into the viewer,
+        use :meth:`napari.Viewer.open_sample`.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        from napari.plugins import available_samples
+
+        sample_keys = available_samples()
+        if sample_keys:
+            # load first available sample
+            viewer.open_sample(*sample_keys[0])
+    """
     return tuple((p, s) for p in _sample_data for s in _sample_data[p])
 
 
@@ -253,5 +274,5 @@ __all__ = [
     'menu_item_template',
     'dock_widgets',
     'function_widgets',
-    'available_sample_data',
+    'available_samples',
 ]

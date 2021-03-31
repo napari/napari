@@ -659,14 +659,32 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return layer_list
 
     def open_sample(self, plugin: str, sample: str, **kwargs):
-        from ..plugins import _sample_data
+        """Open `sample` from `plugin` and add it to the viewer.
+
+        To see all available samples registered by plugins, use
+        :func:`napari.plugins.available_samples`
+
+        Parameters
+        ----------
+        plugin : str
+            name of a plugin providing a sample
+        sample : str
+            name of the sample
+
+        Raises
+        ------
+        KeyError
+            If `plugin` does not provide a sample named `sample`.
+        """
+        from ..plugins import _sample_data, available_samples
 
         try:
             data = _sample_data[plugin][sample]
         except KeyError:
             raise KeyError(
                 f"Plugin {plugin!r} does not provide sample data "
-                f"named {sample!r}."
+                f"named {sample!r}. "
+                f"Available samples include: {available_samples()}"
             )
 
         if callable(data):
