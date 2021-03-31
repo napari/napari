@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Union
+
+from ...utils.events import SelectableEventedList
+from ...utils.tree import Group
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QWidget
+
+
+def create_view(
+    obj: Union[SelectableEventedList, Group], parent: QWidget = None
+):
+    """Create a `QtListView`, or `QtNodeTreeView` for `obj`.
+
+    Parameters
+    ----------
+    obj : SelectableEventedList or Group
+        The python object for which to creat a QtView.
+    parent : QWidget, optional
+        Optional parent widget, by default None
+
+    Returns
+    -------
+    Union[QtListView, QtNodeTreeView]
+        A view instance appropriate for `obj`.
+    """
+    from . import QtListView, QtNodeTreeView
+
+    if isinstance(obj, Group):
+        return QtNodeTreeView(obj, parent=parent)
+    elif isinstance(obj, SelectableEventedList):
+        return QtListView(obj, parent=parent)
+    raise TypeError(f"Cannot create Qt view for obj: {obj}")
+
+
+def create_model(
+    obj: Union[SelectableEventedList, Group], parent: QWidget = None
+):
+    """Create a `QtListModel`, or `QtNodeTreeModel` for `obj`.
+
+    Parameters
+    ----------
+    obj : SelectableEventedList or Group
+        The python object for which to creat a QtView.
+    parent : QWidget, optional
+        Optional parent widget, by default None
+
+    Returns
+    -------
+    Union[QtListModel, QtNodeTreeModel]
+        A model instance appropriate for `obj`.
+    """
+    from . import QtListModel, QtNodeTreeModel
+
+    if isinstance(obj, Group):
+        return QtNodeTreeModel(obj, parent=parent)
+    elif isinstance(obj, SelectableEventedList):
+        return QtListModel(obj, parent=parent)
+    raise TypeError(f"Cannot create Qt model for obj: {obj}")
