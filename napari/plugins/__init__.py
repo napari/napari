@@ -202,25 +202,44 @@ def register_sample_data(
     data: Dict[str, Union[str, Callable[..., Iterable[LayerData]]]],
     hookimpl: HookImplementation,
 ):
+    """Register sample data dict returned by `napari_provide_sample_data`.
+
+    Each key in `data` is a `sample_name` (the string that will appear in the
+    `Open Sample` menu), and the value is either a string, or a callable that
+    returns an iterable of ``LayerData`` tuples, where each tuple is a 1-, 2-,
+    or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data, meta,
+    layer_type)``.
+
+    Parameters
+    ----------
+    data : Dict[str, Union[str, Callable[..., Iterable[LayerData]]]]
+        A mapping of {sample_name->data}
+    hookimpl : HookImplementation
+        The hook implementation that returned the dict
+    """
     plugin_name = hookimpl.plugin_name
-    hook_name = '`napari_provide_sample_data`'
+    hook_name = 'napari_provide_sample_data'
     if not isinstance(data, dict):
         warn(
-            f'Plugin {plugin_name!r} provided a non-dict object to {hook_name}'
-            ': data ignored.'
+            f'Plugin {plugin_name!r} provided a non-dict object to '
+            f'{hook_name!r}: data ignored.'
         )
         return
-    _data = data.copy()
-    for name, dfunc in list(data.items()):
-        if not callable(dfunc) and not isinstance(dfunc, str):
+
+    _data = {}
+    for name, datum in list(data.items()):
+        if callable(datum) or isinstance(datum, str):
+            _data[name] = datum
+        else:
             warn(
                 f'Plugin {plugin_name!r} provided a non-callable, non-string, '
-                f'object for key {name} in the dict returned by {hook_name}. '
-                'Ignoring.'
+                f'object for key {name!r} in the dict returned by '
+                f'{hook_name!r}. Ignoring.'
             )
-            _data.pop(name)
+    if plugin_name not in _sample_data:
+        _sample_data[plugin_name] = {}
 
-    _sample_data[plugin_name] = _data
+    _sample_data[plugin_name].update(_data)
 
 
 def discover_dock_widgets():
