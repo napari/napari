@@ -55,7 +55,7 @@ def napari_provide_sample_data() -> Dict[
 
     Plugins may implement this hook to provide sample data for use in napari.
     Sample data is accessible in the `File > Open Sample` menu, or
-    programmatically, with :meth:`napari.Viewer.load_sample_data`.
+    programmatically, with :meth:`napari.Viewer.open_sample`.
 
     Plugins implementing this hook specification must return a ``dict``, where
     each key is a `sample_name` (the string that will appear in the

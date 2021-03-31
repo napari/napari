@@ -448,7 +448,7 @@ class Window:
                     action = QAction(full_name, parent=self._qt_window)
 
                 def _add_sample(*args, key=key):
-                    self.qt_viewer.viewer.load_sample_data(*key)
+                    self.qt_viewer.viewer.open_sample(*key)
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)

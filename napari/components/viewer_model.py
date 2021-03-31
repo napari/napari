@@ -658,15 +658,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return layer_list
 
-    def load_sample_data(self, plugin_name: str, sample_name: str, **kwargs):
+    def open_sample(self, plugin: str, sample: str, **kwargs):
         from ..plugins import _sample_data
 
         try:
-            data = _sample_data[plugin_name][sample_name]
+            data = _sample_data[plugin][sample]
         except KeyError:
             raise KeyError(
-                f"Plugin {plugin_name!r} does not provide sample data "
-                f"named {sample_name!r}."
+                f"Plugin {plugin!r} does not provide sample data "
+                f"named {sample!r}."
             )
 
         if callable(data):
