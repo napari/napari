@@ -197,7 +197,7 @@ class PluginsSettings(BaseNapariSettings):
 
     schema_version = (0, 1, 0)
 
-    plugins_call_order: dict = Field(
+    plugins_call_order: list = Field(
         None,
         title=trans._("Plugin sort order"),
         description=trans._(
@@ -211,7 +211,7 @@ class PluginsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'plugins_call_order']
+        preferences_exclude = ['schema_version']
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]
