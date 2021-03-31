@@ -28,7 +28,7 @@ General rendering flow:
     on any platform, falling back to the system default otherwise.
     b. ``QStyle`` paints various elements using methods like ``drawPrimitive``
        and ``drawControl``.  These can be overridden for very fine control.
-6. It has hard to use stylesheets with custom ``QStyles``... but it's possible
+6. It is hard to use stylesheets with custom ``QStyles``... but it's possible
    to style sub-controls in ``QAbstractItemView`` (such as ``QTreeView``):
    https://doc.qt.io/qt-5/stylesheet-reference.html#list-of-sub-controls
 
