@@ -20,7 +20,7 @@ def _get_all_keybinding_methods(type_):
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 15
 
 
 def test_len_methods_viewer():
@@ -61,7 +61,7 @@ def test_viewer(make_napari_viewer):
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
-    assert view.layers.vbox_layout.count() == 2
+    assert view.layers.model().rowCount() == 0
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
