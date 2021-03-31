@@ -49,7 +49,6 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 """
 import inspect
-import traceback
 import weakref
 from collections import Counter
 from typing import (
@@ -66,7 +65,7 @@ from typing import (
 )
 
 from typing_extensions import Literal
-from vispy.util.logs import _handle_exception, logger
+from vispy.util.logs import _handle_exception
 
 
 class Event:
@@ -643,9 +642,18 @@ class WarningEmitter(EventEmitter):
     warning message.
     """
 
-    def __init__(self, message, *args, **kwargs):
+    def __init__(
+        self,
+        message,
+        category=FutureWarning,
+        stacklevel=3,
+        *args,
+        **kwargs,
+    ):
         self._message = message
         self._warned = False
+        self._category = category
+        self._stacklevel = stacklevel
         EventEmitter.__init__(self, *args, **kwargs)
 
     def connect(self, cb, *args, **kwargs):
@@ -664,8 +672,11 @@ class WarningEmitter(EventEmitter):
         if isinstance(cb, tuple) and getattr(cb[0], cb[1], None) is None:
             return
 
-        traceback.print_stack()
-        logger.warning(self._message)
+        import warnings
+
+        warnings.warn(
+            self._message, category=self._category, stacklevel=self._stacklevel
+        )
         self._warned = True
 
 
@@ -865,7 +876,8 @@ class EmitterGroup(EventEmitter):
         # while simultaneously eliminating the overhead if nobody is listening.
         if connect:
             for emitter in self:
-                self[emitter].connect(self)
+                if not isinstance(self[emitter], WarningEmitter):
+                    self[emitter].connect(self)
         else:
             for emitter in self:
                 self[emitter].disconnect(self)

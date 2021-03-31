@@ -8,6 +8,7 @@ import numpy as np
 
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
+from ...utils.events.event import WarningEmitter
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -122,8 +123,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Cursor position in world coordinates.
     ndim : int
         Dimensionality of the layer.
-    selected : bool
-        Flag if layer is selected in the viewer or not.
     thumbnail : (N, M, 4) array
         Array of thumbnail data for the layer.
     status : str
@@ -179,7 +178,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._selected = True
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -260,8 +258,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             blending=Event,
             opacity=Event,
             visible=Event,
-            select=Event,
-            deselect=Event,
             scale=Event,
             translate=Event,
             rotate=Event,
@@ -278,6 +274,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             _ndisplay=Event,
+            select=WarningEmitter(
+                "'layer.events.select' is deprecated and will be "
+                "removed in napari v0.4.9, use "
+                "'viewer.layers.selection.events.changed' instead, and inspect"
+                " the 'added' attribute on the event.",
+                type='select',
+            ),
+            deselect=WarningEmitter(
+                "'layer.events.deselect' is deprecated and will be "
+                "removed in napari v0.4.9, use "
+                "'viewer.layers.selection.events.changed' instead, and inspect"
+                " the 'removed' attribute on the event.",
+                type='deselect',
+            ),
         )
         self.name = name
 
@@ -727,18 +737,32 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def selected(self):
         """bool: Whether this layer is selected or not."""
-        return self._selected
+        warnings.warn(
+            "'layer.selected' is deprecated and will be removed in v0.4.9. "
+            "Please use `layer in viewer.layers.selection`",
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        layers = getattr(self, '_deprecated_layerlist', None)
+        if layers is not None:
+            return self in layers.selection
+        return False
 
     @selected.setter
     def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+        warnings.warn(
+            "'layer.selected' is deprecated and will be removed in v0.4.9. "
+            "Please use `viewer.layers.selection.add(layer)` or "
+            "`viewer.layers.selection.remove(layer)`",
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        layers = getattr(self, '_deprecated_layerlist', None)
+        if layers is not None:
+            if selected:
+                layers.selection.add(self)
+            else:
+                layers.selection.discard(self)
 
     @property
     def help(self):
@@ -1075,3 +1099,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    def _on_selection(self, selected: bool):
+        # This method is a temporary workaround to the fact that the Points
+        # layer needs to know when its selection state changes so that it can
+        # update the highlight state.  This, along with the events.select and
+        # events.deselect emitters, (and the LayerList._on_selection_event
+        # method) can be removed once highlighting logic has been removed from
+        # the layer model.
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()

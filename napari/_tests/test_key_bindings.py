@@ -79,7 +79,7 @@ def test_layer_key_bindings(make_napari_viewer):
     view = viewer.window.qt_viewer
 
     layer = viewer.add_image(np.random.random((10, 20)))
-    layer.selected = True
+    viewer.layers.selection.add(layer)
 
     mock_press = Mock()
     mock_release = Mock()
