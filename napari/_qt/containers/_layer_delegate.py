@@ -49,36 +49,64 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
+# translations from the old qt layer list
+# tb.setToolTip(trans._('Layer thumbnail'))
+# cb.setToolTip(trans._('Layer visibility'))
+# ltb.setToolTip(trans._('Layer type'))
+# msg = trans._('Click to select\nDrag to rearrange')
+
 
 class LayerDelegate(QStyledItemDelegate):
+    """A QItemDelegate specialized for painting Layer objects.
+
+    In Qt's `Model/View architecture
+    <https://doc.qt.io/qt-5/model-view-programming.html>`_. A *delegate* is an
+    object that controls the visual rendering (and editing widgets) of an item
+    in a view. For more, see:
+    https://doc.qt.io/qt-5/model-view-programming.html#delegate-classes
+
+    This class provides the logic required to paint a Layer item in the
+    :class:`napari._qt.containers.QtLayerList`.  The `QStyledItemDelegate`
+    super-class provides most of the logic (including display/editing of the
+    layer name, a visibility checkbox, and an icon for the layer type).  This
+    subclass provides additional logic for drawing the layer thumbnail, picking
+    the appropriate icon for the layer, and some additional style/UX issues.
+    """
+
     def paint(
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
         index: QModelIndex,
     ):
+        """Paint the item in the model at `index`."""
         # update the icon based on layer type
-        self._get_option_icon(option, index)
-        # paint the standard itemView (includes layer name, icon, and visible)
+
+        self.get_layer_icon(option, index)
+        # paint the standard itemView (includes name, icon, and vis. checkbox)
         super().paint(painter, option, index)
         # paint the thumbnail
         self._paint_thumbnail(painter, option, index)
 
-    def _get_option_icon(self, option, index):
+    def get_layer_icon(self, option, index):
+        """Add the appropriate QIcon to the item based on the layer type."""
         layer = index.data(index.model().LayerRole)
-        if hasattr(layer, 'is_group') and layer.is_group():
+        if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
             expanded = option.widget.isExpanded(index)
             icon_name = 'folder-open' if expanded else 'folder'
         else:
             icon_name = f'new_{layer._type_string}'
+
         icon = QColoredSVGIcon.from_resources(icon_name)
         # guessing theme rather than passing it through.
         bg = option.palette.color(option.palette.Background).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
         option.decorationSize = QSize(18, 18)
+        option.decorationPosition = option.Right  # put icon on the right
         option.features |= option.HasDecoration
 
     def _paint_thumbnail(self, painter, option, index):
+        """paint the layer thumbnail."""
         # paint the thumbnail
         # MAGICNUMBER: numbers from the margin applied in the stylesheet to
         # QtLayerTreeView::item
@@ -96,11 +124,11 @@ class LayerDelegate(QStyledItemDelegate):
         index: QModelIndex,
     ) -> QWidget:
         """User has double clicked on layer name."""
-        # necessary for geometry, otherwise editor takes up full space.
-        self._get_option_icon(option, index)
+        # necessary for geometry, otherwise editor takes up full width.
+        self.get_layer_icon(option, index)
         editor = super().createEditor(parent, option, index)
+        # make sure editor has same alignment as the display name
         editor.setAlignment(Qt.Alignment(index.data(Qt.TextAlignmentRole)))
-        editor.setObjectName("editor")
         return editor
 
     def editorEvent(
@@ -110,7 +138,13 @@ class LayerDelegate(QStyledItemDelegate):
         option: 'QStyleOptionViewItem',
         index: QtCore.QModelIndex,
     ) -> bool:
-        # intercepting double click event to enable fast visibility changing
+        """Called when an event has occured in the editor.
+
+        This can be used to customize how the delegate handles mouse/key events
+        """
+        # if the user clicks quickly on the visibility checkbox, we *don't*
+        # want it to be interpreted as a double-click.  We want the visibilty
+        # to simply be toggled.
         if event.type() == event.MouseButtonDblClick:
             self.initStyleOption(option, index)
             style = option.widget.style()
@@ -124,4 +158,5 @@ class LayerDelegate(QStyledItemDelegate):
                 else:
                     state = Qt.Unchecked if cur_state else Qt.Checked
                 return model.setData(index, state, Qt.CheckStateRole)
+        # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
