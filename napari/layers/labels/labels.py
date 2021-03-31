@@ -387,20 +387,22 @@ class Labels(_image_base_class):
         self.color_mode = color_mode
 
     def _ensure_int_labels(self, data):
-        """Ensure data is integer by converting from bool if required, raising an error otherwise"""
+        """Ensure data is integer by converting from bool if required, raising an error otherwise."""
         looks_multiscale, data = guess_multiscale(data)
         if not looks_multiscale:
             data = [data]
         int_data = []
-        for d in data:
-            if np.issubdtype(d.dtype, np.floating):
+        for data_level in data:
+            if np.issubdtype(data_level.dtype, np.floating):
                 raise TypeError(
-                    f"Only integer types are supported for Labels layers, but data contains {d.dtype}."
+                    trans._(
+                        "Only integer types are supported for Labels layers, but data contains {}."
+                    ).format(data_level.dtype)
                 )
-            if d.dtype == bool:
-                int_data.append(d.astype(np.int8))
+            if data_level.dtype == bool:
+                int_data.append(data_level.astype(np.int8))
             else:
-                int_data.append(d)
+                int_data.append(data_level)
         data = int_data
         if not looks_multiscale:
             data = data[0]
