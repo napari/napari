@@ -68,6 +68,7 @@ QStatusBar {
 
 #QtCustomTitleBar > QLabel {
   color: {{ primary }};
+  font-size: 11pt;
 }
 
 #QTitleBarCloseButton{

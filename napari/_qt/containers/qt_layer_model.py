@@ -1,26 +1,13 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
-from qtpy.QtWidgets import QWidget
 
 from ...layers import Layer
-from . import QtListModel
-
-if TYPE_CHECKING:
-    from ...components.layerlist import LayerList
+from .qt_list_model import QtListModel
 
 
 class QtLayerListModel(QtListModel[Layer]):
     LayerRole = Qt.UserRole
     ThumbnailRole = Qt.UserRole + 1
-
-    def __init__(self, root: LayerList, parent: QWidget = None):
-        super().__init__(root, parent)
-        self.data
-        self.setRoot(root)
 
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""

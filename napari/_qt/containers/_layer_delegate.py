@@ -43,7 +43,6 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from ..qt_resources import QColoredSVGIcon
-from .qt_layer_model import QtLayerListModel
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
@@ -66,7 +65,7 @@ class LayerDelegate(QStyledItemDelegate):
         self._paint_thumbnail(painter, option, index)
 
     def _get_option_icon(self, option, index):
-        layer = index.data(QtLayerListModel.LayerRole)
+        layer = index.data(index.model().LayerRole)
         if hasattr(layer, 'is_group') and layer.is_group():
             expanded = option.widget.isExpanded(index)
             icon_name = 'folder-open' if expanded else 'folder'
@@ -87,7 +86,7 @@ class LayerDelegate(QStyledItemDelegate):
         h = index.data(Qt.SizeHintRole).height() - 4
         thumb_rect.setWidth(h)
         thumb_rect.setHeight(h)
-        image = index.data(QtLayerListModel.ThumbnailRole)
+        image = index.data(index.model().ThumbnailRole)
         painter.drawPixmap(thumb_rect, QPixmap.fromImage(image))
 
     def createEditor(

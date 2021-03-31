@@ -7,7 +7,6 @@ from ...layers import Layer
 from ...utils import config
 from ...utils.translations import trans
 from ._layer_delegate import LayerDelegate
-from .qt_layer_model import QtLayerListModel
 from .qt_list_view import QtListView
 
 if TYPE_CHECKING:
@@ -22,7 +21,6 @@ if TYPE_CHECKING:
 
 class QtLayerList(QtListView[Layer]):
     _list: 'LayerList'
-    model_class = QtLayerListModel
 
     def __init__(self, root: 'LayerList', parent: QWidget = None):
         super().__init__(root, parent)
