@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import inspect
 import itertools
 import os
 import warnings
 from functools import lru_cache
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -53,6 +56,8 @@ EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
+
+_PathLike = Union[str, Path]
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -681,21 +686,31 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         try:
             data = _sample_data[plugin][sample]
         except KeyError:
-            raise KeyError(
+            samples = available_samples()
+            msg = (
                 f"Plugin {plugin!r} does not provide sample data "
                 f"named {sample!r}. "
-                f"Available samples include: {available_samples()}"
             )
+            if samples:
+                msg += f"Available samples include: {samples}"
+            else:
+                msg += "No plugin samples have been registered."
+            raise KeyError(msg)
 
         if callable(data):
             for datum in data(**kwargs):
                 self._add_layer_from_data(*datum)
-        elif isinstance(data, str):
+        elif isinstance(data, (str, Path)):
             self.open(data)
+        else:
+            raise TypeError(
+                'Got unexpected type for sample '
+                f'({plugin!r}, {sample!r}): {type(data)}'
+            )
 
     def open(
         self,
-        path: Union[str, Sequence[str]],
+        path: Union[_PathLike, Sequence[_PathLike]],
         *,
         stack: bool = False,
         plugin: Optional[str] = None,
@@ -737,7 +752,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers : list
             A list of any layers that were added to the viewer.
         """
-        paths = [path] if isinstance(path, str) else path
+        paths = [path] if isinstance(path, (Path, str)) else path
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(

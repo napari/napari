@@ -1,6 +1,7 @@
 import importlib
 import sys
 from inspect import signature
+from pathlib import Path
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
@@ -17,7 +18,6 @@ from warnings import warn
 
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
-from numpy import isin
 
 from ..types import AugmentedWidget, LayerData
 from ..utils._appdirs import user_site_packages
@@ -228,7 +228,7 @@ def register_sample_data(
 
     _data = {}
     for name, datum in list(data.items()):
-        if callable(datum) or isinstance(datum, str):
+        if callable(datum) or isinstance(datum, (str, Path)):
             _data[name] = datum
         else:
             warn(

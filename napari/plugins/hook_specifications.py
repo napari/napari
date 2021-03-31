@@ -30,17 +30,34 @@ For more general background on the plugin hook calling mechanism, see the
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
-
 # These hook specifications also serve as the API reference for plugin
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
+from __future__ import annotations
 
-from types import FunctionType
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Union,
+)
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import AugmentedWidget, LayerData, ReaderFunction, WriterFunction
+if TYPE_CHECKING:
+    from pathlib import Path
+    from types import FunctionType
+
+    from ..types import (
+        AugmentedWidget,
+        LayerData,
+        ReaderFunction,
+        WriterFunction,
+    )
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -49,7 +66,7 @@ from ..types import AugmentedWidget, LayerData, ReaderFunction, WriterFunction
 
 @napari_hook_specification(historic=True)
 def napari_provide_sample_data() -> Dict[
-    str, Union[str, Callable[..., Iterable[LayerData]]]
+    str, Union[Union[str, Path], Callable[..., Iterable[LayerData]]]
 ]:
     """Provide sample data.
 
