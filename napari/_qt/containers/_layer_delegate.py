@@ -135,7 +135,7 @@ class LayerDelegate(QStyledItemDelegate):
         self,
         event: QtCore.QEvent,
         model: QtCore.QAbstractItemModel,
-        option: 'QStyleOptionViewItem',
+        option: QStyleOptionViewItem,
         index: QtCore.QModelIndex,
     ) -> bool:
         """Called when an event has occured in the editor.
