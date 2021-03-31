@@ -122,7 +122,6 @@ See below for the full list of changes.
   version. Instead, use `layer.get_status(viewer.cursor.position, world=True)`
   (#2443).
 - Label-layers must be of integer type, float `Labels` layers are no longer allowed (see #2491)
-- If a magicgui-annotated function took an `napari.layers.Image` as parameter, this included `napari.layers.Labels` layers. Starting with 0.4.7, developers have to change the accepted parameter type to `napari.layers.Layer` if they want to consume images and labels.  
 
 ## Deprecations
 
