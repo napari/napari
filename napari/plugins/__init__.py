@@ -22,7 +22,7 @@ from napari_plugin_engine import HookImplementation, PluginManager
 from ..types import AugmentedWidget, LayerData
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from . import _builtins, _skimage_data, hook_specifications
+from . import _builtins, hook_specifications
 
 if sys.platform.startswith('linux') and running_as_bundled_app():
     sys.path.append(user_site_packages())
@@ -39,6 +39,8 @@ with plugin_manager.discovery_blocked():
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
     if importlib.util.find_spec("skimage") is not None:
+        from . import _skimage_data
+
         plugin_manager.register(_skimage_data, name='scikit-image')
 
 WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
