@@ -177,8 +177,8 @@ class QtPerformance(QWidget):
         """Update our label and progress bar and log any new slow events."""
         # Update our timer label.
         elapsed = time.time() - self.start_time
-        self.timer_label.setText(trans._("Uptime: {elapsed:.2f}")).format(
-            elapsed=elapsed
+        self.timer_label.setText(
+            trans._("Uptime: {elapsed:.2f}").format(elapsed=elapsed)
         )
 
         average, long_events = self._get_timer_info()
