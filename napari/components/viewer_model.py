@@ -25,6 +25,7 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -56,8 +57,6 @@ EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
-
-_PathLike = Union[str, Path]
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -684,7 +683,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         from ..plugins import _sample_data, available_samples
 
         try:
-            data = _sample_data[plugin][sample]
+            data = _sample_data[plugin][sample]['data']
         except KeyError:
             samples = available_samples()
             msg = (
@@ -710,7 +709,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def open(
         self,
-        path: Union[_PathLike, Sequence[_PathLike]],
+        path: PathOrPaths,
         *,
         stack: bool = False,
         plugin: Optional[str] = None,

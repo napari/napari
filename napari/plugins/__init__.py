@@ -18,8 +18,9 @@ from warnings import warn
 
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
+from numpy import isin
 
-from ..types import AugmentedWidget, LayerData
+from ..types import AugmentedWidget, LayerData, SampleDict
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from . import _builtins, hook_specifications
@@ -48,9 +49,7 @@ dock_widgets: Dict[
     str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
 ] = dict()
 function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
-_sample_data: Dict[
-    str, Dict[str, Union[str, Callable[..., Iterable[LayerData]]]]
-] = dict()
+_sample_data: Dict[str, Dict[str, SampleDict]] = dict()
 
 
 def register_dock_widget(
@@ -230,14 +229,28 @@ def register_sample_data(
 
     _data = {}
     for name, datum in list(data.items()):
-        if callable(datum) or isinstance(datum, (str, Path)):
-            _data[name] = datum
+        if isinstance(datum, dict):
+            if 'data' not in datum or 'display_name' not in datum:
+                warn(
+                    f'In {hook_name!r}, plugin {plugin_name!r} provided an '
+                    f'invalid dict object for key {name!r} that does not have '
+                    'required keys: "data" and "display_name".  Ignoring'
+                )
+                continue
         else:
+            datum = {'data': datum, 'display_name': name}
+
+        if not (
+            callable(datum['data']) or isinstance(datum['data'], (str, Path))
+        ):
             warn(
-                f'Plugin {plugin_name!r} provided a non-callable, non-string, '
-                f'object for key {name!r} in the dict returned by '
-                f'{hook_name!r}. Ignoring.'
+                f'Plugin {plugin_name!r} provided invalid data for key '
+                f'{name!r} in the dict returned by {hook_name!r}. '
+                f'(Must be str, callable, or dict), got ({type(datum["data"])}).'
             )
+            continue
+        _data[name] = datum
+
     if plugin_name not in _sample_data:
         _sample_data[plugin_name] = {}
 

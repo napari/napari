@@ -35,29 +35,18 @@ For more general background on the plugin hook calling mechanism, see the
 # imperative!
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Union,
-)
+from types import FunctionType
+from typing import Any, Dict, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-if TYPE_CHECKING:
-    from pathlib import Path
-    from types import FunctionType
-
-    from ..types import (
-        AugmentedWidget,
-        LayerData,
-        ReaderFunction,
-        WriterFunction,
-    )
+from ..types import (
+    AugmentedWidget,
+    ReaderFunction,
+    SampleData,
+    SampleDict,
+    WriterFunction,
+)
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
@@ -65,9 +54,7 @@ if TYPE_CHECKING:
 
 
 @napari_hook_specification(historic=True)
-def napari_provide_sample_data() -> Dict[
-    str, Union[Union[str, Path], Callable[..., Iterable[LayerData]]]
-]:
+def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
     """Provide sample data.
 
     Plugins may implement this hook to provide sample data for use in napari.
@@ -75,7 +62,7 @@ def napari_provide_sample_data() -> Dict[
     programmatically, with :meth:`napari.Viewer.open_sample`.
 
     Plugins implementing this hook specification must return a ``dict``, where
-    each key is a `sample_name` (the string that will appear in the
+    each key is a `sample_key` (the string that will appear in the
     `Open Sample` menu), and the value is either a string, or
     a callable that returns an iterable of ``LayerData`` tuples, where each
     tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
@@ -85,8 +72,14 @@ def napari_provide_sample_data() -> Dict[
 
     Examples
     --------
-    Here's a minimal example of a plugin that provides two samples: random data
-    from numpy, and a random image pulled from the internet.
+    Here's a minimal example of a plugin that provides three samples:
+
+        1. random data from numpy
+        2. a random image pulled from the internet
+        3. random data from numpy, provided as a dict with the keys:
+            'display_name': a string that will show in the menu (by default,
+                the `sample_key` will be shown)
+            'data': a string or callable, as in 1/2.
 
     .. code-block:: python
 
@@ -102,12 +95,16 @@ def napari_provide_sample_data() -> Dict[
             return {
                 'random data': _generate_random_data,
                 'random image': 'https://picsum.photos/1024'
+                'sample_key': {
+                    'display_name': 'Some Random Data (512 x 512)'
+                    'data': _generate_random_data,
+                }
             }
 
     Returns
     -------
     Dict[ str, Union[str, Callable[..., Iterable[LayerData]]] ]
-        A mapping of `sample_name` to `data_loader`
+        A mapping of `sample_key` to `data_loader`
     """
 
 

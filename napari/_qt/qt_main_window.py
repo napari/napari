@@ -439,16 +439,18 @@ class Window:
             else:
                 menu = open_sample_menu
 
-            for samp_name in samples:
-                key = (plugin_name, samp_name)
+            for samp_name, samp_dict in samples.items():
+                display_name = samp_dict['display_name']
                 if multiprovider:
-                    action = QAction(samp_name, parent=self._qt_window)
+                    action = QAction(display_name, parent=self._qt_window)
                 else:
-                    full_name = plugins.menu_item_template.format(*key)
+                    full_name = plugins.menu_item_template.format(
+                        plugin_name, display_name
+                    )
                     action = QAction(full_name, parent=self._qt_window)
 
-                def _add_sample(*args, key=key):
-                    self.qt_viewer.viewer.open_sample(*key)
+                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                    self.qt_viewer.viewer.open_sample(plg, smp)
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)

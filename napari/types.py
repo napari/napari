@@ -1,14 +1,18 @@
 from functools import wraps
+from pathlib import Path
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     NewType,
+    Sequence,
     Tuple,
     Type,
+    TypedDict,
     Union,
 )
 
@@ -35,8 +39,9 @@ ArrayLike = Union[np.ndarray, 'dask.array.Array', 'zarr.Array']
 FullLayerData = Tuple[Any, Dict, str]
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
-PathLike = Union[str, List[str]]
-ReaderFunction = Callable[[PathLike], List[LayerData]]
+PathLike = Union[str, Path]
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
+ReaderFunction = Callable[[PathOrPaths], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
 ExcInfo = Union[
@@ -47,6 +52,15 @@ ExcInfo = Union[
 # Types for GUI HookSpecs
 WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
 AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
+
+
+# Sample Data for napari_provide_sample_data hookspec
+SampleData = Union[PathLike, Callable[..., Iterable[LayerData]]]
+
+
+class SampleDict(TypedDict):
+    display_name: str
+    data: SampleData
 
 
 # these types are mostly "intentionality" placeholders.  While it's still hard
@@ -81,7 +95,7 @@ LayerDataTuple = NewType("LayerDataTuple", tuple)
 
 
 def image_reader_to_layerdata_reader(
-    func: Callable[[PathLike], ArrayLike]
+    func: Callable[[PathOrPaths], ArrayLike]
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
 

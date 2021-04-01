@@ -42,15 +42,26 @@ def test_sample_hook(test_plugin_manager, monkeypatch):
             return {
                 'random data': _generate_random_data,
                 'napari logo': LOGO,
+                'samp_key': {
+                    'data': _generate_random_data,
+                    'display_name': 'I look gorgeous in the menu!',
+                },
             }
 
     test_plugin_manager.register(test_plugin)
 
-    assert registered['test_plugin']['random data'] == _generate_random_data
-    assert registered['test_plugin']['napari logo'] == LOGO
+    reg = registered['test_plugin']
+    assert reg['random data']['data'] == _generate_random_data
+    assert reg['random data']['display_name'] == 'random data'
+    assert reg['napari logo']['data'] == LOGO
+    assert reg['napari logo']['display_name'] == 'napari logo'
+    assert reg['samp_key']['data'] == _generate_random_data
+    assert reg['samp_key']['display_name'] == 'I look gorgeous in the menu!'
 
     assert len(viewer.layers) == 0
     viewer.open_sample('test_plugin', 'random data')
     assert len(viewer.layers) == 1
     viewer.open_sample('test_plugin', 'napari logo')
     assert len(viewer.layers) == 2
+    viewer.open_sample('test_plugin', 'samp_key')
+    assert len(viewer.layers) == 3
