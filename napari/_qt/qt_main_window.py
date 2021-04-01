@@ -67,6 +67,9 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
 
+        # set plugins defaults
+        plugins.load_settings_plugin_defaults(SETTINGS)
+
         plugins.load_plugin_manager_settings(
             SETTINGS.plugins.plugins_call_order
         )

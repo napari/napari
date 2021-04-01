@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ... import plugins
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
@@ -291,25 +292,29 @@ class QtPluginSorter(QWidget):
         firstresult_only: bool = True,
     ):
         super().__init__(parent)
+
         self.plugin_manager = plugin_manager
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
+        self.firstresult_only = firstresult_only
 
         # populate comboBox with all of the hooks known by the plugin manager
-        for name, hook_caller in plugin_manager.hooks.items():
-            # only show hooks with specifications
-            if not hook_caller.spec:
-                continue
 
-            if firstresult_only:
-                # if the firstresult_only option is set
-                # we only want to include hook_specifications that declare the
-                # "firstresult" option as True.
-                if not hook_caller.spec.opts.get('firstresult', False):
-                    continue
-            self.hook_combo_box.addItem(
-                name.replace("napari_", ""), hook_caller
-            )
+        self.setValue()
+        # for name, hook_caller in plugin_manager.hooks.items():
+        #     # only show hooks with specifications
+        #     if not hook_caller.spec:
+        #         continue
+
+        #     if firstresult_only:
+        #         # if the firstresult_only option is set
+        #         # we only want to include hook_specifications that declare the
+        #         # "firstresult" option as True.
+        #         if not hook_caller.spec.opts.get('firstresult', False):
+        #             continue
+        #     self.hook_combo_box.addItem(
+        #         name.replace("napari_", ""), hook_caller
+        #     )
         self.hook_combo_box.setToolTip(
             trans._("select the hook specification to reorder")
         )
@@ -317,6 +322,8 @@ class QtPluginSorter(QWidget):
         self.hook_list = QtHookImplementationListWidget(parent=self)
         self.hook_list.order_changed.connect(self._change_plugins)
 
+        print(self.hook_combo_box.currentText())
+        print(self.hook_combo_box.count())
         title = QLabel(trans._('Plugin Sorter'))
         title.setObjectName("h3")
 
@@ -355,7 +362,6 @@ class QtPluginSorter(QWidget):
     def _change_plugins(self):
         print('changing order again!')
         # set the new order in settings?
-        print(self.value())
         SETTINGS.plugins.plugins_call_order = self.value()
 
     def set_hookname(self, hook: str):
@@ -390,9 +396,38 @@ class QtPluginSorter(QWidget):
     def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
+    def set_setting_default_value(self):
+        """"""
+        if SETTINGS._defaults["plugins"].plugins_call_order is None:
+            setattr(
+                SETTINGS._defaults['plugins'],
+                'plugins_call_order',
+                self.value(),
+            )
+            print('setting defaults')
+
     def setValue(self):
         """"""
         # set value of the plugin sorter widget to the value saved in settings.
+
+        plugins.load_plugin_manager_settings(
+            SETTINGS.plugins.plugins_call_order
+        )
+
+        for name, hook_caller in self.plugin_manager.hooks.items():
+            # only show hooks with specifications
+            if not hook_caller.spec:
+                continue
+
+            if self.firstresult_only:
+                # if the firstresult_only option is set
+                # we only want to include hook_specifications that declare the
+                # "firstresult" option as True.
+                if not hook_caller.spec.opts.get('firstresult', False):
+                    continue
+            self.hook_combo_box.addItem(
+                name.replace("napari_", ""), hook_caller
+            )
 
     def value(self):
         """
@@ -413,4 +448,4 @@ class QtPluginSorter(QWidget):
                         hook_implementation.enabled,
                     )
                 )
-        return tuple(plugin_sort_order)
+        return plugin_sort_order

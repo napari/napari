@@ -299,6 +299,21 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
 
 discover_sample_data()
+def load_settings_plugin_defaults(SETTINGS):
+    plugins_call_order = []
+    for name, hook_caller in plugin_manager.hooks.items():
+        for hook_implementation in reversed(hook_caller._nonwrappers):
+            plugins_call_order.append(
+                (
+                    name,
+                    hook_implementation.plugin_name,
+                    hook_implementation.enabled,
+                )
+            )
+
+    SETTINGS._defaults['plugins'].plugins_call_order = plugins_call_order
+
+
 def load_plugin_manager_settings(plugins_call_order):
     """
     plugins_call_order : tuple of tuples
@@ -308,6 +323,7 @@ def load_plugin_manager_settings(plugins_call_order):
         )
     """
     # plugins_call_order = SETTINGS.plugins.plugins_call_order
+
     if plugins_call_order is not None:
         # (("get_write", "svg", True), ("get_writer", "builtins", True))
         for name, hook_caller in plugin_manager.hooks.items():
