@@ -13,5 +13,8 @@ while you wait for a computation to finish, you may benefit from reading about
 Performance is a core feature of napari. To learn how to monitor
 performance and diagnose and fix performance problems, see {ref}`perfmon`.
 
-Finally, see {ref}`rendering` for two experimental features than can optionally
+See {ref}`rendering` for two experimental features than can optionally
 be enabled to add non-blocking rendering to napari.
+
+Finally, see {ref}`translations` to learn more about how to make strings
+within the napari codebase localizable.

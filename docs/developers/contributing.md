@@ -135,6 +135,25 @@ Add and commit your changed files:
 git add my-file-or-directory
 git commit -m "my message"
 ```
+
+## Translations
+
+Starting with version 0.4.7, napari now offers the possibility of installing
+language packs, which provide localization (l10n) and internationalization
+(i18n) facilities enabling the user interface to be displayed in different
+languages.
+
+To learn more about the current languages that are in the process of
+translation, visit the [language packs repository](https://github.com/napari/napari-language-packs)
+
+```python
+from napari.utils.translations import trans
+
+some_string = trans._("Localizable string")
+```
+
+To learn more, plese see the [translations guide](../guides/translations.md).
+
 ## Tests
 
 We use unit tests, integration tests, and functional tests to ensure that
