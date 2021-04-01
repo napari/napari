@@ -4,10 +4,14 @@ from vispy.color import Colormap as VispyColormap
 
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import (
+    _MATPLOTLIB_COLORMAP_NAMES,
+    _VISPY_CMAPS,
+    _VISPY_COLORMAPS,
     AVAILABLE_COLORMAPS,
     ensure_colormap,
     increment_unnamed_colormap,
 )
+from napari.utils.colormaps.vendored import cm
 
 
 @pytest.mark.parametrize("name", list(AVAILABLE_COLORMAPS.keys()))
@@ -36,11 +40,13 @@ def test_increment_unnamed_colormap():
         'perceptually_uniform',
         '[unnamed colormap 1]',
     ]
-    assert increment_unnamed_colormap(names) == '[unnamed colormap 2]'
+    assert increment_unnamed_colormap(names)[0] == '[unnamed colormap 2]'
 
     # test that named colormaps are not incremented
     named_colormap = 'perfect_colormap'
-    assert increment_unnamed_colormap(names, named_colormap) == named_colormap
+    assert (
+        increment_unnamed_colormap(names, named_colormap)[0] == named_colormap
+    )
 
 
 def test_can_accept_vispy_colormaps():
@@ -121,3 +127,17 @@ def test_can_accept_colormap_dict():
     assert isinstance(cmap, Colormap)
     np.testing.assert_almost_equal(cmap.colors, colors)
     assert cmap.name == 'special_name'
+
+
+def test_vispy_colormap_amount():
+    """
+    Test that the amount of localized vispy colormap names matches available colormaps.
+    """
+    for name in _VISPY_CMAPS:
+        assert name in _VISPY_COLORMAPS
+
+
+def test_mpl_colormap_exists():
+    """Test that all localized mpl colormap names exist."""
+    for name in _MATPLOTLIB_COLORMAP_NAMES:
+        assert getattr(cm, name, None) is not None

@@ -43,8 +43,9 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
         self.colormap_combobox = QComboBox()
-        # FIXME: TODO
-        self.colormap_combobox.addItems(list(AVAILABLE_COLORMAPS.keys()))
+        for name, colormap in AVAILABLE_COLORMAPS.items():
+            display_name = colormap.display_name
+            self.colormap_combobox.addItem(display_name, name)
 
         # slider for track tail length
         self.tail_length_slider = QSlider(Qt.Horizontal)
@@ -147,11 +148,11 @@ class QtTracksControls(QtLayerControls):
         """
         with self.layer.events.colormap.blocker():
             colormap = self.layer.colormap
-
-            idx = self.colormap_combobox.findText(
-                colormap, Qt.MatchFixedString
-            )
-            self.colormap_combobox.setCurrentIndex(idx)
+            # `self.colormap_combobox.findData` is not returning the correct index.
+            for index in range(self.colormap_combobox.count()):
+                if colormap == self.colormap_combobox.itemData(index):
+                    self.colormap_combobox.setCurrentIndex(index)
+                    break
 
     def _on_color_by_change(self, event=None):
         """Receive layer model color_by change event and update combobox.
