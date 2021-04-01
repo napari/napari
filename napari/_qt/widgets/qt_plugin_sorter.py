@@ -167,15 +167,8 @@ class QtHookImplementationListWidget(QListWidget):
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
         self.order_changed.connect(self.permute_hook)
-        self.order_changed.connect(self._order_change)
         self.hook_caller: Optional[HookCaller] = None
         self.set_hook_caller(hook_caller)
-
-    def _order_change(self):
-        print('changing order!')
-        # set the new order in settings?
-        # SETTINGS.plugins.plugins_call_order = self.value()
-        # print(self.value())
 
     def set_hook_caller(self, hook_caller: Optional[HookCaller]):
         """Set the list widget to show hook implementations for ``hook_caller``.
@@ -300,30 +293,15 @@ class QtPluginSorter(QWidget):
 
         # populate comboBox with all of the hooks known by the plugin manager
 
-        self.setValue()
-        # for name, hook_caller in plugin_manager.hooks.items():
-        #     # only show hooks with specifications
-        #     if not hook_caller.spec:
-        #         continue
+        self.setWidgetValues()
 
-        #     if firstresult_only:
-        #         # if the firstresult_only option is set
-        #         # we only want to include hook_specifications that declare the
-        #         # "firstresult" option as True.
-        #         if not hook_caller.spec.opts.get('firstresult', False):
-        #             continue
-        #     self.hook_combo_box.addItem(
-        #         name.replace("napari_", ""), hook_caller
-        #     )
         self.hook_combo_box.setToolTip(
             trans._("select the hook specification to reorder")
         )
         self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
-        self.hook_list.order_changed.connect(self._change_plugins)
+        self.hook_list.order_changed.connect(self._change_settings_plugins)
 
-        print(self.hook_combo_box.currentText())
-        print(self.hook_combo_box.count())
         title = QLabel(trans._('Plugin Sorter'))
         title.setObjectName("h3")
 
@@ -359,9 +337,8 @@ class QtPluginSorter(QWidget):
         if initial_hook is not None:
             self.set_hookname(initial_hook)
 
-    def _change_plugins(self):
-        print('changing order again!')
-        # set the new order in settings?
+    def _change_settings_plugins(self):
+        """"""
         SETTINGS.plugins.plugins_call_order = self.value()
 
     def set_hookname(self, hook: str):
@@ -404,9 +381,8 @@ class QtPluginSorter(QWidget):
                 'plugins_call_order',
                 self.value(),
             )
-            print('setting defaults')
 
-    def setValue(self):
+    def setWidgetValues(self):
         """"""
         # set value of the plugin sorter widget to the value saved in settings.
 

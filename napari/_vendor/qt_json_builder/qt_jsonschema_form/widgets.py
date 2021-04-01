@@ -131,9 +131,8 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
         return None
         # self.setValue(state)
 
-
-    # def configure(self):
-    #     self.valueChanged.connect(self.on_changed.emit)
+    def configure(self):
+        self.hook_list.order_changed.connect(self.on_changed.emit)
 
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):

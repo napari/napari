@@ -70,10 +70,6 @@ class _QtMainWindow(QMainWindow):
         # set plugins defaults
         plugins.load_settings_plugin_defaults(SETTINGS)
 
-        plugins.load_plugin_manager_settings(
-            SETTINGS.plugins.plugins_call_order
-        )
-
     def _load_window_settings(self):
         """
         Load window layout settings from configuration.

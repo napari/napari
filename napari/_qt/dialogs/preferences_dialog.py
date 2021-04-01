@@ -139,7 +139,7 @@ class PreferencesDialog(QDialog):
         """Restores the settings in place when dialog was launched."""
         # Need to check differences for each page.
         for n in range(self._stack.count()):
-            # Must set the current row so that the proper set list is updated
+            # Must set the current row so that the proper list is updated
             # in check differences.
             self._list.setCurrentRow(n)
             page = self._list.currentItem().text().split(" ")[0].lower()
@@ -147,6 +147,7 @@ class PreferencesDialog(QDialog):
                 self._values_orig_dict[page],
                 self._values_dict[page],
             )
+
         self._list.setCurrentRow(0)
         self.close()
 
