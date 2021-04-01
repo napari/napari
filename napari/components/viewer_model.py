@@ -34,6 +34,7 @@ from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.theme import available_themes
+from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -686,14 +687,16 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             data = _sample_data[plugin][sample]['data']
         except KeyError:
             samples = available_samples()
-            msg = (
+            msg = trans._(
                 f"Plugin {plugin!r} does not provide sample data "
                 f"named {sample!r}. "
             )
             if samples:
-                msg += f"Available samples include: {samples}"
+                msg += trans._('Available samples include: {samples}').format(
+                    samples=samples
+                )
             else:
-                msg += "No plugin samples have been registered."
+                msg += trans._("No plugin samples have been registered.")
             raise KeyError(msg)
 
         if callable(data):
