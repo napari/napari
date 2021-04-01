@@ -121,6 +121,7 @@ See below for the full list of changes.
 - `layer.status` was deprecated in version 0.4.4 and is removed in this
   version. Instead, use `layer.get_status(viewer.cursor.position, world=True)`
   (#2443).
+- Label-layers must be of integer type, float `Labels` layers are no longer allowed (see #2491)
 
 ## Deprecations
 
