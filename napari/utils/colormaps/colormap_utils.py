@@ -29,12 +29,12 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     inferno=trans._('inferno'),
     plasma=trans._('plasma'),
     gray=trans._('gray'),
-    gray_r=trans._('gray_r'),
+    gray_r=trans._('gray r'),
     hsv=trans._('hsv'),
     turbo=trans._('turbo'),
     twilight=trans._('twilight'),
-    twilight_shifted=trans._('twilight_shifted'),
-    gist_earth=trans._('gist_earth'),
+    twilight_shifted=trans._('twilight shifted'),
+    gist_earth=trans._('gist earth'),
     PiYG=trans._('PiYG'),
 )
 _VISPY_CMAPS = get_colormaps()
