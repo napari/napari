@@ -292,7 +292,6 @@ class QtPluginSorter(QWidget):
         self.firstresult_only = firstresult_only
 
         # populate comboBox with all of the hooks known by the plugin manager
-
         self.setWidgetValues()
 
         self.hook_combo_box.setToolTip(
@@ -338,7 +337,7 @@ class QtPluginSorter(QWidget):
             self.set_hookname(initial_hook)
 
     def _change_settings_plugins(self):
-        """"""
+        """Update settings if plugin call order changes."""
         SETTINGS.plugins.plugins_call_order = self.value()
 
     def set_hookname(self, hook: str):
@@ -374,7 +373,9 @@ class QtPluginSorter(QWidget):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
     def set_setting_default_value(self):
-        """"""
+        """On start up, this function is used to set the defaults in settings.
+        Note: use before loading in the saved settings.
+        """
         if SETTINGS._defaults["plugins"].plugins_call_order is None:
             setattr(
                 SETTINGS._defaults['plugins'],
@@ -383,9 +384,9 @@ class QtPluginSorter(QWidget):
             )
 
     def setWidgetValues(self):
-        """"""
-        # set value of the plugin sorter widget to the value saved in settings.
+        """Set the lists in the QtPluginSorter to match the order saved in settings."""
 
+        # Set the values in the plugin manager to match the settings order.
         plugins.load_plugin_manager_settings(
             SETTINGS.plugins.plugins_call_order
         )
@@ -406,13 +407,14 @@ class QtPluginSorter(QWidget):
             )
 
     def value(self):
-        """
-        state = (
-            ("get_writer", "svg", True),
-            ("get_writer", "builtins", True)
-            ("get_reader", "svg", True),
+        """Get the plugin_sort_order for settings from the order in the plugin manager.
+
+        state = [
+            ("napari_get_writer", "svg", True),
+            ("napari_get_writer", "builtins", True)
+            ("napari_get_reader", "svg", True),
             ...
-        )
+        ]
         """
         plugin_sort_order = []
         for name, hook_caller in self.plugin_manager.hooks.items():

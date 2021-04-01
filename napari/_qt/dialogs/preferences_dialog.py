@@ -83,7 +83,9 @@ class PreferencesDialog(QDialog):
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-        # Because there are multiple pages, need to keep a list of values sets.
+        # Because there are multiple pages, need to keep a dictionary of values dicts.
+        # One set of keywords are for each page, then in each entry for a page, there are dicts
+        # of setting and its value.
         self._values_orig_dict = {}
         self._values_dict = {}
         self._setting_changed_dict = {}
@@ -193,7 +195,17 @@ class PreferencesDialog(QDialog):
         return form
 
     def _values_changed(self, page, new_dict, old_dict):
-        """"""
+        """Loops through each setting in a page to determine if it changed.
+
+        Parameters
+        ----------
+        new_dict: dict
+            Dict that has the most recent changes by user. Each key is a setting value
+            and each item is the value.
+        old_dict: dict
+            Dict wtih values set at the begining of preferences dialog session.
+
+        """
         for setting_name, value in new_dict.items():
             if value != old_dict[setting_name]:
                 self._setting_changed_dict[page][setting_name] = value
@@ -208,11 +220,11 @@ class PreferencesDialog(QDialog):
 
         Parameters
         ----------
-        new_list : list
-            The list of new values, with tuples of key value pairs for each
-            setting.
-        values_list : list
-            The old list of values.
+        new_dict: dict
+            Dict that has the most recent changes by user. Each key is a setting value
+            and each item is the value.
+        old_dict: dict
+            Dict wtih values set at the begining of preferences dialog session.
         """
         page = self._list.currentItem().text().split(" ")[0].lower()
         self._values_changed(page, new_dict, old_dict)

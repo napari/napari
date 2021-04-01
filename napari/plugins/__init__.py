@@ -300,6 +300,9 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
 discover_sample_data()
 def load_settings_plugin_defaults(SETTINGS):
+    """Sets SETTINGS plugin defaults on start up from the defaults saved in
+    the plugin manager.
+    """
     plugins_call_order = []
     for name, hook_caller in plugin_manager.hooks.items():
         for hook_implementation in reversed(hook_caller._nonwrappers):
@@ -315,12 +318,17 @@ def load_settings_plugin_defaults(SETTINGS):
 
 
 def load_plugin_manager_settings(plugins_call_order):
-    """
-    plugins_call_order : tuple of tuples
-        (
+    """Sets the plugin call order in the plugin in manger to match what is saved in
+    SETTINGS.
+
+    Note: Run this after load_settings_plugin_defaults, which sets the default values in
+    SETTINGS.
+
+    plugins_call_order : List of tuples
+        [
             (spec_name, plugin_name, enabled),
             (spec_name, plugin_name, enabled),
-        )
+        ]
     """
     # plugins_call_order = SETTINGS.plugins.plugins_call_order
 
