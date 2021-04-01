@@ -40,7 +40,8 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
-from .widgets.qt_plugin_sorter import QtPluginSorter
+
+# from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
@@ -634,14 +635,14 @@ class Window:
         pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
 
-        order_plugin_action = QAction(
-            trans._("Plugin Call Order..."), self._qt_window
-        )
-        order_plugin_action.setStatusTip(
-            trans._('Change call order for plugins')
-        )
-        order_plugin_action.triggered.connect(self._show_plugin_sorter)
-        self.plugins_menu.addAction(order_plugin_action)
+        # order_plugin_action = QAction(
+        #     trans._("Plugin Call Order..."), self._qt_window
+        # )
+        # order_plugin_action.setStatusTip(
+        #     trans._('Change call order for plugins')
+        # )
+        # order_plugin_action.triggered.connect(self._show_plugin_sorter)
+        # self.plugins_menu.addAction(order_plugin_action)
 
         report_plugin_action = QAction(
             trans._("Plugin Errors..."), self._qt_window
@@ -691,15 +692,15 @@ class Window:
 
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
-    def _show_plugin_sorter(self):
-        """Show dialog that allows users to sort the call order of plugins."""
-        plugin_sorter = QtPluginSorter(parent=self._qt_window)
-        if hasattr(self, 'plugin_sorter_widget'):
-            self.plugin_sorter_widget.show()
-        else:
-            self.plugin_sorter_widget = self.add_dock_widget(
-                plugin_sorter, name=trans._('Plugin Sorter'), area="right"
-            )
+    # def _show_plugin_sorter(self):
+    #     """Show dialog that allows users to sort the call order of plugins."""
+    #     plugin_sorter = QtPluginSorter(parent=self._qt_window)
+    #     if hasattr(self, 'plugin_sorter_widget'):
+    #         self.plugin_sorter_widget.show()
+    #     else:
+    #         self.plugin_sorter_widget = self.add_dock_widget(
+    #             plugin_sorter, name=trans._('Plugin Sorter'), area="right"
+    #         )
 
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
