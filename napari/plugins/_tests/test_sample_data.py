@@ -65,3 +65,7 @@ def test_sample_hook(test_plugin_manager, monkeypatch):
     assert len(viewer.layers) == 2
     viewer.open_sample('test_plugin', 'samp_key')
     assert len(viewer.layers) == 3
+
+    # test calling with kwargs
+    viewer.open_sample('test_plugin', 'samp_key', shape=(256, 256))
+    assert len(viewer.layers) == 4
