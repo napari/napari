@@ -25,7 +25,6 @@ class WidgetBuilder:
         "object": {
             "object": widgets.ObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "plugins": widgets.PluginWidget
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
