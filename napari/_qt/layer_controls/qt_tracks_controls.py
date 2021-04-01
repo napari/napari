@@ -43,6 +43,7 @@ class QtTracksControls(QtLayerControls):
         self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
         self.colormap_combobox = QComboBox()
+        # FIXME: TODO
         self.colormap_combobox.addItems(list(AVAILABLE_COLORMAPS.keys()))
 
         # slider for track tail length

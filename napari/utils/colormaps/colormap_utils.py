@@ -1,4 +1,4 @@
-import os
+from collections import OrderedDict
 from threading import Lock
 from typing import Dict, List, Tuple, Union
 
@@ -6,16 +6,10 @@ import numpy as np
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import get_colormap, get_colormaps
 
+from ..translations import trans
 from .bop_colors import bopd
 from .colormap import Colormap
 from .vendored import cm, colorconv
-
-_matplotlib_list_file = os.path.join(
-    os.path.dirname(__file__), 'matplotlib_cmaps.txt'
-)
-with open(_matplotlib_list_file) as fin:
-    matplotlib_colormaps = [line.rstrip() for line in fin]
-
 
 ValidColormapArg = Union[
     str,
@@ -29,20 +23,70 @@ ValidColormapArg = Union[
 ]
 
 
-primary_color_names = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
-primary_colors = np.array(
-    [(1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 0)],
-    dtype=float,
+matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
+    viridis=trans._('viridis'),
+    magma=trans._('magma'),
+    inferno=trans._('inferno'),
+    plasma=trans._('plasma'),
+    gray=trans._('gray'),
+    gray_r=trans._('gray_r'),
+    hsv=trans._('hsv'),
+    turbo=trans._('turbo'),
+    twilight=trans._('twilight'),
+    twilight_shifted=trans._('twilight_shifted'),
+    gist_earth=trans._('gist_earth'),
+    PiYG=trans._('PiYG'),
+)
+_VISPY_CMAPS = get_colormaps()
+_VISPY_COLORMAPS = OrderedDict(
+    autumn=(trans._('autumn'), _VISPY_CMAPS['autumn']),
+    blues=(trans._('blues'), _VISPY_CMAPS['blues']),
+    cool=(trans._('cool'), _VISPY_CMAPS['cool']),
+    greens=(trans._('greens'), _VISPY_CMAPS['greens']),
+    reds=(trans._('reds'), _VISPY_CMAPS['reds']),
+    spring=(trans._('spring'), _VISPY_CMAPS['spring']),
+    summer=(trans._('summer'), _VISPY_CMAPS['summer']),
+    fire=(trans._('fire'), _VISPY_CMAPS['fire']),
+    grays=(trans._('grays'), _VISPY_CMAPS['grays']),
+    hot=(trans._('hot'), _VISPY_CMAPS['hot']),
+    ice=(trans._('ice'), _VISPY_CMAPS['ice']),
+    winter=(trans._('winter'), _VISPY_CMAPS['winter']),
+    light_blues=(trans._('light blues'), _VISPY_CMAPS['light_blues']),
+    orange=(trans._('orange'), _VISPY_CMAPS['orange']),
+    viridis=(trans._('viridis'), _VISPY_CMAPS['viridis']),
+    coolwarm=(trans._('coolwarm'), _VISPY_CMAPS['coolwarm']),
+    PuGr=(trans._('PuGr'), _VISPY_CMAPS['PuGr']),
+    GrBu=(trans._('GrBu'), _VISPY_CMAPS['GrBu']),
+    GrBu_d=(trans._('GrBu_d'), _VISPY_CMAPS['GrBu_d']),
+    RdBu=(trans._('RdBu'), _VISPY_CMAPS['RdBu']),
+    cubehelix=(trans._('cubehelix'), _VISPY_CMAPS['cubehelix']),
+    single_hue=(trans._('single hue'), _VISPY_CMAPS['single_hue']),
+    hsl=(trans._('hsl'), _VISPY_CMAPS['hsl']),
+    husl=(trans._('husl'), _VISPY_CMAPS['husl']),
+    diverging=(trans._('diverging'), _VISPY_CMAPS['diverging']),
+    RdYeBuCy=(trans._('RdYeBuCy'), _VISPY_CMAPS['RdYeBuCy']),
+)
+_PRIMARY_COLORS = OrderedDict(
+    red=(trans._('red'), [1.0, 0.0, 0.0]),
+    green=(trans._('green'), [0.0, 1.0, 0.0]),
+    blue=(trans._('blue'), [0.0, 0.0, 1.0]),
+    cyan=(trans._('cyan'), [0.0, 1.0, 1.0]),
+    magenta=(trans._('magenta'), [1.0, 0.0, 1.0]),
+    yellow=(trans._('yellow'), [1.0, 1.0, 0.0]),
 )
 
-
 SIMPLE_COLORMAPS = {
-    name: Colormap(name=name, colors=[[0.0, 0.0, 0.0], color])
-    for name, color in zip(primary_color_names, primary_colors)
+    name: Colormap(
+        name=name, display_name=display_name, colors=[[0.0, 0.0, 0.0], color]
+    )
+    for name, (display_name, color) in _PRIMARY_COLORS.items()
 }
 
 # dictionay for bop colormap objects
-BOP_COLORMAPS = {k: Colormap(v, name=k) for k, v in bopd.items()}
+BOP_COLORMAPS = {
+    name: Colormap(value, name=name, display_name=display_name)
+    for name, (display_name, value) in bopd.items()
+}
 
 
 def _all_rgb():
@@ -96,8 +140,15 @@ def convert_vispy_colormap(colormap, name='vispy'):
     else:
         interpolation = 'linear'
 
+    if name in _VISPY_COLORMAPS:
+        display_name, _cmap = _VISPY_COLORMAPS[name]
+    else:
+        # Unnamed colormap
+        display_name = trans._(name)
+
     return Colormap(
         name=name,
+        display_name=display_name,
         colors=colormap.colors.rgba,
         controls=controls,
         interpolation=interpolation,
@@ -299,6 +350,7 @@ def label_colormap(num_colors=256, seed=0.5):
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     return Colormap(
         name='label_colormap',
+        display_name='label_colormap',  # TODO: needs translation?
         colors=colors,
         controls=control_points,
         interpolation='zero',
@@ -323,25 +375,32 @@ def vispy_or_mpl_colormap(name):
     KeyError
         If no colormap with that name is found within vispy or matplotlib.
     """
-    vispy_cmaps = get_colormaps()
-    if name in vispy_cmaps:
+    if name in _VISPY_COLORMAPS:
         cmap = get_colormap(name)
         colormap = convert_vispy_colormap(cmap, name=name)
     else:
         try:
             mpl_cmap = getattr(cm, name)
+            display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
         except AttributeError:
             raise KeyError(
-                f'Colormap "{name}" not found in either vispy '
-                'or matplotlib.'
+                trans._(
+                    'Colormap "{name}" not found in either vispy '
+                    'or matplotlib.'
+                ).format(name=name)
             )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
-        colormap = Colormap(name=name, colors=mpl_colors)
+        colormap = Colormap(
+            name=name, display_name=display_name, colors=mpl_colors
+        )
+
     return colormap
 
 
 # A dictionary mapping names to VisPy colormap objects
-ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
+ALL_COLORMAPS = {
+    k: vispy_or_mpl_colormap(k) for k in _MATPLOTLIB_COLORMAP_NAMES
+}
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 ALL_COLORMAPS.update(BOP_COLORMAPS)
 
@@ -360,7 +419,7 @@ CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
 def increment_unnamed_colormap(
     existing: List[str], name: str = '[unnamed colormap]'
-) -> str:
+) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
 
     Parameters
@@ -374,11 +433,18 @@ def increment_unnamed_colormap(
     -------
     name : str
         Name of colormap after incrementing.
+    display_name : str
+        Display name of colormap after incrementing.
     """
+    display_name = trans._('[unnamed colormap]')
     if name == '[unnamed colormap]':
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
-    return name
+        display_name = trans._("[unnamed colormap {number}]").format(
+            number=len(past_names)
+        )
+
+    return name, display_name
 
 
 def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
@@ -428,8 +494,12 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 if colormap == val:
                     name = key
                     break
+
             if not name:
-                name = increment_unnamed_colormap(AVAILABLE_COLORMAPS)
+                name, _display_name = increment_unnamed_colormap(
+                    AVAILABLE_COLORMAPS
+                )
+
             # Convert from vispy colormap
             cmap = convert_vispy_colormap(colormap, name=name)
             AVAILABLE_COLORMAPS[name] = cmap
@@ -444,8 +514,10 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 and isinstance(colormap[0], str)
             ):
                 raise TypeError(
-                    "When providing a tuple as a colormap argument, the first "
-                    "element must be a string and the second a Colormap instance"
+                    trans._(
+                        "When providing a tuple as a colormap argument, the first "
+                        "element must be a string and the second a Colormap instance"
+                    )
                 )
             name, cmap = colormap
             # Convert from vispy colormap
@@ -468,8 +540,10 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                 for i in colormap.values()
             ):
                 raise TypeError(
-                    "When providing a dict as a colormap, "
-                    "all values must be Colormap instances"
+                    trans._(
+                        "When providing a dict as a colormap, "
+                        "all values must be Colormap instances"
+                    )
                 )
             else:
                 # Convert from vispy colormaps
@@ -489,17 +563,23 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     import warnings
 
                     warnings.warn(
-                        "only the first item in a colormap dict is used as an argument"
+                        trans._(
+                            "only the first item in a colormap dict is used as an argument"
+                        )
                     )
                 else:
                     raise ValueError(
-                        "Received an empty dict as a colormap argument."
+                        trans._(
+                            "Received an empty dict as a colormap argument."
+                        )
                     )
         else:
             raise TypeError(
-                f'invalid type for colormap: {type(colormap)}. '
-                'Must be a {str, tuple, dict, napari.utils.Colormap, '
-                'vispy.colors.Colormap}'
+                trans._(
+                    'invalid type for colormap: {colormap_type}. '
+                    'Must be a {{str, tuple, dict, napari.utils.Colormap, '
+                    'vispy.colors.Colormap}}'
+                ).format(colormap_type=type(colormap))
             )
 
     return AVAILABLE_COLORMAPS[name]

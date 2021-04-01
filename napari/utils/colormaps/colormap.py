@@ -32,6 +32,8 @@ class Colormap(EventedModel):
         Data used in the colormap.
     name : str
         Name of the colormap.
+    display_name : str
+        Display name of the colormap.
     controls : array, shape (N,) or (N+1,)
         Control points of the colormap.
     interpolation : str
@@ -44,6 +46,7 @@ class Colormap(EventedModel):
     # fields
     colors: Array[float, (-1, 4)]
     name: str = 'custom'
+    display_name: str = 'custom'
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[float, (-1,)] = None
 
