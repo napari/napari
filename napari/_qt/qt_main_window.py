@@ -8,6 +8,7 @@ import time
 from itertools import chain, repeat
 from typing import Dict
 
+from magicgui.widgets import ProgressBar
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
@@ -39,6 +40,7 @@ from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_plugin_sorter import QtPluginSorter
+from .widgets.qt_progress_bar import QtProgressBarDock
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
@@ -250,6 +252,7 @@ class Window:
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
+        self._progress_bar_dock = QtProgressBarDock(parent=self._qt_window)
 
         # Dictionary holding dock widgets
         self._dock_widgets: Dict[str, QtViewerDockWidget] = {}
@@ -493,6 +496,13 @@ class Window:
             toggle_outline.setStatusTip(trans._('Toggle Chunk Outlines'))
             self.view_menu.addAction(toggle_outline)
 
+        progress_bar_action = QAction(
+            trans._("View Progress Bar Dock..."), self._qt_window
+        )
+        progress_bar_action.setStatusTip(trans._('View current progress bars'))
+        progress_bar_action.triggered.connect(self._show_pbar_dock)
+        self.view_menu.addAction(progress_bar_action)
+
         # Add axes menu
         axes_menu = QMenu(trans._('Axes'), parent=self._qt_window)
         axes_visible_action = QAction(
@@ -666,6 +676,15 @@ class Window:
                 plugin_sorter, name=trans._('Plugin Sorter'), area="right"
             )
 
+    def _show_pbar_dock(self):
+        if not (trans._('Progress Bars') in self._dock_widgets):
+            self.add_dock_widget(
+                self._progress_bar_dock,
+                name=trans._('Progress Bars'),
+                area="right",
+            )
+        self._progress_bar_dock.show()
+
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
 
@@ -781,6 +800,11 @@ class Window:
 
         # instantiate the widget
         wdg = Widget(**kwargs)
+
+        for _, wdg_attr in inspect.getmembers(wdg):
+            if isinstance(wdg_attr, ProgressBar):
+                print("Found a progress bar!")
+                self._progress_bar_dock.layout().addWidget(wdg_attr.native)
 
         # Add dock widget
         self.add_dock_widget(
