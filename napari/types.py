@@ -54,10 +54,12 @@ WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
 AugmentedWidget = Union[WidgetCallable, Tuple[WidgetCallable, dict]]
 
 
-# Sample Data for napari_provide_sample_data hookspec
+# Sample Data for napari_provide_sample_data hookspec is either a string/path
+# or a function that returns an iterable of LayerData tuples
 SampleData = Union[PathLike, Callable[..., Iterable[LayerData]]]
 
 
+# or... they can provide a dict as follows:
 class SampleDict(TypedDict):
     display_name: str
     data: SampleData
