@@ -34,7 +34,7 @@ this also applies to other strings that may be surfaced to the user, e.g.
 custom exceptions.
 
 `f-strings` do not work with localizable strings, so any strings that use them
-need to be converted to use `str.format` method. The "Plural strings section""
+need to be converted to use `str.format` method. The [Plural strings section](#plural-strings)
 below explains this in more detail.
 
 ### Singular strings
@@ -69,7 +69,7 @@ In this case:
   * green
   * blue
 
-For the `Spanish (Spain)` translation the options displayted would be:
+For the `Spanish (Spain)` translation the options displayed would be:
 
   * rojo
   * verde
@@ -98,7 +98,7 @@ class SomeWidget(QWidget):
 
     def __init__(self):
         self.context_combo_box = QComboBox(self)        
-        self.context_combo_box.addItem(trans._p("space", "tab", ), "tab")
+        self.context_combo_box.addItem(trans._p("character", "tab", ), "tab")
         self.context_combo_box.addItem(trans._p("music", "tab"), "tab")
         self.context_combo_box.addItem(trans._p("ui-element", "tab"), "tab")
 ```
