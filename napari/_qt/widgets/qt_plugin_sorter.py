@@ -69,6 +69,11 @@ class ImplementationListItem(QFrame):
         unchecked, the opacity of the item is decreased.
     """
 
+    # Signal
+    on_changed = (
+        Signal()
+    )  # emitted when user changes whether plugin is enabled.
+
     def __init__(self, item: QListWidgetItem, parent: QWidget = None):
         super().__init__(parent)
         self.item = item
@@ -113,6 +118,7 @@ class ImplementationListItem(QFrame):
         """Set the enabled state of this hook implementation to ``state``."""
         self.item.hook_implementation.enabled = bool(state)
         self.opacity.setOpacity(1 if state else 0.5)
+        self.on_changed.emit()
 
     def update_position_label(self, order=None):
         """Update the label showing the position of this item in the list.
@@ -149,6 +155,9 @@ class QtHookImplementationListWidget(QListWidget):
     """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
+    on_changed = (
+        Signal()
+    )  # emitted when user changes whether plugin is enabled.
 
     def __init__(
         self,
@@ -204,6 +213,7 @@ class QtHookImplementationListWidget(QListWidget):
         item.hook_implementation = hook_implementation
         self.addItem(item)
         widg = ImplementationListItem(item, parent=self)
+        widg.on_changed.connect(self.on_changed.emit)
         item.setSizeHint(widg.sizeHint())
         self.order_changed.connect(widg.update_position_label)
         self.setItemWidget(item, widg)
@@ -300,6 +310,7 @@ class QtPluginSorter(QWidget):
         self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
         self.hook_list.order_changed.connect(self._change_settings_plugins)
+        self.hook_list.on_changed.connect(self._change_settings_plugins)
 
         title = QLabel(trans._('Plugin Sorter'))
         title.setObjectName("h3")

@@ -86,29 +86,56 @@ class PreferencesDialog(QDialog):
         # Because there are multiple pages, need to keep a dictionary of values dicts.
         # One set of keywords are for each page, then in each entry for a page, there are dicts
         # of setting and its value.
+
         self._values_orig_dict = {}
         self._values_dict = {}
         self._setting_changed_dict = {}
-        for _key, setting in SETTINGS.schemas().items():
-            schema = json.loads(setting['json_schema'])
-            # Need to remove certain properties that will not be displayed on the GUI
-            properties = schema.pop('properties')
-            model = setting['model']
-            values = model.dict()
-            napari_config = getattr(model, "NapariConfig", None)
-            if napari_config is not None:
-                for val in napari_config.preferences_exclude:
-                    properties.pop(val)
-                    values.pop(val)
 
-            schema['properties'] = properties
-            self._setting_changed_dict[schema["title"].lower()] = {}
-            self._values_orig_dict[schema["title"].lower()] = values
-            self._values_dict[schema["title"].lower()] = values
+        for page, setting in SETTINGS.schemas().items():
+            schema, values, properties = self.get_page_dict(setting)
+
+            self._setting_changed_dict[page] = {}
+            self._values_orig_dict[page] = values
+            self._values_dict[page] = values
 
             # Only add pages if there are any properties to add.
             if properties:
                 self.add_page(schema, values)
+
+    def get_page_dict(self, setting):
+        """Provides the schema, set of values for each setting, and the properties
+        for each setting.
+
+        Parameters
+        ----------
+        setting : dict
+            Dictionary of settings for a page within the settings manager.
+
+        Returns
+        -------
+        schema : dict
+            Json schema of the setting page
+        values : dict
+            Dictionary of values currently set for each parameter in the settings.
+        properties : dict
+            Dictionary of properties within the json schema.
+
+        """
+
+        schema = json.loads(setting['json_schema'])
+        # Need to remove certain properties that will not be displayed on the GUI
+        properties = schema.pop('properties')
+        model = setting['model']
+        values = model.dict()
+        napari_config = getattr(model, "NapariConfig", None)
+        if napari_config is not None:
+            for val in napari_config.preferences_exclude:
+                properties.pop(val)
+                values.pop(val)
+
+        schema['properties'] = properties
+
+        return schema, values, properties
 
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
@@ -145,10 +172,13 @@ class PreferencesDialog(QDialog):
             # in check differences.
             self._list.setCurrentRow(n)
             page = self._list.currentItem().text().split(" ")[0].lower()
-            self.check_differences(
-                self._values_orig_dict[page],
-                self._values_dict[page],
-            )
+            # get new values for settings.  If they were changed from values at beginning
+            # of preference dialog session, change them back.
+            # Using the settings value seems to be the best way to get the checkboxes right
+            # on the plugin call order widget.
+            setting = SETTINGS.schemas()[page]
+            schema, new_values, properties = self.get_page_dict(setting)
+            self.check_differences(self._values_orig_dict[page], new_values)
 
         self._list.setCurrentRow(0)
         self.close()
@@ -188,7 +218,6 @@ class PreferencesDialog(QDialog):
             lambda d: self.check_differences(
                 d,
                 self._values_dict[schema["title"].lower()],
-                # self._values_dict[self._list.currentIndex().row()],
             )
         )
 
