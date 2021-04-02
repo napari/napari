@@ -20,7 +20,7 @@ def _get_all_keybinding_methods(type_):
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 18
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
 
 
 def test_len_methods_viewer():
@@ -266,3 +266,14 @@ def test_removing_points_data(make_napari_viewer):
     pts_layer.data = np.zeros([0, 2])
 
     assert len(pts_layer.data) == 0
+
+
+def test_deleting_points(make_napari_viewer):
+    viewer = make_napari_viewer()
+    points = np.random.random((4, 2)) * 4
+
+    pts_layer = viewer.add_points(points)
+    pts_layer.selected_data = {0}
+    pts_layer.remove_selected()
+
+    assert len(pts_layer.data) == 3

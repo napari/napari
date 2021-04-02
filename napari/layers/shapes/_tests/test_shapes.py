@@ -121,6 +121,32 @@ def test_adding_properties(attribute):
         layer.properties = properties_2
 
 
+def test_data_setter_with_properties():
+    """Test layer data on a layer with properties via the data setter"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    layer = Shapes(data, properties=properties)
+
+    # test setting to data with fewer shapes
+    n_new_shapes = 4
+    new_data = 20 * np.random.random((n_new_shapes, 4, 2))
+    layer.data = new_data
+    assert len(layer.properties['shape_type']) == n_new_shapes
+
+    # test setting to data with more shapes
+    n_new_shapes_2 = 6
+    new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    layer.data = new_data_2
+    assert len(layer.properties['shape_type']) == n_new_shapes_2
+
+    # test setting to data with same shapes
+    new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    layer.data = new_data_3
+    assert len(layer.properties['shape_type']) == n_new_shapes_2
+
+
 def test_properties_dataframe():
     """Test if properties can be provided as a DataFrame"""
     shape = (10, 4, 2)
@@ -131,6 +157,39 @@ def test_properties_dataframe():
     properties_df = properties_df.astype(properties['shape_type'].dtype)
     layer = Shapes(data, properties=properties_df)
     np.testing.assert_equal(layer.properties, properties)
+
+
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'shape_type', 'color': 'red'}
+    layer = Shapes(
+        properties=default_properties,
+        text=text_kwargs,
+    )
+    assert layer.text.mode == 'property'
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+    # add a shape and check that the appropriate text value was added
+    layer.add(np.random.random((1, 4, 2)))
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'shape_type': np.array([1.5], dtype=float)}
+    layer = Shapes(
+        properties=default_properties,
+        text='shape_type: {shape_type:.2f}',
+    )
+    assert layer.text.mode == 'formatted'
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a shape and check that the appropriate text value was added
+    layer.add(np.random.random((1, 4, 2)))
+    np.testing.assert_equal(layer.text.values, ['shape_type: 1.50'])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -225,6 +284,52 @@ def test_refresh_text():
     new_properties = {'shape_type': ['B'] * shape[0]}
     layer.properties = new_properties
     np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
+
+
+def test_nd_text():
+    """Test slicing of text coords with nD shapes"""
+    shapes_data = [
+        [[0, 10, 10, 10], [0, 10, 20, 20], [0, 10, 10, 20], [0, 10, 20, 10]],
+        [[1, 20, 30, 30], [1, 20, 50, 50], [1, 20, 50, 30], [1, 20, 30, 50]],
+    ]
+    properties = {'shape_type': ['A', 'B']}
+    text_kwargs = {'text': 'shape_type', 'anchor': 'center'}
+    layer = Shapes(shapes_data, properties=properties, text=text_kwargs)
+    assert layer.ndim == 4
+
+    layer._slice_dims(point=[0, 10, 0, 0], ndisplay=2)
+    np.testing.assert_equal(layer._indices_view, [0])
+    np.testing.assert_equal(layer._view_text_coords[0], [[15, 15]])
+
+    layer._slice_dims(point=[1, 0, 0, 0], ndisplay=3)
+    np.testing.assert_equal(layer._indices_view, [1])
+    np.testing.assert_equal(layer._view_text_coords[0], [[20, 40, 40]])
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_data_setter_with_text(properties):
+    """Test layer data on a layer with text via the data setter"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
+
+    # test setting to data with fewer shapes
+    n_new_shapes = 4
+    new_data = 20 * np.random.random((n_new_shapes, 4, 2))
+    layer.data = new_data
+    assert len(layer.text.values) == n_new_shapes
+
+    # test setting to data with more shapes
+    n_new_shapes_2 = 6
+    new_data_2 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    layer.data = new_data_2
+    assert len(layer.text.values) == n_new_shapes_2
+
+    # test setting to data with same shapes
+    new_data_3 = 20 * np.random.random((n_new_shapes_2, 4, 2))
+    layer.data = new_data_3
+    assert len(layer.text.values) == n_new_shapes_2
 
 
 def test_rectangles():
@@ -1348,17 +1453,16 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     layer = Shapes(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0,) * 2)
     assert value == (9, None)
 
     layer.mode = 'select'
     layer.selected_data = {9}
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0,) * 2)
     assert value == (9, 7)
 
     layer = Shapes(data + 5)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0,) * 2)
     assert value == (None, None)
 
 
@@ -1368,7 +1472,7 @@ def test_message():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 

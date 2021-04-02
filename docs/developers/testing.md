@@ -35,7 +35,7 @@ the `napari/_tests` folder at the top of the repository.
 
 We also strive to unit test as much of our model file and utils code independently of
 our GUI code. These tests are located in the `napari/layers`, `napari/components`,
-and `napari/utils` folders. Our GUI code is tests in the `napari/_tests`, 
+and `napari/utils` folders. Our GUI code is tests in the `napari/_tests`,
 `napari/_qt`, `napari/_vispy` folders. The `napari/plugins` folder contains a mix
 of tests.
 
@@ -89,6 +89,21 @@ open htmlcov/index.html  # look at the report
 Writing tests for new code is a critical part of keeping napari maintainable as
 it grows. Tests are written in files whose names
 begin with `test_*` and which are contained in one of the `_tests` directories.
+
+### Property-based testing with Hypothesis
+
+Property-based tests allow you to test that "for any X, ..." - with a much nicer
+developer experience than using truly random data.  We use Hypothesis for unit or
+integration tests where there are simple properties like `x == load(save(x))` or
+when Napari implements a function we can check against the equivalent in a trusted
+library for at least some inputs.
+
+See also [this paper on property-based testing in science](http://conference.scipy.org/proceedings/scipy2020/zac_hatfield-dodds.html),
+[issue #2444](https://github.com/napari/napari/issues/2444), and
+[the Hypothesis documentation](https://hypothesis.readthedocs.io/en/latest/)
+(including [Numpy support](https://hypothesis.readthedocs.io/en/latest/numpy.html)).
+
+### Testing with `Qt` and `napari.Viewer`
 
 There are a couple things to keep in mind when writing a test where a `Qt` event
 loop or a `napari.Viewer` is required.  The important thing is that any widgets

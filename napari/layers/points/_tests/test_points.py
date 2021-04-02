@@ -119,6 +119,37 @@ def test_empty_layer_with_edge_colormap():
     np.testing.assert_allclose(layer._edge.current_color, edge_color)
 
 
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'point_type', 'color': 'red'}
+    layer = Points(
+        properties=default_properties,
+        text=text_kwargs,
+    )
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    layer = Points(
+        properties=default_properties,
+        text='point_type: {point_type:.2f}',
+    )
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['point_type: 1.50'])
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -1333,12 +1364,11 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0, 0))
     assert value == 9
 
     layer.data = layer.data + 20
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0, 0))
     assert value is None
 
 
@@ -1349,7 +1379,7 @@ def test_message():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 

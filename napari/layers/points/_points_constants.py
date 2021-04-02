@@ -1,6 +1,8 @@
+from collections import OrderedDict
 from enum import Enum, auto
 
 from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 
 class ColorMode(StringEnum):
@@ -75,3 +77,23 @@ SYMBOL_ALIAS = {
     's': Symbol.SQUARE,
     '|': Symbol.VBAR,
 }
+
+
+SYMBOL_TRANSLATION = OrderedDict(
+    [
+        (Symbol.ARROW, trans._('arrow')),
+        (Symbol.CLOBBER, trans._('clobber')),
+        (Symbol.CROSS, trans._('cross')),
+        (Symbol.DIAMOND, trans._('diamond')),
+        (Symbol.DISC, trans._('disc')),
+        (Symbol.HBAR, trans._('hbar')),
+        (Symbol.RING, trans._('ring')),
+        (Symbol.SQUARE, trans._('square')),
+        (Symbol.STAR, trans._('star')),
+        (Symbol.TAILED_ARROW, trans._('tailed arrow')),
+        (Symbol.TRIANGLE_DOWN, trans._('triangle down')),
+        (Symbol.TRIANGLE_UP, trans._('triangle up')),
+        (Symbol.VBAR, trans._('vbar')),
+        (Symbol.X, trans._('x')),
+    ]
+)

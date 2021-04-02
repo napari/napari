@@ -9,9 +9,10 @@ from qtpy.QtWidgets import (
     QSlider,
 )
 
-from ...layers.points._points_constants import Mode, Symbol
+from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.events import disconnect_events
 from ...utils.interactions import KEY_SYMBOLS
+from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -98,52 +99,61 @@ class QtPointsControls(QtLayerControls):
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
-            tooltip='click to set current face color',
+            tooltip=trans._('click to set current face color'),
         )
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_edge_color,
-            tooltip='click to set current edge color',
+            tooltip=trans._('click to set current edge color'),
         )
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
         symbol_comboBox = QComboBox()
-        symbol_comboBox.addItems([str(s) for s in Symbol])
-        index = symbol_comboBox.findText(
-            self.layer.symbol, Qt.MatchFixedString
-        )
-        symbol_comboBox.setCurrentIndex(index)
+        current_index = 0
+        for index, (data, text) in enumerate(SYMBOL_TRANSLATION.items()):
+            data = data.value
+            symbol_comboBox.addItem(text, data)
+
+            if data == self.layer.symbol:
+                current_index = index
+
+        symbol_comboBox.setCurrentIndex(current_index)
         symbol_comboBox.activated[str].connect(self.changeSymbol)
         self.symbolComboBox = symbol_comboBox
 
         ndim_cb = QCheckBox()
-        ndim_cb.setToolTip('N-dimensional points')
+        ndim_cb.setToolTip(trans._('N-dimensional points'))
         ndim_cb.setChecked(self.layer.n_dimensional)
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
 
         self.select_button = QtModeRadioButton(
-            layer, 'select_points', Mode.SELECT, tooltip='Select points (S)'
+            layer,
+            'select_points',
+            Mode.SELECT,
+            tooltip=trans._('Select points (S)'),
         )
         self.addition_button = QtModeRadioButton(
-            layer, 'add_points', Mode.ADD, tooltip='Add points (P)'
+            layer, 'add_points', Mode.ADD, tooltip=trans._('Add points (P)')
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
             'pan_zoom',
             Mode.PAN_ZOOM,
-            tooltip='Pan/zoom (Z)',
+            tooltip=trans._('Pan/zoom (Z)'),
             checked=True,
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip=f"Delete selected points ({KEY_SYMBOLS['Backspace']})",
+            tooltip=trans._("Delete selected points ({key})").format(
+                key=KEY_SYMBOLS['Backspace']
+            ),
         )
 
         text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip('toggle text visibility')
+        text_disp_cb.setToolTip(trans._('toggle text visibility'))
         text_disp_cb.setChecked(self.layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
@@ -165,21 +175,21 @@ class QtPointsControls(QtLayerControls):
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_row, 0, 1)
-        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 1, 0)
         self.grid_layout.addWidget(self.opacitySlider, 1, 1)
-        self.grid_layout.addWidget(QLabel('point size:'), 2, 0)
+        self.grid_layout.addWidget(QLabel(trans._('point size:')), 2, 0)
         self.grid_layout.addWidget(self.sizeSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
         self.grid_layout.addWidget(self.blendComboBox, 3, 1)
-        self.grid_layout.addWidget(QLabel('symbol:'), 4, 0)
+        self.grid_layout.addWidget(QLabel(trans._('symbol:')), 4, 0)
         self.grid_layout.addWidget(self.symbolComboBox, 4, 1)
-        self.grid_layout.addWidget(QLabel('face color:'), 5, 0)
+        self.grid_layout.addWidget(QLabel(trans._('face color:')), 5, 0)
         self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
-        self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
+        self.grid_layout.addWidget(QLabel(trans._('edge color:')), 6, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
-        self.grid_layout.addWidget(QLabel('display text:'), 7, 0)
+        self.grid_layout.addWidget(QLabel(trans._('display text:')), 7, 0)
         self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 8, 0)
+        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 8, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 8, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
@@ -211,17 +221,17 @@ class QtPointsControls(QtLayerControls):
         elif mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(trans._("Mode not recognized"))
 
     def changeSymbol(self, text):
         """Change marker symbol of the points on the layer model.
 
         Parameters
         ----------
-        text : str
-            Marker symbol of points, eg: '+', '.', etc.
+        index : int
+            Index of current marker symbol of points, eg: '+', '.', etc.
         """
-        self.layer.symbol = text
+        self.layer.symbol = self.symbolComboBox.currentData()
 
     def changeSize(self, value):
         """Change size of points on the layer model.
@@ -290,10 +300,12 @@ class QtPointsControls(QtLayerControls):
             The napari event that triggered this method.
         """
         with self.layer.events.symbol.blocker():
-            index = self.symbolComboBox.findText(
-                self.layer.symbol, Qt.MatchFixedString
-            )
-            self.symbolComboBox.setCurrentIndex(index)
+            # `self.symbolComboBox.findData` does not provide the correct value.
+            symbol = self.layer.symbol
+            for index in range(self.symbolComboBox.count()):
+                if self.symbolComboBox.itemData(index) == symbol:
+                    self.symbolComboBox.setCurrentIndex(index)
+                    break
 
     def _on_size_change(self, event=None):
         """Receive layer model size change event and update point size slider.

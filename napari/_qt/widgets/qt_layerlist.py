@@ -18,8 +18,10 @@ from qtpy.QtWidgets import (
 
 from ...utils import config
 from ...utils.events import disconnect_events
+from ...utils.translations import trans
 
 if TYPE_CHECKING:
+    from ...components.layerlist import LayerList
     from ..experimental.qt_chunk_receiver import QtChunkReceiver
 
 
@@ -65,7 +67,7 @@ class QtLayerList(QScrollArea):
         The layout instance in which the layouts appear.
     """
 
-    def __init__(self, layers):
+    def __init__(self, layers: 'LayerList'):
         super().__init__()
 
         self.layers = layers
@@ -91,17 +93,36 @@ class QtLayerList(QScrollArea):
         self._scroll_up = True
         self._min_scroll_region = 24
         self.setAcceptDrops(True)
-        self.setToolTip('Layer list')
+        self.setToolTip(trans._('Layer list'))
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         self.layers.events.inserted.connect(self._add)
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
+        self.layers.selection.events.changed.connect(self._on_selection_change)
 
         self._drag_start_position = np.zeros(2)
         self._drag_name = None
 
         self.chunk_receiver = _create_chunk_receiver(self)
+
+    def _on_selection_change(self, event):
+        for layer in event.added:
+            w = self._find_widget(layer)
+            if w:
+                w.setSelected(True)
+        for layer in event.removed:
+            w = self._find_widget(layer)
+            if w:
+                w.setSelected(False)
+        if event.added:
+            self._ensure_visible(list(event.added)[-1])
+
+    def _find_widget(self, layer):
+        for i in range(self.vbox_layout.count()):
+            w = self.vbox_layout.itemAt(i).widget()
+            if getattr(w, 'layer', None) == layer:
+                return w
 
     def _add(self, event):
         """Insert widget for layer `event.value` at index `event.index`.
@@ -114,10 +135,9 @@ class QtLayerList(QScrollArea):
         layer = event.value
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
-        widget = QtLayerWidget(layer)
+        widget = QtLayerWidget(layer, selected=layer in self.layers.selection)
         self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
-        layer.events.select.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`.
@@ -194,17 +214,6 @@ class QtLayerList(QScrollArea):
             if new_value > self.verticalScrollBar().maximum():
                 new_value = self.verticalScrollBar().maximum()
             self.verticalScrollBar().setValue(new_value)
-
-    def _scroll_on_select(self, event):
-        """Scroll to ensure that the currently selected layer is visible.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        layer = event.source
-        self._ensure_visible(layer)
 
     def _ensure_visible(self, layer):
         """Ensure layer widget for at particular layer is visible.
@@ -293,30 +302,25 @@ class QtLayerList(QScrollArea):
         """
         if self._drag_name is None:
             # Unselect all the layers if not dragging a layer
-            self.layers.unselect_all()
+            self.layers.selection.active = None
             return
 
         modifiers = event.modifiers()
-        layer = self.layers[self._drag_name]
-        if modifiers == Qt.ShiftModifier:
-            # If shift select all layers in between currently selected one and
-            # clicked one
-            index = self.layers.index(layer)
-            lastSelected = None
-            for i in range(len(self.layers)):
-                if self.layers[i].selected:
-                    lastSelected = i
-            r = [index, lastSelected]
-            r.sort()
-            for i in range(r[0], r[1] + 1):
-                self.layers[i].selected = True
+        clicked_layer = self.layers[self._drag_name]
+        if modifiers == Qt.ShiftModifier and self.layers.selection._current:
+            # shift-click: select all layers between current and clicked
+            clicked = self.layers.index(clicked_layer)
+            current = self.layers.index(self.layers.selection._current)
+            from_, to_ = sorted([clicked, current])
+            _to_select = self.layers[slice(from_, to_ + 1)]  # inclusive range
+            self.layers.selection.update(_to_select)
+            self.layers.selection._current = clicked_layer
         elif modifiers == Qt.ControlModifier:
-            # If control click toggle selected state
-            layer.selected = not layer.selected
+            # If control click toggle selected state of clicked layer
+            self.layers.selection.toggle(clicked_layer)
         else:
             # If otherwise unselect all and leave clicked one selected
-            self.layers.unselect_all(ignore=layer)
-            layer.selected = True
+            self.layers.selection.active = clicked_layer
 
     def mouseMoveEvent(self, event):
         """Drag and drop layer with mouse movement.
@@ -515,12 +519,10 @@ class QtLayerWidget(QFrame):
         Checkbox to toggle layer visibility.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer, selected=True):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.select.connect(self._on_select_change)
-        self.layer.events.deselect.connect(self._on_deselect_change)
         self.layer.events.name.connect(self._on_name_change)
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.thumbnail.connect(self._on_thumbnail_change)
@@ -535,14 +537,14 @@ class QtLayerWidget(QFrame):
 
         tb = QLabel(self)
         tb.setObjectName('thumbnail')
-        tb.setToolTip('Layer thumbnail')
+        tb.setToolTip(trans._('Layer thumbnail'))
         self.thumbnailLabel = tb
         self._on_thumbnail_change()
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
-        cb.setToolTip('Layer visibility')
+        cb.setToolTip(trans._('Layer visibility'))
         cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
         cb.stateChanged.connect(self.changeVisible)
@@ -563,13 +565,13 @@ class QtLayerWidget(QFrame):
         layer_type = type(layer).__name__
         ltb.setObjectName(layer_type)
         ltb.setProperty('layer_type_label', True)
-        ltb.setToolTip('Layer type')
+        ltb.setToolTip(trans._('Layer type'))
         self.typeLabel = ltb
         self.layout.addWidget(ltb)
 
-        msg = 'Click to select\nDrag to rearrange'
+        msg = trans._('Click to select\nDrag to rearrange')
         self.setToolTip(msg)
-        self.setSelected(self.layer.selected)
+        self.setSelected(selected)
 
     def setSelected(self, state):
         """Select layer widget.
@@ -643,26 +645,6 @@ class QtLayerWidget(QFrame):
             Event from the Qt context.
         """
         event.ignore()
-
-    def _on_select_change(self, event=None):
-        """Update selected state of the layer.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
-        self.setSelected(True)
-
-    def _on_deselect_change(self, event=None):
-        """Update selected state of the layer.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event, optional
-            The napari event that triggered this method.
-        """
-        self.setSelected(False)
 
     def _on_name_change(self, event=None):
         """Update text displaying name of layer.

@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton, QSlider
 
+from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
@@ -82,7 +83,7 @@ class QtBaseImageControls(QtLayerControls):
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
-        self.colorbarLabel.setToolTip('Colorbar')
+        self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
 
@@ -225,8 +226,10 @@ def create_range_popup(layer, attr, parent=None):
     range_attr = f'{attr}_range'
     if not hasattr(layer, range_attr):
         raise AttributeError(
-            f'Layer {layer} must have attribute {range_attr} '
-            'to use "create_range_popup"'
+            trans._(
+                'Layer {layer} must have attribute {range_attr} '
+                'to use "create_range_popup"'
+            ).format(layer=layer, range_attr=range_attr)
         )
     is_integer_type = np.issubdtype(layer.dtype, np.integer)
 
@@ -283,7 +286,7 @@ def create_clim_reset_buttons(layer):
 
     reset_btn = QPushButton("reset")
     reset_btn.setObjectName("reset_clims_button")
-    reset_btn.setToolTip("autoscale contrast to data range")
+    reset_btn.setToolTip(trans._("autoscale contrast to data range"))
     reset_btn.setFixedWidth(40)
     reset_btn.clicked.connect(reset)
 
@@ -294,7 +297,7 @@ def create_clim_reset_buttons(layer):
     if np.issubdtype(layer.dtype, np.integer):
         range_btn = QPushButton("full range")
         range_btn.setObjectName("full_clim_range_button")
-        range_btn.setToolTip("set contrast range to full bit-depth")
+        range_btn.setToolTip(trans._("set contrast range to full bit-depth"))
         range_btn.setFixedWidth(65)
         range_btn.clicked.connect(reset_range)
 

@@ -5,6 +5,7 @@ import pydantic
 import pytest
 
 from napari.utils.settings._manager import SettingsManager
+from napari.utils.theme import get_theme, register_theme
 
 
 @pytest.fixture
@@ -26,23 +27,22 @@ def test_settings_file_not_created(tmp_path):
 
 def test_settings_get_section_name():
     class SomeSectionSettings:
-        class Config:
-            title = "Some Section Settings"
+        pass
 
-    section = SettingsManager._get_section_name(SomeSectionSettings())
-    assert section == "some_section"
+    section = SettingsManager._get_section_name(SomeSectionSettings)
+    assert section == "somesection"
 
 
 def test_settings_loads(tmp_path):
     data = """
-application:
+appearance:
   theme: light
 """
     with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
         fh.write(data)
 
     settings = SettingsManager(tmp_path)
-    assert settings.application.theme == "light"
+    assert settings.appearance.theme == "light"
 
 
 def test_settings_load_invalid_type(tmp_path):
@@ -92,11 +92,11 @@ def test_settings_to_dict(settings):
 
 def test_settings_reset(settings):
     settings.reset()
-    assert settings.application.theme == "dark"
-    settings.application.theme = "light"
-    assert settings.application.theme == "light"
+    assert settings.appearance.theme == "dark"
+    settings.appearance.theme = "light"
+    assert settings.appearance.theme == "light"
     settings.reset()
-    assert settings.application.theme == "dark"
+    assert settings.appearance.theme == "dark"
 
 
 def test_settings_schemas(settings):
@@ -108,8 +108,33 @@ def test_settings_schemas(settings):
 def test_settings_model(settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be string
-        settings.application.theme = 1
+        settings.appearance.theme = 1
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be a valid string
-        settings.application.theme = "vaporwave"
+        settings.appearance.theme = "vaporwave"
+
+
+def test_custom_theme_settings(settings):
+    # See: https://github.com/napari/napari/issues/2340
+    custom_theme_name = "blue"
+
+    # No theme registered yet, this should fail
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        settings.appearance.theme = custom_theme_name
+
+    blue_theme = get_theme('dark')
+    blue_theme.update(
+        background='rgb(28, 31, 48)',
+        foreground='rgb(45, 52, 71)',
+        primary='rgb(80, 88, 108)',
+        current='rgb(184, 112, 0)',
+    )
+    register_theme(custom_theme_name, custom_theme_name)
+
+    # Theme registered, should pass validation
+    settings.appearance.theme = custom_theme_name
+
+
+def test_settings_string(settings):
+    assert 'application:\n' in str(settings)

@@ -12,6 +12,7 @@ from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
 from ...utils import perf
+from ...utils.translations import trans
 from ..utils import delete_qapp
 
 
@@ -97,7 +98,7 @@ class EventTypes:
         try:
             return self.string_name[event]
         except KeyError:
-            return f"UnknownEvent:{event}"
+            return trans._("UnknownEvent:{event}").format(event=event)
 
 
 EVENT_TYPES = EventTypes()

@@ -8,17 +8,21 @@ import os
 import sys
 from pathlib import Path
 
+from appdirs import user_config_dir
+from yaml import safe_load
+
+from ._base import _APPAUTHOR, _APPNAME, _DEFAULT_LOCALE, _FILENAME
+
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
 
 # Constants
-DEFAULT_LOCALE = "en"
 LOCALE_DIR = "locale"
 PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 def _get_display_name(
-    locale: str, display_locale: str = DEFAULT_LOCALE
+    locale: str, display_locale: str = _DEFAULT_LOCALE
 ) -> str:
     """
     Return the language name to use with a `display_locale` for a given language locale.
@@ -37,15 +41,22 @@ def _get_display_name(
     str
         Localized `locale` and capitalized language name using `display_locale` as language.
     """
-    # This is a dependency of the language packs to keep out of core
-    import babel
+    try:
+        # This is a dependency of the language packs to keep out of core
+        import babel
 
-    locale = locale if _is_valid_locale(locale) else DEFAULT_LOCALE
-    display_locale = (
-        display_locale if _is_valid_locale(display_locale) else DEFAULT_LOCALE
-    )
-    loc = babel.Locale.parse(locale)
-    return loc.get_display_name(display_locale).capitalize()
+        locale = locale if _is_valid_locale(locale) else _DEFAULT_LOCALE
+        display_locale = (
+            display_locale
+            if _is_valid_locale(display_locale)
+            else _DEFAULT_LOCALE
+        )
+        loc = babel.Locale.parse(locale)
+        dislay_name = loc.get_display_name(display_locale).capitalize()
+    except ImportError:
+        dislay_name = display_locale.capitalize()
+
+    return dislay_name
 
 
 def _is_valid_locale(locale: str) -> bool:
@@ -63,7 +74,7 @@ def _is_valid_locale(locale: str) -> bool:
     optional territory (See ISO-3166 standard).
 
     Examples of valid locales:
-    - English: DEFAULT_LOCALE
+    - English: "en"
     - Australian English: "en_AU"
     - Portuguese: "pt"
     - Brazilian Portuguese: "pt_BR"
@@ -72,22 +83,24 @@ def _is_valid_locale(locale: str) -> bool:
     - Australian Spanish: "es_AU"
     - Brazilian German: "de_BR"
     """
-    # This is a dependency of the language packs to keep out of core
-    import babel
-
     valid = False
     try:
+        # This is a dependency of the language packs to keep out of core
+        import babel
+
         babel.Locale.parse(locale)
         valid = True
-    except babel.core.UnknownLocaleError:
-        pass
+    except ImportError:
+        valid = True
     except ValueError:
+        pass
+    except babel.core.UnknownLocaleError:
         pass
 
     return valid
 
 
-def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
+def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
     """
     Return the available language packs installed in the system.
 
@@ -97,7 +110,7 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
     Parameters
     ----------
     display_locale : str, optional
-        Default is DEFAULT_LOCALE.
+        Default is _DEFAULT_LOCALE.
 
     Returns
     -------
@@ -130,12 +143,12 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
             invalid_locales.append(locale)
 
     display_locale = (
-        display_locale if display_locale in valid_locales else DEFAULT_LOCALE
+        display_locale if display_locale in valid_locales else _DEFAULT_LOCALE
     )
     locales = {
-        DEFAULT_LOCALE: {
-            "displayName": _get_display_name(DEFAULT_LOCALE, display_locale),
-            "nativeName": _get_display_name(DEFAULT_LOCALE, DEFAULT_LOCALE),
+        _DEFAULT_LOCALE: {
+            "displayName": _get_display_name(_DEFAULT_LOCALE, display_locale),
+            "nativeName": _get_display_name(_DEFAULT_LOCALE, _DEFAULT_LOCALE),
         }
     }
     for locale in valid_locales:
@@ -187,7 +200,7 @@ class TranslationBundle:
         """
         self._locale = locale
         localedir = None
-        if locale.split("_")[0] != DEFAULT_LOCALE:
+        if locale.split("_")[0] != _DEFAULT_LOCALE:
             from napari_plugin_engine.manager import iter_available_plugins
 
             lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
@@ -384,7 +397,7 @@ class _Translator:
     """
 
     _TRANSLATORS = {}
-    _LOCALE = DEFAULT_LOCALE
+    _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod
     def _update_env(locale: str):
@@ -412,8 +425,8 @@ class _Translator:
         if _is_valid_locale(locale):
             cls._LOCALE = locale
 
-            if locale.split("_")[0] != DEFAULT_LOCALE:
-                translator._update_env(locale)
+            if locale.split("_")[0] != _DEFAULT_LOCALE:
+                _Translator._update_env(locale)
 
             for __, bundle in cls._TRANSLATORS.items():
                 bundle._update_locale(locale)
@@ -444,4 +457,24 @@ class _Translator:
         return trans
 
 
+def _load_language() -> str:
+    """Load language from configuration file directly."""
+    locale = _DEFAULT_LOCALE
+    default_config_path = Path(
+        user_config_dir(_APPNAME, _APPAUTHOR, _FILENAME)
+    )
+    if default_config_path.exists():
+        with open(default_config_path) as fh:
+            data = safe_load(fh) or {}
+
+        locale = data.get("application", {}).get("language", locale)
+
+    return os.environ.get("NAPARI_LANGUAGE", locale)
+
+
+# Update Translator locale before any other import uses it
+_Translator._set_locale(_load_language())
+
+# Default translator
+trans = _Translator.load("napari")
 translator = _Translator

@@ -1,6 +1,8 @@
+from collections import OrderedDict
 from enum import auto
 
 from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 
 class Blending(StringEnum):
@@ -25,3 +27,12 @@ class Blending(StringEnum):
     TRANSLUCENT = auto()
     ADDITIVE = auto()
     OPAQUE = auto()
+
+
+BLENDING_TRANSLATIONS = OrderedDict(
+    [
+        (Blending.TRANSLUCENT, trans._("translucent")),
+        (Blending.ADDITIVE, trans._("additive")),
+        (Blending.OPAQUE, trans._("opaque")),
+    ]
+)

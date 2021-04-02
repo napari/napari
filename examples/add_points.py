@@ -18,7 +18,7 @@ with napari.gui_qt():
     viewer.add_points(points, size=size)
 
     # unselect the image layer
-    viewer.layers[0].selected = False
+    viewer.layers.selection.discard(viewer.layers[0])
 
     # adjust some of the points layer properties
     layer = viewer.layers[1]
@@ -30,9 +30,11 @@ with napari.gui_qt():
     layer.visible = False
     layer.visible = True
 
-    # change the layer selection
-    layer.selected = False
-    layer.selected = True
+    # select the layer
+    viewer.layers.selection.add(layer)
+    # deselect the layer
+    viewer.layers.selection.remove(layer)
+    # or: viewer.layers.selection.discard(layer)
 
     # change the layer opacity
     layer.opacity = 0.9
@@ -45,4 +47,3 @@ with napari.gui_qt():
 
     # change the layer mode
     layer.mode = 'add'
-
