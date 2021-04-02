@@ -49,12 +49,6 @@ if TYPE_CHECKING:
     from qtpy.QtGui import QPainter
     from qtpy.QtWidgets import QStyleOptionViewItem, QWidget
 
-# translations from the old qt layer list
-# tb.setToolTip(trans._('Layer thumbnail'))
-# cb.setToolTip(trans._('Layer visibility'))
-# ltb.setToolTip(trans._('Layer type'))
-# msg = trans._('Click to select\nDrag to rearrange')
-
 
 class LayerDelegate(QStyledItemDelegate):
     """A QItemDelegate specialized for painting Layer objects.
