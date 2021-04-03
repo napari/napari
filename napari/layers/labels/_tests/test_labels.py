@@ -808,3 +808,24 @@ def test_undo_redo(
     np.testing.assert_array_equal(layer.data, data_history[0])
     layer.redo()
     np.testing.assert_array_equal(layer.data, data_history[1])
+
+
+def test_ndim_fill():
+    test_array = np.zeros((5, 5, 5, 5), dtype=int)
+
+    test_array[:, 1:3, 1:3, 1:3] = 1
+
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+
+    layer.fill((0, 1, 1, 1), 2)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1, 1:3, 1:3, 1:3], 1)
+
+    layer.n_edit_dimensions = 4
+
+    layer.fill((1, 1, 1, 1), 3)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1:, 1:3, 1:3, 1:3], 3)
