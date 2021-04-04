@@ -325,6 +325,16 @@ class Shapes(Layer):
                 ndim = 2
             data = np.empty((0, 0, ndim))
         else:
+            # Tuple for one shape or list of shapes with shape_type
+            if isinstance(data, Tuple):
+                shape_type = data[1]
+                data = data[0]
+            # List of (vertices, shape_type) tuples
+            elif len(data) != 0 and all(
+                isinstance(datum, Tuple) for datum in data
+            ):
+                data = [datum[0] for datum in data]
+                shape_type = [datum[1] for datum in data]
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
                 raise ValueError(
