@@ -119,7 +119,10 @@ class SettingsManager:
 
         if path.is_file():
             with open(path) as fh:
-                data = safe_load(fh.read()) or {}
+                try:
+                    data = safe_load(fh.read()) or {}
+                except Exception:
+                    data = {}
 
             # Check with models
             for section, model_data in data.items():

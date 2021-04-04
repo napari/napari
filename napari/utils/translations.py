@@ -465,7 +465,10 @@ def _load_language() -> str:
     )
     if default_config_path.exists():
         with open(default_config_path) as fh:
-            data = safe_load(fh) or {}
+            try:
+                data = safe_load(fh) or {}
+            except Exception:
+                data = {}
 
         locale = data.get("application", {}).get("language", locale)
 
