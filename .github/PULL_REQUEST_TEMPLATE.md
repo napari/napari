@@ -25,3 +25,5 @@
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
 - [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] If I included new strings, I have used `trans.` to make them localizable.
+      For more information see our [translations guide](https://napari.org/guides/stable/translations.html).
