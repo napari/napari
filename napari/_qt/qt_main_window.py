@@ -497,7 +497,7 @@ class Window:
             self.view_menu.addAction(toggle_outline)
 
         progress_bar_action = QAction(
-            trans._("View Progress Bar Dock..."), self._qt_window
+            trans._("Progress Bar Dock"), self._qt_window
         )
         progress_bar_action.setStatusTip(trans._('View current progress bars'))
         progress_bar_action.triggered.connect(self._show_pbar_dock)
@@ -803,7 +803,6 @@ class Window:
 
         for _, wdg_attr in inspect.getmembers(wdg):
             if isinstance(wdg_attr, ProgressBar):
-                print("Found a progress bar!")
                 self._progress_bar_dock.layout().addWidget(wdg_attr.native)
 
         # Add dock widget
