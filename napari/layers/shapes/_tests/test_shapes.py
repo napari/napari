@@ -372,6 +372,35 @@ def test_rectangles():
     assert layer.ndim == shape[2]
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
+    # Test (rectangle, shape_type) tuple
+    shape = (1, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "rectangle")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+    # Test (list of rectangles, shape_type) tuple
+    shape = (10, 4, 2)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "rectangle")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+    # Test list of (rectangle, shape_type) tuples
+    data = [(vertices[i], "rectangle") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
+
 
 def test_rectangles_roundtrip():
     """Test a full roundtrip with rectangles data."""
@@ -471,6 +500,71 @@ def test_ellipses():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data, shape_type='ellipse')
+    assert layer.nshapes == shape[0]
+    assert np.all([len(ld) == 4 for ld in layer.data])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test single four corner (vertices, shape_type) tuple
+    shape = (1, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test multiple four corner (list of vertices, shape_type) tuple
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test list of four corner (vertices, shape_type) tuples
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = [(vertices[i], "ellipse") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test single (center-radii, shape_type) ellipse
+    shape = (1, 2, 2)
+    np.random.seed(0)
+    data = (20 * np.random.random(shape), "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == 1
+    assert len(layer.data[0]) == 4
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test (list of center-radii, shape_type) tuple
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    center_radii = 20 * np.random.random(shape)
+    data = (center_radii, "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([len(ld) == 4 for ld in layer.data])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test list of (center-radii, shape_type) tuples
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    center_radii = 20 * np.random.random(shape)
+    data = [(center_radii[i], "ellipse") for i in range(shape[0])]
+    layer = Shapes(data)
     assert layer.nshapes == shape[0]
     assert np.all([len(ld) == 4 for ld in layer.data])
     assert layer.ndim == shape[2]
