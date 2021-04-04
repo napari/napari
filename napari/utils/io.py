@@ -270,6 +270,7 @@ def read_zarr_dataset(path):
     path : str
         Path to directory ending in '.zarr'. Path can contain either an array
         or a group of arrays in the case of multiscale data.
+
     Returns
     -------
     image : array-like
