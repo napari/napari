@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
 
 from .. import plugins
 from ..utils import config, perf
+from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
@@ -1202,15 +1203,11 @@ class Window:
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
-        dial = ScreenshotDialog(
-            self.screenshot,
-            self.qt_viewer,
-            SETTINGS.application.last_visited_dir,
-        )
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self.qt_viewer, hist[0], hist)
+
         if dial.exec_():
-            SETTINGS.application.last_visited_dir = os.path.dirname(
-                dial.selectedFiles()[0]
-            )
+            update_save_history(dial.selectedFiles()[0])
 
     def _restart(self):
         """Restart the napari application."""

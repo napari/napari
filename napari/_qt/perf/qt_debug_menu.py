@@ -12,7 +12,7 @@ from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
 from ...utils import perf
-from ...utils.settings import SETTINGS
+from ...utils.history import get_save_history, update_save_history
 from ...utils.translations import trans
 
 
@@ -93,10 +93,13 @@ class PerformanceSubMenu:
         """Open Save As dialog to start recording a trace file."""
         viewer = self.main_window.qt_viewer
 
-        filename, _ = QFileDialog.getSaveFileName(
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+        filename, _ = dlg.getSaveFileName(
             parent=viewer,
             caption=trans._('Record performance trace file'),
-            directory=SETTINGS.application.last_visited_dir,
+            directory=hist[0],
             filter=trans._("Trace Files (*.json)"),
         )
         if filename:
@@ -108,6 +111,8 @@ class PerformanceSubMenu:
             # Schedule this to avoid bogus "MetaCall" event for the entire
             # time the file dialog was up.
             QTimer.singleShot(0, start_trace)
+
+            update_save_history(filename)
 
     def _start_trace(self, path: str):
         perf.timers.start_trace_file(path)

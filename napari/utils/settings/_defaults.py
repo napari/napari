@@ -1,6 +1,7 @@
 """Settings management.
 """
 
+import os
 from enum import Enum
 from pathlib import Path
 from typing import List, Tuple
@@ -248,7 +249,8 @@ class ApplicationSettings(BaseNapariSettings):
         NotificationSeverity.NONE
     )
 
-    last_visited_dir: str = str(Path.home())
+    open_history: List = [os.path.dirname(Path.home())]
+    save_history: List = [os.path.dirname(Path.home())]
 
     class Config:
         # Pydantic specific configuration
@@ -268,7 +270,8 @@ class ApplicationSettings(BaseNapariSettings):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
-            "last_visited_dir",
+            "open_history",
+            "save_history",
         ]
 
 
