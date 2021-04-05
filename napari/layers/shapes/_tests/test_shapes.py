@@ -834,6 +834,20 @@ def test_mixed_shapes():
     assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
 
 
+def test_data_shape_type_overwrites_meta():
+    """Test shape type passed through data property overwrites metadata shape type"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "ellipse")
+    layer = Shapes(data, shape_type='rectangle')
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    data = [(vertices[i], "ellipse") for i in range(shape[0])]
+    layer = Shapes(data, shape_type='rectangle')
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+
 def test_changing_shapes():
     """Test changing Shapes data."""
     shape_a = (10, 4, 2)
