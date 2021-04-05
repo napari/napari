@@ -22,4 +22,4 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 - [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - @shanaxel42
 
 
-<sub>*SC — currently on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
+<sub>***SC** currently on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
