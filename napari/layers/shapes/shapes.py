@@ -1456,15 +1456,17 @@ class Shapes(Layer):
         Parameters
         ----------
         data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Each element can optionally be a tuple containing an array of the N vertices and the shape_type string. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1565,15 +1567,17 @@ class Shapes(Layer):
         Parameters
         ----------
         data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Each element can optionally be a tuple containing an array of the N vertices and the shape_type string. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1652,15 +1656,17 @@ class Shapes(Layer):
         Parameters
         ----------
         data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Each element can optionally be a tuple containing an array of the N vertices and the shape_type string. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
