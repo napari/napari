@@ -622,6 +622,39 @@ def test_lines():
     assert layer.ndim == shape[2]
     assert np.all([s == 'line' for s in layer.shape_type])
 
+    # Test (single line, shape_type) tuple
+    shape = (1, 2, 2)
+    np.random.seed(0)
+    end_points = 20 * np.random.random(shape)
+    data = (end_points, 'line')
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == end_points[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_type])
+
+    # Test (multiple lines, shape_type) tuple
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    end_points = 20 * np.random.random(shape)
+    data = (end_points, "line")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, end_points)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_type])
+
+    # Test list of (line, shape_type) tuples
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    end_points = 20 * np.random.random(shape)
+    data = [(end_points[i], "line") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, end_points)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_type])
+
 
 def test_lines_roundtrip():
     """Test a full roundtrip with line data."""
@@ -652,6 +685,36 @@ def test_paths():
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == 2
+    assert np.all([s == 'path' for s in layer.shape_type])
+
+    # Test (single path, shape_type) tuple
+    shape = (1, 6, 2)
+    np.random.seed(0)
+    path_points = 20 * np.random.random(shape)
+    data = (path_points, "path")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == path_points[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'path' for s in layer.shape_type])
+
+    # Test (list of paths, shape_type) tuple
+    path_points = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+    ]
+    data = (path_points, "path")
+    layer = Shapes(data)
+    assert layer.nshapes == len(path_points)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, path_points)])
+    assert layer.ndim == 2
+    assert np.all([s == 'path' for s in layer.shape_type])
+
+    # Test list of  (path, shape_type) tuples
+    data = [(path_points[i], "path") for i in range(len(path_points))]
+    layer = Shapes(data)
+    assert layer.nshapes == len(data)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, path_points)])
     assert layer.ndim == 2
     assert np.all([s == 'path' for s in layer.shape_type])
 
@@ -691,6 +754,36 @@ def test_polygons():
     assert layer.ndim == 2
     assert np.all([s == 'polygon' for s in layer.shape_type])
 
+    # Test single (polygon, shape_type) tuple
+    shape = (1, 6, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, 'polygon')
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == vertices[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'polygon' for s in layer.shape_type])
+
+    # Test (list of polygons, shape_type) tuple
+    polygons = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+    ]
+    data = (polygons, 'polygon')
+    layer = Shapes(data)
+    assert layer.nshapes == len(polygons)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, polygons)])
+    assert layer.ndim == 2
+    assert np.all([s == 'polygon' for s in layer.shape_type])
+
+    # Test list of (polygon, shape_type) tuples
+    data = [(polygons[i], 'polygon') for i in range(len(polygons))]
+    layer = Shapes(data)
+    assert layer.nshapes == len(polygons)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, polygons)])
+    assert layer.ndim == 2
+    assert np.all([s == 'polygon' for s in layer.shape_type])
+
 
 def test_polygon_roundtrip():
     """Test a full roundtrip with polygon data."""
@@ -709,13 +802,15 @@ def test_mixed_shapes():
     """Test instantiating Shapes layer with a mix of random 2D shapes."""
     # Test multiple polygons with different numbers of points
     np.random.seed(0)
-    data = [
+    shape_vertices = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
     ] + list(np.random.random((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
-    layer = Shapes(data, shape_type=shape_type)
-    assert layer.nshapes == len(data)
-    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    layer = Shapes(shape_vertices, shape_type=shape_type)
+    assert layer.nshapes == len(shape_vertices)
+    assert np.all(
+        [np.all(ld == d) for ld, d in zip(layer.data, shape_vertices)]
+    )
     assert layer.ndim == 2
     assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
 
@@ -727,6 +822,16 @@ def test_mixed_shapes():
     assert np.all(
         [ns == s for ns, s in zip(new_layer.shape_type, layer.shape_type)]
     )
+
+    # Test multiple (shape, shape_type) tuples
+    data = list(zip(shape_vertices, shape_type))
+    layer = Shapes(data)
+    assert layer.nshapes == len(shape_vertices)
+    assert np.all(
+        [np.all(ld == d) for ld, d in zip(layer.data, shape_vertices)]
+    )
+    assert layer.ndim == 2
+    assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
 
 
 def test_changing_shapes():
