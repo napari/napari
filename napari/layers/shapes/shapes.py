@@ -541,10 +541,11 @@ class Shapes(Layer):
         return self._data_view.data
 
     @data.setter
-    def data(self, data, shape_type='rectangle'):
+    def data(self, data):
         self._finish_drawing()
+
         self._data_view = ShapeList()
-        self.add(data, shape_type=shape_type)
+        self.add(data, shape_type=None)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -1492,6 +1493,20 @@ class Shapes(Layer):
             shapes.
         """
         data, shape_type = extract_shape_type(data, shape_type)
+
+        # not given a shape_type through data
+        if shape_type is None:
+            # if same number of shapes assume shape type unchanged
+            if self.nshapes == len(data):
+                shape_type = self.shape_type
+            # fewer shapes, trim shape type
+            elif self.nshapes > len(data):
+                shape_type = self.shape_type[: len(data)]
+            # more shapes, default to rectangle for new shapes
+            else:
+                shape_type = self.shape_type + ["rectangle"] * (
+                    len(data) - self.nshapes
+                )
 
         if edge_width is None:
             edge_width = self.current_edge_width
