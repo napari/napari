@@ -105,10 +105,13 @@ class QNotificationList(QListWidget):
         self.notification_manager = notification_manager
         self.setSortingEnabled(True)
         self.notification_manager.notification_ready.connect(self.addItem)
+        self.destroyed.connect(
+            lambda: self.notification_manager.notification_ready.disconnect(
+                self.addItem
+            )
+        )
 
-    # @Slot(Notification)
     def addItem(self, notif: Notification):
-        pass
         # don't add duplicates
         widg = QNotificationListItem(notif, parent=self)
         item = QListWidgetItem(parent=self)

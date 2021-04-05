@@ -170,7 +170,7 @@ def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     actions = viewer.window._plugin_dock_widget_menu.actions()
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()
-    assert len(viewer.window._dock_widgets) == 2
+    assert len(viewer.window._dock_widgets) == 3
     clear_action = next(
         a
         for a in viewer.window.window_menu.actions()
