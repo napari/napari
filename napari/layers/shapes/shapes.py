@@ -1455,9 +1455,9 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
             List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            N vertices of a shape in D dimensions. Each element can optionally be a tuple containing an array of the N vertices and the shape_type string. Can be an 3-dimensional
             array if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
@@ -1564,9 +1564,9 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
             List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            N vertices of a shape in D dimensions. Each element can optionally be a tuple containing an array of the N vertices and the shape_type string. Can be an 3-dimensional
             array if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
@@ -1651,9 +1651,9 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
             List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            N vertices of a shape in D dimensions. Each element can optionally be a tuple containing an array of the N vertices and the shape_type string. Can be an 3-dimensional
             array if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
