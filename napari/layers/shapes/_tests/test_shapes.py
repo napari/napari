@@ -853,15 +853,22 @@ def test_changing_shapes():
     shape_a = (10, 4, 2)
     shape_b = (20, 4, 2)
     np.random.seed(0)
-    data_a = 20 * np.random.random(shape_a)
-    data_b = 20 * np.random.random(shape_b)
-    layer = Shapes(data_a)
+    vertices_a = 20 * np.random.random(shape_a)
+    vertices_b = 20 * np.random.random(shape_b)
+    layer = Shapes(vertices_a)
     assert layer.nshapes == shape_a[0]
-    layer.data = data_b
+    layer.data = vertices_b
     assert layer.nshapes == shape_b[0]
-    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data_b)])
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices_b)])
     assert layer.ndim == shape_b[2]
     assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+    data_a = (vertices_a, "ellipse")
+    layer.data = data_a
+    assert layer.nshapes == shape_a[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices_a)])
+    assert layer.ndim == shape_a[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
 
 def test_adding_shapes():
@@ -880,6 +887,18 @@ def test_adding_shapes():
     all_shape_type = ['polygon'] * 5 + new_shape_type
     assert layer.nshapes == len(all_data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, all_data)])
+    assert layer.ndim == 2
+    assert np.all([s == so for s, so in zip(layer.shape_type, all_shape_type)])
+
+    # test adding data with shape_type
+    new_vertices = np.random.random((5, 4, 2))
+    new_shape_type2 = ['ellipse'] * 3 + ['rectangle'] * 2
+    new_data2 = list(zip(new_vertices, new_shape_type2))
+    layer.add(new_data2)
+    all_vertices = all_data + list(new_vertices)
+    all_shape_type = all_shape_type + new_shape_type2
+    assert layer.nshapes == len(all_vertices)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, all_vertices)])
     assert layer.ndim == 2
     assert np.all([s == so for s, so in zip(layer.shape_type, all_shape_type)])
 

@@ -46,7 +46,12 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import create_box, get_shape_ndim, number_of_shapes
+from ._shapes_utils import (
+    create_box,
+    extract_shape_type,
+    get_shape_ndim,
+    number_of_shapes,
+)
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -325,16 +330,7 @@ class Shapes(Layer):
                 ndim = 2
             data = np.empty((0, 0, ndim))
         else:
-            # Tuple for one shape or list of shapes with shape_type
-            if isinstance(data, Tuple):
-                shape_type = data[1]
-                data = data[0]
-            # List of (vertices, shape_type) tuples
-            elif len(data) != 0 and all(
-                isinstance(datum, Tuple) for datum in data
-            ):
-                shape_type = [datum[1] for datum in data]
-                data = [datum[0] for datum in data]
+            data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
                 raise ValueError(
@@ -1493,6 +1489,8 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        data, shape_type = extract_shape_type(data, shape_type)
+
         if edge_width is None:
             edge_width = self.current_edge_width
 
