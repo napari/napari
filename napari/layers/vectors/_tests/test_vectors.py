@@ -170,11 +170,11 @@ def test_adding_properties():
     np.testing.assert_equal(layer.properties, properties)
 
     # removing a property that was the _edge_color_property should give a warning
-    layer._edge_color_property = 'vector_type'
+    layer.edge_color = 'vector_type'
     properties_2 = {
         'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
     }
-    with pytest.warns(UserWarning):
+    with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
@@ -437,14 +437,14 @@ def test_switching_edge_color_mode():
     )
 
     # there should not be an edge_color_property
-    assert layer._edge_color_property == ''
+    assert layer._edge.color_properties is None
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in Vectors.properties is being automatically selected
     with pytest.warns(RuntimeWarning):
         layer.edge_color_mode = 'colormap'
-    assert layer._edge_color_property == next(iter(properties))
+    assert layer._edge.color_properties.name == next(iter(properties))
     np.testing.assert_allclose(layer.edge_color[-1], [1, 1, 1, 1])
 
     # switch to color cycle
