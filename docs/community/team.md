@@ -5,21 +5,21 @@ napari is a consensus-based community project. Anyone with an interest in the pr
 
 ## Current Core Developers
 
-- [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
-- [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
-- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni (SC)
-- [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - @justinelarsen
-- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
-- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
-- [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - @royerloic (SC)
-- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn (SC)
-- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
-- [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
+- [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - [@AhmetCanSolak](https://github.com/AhmetCanSolak)
+- [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - [@GenevieveBuckley](https://github.com/GenevieveBuckley)
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - [@jni](https://github.com/jni) (SC)
+- [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - [@justinelarsen](https://github.com/justinelarsen)
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - [@kevinyamauchi](https://github.com/kevinyamauchi)
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - [@kne42](https://github.com/kne42)
+- [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - [@royerloic](https://github.com/royerloic) (SC)
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - [@sofroniewn](https://github.com/sofroniewn) (SC)
+- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - [@tlambert03](https://github.com/tlambert03)
+- [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - [@ziyangczi](https://github.com/ziyangczi)
 
 
 ## Emeritus Core Developers
 
-- [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - @shanaxel42
+- [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - [@shanaxel42](https://github.com/shanaxel42)
 
 
 <sub>***SC** currently on the napari [steering council](https://napari.org/community/governance.html#steering-council).</sub>
