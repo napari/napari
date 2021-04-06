@@ -1,3 +1,5 @@
+from typing import List
+
 from qtpy.QtCore import QModelIndex, QSize, Qt
 from qtpy.QtGui import QImage
 
@@ -6,6 +8,7 @@ from .qt_list_model import QtListModel
 
 LayerRole = Qt.UserRole
 ThumbnailRole = Qt.UserRole + 1
+SortRole = Qt.UserRole + 2
 
 
 class QtLayerListModel(QtListModel[Layer]):
@@ -14,6 +17,8 @@ class QtLayerListModel(QtListModel[Layer]):
         layer = self.getItem(index)
         if role == Qt.DisplayRole:  # used for item text
             return layer.name
+        if role == SortRole:  # used for item text
+            return index.row()
         if role == Qt.TextAlignmentRole:  # alignment of the text
             return Qt.AlignCenter
         if role == Qt.EditRole:  # used to populate line edit when editing
@@ -68,3 +73,19 @@ class QtLayerListModel(QtListModel[Layer]):
         top = self.index(event.index)
         bot = self.index(event.index + 1)
         self.dataChanged.emit(top, bot, roles)
+
+    # TODO:
+    # These two overrides are here to handle drag/drop events because the
+    # view is reversed using `QSortFilterProxyModel` in the `QtLayerList`.
+    # It *should* be possible to achieve the reversal entirely on the view side
+    # without the model knowing anything about it, but after a day of tinkering
+    # with QAbstractProxyModel and subclasses, I haven't yet figured it out.
+
+    def mimeData(self, indices: List[QModelIndex]):
+        """Return an object containing serialized data from `indices`."""
+        data = super().mimeData(indices)
+        data.indices = tuple(reversed(data.indices))
+        return data
+
+    def dropMimeData(self, data, action, destRow, col, parent):
+        return super().dropMimeData(data, action, destRow + 1, col, parent)
