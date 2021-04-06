@@ -24,55 +24,55 @@ ValidColormapArg = Union[
 
 
 matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
-    viridis=trans._('viridis'),
-    magma=trans._('magma'),
-    inferno=trans._('inferno'),
-    plasma=trans._('plasma'),
-    gray=trans._('gray'),
-    gray_r=trans._('gray r'),
-    hsv=trans._('hsv'),
-    turbo=trans._('turbo'),
-    twilight=trans._('twilight'),
-    twilight_shifted=trans._('twilight shifted'),
-    gist_earth=trans._('gist earth'),
-    PiYG=trans._('PiYG'),
+    viridis=trans._p('colormap', 'viridis'),
+    magma=trans._p('colormap', 'magma'),
+    inferno=trans._p('colormap', 'inferno'),
+    plasma=trans._p('colormap', 'plasma'),
+    gray=trans._p('colormap', 'gray'),
+    gray_r=trans._p('colormap', 'gray r'),
+    hsv=trans._p('colormap', 'hsv'),
+    turbo=trans._p('colormap', 'turbo'),
+    twilight=trans._p('colormap', 'twilight'),
+    twilight_shifted=trans._p('colormap', 'twilight shifted'),
+    gist_earth=trans._p('colormap', 'gist earth'),
+    PiYG=trans._p('colormap', 'PiYG'),
 )
-_VISPY_CMAPS = get_colormaps()
-_VISPY_COLORMAPS = OrderedDict(
-    autumn=(trans._('autumn'), _VISPY_CMAPS['autumn']),
-    blues=(trans._('blues'), _VISPY_CMAPS['blues']),
-    cool=(trans._('cool'), _VISPY_CMAPS['cool']),
-    greens=(trans._('greens'), _VISPY_CMAPS['greens']),
-    reds=(trans._('reds'), _VISPY_CMAPS['reds']),
-    spring=(trans._('spring'), _VISPY_CMAPS['spring']),
-    summer=(trans._('summer'), _VISPY_CMAPS['summer']),
-    fire=(trans._('fire'), _VISPY_CMAPS['fire']),
-    grays=(trans._('grays'), _VISPY_CMAPS['grays']),
-    hot=(trans._('hot'), _VISPY_CMAPS['hot']),
-    ice=(trans._('ice'), _VISPY_CMAPS['ice']),
-    winter=(trans._('winter'), _VISPY_CMAPS['winter']),
-    light_blues=(trans._('light blues'), _VISPY_CMAPS['light_blues']),
-    orange=(trans._('orange'), _VISPY_CMAPS['orange']),
-    viridis=(trans._('viridis'), _VISPY_CMAPS['viridis']),
-    coolwarm=(trans._('coolwarm'), _VISPY_CMAPS['coolwarm']),
-    PuGr=(trans._('PuGr'), _VISPY_CMAPS['PuGr']),
-    GrBu=(trans._('GrBu'), _VISPY_CMAPS['GrBu']),
-    GrBu_d=(trans._('GrBu_d'), _VISPY_CMAPS['GrBu_d']),
-    RdBu=(trans._('RdBu'), _VISPY_CMAPS['RdBu']),
-    cubehelix=(trans._('cubehelix'), _VISPY_CMAPS['cubehelix']),
-    single_hue=(trans._('single hue'), _VISPY_CMAPS['single_hue']),
-    hsl=(trans._('hsl'), _VISPY_CMAPS['hsl']),
-    husl=(trans._('husl'), _VISPY_CMAPS['husl']),
-    diverging=(trans._('diverging'), _VISPY_CMAPS['diverging']),
-    RdYeBuCy=(trans._('RdYeBuCy'), _VISPY_CMAPS['RdYeBuCy']),
+_VISPY_COLORMAPS_ORIGINAL = _VCO = get_colormaps()
+_VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
+    autumn=(trans._p('colormap', 'autumn'), _VCO['autumn']),
+    blues=(trans._p('colormap', 'blues'), _VCO['blues']),
+    cool=(trans._p('colormap', 'cool'), _VCO['cool']),
+    greens=(trans._p('colormap', 'greens'), _VCO['greens']),
+    reds=(trans._p('colormap', 'reds'), _VCO['reds']),
+    spring=(trans._p('colormap', 'spring'), _VCO['spring']),
+    summer=(trans._p('colormap', 'summer'), _VCO['summer']),
+    fire=(trans._p('colormap', 'fire'), _VCO['fire']),
+    grays=(trans._p('colormap', 'grays'), _VCO['grays']),
+    hot=(trans._p('colormap', 'hot'), _VCO['hot']),
+    ice=(trans._p('colormap', 'ice'), _VCO['ice']),
+    winter=(trans._p('colormap', 'winter'), _VCO['winter']),
+    light_blues=(trans._p('colormap', 'light blues'), _VCO['light_blues']),
+    orange=(trans._p('colormap', 'orange'), _VCO['orange']),
+    viridis=(trans._p('colormap', 'viridis'), _VCO['viridis']),
+    coolwarm=(trans._p('colormap', 'coolwarm'), _VCO['coolwarm']),
+    PuGr=(trans._p('colormap', 'PuGr'), _VCO['PuGr']),
+    GrBu=(trans._p('colormap', 'GrBu'), _VCO['GrBu']),
+    GrBu_d=(trans._p('colormap', 'GrBu_d'), _VCO['GrBu_d']),
+    RdBu=(trans._p('colormap', 'RdBu'), _VCO['RdBu']),
+    cubehelix=(trans._p('colormap', 'cubehelix'), _VCO['cubehelix']),
+    single_hue=(trans._p('colormap', 'single hue'), _VCO['single_hue']),
+    hsl=(trans._p('colormap', 'hsl'), _VCO['hsl']),
+    husl=(trans._p('colormap', 'husl'), _VCO['husl']),
+    diverging=(trans._p('colormap', 'diverging'), _VCO['diverging']),
+    RdYeBuCy=(trans._p('colormap', 'RdYeBuCy'), _VCO['RdYeBuCy']),
 )
 _PRIMARY_COLORS = OrderedDict(
-    red=(trans._('red'), [1.0, 0.0, 0.0]),
-    green=(trans._('green'), [0.0, 1.0, 0.0]),
-    blue=(trans._('blue'), [0.0, 0.0, 1.0]),
-    cyan=(trans._('cyan'), [0.0, 1.0, 1.0]),
-    magenta=(trans._('magenta'), [1.0, 0.0, 1.0]),
-    yellow=(trans._('yellow'), [1.0, 1.0, 0.0]),
+    red=(trans._p('colormap', 'red'), [1.0, 0.0, 0.0]),
+    green=(trans._p('colormap', 'green'), [0.0, 1.0, 0.0]),
+    blue=(trans._p('colormap', 'blue'), [0.0, 0.0, 1.0]),
+    cyan=(trans._p('colormap', 'cyan'), [0.0, 1.0, 1.0]),
+    magenta=(trans._p('colormap', 'magenta'), [1.0, 0.0, 1.0]),
+    yellow=(trans._p('colormap', 'yellow'), [1.0, 1.0, 0.0]),
 )
 
 SIMPLE_COLORMAPS = {
@@ -140,8 +140,8 @@ def convert_vispy_colormap(colormap, name='vispy'):
     else:
         interpolation = 'linear'
 
-    if name in _VISPY_COLORMAPS:
-        display_name, _cmap = _VISPY_COLORMAPS[name]
+    if name in _VISPY_COLORMAPS_TRANSLATIONS:
+        display_name, _cmap = _VISPY_COLORMAPS_TRANSLATIONS[name]
     else:
         # Unnamed colormap
         display_name = trans._(name)
@@ -350,7 +350,7 @@ def label_colormap(num_colors=256, seed=0.5):
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     return Colormap(
         name='label_colormap',
-        display_name='label_colormap',  # TODO: needs translation?
+        display_name=trans._p('colormap', 'low discrepancy colors'),
         colors=colors,
         controls=control_points,
         interpolation='zero',
@@ -375,7 +375,7 @@ def vispy_or_mpl_colormap(name):
     KeyError
         If no colormap with that name is found within vispy or matplotlib.
     """
-    if name in _VISPY_COLORMAPS:
+    if name in _VISPY_COLORMAPS_TRANSLATIONS:
         cmap = get_colormap(name)
         colormap = convert_vispy_colormap(cmap, name=name)
     else:
@@ -417,7 +417,7 @@ RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
 
 
-def increment_unnamed_colormap(
+def _increment_unnamed_colormap(
     existing: List[str], name: str = '[unnamed colormap]'
 ) -> Tuple[str, str]:
     """Increment name for unnamed colormap.
@@ -496,7 +496,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                     break
 
             if not name:
-                name, _display_name = increment_unnamed_colormap(
+                name, _display_name = _increment_unnamed_colormap(
                     AVAILABLE_COLORMAPS
                 )
 

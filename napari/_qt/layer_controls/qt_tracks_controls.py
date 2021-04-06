@@ -147,12 +147,9 @@ class QtTracksControls(QtLayerControls):
             Event from the Qt context, by default None.
         """
         with self.layer.events.colormap.blocker():
-            colormap = self.layer.colormap
-            # `self.colormap_combobox.findData` is not returning the correct index.
-            for index in range(self.colormap_combobox.count()):
-                if colormap == self.colormap_combobox.itemData(index):
-                    self.colormap_combobox.setCurrentIndex(index)
-                    break
+            self.colormap_combobox.setCurrentIndex(
+                self.colormap_combobox.findData(self.layer.colormap)
+            )
 
     def _on_color_by_change(self, event=None):
         """Receive layer model color_by change event and update combobox.

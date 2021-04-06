@@ -46,11 +46,14 @@ class Colormap(EventedModel):
     # fields
     colors: Array[float, (-1, 4)]
     name: str = 'custom'
-    display_name: str = 'custom'
+    display_name: str = None
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[float, (-1,)] = None
 
     def __init__(self, colors, **data):
+        if data.get('display_name') is None:
+            data['display_name'] = data.get('name', 'custom')
+
         super().__init__(colors=colors, **data)
 
     # validators

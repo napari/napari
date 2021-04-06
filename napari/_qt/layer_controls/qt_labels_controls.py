@@ -451,13 +451,9 @@ class QtLabelsControls(QtLayerControls):
             The napari event that triggered this method.
         """
         with self.layer.events.color_mode.blocker():
-            # `self.colorModeComboBox.findData` is not returning the correct index.
-            for index in range(self.colorModeComboBox.count()):
-                if self.layer.color_mode == self.colorModeComboBox.itemData(
-                    index
-                ):
-                    self.colorModeComboBox.setCurrentIndex(index)
-                    break
+            self.colorModeComboBox.setCurrentIndex(
+                self.colorModeComboBox.findData(self.layer.color_mode)
+            )
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

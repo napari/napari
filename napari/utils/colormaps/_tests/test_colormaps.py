@@ -5,11 +5,11 @@ from vispy.color import Colormap as VispyColormap
 from napari.utils.colormaps import Colormap
 from napari.utils.colormaps.colormap_utils import (
     _MATPLOTLIB_COLORMAP_NAMES,
-    _VISPY_CMAPS,
-    _VISPY_COLORMAPS,
+    _VISPY_COLORMAPS_ORIGINAL,
+    _VISPY_COLORMAPS_TRANSLATIONS,
     AVAILABLE_COLORMAPS,
+    _increment_unnamed_colormap,
     ensure_colormap,
-    increment_unnamed_colormap,
 )
 from napari.utils.colormaps.vendored import cm
 
@@ -40,12 +40,12 @@ def test_increment_unnamed_colormap():
         'perceptually_uniform',
         '[unnamed colormap 1]',
     ]
-    assert increment_unnamed_colormap(names)[0] == '[unnamed colormap 2]'
+    assert _increment_unnamed_colormap(names)[0] == '[unnamed colormap 2]'
 
     # test that named colormaps are not incremented
     named_colormap = 'perfect_colormap'
     assert (
-        increment_unnamed_colormap(names, named_colormap)[0] == named_colormap
+        _increment_unnamed_colormap(names, named_colormap)[0] == named_colormap
     )
 
 
@@ -133,8 +133,8 @@ def test_vispy_colormap_amount():
     """
     Test that the amount of localized vispy colormap names matches available colormaps.
     """
-    for name in _VISPY_CMAPS:
-        assert name in _VISPY_COLORMAPS
+    for name in _VISPY_COLORMAPS_ORIGINAL:
+        assert name in _VISPY_COLORMAPS_TRANSLATIONS
 
 
 def test_mpl_colormap_exists():
