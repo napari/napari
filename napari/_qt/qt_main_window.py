@@ -428,10 +428,38 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
+        from ..plugins import _sample_data
+
+        open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+        for plugin_name, samples in _sample_data.items():
+            multiprovider = len(samples) > 1
+            if multiprovider:
+                menu = QMenu(plugin_name, self._qt_window)
+                open_sample_menu.addMenu(menu)
+            else:
+                menu = open_sample_menu
+
+            for samp_name, samp_dict in samples.items():
+                display_name = samp_dict['display_name']
+                if multiprovider:
+                    action = QAction(display_name, parent=self._qt_window)
+                else:
+                    full_name = plugins.menu_item_template.format(
+                        plugin_name, display_name
+                    )
+                    action = QAction(full_name, parent=self._qt_window)
+
+                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                    self.qt_viewer.viewer.open_sample(plg, smp)
+
+                menu.addAction(action)
+                action.triggered.connect(_add_sample)
+
         self.file_menu = self.main_menu.addMenu(trans._('&File'))
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addMenu(open_sample_menu)
         self.file_menu.addSeparator()
         self.file_menu.addAction(preferences)
         self.file_menu.addSeparator()
