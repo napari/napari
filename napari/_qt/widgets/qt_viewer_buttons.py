@@ -308,13 +308,7 @@ class QtStateButton(QtViewerPushButton):
         self._on_change()
 
     def change(self):
-        """Toggle between the multiple states of this button.
-
-        Parameters
-        ----------
-        state : qtpy.QtCore.Qt.CheckState
-            State of the checkbox.
-        """
+        """Toggle between the multiple states of this button."""
         if self.isChecked():
             newstate = self._onstate
         else:
