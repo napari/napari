@@ -280,7 +280,7 @@ class Labels(_image_base_class):
             category=FutureWarning,
             stacklevel=2,
         )
-        return self._n_edit_dimensions == self.ndim
+        return self._n_edit_dimensions == self.ndim and self.ndim > 2
 
     @n_dimensional.setter
     def n_dimensional(self, n_dimensional):
@@ -992,7 +992,7 @@ class Labels(_image_base_class):
         shape = self.data.shape
         if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
-            if not self.n_dimensional and self.ndim > 2:
+            if self.n_edit_dimensions == 2 and self.ndim > 2:
                 for i in self._dims_not_displayed:
                     brush_size_dims[i] = 1
 
@@ -1014,7 +1014,7 @@ class Labels(_image_base_class):
             slice_coord = indices_in_shape(slice_coord, shape)
         elif str(self._brush_shape) == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
-            if not self.n_dimensional and self.ndim > 2:
+            if self.n_edit_dimensions == 2 and self.ndim > 2:
                 coord = [coord[i] for i in self._dims_displayed]
                 shape = [shape[i] for i in self._dims_displayed]
 
@@ -1032,7 +1032,7 @@ class Labels(_image_base_class):
             # Transfer valid coordinates to slice_coord,
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
-            if not self.n_dimensional and self.ndim > 2:
+            if self.n_edit_dimensions == 2 and self.ndim > 2:
                 for j, i in enumerate(self._dims_displayed):
                     slice_coord[i] = slice_coord_temp[j]
                 for i in self._dims_not_displayed:

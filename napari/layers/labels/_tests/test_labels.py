@@ -416,15 +416,17 @@ def test_contiguous():
     assert layer.contiguous is False
 
 
-def test_n_dimensional():
-    """Test changing n_dimensional."""
+def test_n_edit_dimensions():
+    """Test changing the number of editable dimensions."""
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional is False
-
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+    layer.n_edit_dimensions = 2
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is False
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
