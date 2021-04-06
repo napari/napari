@@ -7,6 +7,7 @@ import numpy as np
 from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.events import Event
 from ..base import Layer
+from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
@@ -15,7 +16,7 @@ from ..utils.color_transformations import (
 )
 from ..utils.layer_utils import dataframe_to_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
-from ._vectors_constants import DEFAULT_COLOR_CYCLE, ColorMode
+from ._vectors_constants import DEFAULT_COLOR_CYCLE
 
 
 class Vectors(Layer):
