@@ -12,11 +12,11 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    TypedDict,
     Union,
 )
 
 import numpy as np
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     import dask.array
