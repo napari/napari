@@ -118,11 +118,19 @@ class SettingsManager:
             self._settings[section] = setting()
 
         if path.is_file():
-            with open(path) as fh:
-                try:
+            try:
+                with open(path) as fh:
                     data = safe_load(fh.read()) or {}
-                except Exception:
-                    data = {}
+            except Exception as err:
+                import warnings
+
+                warnings.warn(
+                    "The content of the napari settings file could "
+                    "not be read.\n\nThe default settings will be used "
+                    "and the content of the file will be replaced the "
+                    f"next time settings are changed.\n\nError: \n{err}"
+                )
+                data = {}
 
             # Check with models
             for section, model_data in data.items():

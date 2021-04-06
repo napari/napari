@@ -8,10 +8,9 @@ import os
 import sys
 from pathlib import Path
 
-from appdirs import user_config_dir
 from yaml import safe_load
 
-from ._base import _APPAUTHOR, _APPNAME, _DEFAULT_LOCALE, _FILENAME
+from ._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
@@ -457,17 +456,39 @@ class _Translator:
         return trans
 
 
-def _load_language() -> str:
-    """Load language from configuration file directly."""
-    locale = _DEFAULT_LOCALE
-    default_config_path = Path(
-        user_config_dir(_APPNAME, _APPAUTHOR, _FILENAME)
-    )
+def _load_language(
+    default_config_path: str = _DEFAULT_CONFIG_PATH,
+    locale: str = _DEFAULT_LOCALE,
+) -> str:
+    """
+    Load language from configuration file directly.
+
+    Parameters
+    ----------
+    default_config_path : str or Path
+        The default configuration path, optional
+    locale : str
+        The default locale used to display options, optional
+
+    Returns
+    -------
+    str
+        The language locale set by napari.
+    """
+    default_config_path = Path(default_config_path)
     if default_config_path.exists():
         with open(default_config_path) as fh:
             try:
                 data = safe_load(fh) or {}
-            except Exception:
+            except Exception as err:
+                import warnings
+
+                warnings.warn(
+                    "The `language` setting defined in the napari "
+                    "configuration file could not be read. The "
+                    f"default language will be used.\n\nError: \n{err}"
+                )
+
                 data = {}
 
         locale = data.get("application", {}).get("language", locale)
