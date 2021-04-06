@@ -1,11 +1,14 @@
+import importlib
 import sys
 from inspect import signature
+from pathlib import Path
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -15,8 +18,9 @@ from warnings import warn
 
 from magicgui import magicgui
 from napari_plugin_engine import HookImplementation, PluginManager
+from numpy import isin
 
-from ..types import AugmentedWidget
+from ..types import AugmentedWidget, LayerData, SampleDict
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from . import _builtins, hook_specifications
@@ -35,12 +39,17 @@ plugin_manager = PluginManager('napari', discover_entry_point='napari.plugin')
 with plugin_manager.discovery_blocked():
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
+    if importlib.util.find_spec("skimage") is not None:
+        from . import _skimage_data
+
+        plugin_manager.register(_skimage_data, name='scikit-image')
 
 WidgetCallable = Callable[..., Union['FunctionGui', 'QWidget']]
 dock_widgets: Dict[
     str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
 ] = dict()
 function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = dict()
+_sample_data: Dict[str, Dict[str, SampleDict]] = dict()
 
 
 def register_dock_widget(
@@ -190,6 +199,64 @@ def register_function_widget(
         function_widgets[plugin_name][name] = func
 
 
+def register_sample_data(
+    data: Dict[str, Union[str, Callable[..., Iterable[LayerData]]]],
+    hookimpl: HookImplementation,
+):
+    """Register sample data dict returned by `napari_provide_sample_data`.
+
+    Each key in `data` is a `sample_name` (the string that will appear in the
+    `Open Sample` menu), and the value is either a string, or a callable that
+    returns an iterable of ``LayerData`` tuples, where each tuple is a 1-, 2-,
+    or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data, meta,
+    layer_type)``.
+
+    Parameters
+    ----------
+    data : Dict[str, Union[str, Callable[..., Iterable[LayerData]]]]
+        A mapping of {sample_name->data}
+    hookimpl : HookImplementation
+        The hook implementation that returned the dict
+    """
+    plugin_name = hookimpl.plugin_name
+    hook_name = 'napari_provide_sample_data'
+    if not isinstance(data, dict):
+        warn(
+            f'Plugin {plugin_name!r} provided a non-dict object to '
+            f'{hook_name!r}: data ignored.'
+        )
+        return
+
+    _data = {}
+    for name, datum in list(data.items()):
+        if isinstance(datum, dict):
+            if 'data' not in datum or 'display_name' not in datum:
+                warn(
+                    f'In {hook_name!r}, plugin {plugin_name!r} provided an '
+                    f'invalid dict object for key {name!r} that does not have '
+                    'required keys: "data" and "display_name".  Ignoring'
+                )
+                continue
+        else:
+            datum = {'data': datum, 'display_name': name}
+
+        if not (
+            callable(datum['data']) or isinstance(datum['data'], (str, Path))
+        ):
+            warn(
+                f'Plugin {plugin_name!r} provided invalid data for key '
+                f'{name!r} in the dict returned by {hook_name!r}. '
+                f'(Must be str, callable, or dict), got ({type(datum["data"])}).'
+            )
+            continue
+        _data[name] = datum
+
+    if plugin_name not in _sample_data:
+        _sample_data[plugin_name] = {}
+
+    _sample_data[plugin_name].update(_data)
+
+
 def discover_dock_widgets():
     """Trigger discovery of dock_widgets plugins"""
     dw_hook = plugin_manager.hook.napari_experimental_provide_dock_widget
@@ -200,7 +267,46 @@ def discover_dock_widgets():
     )
 
 
+def discover_sample_data():
+    """Trigger discovery of sample data."""
+    sd_hook = plugin_manager.hook.napari_provide_sample_data
+    sd_hook.call_historic(result_callback=register_sample_data, with_impl=True)
+
+
+def available_samples() -> Tuple[Tuple[str, str], ...]:
+    """Return a tuple of sample data keys provided by plugins.
+
+    Returns
+    -------
+    sample_keys : Tuple[Tuple[str, str], ...]
+        A sequence of 2-tuples ``(plugin_name, sample_name)`` showing available
+        sample data provided by plugins.  To load sample data into the viewer,
+        use :meth:`napari.Viewer.open_sample`.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        from napari.plugins import available_samples
+
+        sample_keys = available_samples()
+        if sample_keys:
+            # load first available sample
+            viewer.open_sample(*sample_keys[0])
+    """
+    return tuple((p, s) for p in _sample_data for s in _sample_data[p])
+
+
+discover_sample_data()
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
 
-__all__ = ["PluginManager", "plugin_manager", 'menu_item_template']
+__all__ = [
+    "PluginManager",
+    "plugin_manager",
+    'menu_item_template',
+    'dock_widgets',
+    'function_widgets',
+    'available_samples',
+]

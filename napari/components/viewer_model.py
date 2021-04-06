@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import inspect
 import itertools
 import os
 import warnings
 from functools import lru_cache
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -22,6 +25,7 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -30,6 +34,7 @@ from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.theme import available_themes
+from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -658,9 +663,70 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return layer_list
 
+    def open_sample(
+        self,
+        plugin: str,
+        sample: str,
+        reader_plugin: Optional[str] = None,
+        **kwargs,
+    ):
+        """Open `sample` from `plugin` and add it to the viewer.
+
+        To see all available samples registered by plugins, use
+        :func:`napari.plugins.available_samples`
+
+        Parameters
+        ----------
+        plugin : str
+            name of a plugin providing a sample
+        sample : str
+            name of the sample
+        reader_plugin : str, optional
+            reader plugin to pass to viewer.open (only used if the sample data
+            is a string).  by default None.
+
+        **kwargs:
+            additional kwargs will be passed to the sample data loader provided
+            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            not match the sample data loader.
+
+        Raises
+        ------
+        KeyError
+            If `plugin` does not provide a sample named `sample`.
+        """
+        from ..plugins import _sample_data, available_samples
+
+        try:
+            data = _sample_data[plugin][sample]['data']
+        except KeyError:
+            samples = available_samples()
+            msg = trans._(
+                f"Plugin {plugin!r} does not provide sample data "
+                f"named {sample!r}. "
+            )
+            if samples:
+                msg += trans._('Available samples include: {samples}').format(
+                    samples=samples
+                )
+            else:
+                msg += trans._("No plugin samples have been registered.")
+            raise KeyError(msg)
+
+        if callable(data):
+            for datum in data(**kwargs):
+                self._add_layer_from_data(*datum)
+        elif isinstance(data, (str, Path)):
+            self.open(data, plugin=reader_plugin)
+        else:
+            raise TypeError(
+                'Got unexpected type for sample '
+                f'({plugin!r}, {sample!r}): {type(data)}'
+            )
+
     def open(
         self,
-        path: Union[str, Sequence[str]],
+        path: PathOrPaths,
         *,
         stack: bool = False,
         plugin: Optional[str] = None,
@@ -702,7 +768,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers : list
             A list of any layers that were added to the viewer.
         """
-        paths = [path] if isinstance(path, str) else path
+        paths = [path] if isinstance(path, (Path, str)) else path
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
