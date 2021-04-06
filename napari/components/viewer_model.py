@@ -663,7 +663,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return layer_list
 
-    def open_sample(self, plugin: str, sample: str, **kwargs):
+    def open_sample(
+        self,
+        plugin: str,
+        sample: str,
+        reader_plugin: Optional[str] = None,
+        **kwargs,
+    ):
         """Open `sample` from `plugin` and add it to the viewer.
 
         To see all available samples registered by plugins, use
@@ -675,6 +681,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             name of a plugin providing a sample
         sample : str
             name of the sample
+        reader_plugin : str, optional
+            reader plugin to pass to viewer.open (only used if the sample data
+            is a string).  by default None.
+
+        **kwargs:
+            additional kwargs will be passed to the sample data loader provided
+            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            not match the sample data loader.
 
         Raises
         ------
@@ -703,7 +717,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for datum in data(**kwargs):
                 self._add_layer_from_data(*datum)
         elif isinstance(data, (str, Path)):
-            self.open(data)
+            self.open(data, plugin=reader_plugin)
         else:
             raise TypeError(
                 'Got unexpected type for sample '
