@@ -731,8 +731,6 @@ class Shapes(Layer):
 
         for d, st, ew, ec, fc, z in shape_inputs:
 
-            # A False slice_key means the shape is invalid as it is not
-            # confined to a single plane
             shape_cls = shape_classes[ShapeType(st)]
             shape = shape_cls(
                 d,
@@ -744,9 +742,12 @@ class Shapes(Layer):
 
             # Add shape
             new_data_view.add(
-                shape, edge_color=ec, face_color=fc, z_refresh=False
+                shape, edge_color=ec, face_color=fc, z_refresh=True
             )
+
         self._data_view = new_data_view
+        self._display_order_stored = copy(self._dims_order)
+        self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
 
     @property

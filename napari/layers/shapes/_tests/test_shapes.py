@@ -871,6 +871,15 @@ def test_changing_shapes():
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
 
+def test_changing_shape_type():
+    """Test changing shape type"""
+    np.random.seed(0)
+    rectangles = 20 * np.random.random((10, 4, 2))
+    layer = Shapes(rectangles, shape_type='rectangle')
+    layer.shape_type = "ellipse"
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+
 def test_adding_shapes():
     """Test adding shapes."""
     # Start with polygons with different numbers of points
