@@ -4,11 +4,11 @@ from qtpy.QtGui import QImage
 from ...layers import Layer
 from .qt_list_model import QtListModel
 
+LayerRole = Qt.UserRole
+ThumbnailRole = Qt.UserRole + 1
+
 
 class QtLayerListModel(QtListModel[Layer]):
-    LayerRole = Qt.UserRole
-    ThumbnailRole = Qt.UserRole + 1
-
     def data(self, index: QModelIndex, role: Qt.ItemDataRole):
         """Return data stored under ``role`` for the item at ``index``."""
         layer = self.getItem(index)
@@ -25,9 +25,9 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == Qt.SizeHintRole:  # determines size of item
             h = 38
             return QSize(228, h)
-        if role == self.LayerRole:  # custom role: return the layer
+        if role == LayerRole:  # custom role: return the layer
             return self.getItem(index)
-        if role == self.ThumbnailRole:  # return the thumbnail
+        if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(
                 thumbnail,
@@ -60,7 +60,7 @@ class QtLayerListModel(QtListModel[Layer]):
         if not hasattr(event, 'index'):
             return
         role = {
-            'thumbnail': self.ThumbnailRole,
+            'thumbnail': ThumbnailRole,
             'visible': Qt.CheckStateRole,
             'name': Qt.DisplayRole,
         }.get(event.type, None)

@@ -263,12 +263,6 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Must be called after move operation to update model."""
         self.endMoveRows()
 
-    def indexOf(self, obj: ItemType) -> QModelIndex:
-        """Find the `QModelIndex` for a given object in the model."""
-        fl = Qt.MatchExactly | Qt.MatchRecursive
-        hits = self.match(self.index(0, 0), Qt.UserRole, obj, hits=1, flags=fl)
-        return hits[0] if hits else QModelIndex()
-
     def getItem(self, index: QModelIndex) -> ItemType:
         """Return python object for a given `QModelIndex`.
 
