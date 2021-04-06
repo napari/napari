@@ -177,7 +177,7 @@ class SettingsManager:
 
         Parameters
         ----------
-        plugin:
+        plugin
             The napari plugin that may or may not provide settings.
         """
         self._plugins.append(plugin)

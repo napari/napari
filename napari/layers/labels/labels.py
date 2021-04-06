@@ -842,7 +842,7 @@ class Labels(_image_base_class):
 
         See Also
         --------
-        `Labels._save_history`
+        Labels._save_history
         """
         if len(before) == 0:
             return

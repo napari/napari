@@ -117,8 +117,8 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
     dict
         A dict with the native and display language for all locales found.
 
-    Example
-    -------
+    Examples
+    --------
     >>> get_language_packs("es_CO")
     {
         'en': {'displayName': 'Inglés', 'nativeName': 'English'},
@@ -223,7 +223,7 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgid: str
+        msgid : str
             The singular string to translate.
 
         Returns
@@ -239,11 +239,11 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgid: str
+        msgid : str
             The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str
             The plural string to translate.
-        n: int
+        n : int
             The number for pluralization.
 
         Returns
@@ -259,9 +259,9 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str
             The message context.
-        msgid: str
+        msgid : str
             The singular string to translate.
 
         Returns
@@ -286,13 +286,13 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str
             The message context.
-        msgid: str
+        msgid : str
             The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str
             The plural string to translate.
-        n: int
+        n : int
             The number for pluralization.
 
         Returns
@@ -320,7 +320,7 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgid: str
+        msgid : str
             The singular string to translate.
 
         Returns
@@ -336,11 +336,11 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgid: str
+        msgid : str
             The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str
             The plural string to translate.
-        n: int
+        n : int
             The number for pluralization.
 
         Returns
@@ -356,9 +356,9 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str
             The message context.
-        msgid: str
+        msgid : str
             The singular string to translate.
 
         Returns
@@ -374,13 +374,13 @@ class TranslationBundle:
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str
             The message context.
-        msgid: str
+        msgid : str
             The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str
             The plural string to translate.
-        n: int
+        n : int
             The number for pluralization.
 
         Returns
@@ -406,7 +406,7 @@ class _Translator:
 
         Parameters
         ----------
-        locale: str
+        locale : str
             The language name to use.
         """
         for key in ["LANGUAGE", "LANG"]:
@@ -419,7 +419,7 @@ class _Translator:
 
         Parameters
         ----------
-        locale: str
+        locale : str
             The language name to use.
         """
         if _is_valid_locale(locale):
@@ -440,7 +440,7 @@ class _Translator:
 
         Parameters
         ----------
-        domain: str
+        domain : str
             The translations domain. The normalized python package name.
 
         Returns
