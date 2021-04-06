@@ -132,6 +132,46 @@ def test_empty_3D_vectors():
     assert layer._view_data.shape[2] == 2
 
 
+def test_data_setter():
+    n_vectors_0 = 10
+    shape = (n_vectors_0, 2, 3)
+    np.random.seed(0)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {
+        'prop_0': np.random.random((n_vectors_0,)),
+        'prop_1': np.random.random((n_vectors_0,)),
+    }
+    layer = Vectors(data, properties=properties)
+
+    assert len(layer.data) == n_vectors_0
+    assert len(layer.edge_color) == n_vectors_0
+    assert len(layer.properties['prop_0']) == n_vectors_0
+    assert len(layer.properties['prop_1']) == n_vectors_0
+
+    # set the data with more vectors
+    n_vectors_1 = 20
+    data_1 = np.random.random((n_vectors_1, 2, 3))
+    data_1[:, 0, :] = 20 * data_1[:, 0, :]
+    layer.data = data_1
+
+    assert len(layer.data) == n_vectors_1
+    assert len(layer.edge_color) == n_vectors_1
+    assert len(layer.properties['prop_0']) == n_vectors_1
+    assert len(layer.properties['prop_1']) == n_vectors_1
+
+    # set the data with fewer vectors
+    n_vectors_2 = 5
+    data_2 = np.random.random((n_vectors_2, 2, 3))
+    data_2[:, 0, :] = 20 * data_2[:, 0, :]
+    layer.data = data_2
+
+    assert len(layer.data) == n_vectors_2
+    assert len(layer.edge_color) == n_vectors_2
+    assert len(layer.properties['prop_0']) == n_vectors_2
+    assert len(layer.properties['prop_1']) == n_vectors_2
+
+
 def test_properties_dataframe():
     """test if properties can be provided as a DataFrame"""
     shape = (10, 2)

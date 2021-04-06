@@ -248,7 +248,10 @@ class Vectors(Layer):
 
     @data.setter
     def data(self, vectors: np.ndarray):
+        previous_n_vectors = len(self.data)
+
         self._data = vectors_to_coordinates(vectors)
+        n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
             self._data[:, :, list(self._dims_displayed)],
@@ -258,6 +261,36 @@ class Vectors(Layer):
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
+
+        # Adjust the props/color arrays when the number of vectors has changed
+        with self.events.blocker_all():
+            with self._edge.events.blocker_all():
+                if n_vectors < previous_n_vectors:
+                    # If there are now fewer points, remove the size and colors of the
+                    # extra ones
+                    if len(self._edge.colors) > n_vectors:
+                        self._edge._remove(
+                            np.arange(n_vectors, len(self._edge.colors))
+                        )
+
+                    for k in self.properties:
+                        self.properties[k] = self.properties[k][:n_vectors]
+
+                elif n_vectors > previous_n_vectors:
+                    # If there are now more points, add the size and colors of the
+                    # new ones
+                    adding = n_vectors - previous_n_vectors
+
+                    for k in self.properties:
+                        new_property = np.repeat(
+                            self.properties[k][-1], adding, axis=0
+                        )
+                        self.properties[k] = np.concatenate(
+                            (self.properties[k], new_property), axis=0
+                        )
+
+                    # add new colors
+                    self._edge._add(n_colors=adding)
 
         self._update_dims()
         self.events.data(value=self.data)
