@@ -141,25 +141,28 @@ def test_move(test_list):
     assert test_list == [3, 2, 0, 1, 4]
 
 
-@pytest.mark.parametrize(
-    'sources,dest,expectation',
-    [
-        ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
-        ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
-        ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
-        ([3, 0, 2], 6, [1, 4, 5, 3, 0, 2, 6, 7]),  # move back reorder
-        ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
-        ([7, 4], 1, [0, 7, 4, 1, 2, 3, 5, 6]),  # move forward reorder
-        ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
-        ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
-        ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
-        ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
-        ([1, 3, 5, 7], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # same as above
-        ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
-        ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
-        ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
-    ],
-)
+POS_INDICES = [
+    ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
+    ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
+    ([3, 0, 2], 6, [1, 4, 5, 3, 0, 2, 6, 7]),  # move back reorder
+    ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
+    ([7, 4], 1, [0, 7, 4, 1, 2, 3, 5, 6]),  # move forward reorder
+    ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
+    ([1, 3, 5, 7], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # same as above
+    ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
+]
+NEG_SLICE_INDICES = [
+    ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
+    ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
+    ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
+    ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
+    ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
+    ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
+]
+MOVING_INDICES = POS_INDICES + NEG_SLICE_INDICES
+
+
+@pytest.mark.parametrize('sources,dest,expectation', MOVING_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test the that we can move objects with the move method"""
     el = EventedList(range(8))
@@ -328,7 +331,7 @@ def test_setting_nested_slice():
     assert tuple(ne_list[1, 1, 1]) == (9, 10, 1112)
 
 
-POS_INDICES = [
+NESTED_POS_INDICES = [
     # indices           2       (2, 1)
     # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
     [(), (), [0, 1, [20, [210, 211], 22], 3, 4]],  # no-op
@@ -343,7 +346,7 @@ POS_INDICES = [
     [((2, 1, 1),), (), [0, 1, [20, [210], 22], 3, 4, 211]],
 ]
 
-NEG_INDICES = [
+NESTED_NEG_INDICES = [
     [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 4, 20, 211, 3]],
     [((2, 0), (2, 1, 1), (3,)), (-2), [0, 1, [[210], 22], 20, 211, 3, 4]],
     [((2, 0), (2, 1, 1), (3,)), (-4), [0, 1, 20, 211, 3, [[210], 22], 4]],
@@ -351,10 +354,10 @@ NEG_INDICES = [
     [((2, 1, 1), (3,)), (2, -2), [0, 1, [20, [210], 211, 3, 22], 4]],
 ]
 
-ALL_INDICES = POS_INDICES + NEG_INDICES  # type: ignore
+NESTED_INDICES = NESTED_POS_INDICES + NESTED_NEG_INDICES  # type: ignore
 
 
-@pytest.mark.parametrize('sources, dest, expectation', ALL_INDICES)
+@pytest.mark.parametrize('sources, dest, expectation', NESTED_INDICES)
 def test_nested_move_multiple(sources, dest, expectation):
     """Test that moving multiple indices works and emits right events."""
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])

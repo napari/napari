@@ -1,14 +1,13 @@
 from typing import Generator, Iterable, List, TypeVar
 
-from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
-from ..events.containers._selection import Selectable
+from ..events.containers._selectable_list import SelectableNestableEventedList
 from .node import Node
 
 NodeType = TypeVar("NodeType", bound=Node)
 
 
-class Group(NestableEventedList[NodeType], Node, Selectable[NodeType]):
+class Group(Node, SelectableNestableEventedList[NodeType]):
     """An object that can contain other objects in a composite Tree pattern.
 
     The ``Group`` (aka composite) is an element that has sub-elements:
@@ -38,8 +37,9 @@ class Group(NestableEventedList[NodeType], Node, Selectable[NodeType]):
         basetype=Node,
     ):
         Node.__init__(self, name=name)
-        NestableEventedList.__init__(self, data=children, basetype=basetype)
-        Selectable.__init__(self)
+        SelectableNestableEventedList.__init__(
+            self, data=children, basetype=basetype
+        )
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
@@ -61,10 +61,7 @@ class Group(NestableEventedList[NodeType], Node, Selectable[NodeType]):
 
     def __contains__(self, other):
         """Return true if ``other`` appears anywhere under this group."""
-        for item in self.traverse():
-            if item is other:
-                return True
-        return False
+        return any(item is other for item in self.traverse())
 
     def traverse(self, leaves_only=False) -> Generator[NodeType, None, None]:
         """Recursive all nodes and leaves of the Group tree."""
