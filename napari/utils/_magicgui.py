@@ -177,9 +177,9 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
             # then try to update the viewer layer with that name.
             try:
                 layer = viewer.layers[layer_datum[1].get('name')]
-                layer.data = layer_datum[0]
                 for k, v in layer_datum[1].items():
                     setattr(layer, k, v)
+                layer.data = layer_datum[0]
                 continue
             except KeyError:  # layer not in the viewer
                 pass

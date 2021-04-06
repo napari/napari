@@ -981,7 +981,7 @@ def points_in_poly(points, vertices):
     return inside
 
 
-def extract_shape_type(data, shape_type):
+def extract_shape_type(data, shape_type=None):
     """Checks whether data contains shape type information and extracts it if so, returning
     data and shape_type separately.
 
@@ -996,7 +996,7 @@ def extract_shape_type(data, shape_type):
     -------
     data : Array | List[Array]
         list or array of vertices belonging to each shape
-    shape_type : str | List[str] | None
+    shape_type : List[str] | None
         type of each shape in data, or None if none was passed
     """
     # Tuple for one shape or list of shapes with shape_type

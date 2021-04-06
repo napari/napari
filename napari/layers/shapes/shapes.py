@@ -544,8 +544,24 @@ class Shapes(Layer):
     def data(self, data):
         self._finish_drawing()
 
+        data, shape_type = extract_shape_type(data)
+        n_new_shapes = number_of_shapes(data)
+        # not given a shape_type through data
+        if shape_type is None:
+            # if same number of shapes assume shape type unchanged
+            if self.nshapes == n_new_shapes:
+                shape_type = self.shape_type
+            # fewer shapes, trim shape type
+            elif self.nshapes > n_new_shapes:
+                shape_type = self.shape_type[:n_new_shapes]
+            # more shapes, default to rectangle for new shapes
+            else:
+                shape_type = self.shape_type + ["rectangle"] * (
+                    n_new_shapes - self.nshapes
+                )
+
         self._data_view = ShapeList()
-        self.add(data, shape_type=None)
+        self.add(data, shape_type=shape_type)
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -698,6 +714,40 @@ class Shapes(Layer):
     def shape_type(self):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
+
+    @shape_type.setter
+    def shape_type(self, shape_type):
+        self._finish_drawing()
+
+        new_data_view = ShapeList()
+        shape_inputs = zip(
+            self._data_view.data,
+            ensure_iterable(shape_type),
+            self._data_view.edge_widths,
+            self._data_view.edge_color,
+            self._data_view.face_color,
+            self._data_view.z_indices,
+        )
+
+        for d, st, ew, ec, fc, z in shape_inputs:
+
+            # A False slice_key means the shape is invalid as it is not
+            # confined to a single plane
+            shape_cls = shape_classes[ShapeType(st)]
+            shape = shape_cls(
+                d,
+                edge_width=ew,
+                z_index=z,
+                dims_order=self._dims_order,
+                ndisplay=self._ndisplay,
+            )
+
+            # Add shape
+            new_data_view.add(
+                shape, edge_color=ec, face_color=fc, z_refresh=False
+            )
+        self._data_view = new_data_view
+        self._update_dims()
 
     @property
     def edge_color(self):
@@ -1493,20 +1543,6 @@ class Shapes(Layer):
             shapes.
         """
         data, shape_type = extract_shape_type(data, shape_type)
-
-        # not given a shape_type through data
-        if shape_type is None:
-            # if same number of shapes assume shape type unchanged
-            if self.nshapes == len(data):
-                shape_type = self.shape_type
-            # fewer shapes, trim shape type
-            elif self.nshapes > len(data):
-                shape_type = self.shape_type[: len(data)]
-            # more shapes, default to rectangle for new shapes
-            else:
-                shape_type = self.shape_type + ["rectangle"] * (
-                    len(data) - self.nshapes
-                )
 
         if edge_width is None:
             edge_width = self.current_edge_width
