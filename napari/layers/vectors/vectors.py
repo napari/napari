@@ -181,8 +181,6 @@ class Vectors(Layer):
             properties=Event,
         )
 
-        # self.visible = False
-
         # Save the vector style params
         self._edge_width = edge_width
 
