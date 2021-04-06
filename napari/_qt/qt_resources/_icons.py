@@ -136,7 +136,7 @@ def generate_colorized_svgs(
         default `None`
 
     Yields
-    -------
+    ------
     (alias, xml) : Iterator[Tuple[str, str]]
         `alias` is the name that will used to access the icon in the Qt
         Resource system (such as QSS), and `xml` is the *raw* colorzied SVG

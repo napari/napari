@@ -15,8 +15,8 @@ text_size = 20
 def create_label_menu(shapes_layer, label_property, labels):
     """Create a label menu widget that can be added to the napari viewer dock
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     shapes_layer : napari.layers.Shapes
         a napari shapes layer
     label_property : str
@@ -24,8 +24,8 @@ def create_label_menu(shapes_layer, label_property, labels):
     labels : List[str]
         list of the possible text labels values.
 
-    Returns:
-    --------
+    Returns
+    -------
     label_widget : magicgui.widgets.Container
         the container widget with the label combobox
     """
