@@ -5,12 +5,19 @@ from pydantic.dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Source:
-    """An object to store the provenance of a layer."""
+    """An object to store the provenance of a layer.
 
-    # filpath/url associated with layer
+    Parameters
+    ----------
+    path: str, optional
+        filpath/url associated with layer
+    plugin: str, optional
+        name of plugin that loaded the file (if applicable)
+    method: str, optional
+        fully qualified name of the highest level API method that created the
+        layer (e.g. viewer.open)
+    """
+
     path: Optional[str] = None
-    # name of plugin that loaded the file (if applic.)
     plugin: Optional[str] = None
-    # fully qualified name of the highest level API method that
-    # created the layer (e.g. viewer.open)
     method: Optional[str] = None
