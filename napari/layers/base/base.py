@@ -174,7 +174,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
-        self._source = Source()
+        mthd = f"{type(self).__module__}.{type(self).__name__}.__init__"
+        self._source = Source(method=mthd)
         self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity
