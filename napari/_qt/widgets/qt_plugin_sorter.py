@@ -411,7 +411,8 @@ class QtPluginSorter(QWidget):
 
     def setWidgetValues(self):
         """Set the values in the plugin manager to match the settings order."""
-        plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+        if SETTINGS.plugins.call_order is not None:
+            plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
     def value(self):
         """Returns the call order from the plugin manager.
