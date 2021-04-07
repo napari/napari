@@ -302,7 +302,6 @@ class QtPluginSorter(QWidget):
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
 
         # populate comboBox with all of the hooks known by the plugin manager
-        self.setWidgetValues()
 
         for name, hook_caller in plugin_manager.hooks.items():
             # only show hooks with specifications
@@ -408,11 +407,6 @@ class QtPluginSorter(QWidget):
                 'call_order',
                 self.plugin_manager.call_order(),
             )
-
-    def setWidgetValues(self):
-        """Set the values in the plugin manager to match the settings order."""
-        if SETTINGS.plugins.call_order is not None:
-            plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
     def value(self):
         """Returns the call order from the plugin manager.
