@@ -7,6 +7,7 @@ import gettext
 import os
 import sys
 from pathlib import Path
+from typing import Union
 
 from yaml import safe_load
 
@@ -166,10 +167,85 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
 
 # --- Translators
 # ----------------------------------------------------------------------------
+class TranslationString:
+    """
+    TODO:
+    """
+
+    def __init__(
+        self,
+        domain: str = None,
+        msgctxt: str = None,
+        msgid: str = None,
+        msgid_plural: str = None,
+        n: str = None,
+        deferred: bool = False,
+        **kwargs,
+    ):
+        self._domain = domain
+        self._msgctxt = msgctxt
+        self._msgid = msgid
+        self._msgid_plural = msgid_plural
+        self._n = n
+        self._deferred = deferred
+        self._kwargs = kwargs
+
+        # Add `n` to `kwargs` to use with `format`
+        self._kwargs['n'] = n
+
+    def __repr__(self):
+        """"""
+        return repr(self.translate())
+
+    def __str__(self):
+        """"""
+        return self.translate()
+
+    def translate(self):
+        """"""
+        # Python 3.7 or lower does not offer translations based on context.
+        # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
+        if PY37_OR_LOWER:
+            if self._n is None:
+                translation = gettext.dgettext(self._domain, self._msgid)
+            else:
+                translation = gettext.dngettext(
+                    self._domain, self._msgid, self._msgid_plural, self._n
+                )
+        else:
+            if self._n is None and self._msgctxt is None:
+                translation = gettext.dgettext(
+                    self._domain,
+                    self._msgid,
+                )
+            elif self._n is None:
+                translation = gettext.dpgettext(
+                    self._domain,
+                    self._msgctxt,
+                    self._msgid,
+                )
+            elif self._msgctxt is None:
+                translation = gettext.dngettext(
+                    self._domain,
+                    self._msgid,
+                    self._msgid_plural,
+                    self._n,
+                )
+            else:
+                translation = gettext.dnpgettext(
+                    self._domain,
+                    self._msgctxt,
+                    self._msgid,
+                    self._msgid_plural,
+                    self._n,
+                )
+
+        return translation.format(**self._kwargs)
+
+
 class TranslationBundle:
     """
     Translation bundle providing gettext translation functionality.
-
 
     Parameters
     ----------
@@ -216,142 +292,138 @@ class TranslationBundle:
 
         gettext.bindtextdomain(self._domain, localedir=localedir)
 
-    def gettext(self, msgid: str) -> str:
+    def _dnpgettext(
+        self,
+        msgctxt: str = None,
+        msgid: str = "",
+        msgid_plural: str = "",
+        n: int = None,
+        **kwargs,
+    ):
         """
-        Translate a singular string.
-
-        Parameters
-        ----------
-        msgid : str
-            The singular string to translate.
-
-        Returns
-        -------
-        str
-            The translated string.
+        TODO:
         """
-        return gettext.dgettext(self._domain, msgid)
-
-    def ngettext(self, msgid: str, msgid_plural: str, n: int) -> str:
-        """
-        Translate a singular string with pluralization.
-
-        Parameters
-        ----------
-        msgid : str
-            The singular string to translate.
-        msgid_plural : str
-            The plural string to translate.
-        n : int
-            The number for pluralization.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        return gettext.dngettext(self._domain, msgid, msgid_plural, n)
-
-    def pgettext(self, msgctxt: str, msgid: str) -> str:
-        """
-        Translate a singular string with context.
-
-        Parameters
-        ----------
-        msgctxt : str
-            The message context.
-        msgid : str
-            The singular string to translate.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        # Python 3.7 or lower does not offer translations based on context.
-        # On these versions `gettext.pgettext` falls back to `gettext.gettext`
         if PY37_OR_LOWER:
-            translation = gettext.dgettext(self._domain, msgid)
+            if n is None:
+                translation = gettext.dgettext(self._domain, msgid)
+            else:
+                translation = gettext.dngettext(
+                    self._domain, msgid, msgid_plural, n
+                )
         else:
-            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+            if n is None and msgctxt is None:
+                translation = gettext.dgettext(
+                    self._domain,
+                    msgid,
+                )
+            elif n is None:
+                translation = gettext.dpgettext(
+                    self._domain,
+                    msgctxt,
+                    msgid,
+                )
+            elif msgctxt is None:
+                translation = gettext.dngettext(
+                    self._domain,
+                    msgid,
+                    msgid_plural,
+                    n,
+                )
+            else:
+                translation = gettext.dnpgettext(
+                    self._domain,
+                    msgctxt,
+                    msgid,
+                    msgid_plural,
+                    n,
+                )
+
+        kwargs['n'] = n
+        return translation.format(**kwargs)
+
+    def _(
+        self, msgid: str, deferred: bool = False, **kwargs
+    ) -> Union[TranslationString, str]:
+        """
+        Shorthand for `gettext.gettext` with enhanced functionality.
+
+        Parameters
+        ----------
+        msgid : str
+            The singular string to translate.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        kwargs : dict, optional
+            Any additional arguments to use when formating the string.
+
+        Returns
+        -------
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
+        """
+        if deferred:
+            translation = TranslationString(
+                domain=self._domain, msgid=msgid, deferred=deferred, **kwargs
+            )
+        else:
+            translation = self._dnpgettext(msgid=msgid, **kwargs)
 
         return translation
 
-    def npgettext(
-        self, msgctxt: str, msgid: str, msgid_plural: str, n: int
-    ) -> str:
+    def _n(
+        self,
+        msgid: str,
+        msgid_plural: str,
+        n: int,
+        deferred: bool = False,
+        **kwargs,
+    ) -> Union[TranslationString, str]:
         """
-        Translate a singular string with context and pluralization.
+        Shorthand for `gettext.ngettext` with enhanced functionality.
 
         Parameters
         ----------
-        msgctxt : str
-            The message context.
         msgid : str
             The singular string to translate.
         msgid_plural : str
             The plural string to translate.
         n : int
             The number for pluralization.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        kwargs : dict, optional
+            Any additional arguments to use when formating the string.
 
         Returns
         -------
-        str
-            The translated string.
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
         """
-        # Python 3.7 or lower does not offer translations based on context.
-        # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
-        if PY37_OR_LOWER:
-            translation = gettext.dngettext(
-                self._domain, msgid, msgid_plural, n
+        if deferred:
+            translation = TranslationString(
+                domain=self._domain,
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                n=n,
+                deferred=deferred,
+                **kwargs,
             )
         else:
-            translation = gettext.dnpgettext(
-                self._domain, msgctxt, msgid, msgid_plural, n
+            translation = self._dnpgettext(
+                msgid=msgid, msgid_plural=msgid_plural, n=n, **kwargs
             )
 
         return translation
 
-    # Shorthands
-    def _(self, msgid: str) -> str:
+    def _p(
+        self, msgctxt: str, msgid: str, deferred: bool = False, **kwargs
+    ) -> Union[TranslationString, str]:
         """
-        Shorthand for gettext.
-
-        Parameters
-        ----------
-        msgid : str
-            The singular string to translate.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        return self.gettext(msgid)
-
-    def _n(self, msgid: str, msgid_plural: str, n: int) -> str:
-        """
-        Shorthand for ngettext.
-
-        Parameters
-        ----------
-        msgid : str
-            The singular string to translate.
-        msgid_plural : str
-            The plural string to translate.
-        n : int
-            The number for pluralization.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        return self.ngettext(msgid, msgid_plural, n)
-
-    def _p(self, msgctxt: str, msgid: str) -> str:
-        """
-        Shorthand for pgettext.
+        Shorthand for `gettext.pgettext` with enhanced functionality.
 
         Parameters
         ----------
@@ -359,17 +431,44 @@ class TranslationBundle:
             The message context.
         msgid : str
             The singular string to translate.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        kwargs : dict, optional
+            Any additional arguments to use when formating the string.
 
         Returns
         -------
-        str
-            The translated string.
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
         """
-        return self.pgettext(msgctxt, msgid)
+        if deferred:
+            translation = TranslationString(
+                domain=self._domain,
+                msgctxt=msgctxt,
+                msgid=msgid,
+                deferred=deferred,
+                **kwargs,
+            )
+        else:
+            translation = self._dnpgettext(
+                msgctxt=msgctxt, msgid=msgid, **kwargs
+            )
 
-    def _np(self, msgctxt: str, msgid: str, msgid_plural: str, n: str) -> str:
+        return translation
+
+    def _np(
+        self,
+        msgctxt: str,
+        msgid: str,
+        msgid_plural: str,
+        n: str,
+        deferred: bool = False,
+        **kwargs,
+    ) -> Union[TranslationString, str]:
         """
-        Shorthand for npgettext.
+        Shorthand for `gettext.npgettext` with enhanced functionality.
 
         Parameters
         ----------
@@ -381,13 +480,38 @@ class TranslationBundle:
             The plural string to translate.
         n : int
             The number for pluralization.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        kwargs : dict, optional
+            Any additional arguments to use when formating the string.
 
         Returns
         -------
-        str
-            The translated string.
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
         """
-        return self.npgettext(msgctxt, msgid, msgid_plural, n)
+        if deferred:
+            TranslationString(
+                domain=self._domain,
+                msgctxt=msgctxt,
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                n=n,
+                deferred=deferred,
+                **kwargs,
+            )
+        else:
+            translation = self._dnpgettext(
+                msgctxt=msgctxt,
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                n=n,
+                **kwargs,
+            )
+
+        return translation
 
 
 class _Translator:

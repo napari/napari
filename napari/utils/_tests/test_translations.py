@@ -119,12 +119,16 @@ def test_is_valid_locale_invalid():
 def test_locale_valid_singular(trans):
     # Test singular method
     expected_result = "Más sobre napari"
-    result = trans.gettext("MORE ABOUT NAPARI")
-    assert result == expected_result
-
-    # Test singular method shorthand
     result = trans._("MORE ABOUT NAPARI")
     assert result == expected_result
+
+
+def test_locale_valid_deferred_singular(trans):
+    # Test singular method
+    expected_result = "Más sobre napari"
+    result = trans._("MORE ABOUT NAPARI", deferred=True)
+    assert result.translate() == expected_result
+    assert str(result) == expected_result
 
 
 def test_locale_invalid():
@@ -140,10 +144,6 @@ def test_locale_n_runs(trans):
     n = 2
     string = "MORE ABOUT NAPARI"
     plural = "MORE ABOUT NAPARIS"
-    result = trans.ngettext(string, plural, n)
-    assert result == plural
-
-    # Test plural method shorthand
     result = trans._n(string, plural, n)
     assert result == plural
 
@@ -153,19 +153,8 @@ def test_locale_p_runs(trans):
     context = "context"
     string = "MORE ABOUT NAPARI"
     py37_result = "Más sobre napari"
-    result = trans.pgettext(context, string)
-
-    # Python 3.7 or lower does not offer translations based on context
-    # so pgettext, or npgettext are not available. We fallback to the
-    # singular and plural versions without context. For these cases:
-    # `pgettext` falls back to `gettext` and `npgettext` to `gettext`
-    if PY37_OR_LOWER:
-        assert result == py37_result
-    else:
-        assert result == string
-
-    # Test context singular method shorthand
     result = trans._p(context, string)
+
     if PY37_OR_LOWER:
         assert result == py37_result
     else:
@@ -178,10 +167,6 @@ def test_locale_np_runs(trans):
     context = "context"
     string = "MORE ABOUT NAPARI"
     plural = "MORE ABOUT NAPARIS"
-    result = trans.npgettext(context, string, plural, n)
-    assert result == plural
-
-    # Test plural context method shorthand
     result = trans._np(context, string, plural, n)
     assert result == plural
 
