@@ -2,7 +2,7 @@
 """
 
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, Dict
 
 from pydantic import BaseSettings, Field
 
@@ -11,6 +11,7 @@ from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
+from ...plugins import CallOrderDict
 
 
 class Theme(str):
@@ -197,11 +198,11 @@ class PluginsSettings(BaseNapariSettings):
 
     schema_version = (0, 1, 0)
 
-    plugins_call_order: list = Field(
+    call_order: CallOrderDict = Field(
         None,
         title=trans._("Plugin sort order"),
         description=trans._(
-            "Sort plugins for each action in the order to be called."
+            "Sort plugins for each action in the order to be called.",
         ),
     )
 

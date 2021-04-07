@@ -3,7 +3,8 @@
 import re
 from typing import List, Optional, Union
 
-from napari_plugin_engine import HookCaller, HookImplementation, PluginManager
+from ...plugins import PluginManager
+from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -299,10 +300,24 @@ class QtPluginSorter(QWidget):
         self.plugin_manager = plugin_manager
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
-        self.firstresult_only = firstresult_only
 
         # populate comboBox with all of the hooks known by the plugin manager
         self.setWidgetValues()
+
+        for name, hook_caller in plugin_manager.hooks.items():
+            # only show hooks with specifications
+            if not hook_caller.spec:
+                continue
+
+            if firstresult_only:
+                # if the firstresult_only option is set
+                # we only want to include hook_specifications that declare the
+                # "firstresult" option as True.
+                if not hook_caller.spec.opts.get('firstresult', False):
+                    continue
+            self.hook_combo_box.addItem(
+                name.replace("napari_", ""), hook_caller
+            )
 
         self.hook_combo_box.setToolTip(
             trans._("select the hook specification to reorder")
@@ -349,8 +364,8 @@ class QtPluginSorter(QWidget):
 
     def _change_settings_plugins(self):
         """Update settings if plugin call order changes."""
-        SETTINGS.plugins.plugins_call_order = self.value()
-
+        SETTINGS.plugins.call_order = self.plugin_manager.call_order()
+    
     def set_hookname(self, hook: str):
         """Change the hook specification shown in the list widget.
 
@@ -387,54 +402,26 @@ class QtPluginSorter(QWidget):
         """On start up, this function is used to set the defaults in settings.
         Note: use before loading in the saved settings.
         """
-        if SETTINGS._defaults["plugins"].plugins_call_order is None:
+        if SETTINGS._defaults["plugins"].call_order is None:
             setattr(
                 SETTINGS._defaults['plugins'],
-                'plugins_call_order',
-                self.value(),
+                'call_order',
+                self.plugin_manager.call_order(),
             )
 
     def setWidgetValues(self):
-        """Set the lists in the QtPluginSorter to match the order saved in settings."""
-
-        # Set the values in the plugin manager to match the settings order.
-        plugins.load_plugin_manager_settings(
-            SETTINGS.plugins.plugins_call_order
-        )
-
-        for name, hook_caller in self.plugin_manager.hooks.items():
-            # only show hooks with specifications
-            if not hook_caller.spec:
-                continue
-
-            if self.firstresult_only:
-                # if the firstresult_only option is set
-                # we only want to include hook_specifications that declare the
-                # "firstresult" option as True.
-                if not hook_caller.spec.opts.get('firstresult', False):
-                    continue
-            self.hook_combo_box.addItem(
-                name.replace("napari_", ""), hook_caller
-            )
+        """Set the values in the plugin manager to match the settings order."""
+        plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+    
 
     def value(self):
-        """Get the plugin_sort_order for settings from the order in the plugin manager.
+        """Returns the call order from the plugin manager.
 
-        state = [
-            ("napari_get_writer", "svg", True),
-            ("napari_get_writer", "builtins", True)
-            ("napari_get_reader", "svg", True),
-            ...
-        ]
+            Returns
+            -------
+            call_order : CallOrderDict
+
         """
-        plugin_sort_order = []
-        for name, hook_caller in self.plugin_manager.hooks.items():
-            for hook_implementation in reversed(hook_caller._nonwrappers):
-                plugin_sort_order.append(
-                    (
-                        name,
-                        hook_implementation.plugin_name,
-                        hook_implementation.enabled,
-                    )
-                )
-        return plugin_sort_order
+
+
+        return plugins.plugin_manager.call_order()

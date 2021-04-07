@@ -21,7 +21,7 @@ class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
     ui_schema = {
-        "plugins_call_order": {"ui:widget": "plugins"},
+        "call_order": {"ui:widget": "plugins"},
     }
 
     resized = Signal(QSize)

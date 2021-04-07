@@ -3,6 +3,7 @@ import sys
 from inspect import signature
 from pathlib import Path
 from types import FunctionType
+from typing_extensions import TypedDict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,8 +18,9 @@ from typing import (
 from warnings import warn
 
 from magicgui import magicgui
-from napari_plugin_engine import HookImplementation, PluginManager
 from numpy import isin
+from napari_plugin_engine import HookImplementation
+from napari_plugin_engine import PluginManager as _PM
 
 from ..types import AugmentedWidget, LayerData, SampleDict
 from ..utils._appdirs import user_site_packages
@@ -32,6 +34,84 @@ if sys.platform.startswith('linux') and running_as_bundled_app():
 if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
+
+class PluginHookOption(TypedDict):
+    plugin: str
+    enabled: bool
+
+
+CallOrderDict = Dict[str, List[PluginHookOption]]
+
+
+class PluginManager(_PM):
+    # replaces QtPluginSorter.values
+    def call_order(self) -> CallOrderDict:
+        """Returns the call order from the plugin manager.
+
+        Returns
+        -------
+        call_order : CallOrderDict
+        call_order = 
+            {
+                        spec_name: [
+                                {
+                                    name: plugin_name
+                                    enabled: enabled 
+                                },
+                                {
+                                    name: plugin_name
+                                    enabled: enabled 
+                                },
+                                ...
+                        ],
+                        ...
+            }
+        
+        """
+
+        return {
+            spec_name: [
+                {'plugin': impl.plugin_name, 'enabled': impl.enabled}
+                for impl in reversed(caller.get_hookimpls())
+            ]
+            for spec_name, caller in self.hooks.items()
+        }
+
+    def set_call_order(self, new_order: CallOrderDict):
+        """Sets the plugin manager call order to match SETTINGS plugin values.
+
+            Note: Run this after load_settings_plugin_defaults, which 
+            sets the default values inSETTINGS.
+
+            Parameters
+            ----------
+            new_order : CallOrderDict
+
+            new_order = 
+                    {
+                        spec_name: [
+                                {
+                                    name: plugin_name
+                                    enabled: enabled 
+                                },
+                                {
+                                    name: plugin_name
+                                    enabled: enabled 
+                                },
+                                ...
+                        ],
+                        ...
+                    }
+            """
+
+        for spec_name, hook_caller in self.hooks.items():
+            spec_order = new_order.get(spec_name)
+            order = []
+            for p in spec_order:
+                order.append(p['plugin'])
+                hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
+            if order:
+                hook_caller.bring_to_front(order)
 
 
 # the main plugin manager instance for the `napari` plugin namespace.
@@ -299,54 +379,13 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
 
 discover_sample_data()
+
 def load_settings_plugin_defaults(SETTINGS):
     """Sets SETTINGS plugin defaults on start up from the defaults saved in
     the plugin manager.
     """
-    plugins_call_order = []
-    for name, hook_caller in plugin_manager.hooks.items():
-        for hook_implementation in reversed(hook_caller._nonwrappers):
-            plugins_call_order.append(
-                (
-                    name,
-                    hook_implementation.plugin_name,
-                    hook_implementation.enabled,
-                )
-            )
 
-    SETTINGS._defaults['plugins'].plugins_call_order = plugins_call_order
-
-
-def load_plugin_manager_settings(plugins_call_order):
-    """Sets the plugin call order in the plugin in manger to match what is saved in
-    SETTINGS.
-
-    Note: Run this after load_settings_plugin_defaults, which sets the default values in
-    SETTINGS.
-
-    plugins_call_order : List of tuples
-        [
-            (spec_name, plugin_name, enabled),
-            (spec_name, plugin_name, enabled),
-        ]
-    """
-    # plugins_call_order = SETTINGS.plugins.plugins_call_order
-
-    if plugins_call_order is not None:
-        # (("get_write", "svg", True), ("get_writer", "builtins", True))
-        for name, hook_caller in plugin_manager.hooks.items():
-            # order: List of hook implementations
-            order = []
-            for spec_name, plugin_name, enabled in plugins_call_order:
-                for hook_implementation in reversed(hook_caller._nonwrappers):
-                    if (
-                        spec_name == name
-                        and hook_implementation.plugin_name == plugin_name
-                    ):
-                        hook_implementation.enabled = enabled
-                        order.append(hook_implementation)
-                if order:
-                    hook_caller.bring_to_front(order)
+    SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
 
 
 #: Template to use for namespacing a plugin item in the menu bar

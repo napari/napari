@@ -25,6 +25,7 @@ class WidgetBuilder:
         "object": {
             "object": widgets.ObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
+            "plugins": widgets.PluginWidget
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
@@ -115,9 +116,7 @@ class WidgetBuilder:
 
         widget_variant = ui_schema.get('ui:widget', default_variant)
         widget_cls = self.widget_map[schema_type][widget_variant]
-
         widget = widget_cls(schema, ui_schema, self)
-
         default_state = get_widget_state(schema, state)
         if default_state is not None:
             widget.state = default_state
