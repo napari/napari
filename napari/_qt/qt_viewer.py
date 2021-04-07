@@ -448,7 +448,7 @@ class QtViewer(QSplitter):
         msg = trans._("selected") if selected else trans._("all")
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
-            caption=trans._('Save {msg} layers').format(msg=msg),
+            caption=trans._('Save {msg} layers', msg=msg),
             directory=self._last_visited_dir,  # home dir by default
         )
 
@@ -461,8 +461,11 @@ class QtViewer(QSplitter):
             if not saved:
                 raise OSError(
                     trans._(
-                        "File {filename} save failed.\n{error_messages}"
-                    ).format(filename=filename, error_messages=error_messages)
+                        "File {filename} save failed.\n{error_messages}",
+                        deferred=True,
+                        filename=filename,
+                        error_messages=error_messages,
+                    )
                 )
 
     def screenshot(self, path=None):

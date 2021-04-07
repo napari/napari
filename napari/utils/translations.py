@@ -195,14 +195,27 @@ class TranslationString:
 
     def __repr__(self):
         """"""
-        return repr(self.translate())
+        return repr(self.__str__())
 
     def __str__(self):
         """"""
-        return self.translate()
+        return self.value() if self._deferred else self.translation()
 
-    def translate(self):
-        """"""
+    def value(self):
+        """
+        Return the original string with interpolated kwargs, if provided.
+        """
+        if self._n is None or self._n == 1:
+            string = self._msgid
+        elif self._n != 1:
+            string = self._msgid_plural
+
+        return string.format(**self._kwargs)
+
+    def translation(self):
+        """
+        Return the translated string with interpolated kwargs, if provided.
+        """
         # Python 3.7 or lower does not offer translations based on context.
         # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
         if PY37_OR_LOWER:

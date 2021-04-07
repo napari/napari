@@ -40,8 +40,11 @@ class Theme(str):
         if value not in available_themes():
             raise ValueError(
                 trans._(
-                    '"{value}" is not valid. It must be one of {themes}'
-                ).format(value=value, themes=", ".join(themes))
+                    '"{value}" is not valid. It must be one of {themes}',
+                    deferred=True,
+                    value=value,
+                    themes=", ".join(themes),
+                )
             )
 
         return value
@@ -74,8 +77,11 @@ class Language(str):
         if v not in language_packs:
             raise ValueError(
                 trans._(
-                    '"{value}" is not valid. It must be one of {language_packs}.'
-                ).format(value=v, language_packs=", ".join(language_packs))
+                    '"{value}" is not valid. It must be one of {language_packs}.',
+                    deferred=True,
+                    value=v,
+                    language_packs=", ".join(language_packs),
+                )
             )
 
         return v

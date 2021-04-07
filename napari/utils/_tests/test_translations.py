@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from napari.utils.translations import (
+    TranslationString,
     _get_display_name,
     _is_valid_locale,
     _load_language,
@@ -127,7 +128,10 @@ def test_locale_valid_deferred_singular(trans):
     # Test singular method
     expected_result = "Más sobre napari"
     result = trans._("MORE ABOUT NAPARI", deferred=True)
-    assert result.translate() == expected_result
+    assert result.translation() == expected_result
+    assert str(result) == "MORE ABOUT NAPARI"
+
+    result = trans._("MORE ABOUT NAPARI", deferred=False)
     assert str(result) == expected_result
 
 
@@ -194,3 +198,15 @@ def test_load_language_invalid(tmp_path):
 
     with pytest.warns(UserWarning):
         _load_language(temp_config_path)
+
+
+def test_exception_string(trans):
+    expected_result = "Más sobre napari"
+    result = trans._("MORE ABOUT NAPARI", deferred=True)
+    assert str(result) != expected_result
+    assert str(result) == "MORE ABOUT NAPARI"
+
+    with pytest.raises(ValueError) as err:
+        raise ValueError(result)
+
+    assert isinstance(err.value.args[0], TranslationString)
