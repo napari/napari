@@ -49,7 +49,6 @@ class WidgetBuilder:
         "array": {
             "array": widgets.ArraySchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "plugins": widgets.PluginWidget,
         },
     }
 
