@@ -810,7 +810,7 @@ class Labels(_image_base_class):
 
         Parameters
         ----------
-        value: 3-tuple of arrays
+        value : 3-tuple of arrays
             The value is a 3-tuple containing:
 
             - a numpy multi-index, pointing to the array elements that were

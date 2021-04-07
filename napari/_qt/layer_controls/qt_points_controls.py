@@ -228,7 +228,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        index : int
+        text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
         self.layer.symbol = self.symbolComboBox.currentData()

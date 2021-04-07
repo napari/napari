@@ -1064,11 +1064,6 @@ class Window:
     def show(self):
         """Resize, show, and bring forward the window.
 
-        Parameters
-        ----------
-        run : bool, optional
-            If true, will start an event loop if necessary, by default False
-
         Raises
         ------
         RuntimeError

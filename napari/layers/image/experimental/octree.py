@@ -309,8 +309,6 @@ class Octree:
         ----------
         slice_id : int
             The id of the slice this octree is in.
-        tile_size : int
-            Keep creating levels until one fits with a tile of this size.
 
         Returns
         -------
