@@ -2,16 +2,16 @@
 """
 
 from enum import Enum
-from typing import Tuple, Dict
+from typing import Tuple
 
 from pydantic import BaseSettings, Field
 
+from ...plugins import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
-from ...plugins import CallOrderDict
 
 
 class Theme(str):

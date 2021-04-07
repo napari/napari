@@ -7,7 +7,9 @@ def enum_defaults(schema):
 
 def object_defaults(schema):
     if "properties" in schema:
-        return {k: compute_defaults(s) for k, s in schema["properties"].items()}
+        return {
+            k: compute_defaults(s) for k, s in schema["properties"].items()
+        }
     else:
         return None
 

@@ -3,7 +3,6 @@ import sys
 from inspect import signature
 from pathlib import Path
 from types import FunctionType
-from typing_extensions import TypedDict
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,6 +20,7 @@ from magicgui import magicgui
 from numpy import isin
 from napari_plugin_engine import HookImplementation
 from napari_plugin_engine import PluginManager as _PM
+from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict
 from ..utils._appdirs import user_site_packages
@@ -34,6 +34,7 @@ if sys.platform.startswith('linux') and running_as_bundled_app():
 if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
+
 
 class PluginHookOption(TypedDict):
     plugin: str
@@ -51,22 +52,22 @@ class PluginManager(_PM):
         Returns
         -------
         call_order : CallOrderDict
-        call_order = 
+        call_order =
             {
                         spec_name: [
                                 {
                                     name: plugin_name
-                                    enabled: enabled 
+                                    enabled: enabled
                                 },
                                 {
                                     name: plugin_name
-                                    enabled: enabled 
+                                    enabled: enabled
                                 },
                                 ...
                         ],
                         ...
             }
-        
+
         """
 
         return {
@@ -80,29 +81,29 @@ class PluginManager(_PM):
     def set_call_order(self, new_order: CallOrderDict):
         """Sets the plugin manager call order to match SETTINGS plugin values.
 
-            Note: Run this after load_settings_plugin_defaults, which 
-            sets the default values inSETTINGS.
+        Note: Run this after load_settings_plugin_defaults, which
+        sets the default values inSETTINGS.
 
-            Parameters
-            ----------
-            new_order : CallOrderDict
+        Parameters
+        ----------
+        new_order : CallOrderDict
 
-            new_order = 
-                    {
-                        spec_name: [
-                                {
-                                    name: plugin_name
-                                    enabled: enabled 
-                                },
-                                {
-                                    name: plugin_name
-                                    enabled: enabled 
-                                },
-                                ...
-                        ],
-                        ...
-                    }
-            """
+        new_order =
+                {
+                    spec_name: [
+                            {
+                                name: plugin_name
+                                enabled: enabled
+                            },
+                            {
+                                name: plugin_name
+                                enabled: enabled
+                            },
+                            ...
+                    ],
+                    ...
+                }
+        """
 
         for spec_name, hook_caller in self.hooks.items():
             spec_order = new_order.get(spec_name)

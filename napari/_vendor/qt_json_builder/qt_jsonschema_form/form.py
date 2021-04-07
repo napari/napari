@@ -25,7 +25,7 @@ class WidgetBuilder:
         "object": {
             "object": widgets.ObjectSchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "plugins": widgets.PluginWidget
+            "plugins": widgets.PluginWidget,
         },
         "number": {
             "spin": widgets.SpinDoubleSchemaWidget,
@@ -49,7 +49,7 @@ class WidgetBuilder:
         "array": {
             "array": widgets.ArraySchemaWidget,
             "enum": widgets.EnumSchemaWidget,
-            "plugins": widgets.PluginWidget
+            "plugins": widgets.PluginWidget,
         },
     }
 
@@ -80,17 +80,16 @@ class WidgetBuilder:
         validator_cls.check_schema(schema)
         validator = validator_cls(schema)
         schema_widget = self.create_widget(schema, ui_schema, state)
-       
+
         form = widgets.FormWidget(schema_widget)
 
         def validate(data):
             form.clear_errors()
-           
+
             errors = [*validator.iter_errors(data)]
 
             if errors:
                 form.display_errors(errors)
-               
 
             for err in errors:
                 schema_widget.handle_error(err.path, err)

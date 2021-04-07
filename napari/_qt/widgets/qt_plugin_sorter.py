@@ -3,7 +3,6 @@
 import re
 from typing import List, Optional, Union
 
-from ...plugins import PluginManager
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
@@ -21,6 +20,7 @@ from qtpy.QtWidgets import (
 )
 
 from ... import plugins
+from ...plugins import PluginManager
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
@@ -365,7 +365,7 @@ class QtPluginSorter(QWidget):
     def _change_settings_plugins(self):
         """Update settings if plugin call order changes."""
         SETTINGS.plugins.call_order = self.plugin_manager.call_order()
-    
+
     def set_hookname(self, hook: str):
         """Change the hook specification shown in the list widget.
 
@@ -412,16 +412,14 @@ class QtPluginSorter(QWidget):
     def setWidgetValues(self):
         """Set the values in the plugin manager to match the settings order."""
         plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
-    
 
     def value(self):
         """Returns the call order from the plugin manager.
 
-            Returns
-            -------
-            call_order : CallOrderDict
+        Returns
+        -------
+        call_order : CallOrderDict
 
         """
-
 
         return plugins.plugin_manager.call_order()
