@@ -8,6 +8,7 @@ import pytest
 from napari.utils.translations import (
     _get_display_name,
     _is_valid_locale,
+    _load_language,
     get_language_packs,
     translator,
 )
@@ -183,3 +184,28 @@ def test_locale_np_runs(trans):
     # Test plural context method shorthand
     result = trans._np(context, string, plural, n)
     assert result == plural
+
+
+def test_load_language_valid(tmp_path):
+    # This is valid content
+    data = """
+application:
+  language: es_ES
+"""
+    temp_config_path = tmp_path / "tempconfig.yml"
+    with open(temp_config_path, "w") as fh:
+        fh.write(data)
+
+    result = _load_language(temp_config_path)
+    assert result == "es_ES"
+
+
+def test_load_language_invalid(tmp_path):
+    # This is invalid content
+    data = ":"
+    temp_config_path = tmp_path / "tempconfig.yml"
+    with open(temp_config_path, "w") as fh:
+        fh.write(data)
+
+    with pytest.warns(UserWarning):
+        _load_language(temp_config_path)
