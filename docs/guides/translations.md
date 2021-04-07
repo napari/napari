@@ -181,11 +181,13 @@ developers.
 
 For these case, all the `trans._*` methods provide an extra parameter
 `deferred`. When used and set to `True`, the methods will return an instance
-of a `TranslationString` which provides two methods, `TranslationString.translation()` and `TranslationString.value()`. The former provides the translation and the later
-provides the original string. Additionally, the `string` representation of this
-object will default to use the original string.
+of a `TranslationString` which provides two methods, `TranslationString.value()`
+and `TranslationString.translation()`. The former provides the original
+untranslated string and the later provides the translated string.
+Additionally, the `string` representation of this object will default to use
+the original string.
 
-Whit this, we can also provide the correct translations when using the napari
+With this, we can also provide the correct translations when using the napari
 application and displaying messages on the notifications manager in the
 language selected by the users.
 
