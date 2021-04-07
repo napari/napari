@@ -200,4 +200,4 @@ class QtTracksControls(QtLayerControls):
         self.layer.color_by = value
 
     def change_colormap(self, colormap: str):
-        self.layer.colormap = colormap
+        self.layer.colormap = self.colormap_combobox.currentData()
