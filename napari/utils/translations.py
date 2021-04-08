@@ -182,6 +182,9 @@ class TranslationString:
         deferred: bool = False,
         **kwargs,
     ):
+        if msgid is None:
+            raise ValueError("Must provide at least a `msgid` parameter!")
+
         self._domain = domain
         self._msgctxt = msgctxt
         self._msgid = msgid

@@ -402,3 +402,15 @@ def test_exception_string(trans):
         raise ValueError(result)
 
     assert isinstance(err.value.args[0], TranslationString)
+
+
+# Test TranslationString
+# ----------------------
+def test_translation_string_exceptions():
+    with pytest.raises(ValueError):
+        TranslationString()
+
+
+def test_bundle_exceptions(trans):
+    with pytest.raises(ValueError):
+        trans._dnpgettext()
