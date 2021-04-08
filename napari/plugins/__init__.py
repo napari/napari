@@ -45,7 +45,6 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class PluginManager(_PM):
-    # replaces QtPluginSorter.values
     def call_order(self) -> CallOrderDict:
         """Returns the call order from the plugin manager.
 
@@ -82,7 +81,7 @@ class PluginManager(_PM):
         """Sets the plugin manager call order to match SETTINGS plugin values.
 
         Note: Run this after load_settings_plugin_defaults, which
-        sets the default values inSETTINGS.
+        sets the default values in SETTINGS.
 
         Parameters
         ----------
