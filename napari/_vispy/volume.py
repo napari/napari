@@ -137,7 +137,6 @@ class Volume(BaseVolume):
             self._bounding_box_lims = np.asarray(
                 bounding_box, dtype=np.float32
             )
-            print('node: ', self._bounding_box_lims)
             self.shared_program['u_bbox_x_min'] = self._bounding_box_lims[0, 0]
             self.shared_program['u_bbox_x_max'] = self._bounding_box_lims[0, 1]
 
@@ -215,7 +214,7 @@ class Volume(BaseVolume):
             )
         )
 
-    def set_data(self, vol, clim=None, copy=True):
+    def set_data(self, vol, clim=None, bounding_box=None, copy=True):
         """Set the volume data.
 
         Parameters
@@ -275,12 +274,14 @@ class Volume(BaseVolume):
             self._need_vertex_update = True
         self._vol_shape = shape
 
-        print(self._bounding_box)
-        default_bbox = [[0, 1], [0, 1], [0, 1]]
-        if self._bounding_box is None:
+        if self._bounding_box is None and bounding_box is None:
+            # vispy node is initialized before data model so we need to provide
+            # an initial bounding box. this gets updated when the Image layer is
+            # initialized
             self._initialize_bounding_box()
-        elif np.allclose(self._bounding_box, default_bbox):
-            self._initialize_bounding_box()
+        elif bounding_box is not None:
+            # we re-order the axes to match vispy
+            self._bounding_box = bounding_box[[2, 1, 0], :]
 
         self.shared_program['u_bbox_x_min'] = self._bounding_box[0, 0]
         self.shared_program['u_bbox_x_max'] = self._bounding_box[0, 1]
