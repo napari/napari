@@ -863,12 +863,41 @@ def test_changing_shapes():
     assert layer.ndim == shape_b[2]
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
+    # setting data with shape type
     data_a = (vertices_a, "ellipse")
     layer.data = data_a
     assert layer.nshapes == shape_a[0]
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices_a)])
     assert layer.ndim == shape_a[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # setting data with fewer shapes
+    smaller_data = vertices_a[:5]
+    current_edge_color = layer._data_view.edge_color
+    current_edge_width = layer._data_view.edge_widths
+    current_face_color = layer._data_view.face_color
+    current_z = layer._data_view.z_indices
+
+    layer.data = smaller_data
+    assert layer.nshapes == smaller_data.shape[0]
+    assert np.allclose(layer._data_view.edge_color, current_edge_color[:5])
+    assert np.allclose(layer._data_view.face_color, current_face_color[:5])
+    assert np.allclose(layer._data_view.edge_widths, current_edge_width[:5])
+    assert np.allclose(layer._data_view.z_indices, current_z[:5])
+
+    # setting data with added shapes
+    current_edge_color = layer._data_view.edge_color
+    current_edge_width = layer._data_view.edge_widths
+    current_face_color = layer._data_view.face_color
+    current_z = layer._data_view.z_indices
+
+    bigger_data = vertices_b
+    layer.data = bigger_data
+    assert layer.nshapes == bigger_data.shape[0]
+    assert np.allclose(layer._data_view.edge_color[:5], current_edge_color)
+    assert np.allclose(layer._data_view.face_color[:5], current_face_color)
+    assert np.allclose(layer._data_view.edge_widths[:5], current_edge_width)
+    assert np.allclose(layer._data_view.z_indices[:5], current_z)
 
 
 def test_changing_shape_type():
