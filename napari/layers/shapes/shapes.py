@@ -548,20 +548,48 @@ class Shapes(Layer):
         n_new_shapes = number_of_shapes(data)
         # not given a shape_type through data
         if shape_type is None:
-            # if same number of shapes assume shape type unchanged
-            if self.nshapes == n_new_shapes:
-                shape_type = self.shape_type
-            # fewer shapes, trim shape type
-            elif self.nshapes > n_new_shapes:
-                shape_type = self.shape_type[:n_new_shapes]
-            # more shapes, default to rectangle for new shapes
-            else:
-                shape_type = self.shape_type + ["rectangle"] * (
-                    n_new_shapes - self.nshapes
+            shape_type = self.shape_type
+
+        edge_widths = self._data_view.edge_widths
+        edge_color = self._data_view.edge_color
+        face_color = self._data_view.face_color
+        z_indices = self._data_view.z_indices
+
+        # fewer shapes, trim attributes
+        if self.nshapes > n_new_shapes:
+            shape_type = shape_type[:n_new_shapes]
+            edge_widths = edge_widths[:n_new_shapes]
+            z_indices = z_indices[:n_new_shapes]
+            edge_color = edge_color[:n_new_shapes]
+            face_color = face_color[:n_new_shapes]
+        # more shapes, add attributes
+        elif self.nshapes < n_new_shapes:
+            n_shapes_difference = n_new_shapes - self.nshapes
+            shape_type = shape_type + ["rectangle"] * n_shapes_difference
+            edge_widths = edge_widths + [1] * n_shapes_difference
+            z_indices = z_indices + [0] * n_shapes_difference
+            edge_color = np.concatenate(
+                (
+                    edge_color,
+                    self._get_new_shape_color(n_shapes_difference, 'edge'),
                 )
+            )
+            face_color = np.concatenate(
+                (
+                    face_color,
+                    self._get_new_shape_color(n_shapes_difference, 'face'),
+                )
+            )
 
         self._data_view = ShapeList()
-        self.add(data, shape_type=shape_type)
+        self.add(
+            data,
+            shape_type=shape_type,
+            edge_width=edge_widths,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_indices,
+        )
 
         self._update_dims()
         self.events.data(value=self.data)
