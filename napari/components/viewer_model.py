@@ -706,8 +706,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 f"named {sample!r}. "
             )
             if samples:
-                msg += trans._('Available samples include: {samples}').format(
-                    samples=samples
+                msg += trans._(
+                    'Available samples include: {samples}', samples=samples
                 )
             else:
                 msg += trans._("No plugin samples have been registered.")

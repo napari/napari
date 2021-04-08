@@ -396,8 +396,9 @@ class Labels(_image_base_class):
             if np.issubdtype(data_level.dtype, np.floating):
                 raise TypeError(
                     trans._(
-                        "Only integer types are supported for Labels layers, but data contains {data_level_type}."
-                    ).format(data_level_type=data_level.dtype)
+                        "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
+                        data_level_type=data_level.dtype,
+                    )
                 )
             if data_level.dtype == bool:
                 int_data.append(data_level.astype(np.int8))

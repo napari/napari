@@ -49,7 +49,7 @@ class QtDimSliderWidget(QWidget):
         self.play_button = None
         self.curslice_label = QLineEdit(self)
         self.curslice_label.setToolTip(
-            trans._('Current slice for axis {axis}').format(axis=axis)
+            trans._('Current slice for axis {axis}', axis=axis)
         )
         # if we set the QIntValidator to actually reflect the range of the data
         # then an invalid (i.e. too large) index doesn't actually trigger the
@@ -62,7 +62,7 @@ class QtDimSliderWidget(QWidget):
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
         self.totslice_label.setToolTip(
-            trans._('Total slices for axis {axis}').format(axis=axis)
+            trans._('Total slices for axis {axis}', axis=axis)
         )
         self.curslice_label.setObjectName('slice_label')
         self.totslice_label.setObjectName('slice_label')
