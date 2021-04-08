@@ -9,6 +9,7 @@ from typing import Optional
 import numpy as np
 
 from ....components.experimental.chunk import ChunkRequest, LayerRef
+from ....utils.translations import trans
 from ._octree_loader import OctreeLoader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
@@ -88,7 +89,12 @@ class OctreeSlice:
             index = self.octree_level
             num_levels = len(self._octree.levels)
             raise IndexError(
-                f"Octree level {index} is not in range(0, {num_levels})"
+                trans._(
+                    "Octree level {index} is not in range(0, {num_levels})",
+                    deferred=True,
+                    index=index,
+                    num_levels=num_levels,
+                )
             ) from exc
 
     def get_intersection(self, view: OctreeView) -> OctreeIntersection:
@@ -127,7 +133,13 @@ class OctreeSlice:
         """
         index = self._get_auto_level_index(view)
         if index < 0 or index >= self._octree.num_levels:
-            raise ValueError(f"Invalid octree level {index}")
+            raise ValueError(
+                trans._(
+                    "Invalid octree level {index}",
+                    deferred=True,
+                    index=index,
+                )
+            )
 
         return self._octree.levels[index]
 

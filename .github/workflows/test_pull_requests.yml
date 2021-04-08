@@ -43,6 +43,24 @@ jobs:
           pip install check-manifest
       - name: Check Manifest
         run: check-manifest
+
+  missing_translations:
+    # Check that all strings added on files are using trans or skipped if not translatable
+    name: Check missing translations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install napari
+        run: |
+          pip install -e .[all]
+      - name: Run check
+        run: |
+          python tools/check_strings.py napari/
+
   localization_syntax:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax

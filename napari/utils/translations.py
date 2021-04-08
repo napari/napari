@@ -135,7 +135,6 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
 
     invalid_locales = []
     valid_locales = []
-    messages = []
     for locale in found_locales:
         if _is_valid_locale(locale):
             valid_locales.append(locale)
@@ -157,20 +156,42 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
             "nativeName": _get_display_name(locale, locale),
         }
 
-    if invalid_locales:
-        messages.append(
-            f"The following locales are invalid: {invalid_locales}!"
-        )
-
     return locales
 
 
 # --- Translators
 # ----------------------------------------------------------------------------
-class TranslationString:
+class TranslationString(str):
     """
     A class that allows to create a deferred translations.
     """
+
+    def __new__(
+        cls,
+        domain: Optional[str] = None,
+        msgctxt: Optional[str] = None,
+        msgid: Optional[str] = None,
+        msgid_plural: Optional[str] = None,
+        n: Optional[str] = None,
+        deferred: bool = False,
+        **kwargs,
+    ):
+        if msgid is None:
+            raise ValueError(
+                trans._("Must provide at least a `msgid` parameter!")
+            )
+
+        kwargs["n"] = n
+
+        return str.__new__(
+            cls,
+            cls._original_value(
+                msgid,
+                msgid_plural,
+                n,
+                kwargs,
+            ),
+        )
 
     def __init__(
         self,
@@ -183,7 +204,9 @@ class TranslationString:
         **kwargs,
     ):
         if msgid is None:
-            raise ValueError("Must provide at least a `msgid` parameter!")
+            raise ValueError(
+                trans._("Must provide at least a `msgid` parameter!")
+            )
 
         self._domain = domain
         self._msgctxt = msgctxt
@@ -202,16 +225,35 @@ class TranslationString:
     def __str__(self):
         return self.value() if self._deferred else self.translation()
 
+    @classmethod
+    def _original_value(cls, msgid, msgid_plural, n, kwargs):
+        """
+        Return the original string with interpolated kwargs, if provided.
+
+        Parameters
+        ----------
+        msgid : str
+            The singular string to translate.
+        msgid_plural : str
+            The plural string to translate.
+        n : int
+            The number for pluralization.
+        kwargs : dict
+            Any additional arguments to use when formating the string.
+        """
+        string = msgid if n is None or n == 1 else msgid_plural
+        return string.format(**kwargs)
+
     def value(self) -> str:
         """
         Return the original string with interpolated kwargs, if provided.
         """
-        if self._n is None or self._n == 1:
-            string = self._msgid
-        elif self._n != 1:
-            string = self._msgid_plural
-
-        return string.format(**self._kwargs)
+        return self._original_value(
+            self._msgid,
+            self._msgid_plural,
+            self._n,
+            self._kwargs,
+        )
 
     def translation(self) -> str:
         """
@@ -297,7 +339,14 @@ class TranslationBundle:
             if locale not in data:
                 import warnings
 
-                warnings.warn("Requested locale not available: {locale}")
+                trans = self
+                warnings.warn(
+                    trans._(
+                        "Requested locale not available: {locale}",
+                        deferred=True,
+                        locale=locale,
+                    )
+                )
             else:
                 import importlib
 
@@ -332,7 +381,12 @@ class TranslationBundle:
             Any additional arguments to use when formating the string.
         """
         if msgid is None:
-            raise ValueError("Must provide at least a `msgid` parameter!")
+            trans = self
+            raise ValueError(
+                trans._(
+                    "Must provide at least a `msgid` parameter!", deferred=True
+                )
+            )
 
         if PY37_OR_LOWER:
             translation = (
@@ -629,11 +683,8 @@ def _load_language(
                 import warnings
 
                 warnings.warn(
-                    "The `language` setting defined in the napari "
-                    "configuration file could not be read. The "
-                    f"default language will be used.\n\nError: \n{err}"
-                )
-
+                    f"The `language` setting defined in the napari configuration file could not be read.\n\nThe default language will be used.\n\nError:\n{err}"
+                ),
                 data = {}
 
         locale = data.get("application", {}).get("language", locale)
@@ -641,9 +692,10 @@ def _load_language(
     return os.environ.get("NAPARI_LANGUAGE", locale)
 
 
+# Default translator
+trans = _Translator.load("napari")
+
 # Update Translator locale before any other import uses it
 _Translator._set_locale(_load_language())
 
-# Default translator
-trans = _Translator.load("napari")
 translator = _Translator

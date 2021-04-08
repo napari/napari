@@ -18,6 +18,7 @@ from ..utils.notifications import (
 )
 from ..utils.perf import perf_config
 from ..utils.settings import SETTINGS
+from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
@@ -118,8 +119,11 @@ def get_app(
         if set_values:
 
             warn(
-                "QApplication already existed, these arguments to to 'get_app'"
-                " were ignored: {}".format(set_values)
+                trans._(
+                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
+                    deferred=True,
+                    arg=set_values,
+                )
             )
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import convert_app_for_tracing
@@ -334,24 +338,32 @@ def run(
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
-            'No Qt app has been created. '
-            'One can be created by calling `get_app()` '
-            'or qtpy.QtWidgets.QApplication([])'
+            trans._(
+                'No Qt app has been created. One can be created by calling `get_app()` or qtpy.QtWidgets.QApplication([])',
+                deferred=True,
+            )
         )
     if not app.topLevelWidgets() and not force:
         warn(
-            "Refusing to run a QApplication with no topLevelWidgets. "
-            f"To run the app anyway, use `{_func_name}(force=True)`"
+            trans._(
+                "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
+                deferred=True,
+                _func_name=_func_name,
+            )
         )
         return
 
     if app.thread().loopLevel() >= max_loop_level:
         loops = app.thread().loopLevel()
-        s = 's' if loops > 1 else ''
         warn(
-            f"A QApplication is already running with {loops} event loop{s}."
-            "To enter *another* event loop, use "
-            f"`{_func_name}(max_loop_level={loops + 1})`"
+            trans._n(
+                "A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                "A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                n=loops,
+                deferred=True,
+                _func_name=_func_name,
+                max_loop_level=loops + 1,
+            )
         )
         return
 

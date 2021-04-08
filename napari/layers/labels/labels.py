@@ -424,7 +424,10 @@ class Labels(_image_base_class):
 
         if not all([v == lens[0] for v in lens]):
             raise ValueError(
-                "the number of items must be equal for all properties"
+                trans._(
+                    "the number of items must be equal for all properties",
+                    deferred=True,
+                )
             )
         return properties
 
@@ -527,9 +530,8 @@ class Labels(_image_base_class):
         warnings.warn(
             (
                 trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. "
-                    "Afterward, only the circle brush shape will be available, "
-                    "and the layer.brush_shape attribute will be removed."
+                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
+                    deferred=True,
                 )
             ),
             category=FutureWarning,
@@ -545,9 +547,8 @@ class Labels(_image_base_class):
         warnings.warn(
             (
                 trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. "
-                    "Afterward, only the circle brush shape will be available, "
-                    "and the layer.brush_shape attribute will be removed."
+                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
+                    deferred=True,
                 )
             ),
             category=FutureWarning,
@@ -620,11 +621,7 @@ class Labels(_image_base_class):
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
             self.help = trans._(
-                'hold <space> to pan/zoom, '
-                'hold <shift> to toggle preserve_labels, '
-                'hold <control> to fill, '
-                'hold <alt> to erase, '
-                'drag to paint a label'
+                'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
             )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.FILL:
@@ -773,7 +770,12 @@ class Labels(_image_base_class):
             image[boundaries] = raw[boundaries]
             image = self._all_vals[image]
         elif self.contour > 0 and raw.ndim > 2:
-            warnings.warn("Contours are not displayed during 3D rendering")
+            warnings.warn(
+                trans._(
+                    "Contours are not displayed during 3D rendering",
+                    deferred=True,
+                )
+            )
 
         return image
 
@@ -1077,5 +1079,5 @@ class Labels(_image_base_class):
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'
                 else:
-                    msg += ' [No Properties]'
+                    msg += ' ' + trans._('[No Properties]')
         return msg

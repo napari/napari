@@ -13,6 +13,8 @@ from typing import (
     overload,
 )
 
+from ....utils.translations import trans
+
 logger = logging.getLogger(__name__)
 
 
@@ -86,7 +88,12 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __setitem__(self, key, value):  # noqa: F811
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError('Can only assign an iterable to slice')
+                raise TypeError(
+                    trans._(
+                        'Can only assign an iterable to slice',
+                        deferred=True,
+                    )
+                )
             self._list[key] = [self._type_check(v) for v in value]
         else:
             self._list[key] = self._type_check(value)
@@ -151,8 +158,12 @@ class TypedMutableSequence(MutableSequence[_T]):
             isinstance(e, t) for t in self._basetypes
         ):
             raise TypeError(
-                f'Cannot add object with type {type(e)!r} to '
-                f'TypedList expecting type {self._basetypes!r}'
+                trans._(
+                    'Cannot add object with type {dtype} to TypedList expecting type {basetypes}',
+                    deferred=True,
+                    dtype=f"{type(e)!r}",
+                    basetypes=f"{self._basetypes!r}",
+                )
             )
         return e
 
@@ -224,7 +235,13 @@ class TypedMutableSequence(MutableSequence[_T]):
             if v is value or v == value:
                 return i
 
-        raise ValueError(f"{value!r} is not in list")
+        raise ValueError(
+            trans._(
+                "{value} is not in list",
+                deferred=True,
+                value=f"{value!r}",
+            )
+        )
 
     def _iter_indices(self, start=0, stop=None, deep=False):
         """Iter indices from start to stop.

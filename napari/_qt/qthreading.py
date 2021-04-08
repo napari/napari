@@ -7,6 +7,8 @@ from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
 
+from ..utils.translations import trans
+
 
 def as_generator_function(func: Callable) -> Callable:
     """Turns a regular function (single return) into a generator function."""
@@ -130,7 +132,9 @@ class WorkerBase(QRunnable):
                     # error that will cause segfault if we try to do much other
                     # than simply notify the user.
                     warnings.warn(
-                        f"RuntimeError in aborted thread: {str(result)}",
+                        trans._(
+                            "RuntimeError in aborted thread: {result}",
+                        ).format(result=str(result)),
                         RuntimeWarning,
                     )
                     return

@@ -11,6 +11,7 @@ from napari_plugin_engine import (
 from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
+from ..utils.translations import trans
 from . import plugin_manager as napari_plugin_manager
 
 logger = getLogger(__name__)
@@ -65,18 +66,31 @@ def read_data_with_plugins(
         if plugin not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
-                f"There is no registered plugin named '{plugin}'.\n"
-                f"Names of plugins offering readers are: {names}"
+                trans._(
+                    "There is no registered plugin named '{plugin}'.\nNames of plugins offering readers are: {names}",
+                    deferred=True,
+                    plugin=plugin,
+                    names=names,
+                )
             )
         reader = hook_caller._call_plugin(plugin, path=path)
         if not callable(reader):
-            raise ValueError(f'Plugin {plugin!r} does not support file {path}')
+            raise ValueError(
+                trans._(
+                    'Plugin {plugin} does not support file {path}',
+                    deferred=True,
+                    plugin=f"{plugin!r}",
+                    path=path,
+                )
+            )
+
         hookimpl = hook_caller.get_plugin_implementation(plugin)
         layer_data = reader(path)
         # if the reader returns a "null layer" sentinel indicating an empty
         # file, return an empty list, otherwise return the result or None
         if _is_null_layer_sentinel(layer_data):
             return [], hookimpl
+
         return layer_data or None, hookimpl
 
     errors: List[PluginCallError] = []
@@ -113,7 +127,13 @@ def read_data_with_plugins(
         else:
             path_repr = repr(path)
         # TODO: change to a warning notification in a later PR
-        raise ValueError(f'No plugin found capable of reading {path_repr}.')
+        raise ValueError(
+            trans._(
+                'No plugin found capable of reading {path_repr}.',
+                deferred=True,
+                path_repr=path_repr,
+            )
+        )
 
     if errors:
         names = {repr(e.plugin_name) for e in errors}
@@ -198,8 +218,12 @@ def save_layers(
         # path/layers combination
         # we just want to provide some useful feedback
         warnings.warn(
-            'No data written! There may be no plugins '
-            f'capable of writing these {len(layers)} layers to {path}.'
+            trans._(
+                'No data written! There may be no plugins capable of writing these {length} layers to {path}.',
+                deferred=True,
+                length=len(layers),
+                path=path,
+            )
         )
 
     return written
@@ -282,8 +306,12 @@ def _write_multiple_layers_with_plugins(
         if plugin_name not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
-                f"There is no registered plugin named '{plugin_name}'.\n"
-                f"Names of plugins offering writers are: {names}"
+                trans._(
+                    "There is no registered plugin named '{plugin_name}'.\nNames of plugins offering writers are: {names}",
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    names=names,
+                )
             )
         implementation = hook_caller.get_plugin_implementation(plugin_name)
         writer_function = hook_caller(
@@ -298,10 +326,19 @@ def _write_multiple_layers_with_plugins(
 
     if not callable(writer_function):
         if plugin_name:
-            msg = f'Requested plugin "{plugin_name}" is not capable'
+            msg = trans._(
+                'Requested plugin "{plugin_name}" is not capable of writing this combination of layer types: {layer_types}',
+                deferred=True,
+                plugin_name=plugin_name,
+                layer_types=layer_types,
+            )
         else:
-            msg = 'Unable to find plugin capable'
-        msg += f' of writing this combination of layer types: {layer_types}'
+            msg = trans._(
+                'Unable to find plugin capable of writing this combination of layer types: {layer_types}',
+                deferred=True,
+                layer_types=layer_types,
+            )
+
         raise ValueError(msg)
 
     try:
@@ -358,9 +395,12 @@ def _write_single_layer_with_plugins(
     if plugin_name and (plugin_name not in plugin_manager.plugins):
         names = {i.plugin_name for i in hook_caller.get_hookimpls()}
         raise ValueError(
-            f"There is no registered plugin named '{plugin_name}'.\n"
-            "Plugins capable of writing layer._type_string layers"
-            f"are: {names}"
+            trans._(
+                "There is no registered plugin named '{plugin_name}'.\nPlugins capable of writing layer._type_string layers are: {names}",
+                deferred=True,
+                plugin_name=plugin_name,
+                names=names,
+            )
         )
 
     # Call the hook_caller

@@ -3,6 +3,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Union
 
+from ..utils.translations import trans
+
 ICON_PATH = (Path(__file__).parent / 'icons').resolve()
 ICONS = {x.stem: str(x) for x in ICON_PATH.iterdir() if x.suffix == '.svg'}
 
@@ -11,7 +13,12 @@ def get_icon_path(name: str) -> str:
     """Return path to an SVG in the theme icons."""
     if name not in ICONS:
         raise ValueError(
-            f"unrecognized icon name: {name!r}. Known names: {ICONS}"
+            trans._(
+                "unrecognized icon name: {name}. Known names: {icons}",
+                deferred=True,
+                name=f"{name!r}",
+                icons=ICONS,
+            )
         )
     return ICONS[name]
 
@@ -48,7 +55,13 @@ def get_colorized_svg(
         return xml
 
     if not svg_elem.search(xml):
-        raise ValueError(f"Could not detect svg tag in {path_or_xml!r}")
+        raise ValueError(
+            trans._(
+                "Could not detect svg tag in {path}",
+                deferred=True,
+                path=f"{path_or_xml!r}",
+            )
+        )
     # use regex to find the svg tag and insert css right after
     # (the '\\1' syntax includes the matched tag in the output)
     return svg_elem.sub(f'\\1{svg_style.format(color, opacity)}', xml)

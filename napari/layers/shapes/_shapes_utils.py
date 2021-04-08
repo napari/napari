@@ -4,6 +4,7 @@ import numpy as np
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
+from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
 
 
@@ -399,8 +400,10 @@ def rectangle_to_box(data):
     """
     if not data.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, D]`
-                         shape specifying corners for the rectangle"""
+            trans._(
+                "Data shape does not match expected `[4, D]` shape specifying corners for the rectangle",
+                deferred=True,
+            )
         )
     box = np.array(
         [
@@ -492,8 +495,10 @@ def triangulate_ellipse(corners, num_segments=100):
     """
     if not corners.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, D]`
-                         shape specifying corners for the ellipse"""
+            trans._(
+                "Data shape does not match expected `[4, D]` shape specifying corners for the ellipse",
+                deferred=True,
+            )
         )
 
     center = corners.mean(axis=0)

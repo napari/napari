@@ -280,7 +280,7 @@ class NapariQtNotification(QDialog):
 
             def call_back_with_self(callback, self):
                 """
-                we need a higher order function this to capture the reference to self.
+                We need a higher order function this to capture the reference to self.
                 """
 
                 def _inner():

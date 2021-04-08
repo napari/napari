@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 from .. import layers, types
 from ..layers._source import Source, layer_source
 from ..utils.misc import ensure_list_of_layer_data_tuple
+from ..utils.translations import trans
 from ..viewer import Viewer
 
 try:
@@ -173,8 +174,11 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
         result = ensure_list_of_layer_data_tuple(result)
     except TypeError:
         raise TypeError(
-            f'magicgui function {gui} annotated with a return type of '
-            'napari.types.LayerDataTuple did not return LayerData tuple(s)'
+            trans._(
+                'magicgui function {gui} annotated with a return type of napari.types.LayerDataTuple did not return LayerData tuple(s)',
+                deferred=True,
+                gui=gui,
+            )
         )
 
     with layer_source(widget=gui):

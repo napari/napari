@@ -23,6 +23,8 @@ from typing import (
 
 import numpy as np
 
+from ..utils.translations import trans
+
 if TYPE_CHECKING:
     import packaging.version
 
@@ -181,7 +183,14 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
 
     if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
-            raise ValueError(f"length of {obj} must equal {length}")
+            raise ValueError(
+                trans._(
+                    "length of {obj} must equal {length}",
+                    deferred=True,
+                    obj=obj,
+                    length=length,
+                )
+            )
         return obj
     return itertools.repeat(obj)
 
@@ -225,8 +234,12 @@ class StringEnumMeta(EnumMeta):
                 return value
             else:
                 raise ValueError(
-                    f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}. Got {builtins.type(value)}'
+                    trans._(
+                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                        deferred=True,
+                        class_name=cls,
+                        dtype=builtins.type(value),
+                    )
                 )
 
         # otherwise create new Enum class
@@ -302,7 +315,12 @@ def abspath_or_url(relpath: T) -> T:
             return relpath
         return path.abspath(path.expanduser(relpath))
 
-    raise TypeError("Argument must be a string, PathLike, or sequence thereof")
+    raise TypeError(
+        trans._(
+            "Argument must be a string, PathLike, or sequence thereof",
+            deferred=True,
+        )
+    )
 
 
 class CallDefault(inspect.Parameter):
@@ -366,7 +384,13 @@ def ensure_n_tuple(val, n, fill=0):
 
 def ensure_layer_data_tuple(val):
     if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
-        raise TypeError(f'Not a valid layer data tuple: {val!r}')
+        raise TypeError(
+            trans._(
+                'Not a valid layer data tuple: {value}',
+                deferred=True,
+                value=f"{val!r}",
+            )
+        )
     return val
 
 
@@ -376,7 +400,9 @@ def ensure_list_of_layer_data_tuple(val):
             return [ensure_layer_data_tuple(v) for v in val]
         except TypeError:
             pass
-    raise TypeError('Not a valid list of layer data tuples!')
+    raise TypeError(
+        trans._('Not a valid list of layer data tuples!', deferred=True)
+    )
 
 
 def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
@@ -428,7 +454,13 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
     hashfunc = hashlib.md5
 
     if not Path(path).is_dir():
-        raise TypeError(f"{path} is not a directory.")
+        raise TypeError(
+            trans._(
+                "{path} is not a directory.",
+                deferred=True,
+                path=path,
+            )
+        )
 
     _hash = hashfunc()
     for root, _, files in os.walk(path):
