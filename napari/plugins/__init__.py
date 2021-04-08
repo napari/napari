@@ -17,9 +17,9 @@ from typing import (
 from warnings import warn
 
 from magicgui import magicgui
-from numpy import isin
 from napari_plugin_engine import HookImplementation
 from napari_plugin_engine import PluginManager as _PM
+from numpy import isin
 from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict
@@ -380,6 +380,7 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
 
 discover_sample_data()
+
 
 def load_settings_plugin_defaults(SETTINGS):
     """Sets SETTINGS plugin defaults on start up from the defaults saved in
