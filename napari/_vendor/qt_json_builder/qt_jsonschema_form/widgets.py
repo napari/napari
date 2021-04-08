@@ -522,7 +522,7 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
 
         # Populate rows
         widgets = {}
-
+        layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
