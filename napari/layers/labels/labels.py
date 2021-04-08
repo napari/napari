@@ -314,8 +314,12 @@ class Labels(_image_base_class):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
+        # invalidate _all_vals to trigger re-generation
+        # in _raw_to_displayed
+        self._all_vals = None
         self.refresh()
         self.events.selected_label()
+
 
     @property
     def num_colors(self):
@@ -715,7 +719,7 @@ class Labels(_image_base_class):
         ):
             try:
                 image = self._all_vals[raw]
-            except IndexError:
+            except (IndexError, TypeError):
                 max_val = np.max(raw)
                 self._all_vals = low_discrepancy_image(
                     np.arange(max_val + 1), self._seed
