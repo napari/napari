@@ -53,7 +53,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_display_change()
         self._on_data_change()
 
-    def _on_display_change(self, data=None):
+    def _on_display_change(self, data=None, bounding_box=None):
 
         parent = self.node.parent
         self.node.parent = None
@@ -69,8 +69,10 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.visible = self.layer.visible
 
         if self.layer.loaded:
-            self.node.set_data(data)
-
+            if isinstance(self.node, VolumeNode):
+                self.node.set_data(data, bounding_box=bounding_box)
+            else:
+                self.node.set_data(data)
         self.node.parent = parent
         self.node.order = self.order
         self.reset()
@@ -81,9 +83,11 @@ class VispyImageLayer(VispyBaseLayer):
             # be very expensive. Lets not do it until our data has been loaded.
             return
 
-        self._set_node_data(self.node, self.layer._data_view)
+        self._set_node_data(
+            self.node, self.layer._data_view, self.layer._view_bounding_box
+        )
 
-    def _set_node_data(self, node, data):
+    def _set_node_data(self, node, data, bounding_box=None):
         """Our self.layer._data_view has been updated, update our node."""
 
         data = fix_data_dtype(data)
@@ -103,10 +107,12 @@ class VispyImageLayer(VispyBaseLayer):
         if (
             self.layer._ndisplay == 3 and not isinstance(node, VolumeNode)
         ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
-            self._on_display_change(data)
+            self._on_display_change(data, bounding_box)
         else:
-            node.set_data(data)
-
+            if isinstance(self.node, VolumeNode):
+                self.node.set_data(data, bounding_box=bounding_box)
+            else:
+                self.node.set_data(data)
         if self.layer._empty:
             node.visible = False
         else:
