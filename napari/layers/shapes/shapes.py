@@ -757,21 +757,7 @@ class Shapes(Layer):
             self._data_view.z_indices,
         )
 
-        for d, st, ew, ec, fc, z in shape_inputs:
-
-            shape_cls = shape_classes[ShapeType(st)]
-            shape = shape_cls(
-                d,
-                edge_width=ew,
-                z_index=z,
-                dims_order=self._dims_order,
-                ndisplay=self._ndisplay,
-            )
-
-            # Add shape
-            new_data_view.add(
-                shape, edge_color=ec, face_color=fc, z_refresh=True
-            )
+        self._add_shapes_to_view(shape_inputs, new_data_view)
 
         self._data_view = new_data_view
         self._display_order_stored = copy(self._dims_order)
@@ -1823,27 +1809,27 @@ class Shapes(Layer):
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, z in shape_inputs:
-
-                # A False slice_key means the shape is invalid as it is not
-                # confined to a single plane
-                shape_cls = shape_classes[ShapeType(st)]
-                shape = shape_cls(
-                    d,
-                    edge_width=ew,
-                    z_index=z,
-                    dims_order=self._dims_order,
-                    ndisplay=self._ndisplay,
-                )
-
-                # Add shape
-                self._data_view.add(
-                    shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
-                )
+            self._add_shapes_to_view(shape_inputs, self._data_view)
 
         self._display_order_stored = copy(self._dims_order)
         self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
+
+    def _add_shapes_to_view(self, shape_inputs, data_view):
+        """Build new shapes and add them to the _data_view"""
+        for d, st, ew, ec, fc, z in shape_inputs:
+
+            shape_cls = shape_classes[ShapeType(st)]
+            shape = shape_cls(
+                d,
+                edge_width=ew,
+                z_index=z,
+                dims_order=self._dims_order,
+                ndisplay=self._ndisplay,
+            )
+
+            # Add shape
+            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=True)
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
