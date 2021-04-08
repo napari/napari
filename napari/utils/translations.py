@@ -169,7 +169,7 @@ def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
 # ----------------------------------------------------------------------------
 class TranslationString:
     """
-    TODO:
+    A class that allows to create a deferred translations.
     """
 
     def __init__(
@@ -194,14 +194,12 @@ class TranslationString:
         self._kwargs['n'] = n
 
     def __repr__(self):
-        """"""
         return repr(self.__str__())
 
     def __str__(self):
-        """"""
         return self.value() if self._deferred else self.translation()
 
-    def value(self):
+    def value(self) -> str:
         """
         Return the original string with interpolated kwargs, if provided.
         """
@@ -212,7 +210,7 @@ class TranslationString:
 
         return string.format(**self._kwargs)
 
-    def translation(self):
+    def translation(self) -> str:
         """
         Return the translated string with interpolated kwargs, if provided.
         """
@@ -308,33 +306,42 @@ class TranslationBundle:
     def _dnpgettext(
         self,
         msgctxt: Optional[str] = None,
-        msgid: str = "",
-        msgid_plural: str = "",
+        msgid: Optional[str] = None,
+        msgid_plural: Optional[str] = None,
         n: Optional[int] = None,
         **kwargs,
-    ):
+    ) -> str:
         """
-        TODO:
+        Helper to handle all trans methods and delegate to corresponding
+        gettext methods.
+
+        Parameters
+        ----------
+        msgctxt : str, optional
+            The message context.
+        msgid : str, optional
+            The singular string to translate.
+        msgid_plural : str, optional
+            The plural string to translate.
+        n : int, optional
+            The number for pluralization.
+        kwargs : dict, optional
+            Any additional arguments to use when formating the string.
         """
+        if msgid is None:
+            raise ValueError("Must provide at least a `msgid` parameter!")
+
         if PY37_OR_LOWER:
-            if n is None:
-                translation = gettext.dgettext(self._domain, msgid)
-            else:
-                translation = gettext.dngettext(
-                    self._domain, msgid, msgid_plural, n
-                )
+            translation = (
+                gettext.dgettext(self._domain, msgid)
+                if n is None
+                else gettext.dngettext(self._domain, msgid, msgid_plural, n)
+            )
         else:
             if n is None and msgctxt is None:
-                translation = gettext.dgettext(
-                    self._domain,
-                    msgid,
-                )
+                translation = gettext.dgettext(self._domain, msgid)
             elif n is None:
-                translation = gettext.dpgettext(
-                    self._domain,
-                    msgctxt,
-                    msgid,
-                )
+                translation = gettext.dpgettext(self._domain, msgctxt, msgid)
             elif msgctxt is None:
                 translation = gettext.dngettext(
                     self._domain,
@@ -376,14 +383,13 @@ class TranslationBundle:
             The translation string which might be deferred or translated in
             place.
         """
-        if deferred:
-            translation = TranslationString(
+        return (
+            TranslationString(
                 domain=self._domain, msgid=msgid, deferred=deferred, **kwargs
             )
-        else:
-            translation = self._dnpgettext(msgid=msgid, **kwargs)
-
-        return translation
+            if deferred
+            else self._dnpgettext(msgid=msgid, **kwargs)
+        )
 
     def _n(
         self,
@@ -416,8 +422,8 @@ class TranslationBundle:
             The translation string which might be deferred or translated in
             place.
         """
-        if deferred:
-            translation = TranslationString(
+        return (
+            TranslationString(
                 domain=self._domain,
                 msgid=msgid,
                 msgid_plural=msgid_plural,
@@ -425,15 +431,18 @@ class TranslationBundle:
                 deferred=deferred,
                 **kwargs,
             )
-        else:
-            translation = self._dnpgettext(
+            if deferred
+            else self._dnpgettext(
                 msgid=msgid, msgid_plural=msgid_plural, n=n, **kwargs
             )
-
-        return translation
+        )
 
     def _p(
-        self, msgctxt: str, msgid: str, deferred: Optional[bool] = False, **kwargs
+        self,
+        msgctxt: str,
+        msgid: str,
+        deferred: Optional[bool] = False,
+        **kwargs,
     ) -> Union[TranslationString, str]:
         """
         Shorthand for `gettext.pgettext` with enhanced functionality.
@@ -456,20 +465,17 @@ class TranslationBundle:
             The translation string which might be deferred or translated in
             place.
         """
-        if deferred:
-            translation = TranslationString(
+        return (
+            TranslationString(
                 domain=self._domain,
                 msgctxt=msgctxt,
                 msgid=msgid,
                 deferred=deferred,
                 **kwargs,
             )
-        else:
-            translation = self._dnpgettext(
-                msgctxt=msgctxt, msgid=msgid, **kwargs
-            )
-
-        return translation
+            if deferred
+            else self._dnpgettext(msgctxt=msgctxt, msgid=msgid, **kwargs)
+        )
 
     def _np(
         self,
@@ -505,7 +511,7 @@ class TranslationBundle:
             The translation string which might be deferred or translated in
             place.
         """
-        if deferred:
+        return (
             TranslationString(
                 domain=self._domain,
                 msgctxt=msgctxt,
@@ -515,16 +521,15 @@ class TranslationBundle:
                 deferred=deferred,
                 **kwargs,
             )
-        else:
-            translation = self._dnpgettext(
+            if deferred
+            else self._dnpgettext(
                 msgctxt=msgctxt,
                 msgid=msgid,
                 msgid_plural=msgid_plural,
                 n=n,
                 **kwargs,
             )
-
-        return translation
+        )
 
 
 class _Translator:
