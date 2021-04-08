@@ -7,7 +7,7 @@ import gettext
 import os
 import sys
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from yaml import safe_load
 
@@ -174,11 +174,11 @@ class TranslationString:
 
     def __init__(
         self,
-        domain: str = None,
-        msgctxt: str = None,
-        msgid: str = None,
-        msgid_plural: str = None,
-        n: str = None,
+        domain: Optional[str] = None,
+        msgctxt: Optional[str] = None,
+        msgid: Optional[str] = None,
+        msgid_plural: Optional[str] = None,
+        n: Optional[str] = None,
         deferred: bool = False,
         **kwargs,
     ):
@@ -307,10 +307,10 @@ class TranslationBundle:
 
     def _dnpgettext(
         self,
-        msgctxt: str = None,
+        msgctxt: Optional[str] = None,
         msgid: str = "",
         msgid_plural: str = "",
-        n: int = None,
+        n: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -390,7 +390,7 @@ class TranslationBundle:
         msgid: str,
         msgid_plural: str,
         n: int,
-        deferred: bool = False,
+        deferred: Optional[bool] = False,
         **kwargs,
     ) -> Union[TranslationString, str]:
         """
@@ -433,7 +433,7 @@ class TranslationBundle:
         return translation
 
     def _p(
-        self, msgctxt: str, msgid: str, deferred: bool = False, **kwargs
+        self, msgctxt: str, msgid: str, deferred: Optional[bool] = False, **kwargs
     ) -> Union[TranslationString, str]:
         """
         Shorthand for `gettext.pgettext` with enhanced functionality.
@@ -477,7 +477,7 @@ class TranslationBundle:
         msgid: str,
         msgid_plural: str,
         n: str,
-        deferred: bool = False,
+        deferred: Optional[bool] = False,
         **kwargs,
     ) -> Union[TranslationString, str]:
         """
