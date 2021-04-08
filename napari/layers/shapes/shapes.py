@@ -760,8 +760,6 @@ class Shapes(Layer):
         self._add_shapes_to_view(shape_inputs, new_data_view)
 
         self._data_view = new_data_view
-        self._display_order_stored = copy(self._dims_order)
-        self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
 
     @property
@@ -1829,7 +1827,8 @@ class Shapes(Layer):
             )
 
             # Add shape
-            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=True)
+            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
+        data_view._update_z_order()
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
