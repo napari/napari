@@ -320,7 +320,6 @@ class Labels(_image_base_class):
         self.refresh()
         self.events.selected_label()
 
-
     @property
     def num_colors(self):
         """int: Number of unique colors to use in colormap."""
