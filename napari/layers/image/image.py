@@ -276,9 +276,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
 
-        self._bounding_box_lims = np.column_stack(
-            (np.zeros(data.ndim), data.shape)
-        )
+        if rgb:
+            self._bounding_box_lims = np.column_stack(
+                (np.zeros(data.ndim - 1), data.shape[:-1])
+            )
+        else:
+            self._bounding_box_lims = np.column_stack(
+                (np.zeros(data.ndim), data.shape)
+            )
         # self._bounding_box_lims = np.array([[0, 100], [0, 200], [0, 300]])
         self._bounding_box_lims[:, 1] = self._bounding_box_lims[:, 1] - 1
 
@@ -497,7 +502,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def _view_bounding_box(self):
         """Returns the bounding box sliced according to the displayed dimensions"""
-        return self._bounding_box[self._dims_displayed]
+
+        if self._ndisplay == 3 and self._bounding_box.shape[0] == 2:
+            bounding_box_view = np.vstack(([0, 1], self._bounding_box))
+
+        else:
+            bounding_box_view = self._bounding_box[self._dims_displayed]
+
+        return bounding_box_view
 
     @property
     def loaded(self):

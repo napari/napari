@@ -69,10 +69,7 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.visible = self.layer.visible
 
         if self.layer.loaded:
-            if isinstance(self.node, VolumeNode):
-                self.node.set_data(data, bounding_box=bounding_box)
-            else:
-                self.node.set_data(data)
+            self.node.set_data(data, bounding_box=bounding_box)
         self.node.parent = parent
         self.node.order = self.order
         self.reset()
@@ -109,10 +106,7 @@ class VispyImageLayer(VispyBaseLayer):
         ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
             self._on_display_change(data, bounding_box)
         else:
-            if isinstance(self.node, VolumeNode):
-                self.node.set_data(data, bounding_box=bounding_box)
-            else:
-                self.node.set_data(data)
+            self.node.set_data(data, bounding_box=bounding_box)
         if self.layer._empty:
             node.visible = False
         else:
@@ -150,13 +144,9 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.attenuation = self.layer.attenuation
 
     def _on_bounding_box_change(self, event=None):
-        if isinstance(self.node, VolumeNode):
-            bounding_box = self.layer._view_bounding_box
-            print('bbox: ', bounding_box)
-            # reorder the bounding box to be aligned with the axes in vispy
-            reordered_bounding_box = bounding_box[[2, 1, 0], :]
-            print('reordered: ', reordered_bounding_box)
-            self.node._bounding_box = reordered_bounding_box
+        bounding_box = self.layer._view_bounding_box
+        # reorder the bounding box to be aligned with the axes in vispy
+        self.node._bounding_box = bounding_box[::-1, :]
 
     def reset(self, event=None):
         self._reset_base()
