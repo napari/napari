@@ -68,7 +68,8 @@ class _QtMainWindow(QMainWindow):
         plugins.load_settings_plugin_defaults(SETTINGS)
 
         # set the values in plugins to match the ones saved in SETTINGS
-        plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+        if SETTINGS.plugins.call_order is not None:
+            plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
     def _load_window_settings(self):
         """
