@@ -2,7 +2,7 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
 
-from ...layers.vectors._vectors_constants import ColorMode
+from ...layers.utils._color_manager_constants import ColorMode
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
@@ -73,7 +73,8 @@ class QtVectorsControls(QtLayerControls):
 
         # dropdown to select the edge color mode
         colorModeComboBox = QComboBox(self)
-        colorModeComboBox.addItems(ColorMode.keys())
+        color_modes = [e.value for e in ColorMode]
+        colorModeComboBox.addItems(color_modes)
         colorModeComboBox.activated[str].connect(self.change_edge_color_mode)
         self.color_mode_comboBox = colorModeComboBox
         self._on_edge_color_mode_change()
@@ -257,7 +258,7 @@ class QtVectorsControls(QtLayerControls):
             The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.color_mode_comboBox):
-            mode = self.layer.edge_color_mode
+            mode = self.layer._edge.color_mode
             index = self.color_mode_comboBox.findText(
                 mode, Qt.MatchFixedString
             )
@@ -273,14 +274,14 @@ class QtVectorsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method, by default None.
         """
-        if self.layer._edge_color_mode == ColorMode.DIRECT:
+        if self.layer._edge.color_mode == ColorMode.DIRECT:
             with qt_signals_blocked(self.edgeColorEdit):
                 self.edgeColorEdit.setColor(self.layer.edge_color[0])
-        elif self.layer._edge_color_mode in (
+        elif self.layer._edge.color_mode in (
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
             with qt_signals_blocked(self.color_prop_box):
-                prop = self.layer._edge_color_property
+                prop = self.layer._edge.color_properties.name
                 index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
                 self.color_prop_box.setCurrentIndex(index)

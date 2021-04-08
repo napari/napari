@@ -38,11 +38,18 @@ with napari.gui_qt():
     # create the properties dictionary.
     properties = {
         'angle': angle,
-        'pos_angle':pos_angle,
+        'pos_angle': pos_angle,
     }
 
     # add the vectors
-    layer = viewer.add_vectors(pos, edge_width=3, properties=properties, edge_color='angle', edge_colormap='husl')
+    layer = viewer.add_vectors(
+        pos,
+        edge_width=3,
+        properties=properties,
+        edge_color='angle',
+        edge_colormap='husl',
+        name='vectors'
+    )
 
     # set the edge color mode to colormap
     layer.edge_color_mode = 'colormap'
