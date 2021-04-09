@@ -37,6 +37,8 @@ if TYPE_CHECKING:
 
 
 class PluginHookOption(TypedDict):
+    """Custom type specifying plugin and enabled state."""
+
     plugin: str
     enabled: bool
 
