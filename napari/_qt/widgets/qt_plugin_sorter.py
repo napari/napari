@@ -70,10 +70,7 @@ class ImplementationListItem(QFrame):
         unchecked, the opacity of the item is decreased.
     """
 
-    # Signal
-    on_changed = (
-        Signal()
-    )  # emitted when user changes whether plugin is enabled.
+    on_changed = Signal()  # when user changes whether plugin is enabled.
 
     def __init__(self, item: QListWidgetItem, parent: QWidget = None):
         super().__init__(parent)
