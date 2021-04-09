@@ -496,7 +496,7 @@ class Tracks(Layer):
         # updated before the properties are. properties should always contain
         # a track_id key
         if self.color_by not in self.properties_to_color_by:
-            self.color_by = 'track_id'
+            self._color_by = 'track_id'
 
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = self._manager.vertex_properties(self.color_by)
