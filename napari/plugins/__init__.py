@@ -113,9 +113,8 @@ class PluginManager(_PM):
         """
 
         for spec_name, hook_caller in self.hooks.items():
-            spec_order = new_order.get(spec_name)
             order = []
-            for p in spec_order:
+            for p in new_order.get(spec_name, []):
                 order.append(p['plugin'])
                 hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
             if order:
