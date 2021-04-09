@@ -14,6 +14,39 @@ from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
 
 
+
+
+class SchemaVersion(str):
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise ValueError(trans._('must be a string in the form MAJOR.MINOR.PATCH', deferred=True))
+
+        parts = v.split(".")
+        if len(parts) != 3:
+            raise ValueError(trans._('must be a string in the form MAJOR.MINOR.PATCH', deferred=True))
+
+        for part in parts:
+            try:
+                int(part)
+            except Exception:
+                raise ValueError(trans._('MAJOR, MINOR, PATCH should be numbers!', deferred=True))
+
+        return SchemaVersion(v)
+
+    def __repr__(self):
+        return f'SchemaVersion({super().__repr__()})'
+
+    def as_tuple(self):
+        return tuple(int(p) for p in  self.split('.'))
+
+
+
 class Theme(str):
     """
     Custom theme type to dynamically load all installed themes.
@@ -222,3 +255,29 @@ class PluginsSettings(BaseNapariSettings):
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]
+
+
+class Test(BaseNapariSettings):
+    """Plugins Settings."""
+
+    schema_version: SchemaVersion = "0.1.0"
+    plugins_call_order: List[str] = Field(
+        [],
+        title=trans._("Plugin call order"),
+        description=trans._("Sort plugins call order"),
+    )
+
+    class Config:
+        # Pydantic specific configuration
+        title = trans._("Plugins")
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version', 'plugins_call_order']
+
+
+model = Test()
+print([model.schema_version, model.schema_version.as_tuple()])
+
+model = Test(schema_version="1.2.3")
+print([model.schema_version, model.schema_version.as_tuple()])
