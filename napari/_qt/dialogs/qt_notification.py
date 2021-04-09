@@ -82,13 +82,15 @@ class NapariQtNotification(QDialog):
 
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
+        self.qt_viewer = None
         for wdg in QApplication.topLevelWidgets():
             if isinstance(wdg, QMainWindow):
                 try:
                     # TODO: making the canvas the parent makes it easier to
                     # move/resize, but also means that the notification can get
                     # clipped on the left if the canvas is too small.
-                    canvas = wdg.centralWidget().children()[1].canvas.native
+                    self.qt_viewer = wdg.centralWidget().children()[1]
+                    canvas = self.qt_viewer.canvas.native
                     self.setParent(canvas)
                     canvas.resized.connect(self.move_to_bottom_right)
                     break
@@ -315,6 +317,19 @@ class NapariQtNotification(QDialog):
 
         if isinstance(notification, ErrorNotification):
 
+            def debug_tb(parent=None):
+                from ..utils import event_hook_removed
+
+                parent.qt_viewer.toggle_console_visibility()
+                import qtpy
+
+                qtpy.QtCore.QCoreApplication.processEvents()
+                with event_hook_removed():
+                    parent.qt_viewer.console.shell.debugger(force=True)
+                #     print("Entering debugger. Type 'q' to return to napari.\n")
+                #     pdb.post_mortem(notification.exception.__traceback__)
+                #     print("\nDebugging finished.  Napari active again.")
+
             def show_tb(parent):
                 tbdialog = QDialog(parent=parent.parent())
                 tbdialog.setModal(True)
@@ -326,11 +341,16 @@ class NapariQtNotification(QDialog):
                 text = QTextEdit()
                 text.setHtml(notification.as_html())
                 text.setReadOnly(True)
+                btn = QPushButton('Enter Debugger')
+                btn.clicked.connect(debug_tb)
+                btn.setMaximumWidth(150)
                 tbdialog.layout().addWidget(text)
+                tbdialog.layout().addWidget(btn, 0, Qt.AlignRight)
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
                 (trans._('View Traceback'), show_tb),
+                (trans._('Debug'), debug_tb),
             )
         else:
             actions = notification.actions
