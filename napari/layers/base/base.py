@@ -1,7 +1,9 @@
+import inspect
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
+from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
@@ -23,6 +25,41 @@ from ..utils.layer_utils import (
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
+
+
+def _find_layer_source() -> Source:
+    """Traverse calling stack looking for a magicgui FunctionGui."""
+    naproot = str(Path(__file__).parent.parent.parent)
+    for finfo in reversed(inspect.stack()[2:8]):
+        floc = finfo.frame.f_locals
+        if naproot not in finfo.filename:
+            continue
+        # came through `viewer.open`
+        if finfo.function == '_add_layers_with_plugins':
+            hookimpl = floc.get('_hook')
+            return Source(
+                method='open',
+                path=floc.get('filename'),
+                plugin=hookimpl.plugin_name if hookimpl else None,
+                kwargs={
+                    'stack': floc.get('stack'),
+                    'plugin': floc.get('plugin'),
+                    'layer_type': floc.get('layer_type'),
+                    'kwargs': floc.get('kwargs'),
+                },
+            )
+        # came through `viewer.open_sample`
+        elif finfo.function == 'open_sample':
+            return Source(
+                method='open_sample',
+                path=floc.get('sample'),
+                plugin=floc.get('plugin'),
+                kwargs=floc.get('kwargs'),
+            )
+        elif finfo.function.startswith('add_'):
+            return Source(method=finfo.function)
+
+    return Source()
 
 
 class Layer(KeymapProvider, MousemapProvider, ABC):
@@ -170,7 +207,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         multiscale=False,
     ):
         super().__init__()
-
+        self._source = _find_layer_source()
+        print(self._source)
         if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
