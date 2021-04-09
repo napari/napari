@@ -71,13 +71,19 @@ class PluginManager(_PM):
 
         """
 
-        return {
-            spec_name: [
-                {'plugin': impl.plugin_name, 'enabled': impl.enabled}
-                for impl in reversed(caller.get_hookimpls())
-            ]
-            for spec_name, caller in self.hooks.items()
-        }
+        order = {}
+        for spec_name, caller in self.hooks.items():
+            # no need to save call order unless we only use first result
+            if not caller.is_firstresult:
+                continue
+            impls = caller.get_hookimpls()
+            # no need to save call order if there is only a single item
+            if len(impls) > 1:
+                order[spec_name] = [
+                    {'plugin': impl.plugin_name, 'enabled': impl.enabled}
+                    for impl in reversed(impls)
+                ]
+        return order
 
     def set_call_order(self, new_order: CallOrderDict):
         """Sets the plugin manager call order to match SETTINGS plugin values.
