@@ -153,9 +153,7 @@ class QtHookImplementationListWidget(QListWidget):
     """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
-    on_changed = (
-        Signal()
-    )  # emitted when user changes whether plugin is enabled.
+    on_changed = Signal()  # when user changes whether plugin is enabled.
 
     def __init__(
         self,
