@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from napari.utils.translations import (
+    TranslationString,
     _get_display_name,
     _is_valid_locale,
     _load_language,
@@ -23,7 +24,7 @@ es_CO_po = r"""msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2021-02-18 19:00\n"
-"PO-Revision-Date:  2021-02-18 19:00\n"
+"PO-Revision-Date: 2021-04-08 08:14-0500\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -33,25 +34,52 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Language: es_CO\n"
 
-#: /
-msgid "MORE ABOUT NAPARI"
+#: Test for singular
+msgid "More about napari"
 msgstr "Más sobre napari"
+
+#: Test for singular with context
+msgctxt "singular-context"
+msgid "More about napari with context"
+msgstr "Más sobre napari con contexto"
+
+#: Test for singular with variables
+msgid "More about napari with {variable}"
+msgstr "Más sobre napari con {variable}"
+
+#: Test for singular with and context variables
+msgctxt "singular-context-variables"
+msgid "More about napari with context and {variable}"
+msgstr "Más sobre napari con contexto y {variable}"
+
+#: Test for plural
+msgid "I have napari"
+msgid_plural "I have naparis"
+msgstr[0] "Tengo napari"
+msgstr[1] "Tengo naparis"
+
+#: Test for singular with context
+msgctxt "plural-context"
+msgid "I have napari with context"
+msgid_plural "I have naparis with context"
+msgstr[0] "Tengo napari con contexto"
+msgstr[1] "Tengo naparis con contexto"
+
+#: Test for plural with variables
+msgid "I have {n} napari with {variable}"
+msgid_plural "I have {n} naparis with {variable}"
+msgstr[0] "Tengo {n} napari con {variable}"
+msgstr[1] "Tengo {n} naparis con {variable}"
+
+#: Test for singular with and context variables
+msgctxt "plural-context-variables"
+msgid "I have {n} napari with {variable} and context"
+msgid_plural "I have {n} naparis with {variable} and context"
+msgstr[0] "Tengo {n} napari con {variable} y contexto"
+msgstr[1] "Tengo {n} naparis con {variable} y contexto"
 """
 
-es_CO_mo = (
-    b"\xde\x12\x04\x95\x00\x00\x00\x00\x02\x00\x00\x00\x1c\x00\x00\x00,"
-    b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00<\x00"
-    b"\x00\x00\x11\x00\x00\x00=\x00\x00\x00[\x01\x00\x00O\x00\x00\x00\x11"
-    b"\x00\x00\x00\xab\x01\x00\x00\x00"
-    b"MORE ABOUT NAPARI\x00Project-Id-Version:  \n"
-    b"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-    b"POT-Creation-Date: 2021-02-18 19:00+0000\n"
-    b"PO-Revision-Date: 2021-02-18 19:00+0000\n"
-    b"Last-Translator: \nLanguage: es_CO\nLanguage-Team: \n"
-    b"Plural-Forms: nplurals=2; plural=(n != 1)\nMIME-Version: 1.0\n"
-    b"Content-Type: text/plain; charset=utf-8\nContent-Transfer-Encoding: 8bit"
-    b"\nGenerated-By: Babel 2.9.0\n\x00M\xc3\xa1s sobre napari\x00"
-)
+es_CO_mo = b'\xde\x12\x04\x95\x00\x00\x00\x00\t\x00\x00\x00\x1c\x00\x00\x00d\x00\x00\x00\r\x00\x00\x00\xac\x00\x00\x00\x00\x00\x00\x00\xe0\x00\x00\x00\x1c\x00\x00\x00\xe1\x00\x00\x00D\x00\x00\x00\xfe\x00\x00\x00\x11\x00\x00\x00C\x01\x00\x00!\x00\x00\x00U\x01\x00\x00E\x00\x00\x00w\x01\x00\x00u\x00\x00\x00\xbd\x01\x00\x00/\x00\x00\x003\x02\x00\x00H\x00\x00\x00c\x02\x00\x00\x0e\x01\x00\x00\xac\x02\x00\x00\x1a\x00\x00\x00\xbb\x03\x00\x00@\x00\x00\x00\xd6\x03\x00\x00\x11\x00\x00\x00\x17\x04\x00\x00 \x00\x00\x00)\x04\x00\x004\x00\x00\x00J\x04\x00\x00V\x00\x00\x00\x7f\x04\x00\x00\x1e\x00\x00\x00\xd6\x04\x00\x00+\x00\x00\x00\xf5\x04\x00\x00\x01\x00\x00\x00\t\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x08\x00\x00\x00\x06\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x02\x00\x00\x00\x00I have napari\x00I have naparis\x00I have {n} napari with {variable}\x00I have {n} naparis with {variable}\x00More about napari\x00More about napari with {variable}\x00plural-context\x04I have napari with context\x00I have naparis with context\x00plural-context-variables\x04I have {n} napari with {variable} and context\x00I have {n} naparis with {variable} and context\x00singular-context\x04More about napari with context\x00singular-context-variables\x04More about napari with context and {variable}\x00Project-Id-Version: \nPO-Revision-Date: 2021-04-08 08:14-0500\nLanguage-Team: \nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\nX-Generator: Poedit 2.4.2\nLast-Translator: \nPlural-Forms: nplurals=2; plural=(n != 1);\nLanguage: es_CO\n\x00Tengo napari\x00Tengo naparis\x00Tengo {n} napari con {variable}\x00Tengo {n} naparis con {variable}\x00M\xc3\xa1s sobre napari\x00M\xc3\xa1s sobre napari con {variable}\x00Tengo napari con contexto\x00Tengo naparis con contexto\x00Tengo {n} napari con {variable} y contexto\x00Tengo {n} naparis con {variable} y contexto\x00M\xc3\xa1s sobre napari con contexto\x00M\xc3\xa1s sobre napari con contexto y {variable}\x00'
 
 
 @pytest.fixture
@@ -116,76 +144,6 @@ def test_is_valid_locale_invalid():
     assert not _is_valid_locale("bar")
 
 
-def test_locale_valid_singular(trans):
-    # Test singular method
-    expected_result = "Más sobre napari"
-    result = trans.gettext("MORE ABOUT NAPARI")
-    assert result == expected_result
-
-    # Test singular method shorthand
-    result = trans._("MORE ABOUT NAPARI")
-    assert result == expected_result
-
-
-def test_locale_invalid():
-    with pytest.warns(UserWarning):
-        translator._set_locale(TEST_LOCALE)
-        trans = translator.load()
-        result = trans._("BOO")
-        assert result == "BOO"
-
-
-def test_locale_n_runs(trans):
-    # Test plural method
-    n = 2
-    string = "MORE ABOUT NAPARI"
-    plural = "MORE ABOUT NAPARIS"
-    result = trans.ngettext(string, plural, n)
-    assert result == plural
-
-    # Test plural method shorthand
-    result = trans._n(string, plural, n)
-    assert result == plural
-
-
-def test_locale_p_runs(trans):
-    # Test context singular method
-    context = "context"
-    string = "MORE ABOUT NAPARI"
-    py37_result = "Más sobre napari"
-    result = trans.pgettext(context, string)
-
-    # Python 3.7 or lower does not offer translations based on context
-    # so pgettext, or npgettext are not available. We fallback to the
-    # singular and plural versions without context. For these cases:
-    # `pgettext` falls back to `gettext` and `npgettext` to `gettext`
-    if PY37_OR_LOWER:
-        assert result == py37_result
-    else:
-        assert result == string
-
-    # Test context singular method shorthand
-    result = trans._p(context, string)
-    if PY37_OR_LOWER:
-        assert result == py37_result
-    else:
-        assert result == string
-
-
-def test_locale_np_runs(trans):
-    # Test plural context method
-    n = 2
-    context = "context"
-    string = "MORE ABOUT NAPARI"
-    plural = "MORE ABOUT NAPARIS"
-    result = trans.npgettext(context, string, plural, n)
-    assert result == plural
-
-    # Test plural context method shorthand
-    result = trans._np(context, string, plural, n)
-    assert result == plural
-
-
 def test_load_language_valid(tmp_path):
     # This is valid content
     data = """
@@ -209,3 +167,250 @@ def test_load_language_invalid(tmp_path):
 
     with pytest.warns(UserWarning):
         _load_language(temp_config_path)
+
+
+def test_locale_invalid():
+    with pytest.warns(UserWarning):
+        translator._set_locale(TEST_LOCALE)
+        trans = translator.load()
+        result = trans._("BOO")
+        assert result == "BOO"
+
+
+# Test trans methods
+# ------------------
+def test_locale_singular(trans):
+    expected_result = "Más sobre napari"
+    result = trans._("More about napari")
+    assert result == expected_result
+
+
+def test_locale_singular_with_format(trans):
+    variable = 1
+    singular = "More about napari with {variable}"
+    expected_result = f"Más sobre napari con {variable}"
+    result = trans._(singular, variable=variable)
+    assert result == expected_result
+
+
+def test_locale_singular_deferred_with_format(trans):
+    variable = 1
+    singular = "More about napari with {variable}"
+    original_result = f"More about napari with {variable}"
+    translated_result = f"Más sobre napari con {variable}"
+    result = trans._(singular, deferred=True, variable=variable)
+    assert isinstance(result, TranslationString)
+    assert result.translation() == translated_result
+    assert result.value() == original_result
+    assert str(result) == original_result
+
+
+def test_locale_singular_context(trans):
+    context = "singular-context"
+    singular = "More about napari with context"
+
+    if PY37_OR_LOWER:
+        # Context not supported on this version
+        expected_result = singular
+    else:
+        expected_result = "Más sobre napari con contexto"
+
+    result = trans._p(context, singular)
+    assert result == expected_result
+
+
+def test_locale_singular_context_with_format(trans):
+    context = "singular-context-variables"
+    variable = 1
+    singular = "More about napari with context and {variable}"
+
+    if PY37_OR_LOWER:
+        # Context not supported on this version
+        expected_result = singular.format(variable=variable)
+    else:
+        expected_result = f"Más sobre napari con contexto y {variable}"
+
+    result = trans._p(context, singular, variable=variable)
+    assert result == expected_result
+
+
+def test_locale_singular_context_deferred_with_format(trans):
+    context = "singular-context-variables"
+    variable = 1
+    singular = "More about napari with context and {variable}"
+    original_result = f"More about napari with context and {variable}"
+
+    if PY37_OR_LOWER:
+        # Context not supported on this version
+        translated_result = original_result
+    else:
+        translated_result = f"Más sobre napari con contexto y {variable}"
+
+    result = trans._p(context, singular, deferred=True, variable=variable)
+    assert isinstance(result, TranslationString)
+    assert result.translation() == translated_result
+    assert result.value() == original_result
+    assert str(result) == original_result
+
+
+def test_locale_plural(trans):
+    singular = "I have napari"
+    plural = "I have naparis"
+
+    n = 1
+    result = trans._n(singular, plural, n=n)
+    expected_result = "Tengo napari"
+    assert result == expected_result
+
+    n = 2
+    result_plural = trans._n(singular, plural, n=n)
+    expected_result_plural = "Tengo naparis"
+    assert result_plural == expected_result_plural
+
+
+def test_locale_plural_with_format(trans):
+    singular = "I have {n} napari with {variable}"
+    plural = "I have {n} naparis with {variable}"
+    variable = 1
+
+    n = 1
+    result = trans._n(singular, plural, n=n, variable=variable)
+    expected_result = f"Tengo {n} napari con {variable}"
+    assert result == expected_result
+
+    n = 2
+    result_plural = trans._n(singular, plural, n=n, variable=variable)
+    expected_result_plural = f"Tengo {n} naparis con {variable}"
+    assert result_plural == expected_result_plural
+
+
+def test_locale_plural_deferred_with_format(trans):
+    variable = 1
+    singular = "I have {n} napari with {variable}"
+    plural = "I have {n} naparis with {variable}"
+
+    n = 1
+    original_result = singular.format(n=n, variable=variable)
+    result = trans._n(singular, plural, n=n, deferred=True, variable=variable)
+    expected_result = f"Tengo {n} napari con {variable}"
+    assert isinstance(result, TranslationString)
+    assert result.translation() == expected_result
+    assert result.value() == original_result
+    assert str(result) == original_result
+
+    n = 2
+    original_result_plural = plural.format(n=n, variable=variable)
+    result_plural = trans._n(
+        singular, plural, n=n, deferred=True, variable=variable
+    )
+    expected_result_plural = f"Tengo {n} naparis con {variable}"
+    assert isinstance(result, TranslationString)
+    assert result_plural.translation() == expected_result_plural
+    assert result_plural.value() == original_result_plural
+    assert str(result_plural) == original_result_plural
+
+
+def test_locale_plural_context(trans):
+    context = "plural-context"
+    singular = "I have napari with context"
+    plural = "I have naparis with context"
+
+    n = 1
+    result = trans._np(context, singular, plural, n=n)
+    expected_res = singular if PY37_OR_LOWER else "Tengo napari con contexto"
+    assert result == expected_res
+
+    n = 2
+    result_plural = trans._np(context, singular, plural, n=n)
+    expected_res = plural if PY37_OR_LOWER else "Tengo naparis con contexto"
+    assert result_plural == expected_res
+
+
+def test_locale_plural_context_with_format(trans):
+    context = "plural-context-variables"
+    singular = "I have {n} napari with {variable} and context"
+    plural = "I have {n} naparis with {variable} and context"
+    variable = 1
+
+    n = 1
+    result = trans._np(context, singular, plural, n=n, variable=variable)
+    if PY37_OR_LOWER:
+        expected_result = singular.format(n=n, variable=variable)
+    else:
+        expected_result = f"Tengo {n} napari con {variable} y contexto"
+
+    assert result == expected_result
+
+    n = 2
+    result_plural = trans._np(
+        context, singular, plural, n=n, variable=variable
+    )
+    if PY37_OR_LOWER:
+        expected_result_plural = plural.format(n=n, variable=variable)
+    else:
+        expected_result_plural = f"Tengo {n} naparis con {variable} y contexto"
+
+    assert result_plural == expected_result_plural
+
+
+def test_locale_plural_context_deferred_with_format(trans):
+    context = "plural-context-variables"
+    variable = 1
+    singular = "I have {n} napari with {variable} and context"
+    plural = "I have {n} naparis with {variable} and context"
+
+    n = 1
+    original_result = singular.format(n=n, variable=variable)
+    result = trans._np(
+        context, singular, plural, n=n, deferred=True, variable=variable
+    )
+    if PY37_OR_LOWER:
+        expected_result = original_result
+    else:
+        expected_result = f"Tengo {n} napari con {variable} y contexto"
+
+    assert isinstance(result, TranslationString)
+    assert result.translation() == expected_result
+    assert result.value() == original_result
+    assert str(result) == original_result
+
+    n = 2
+    original_result_plural = plural.format(n=n, variable=variable)
+    result_plural = trans._np(
+        context, singular, plural, n=n, deferred=True, variable=variable
+    )
+    if PY37_OR_LOWER:
+        expected_result_plural = original_result_plural
+    else:
+        expected_result_plural = f"Tengo {n} naparis con {variable} y contexto"
+
+    assert isinstance(result, TranslationString)
+    assert result_plural.translation() == expected_result_plural
+    assert result_plural.value() == original_result_plural
+    assert str(result_plural) == original_result_plural
+
+
+# Deferred strings in exceptions
+# ------------------------------
+def test_exception_string(trans):
+    expected_result = "Más sobre napari"
+    result = trans._("MORE ABOUT NAPARI", deferred=True)
+    assert str(result) != expected_result
+    assert str(result) == "MORE ABOUT NAPARI"
+
+    with pytest.raises(ValueError) as err:
+        raise ValueError(result)
+
+    assert isinstance(err.value.args[0], TranslationString)
+
+
+# Test TranslationString
+# ----------------------
+def test_translation_string_exceptions():
+    with pytest.raises(ValueError):
+        TranslationString()
+
+
+def test_bundle_exceptions(trans):
+    with pytest.raises(ValueError):
+        trans._dnpgettext()

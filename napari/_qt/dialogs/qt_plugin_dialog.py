@@ -280,7 +280,7 @@ class QPluginList(QListWidget):
             item.outdated = True
             widg = self.itemWidget(item)
             update_btn = QPushButton(
-                trans._("update (v{latest})").format(latest=latest), widg
+                trans._("update (v{latest})", latest=latest), widg
             )
             update_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
             update_btn.clicked.connect(
@@ -446,7 +446,7 @@ class QtPluginDialog(QDialog):
     def _update_count_in_label(self):
         count = self.available_list.count()
         self.avail_label.setText(
-            trans._("Available Plugins ({count})").format(count=count)
+            trans._("Available Plugins ({count})", count=count)
         )
 
     def eventFilter(self, watched, event):

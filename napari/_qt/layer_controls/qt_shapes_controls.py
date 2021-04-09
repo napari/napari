@@ -178,8 +178,8 @@ class QtShapesControls(QtLayerControls):
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip=trans._("Delete selected shapes ({key})").format(
-                key=KEY_SYMBOLS['Backspace']
+            tooltip=trans._(
+                "Delete selected shapes ({key})", key=KEY_SYMBOLS['Backspace']
             ),
         )
 
@@ -293,7 +293,7 @@ class QtShapesControls(QtLayerControls):
             mode_buttons[event.mode].setChecked(True)
         else:
             raise ValueError(
-                trans._("Mode '{mode}'not recognized").format(mode=event.mode)
+                trans._("Mode '{mode}'not recognized", mode=event.mode)
             )
 
     def changeFaceColor(self, color: np.ndarray):
