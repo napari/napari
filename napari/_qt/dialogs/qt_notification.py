@@ -82,15 +82,13 @@ class NapariQtNotification(QDialog):
 
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
-        self.qt_viewer = None
         for wdg in QApplication.topLevelWidgets():
             if isinstance(wdg, QMainWindow):
                 try:
                     # TODO: making the canvas the parent makes it easier to
                     # move/resize, but also means that the notification can get
                     # clipped on the left if the canvas is too small.
-                    self.qt_viewer = wdg.centralWidget().children()[1]
-                    canvas = self.qt_viewer.canvas.native
+                    canvas = wdg.centralWidget().children()[1].canvas.native
                     self.setParent(canvas)
                     canvas.resized.connect(self.move_to_bottom_right)
                     break
@@ -335,9 +333,7 @@ class NapariQtNotification(QDialog):
                         'Now Debugging. Please quit debugger in console '
                         'to continue'
                     )
-                    QApplication.processEvents()
-                    QApplication.processEvents()
-                    debug_tb(notification.exception.__traceback__)
+                    _debug_tb(notification.exception.__traceback__)
                     btn.setText('Enter Debugger')
 
                 btn.clicked.connect(_enter_debug_mode)
@@ -372,11 +368,13 @@ class NapariQtNotification(QDialog):
             cls.from_notification(notification).show()
 
 
-def debug_tb(tb):
+def _debug_tb(tb):
     import pdb
 
     from ..utils import event_hook_removed
 
+    QApplication.processEvents()
+    QApplication.processEvents()
     with event_hook_removed():
         print("Entering debugger. Type 'q' to return to napari.\n")
         pdb.post_mortem(tb)
