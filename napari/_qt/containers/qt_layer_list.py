@@ -6,8 +6,8 @@ from qtpy.QtCore import QSortFilterProxyModel, Qt
 
 from ...layers import Layer
 from ...utils.translations import trans
+from ._base_item_model import SortRole, _BaseEventedItemModel
 from ._layer_delegate import LayerDelegate
-from .qt_layer_model import SortRole
 from .qt_list_view import QtListView
 
 if TYPE_CHECKING:
@@ -16,10 +16,26 @@ if TYPE_CHECKING:
     from ...components.layerlist import LayerList
 
 
+class ReverseProxyModel(QSortFilterProxyModel):
+    """Proxy Model that reverses the view order of a _BaseEventedItemModel."""
+
+    def __init__(self, model: _BaseEventedItemModel) -> None:
+        super().__init__()
+        self.setSourceModel(model)
+        self.setSortRole(SortRole)
+        self.sort(0, Qt.DescendingOrder)
+
+    def dropMimeData(self, data, action, destRow, col, parent):
+        """Handle destination row for dropping with reversed indices."""
+        row = 0 if destRow == -1 else self.sourceModel().rowCount() - destRow
+        return self.sourceModel().dropMimeData(data, action, row, col, parent)
+
+
 class QtLayerList(QtListView[Layer]):
     """QItemView subclass specialized for the LayerList.
 
-    This is as mostly for targetting with QSS, and applying the delegate
+    This is as mostly for targetting with QSS, applying the delegate and
+    reversing the view with ReverseProxyModel.
     """
 
     def __init__(self, root: LayerList, parent: QWidget = None):
@@ -27,11 +43,6 @@ class QtLayerList(QtListView[Layer]):
         self.setItemDelegate(LayerDelegate())
         self.setToolTip(trans._('Layer list'))
 
-        # This reverses the order of the items in the view, so items at the
-        # end of the list are on top.  See also the couple mimeData
-        # overrides in QtLayerListModel
-        self._proxy_model = QSortFilterProxyModel()
-        self._proxy_model.setSourceModel(self.model())
-        self._proxy_model.setSortRole(SortRole)
-        self.setModel(self._proxy_model)
-        self._proxy_model.sort(0, Qt.DescendingOrder)
+        # This reverses the order of the items in the view,
+        # so items at the end of the list are at the top.
+        self.setModel(ReverseProxyModel(self.model()))

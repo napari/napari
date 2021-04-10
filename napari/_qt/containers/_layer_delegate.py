@@ -43,7 +43,8 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
 from ..qt_resources import QColoredSVGIcon
-from .qt_layer_model import LayerRole, ThumbnailRole
+from ._base_item_model import ItemRole
+from .qt_layer_model import ThumbnailRole
 
 if TYPE_CHECKING:
     from qtpy.QtCore import QModelIndex
@@ -85,7 +86,7 @@ class LayerDelegate(QStyledItemDelegate):
 
     def get_layer_icon(self, option, index):
         """Add the appropriate QIcon to the item based on the layer type."""
-        layer = index.data(LayerRole)
+        layer = index.data(ItemRole)
         if hasattr(layer, 'is_group') and layer.is_group():  # for layer trees
             expanded = option.widget.isExpanded(index)
             icon_name = 'folder-open' if expanded else 'folder'

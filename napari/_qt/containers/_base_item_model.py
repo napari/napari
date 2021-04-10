@@ -14,6 +14,9 @@ if TYPE_CHECKING:
 
 ItemType = TypeVar("ItemType")
 
+ItemRole = Qt.UserRole
+SortRole = Qt.UserRole + 1
+
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     """A QAbstractItemModel desigend to work with `SelectableEventedList`.
@@ -89,8 +92,10 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         if role == Qt.DisplayRole:
             return str(self.getItem(index))
-        if role == Qt.UserRole:
+        if role == ItemRole:
             return self.getItem(index)
+        if role == SortRole:
+            return index.row()
         return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
