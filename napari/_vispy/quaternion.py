@@ -25,7 +25,11 @@ def quaternion2euler(quaternion, degrees=False):
     )
 
     theta_2 = 2 * (q.w * q.y - q.z * q.x)
-    theta_2 = np.arcsin(theta_2) if abs(theta_2) < 1 else np.sign(theta_2) * np.pi / 2
+    theta_2 = (
+        np.arcsin(theta_2)
+        if abs(theta_2) < 1
+        else np.sign(theta_2) * np.pi / 2
+    )
 
     theta_3 = np.arctan2(
         2 * (q.w * q.x + q.y * q.z),

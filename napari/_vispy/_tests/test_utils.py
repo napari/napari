@@ -4,16 +4,18 @@ from vispy.util.quaternion import Quaternion
 from napari._vispy.quaternion import quaternion2euler
 
 
-def test_quaternion2euler(qtbot):
+def test_quaternion2euler():
     """Test quaternion to euler angle conversion."""
-    # Test roundtrip degrees
-    angles = (12, 53, 92)
-    q = Quaternion.create_from_euler_angles(*angles, degrees=True)
-    ea = quaternion2euler(q, degrees=True)
-    np.testing.assert_allclose(ea, angles)
+    # Test some sets of angles
+    angles_test = [[12, 53, 92], [180, -90, 0]]
 
-    # Test roundtrip radians
-    angles = (0.1, -0.2, 1.2)
-    q = Quaternion.create_from_euler_angles(*angles)
-    ea = quaternion2euler(q)
-    np.testing.assert_allclose(ea, angles)
+    for angles in angles_test:
+        q = Quaternion.create_from_euler_angles(*angles, degrees=True)
+        ea = quaternion2euler(q, degrees=True)
+        np.testing.assert_allclose(ea, angles)
+
+        # Test roundtrip radians
+        angles_rad = np.radians(angles)
+        q = Quaternion.create_from_euler_angles(*angles_rad)
+        ea = quaternion2euler(q)
+        np.testing.assert_allclose(ea, angles_rad)
