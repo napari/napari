@@ -22,8 +22,7 @@ class QtLayerListModel(QtListModel[Layer]):
         if role == Qt.CheckStateRole:  # the "checked" state of this item
             return Qt.Checked if layer.visible else Qt.Unchecked
         if role == Qt.SizeHintRole:  # determines size of item
-            h = 38
-            return QSize(228, h)
+            return QSize(200, 34)
         if role == ThumbnailRole:  # return the thumbnail
             thumbnail = layer.thumbnail
             return QImage(

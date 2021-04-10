@@ -617,18 +617,13 @@ QtListView QScrollBar:down-arrow {
 
 QtListView::item {
   padding: 4px;
-  margin: 2px 2px 2px 32px;
+  margin: 2px 2px 2px 2px;
   background-color: {{ foreground }};
   border: 1px solid {{ foreground }};
 }
 
-
 QtListView::item:hover {
   background-color: {{ lighten(foreground, 3) }};
-}
-
-QtListView::item::text {
-  font-size: 8px;
 }
 
 /* in the QSS context "active" means the window is active */
@@ -650,8 +645,10 @@ QtListView QLineEdit {
 }
 
 QtLayerList::item {
+  margin: 2px 2px 2px 28px;
   border-top-right-radius: 2px;
   border-bottom-right-radius: 2px;
+  border: 0;
 }
 
 /* the first one is the "partially checked" state */

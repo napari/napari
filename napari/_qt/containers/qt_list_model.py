@@ -66,7 +66,6 @@ class QtListModel(_BaseEventedItemModel[ItemType]):
 
         if isinstance(data, ItemMimeData):
             moving_indices = data.indices
-            from loguru import logger
 
             logger.debug(f"dropMimeData: indices {moving_indices} ➡ {destRow}")
 

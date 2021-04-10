@@ -42,6 +42,9 @@ class QtLayerList(QtListView[Layer]):
         super().__init__(root, parent)
         self.setItemDelegate(LayerDelegate())
         self.setToolTip(trans._('Layer list'))
+        font = self.font()
+        font.setPointSize(12)
+        self.setFont(font)
 
         # This reverses the order of the items in the view,
         # so items at the end of the list are at the top.
