@@ -317,19 +317,6 @@ class NapariQtNotification(QDialog):
 
         if isinstance(notification, ErrorNotification):
 
-            def debug_tb(parent=None):
-                from ..utils import event_hook_removed
-
-                parent.qt_viewer.toggle_console_visibility()
-                import qtpy
-
-                qtpy.QtCore.QCoreApplication.processEvents()
-                with event_hook_removed():
-                    parent.qt_viewer.console.shell.debugger(force=True)
-                #     print("Entering debugger. Type 'q' to return to napari.\n")
-                #     pdb.post_mortem(notification.exception.__traceback__)
-                #     print("\nDebugging finished.  Napari active again.")
-
             def show_tb(parent):
                 tbdialog = QDialog(parent=parent.parent())
                 tbdialog.setModal(True)
@@ -342,15 +329,24 @@ class NapariQtNotification(QDialog):
                 text.setHtml(notification.as_html())
                 text.setReadOnly(True)
                 btn = QPushButton('Enter Debugger')
-                btn.clicked.connect(debug_tb)
-                btn.setMaximumWidth(150)
+
+                def _enter_debug_mode():
+                    btn.setText(
+                        'Now Debugging. Please quit debugger in console '
+                        'to continue'
+                    )
+                    QApplication.processEvents()
+                    QApplication.processEvents()
+                    debug_tb(notification.exception.__traceback__)
+                    btn.setText('Enter Debugger')
+
+                btn.clicked.connect(_enter_debug_mode)
                 tbdialog.layout().addWidget(text)
                 tbdialog.layout().addWidget(btn, 0, Qt.AlignRight)
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
                 (trans._('View Traceback'), show_tb),
-                (trans._('Debug'), debug_tb),
             )
         else:
             actions = notification.actions
@@ -374,3 +370,14 @@ class NapariQtNotification(QDialog):
             >= SETTINGS.application.gui_notification_level
         ):
             cls.from_notification(notification).show()
+
+
+def debug_tb(tb):
+    import pdb
+
+    from ..utils import event_hook_removed
+
+    with event_hook_removed():
+        print("Entering debugger. Type 'q' to return to napari.\n")
+        pdb.post_mortem(tb)
+        print("\nDebugging finished.  Napari active again.")
