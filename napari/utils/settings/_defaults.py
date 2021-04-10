@@ -2,10 +2,11 @@
 """
 
 from enum import Enum
-from typing import List, Tuple
+from typing import Tuple
 
 from pydantic import BaseSettings, Field
 
+from ...plugins import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
@@ -33,15 +34,18 @@ class Theme(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string'))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         value = v.lower()
         themes = available_themes()
         if value not in available_themes():
             raise ValueError(
                 trans._(
-                    '"{value}" is not valid. It must be one of {themes}'
-                ).format(value=value, themes=", ".join(themes))
+                    '"{value}" is not valid. It must be one of {themes}',
+                    deferred=True,
+                    value=value,
+                    themes=", ".join(themes),
+                )
             )
 
         return value
@@ -74,8 +78,11 @@ class Language(str):
         if v not in language_packs:
             raise ValueError(
                 trans._(
-                    '"{value}" is not valid. It must be one of {language_packs}.'
-                ).format(value=v, language_packs=", ".join(language_packs))
+                    '"{value}" is not valid. It must be one of {language_packs}.',
+                    deferred=True,
+                    value=v,
+                    language_packs=", ".join(language_packs),
+                )
             )
 
         return v
@@ -196,10 +203,13 @@ class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
     schema_version = (0, 1, 0)
-    plugins_call_order: List[str] = Field(
-        [],
-        title=trans._("Plugin call order"),
-        description=trans._("Sort plugins call order"),
+
+    call_order: CallOrderDict = Field(
+        None,
+        title=trans._("Plugin sort order"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called.",
+        ),
     )
 
     class Config:
@@ -208,7 +218,7 @@ class PluginsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'plugins_call_order']
+        preferences_exclude = ['schema_version']
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

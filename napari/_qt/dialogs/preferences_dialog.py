@@ -20,6 +20,10 @@ from ...utils.translations import trans
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
+    ui_schema = {
+        "call_order": {"ui:widget": "plugins"},
+    }
+
     resized = Signal(QSize)
     closed = Signal()
 
@@ -79,28 +83,60 @@ class PreferencesDialog(QDialog):
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-        # Because there are multiple pages, need to keep a list of values sets.
-        self._values_orig_set_list = []
-        self._values_set_list = []
-        for _key, setting in SETTINGS.schemas().items():
-            schema = json.loads(setting['json_schema'])
-            # Need to remove certain properties that will not be displayed on the GUI
-            properties = schema.pop('properties')
-            model = setting['model']
-            values = model.dict()
-            napari_config = getattr(model, "NapariConfig", None)
-            if napari_config is not None:
-                for val in napari_config.preferences_exclude:
-                    properties.pop(val)
-                    values.pop(val)
 
-            schema['properties'] = properties
-            self._values_orig_set_list.append(set(values.items()))
-            self._values_set_list.append(set(values.items()))
+        # Because there are multiple pages, need to keep a dictionary of values dicts.
+        # One set of keywords are for each page, then in each entry for a page, there are dicts
+        # of setting and its value.
+
+        self._values_orig_dict = {}
+        self._values_dict = {}
+        self._setting_changed_dict = {}
+
+        for page, setting in SETTINGS.schemas().items():
+            schema, values, properties = self.get_page_dict(setting)
+
+            self._setting_changed_dict[page] = {}
+            self._values_orig_dict[page] = values
+            self._values_dict[page] = values
 
             # Only add pages if there are any properties to add.
             if properties:
                 self.add_page(schema, values)
+
+    def get_page_dict(self, setting):
+        """Provides the schema, set of values for each setting, and the properties
+        for each setting.
+
+        Parameters
+        ----------
+        setting : dict
+            Dictionary of settings for a page within the settings manager.
+
+        Returns
+        -------
+        schema : dict
+            Json schema of the setting page.
+        values : dict
+            Dictionary of values currently set for each parameter in the settings.
+        properties : dict
+            Dictionary of properties within the json schema.
+
+        """
+
+        schema = json.loads(setting['json_schema'])
+        # Need to remove certain properties that will not be displayed on the GUI
+        properties = schema.pop('properties')
+        model = setting['model']
+        values = model.dict()
+        napari_config = getattr(model, "NapariConfig", None)
+        if napari_config is not None:
+            for val in napari_config.preferences_exclude:
+                properties.pop(val)
+                values.pop(val)
+
+        schema['properties'] = properties
+
+        return schema, values, properties
 
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
@@ -133,13 +169,18 @@ class PreferencesDialog(QDialog):
         """Restores the settings in place when dialog was launched."""
         # Need to check differences for each page.
         for n in range(self._stack.count()):
-            # Must set the current row so that the proper set list is updated
+            # Must set the current row so that the proper list is updated
             # in check differences.
             self._list.setCurrentRow(n)
-            self.check_differences(
-                self._values_orig_set_list[n],
-                self._values_set_list[n],
-            )
+            page = self._list.currentItem().text().split(" ")[0].lower()
+            # get new values for settings.  If they were changed from values at beginning
+            # of preference dialog session, change them back.
+            # Using the settings value seems to be the best way to get the checkboxes right
+            # on the plugin call order widget.
+            setting = SETTINGS.schemas()[page]
+            schema, new_values, properties = self.get_page_dict(setting)
+            self.check_differences(self._values_orig_dict[page], new_values)
+
         self._list.setCurrentRow(0)
         self.close()
 
@@ -171,41 +212,60 @@ class PreferencesDialog(QDialog):
         """
 
         builder = WidgetBuilder()
-        form = builder.create_form(schema, {})
+        form = builder.create_form(schema, self.ui_schema)
         # set state values for widget
         form.widget.state = values
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
-                set(d.items()),
-                self._values_set_list[self._list.currentIndex().row()],
+                d,
+                self._values_dict[schema["title"].lower()],
             )
         )
 
         return form
 
-    def check_differences(self, new_set, values_set):
+    def _values_changed(self, page, new_dict, old_dict):
+        """Loops through each setting in a page to determine if it changed.
+
+        Parameters
+        ----------
+        new_dict : dict
+            Dict that has the most recent changes by user. Each key is a setting value
+            and each item is the value.
+        old_dict : dict
+            Dict wtih values set at the begining of preferences dialog session.
+
+        """
+        for setting_name, value in new_dict.items():
+            if value != old_dict[setting_name]:
+                self._setting_changed_dict[page][setting_name] = value
+            elif (
+                value == old_dict[setting_name]
+                and setting_name in self._setting_changed_dict[page]
+            ):
+                self._setting_changed_dict[page].pop(setting_name)
+
+    def check_differences(self, new_dict, old_dict):
         """Changes settings in settings manager with changes from dialog.
 
         Parameters
         ----------
-        new_set : set
-            The set of new values, with tuples of key value pairs for each
-            setting.
-        values_set : set
-            The old set of values.
+        new_dict : dict
+            Dict that has the most recent changes by user. Each key is a setting parameter
+            and each item is the value.
+        old_dict : dict
+            Dict wtih values set at the beginning of the preferences dialog session.
         """
-
         page = self._list.currentItem().text().split(" ")[0].lower()
-        different_values = list(new_set - values_set)
+        self._values_changed(page, new_dict, old_dict)
+        different_values = self._setting_changed_dict[page]
 
         if len(different_values) > 0:
             # change the values in SETTINGS
-            for val in different_values:
+            for setting_name, value in different_values.items():
                 try:
-                    setattr(SETTINGS._settings[page], val[0], val[1])
-                    self._values_set_list[
-                        self._list.currentIndex().row()
-                    ] = new_set
+                    setattr(SETTINGS._settings[page], setting_name, value)
+                    self._values_dict[page] = new_dict
                 except:  # noqa: E722
                     continue
 

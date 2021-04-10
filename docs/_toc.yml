@@ -19,6 +19,7 @@
 
 - file: developers/index
   sections:
+    - file: developers/team
     - file: developers/benchmarks
     - file: developers/code_of_conduct
     - file: developers/code_of_conduct_reporting

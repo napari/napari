@@ -192,8 +192,8 @@ def linear_index(row_range, col_range):
 
     A linear index starts at the top left and procedes in a raster fashion.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     row_range : range
         Range of rows to be accessed.
     col_range : range

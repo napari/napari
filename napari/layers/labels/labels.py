@@ -314,6 +314,9 @@ class Labels(_image_base_class):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
+        # invalidate _all_vals to trigger re-generation
+        # in _raw_to_displayed
+        self._all_vals = np.array([])
         self.refresh()
         self.events.selected_label()
 
@@ -396,8 +399,9 @@ class Labels(_image_base_class):
             if np.issubdtype(data_level.dtype, np.floating):
                 raise TypeError(
                     trans._(
-                        "Only integer types are supported for Labels layers, but data contains {data_level_type}."
-                    ).format(data_level_type=data_level.dtype)
+                        "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
+                        data_level_type=data_level.dtype,
+                    )
                 )
             if data_level.dtype == bool:
                 int_data.append(data_level.astype(np.int8))
@@ -810,7 +814,7 @@ class Labels(_image_base_class):
 
         Parameters
         ----------
-        value: 3-tuple of arrays
+        value : 3-tuple of arrays
             The value is a 3-tuple containing:
 
             - a numpy multi-index, pointing to the array elements that were

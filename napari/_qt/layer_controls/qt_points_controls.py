@@ -147,8 +147,8 @@ class QtPointsControls(QtLayerControls):
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip=trans._("Delete selected points ({key})").format(
-                key=KEY_SYMBOLS['Backspace']
+            tooltip=trans._(
+                "Delete selected points ({key})", key=KEY_SYMBOLS['Backspace']
             ),
         )
 
@@ -228,7 +228,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        index : int
+        text : int
             Index of current marker symbol of points, eg: '+', '.', etc.
         """
         self.layer.symbol = self.symbolComboBox.currentData()
