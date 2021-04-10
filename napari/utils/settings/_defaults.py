@@ -2,10 +2,11 @@
 """
 
 from enum import Enum
-from typing import List, Tuple
+from typing import Tuple
 
 from pydantic import BaseSettings, Field
 
+from ...plugins import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
@@ -202,10 +203,13 @@ class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
     schema_version = (0, 1, 0)
-    plugins_call_order: List[str] = Field(
-        [],
-        title=trans._("Plugin call order"),
-        description=trans._("Sort plugins call order"),
+
+    call_order: CallOrderDict = Field(
+        None,
+        title=trans._("Plugin sort order"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called.",
+        ),
     )
 
     class Config:
@@ -214,7 +218,7 @@ class PluginsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'plugins_call_order']
+        preferences_exclude = ['schema_version']
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]
