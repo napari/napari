@@ -1,8 +1,8 @@
 from enum import Enum
+from typing import Optional
 
 import numpy as np
-from typing import Optional
-from pydantic import validator, PrivateAttr
+from pydantic import PrivateAttr, validator
 
 from ..events import EventedModel
 from ..events.custom_types import Array
