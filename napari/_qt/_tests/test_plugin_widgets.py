@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QWidget
 
 import napari
 from napari import Viewer, plugins
-from napari.plugins import hook_specifications
+from napari.plugins import hook_specifications, register_dock_widget
 
 
 class Widg1(QWidget):
@@ -52,7 +52,7 @@ def test_dock_widget_registration(
 
     with monkeypatch.context() as m:
         registered = {}
-        m.setattr(plugins, "dock_widgets", registered)
+        m.setattr(plugins._discovery, "dock_widgets", registered)
 
         class Plugin:
             @napari_hook_implementation
@@ -62,7 +62,7 @@ def test_dock_widget_registration(
         test_plugin_manager.register(Plugin)
 
         hook.call_historic(
-            result_callback=plugins.register_dock_widget, with_impl=True
+            result_callback=register_dock_widget, with_impl=True
         )
         if '[bad_' in request.node.name:
             assert len(recwarn) == 1

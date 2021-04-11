@@ -6,7 +6,7 @@ from typing import Tuple
 
 from pydantic import BaseSettings, Field
 
-from ...plugins import CallOrderDict
+from ...plugins._plugin_manager import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity

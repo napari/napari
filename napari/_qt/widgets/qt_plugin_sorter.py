@@ -1,7 +1,9 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
+from __future__ import annotations
+
 import re
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
@@ -20,12 +22,14 @@ from qtpy.QtWidgets import (
 )
 
 from ... import plugins
-from ...plugins import PluginManager
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
 from ..widgets.qt_eliding_label import ElidingLabel
+
+if TYPE_CHECKING:
+    from napari_plugin_engine import PluginManager
 
 
 def rst2html(text):
@@ -258,7 +262,7 @@ class QtPluginSorter(QWidget):
     ----------
     plugin_manager : PluginManager, optional
         An instance of a PluginManager. by default, the main
-        :class:`~napari.plugins.manager.PluginManager` instance
+        :class:`~napari.plugins.plugin_manager` instance
     parent : QWidget, optional
         Optional parent widget, by default None
     initial_hook : str, optional

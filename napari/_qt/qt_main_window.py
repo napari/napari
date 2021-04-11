@@ -23,6 +23,7 @@ from qtpy.QtWidgets import (
 )
 
 from .. import plugins
+from ..plugins import plugin_manager
 from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
@@ -65,11 +66,11 @@ class _QtMainWindow(QMainWindow):
         self._status_bar = self.statusBar()
 
         # set SETTINGS plugin defaults.
-        plugins.load_settings_plugin_defaults(SETTINGS)
+        SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
 
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
-            plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+            plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
     def _load_window_settings(self):
         """
@@ -434,7 +435,7 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
-        from ..plugins import _sample_data
+        from ..plugins._discovery import _sample_data
 
         open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
         for plugin_name, samples in _sample_data.items():

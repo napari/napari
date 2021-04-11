@@ -695,7 +695,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import _sample_data, available_samples
+        from ..plugins._discovery import _sample_data, available_samples
 
         try:
             data = _sample_data[plugin][sample]['data']
