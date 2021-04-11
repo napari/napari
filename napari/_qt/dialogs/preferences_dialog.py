@@ -76,6 +76,11 @@ class PreferencesDialog(QDialog):
         self.closed.emit()
         super().closeEvent(event)
 
+    def reject(self):
+        """Override to handle Escape."""
+        super().reject()
+        self.close()
+
     def resizeEvent(self, event):
         """Override to emit signal."""
         self.resized.emit(event.size())
