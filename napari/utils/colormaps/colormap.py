@@ -1,7 +1,8 @@
 from enum import Enum
 
 import numpy as np
-from pydantic import validator
+from typing import Optional
+from pydantic import validator, PrivateAttr
 
 from ..events import EventedModel
 from ..events.custom_types import Array
@@ -46,13 +47,13 @@ class Colormap(EventedModel):
     # fields
     colors: Array[float, (-1, 4)]
     name: str = 'custom'
-    display_name: str = None
+    _display_name: Optional[str] = PrivateAttr(None)
     interpolation: ColormapInterpolationMode = ColormapInterpolationMode.LINEAR
     controls: Array[float, (-1,)] = None
 
-    def __init__(self, colors, **data):
-        if data.get('display_name') is None:
-            data['display_name'] = data.get('name', 'custom')
+    def __init__(self, colors, display_name: Optional[str] = None, **data):
+        if display_name is None:
+            data['_display_name'] = data.get('name', 'custom')
 
         super().__init__(colors=colors, **data)
 
