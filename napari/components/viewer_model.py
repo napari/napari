@@ -695,12 +695,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins._discovery import _sample_data, available_samples
+        from ..plugins import plugin_manager
 
         try:
-            data = _sample_data[plugin][sample]['data']
+            data = plugin_manager._sample_data[plugin][sample]['data']
         except KeyError:
-            samples = available_samples()
+            samples = plugin_manager.available_samples()
             msg = trans._(
                 f"Plugin {plugin!r} does not provide sample data "
                 f"named {sample!r}. "

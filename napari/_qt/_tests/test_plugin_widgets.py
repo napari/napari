@@ -3,8 +3,7 @@ from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
 
 import napari
-from napari import Viewer, plugins
-from napari.plugins import hook_specifications, register_dock_widget
+from napari import Viewer
 
 
 class Widg1(QWidget):
@@ -38,55 +37,49 @@ dwidget_args = {
 }
 
 
-# test_plugin_manager and add_implementation fixtures are
-#     provided by napari_plugin_engine._testsupport
+# test_napari_plugin_manager from conftest.py
 # monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
 def test_dock_widget_registration(
-    arg, test_plugin_manager, monkeypatch, request, recwarn
+    arg, test_napari_plugin_manager, request, recwarn
 ):
     """Test that dock widgets get validated and registerd correctly."""
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(hook_specifications)
-    hook = test_plugin_manager.hook.napari_experimental_provide_dock_widget
 
-    with monkeypatch.context() as m:
-        registered = {}
-        m.setattr(plugins._discovery, "dock_widgets", registered)
+    class Plugin:
+        @napari_hook_implementation
+        def napari_experimental_provide_dock_widget():
+            return arg
 
-        class Plugin:
-            @napari_hook_implementation
-            def napari_experimental_provide_dock_widget():
-                return arg
+    test_napari_plugin_manager.register(Plugin)
+    test_napari_plugin_manager.discover_widgets()
+    widgets = test_napari_plugin_manager._dock_widgets
 
-        test_plugin_manager.register(Plugin)
-
-        hook.call_historic(
-            result_callback=register_dock_widget, with_impl=True
-        )
-        if '[bad_' in request.node.name:
-            assert len(recwarn) == 1
-            assert not registered
-        else:
-            assert len(recwarn) == 0
-            assert registered['Plugin']['Widg1'][0] == Widg1
-            if 'tuple_list' in request.node.name:
-                assert registered['Plugin']['Widg2'][0] == Widg2
+    if '[bad_' in request.node.name:
+        assert len(recwarn) == 1
+        assert not widgets
+    else:
+        assert len(recwarn) == 0
+        assert widgets['Plugin']['Widg1'][0] == Widg1
+        if 'tuple_list' in request.node.name:
+            assert widgets['Plugin']['Widg2'][0] == Widg2
 
 
 @pytest.fixture
-def test_plugin_widgets(monkeypatch):
+def test_plugin_widgets(monkeypatch, test_napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
-    with monkeypatch.context() as m:
-        dock_widgets = {
-            "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
-            "TestP2": {"Widg3": (Widg3, {})},
-        }
-        m.setattr(plugins, "dock_widgets", dock_widgets)
+    dock_widgets = {
+        "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
+        "TestP2": {"Widg3": (Widg3, {})},
+    }
+    monkeypatch.setattr(
+        test_napari_plugin_manager, "_dock_widgets", dock_widgets
+    )
 
-        function_widgets = {'TestP3': {'magic': magicfunc}}
-        m.setattr(plugins, "function_widgets", function_widgets)
-        yield
+    function_widgets = {'TestP3': {'magic': magicfunc}}
+    monkeypatch.setattr(
+        test_napari_plugin_manager, "_function_widgets", function_widgets
+    )
+    yield
 
 
 def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):

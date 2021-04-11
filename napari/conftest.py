@@ -332,3 +332,25 @@ def pytest_collection_modifyitems(session, config, items):
             at_end.append(items.pop(i))
 
     items.extend([x for _, x in sorted(zip(put_at_end, at_end))])
+
+
+@pytest.fixture
+def test_napari_plugin_manager(monkeypatch):
+    from unittest.mock import patch
+
+    import napari
+    from napari.plugins import NapariPluginManager
+
+    pm = NapariPluginManager()
+
+    # make it so that internal requests for the plugin_manager
+    # get this test version for the duration of the test.
+    monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
+    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
+    monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
+
+    # prevent discovery of plugins in the environment
+    # you can still use `pm.register` to explicitly register something.
+    with patch.object(pm, 'discover'):
+        pm._initialize()  # register our builtins
+        yield pm

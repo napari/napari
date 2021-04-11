@@ -5,7 +5,6 @@ wrap.
 import inspect
 import os
 import time
-from itertools import chain, repeat
 from typing import Dict
 
 from qtpy.QtCore import QPoint, QSize, Qt
@@ -22,7 +21,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .. import plugins
+from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..utils import config, perf
 from ..utils.io import imsave
@@ -435,10 +434,9 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close)
 
-        from ..plugins._discovery import _sample_data
-
+        plugin_manager.discover_sample_data()
         open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
-        for plugin_name, samples in _sample_data.items():
+        for plugin_name, samples in plugin_manager._sample_data.items():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -451,7 +449,7 @@ class Window:
                 if multiprovider:
                     action = QAction(display_name, parent=self._qt_window)
                 else:
-                    full_name = plugins.menu_item_template.format(
+                    full_name = plugin_menu_item_template.format(
                         plugin_name, display_name
                     )
                     action = QAction(full_name, parent=self._qt_window)
@@ -651,13 +649,10 @@ class Window:
             trans._('Add Dock Widget'), self._qt_window
         )
 
-        if not plugins.dock_widgets:
-            plugins.discover_dock_widgets()
+        plugin_manager.discover_widgets()
 
         # Add a menu item (QAction) for each available plugin widget
-        docks = zip(repeat("dock"), plugins.dock_widgets.items())
-        funcs = zip(repeat("func"), plugins.function_widgets.items())
-        for hook_type, (plugin_name, widgets) in chain(docks, funcs):
+        for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -670,7 +665,7 @@ class Window:
                 if multiprovider:
                     action = QAction(wdg_name, parent=self._qt_window)
                 else:
-                    full_name = plugins.menu_item_template.format(*key)
+                    full_name = plugin_menu_item_template.format(*key)
                     action = QAction(full_name, parent=self._qt_window)
 
                 def _add_widget(*args, key=key, hook_type=hook_type):
@@ -772,15 +767,15 @@ class Window:
         """
         from ..viewer import Viewer
 
-        Widget, dock_kwargs = plugins.get_plugin_widget(
+        Widget, dock_kwargs = plugin_manager.get_widget(
             plugin_name, widget_name
         )
         if not widget_name:
-            # if widget_name wasn't provided, `get_plugin_widget` will have
+            # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = list(plugins.dock_widgets[plugin_name])[0]
+            widget_name = list(plugin_manager._dock_widgets[plugin_name])[0]
 
-        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()
             return
@@ -820,12 +815,12 @@ class Window:
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
         """
-        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()
             return
 
-        func = plugins.function_widgets[plugin_name][widget_name]
+        func = plugin_manager._function_widgets[plugin_name][widget_name]
 
         # Add function widget
         self.add_function_widget(

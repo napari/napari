@@ -1,27 +1,11 @@
-from ._discovery import (
-    available_samples,
-    discover_dock_widgets,
-    discover_sample_data,
-    dock_widgets,
-    function_widgets,
-    get_plugin_widget,
-    register_dock_widget,
-)
-from ._plugin_manager import plugin_manager
+from ._plugin_manager import NapariPluginManager
 
-__all__ = [
-    'available_samples',
-    'discover_dock_widgets',
-    'dock_widgets',
-    'function_widgets',
-    'get_plugin_widget',
-    'menu_item_template',
-    'register_dock_widget',
-    "plugin_manager",
-]
+__all__ = ["plugin_manager", "menu_item_template"]
 
 
-discover_sample_data()
+# the main plugin manager instance for the `napari` plugin namespace.
+plugin_manager = NapariPluginManager()
+plugin_manager._initialize()
 
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
