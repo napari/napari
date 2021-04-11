@@ -1,4 +1,6 @@
 """Copy docs from the napari repo into the napari.github.io repo
+
+python -m copy-docs.py [dstdir]
 """
 
 import os
@@ -26,11 +28,13 @@ IGNORE = [
     osp.join('images', 'logo.png'),
 ]
 
+SRC = osp.dirname(__file__)
+
 
 def exclude_filter(path):
     """Exclude files in the ignore list and duplicated files."""
     for ignore in IGNORE:
-        if fnmatch(path, osp.join('**', ignore)):  # in ignore list
+        if fnmatch(path, osp.join(SRC, ignore)):  # in ignore list
             return True
     else:
         if osp.isdir(path) or osp.splitext(path)[1] != '.md':
@@ -108,18 +112,16 @@ def copy_paths(src, dst, paths, *, exclude=None):
 
 
 def main(args):
-    src = osp.dirname(__file__)
     dst = osp.join(
         osp.dirname(osp.dirname(osp.dirname(__file__))), 'napari.github.io'
     )
 
     try:
-        src = args[1]
-        dst = args[2]
+        dst = args[1]
     except IndexError:
         pass
 
-    copy_paths(src, dst, TO_COPY, exclude=exclude_filter)
+    copy_paths(SRC, dst, TO_COPY, exclude=exclude_filter)
 
 
 if __name__ == '__main__':
