@@ -159,6 +159,7 @@ def test_kwargs_passed(monkeypatch):
             order=(),
             axis_labels=(),
             show=True,
+            welcome=True,
         ),
         call().open(
             path='some/path',
