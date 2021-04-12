@@ -47,8 +47,9 @@ class ScreenshotDialog(QFileDialog):
                     self,
                     trans._("Confirm overwrite"),
                     trans._(
-                        "{save_path} already exists. Do you want to replace it?"
-                    ).format(save_path=save_path),
+                        "{save_path} already exists. Do you want to replace it?",
+                        save_path=save_path,
+                    ),
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.No,
                 )
