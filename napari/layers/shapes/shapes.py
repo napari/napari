@@ -16,7 +16,6 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
-from ...utils.progress import progress
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils.color_manager_utils import guess_continuous, map_property
@@ -1730,7 +1729,7 @@ class Shapes(Layer):
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, z in progress(shape_inputs):
+            for d, st, ew, ec, fc, z in shape_inputs:
                 sleep(0.5)
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
