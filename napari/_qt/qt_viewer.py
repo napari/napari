@@ -39,7 +39,6 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarVisual,
-    VispyWelcomeVisual,
     create_vispy_visual,
 )
 
@@ -171,6 +170,8 @@ class QtViewer(QSplitter):
         # Canvas widget to provide a welcome page
         self._canvas_overlay = QtCanvasOverlay(self, self.canvas)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
+        if welcome:
+            self._canvas_overlay.show_welcome()
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -215,8 +216,8 @@ class QtViewer(QSplitter):
         )
         self.canvas.connect(self.camera.on_draw)
 
-        # Add axes, scale bar and welcome visuals.
-        self._add_visuals(welcome)
+        # Add axes, scale bar
+        self._add_visuals()
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
@@ -277,14 +278,8 @@ class QtViewer(QSplitter):
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
         self.viewer.events.theme.connect(self.canvas._on_theme_change)
 
-    def _add_visuals(self, welcome: bool) -> None:
-        """Add visuals for axes, scale bar, and welcome text.
-
-        Parameters
-        ----------
-        welcome : bool
-            Show the welcome visual.
-        """
+    def _add_visuals(self) -> None:
+        """Add visuals for axes, scale bar, and welcome text."""
 
         self.axes = VispyAxesVisual(
             self.viewer,
@@ -297,17 +292,6 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-
-        self._show_welcome = welcome and config.allow_welcome_visual
-        if self._show_welcome:
-            self.welcome = VispyWelcomeVisual(
-                self.viewer, parent=self.view, order=-100
-            )
-            self.viewer.events.layers_change.connect(
-                self.welcome._on_visible_change
-            )
-            self.viewer.events.theme.connect(self.welcome._on_theme_change)
-            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""

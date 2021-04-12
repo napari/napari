@@ -37,7 +37,9 @@ class QtWelcomeWidget(QWidget):
         icon = QColoredSVGIcon.from_resources('logo_silhouette')
         self._image = QLabel()
         self._image.setPixmap(
-            icon.colored(theme=SETTINGS.appearance.theme).pixmap(300, 300)
+            icon.colored(
+                theme=SETTINGS.appearance.theme, theme_key='secondary'
+            ).pixmap(300, 300)
         )
         self._label = QtWelcomeLabel(
             trans._(
@@ -178,8 +180,8 @@ class QtCanvasOverlay(QWidget):
 
     def show_welcome(self):
         """Show welcome screen widget on stack."""
-        self._stack.setCurrentIndex(0)
+        self._stack.setCurrentIndex(1)
 
     def hide_welcome(self):
         """Hide welcome screen widget and display Canvas."""
-        self._stack.setCurrentIndex(1)
+        self._stack.setCurrentIndex(0)
