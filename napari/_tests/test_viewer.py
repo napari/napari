@@ -166,7 +166,7 @@ def test_screenshot(make_napari_viewer):
 
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(welcome=False)
     viewer.add_points(data=None)
     assert viewer.theme == 'dark'
 

@@ -453,7 +453,7 @@ def test_welcome(make_napari_viewer):
 @skip_local_popups
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
-    viewer = make_napari_viewer(show=True)
+    viewer = make_napari_viewer(show=True, welcome=False)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True)
@@ -476,7 +476,7 @@ def test_axes_visible(make_napari_viewer):
 @skip_local_popups
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
-    viewer = make_napari_viewer(show=True)
+    viewer = make_napari_viewer(show=True, welcome=False)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True)

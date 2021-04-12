@@ -274,13 +274,13 @@ class Window:
         Window menu.
     """
 
-    def __init__(self, viewer, *, show: bool = True):
+    def __init__(self, viewer, *, show: bool = True, welcome: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow()
-        self.qt_viewer = QtViewer(viewer, welcome=True)
+        self.qt_viewer = QtViewer(viewer, welcome=welcome)
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
