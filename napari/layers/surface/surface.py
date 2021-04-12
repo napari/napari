@@ -154,7 +154,9 @@ class Surface(IntensityVisualizationMixin, Layer):
                 trans._(
                     'Surface data tuple must be 2 or 3, specifying'
                     'vertices, faces, and optionally vertex values,'
-                    'instead got length {}.'.format(len(data))
+                    'instead got length {data_length}.',
+                    deferred=True,
+                    data_length=len(data),
                 )
             )
         self._vertices = data[0]
@@ -200,7 +202,9 @@ class Surface(IntensityVisualizationMixin, Layer):
                 trans._(
                     'Surface data tuple must be 2 or 3, specifying'
                     'vertices, faces, and optionally vertex values,'
-                    'instead got length {}.'.format(len(data))
+                    'instead got length {data_length}.',
+                    deferred=True,
+                    data_length=len(data),
                 )
             )
         self._vertices = data[0]
