@@ -15,6 +15,13 @@ from ..translations import _load_language, get_language_packs, trans
 
 
 class SchemaVersion(str):
+    """
+    Custom schema version type to handle both tuples and version strings.
+
+    Provides also a `as_tuple` method for convenience when doing version
+    comparison.
+    """
+
     def __new__(cls, value):
         if isinstance(value, (tuple, list)):
             value = ".".join(str(item) for item in value)
@@ -37,17 +44,32 @@ class SchemaVersion(str):
             v = ".".join(str(item) for item in v)
 
         if not isinstance(v, str):
-            raise ValueError()
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
 
         parts = v.split(".")
         if len(parts) != 3:
-            raise ValueError()
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
 
         for part in parts:
             try:
                 int(part)
             except Exception:
-                raise ValueError()
+                raise ValueError(
+                    trans._(
+                        "A schema version subparts must be positive integers or parseable as integers!"
+                    ),
+                    deferred=True,
+                )
 
         return cls(v)
 
