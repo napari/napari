@@ -244,6 +244,7 @@ class _QtMainWindow(QMainWindow):
         # For the Mac App this might need to be different
         process.setProgram(sys.executable)
         process.setArguments(sys.argv)
+        process.startDetached()
         self.close(quit_app=True)
 
 
