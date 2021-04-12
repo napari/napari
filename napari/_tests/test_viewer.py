@@ -164,25 +164,20 @@ def test_screenshot(make_napari_viewer):
     assert screenshot.ndim == 3
 
 
-def test_changing_theme(make_napari_viewer, qtbot):
+def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
     viewer = make_napari_viewer(show=False, welcome=False)
     viewer.add_points(data=None)
-    qtbot.wait(2000)
     size = viewer.window.qt_viewer.size()
     viewer.window.qt_viewer.setFixedSize(size)
 
     assert viewer.theme == 'dark'
-    qtbot.wait(2000)
     screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.theme == 'light'
-    qtbot.wait(2000)
     screenshot_light = viewer.screenshot(canvas_only=False)
 
-    print(screenshot_dark.shape)
-    print(screenshot_light.shape)
     equal = (screenshot_dark == screenshot_light).min(-1)
 
     # more than 99.5% of the pixels have changed
