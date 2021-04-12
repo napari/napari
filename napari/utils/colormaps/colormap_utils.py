@@ -442,8 +442,9 @@ def _increment_unnamed_colormap(
     if name == '[unnamed colormap]':
         past_names = [n for n in existing if n.startswith('[unnamed colormap')]
         name = f'[unnamed colormap {len(past_names)}]'
-        display_name = trans._("[unnamed colormap {number}]").format(
-            number=len(past_names)
+        display_name = trans._(
+            "[unnamed colormap {number}]",
+            number=len(past_names),
         )
 
     return name, display_name

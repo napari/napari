@@ -58,7 +58,6 @@ class QtBaseImageControls(QtLayerControls):
 
         for name, cm in AVAILABLE_COLORMAPS.items():
             if name in self.layer.colormaps:
-                print(cm._display_name, name)
                 comboBox.addItem(cm._display_name, name)
 
         comboBox.activated[str].connect(self.changeColor)
