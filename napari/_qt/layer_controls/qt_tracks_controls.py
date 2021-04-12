@@ -4,6 +4,7 @@ from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
+from ..utils import qt_signals_blocked
 from .qt_layer_controls_base import QtLayerControls
 
 MAX_TAIL_LENGTH = 300
@@ -133,7 +134,9 @@ class QtTracksControls(QtLayerControls):
     def _on_properties_change(self, event=None):
         """Change the properties that can be used to color the tracks."""
         with self.layer.events.properties.blocker():
-            self.color_by_combobox.clear()
+
+            with qt_signals_blocked(self.color_by_combobox):
+                self.color_by_combobox.clear()
             self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
     def _on_colormap_change(self, event=None):
