@@ -4,6 +4,7 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -150,9 +151,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         # assign mesh data and establish default behavior
         if len(data) not in (2, 3):
             raise ValueError(
-                'Surface data tuple must be 2 or 3, specifying'
-                'vertices, faces, and optionally vertex values,'
-                f'instead got length {len(data)}.'
+                trans._(
+                    'Surface data tuple must be 2 or 3, specifying'
+                    'vertices, faces, and optionally vertex values,'
+                    'instead got length {}.'.format(len(data))
+                )
             )
         self._vertices = data[0]
         self._faces = data[1]
@@ -194,9 +197,11 @@ class Surface(IntensityVisualizationMixin, Layer):
     def data(self, data):
         if len(data) not in (2, 3):
             raise ValueError(
-                'Surface data tuple must be 2 or 3, specifying'
-                'vertices, faces, and optionally vertex values,'
-                f'instead got length {len(data)}.'
+                trans._(
+                    'Surface data tuple must be 2 or 3, specifying'
+                    'vertices, faces, and optionally vertex values,'
+                    'instead got length {}.'.format(len(data))
+                )
             )
         self._vertices = data[0]
         self._faces = data[1]
