@@ -27,7 +27,7 @@ from qtpy.QtWidgets import (
 from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter
+from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -241,9 +241,11 @@ class _QtMainWindow(QMainWindow):
     def restart(self):
         """Restart the napari application in a detached process."""
         process = QProcess()
-        # For the Mac App this might need to be different
         process.setProgram(sys.executable)
-        process.setArguments(sys.argv)
+
+        if not running_as_bundled_app():
+            process.setArguments(sys.argv)
+
         process.startDetached()
         self.close(quit_app=True)
 
@@ -455,9 +457,9 @@ class Window:
             lambda: self._qt_window.close(quit_app=True)
         )
 
-        restartAction = QAction(trans._('Restart'), self._qt_window)
-        restartAction.setShortcut('Ctrl+R')
-        restartAction.triggered.connect(self._qt_window.restart)
+        if running_as_bundled_app():
+            restartAction = QAction(trans._('Restart'), self._qt_window)
+            restartAction.triggered.connect(self._qt_window.restart)
 
         closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
@@ -504,7 +506,10 @@ class Window:
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
-        self.file_menu.addAction(restartAction)
+
+        if running_as_bundled_app():
+            self.file_menu.addAction(restartAction)
+
         self.file_menu.addAction(quitAction)
 
     def _open_preferences(self):
@@ -1202,6 +1207,10 @@ class Window:
         )
         if dial.exec_():
             self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+
+    def _restart(self):
+        """Restart the napari application."""
+        self._qt_window.restart()
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
