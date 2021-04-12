@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -25,8 +25,6 @@ class QtShortcutLabel(QLabel):
 
 class QtWelcomeWidget(QWidget):
     """Welcome widget to display initial information and shortcuts to user."""
-
-    sig_dropped = Signal(object)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -151,41 +149,23 @@ class QtWelcomeWidget(QWidget):
             Event from the Qt context.
         """
         self._update_property("drag", False)
-        self.sig_dropped.emit(event)
+        # QtCanvasOverlay > QWidget > QtViewer
+        self.parent().parent().parent().dropEvent(event)
 
 
-class QtCanvasOverlay(QWidget):
+class QtCanvasOverlay(QStackedWidget):
     """
     Stacked widget providing switching between the canvas and the welcome page.
     """
 
-    sig_dropped = Signal(object)
-
     def __init__(self, parent, canvas):
         super().__init__(parent)
 
-        # Widgets
-        self._stack = QStackedWidget(self)
-        self._canvas = canvas
-        self._overlay = QtWelcomeWidget(self)
-
         # Widget setup
-        self._stack.addWidget(self._canvas.native)
-        self._stack.addWidget(self._overlay)
-        self._stack.setCurrentIndex(0)
+        self.addWidget(canvas.native)
+        self.addWidget(QtWelcomeWidget(self))
+        self.setCurrentIndex(0)
 
-        # Layout
-        layout = QVBoxLayout()
-        layout.addWidget(self._stack)
-        self.setLayout(layout)
-
-        # Signals
-        self._overlay.sig_dropped.connect(self.sig_dropped)
-
-    def show_welcome(self):
+    def set_welcome_visible(self, visible=True):
         """Show welcome screen widget on stack."""
-        self._stack.setCurrentIndex(1)
-
-    def hide_welcome(self):
-        """Hide welcome screen widget and display Canvas."""
-        self._stack.setCurrentIndex(0)
+        self.setCurrentIndex(int(visible))

@@ -169,9 +169,7 @@ class QtViewer(QSplitter):
 
         # Canvas widget to provide a welcome page
         self._canvas_overlay = QtCanvasOverlay(self, self.canvas)
-        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
-        if welcome:
-            self._canvas_overlay.show_welcome()
+        self._canvas_overlay.set_welcome_visible(welcome)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -482,10 +480,7 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         if self._welcome:
-            if len(self.viewer.layers) > 0:
-                self._canvas_overlay.hide_welcome()
-            else:
-                self._canvas_overlay.show_welcome()
+            self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
