@@ -115,8 +115,12 @@ class PluginManager(_PM):
         for spec_name, hook_caller in self.hooks.items():
             order = []
             for p in new_order.get(spec_name, []):
+                try:
+                    imp = hook_caller.get_plugin_implementation(p['plugin'])
+                except KeyError:
+                    continue
+                imp.enabled = p['enabled']
                 order.append(p['plugin'])
-                hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
             if order:
                 hook_caller.bring_to_front(order)
 
