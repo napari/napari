@@ -151,7 +151,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 'Surface data tuple must be 2 or 3, specifying'
-                'verictes, faces, and optionally vertex values,'
+                'vertices, faces, and optionally vertex values,'
                 f'instead got length {len(data)}.'
             )
         self._vertices = data[0]
@@ -189,6 +189,23 @@ class Surface(IntensityVisualizationMixin, Layer):
     @property
     def data(self):
         return (self.vertices, self.faces, self.vertex_values)
+
+    @data.setter
+    def data(self, data):
+        if len(data) not in (2, 3):
+            raise ValueError(
+                'Surface data tuple must be 2 or 3, specifying'
+                'vertices, faces, and optionally vertex values,'
+                f'instead got length {len(data)}.'
+            )
+        self._vertices = data[0]
+        self._faces = data[1]
+        if len(data) == 3:
+            self._vertex_values = data[2]
+        else:
+            self._vertex_values = np.ones(len(self._vertices))
+
+        self._update_dims()
 
     @property
     def vertices(self):
