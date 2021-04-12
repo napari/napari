@@ -245,6 +245,10 @@ QLabel#Vectors {
   image: url(":/themes/{{ folder }}/new_vectors.svg");
 }
 
+QLabel#logo_silhouette {
+  image: url(":/themes/{{ folder }}/logo_silhouette.svg");
+}
+
 
 /* ------------------------------------------------------ */
 

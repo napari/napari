@@ -12,9 +12,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.settings import SETTINGS
 from ...utils.translations import trans
-from ..qt_resources import QColoredSVGIcon
 
 
 class QtWelcomeLabel(QLabel):
@@ -34,13 +32,9 @@ class QtWelcomeWidget(QWidget):
         super().__init__(parent)
 
         # Create colored icon using theme
-        icon = QColoredSVGIcon.from_resources('logo_silhouette')
         self._image = QLabel()
-        self._image.setPixmap(
-            icon.colored(
-                theme=SETTINGS.appearance.theme, theme_key='secondary'
-            ).pixmap(300, 300)
-        )
+        self._image.setObjectName("logo_silhouette")
+        self._image.setMinimumSize(300, 300)
         self._label = QtWelcomeLabel(
             trans._(
                 "Drag image(s) here to open\nor\nUse the menu shortcuts below:"
