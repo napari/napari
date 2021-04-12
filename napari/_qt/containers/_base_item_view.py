@@ -3,7 +3,6 @@ from __future__ import annotations
 from itertools import chain, repeat
 from typing import TYPE_CHECKING, Generic, TypeVar
 
-from PyQt5.QtCore import QAbstractItemModel
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
@@ -12,6 +11,7 @@ from ._factory import create_model
 ItemType = TypeVar("ItemType")
 
 if TYPE_CHECKING:
+    from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
 
     from ...utils.events import Event
