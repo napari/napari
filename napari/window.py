@@ -11,7 +11,7 @@ __all__ = ['Window']
 try:
     from ._qt import Window
 
-except ImportError as e:
+except ImportError:
 
     class Window:  # type: ignore
         def __init__(self, *args, **kwargs):
@@ -24,5 +24,3 @@ except ImportError as e:
             raise ImportError(
                 "could not import qtpy.  Cannot show napari window."
             )
-
-    print(e)
