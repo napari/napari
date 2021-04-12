@@ -965,8 +965,10 @@ class Window:
             else:
                 raise LookupError(
                     trans._(
-                        "Could not find a dock widget containing: {widget}"
-                    ).format(widget=widget)
+                        "Could not find a dock widget containing: {widget}",
+                        deferred=True,
+                        widget=widget,
+                    )
                 )
         else:
             _dw = widget
@@ -1104,8 +1106,10 @@ class Window:
                 warnings.warn(
                     trans._(
                         "The window geometry settings could not be "
-                        "loaded due to the following error: {err}"
-                    ).format(err=err),
+                        "loaded due to the following error: {err}",
+                        deferred=True,
+                        err=err,
+                    ),
                     category=RuntimeWarning,
                     stacklevel=2,
                 )
