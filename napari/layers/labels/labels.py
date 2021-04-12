@@ -143,7 +143,7 @@ class Labels(_image_base_class):
         paint with background label, which effectively removes the label.
 
     Extended Summary
-    ----------
+    ----------------
     _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None

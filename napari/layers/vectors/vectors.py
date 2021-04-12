@@ -102,7 +102,7 @@ class Vectors(Layer):
         (property.min(), property.max())
 
     Extended Summary
-    ----------
+    ----------------
     _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.

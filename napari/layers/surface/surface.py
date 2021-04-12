@@ -97,7 +97,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         Gamma correction for determining colormap linearity.
 
     Extended Summary
-    ----------
+    ----------------
     _data_view : (M, 2) or (M, 3) array
         The coordinates of the vertices given the viewed dimensions.
     _view_faces : (P, 3) array

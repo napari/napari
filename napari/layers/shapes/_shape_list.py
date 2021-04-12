@@ -42,7 +42,7 @@ class ShapeList:
         z-index for each shape.
 
     Extended Summary
-    ----------
+    ----------------
     _vertices : np.ndarray
         Mx2 array of all displayed vertices from all shapes
     _index : np.ndarray

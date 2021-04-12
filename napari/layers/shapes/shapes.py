@@ -208,7 +208,7 @@ class Shapes(Layer):
         modes all allow for their corresponding shape type to be added.
 
     Extended Summary
-    ----------
+    ----------------
     _data_dict : Dict of ShapeList
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList

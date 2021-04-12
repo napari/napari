@@ -57,7 +57,7 @@ class Shape(ABC):
         slicing multidimensional shapes.
 
     Extended Summary
-    ----------
+    ----------------
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray
