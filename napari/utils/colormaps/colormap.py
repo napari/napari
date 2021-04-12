@@ -53,9 +53,10 @@ class Colormap(EventedModel):
 
     def __init__(self, colors, display_name: Optional[str] = None, **data):
         if display_name is None:
-            data['_display_name'] = data.get('name', 'custom')
+            display_name = data.get('name', 'custom')
 
         super().__init__(colors=colors, **data)
+        self._display_name = display_name
 
     # validators
     @validator('colors', pre=True)

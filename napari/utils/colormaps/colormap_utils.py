@@ -82,6 +82,7 @@ SIMPLE_COLORMAPS = {
     for name, (display_name, color) in _PRIMARY_COLORS.items()
 }
 
+
 # dictionay for bop colormap objects
 BOP_COLORMAPS = {
     name: Colormap(value, name=name, display_name=display_name)
@@ -386,8 +387,9 @@ def vispy_or_mpl_colormap(name):
             raise KeyError(
                 trans._(
                     'Colormap "{name}" not found in either vispy '
-                    'or matplotlib.'
-                ).format(name=name)
+                    'or matplotlib.',
+                    name=name,
+                )
             )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
@@ -587,3 +589,12 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
 def make_default_color_array():
     return np.array([0, 0, 0, 1])
+
+
+def display_name_to_name(display_name):
+    display_name_map = {
+        v._display_name: k for k, v in AVAILABLE_COLORMAPS.items()
+    }
+    return display_name_map.get(
+        display_name, list(AVAILABLE_COLORMAPS.keys())[0]
+    )

@@ -6,6 +6,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton, QSlider
 
+from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
@@ -53,8 +54,13 @@ class QtBaseImageControls(QtLayerControls):
 
         comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
-        comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
+
+        for name, cm in AVAILABLE_COLORMAPS.items():
+            if name in self.layer.colormaps:
+                print(cm._display_name, name)
+                comboBox.addItem(cm._display_name, name)
+
         comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
 
@@ -95,7 +101,7 @@ class QtBaseImageControls(QtLayerControls):
         text : str
             Colormap name.
         """
-        self.layer.colormap = text
+        self.layer.colormap = self.colormapComboBox.currentData()
 
     def _clim_mousepress(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
@@ -158,10 +164,14 @@ class QtBaseImageControls(QtLayerControls):
         """
         name = self.layer.colormap.name
         if name not in self.colormapComboBox._allitems:
-            self.colormapComboBox._allitems.add(name)
-            self.colormapComboBox.addItem(name)
-        if name != self.colormapComboBox.currentText():
-            self.colormapComboBox.setCurrentText(name)
+            cm = AVAILABLE_COLORMAPS.get(name)
+            if cm:
+                self.colormapComboBox._allitems.add(name)
+                self.colormapComboBox.addItem(cm._display_name, name)
+
+        if name != self.colormapComboBox.currentData():
+            index = self.colormapComboBox.findData(name)
+            self.colormapComboBox.setCurrentIndex(index)
 
         # Note that QImage expects the image width followed by height
         cbar = self.layer.colormap.colorbar
