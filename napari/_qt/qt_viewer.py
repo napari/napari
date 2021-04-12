@@ -32,6 +32,7 @@ from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_welcome import QtCanvasOverlay
 
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
@@ -90,12 +91,13 @@ class QtViewer(QSplitter):
     """
 
     def __init__(self, viewer: Viewer, welcome=False):
-
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
+
+        self._welcome = welcome
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -166,10 +168,14 @@ class QtViewer(QSplitter):
 
         self._create_canvas()
 
+        # Canvas widget to provide a welcome page
+        self._canvas_overlay = QtCanvasOverlay(self, self.canvas)
+        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
-        main_layout.addWidget(self.canvas.native)
+        main_layout.addWidget(self._canvas_overlay)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
@@ -366,6 +372,9 @@ class QtViewer(QSplitter):
 
         if active_layer is not None:
             self._key_map_handler.keymap_providers.insert(0, active_layer)
+
+        if active_layer is None and self._welcome:
+            self._canvas_overlay.show_welcome()
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -803,7 +812,12 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self.viewer.open(filenames, stack=bool(shift_down))
+
+        if (
+            self.viewer.open(filenames, stack=bool(shift_down))
+            and self._welcome
+        ):
+            self._canvas_overlay.hide_welcome()
 
     def closeEvent(self, event):
         """Cleanup and close.
