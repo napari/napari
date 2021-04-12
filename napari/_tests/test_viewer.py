@@ -166,7 +166,8 @@ def test_screenshot(make_napari_viewer):
 
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
-    viewer = make_napari_viewer(show=False, welcome=False)
+    viewer = make_napari_viewer(show=False)
+    viewer.window.qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
     size = viewer.window.qt_viewer.size()
     viewer.window.qt_viewer.setFixedSize(size)

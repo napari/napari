@@ -167,7 +167,7 @@ class QtViewer(QSplitter):
 
         self._create_canvas()
 
-        # Canvas widget to provide a welcome page
+        # Stacked widget to provide a welcome page
         self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
         self._canvas_overlay.set_welcome_visible(welcome)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
@@ -752,6 +752,11 @@ class QtViewer(QSplitter):
                     ],
                     shape_threshold=self.canvas.size,
                 )
+
+    def set_welcome_visible(self, visible):
+        """Show welcome screen widget."""
+        self._welcome = visible
+        self._canvas_overlay.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.

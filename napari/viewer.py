@@ -25,8 +25,6 @@ class Viewer(ViewerModel):
         Dimension names. by default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
-    show : bool, optional
-        Whether to show the welcome screen on the canvale. True by default True.
     """
 
     # Create private variable for window
@@ -40,7 +38,6 @@ class Viewer(ViewerModel):
         order=(),
         axis_labels=(),
         show=True,
-        welcome=True,
     ):
         super().__init__(
             title=title,
@@ -52,7 +49,7 @@ class Viewer(ViewerModel):
         # instantiating the first Viewer.
         from .window import Window
 
-        self._window = Window(self, show=show, welcome=welcome)
+        self._window = Window(self, show=show)
 
     # Expose private window publically. This is needed to keep window off pydantic model
     @property
