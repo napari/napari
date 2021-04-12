@@ -4,11 +4,12 @@ wrap.
 """
 import inspect
 import os
+import sys
 import time
 from itertools import chain, repeat
 from typing import Dict
 
-from qtpy.QtCore import QPoint, QSize, Qt
+from qtpy.QtCore import QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -237,6 +238,14 @@ class _QtMainWindow(QMainWindow):
 
         event.accept()
 
+    def restart(self):
+        """Restart the napari application in a detached process."""
+        process = QProcess()
+        # For the Mac App this might need to be different
+        process.setProgram(sys.executable)
+        process.setArguments(sys.argv)
+        self.close(quit_app=True)
+
 
 class Window:
     """Application window that contains the menu bar and viewer.
@@ -445,6 +454,10 @@ class Window:
             lambda: self._qt_window.close(quit_app=True)
         )
 
+        restartAction = QAction(trans._('Restart'), self._qt_window)
+        restartAction.setShortcut('Ctrl+R')
+        restartAction.triggered.connect(self._qt_window.restart)
+
         closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close_window)
@@ -490,6 +503,7 @@ class Window:
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
+        self.file_menu.addAction(restartAction)
         self.file_menu.addAction(quitAction)
 
     def _open_preferences(self):
