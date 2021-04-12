@@ -13,6 +13,7 @@ from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
     QApplication,
+    QDialog,
     QDockWidget,
     QHBoxLayout,
     QLabel,
@@ -194,6 +195,20 @@ class _QtMainWindow(QMainWindow):
         """Override to handle closing app or just the window."""
         self._quit_app = quit_app
         return super().close()
+
+    def close_window(self):
+        """Close active dialog or active window."""
+        parent = QApplication.focusWidget()
+        while parent is not None:
+            if isinstance(parent, QMainWindow):
+                self.close()
+                break
+
+            if isinstance(parent, QDialog):
+                parent.close()
+                break
+
+            parent = parent.parent()
 
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
@@ -432,7 +447,7 @@ class Window:
 
         closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
-        closeAction.triggered.connect(self._qt_window.close)
+        closeAction.triggered.connect(self._qt_window.close_window)
 
         from ..plugins import _sample_data
 
