@@ -194,7 +194,11 @@ class QtViewer(QSplitter):
         }
 
         self._on_active_change()
-        viewer.layers.selection.events.active.connect(self._on_active_change)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_change
+        )
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -357,9 +361,6 @@ class QtViewer(QSplitter):
         if active_layer is not None:
             self._key_map_handler.keymap_providers.insert(0, active_layer)
 
-        if active_layer is None and self._welcome:
-            self._canvas_overlay.show_welcome()
-
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
             self._key_bindings_dialog.update_active_layer()
@@ -471,6 +472,21 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
+
+    def _update_welcome_screen(self, event=None):
+        """Update welcome screen display based on layer count.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        """
+        if self._welcome:
+            if len(self.viewer.layers) > 0:
+                self._canvas_overlay.hide_welcome()
+            else:
+                self._canvas_overlay.show_welcome()
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -797,11 +813,7 @@ class QtViewer(QSplitter):
             else:
                 filenames.append(url.toString())
 
-        if (
-            self.viewer.open(filenames, stack=bool(shift_down))
-            and self._welcome
-        ):
-            self._canvas_overlay.hide_welcome()
+        self.viewer.open(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Cleanup and close.
