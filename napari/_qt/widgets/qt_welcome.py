@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QKeySequence, QPainter
 from qtpy.QtWidgets import (
     QFormLayout,
@@ -25,6 +25,8 @@ class QtShortcutLabel(QLabel):
 
 class QtWelcomeWidget(QWidget):
     """Welcome widget to display initial information and shortcuts to user."""
+
+    sig_dropped = Signal("QEvent")
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -149,22 +151,28 @@ class QtWelcomeWidget(QWidget):
             Event from the Qt context.
         """
         self._update_property("drag", False)
-        # QtCanvasOverlay > QWidget > QtViewer
-        self.parent().parent().parent().dropEvent(event)
+        self.sig_dropped.emit(event)
 
 
-class QtCanvasOverlay(QStackedWidget):
+class QtWidgetOverlay(QStackedWidget):
     """
-    Stacked widget providing switching between the canvas and the welcome page.
+    Stacked widget providing switching between the widget and a welcome page.
     """
 
-    def __init__(self, parent, canvas):
+    sig_dropped = Signal("QEvent")
+
+    def __init__(self, parent, widget):
         super().__init__(parent)
 
+        self._overlay = QtWelcomeWidget(self)
+
         # Widget setup
-        self.addWidget(canvas.native)
-        self.addWidget(QtWelcomeWidget(self))
+        self.addWidget(widget)
+        self.addWidget(self._overlay)
         self.setCurrentIndex(0)
+
+        # Signals
+        self._overlay.sig_dropped.connect(self.sig_dropped)
 
     def set_welcome_visible(self, visible=True):
         """Show welcome screen widget on stack."""

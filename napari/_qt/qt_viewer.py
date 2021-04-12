@@ -32,7 +32,7 @@ from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
-from .widgets.qt_welcome import QtCanvasOverlay
+from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
@@ -168,8 +168,9 @@ class QtViewer(QSplitter):
         self._create_canvas()
 
         # Canvas widget to provide a welcome page
-        self._canvas_overlay = QtCanvasOverlay(self, self.canvas)
+        self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
         self._canvas_overlay.set_welcome_visible(welcome)
+        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
