@@ -116,6 +116,8 @@ class PluginManager(_PM):
             order = []
             for p in new_order.get(spec_name, []):
                 try:
+                    # if the plugin was uninstalled in the meantime,
+                    # we should just move on to the next plugin
                     imp = hook_caller.get_plugin_implementation(p['plugin'])
                 except KeyError:
                     continue
