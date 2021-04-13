@@ -122,7 +122,7 @@ def get_app(
                 trans._(
                     "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
                     deferred=True,
-                    arg=set_values,
+                    args=set_values,
                 )
             )
         if perf_config and perf_config.trace_qt_events:
@@ -339,7 +339,7 @@ def run(
     if not app:
         raise RuntimeError(
             trans._(
-                'No Qt app has been created. One can be created by calling `get_app()` or qtpy.QtWidgets.QApplication([])',
+                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
                 deferred=True,
             )
         )
