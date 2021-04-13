@@ -4,11 +4,12 @@ wrap.
 """
 import inspect
 import os
+import sys
 import time
 from itertools import chain, repeat
 from typing import Dict
 
-from qtpy.QtCore import QPoint, QSize, Qt
+from qtpy.QtCore import QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -26,7 +27,7 @@ from qtpy.QtWidgets import (
 from .. import plugins
 from ..utils import config, perf
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter
+from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -237,6 +238,17 @@ class _QtMainWindow(QMainWindow):
 
         event.accept()
 
+    def restart(self):
+        """Restart the napari application in a detached process."""
+        process = QProcess()
+        process.setProgram(sys.executable)
+
+        if not running_as_bundled_app():
+            process.setArguments(sys.argv)
+
+        process.startDetached()
+        self.close(quit_app=True)
+
 
 class Window:
     """Application window that contains the menu bar and viewer.
@@ -445,6 +457,10 @@ class Window:
             lambda: self._qt_window.close(quit_app=True)
         )
 
+        if running_as_bundled_app():
+            restartAction = QAction(trans._('Restart'), self._qt_window)
+            restartAction.triggered.connect(self._qt_window.restart)
+
         closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close_window)
@@ -490,6 +506,10 @@ class Window:
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
+
+        if running_as_bundled_app():
+            self.file_menu.addAction(restartAction)
+
         self.file_menu.addAction(quitAction)
 
     def _open_preferences(self):
@@ -1187,6 +1207,10 @@ class Window:
         )
         if dial.exec_():
             self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+
+    def _restart(self):
+        """Restart the napari application."""
+        self._qt_window.restart()
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
