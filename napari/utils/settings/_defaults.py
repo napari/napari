@@ -14,6 +14,75 @@ from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
 
 
+class SchemaVersion(str):
+    """
+    Custom schema version type to handle both tuples and version strings.
+
+    Provides also a `as_tuple` method for convenience when doing version
+    comparison.
+    """
+
+    def __new__(cls, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        return str.__new__(cls, value)
+
+    def __init__(self, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        self._value = value
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if isinstance(v, (tuple, list)):
+            v = ".".join(str(item) for item in v)
+
+        if not isinstance(v, str):
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        parts = v.split(".")
+        if len(parts) != 3:
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        for part in parts:
+            try:
+                int(part)
+            except Exception:
+                raise ValueError(
+                    trans._(
+                        "A schema version subparts must be positive integers or parseable as integers!"
+                    ),
+                    deferred=True,
+                )
+
+        return cls(v)
+
+    def __repr__(self):
+        return f'SchemaVersion("{self._value}")'
+
+    def __str__(self):
+        return f'"{self._value}"'
+
+    def as_tuple(self):
+        return tuple(int(p) for p in self._value.split('.'))
+
+
 class Theme(str):
     """
     Custom theme type to dynamically load all installed themes.
@@ -113,7 +182,7 @@ class AppearanceSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
+    schema_version: SchemaVersion = (0, 1, 0)
 
     theme: Theme = Field(
         "dark",
@@ -140,7 +209,7 @@ class ApplicationSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
+    schema_version: SchemaVersion = (0, 1, 0)
 
     first_time: bool = True
 
@@ -202,8 +271,7 @@ class ApplicationSettings(BaseNapariSettings):
 class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
-    schema_version = (0, 1, 0)
-
+    schema_version: SchemaVersion = (0, 1, 1)
     call_order: CallOrderDict = Field(
         None,
         title=trans._("Plugin sort order"),
