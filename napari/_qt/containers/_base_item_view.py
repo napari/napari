@@ -47,14 +47,13 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     # ########## Reimplemented Public Qt Functions ##################
 
-    def model(self) -> _BaseEventedItemModel:  # for type hints
+    def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
         return super().model()
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
         """Delete items with delete key."""
         if e.key() in (Qt.Key_Backspace, Qt.Key_Delete):
-            for i in self.selectionModel().selectedIndexes():
-                self._root.remove(i.data(Qt.UserRole))
+            self._root.remove_selected()
             return
         return super().keyPressEvent(e)
 

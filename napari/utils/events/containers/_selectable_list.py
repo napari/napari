@@ -66,10 +66,13 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
 
     def remove_selected(self):
         """Remove selected items from list."""
+        idx = 0
         for i in list(self.selection):
             idx = self.index(i)
             self.remove(i)
-        self.selection.add(self[max(0, (idx - 1))])
+        new = max(0, (idx - 1))
+        if len(self) > new:
+            self.selection.add(self[new])
 
     def select_next(self, step=1, shift=False):
         """Selects next item from list."""
