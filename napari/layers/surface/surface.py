@@ -215,6 +215,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             self._vertex_values = np.ones(len(self._vertices))
 
         self._update_dims()
+        self.events.data(value=self.data)
 
     @property
     def vertices(self):
