@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
 
-from PyQt5.QtWidgets import QProgressBar
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QProgressBar
 
 from .._qt.utils import get_viewer_instance
 
@@ -8,7 +8,7 @@ from .._qt.utils import get_viewer_instance
 def get_pbar():
     pbar = ProgressBar()
     viewer_instance = get_viewer_instance()
-    viewer_instance.activityDock.widget().layout.addWidget(pbar.pbar)
+    viewer_instance.activityDock.widget().layout.addLayout(pbar.layout)
 
     return pbar
 
@@ -20,13 +20,13 @@ class progress:
         self._iterable = iterable
         self._pbar = get_pbar()
 
-        if iterable:
+        if iterable is not None:  # iterator takes priority over total
             try:
                 self._total = len(iterable)
             except TypeError:  # generator (total needed)
-                self._total = total
+                self._total = total if total is not None else 0
         else:
-            if total:
+            if total is not None:
                 self._total = total
             else:
                 self._total = 0  # indeterminate bar
@@ -42,12 +42,18 @@ class progress:
 class ProgressBar:
     def __init__(self) -> None:
         self.pbar = QProgressBar()
+        self.label = QLabel("Test Label")
 
-    def set_total(total):
-        pass
+        layout = QHBoxLayout()
+        layout.addWidget(self.label)
+        layout.addWidget(self.pbar)
+        self.layout = layout
 
-    def set_value(value):
-        pass
+    def set_total(self, total):
+        self.pbar.setRange(0, total)
 
-    def set_description(desc):
+    def set_value(self, value):
+        self.pbar.setValue(value)
+
+    def set_description(self, desc):
         pass
