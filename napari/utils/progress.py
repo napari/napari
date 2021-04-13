@@ -1,76 +1,53 @@
-import inspect
-from typing import Iterable
+from typing import Iterable, Optional
 
-# from magicgui import tqdm
-from magicgui.widgets import FunctionGui
+from PyQt5.QtWidgets import QProgressBar
 
-# from ..viewer import Viewer
-
-try:
-    from tqdm import tqdm as _tqdm_std
-except ImportError as e:  # pragma: no cover
-    msg = f"{e}. To use napari with tqdm please `pip install tqdm`"
-    raise type(e)(msg)
+from .._qt.utils import get_viewer_instance
 
 
-def _find_viewer(max_depth=6):
-    """Traverse calling stack looking for a napari Viewer."""
-    stck = inspect.stack()
-    for finfo in stck[2:max_depth]:
+def get_pbar():
+    pbar = ProgressBar()
+    viewer_instance = get_viewer_instance()
+    viewer_instance.activityDock.widget().layout.addWidget(pbar.pbar)
 
-        if finfo.filename.endswith("viewer.py"):
-            obj = finfo.frame.f_locals.get("self")
-            if isinstance(obj, FunctionGui):
-                return obj
-            return None  # pragma: no cover
-
-    return None
+    return pbar
 
 
-_tqdm_kwargs = {
-    p.name
-    for p in inspect.signature(_tqdm_std.__init__).parameters.values()
-    if p.kind is not inspect.Parameter.VAR_KEYWORD and p.name != "self"
-}
+class progress:
+    def __init__(
+        self, iterable: Optional[Iterable] = None, total: Optional[int] = None
+    ) -> None:
+        self._iterable = iterable
+        self._pbar = get_pbar()
+
+        if iterable:
+            try:
+                self._total = len(iterable)
+            except TypeError:  # generator (total needed)
+                self._total = total
+        else:
+            if total:
+                self._total = total
+            else:
+                self._total = 0  # indeterminate bar
+
+        self._pbar.set_total(self._total)
+
+    def __iter__(self):
+        for n, i in enumerate(self._iterable):
+            self._pbar.set_value(n)
+            yield i
 
 
-class progress(_tqdm_std):
-    """magicgui version of tqdm.
+class ProgressBar:
+    def __init__(self) -> None:
+        self.pbar = QProgressBar()
 
-    See tqdm.tqdm API for valid args and kwargs: https://tqdm.github.io/docs/tqdm/
+    def set_total(total):
+        pass
 
-    Also, any keyword arguments to the :class:`magicgui.widgets.ProgressBar` widget
-    are also accepted and will be passed to the ``ProgressBar``.
+    def set_value(value):
+        pass
 
-    Examples
-    --------
-    When used inside of a magicgui-decorated function, ``tqdm`` (and the
-    ``trange`` shortcut function) will append a visible progress bar to the gui
-    container.
-
-    >>> @magicgui(call_button=True)
-    ... def long_running(steps=10, delay=0.1):
-    ...     for i in tqdm(range(steps)):
-    ...         sleep(delay)
-
-    nesting is also possible:
-
-    >>> @magicgui(call_button=True)
-    ... def long_running(steps=10, repeats=4, delay=0.1):
-    ...     for r in trange(repeats):
-    ...         for s in trange(steps):
-    ...             sleep(delay)
-    """
-
-    disable: bool
-
-    def __init__(self, iterable: Iterable = None, *args, **kwargs) -> None:
-        kwargs = kwargs.copy()
-        # pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self._mgui = _find_viewer()
-
-        super().__init__(iterable, *args, **kwargs)
-
-        # self.sp = lambda x: None  # no-op status printer, required for older tqdm compat
-        # if self.disable:
-        #     return
+    def set_description(desc):
+        pass

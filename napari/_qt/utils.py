@@ -4,6 +4,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
+from PyQt5.QtWidgets import QMainWindow
 from qtpy.QtCore import QByteArray, QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
@@ -254,3 +255,18 @@ def delete_qapp(app):
     # calling a second time is necessary on PySide2...
     # see: https://bugreports.qt.io/browse/PYSIDE-1470
     QApplication.instance()
+
+
+def get_viewer_instance():
+    """Inspect QApplication widgets and return instance of QtViewer
+
+    Returns
+    -------
+    QtViewer
+        napari QtViewer instance
+    """
+    # FIXME: this does not work with multiple viewers.
+    for wdg in QApplication.topLevelWidgets():
+        if isinstance(wdg, QMainWindow):
+            return wdg.centralWidget().children()[1]
+    return None  # TODO: raise error here?

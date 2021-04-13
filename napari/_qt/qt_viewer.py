@@ -26,6 +26,7 @@ from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_activity_dock import QtActivityDock
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -116,6 +117,10 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
+
+        activityDock = QtActivityDock()
+        activityDock.setObjectName('activityDock')
+
         self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
@@ -131,6 +136,14 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer controls',
+        )
+        self.activityDock = QtViewerDockWidget(
+            self,
+            activityDock,
+            name=trans._('activity dock'),
+            area='right',
+            allowed_areas=['right', 'bottom'],
+            object_name='activity dock',
         )
         self.dockConsole = QtViewerDockWidget(
             self,
@@ -150,6 +163,8 @@ class QtViewer(QSplitter):
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
+
+        self.activityDock.setVisible(False)
 
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()

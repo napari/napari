@@ -13,17 +13,17 @@ from qtpy.QtCore import (
     QTimer,
 )
 from qtpy.QtWidgets import (
-    QApplication,
     QDialog,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
-    QMainWindow,
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
+
+from napari._qt.utils import get_viewer_instance
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
@@ -79,20 +79,18 @@ class NapariQtNotification(QDialog):
         """[summary]"""
         super().__init__(None)
 
-        # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
-        for wdg in QApplication.topLevelWidgets():
-            if isinstance(wdg, QMainWindow):
-                try:
-                    # TODO: making the canvas the parent makes it easier to
-                    # move/resize, but also means that the notification can get
-                    # clipped on the left if the canvas is too small.
-                    canvas = wdg.centralWidget().children()[1].canvas.native
-                    self.setParent(canvas)
-                    canvas.resized.connect(self.move_to_bottom_right)
-                    break
-                except Exception:
-                    pass
+        viewer_instance = get_viewer_instance()
+        try:
+            # TODO: making the canvas the parent makes it easier to
+            # move/resize, but also means that the notification can get
+            # clipped on the left if the canvas is too small.
+            canvas = viewer_instance.canvas.native
+            self.setParent(canvas)
+            canvas.resized.connect(self.move_to_bottom_right)
+        except Exception:
+            pass
+
         self.setupUi()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setup_buttons(actions)
