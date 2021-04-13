@@ -24,12 +24,12 @@ from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 from ..utils.translations import trans
+from .containers import QtLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
-from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
@@ -219,6 +219,17 @@ class QtViewer(QSplitter):
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
+
+        # moved from the old layerlist... still feels misplaced.
+        # can you help me move this elsewhere?
+        if config.async_loading:
+            from .experimental.qt_chunk_receiver import QtChunkReceiver
+
+            # The QtChunkReceiver object allows the ChunkLoader to pass newly
+            # loaded chunks to the layers that requested them.
+            self.chunk_receiver = QtChunkReceiver(self.layers)
+        else:
+            self.chunk_receiver = None
 
     def __getattr__(self, name):
         if name == 'raw_stylesheet':

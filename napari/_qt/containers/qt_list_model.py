@@ -82,7 +82,7 @@ class ItemMimeData(QMimeData):
     def __init__(self, items: Sequence[ItemType], indices: Sequence[int]):
         super().__init__()
         self.items = items
-        self.indices = indices
+        self.indices = tuple(sorted(indices))
         if items:
             self.setData(ListIndexMIMEType, pickle.dumps(self.indices))
             self.setText(" ".join(str(item) for item in items))
