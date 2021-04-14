@@ -107,12 +107,9 @@ class QtLayerControls(QFrame):
             The napari event that triggered this method, by default None.
         """
         with self.layer.events.blending.blocker():
-            # `self.blendComboBox.findData` is not returning the correct index.
-            blending = self.layer.blending
-            for index in range(self.blendComboBox.count()):
-                if self.blendComboBox.itemData(index) == blending:
-                    self.blendComboBox.setCurrentIndex(index)
-                    break
+            self.blendComboBox.setCurrentIndex(
+                self.blendComboBox.findData(self.layer.blending)
+            )
 
     def close(self):
         """Disconnect events when widget is closing."""
