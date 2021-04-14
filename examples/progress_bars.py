@@ -33,9 +33,20 @@ def indeterminate():
 def iterable():
     """progress can be used as a wrapper around an iterable object
     """
-    for i in progress(range(10)):
+    my_animals = ["cat", "dog", "wolf", "turtle"]
+    pbr = progress(my_animals)
+    for animal in pbr:
+        pbr.set_description(f"Processing {animal}")
         sleep(0.1)
 
+    pbr.set_description("Done!")
+
+def total_iterable():
+    """progress also generates an iterable for us when a total is passed
+    """
+    pbr = progress(total=10)
+    for _ in pbr:
+        sleep(0.1)
 
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()
@@ -51,6 +62,10 @@ button_layout.addWidget(indeterminate_btn)
 iterable_btn = QPushButton("Iterable")
 iterable_btn.clicked.connect(iterable)
 button_layout.addWidget(iterable_btn)
+
+total_btn = QPushButton("Total Iterable")
+total_btn.clicked.connect(total_iterable)
+button_layout.addWidget(total_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
