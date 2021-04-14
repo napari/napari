@@ -88,6 +88,10 @@ class progress:
             self._pbar._set_description(desc)
         QApplication.processEvents()
 
+    def set_description(self, desc):
+        """Update progress bar description"""
+        self._pbar._set_description(desc)
+
     def hide(self):
         """Hide the progress bar"""
         self._pbar.baseWidget.hide()
