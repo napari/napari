@@ -46,7 +46,12 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import create_box, get_shape_ndim, number_of_shapes
+from ._shapes_utils import (
+    create_box,
+    extract_shape_type,
+    get_shape_ndim,
+    number_of_shapes,
+)
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -325,6 +330,7 @@ class Shapes(Layer):
                 ndim = 2
             data = np.empty((0, 0, ndim))
         else:
+            data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
                 raise ValueError(
@@ -535,10 +541,55 @@ class Shapes(Layer):
         return self._data_view.data
 
     @data.setter
-    def data(self, data, shape_type='rectangle'):
+    def data(self, data):
         self._finish_drawing()
+
+        data, shape_type = extract_shape_type(data)
+        n_new_shapes = number_of_shapes(data)
+        # not given a shape_type through data
+        if shape_type is None:
+            shape_type = self.shape_type
+
+        edge_widths = self._data_view.edge_widths
+        edge_color = self._data_view.edge_color
+        face_color = self._data_view.face_color
+        z_indices = self._data_view.z_indices
+
+        # fewer shapes, trim attributes
+        if self.nshapes > n_new_shapes:
+            shape_type = shape_type[:n_new_shapes]
+            edge_widths = edge_widths[:n_new_shapes]
+            z_indices = z_indices[:n_new_shapes]
+            edge_color = edge_color[:n_new_shapes]
+            face_color = face_color[:n_new_shapes]
+        # more shapes, add attributes
+        elif self.nshapes < n_new_shapes:
+            n_shapes_difference = n_new_shapes - self.nshapes
+            shape_type = shape_type + ["rectangle"] * n_shapes_difference
+            edge_widths = edge_widths + [1] * n_shapes_difference
+            z_indices = z_indices + [0] * n_shapes_difference
+            edge_color = np.concatenate(
+                (
+                    edge_color,
+                    self._get_new_shape_color(n_shapes_difference, 'edge'),
+                )
+            )
+            face_color = np.concatenate(
+                (
+                    face_color,
+                    self._get_new_shape_color(n_shapes_difference, 'face'),
+                )
+            )
+
         self._data_view = ShapeList()
-        self.add(data, shape_type=shape_type)
+        self.add(
+            data,
+            shape_type=shape_type,
+            edge_width=edge_widths,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_indices,
+        )
 
         self._update_dims()
         self.events.data(value=self.data)
@@ -679,6 +730,25 @@ class Shapes(Layer):
     def shape_type(self):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
+
+    @shape_type.setter
+    def shape_type(self, shape_type):
+        self._finish_drawing()
+
+        new_data_view = ShapeList()
+        shape_inputs = zip(
+            self._data_view.data,
+            ensure_iterable(shape_type),
+            self._data_view.edge_widths,
+            self._data_view.edge_color,
+            self._data_view.face_color,
+            self._data_view.z_indices,
+        )
+
+        self._add_shapes_to_view(shape_inputs, new_data_view)
+
+        self._data_view = new_data_view
+        self._update_dims()
 
     @property
     def edge_color(self):
@@ -1438,16 +1508,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1472,6 +1544,8 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        data, shape_type = extract_shape_type(data, shape_type)
+
         if edge_width is None:
             edge_width = self.current_edge_width
 
@@ -1545,16 +1619,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1632,16 +1708,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1718,27 +1796,28 @@ class Shapes(Layer):
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, z in shape_inputs:
-
-                # A False slice_key means the shape is invalid as it is not
-                # confined to a single plane
-                shape_cls = shape_classes[ShapeType(st)]
-                shape = shape_cls(
-                    d,
-                    edge_width=ew,
-                    z_index=z,
-                    dims_order=self._dims_order,
-                    ndisplay=self._ndisplay,
-                )
-
-                # Add shape
-                self._data_view.add(
-                    shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
-                )
+            self._add_shapes_to_view(shape_inputs, self._data_view)
 
         self._display_order_stored = copy(self._dims_order)
         self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
+
+    def _add_shapes_to_view(self, shape_inputs, data_view):
+        """Build new shapes and add them to the _data_view"""
+        for d, st, ew, ec, fc, z in shape_inputs:
+
+            shape_cls = shape_classes[ShapeType(st)]
+            shape = shape_cls(
+                d,
+                edge_width=ew,
+                z_index=z,
+                dims_order=self._dims_order,
+                ndisplay=self._ndisplay,
+            )
+
+            # Add shape
+            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
+        data_view._update_z_order()
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
