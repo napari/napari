@@ -16,6 +16,7 @@ multiscale = list(
 )
 print('multiscale level shapes: ', [p.shape for p in multiscale])
 
-with napari.gui_qt():
-    # add image multiscale
-    napari.view_image(multiscale, contrast_limits=[0, 1], multiscale=True)
+# add image multiscale
+viewer = napari.view_image(multiscale, contrast_limits=[0, 1], multiscale=True)
+
+napari.run()

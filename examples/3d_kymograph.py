@@ -134,18 +134,19 @@ for s in samples:
     print(f"Description: {s['description']}")
     s["vol"] = np.squeeze(IDR_fetch_image(s["IDRid"]))
 
-with napari.gui_qt():
-    v = napari.Viewer(ndisplay=3)
-    scale = (5, 1, 1)  # "stretch" time domain
-    for s in samples:
-        v.add_image(
-            s["vol"], name=s['description'], scale=scale, blending="opaque"
-        )
+v = napari.Viewer(ndisplay=3)
+scale = (5, 1, 1)  # "stretch" time domain
+for s in samples:
+    v.add_image(
+        s["vol"], name=s['description'], scale=scale, blending="opaque"
+    )
 
-    v.grid.enabled = True  # show the volumes in grid mode
-    v.axes.visible = True  # magenta error shows time direction
+v.grid.enabled = True  # show the volumes in grid mode
+v.axes.visible = True  # magenta error shows time direction
 
-    # set an oblique view angle onto the kymograph grid
-    v.camera.center = (440, 880, 1490)
-    v.camera.angles = (-20, 23, -50)
-    v.camera.zoom = 0.17
+# set an oblique view angle onto the kymograph grid
+v.camera.center = (440, 880, 1490)
+v.camera.angles = (-20, 23, -50)
+v.camera.zoom = 0.17
+
+napari.run()
