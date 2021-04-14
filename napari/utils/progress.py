@@ -1,3 +1,4 @@
+import inspect
 from typing import Iterable, Optional
 
 from PyQt5 import QtCore
@@ -20,9 +21,21 @@ def get_pbar():
     return pbar
 
 
+def get_calling_function_name(max_depth: int):
+    """Inspect stack up to max_depth and return first function name outside of progress.py"""
+    for finfo in inspect.stack()[2:max_depth]:
+        if not finfo.filename.endswith("progress.py"):
+            return finfo.function
+
+    return None
+
+
 class progress:
     def __init__(
-        self, iterable: Optional[Iterable] = None, total: Optional[int] = None
+        self,
+        iterable: Optional[Iterable] = None,
+        total: Optional[int] = None,
+        description: Optional[str] = None,
     ) -> None:
         self._iterable = iterable
         self._pbar = get_pbar()
@@ -40,8 +53,13 @@ class progress:
                 self._total = 0
 
         self._pbar._set_total(self._total)
-        # TODO: Find calling function and set to that
-        self._pbar._set_description("Test Description")
+
+        if description:
+            self._pbar._set_description(description)
+        else:
+            description = get_calling_function_name(max_depth=5)
+            if description:
+                self._pbar._set_description(description)
 
         QApplication.processEvents()
 
