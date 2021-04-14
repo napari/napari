@@ -329,7 +329,7 @@ class QtStateButton(QtViewerPushButton):
         self._offstate = offstate
         self._events = events
         self._events.connect(self._on_change)
-        # self.clicked.connect(self.change)
+        self.clicked.connect(self.change)
         self._on_change()
 
     def change(self):

@@ -396,6 +396,9 @@ class ActionManager:
         """
         action = self._actions[name]
 
+        if hasattr(button, 'change'):
+            button.clicked.disconnect(button.change)
+
         button.clicked.connect(
             lambda: call_with_context(action.command, self.context)
         )

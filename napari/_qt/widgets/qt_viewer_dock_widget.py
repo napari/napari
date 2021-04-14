@@ -23,7 +23,8 @@ _sentinel = object()
 _SHORTCUT_DEPRECATION_STRING = trans._(
     'The shortcut parameter is deprecated since version 0.4.8, please use the '
     'action and shortcut manager APIs. The new action manager and shortcut API '
-    'allow user configuration and localisation. (got {shortcut})'
+    'allow user configuration and localisation. (got {shortcut})',
+    shortcut="{shortcut}",
 )
 
 
