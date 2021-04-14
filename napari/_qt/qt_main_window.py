@@ -28,8 +28,8 @@ from .. import plugins
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.key_bindings import action_manager
+from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -341,6 +341,11 @@ class Window:
         for name, action in action_manager._actions.items():
             qa = QAction(self.qt_viewer)
             action_manager.bind_qaction(name, qa)
+            # Note: do not bind shortcut here.
+            # while it would be nice to have the shortcut in the menu, this does
+            # bind the shortctut at the window level and will bypass custom handling
+            # of shortcuts at the KeymapProvider level. While it could work for
+            # globals instances, like viewer; it wont for others like layers.
             self.window_menu.addAction(qa)
 
         if show:
