@@ -4,7 +4,12 @@ from time import sleep
 from napari.utils.progress import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
+
 def arbitrary_steps():
+    """We can manually control updating the value of the progress bar. 
+    If we try to set a value that exceeds the total, the progress bar
+    becomes indeterminate.
+    """
     pbr = progress(total=3)
     sleep(3)
     pbr.update(1, "Step 1 Complete")    
@@ -20,10 +25,14 @@ def arbitrary_steps():
 
 
 def indeterminate():
+    """By passing a total of 0, we can have an indeterminate progress bar
+    """
     pbr = progress(total=0)
 
 
 def iterable():
+    """progress can be used as a wrapper around an iterable object
+    """
     for i in progress(range(10)):
         sleep(0.1)
 
