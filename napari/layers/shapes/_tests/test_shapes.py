@@ -372,6 +372,9 @@ def test_rectangles():
     assert layer.ndim == shape[2]
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
+
+def test_rectangles_with_shape_type():
+    """Test instantiating rectangles with shape_type in data"""
     # Test (rectangle, shape_type) tuple
     shape = (1, 4, 2)
     np.random.seed(0)
@@ -505,6 +508,9 @@ def test_ellipses():
     assert layer.ndim == shape[2]
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
+
+def test_ellipses_with_shape_type():
+    """Test instantiating ellipses with shape_type in data"""
     # Test single four corner (vertices, shape_type) tuple
     shape = (1, 4, 2)
     np.random.seed(0)
@@ -622,6 +628,9 @@ def test_lines():
     assert layer.ndim == shape[2]
     assert np.all([s == 'line' for s in layer.shape_type])
 
+
+def test_lines_with_shape_type():
+    """Test instantiating lines with shape_type"""
     # Test (single line, shape_type) tuple
     shape = (1, 2, 2)
     np.random.seed(0)
@@ -688,6 +697,9 @@ def test_paths():
     assert layer.ndim == 2
     assert np.all([s == 'path' for s in layer.shape_type])
 
+
+def test_paths_with_shape_type():
+    """Test instantiating paths with shape_type in data"""
     # Test (single path, shape_type) tuple
     shape = (1, 6, 2)
     np.random.seed(0)
@@ -753,6 +765,10 @@ def test_polygons():
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
     assert layer.ndim == 2
     assert np.all([s == 'polygon' for s in layer.shape_type])
+
+
+def test_polygons_with_shape_type():
+    """Test 2D polygons with shape_type in data"""
 
     # Test single (polygon, shape_type) tuple
     shape = (1, 6, 2)
@@ -822,6 +838,15 @@ def test_mixed_shapes():
     assert np.all(
         [ns == s for ns, s in zip(new_layer.shape_type, layer.shape_type)]
     )
+
+
+def test_mixed_shapes_with_shape_type():
+    """Test adding mixed shapes with shape_type in data"""
+    np.random.seed(0)
+    shape_vertices = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
+    ] + list(np.random.random((5, 4, 2)))
+    shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
 
     # Test multiple (shape, shape_type) tuples
     data = list(zip(shape_vertices, shape_type))
