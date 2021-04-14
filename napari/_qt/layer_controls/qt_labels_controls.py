@@ -17,7 +17,7 @@ from ...layers.labels._labels_constants import (
     Mode,
 )
 from ...utils.events import disconnect_events
-from ...utils.interactions import KEY_SYMBOLS
+from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -167,8 +167,8 @@ class QtLabelsControls(QtLayerControls):
             'fill',
             Mode.FILL,
             tooltip=trans._(
-                "Fill mode (F) \nToggle with {key}",
-                key=KEY_SYMBOLS['Control'],
+                "Fill mode (F) \nToggle with {shortcut}",
+                shortcut=Shortcut("Control"),
             ),
         )
         self.erase_button = QtModeRadioButton(
@@ -176,8 +176,8 @@ class QtLabelsControls(QtLayerControls):
             'erase',
             Mode.ERASE,
             tooltip=trans._(
-                "Erase mode (E) \nToggle with {key}",
-                key=KEY_SYMBOLS['Alt'],
+                "Erase mode (E) \nToggle with {shortcut}",
+                shortcut=Shortcut("Alt"),
             ),
         )
 
