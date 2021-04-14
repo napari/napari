@@ -13,7 +13,7 @@ angles_param.extend([(x, False) for x in np.radians(angles)])
 
 
 @pytest.mark.parametrize('angles,degrees', angles_param)
-def test_quaternion2euler(angles, degress):
+def test_quaternion2euler(angles, degrees):
     """Test quaternion to euler angle conversion."""
 
     # Test for degrees
