@@ -474,7 +474,6 @@ class QtViewer(QSplitter):
                 error_messages = "\n".join(
                     [str(x.message.args[0]) for x in wa]
                 )
-                update_save_history(saved[0])
 
             if not saved:
                 raise OSError(
@@ -485,6 +484,8 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
+            else:
+                update_save_history(saved[0])
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
