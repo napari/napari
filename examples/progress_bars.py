@@ -36,8 +36,8 @@ def iterable():
     my_animals = ["cat", "dog", "wolf", "turtle"]
     pbr = progress(my_animals)
     for animal in pbr:
-        pbr.set_description(f"Processing {animal}")
-        sleep(0.1)
+        pbr.set_description(f"{animal}")
+        sleep(0.2)
 
     pbr.set_description("Done!")
 
@@ -71,7 +71,5 @@ pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
 
 viewer.window.add_dock_widget(pbar_widget)
-
-
 napari.run()
 
