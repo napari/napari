@@ -142,8 +142,8 @@ class Labels(_image_base_class):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None

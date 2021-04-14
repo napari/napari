@@ -56,8 +56,8 @@ class Shape(ABC):
         Min and max values of the M non-displayed dimensions, useful for
         slicing multidimensional shapes.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray

@@ -207,8 +207,8 @@ class Shapes(Layer):
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
         modes all allow for their corresponding shape type to be added.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _data_dict : Dict of ShapeList
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList

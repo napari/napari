@@ -197,8 +197,8 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
         If properties is not provided, it will be {} (empty dictionary).
