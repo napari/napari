@@ -10,7 +10,7 @@ def quaternion2euler(quaternion, degrees=False):
 
     Euler angles representation also has a singularity
     near pitch = Pi/2 ; to avoid this, we set to Pi/2 pitch angles
-     that are closer than the chosen epsilon from it.
+    that are closer than the chosen epsilon from it.
 
     Parameters
     ----------
