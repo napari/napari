@@ -982,8 +982,7 @@ def points_in_poly(points, vertices):
 
 
 def extract_shape_type(data, shape_type=None):
-    """Checks whether data contains shape type information and extracts it if so, returning
-    data and shape_type separately.
+    """Separates shape_type from data if present, and returns both.
 
     Parameters
     ----------
