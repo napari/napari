@@ -18,8 +18,8 @@ def test_quaternion2euler(angles, degress):
 
     # Test for degrees
     q = Quaternion.create_from_euler_angles(*angles, degrees)
-    ea = quaternion2euler(q, degrees=angles_param[1])
-    q_p = Quaternion.create_from_euler_angles(*ea, degrees=angles_param[1])
+    ea = quaternion2euler(q, degrees=degrees)
+    q_p = Quaternion.create_from_euler_angles(*ea, degrees=degrees)
 
     # We now compare the corresponding quaternions ; they should be equals or opposites (as they're already unit ones)
     q_values = np.array([q.w, q.x, q.y, q.z])
