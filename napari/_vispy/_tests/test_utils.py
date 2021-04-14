@@ -17,7 +17,7 @@ def test_quaternion2euler(angles, degress):
     """Test quaternion to euler angle conversion."""
 
     # Test for degrees
-    q = Quaternion.create_from_euler_angles(*angles_param[0], angles_param[1])
+    q = Quaternion.create_from_euler_angles(*angles, degrees)
     ea = quaternion2euler(q, degrees=angles_param[1])
     q_p = Quaternion.create_from_euler_angles(*ea, degrees=angles_param[1])
 
