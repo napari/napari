@@ -35,27 +35,27 @@ with napari.gui_qt():
 
     def update_t_range(event):
         t_range = event
-        print(t_range)
+        print('t: ', t_range)
 
         layer._set_bbox_lim(t_range, 0)
 
     def update_x_range(event):
         x_range = event
-        print(x_range)
+        print('x: ', x_range)
 
-        layer._set_bbox_lim(x_range, -1)
+        layer._set_bbox_lim(x_range, 3)
     
     def update_y_range(event):
         y_range = event
-        print(y_range)
+        print('y: ', y_range)
 
-        layer._set_bbox_lim(y_range, -2)
+        layer._set_bbox_lim(y_range, 2)
 
     def update_z_range(event):
         z_range = event
-        print(z_range)
+        print('z: ', z_range)
 
-        layer._set_bbox_lim(z_range, -3)
+        layer._set_bbox_lim(z_range, 1)
 
     t_lim_slider = QHRangeSlider((0, nt - 1), data_range=(0, nt - 1))
     t_lim_slider.valuesChanged.connect(update_t_range)
