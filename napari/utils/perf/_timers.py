@@ -80,7 +80,7 @@ class PerfTimers:
         ----------
         name : PerfEvent
             Add this event.
-        kwargs
+        **kwargs
             Arguments to display in the Args section of the Tracing GUI.
         """
         now = perf_counter_ns()
@@ -93,7 +93,7 @@ class PerfTimers:
         ----------
         name : str
             The name of this event like "draw".
-        kwargs : Dict[str, float]
+        **kwargs : Dict[str, float]
             The individual counters for this event.
 
         Notes
@@ -191,7 +191,7 @@ def _create_timer():
         ----------
         name : PerfEvent
             Add this event.
-        kwargs
+        **kwargs
             Arguments to display in the Args section of the Chrome Tracing GUI.
         """
         timers.add_instant_event(name, **kwargs)
@@ -203,7 +203,7 @@ def _create_timer():
         ----------
         name : str
             The name of this event like "draw".
-        kwargs : Dict[str, float]
+        **kwargs : Dict[str, float]
             The individual counters for this event.
 
         Notes

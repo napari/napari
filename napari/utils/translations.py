@@ -328,7 +328,7 @@ class TranslationBundle:
             The plural string to translate.
         n : int, optional
             The number for pluralization.
-        kwargs : dict, optional
+        **kwargs : dict, optional
             Any additional arguments to use when formating the string.
         """
         if msgid is None:
@@ -377,7 +377,7 @@ class TranslationBundle:
         deferred : bool, optional
             Define if the string translation should be deferred or executed
             in place. Default is False.
-        kwargs : dict, optional
+        **kwargs : dict, optional
             Any additional arguments to use when formating the string.
 
         Returns
@@ -416,7 +416,7 @@ class TranslationBundle:
         deferred : bool, optional
             Define if the string translation should be deferred or executed
             in place. Default is False.
-        kwargs : dict, optional
+        **kwargs : dict, optional
             Any additional arguments to use when formating the string.
 
         Returns
@@ -459,7 +459,7 @@ class TranslationBundle:
         deferred : bool, optional
             Define if the string translation should be deferred or executed
             in place. Default is False.
-        kwargs : dict, optional
+        **kwargs : dict, optional
             Any additional arguments to use when formating the string.
 
         Returns
@@ -505,7 +505,7 @@ class TranslationBundle:
         deferred : bool, optional
             Define if the string translation should be deferred or executed
             in place. Default is False.
-        kwargs : dict, optional
+        **kwargs : dict, optional
             Any additional arguments to use when formating the string.
 
         Returns

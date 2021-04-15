@@ -684,8 +684,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-
-        **kwargs:
+        **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of **kwargs may raise an error if the kwargs do
             not match the sample data loader.
