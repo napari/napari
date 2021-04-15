@@ -242,16 +242,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     ``ipython --gui=qt``.
     """
     warn(
-        "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running "
-        "napari from a script, please use 'napari.run()' as follows:\n\n"
-        "    import napari\n\n"
-        "    viewer = napari.Viewer()  # no prior setup needed\n"
-        "    # other code using the viewer...\n"
-        "    napari.run()\n\n"
-        "In IPython or Jupyter, 'napari.run()' is not necessary. napari will "
-        "automatically\nstart an interactive event loop for you: \n\n"
-        "    import napari\n"
-        "    viewer = napari.Viewer()  # that's it!\n",
+        trans._(
+            "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running napari from a script, please use 'napari.run()' as follows:\n\n    import napari\n\n    viewer = napari.Viewer()  # no prior setup needed\n    # other code using the viewer...\n    napari.run()\n\nIn IPython or Jupyter, 'napari.run()' is not necessary. napari will automatically\nstart an interactive event loop for you: \n\n    import napari\n    viewer = napari.Viewer()  # that's it!\n",
+            deferred=True,
+        ),
         FutureWarning,
     )
 

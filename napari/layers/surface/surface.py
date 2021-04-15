@@ -198,9 +198,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying'
-                    'vertices, faces, and optionally vertex values,'
-                    'instead got length {data_length}.',
+                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.',
                     deferred=True,
                     data_length=len(data),
                 )
