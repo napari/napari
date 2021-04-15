@@ -1,9 +1,16 @@
+import os
 import sys
 
 import numpy as np
 import pytest
 
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
 
+
+@skip_local_popups
 @pytest.mark.skipif(
     sys.platform.startswith('win') or sys.platform.startswith('linux'),
     reason='Currently fails on certain CI due to error on canvas draw.',
