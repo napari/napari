@@ -1,4 +1,3 @@
-from dataclasses import field
 from typing import Optional
 
 from pydantic.dataclasses import dataclass
@@ -22,4 +21,3 @@ class Source:
     path: Optional[str] = None
     plugin: Optional[str] = None
     method: Optional[str] = None
-    kwargs: Optional[dict] = field(default_factory=dict)

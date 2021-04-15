@@ -11,7 +11,7 @@ template = """def {name}{signature}:
 """
 
 
-def create_func(cls, name=None, doc=None, file=__file__):
+def create_func(cls, name=None, doc=None):
     cls_name = cls.__name__
 
     if name is None:
@@ -47,7 +47,7 @@ def create_func(cls, name=None, doc=None, file=__file__):
     )
 
     execdict = {cls_name: cls}
-    eval(compile(src, file, 'exec'), execdict)
+    exec(src, execdict)
     func = execdict[name]
 
     func.__doc__ = doc
