@@ -3,7 +3,6 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
-import os
 import sys
 import time
 from itertools import chain, repeat
@@ -26,6 +25,7 @@ from qtpy.QtWidgets import (
 
 from .. import plugins
 from ..utils import config, perf
+from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
@@ -1202,11 +1202,11 @@ class Window:
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
-        dial = ScreenshotDialog(
-            self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir
-        )
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self.qt_viewer, hist[0], hist)
+
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            update_save_history(dial.selectedFiles()[0])
 
     def _restart(self):
         """Restart the napari application."""

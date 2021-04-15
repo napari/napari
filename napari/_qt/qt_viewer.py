@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os.path
 import warnings
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -13,6 +11,12 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
+from ..utils.history import (
+    get_open_history,
+    get_save_history,
+    update_open_history,
+    update_save_history,
+)
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -176,8 +180,6 @@ class QtViewer(QSplitter):
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
-
-        self._last_visited_dir = str(Path.home())
 
         self._cursors = {
             'cross': Qt.CrossCursor,
@@ -457,10 +459,13 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         msg = trans._("selected") if selected else trans._("all")
-        filename, _ = QFileDialog.getSaveFileName(
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+        filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],  # home dir by default
         )
 
         if filename:
@@ -469,6 +474,7 @@ class QtViewer(QSplitter):
                 error_messages = "\n".join(
                     [str(x.message.args[0]) for x in wa]
                 )
+
             if not saved:
                 raise OSError(
                     trans._(
@@ -478,6 +484,8 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
+            else:
+                update_save_history(saved[0])
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -500,39 +508,53 @@ class QtViewer(QSplitter):
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
-        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self, hist[0], hist)
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            update_save_history(dial.selectedFiles()[0])
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
-        filenames, _ = QFileDialog.getOpenFileNames(
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+        filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select file(s)...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],
         )
+
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
+            update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self):
         """Add files as a stack, from the menubar."""
-        filenames, _ = QFileDialog.getOpenFileNames(
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+        filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select files...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
+            update_open_history(filenames[0])
 
     def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
-        folder = QFileDialog.getExistingDirectory(
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+        folder = dlg.getExistingDirectory(
             parent=self,
             caption=trans._('Select folder...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],  # home dir by default
         )
         if folder not in {'', None}:
             self.viewer.open([folder])
+            update_open_history(folder)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""

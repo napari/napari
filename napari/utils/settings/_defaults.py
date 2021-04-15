@@ -1,8 +1,10 @@
 """Settings management.
 """
 
+import os
 from enum import Enum
-from typing import Tuple
+from pathlib import Path
+from typing import List, Tuple
 
 from pydantic import BaseSettings, Field
 
@@ -247,6 +249,9 @@ class ApplicationSettings(BaseNapariSettings):
         NotificationSeverity.NONE
     )
 
+    open_history: List = [os.path.dirname(Path.home())]
+    save_history: List = [os.path.dirname(Path.home())]
+
     class Config:
         # Pydantic specific configuration
         title = trans._("Application")
@@ -265,6 +270,8 @@ class ApplicationSettings(BaseNapariSettings):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
+            "open_history",
+            "save_history",
         ]
 
 
