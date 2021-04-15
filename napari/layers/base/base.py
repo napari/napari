@@ -28,41 +28,34 @@ Extent = namedtuple('Extent', 'data world step')
 
 
 def _find_layer_source() -> Source:
-    """Traverse calling stack to find how a layer was created."""
+    """Traverse calling stack looking for a magicgui FunctionGui."""
     naproot = str(Path(__file__).parent.parent.parent)
-    # we look from deeper to shallow through the calling stack
-    # starting 8 frames back (which is enough for all of our entries)
     for finfo in reversed(inspect.stack()[2:8]):
+        floc = finfo.frame.f_locals
         if naproot not in finfo.filename:
             continue
-
         # came through `viewer.open`
         if finfo.function == '_add_layers_with_plugins':
-            flocals = finfo.frame.f_locals  # local namespace of this frame
-            hookimpl = flocals.get('_hook')
+            hookimpl = floc.get('_hook')
             return Source(
                 method='open',
-                path=flocals.get('filename'),
+                path=floc.get('filename'),
                 plugin=hookimpl.plugin_name if hookimpl else None,
                 kwargs={
-                    'stack': flocals.get('stack'),
-                    'plugin': flocals.get('plugin'),
-                    'layer_type': flocals.get('layer_type'),
-                    'kwargs': flocals.get('kwargs'),
+                    'stack': floc.get('stack'),
+                    'plugin': floc.get('plugin'),
+                    'layer_type': floc.get('layer_type'),
+                    'kwargs': floc.get('kwargs'),
                 },
             )
-
         # came through `viewer.open_sample`
         elif finfo.function == 'open_sample':
-            flocals = finfo.frame.f_locals
             return Source(
                 method='open_sample',
-                path=flocals.get('sample'),
-                plugin=flocals.get('plugin'),
-                kwargs=flocals.get('kwargs'),
+                path=floc.get('sample'),
+                plugin=floc.get('plugin'),
+                kwargs=floc.get('kwargs'),
             )
-
-        # for the add_* methods, we don't currently store any metadata
         elif finfo.function.startswith('add_'):
             return Source(method=finfo.function)
 
