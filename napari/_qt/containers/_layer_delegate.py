@@ -35,12 +35,13 @@ General rendering flow:
 """
 from __future__ import annotations
 
+from functools import partial
 from typing import TYPE_CHECKING
 
 from qtpy import QtCore
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
-from qtpy.QtWidgets import QStyledItemDelegate
+from qtpy.QtWidgets import QMenu, QStyledItemDelegate
 
 from ..qt_resources import QColoredSVGIcon
 from ._base_item_model import ItemRole
@@ -138,6 +139,14 @@ class LayerDelegate(QStyledItemDelegate):
 
         This can be used to customize how the delegate handles mouse/key events
         """
+        if (
+            event.type() == event.MouseButtonRelease
+            and event.button() == Qt.RightButton
+        ):
+            self.showContextMenu(
+                index, model, event.globalPos(), option.widget
+            )
+
         # if the user clicks quickly on the visibility checkbox, we *don't*
         # want it to be interpreted as a double-click.  We want the visibilty
         # to simply be toggled.
@@ -156,3 +165,118 @@ class LayerDelegate(QStyledItemDelegate):
                 return model.setData(index, state, Qt.CheckStateRole)
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
+
+    def showContextMenu(
+        self, index: QModelIndex, model, pos: QPoint, parent: QWidget
+    ):
+
+        menu = QMenu(parent)
+
+        layer_list = model.sourceModel()._root
+        layer = index.data(ItemRole)
+
+        for name, action in get_actions(layer, layer_list):
+            menu.addAction(name, partial(QTimer.singleShot, 0, action))
+
+        menu.exec_(pos)
+
+
+from qtpy.QtCore import QTimer
+from qtpy.QtWidgets import QApplication
+
+from napari.layers.utils import stack_utils
+
+
+def split_stack(layer, axis, layer_list):
+    if layer.rgb:
+        images = stack_utils.split_rgb(layer)
+    else:
+        images = stack_utils.stack_to_images(layer, axis)
+    layer_list.remove(layer)
+    layer_list.extend(images)
+    layer_list.selection = set(images)
+
+
+def merge_stack(layers, layer_list, position=0, rgb=False):
+    if rgb:
+        new = stack_utils.merge_rgb(layers)
+    else:
+        new = stack_utils.images_to_stack(layers)
+    for layer in layers:
+        layer_list.remove(layer)
+    layer_list.insert(position, new)
+    layer_list.selection.active = new
+
+
+def duplicate(layer, layer_list):
+    from copy import deepcopy
+
+    new = deepcopy(layer)
+    new.name += ' copy'
+    layer_list.insert(layer_list.index(layer) + 1, new)
+
+
+def convert(layer, new_type, layer_list):
+    from napari.layers import Layer
+
+    layer_list.remove(layer)
+    data = layer.data.astype(int) if layer_list == 'labels' else layer.data
+    layer_list.append(Layer.create(data, {}, new_type))
+
+
+def link_layers(layers):
+    from napari.experimental import link_layers
+
+    link_layers(layers)
+
+
+def get_actions(layer, layer_list):
+    from napari.layers import Image, Labels
+
+    selection = layer_list.selection
+    layer_in_selection = len(selection) > 1 and layer in selection
+
+    if len(selection) <= 1:
+        yield ('Duplicate', partial(duplicate, layer, layer_list))
+    else:
+        yield ('Link layers', partial(link_layers, selection))
+    if isinstance(layer, Image):
+        if layer_in_selection:
+            try:
+                # not sure whether layer.data.shape is always going to work
+                if (
+                    len({x.data.shape for x in selection}) == 1
+                    and len({type(x) for x in selection}) == 1
+                ):
+                    # use the layer that was clicked on as the "template" for merge
+                    lst = list(selection)
+                    lst.insert(0, lst.pop(lst.index(layer)))
+                    yield (
+                        'Stack images',
+                        partial(merge_stack, lst, layer_list),
+                    )
+            except Exception:
+                pass
+            # not working
+            # if len(selection) == 3:
+            #     yield (
+            #         'Make RGB',
+            #         partial(merge_stack, lst, layer_list, rgb=True),
+            #     )
+        elif layer.rgb:
+            yield ('Split RGB', partial(split_stack, layer, -1, layer_list))
+        else:
+            for ax in (i for i, s in enumerate(layer.data.shape) if s < 8):
+                yield (
+                    f'Split Image (axis {ax})',
+                    partial(split_stack, layer, ax, layer_list),
+                )
+            yield (
+                'Convert to Labels',
+                partial(convert, layer, 'labels', layer_list),
+            )
+    if isinstance(layer, Labels) and not layer_in_selection:
+        yield (
+            'Convert to Image',
+            partial(convert, layer, 'image', layer_list),
+        )

@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List
+from typing import List
 
 import numpy as np
 
@@ -110,11 +110,7 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(
-    stack: Image,
-    axis: int,
-    **kwargs: Dict,
-) -> List[Image]:
+def stack_to_images(stack: Image, axis: int, **kwargs) -> List[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -146,7 +142,7 @@ def stack_to_images(
         del meta[key]
 
     name = stack.name
-    num_dim = stack.ndim
+    num_dim = 3 if stack.rgb else stack.ndim
 
     if num_dim < 3:
         raise ValueError(
@@ -164,7 +160,7 @@ def stack_to_images(
         kwargs['colormap'] = itertools.cycle(kwargs['colormap'])
 
     if meta['rgb']:
-        if axis == (num_dim - 1) or axis == -1:
+        if axis in [num_dim - 1, -1]:
             kwargs['rgb'] = False  # split channels as grayscale
         else:
             kwargs['rgb'] = True  # split some other axis, remain rgb
@@ -180,7 +176,7 @@ def stack_to_images(
     meta['affine'] = None
 
     meta.update(kwargs)
-    imagelist = list()
+    imagelist = []
     layerdata_list = split_channels(data, axis, **meta)
     for i, tup in enumerate(layerdata_list):
         idata, imeta, _ = tup
@@ -192,11 +188,15 @@ def stack_to_images(
     return imagelist
 
 
-def images_to_stack(
-    images: List[Image],
-    axis: int = 0,
-    **kwargs: Dict,
-) -> Image:
+def split_rgb(stack: Image, with_alpha=False) -> List[Image]:
+    """Variant of stack_to_images that splits an RGB with predefined cmap."""
+    if not stack.rgb:
+        raise ValueError('Image must be RGB to use split_rgb')
+    images = stack_to_images(stack, -1, colormap=('red', 'green', 'blue'))
+    return images if with_alpha else images[:3]
+
+
+def images_to_stack(images: List[Image], axis: int = 0, **kwargs) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
     The new image layer will get the meta properties of the first
@@ -218,7 +218,7 @@ def images_to_stack(
         Combined image stack
     """
 
-    if len(images) == 0:
+    if not images:
         raise IndexError("images list is empty")
 
     data, meta, _ = images[0].as_layer_data_tuple()
@@ -228,6 +228,11 @@ def images_to_stack(
 
     meta.update(kwargs)
     new_data = np.stack([image.data for image in images], axis=axis)
-    stack = Image(new_data, **meta)
+    return Image(new_data, **meta)
 
-    return stack
+
+def merge_rgb(images: List[Image]) -> List[Image]:
+    """Variant of images_to_stack that makes an RGB from 3 images."""
+    if not (len(images) == 3 and all(isinstance(x, Image) for x in images)):
+        raise ValueError("merge_rgb requires 3 images layers")
+    return images_to_stack(images, axis=-1, rgb=True)

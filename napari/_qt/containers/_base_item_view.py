@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
+from ..utils import qt_signals_blocked
+from ._base_item_model import ItemRole
 from ._factory import create_model
 
 ItemType = TypeVar("ItemType")
@@ -61,7 +63,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         self: QAbstractItemView, current: QModelIndex, previous: QModelIndex
     ):
         """The Qt current item has changed. Update the python model."""
-        self._root.selection._current = current.data(Qt.UserRole)
+        self._root.selection._current = current.data(ItemRole)
         return super().currentChanged(current, previous)
 
     def selectionChanged(
@@ -70,9 +72,14 @@ class _BaseEventedItemView(Generic[ItemType]):
         deselected: QItemSelection,
     ):
         """The Qt Selection has changed. Update the python model."""
-        s = self._root.selection
-        s.difference_update(i.data(Qt.UserRole) for i in deselected.indexes())
-        s.update(i.data(Qt.UserRole) for i in selected.indexes())
+        sel = {i.data(ItemRole) for i in selected.indexes()}
+        desel = {i.data(ItemRole) for i in deselected.indexes()}
+
+        print("selectionChanged", sel, desel)
+        if not self._root.selection.events.changed._emitting:
+            print("set root selection")
+            self._root.selection.update(sel)
+            self._root.selection.difference_update(desel)
         return super().selectionChanged(selected, deselected)
 
     # ###### Non-Qt methods added for SelectableEventedList Model ############
@@ -109,6 +116,7 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     def _sync_selection_models(self):
         """Clear and re-sync the Qt selection view from the python selection."""
+        print("_sync_selection_models")
         sel_model = self.selectionModel()
         selection = QItemSelection()
         for i in self._root.selection:

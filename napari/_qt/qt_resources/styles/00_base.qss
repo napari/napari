@@ -28,8 +28,8 @@ alternate-background-color -> QPalette.AlternateBase
 QWidget {
   background-color: {{ background }};
   border: 0px;
-  padding: 1px;
-  margin: 0px;
+  /* padding: 1px;
+  margin: 0px; */
   color: {{ text }};
   selection-background-color: {{ secondary }};
   selection-color: {{ text }};

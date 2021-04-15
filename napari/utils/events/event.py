@@ -256,6 +256,7 @@ class EventEmitter:
         self._block_counter: Counter[Optional[Callback]] = Counter()
 
         # used to detect emitter loops
+        self._emitting = False
         self.source = source
         self.default_args = {}
         if type is not None:
@@ -525,6 +526,7 @@ class EventEmitter:
         # Add our source to the event; remove it after all callbacks have been
         # invoked.
         event._push_source(self.source)
+        self._emitting = True
         try:
             if blocked.get(None, 0) > 0:  # this is the same as self.blocked()
                 self._block_counter.update([None])
@@ -554,6 +556,7 @@ class EventEmitter:
             for cb in rem:
                 self.disconnect(cb)
         finally:
+            self._emitting = False
             if event._pop_source() != self.source:
                 raise RuntimeError("Event source-stack mismatch.")
 
