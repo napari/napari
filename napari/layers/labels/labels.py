@@ -142,8 +142,8 @@ class Labels(_image_base_class):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
@@ -314,6 +314,9 @@ class Labels(_image_base_class):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
+        # invalidate _all_vals to trigger re-generation
+        # in _raw_to_displayed
+        self._all_vals = np.array([])
         self.refresh()
         self.events.selected_label()
 

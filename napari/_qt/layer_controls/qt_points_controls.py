@@ -300,12 +300,9 @@ class QtPointsControls(QtLayerControls):
             The napari event that triggered this method.
         """
         with self.layer.events.symbol.blocker():
-            # `self.symbolComboBox.findData` does not provide the correct value.
-            symbol = self.layer.symbol
-            for index in range(self.symbolComboBox.count()):
-                if self.symbolComboBox.itemData(index) == symbol:
-                    self.symbolComboBox.setCurrentIndex(index)
-                    break
+            self.symbolComboBox.setCurrentIndex(
+                self.symbolComboBox.findData(self.layer.symbol)
+            )
 
     def _on_size_change(self, event=None):
         """Receive layer model size change event and update point size slider.

@@ -5,7 +5,7 @@ from qtpy.QtCore import QEvent, QModelIndex, Qt
 from qtpy.QtGui import QKeyEvent
 
 from napari._qt.containers import QtListModel, QtListView
-from napari.utils.events._tests.test_evented_list import POS_INDICES
+from napari.utils.events._tests.test_evented_list import BASIC_INDICES
 from napari.utils.events.containers import SelectableEventedList
 
 
@@ -95,7 +95,7 @@ def test_list_view_keypress(qtbot):
     assert first not in root
 
 
-@pytest.mark.parametrize('sources, dest, expectation', POS_INDICES)
+@pytest.mark.parametrize('sources, dest, expectation', BASIC_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 

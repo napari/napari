@@ -30,11 +30,12 @@ def gaussian_blur(
         return skimage.filters.gaussian(layer.data, sigma=sigma, mode=mode)
 
 
-with napari.gui_qt():
-    # create a viewer and add some images
-    viewer = napari.Viewer()
-    viewer.add_image(skimage.data.astronaut().mean(-1), name="astronaut")
-    viewer.add_image(skimage.data.grass().astype("float"), name="grass")
+# create a viewer and add some images
+viewer = napari.Viewer()
+viewer.add_image(skimage.data.astronaut().mean(-1), name="astronaut")
+viewer.add_image(skimage.data.grass().astype("float"), name="grass")
 
-    # Add our magic function to napari
-    viewer.window.add_function_widget(gaussian_blur)
+# Add our magic function to napari
+viewer.window.add_function_widget(gaussian_blur)
+
+napari.run()

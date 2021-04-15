@@ -101,8 +101,8 @@ class Vectors(Layer):
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.

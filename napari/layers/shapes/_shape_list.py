@@ -41,8 +41,8 @@ class ShapeList:
     z_indices : (N, ) list of int
         z-index for each shape.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _vertices : np.ndarray
         Mx2 array of all displayed vertices from all shapes
     _index : np.ndarray

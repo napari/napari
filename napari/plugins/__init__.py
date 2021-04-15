@@ -17,8 +17,10 @@ from typing import (
 from warnings import warn
 
 from magicgui import magicgui
-from napari_plugin_engine import HookImplementation, PluginManager
+from napari_plugin_engine import HookImplementation
+from napari_plugin_engine import PluginManager as _PM
 from numpy import isin
+from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict
 from ..utils._appdirs import user_site_packages
@@ -32,6 +34,97 @@ if sys.platform.startswith('linux') and running_as_bundled_app():
 if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
+
+
+class PluginHookOption(TypedDict):
+    """Custom type specifying plugin and enabled state."""
+
+    plugin: str
+    enabled: bool
+
+
+CallOrderDict = Dict[str, List[PluginHookOption]]
+
+
+class PluginManager(_PM):
+    def call_order(self) -> CallOrderDict:
+        """Returns the call order from the plugin manager.
+
+        Returns
+        -------
+        call_order : CallOrderDict
+        call_order =
+            {
+                        spec_name: [
+                                {
+                                    name: plugin_name
+                                    enabled: enabled
+                                },
+                                {
+                                    name: plugin_name
+                                    enabled: enabled
+                                },
+                                ...
+                        ],
+                        ...
+            }
+
+        """
+
+        order = {}
+        for spec_name, caller in self.hooks.items():
+            # no need to save call order unless we only use first result
+            if not caller.is_firstresult:
+                continue
+            impls = caller.get_hookimpls()
+            # no need to save call order if there is only a single item
+            if len(impls) > 1:
+                order[spec_name] = [
+                    {'plugin': impl.plugin_name, 'enabled': impl.enabled}
+                    for impl in reversed(impls)
+                ]
+        return order
+
+    def set_call_order(self, new_order: CallOrderDict):
+        """Sets the plugin manager call order to match SETTINGS plugin values.
+
+        Note: Run this after load_settings_plugin_defaults, which
+        sets the default values in SETTINGS.
+
+        Parameters
+        ----------
+        new_order : CallOrderDict
+
+        new_order =
+                {
+                    spec_name: [
+                            {
+                                name: plugin_name
+                                enabled: enabled
+                            },
+                            {
+                                name: plugin_name
+                                enabled: enabled
+                            },
+                            ...
+                    ],
+                    ...
+                }
+        """
+
+        for spec_name, hook_caller in self.hooks.items():
+            order = []
+            for p in new_order.get(spec_name, []):
+                try:
+                    # if the plugin was uninstalled in the meantime,
+                    # we should just move on to the next plugin
+                    imp = hook_caller.get_plugin_implementation(p['plugin'])
+                except KeyError:
+                    continue
+                imp.enabled = p['enabled']
+                order.append(p['plugin'])
+            if order:
+                hook_caller.bring_to_front(order)
 
 
 # the main plugin manager instance for the `napari` plugin namespace.
@@ -299,6 +392,16 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
 
 discover_sample_data()
+
+
+def load_settings_plugin_defaults(SETTINGS):
+    """Sets SETTINGS plugin defaults on start up from the defaults saved in
+    the plugin manager.
+    """
+
+    SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
+
+
 #: Template to use for namespacing a plugin item in the menu bar
 menu_item_template = '{}: {}'
 
