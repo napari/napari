@@ -34,12 +34,13 @@ class progress:
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
+        desc: Optional[str] = None,
         total: Optional[int] = None,
         step: Optional[int] = None,
-        description: Optional[str] = None,
     ) -> None:
         self._iterable = iterable
         self._pbar = get_pbar()
+        self.n = 0
 
         if iterable is not None:  # iterator takes priority over total
             try:
@@ -51,26 +52,34 @@ class progress:
                 self._total = total
                 # TODO: figure out the half open range thing...
                 self._step = step if step else 1
-                self._iterable = range(0, total + 1, step)
+                self._iterable = range(0, total + 1, self._step)
             else:
                 self._total = 0
                 self._step = 0
 
         self._pbar._set_total(self._total)
 
-        if description:
-            self._pbar._set_description(description)
+        if desc:
+            self._pbar._set_description(desc)
         else:
-            description = get_calling_function_name(max_depth=5)
-            if description:
-                self._pbar._set_description(description)
+            desc = get_calling_function_name(max_depth=5)
+            if desc:
+                self._pbar._set_description(desc)
 
         QApplication.processEvents()
 
     def __iter__(self):
-        for n, i in enumerate(self._iterable):
-            self._pbar._set_value(n)
-            yield i
+        iterable = self._iterable
+        n = self.n
+        try:
+            for obj in iterable:
+                yield obj
+
+                n += 1
+                self.update(n)
+        finally:
+            self.n = n
+            self.close()
 
     def increment(self):
         """Increment progress bar using current step"""
@@ -82,15 +91,13 @@ class progress:
         """Decrement progress bar using current step"""
         self._pbar._set_value(max(0, self._pbar._get_value() - self._step))
 
-    def update(self, val, desc=None):
-        """Update progress bar with new value and, optionally, a description.
+    def update(self, val):
+        """Update progress bar with new value
 
         Parameters
         ----------
         val : int
             new value for progress bar
-        desc : str, optional
-            description to display on progress bar, by default None
         """
         if val > self._total:
             # exceeded total, become indeterminate
@@ -98,8 +105,6 @@ class progress:
         else:
             self._pbar._set_value(val)
 
-        if desc:
-            self._pbar._set_description(desc)
         QApplication.processEvents()
 
     def set_description(self, desc):
@@ -114,8 +119,8 @@ class progress:
         """Show the progress bar"""
         self._pbar.baseWidget.show()
 
-    def delete(self):
-        """Delete the progress bar widget"""
+    def close(self):
+        """Closes and deletes the progress bar widget"""
         self._pbar.baseWidget.close()
 
 

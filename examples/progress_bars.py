@@ -12,16 +12,20 @@ def arbitrary_steps():
     """
     pbr = progress(total=3)
     sleep(3)
-    pbr.update(1, "Step 1 Complete")    
+    pbr.set_description("Step 1 Complete")
+    pbr.update(1)    
 
     sleep(1)
-    pbr.update(2, "Step 2 Complete")
+    pbr.set_description("Step 2 Complete")
+    pbr.update(2)
 
     sleep(2)
-    pbr.update(3, "Step 3 Done!")
+    pbr.set_description("Step 3 Done!")
+    pbr.update(3)
 
     sleep(1)
-    pbr.update(4, "Total Exceeded...")
+    pbr.set_description("Total Exceeded...")
+    pbr.update(4)
 
 
 def indeterminate():
@@ -37,9 +41,8 @@ def iterable():
     pbr = progress(my_animals)
     for animal in pbr:
         pbr.set_description(f"{animal}")
-        sleep(0.2)
-
-    pbr.set_description("Done!")
+        sleep(0.4)
+        
 
 def total_iterable():
     """progress also generates an iterable for us when a total is passed
