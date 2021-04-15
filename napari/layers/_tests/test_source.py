@@ -1,5 +1,3 @@
-from magicgui import magicgui
-
 from napari.layers import Points
 from napari.layers._source import Source, current_source, layer_source
 
@@ -15,10 +13,6 @@ def test_layer_source():
 def test_source_context():
     """Test nested contexts, overrides, and resets."""
 
-    @magicgui
-    def widget(x=1):
-        ...
-
     assert current_source() == Source()
     # everything created within this context will have this sample source
     with layer_source(sample=('samp', 'name')):
@@ -33,17 +27,7 @@ def test_source_context():
                 assert current_source() == Source(
                     path='b', reader_plugin='plug', sample=('samp', 'name')
                 )
-                with layer_source(widget=widget):
-                    assert current_source() == Source(
-                        path='b',
-                        reader_plugin='plug',
-                        sample=('samp', 'name'),
-                        widget=widget,
-                    )
                 # as we exit the contexts, they should undo their assignments
-                assert current_source() == Source(
-                    path='b', reader_plugin='plug', sample=('samp', 'name')
-                )
             assert current_source() == Source(
                 path='a', reader_plugin='plug', sample=('samp', 'name')
             )
