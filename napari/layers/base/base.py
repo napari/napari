@@ -15,7 +15,7 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
-from ..source import Source
+from .._source import current_source
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -174,8 +174,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
-        mthd = f"{type(self).__module__}.{type(self).__name__}.__init__"
-        self._source = Source(method=mthd)
+        self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity

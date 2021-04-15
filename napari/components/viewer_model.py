@@ -23,8 +23,8 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..layers import Image, Layer
+from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
-from ..layers.source import Source
 from ..layers.utils.stack_utils import split_channels
 from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
@@ -714,18 +714,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 msg += trans._("No plugin samples have been registered.")
             raise KeyError(msg)
 
-        if callable(data):
-            mthd = f'{type(self).__module__}.{type(self).__name__}.open_sample'
-            for datum in data(**kwargs):
-                for i in self._add_layer_from_data(*datum):
-                    i._source = Source(path=sample, plugin=plugin, method=mthd)
-        elif isinstance(data, (str, Path)):
-            self.open(data, plugin=reader_plugin)
-        else:
-            raise TypeError(
-                'Got unexpected type for sample '
-                f'({plugin!r}, {sample!r}): {type(data)}'
-            )
+        with layer_source(sample=(plugin, sample)):
+            if callable(data):
+                for datum in data(**kwargs):
+                    self._add_layer_from_data(*datum)
+            elif isinstance(data, (str, Path)):
+                self.open(data, plugin=reader_plugin)
+            else:
+                raise TypeError(
+                    'Got unexpected type for sample '
+                    f'({plugin!r}, {sample!r}): {type(data)}'
+                )
 
     def open(
         self,
@@ -831,8 +830,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data, hookimpl = (
-            read_data_with_plugins(path_or_paths, plugin=plugin) or []
+        layer_data, hookimpl = read_data_with_plugins(
+            path_or_paths, plugin=plugin
         )
 
         # glean layer names from filename. These will be used as *fallback*
@@ -851,7 +850,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added
-        mthd = f'{type(self).__module__}.{type(self).__name__}.open'
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, ext = os.path.splitext(os.path.basename(filename))
@@ -859,9 +857,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 data, kwargs, layer_type, fallback_name=basename
             )
             # actually add the layer
-            for i in self._add_layer_from_data(*_data):
-                i._source = Source(path=filename, plugin=plugin, method=mthd)
-                added.append(i)
+            with layer_source(path=filename, reader_plugin=plugin):
+                added.extend(self._add_layer_from_data(*_data))
         return added
 
     def _add_layer_from_data(
