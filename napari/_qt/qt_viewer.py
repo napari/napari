@@ -36,13 +36,13 @@ from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
     VispyCamera,
     VispyCanvas,
     VispyScaleBarVisual,
-    VispyWelcomeVisual,
     create_vispy_visual,
 )
 
@@ -57,9 +57,9 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    welcome : bool
+    show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
-        canvas.
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -93,13 +93,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer: Viewer, welcome=False):
-
+    def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
+
+        self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -170,10 +171,15 @@ class QtViewer(QSplitter):
 
         self._create_canvas()
 
+        # Stacked widget to provide a welcome page
+        self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
+        self._canvas_overlay.set_welcome_visible(show_welcome_screen)
+        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
-        main_layout.addWidget(self.canvas.native)
+        main_layout.addWidget(self._canvas_overlay)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
@@ -189,7 +195,11 @@ class QtViewer(QSplitter):
         }
 
         self._on_active_change()
-        viewer.layers.selection.events.active.connect(self._on_active_change)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_change
+        )
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -211,8 +221,8 @@ class QtViewer(QSplitter):
         )
         self.canvas.connect(self.camera.on_draw)
 
-        # Add axes, scale bar and welcome visuals.
-        self._add_visuals(welcome)
+        # Add axes, scale bar
+        self._add_visuals()
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
@@ -273,14 +283,8 @@ class QtViewer(QSplitter):
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
         self.viewer.events.theme.connect(self.canvas._on_theme_change)
 
-    def _add_visuals(self, welcome: bool) -> None:
-        """Add visuals for axes, scale bar, and welcome text.
-
-        Parameters
-        ----------
-        welcome : bool
-            Show the welcome visual.
-        """
+    def _add_visuals(self) -> None:
+        """Add visuals for axes, scale bar, and welcome text."""
 
         self.axes = VispyAxesVisual(
             self.viewer,
@@ -293,17 +297,6 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-
-        self._show_welcome = welcome and config.allow_welcome_visual
-        if self._show_welcome:
-            self.welcome = VispyWelcomeVisual(
-                self.viewer, parent=self.view, order=-100
-            )
-            self.viewer.events.layers_change.connect(
-                self.welcome._on_visible_change
-            )
-            self.viewer.events.theme.connect(self.welcome._on_theme_change)
-            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -486,6 +479,17 @@ class QtViewer(QSplitter):
                 )
             else:
                 update_save_history(saved[0])
+
+    def _update_welcome_screen(self, event=None):
+        """Update welcome screen display based on layer count.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        if self._show_welcome_screen:
+            self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -771,6 +775,11 @@ class QtViewer(QSplitter):
                     shape_threshold=self.canvas.size,
                 )
 
+    def set_welcome_visible(self, visible):
+        """Show welcome screen widget."""
+        self._show_welcome_screen = visible
+        self._canvas_overlay.set_welcome_visible(visible)
+
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
 
@@ -825,6 +834,7 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
+
         self.viewer.open(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
