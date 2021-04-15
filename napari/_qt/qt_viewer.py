@@ -448,7 +448,7 @@ class QtViewer(QSplitter):
         msg = ''
         if not len(self.viewer.layers):
             msg = trans._("There are no layers in the viewer to save")
-        elif selected and not len(self.viewer.layers.selected):
+        elif selected and not len(self.viewer.layers.selection):
             msg = trans._(
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
