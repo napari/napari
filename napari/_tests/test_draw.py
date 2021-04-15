@@ -10,10 +10,12 @@ import pytest
 )
 def test_canvas_drawing(make_napari_viewer):
     """Test drawing before and after adding and then deleting a layer."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=True)
     view = viewer.window.qt_viewer
+    view.set_welcome_visible(False)
 
     assert len(viewer.layers) == 0
+
     # Check canvas context is not none before drawing, as currently on
     # some of our CI a proper canvas context is not made
     view.canvas.events.draw()
