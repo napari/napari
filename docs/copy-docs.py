@@ -3,11 +3,14 @@
 python -m copy-docs.py [dstdir]
 """
 
+import copy
 import os
 import os.path as osp
 import shutil
 import sys
 from fnmatch import fnmatch
+
+import yaml
 
 # path to copy and locations to copy to if different
 TO_COPY = [
@@ -29,6 +32,10 @@ IGNORE = [
 ]
 
 SRC = osp.dirname(__file__)
+
+DOC_EXTS = ['.md', '.rst', '.ipynb']
+
+TOC_IGNORE = ['release', 'api/stable', 'images', '_templates']
 
 
 def exclude_filter(path):
@@ -61,6 +68,11 @@ def copy_path(srcdir, dstdir, path, newpath=None, *, exclude=None):
         If not provided, will default to the value of `path`.
     exclude : function(path-like) -> bool, keyword-only, optional
         Conditional function on whether to exclude the given path.
+
+    Returns
+    -------
+    files : list of path-like
+        Paths of the copied files.
     """
     if newpath is None:
         newpath = path
@@ -69,20 +81,27 @@ def copy_path(srcdir, dstdir, path, newpath=None, *, exclude=None):
     dst = osp.join(dstdir, newpath)
 
     if exclude(src):  # skip this path
-        return
+        return []
 
     print(f'copying {src} to {dst}')
 
     if osp.isfile(src):
         shutil.copyfile(src, dst)
+        return [newpath]
     elif osp.isdir(src):
         if osp.exists(dst):  # if the destination directory exists, delete it
             shutil.rmtree(dst)
 
         os.mkdir(dst)
 
+        files = []
+
         for fpath in os.listdir(src):  # recursively copy each child path
-            copy_path(src, dst, fpath, exclude=exclude)
+            p = osp.join(path, fpath)
+            np = osp.join(newpath, fpath)
+            files += copy_path(srcdir, dstdir, p, np, exclude=exclude)
+
+        return files
     else:
         raise RuntimeError(f'unknown path type {src}')
 
@@ -103,12 +122,89 @@ def copy_paths(src, dst, paths, *, exclude=None):
         than the path copied from.
     exclude : function(path-like) -> bool, keyword-only, optional
         Conditional function on whether to exclude the given path.
+
+    Returns
+    -------
+    files : list of path-like
+        Paths of the copied files.
     """
+    files = []
+
     for path in paths:
         if isinstance(path, tuple):
-            copy_path(src, dst, path[0], path[1], exclude=exclude)
+            files += copy_path(src, dst, path[0], path[1], exclude=exclude)
         else:
-            copy_path(src, dst, path, exclude=exclude)
+            files += copy_path(src, dst, path, exclude=exclude)
+
+    return files
+
+
+def update_toc(toc, paths, ignore=[]):
+    """Update the table of contents according to the paths of all files copied over.
+
+    Parameters
+    ----------
+    toc : JSON
+        Table of contents according to the JupyterBook specification.
+    paths : list of path-like
+        Paths of the files copied over.
+    ignore : list of path-like
+        List of directories to ignore when updating the table of contents.
+
+    Returns
+    -------
+    new_toc : JSON
+        Updated table of contents.
+    """
+    new_toc = copy.deepcopy(toc)
+
+    remaining_paths = []
+
+    # remove all paths in ignore list and those with the wrong extension
+    for path in paths:
+        base, ext = osp.splitext(path)
+
+        for prefix in ignore:  # check if path should be ignored
+            if path.startswith(prefix):
+                break
+        else:  # not on the ignore list
+            if ext in DOC_EXTS:  # relevant filetype
+                remaining_paths.append(
+                    base
+                )  # the toc does not include extensions
+
+    chapters = new_toc[1]['chapters']
+
+    for chapter in chapters:
+        if (
+            'file' not in chapter
+            or (index := chapter['file']) not in remaining_paths
+        ):
+            continue  # skip irrelevant chapters
+
+        parent_dir = osp.dirname(index)
+        remaining_paths.remove(index)
+
+        sections = chapter['sections']
+        files = [section['file'] for section in sections]
+
+        # find and remove deleted files from toc
+        for i, path in enumerate(files):
+            if path in remaining_paths:
+                remaining_paths.remove(path)
+            else:
+                print(f'deleting {path} from toc')
+                del sections[i]  # delete from toc
+
+        new_files = filter(
+            lambda path: path.startswith(parent_dir), remaining_paths
+        )
+        for path in new_files:
+            print(f'adding {path} to toc')
+            sections.append({'file': path})
+            remaining_paths.remove(path)
+
+    return new_toc
 
 
 def main(args):
@@ -121,7 +217,20 @@ def main(args):
     except IndexError:
         pass
 
-    copy_paths(SRC, dst, TO_COPY, exclude=exclude_filter)
+    files = copy_paths(SRC, dst, TO_COPY, exclude=exclude_filter)
+    toc_file = osp.join(dst, '_toc.yml')
+
+    with open(toc_file) as f:
+        toc = yaml.safe_load(f)
+
+    if toc is None:
+        print(f'toc file {toc_file} empty')
+        return
+
+    new_toc = update_toc(toc, files, TOC_IGNORE)
+
+    with open(toc_file, 'w') as f:
+        yaml.dump(new_toc, f)
 
 
 if __name__ == '__main__':
