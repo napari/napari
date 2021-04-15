@@ -53,9 +53,9 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    welcome : bool
+    show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
-        canvas.
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -89,14 +89,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer: Viewer, welcome=False):
+    def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
 
-        self._welcome = welcome
+        self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -169,7 +169,7 @@ class QtViewer(QSplitter):
 
         # Stacked widget to provide a welcome page
         self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
-        self._canvas_overlay.set_welcome_visible(welcome)
+        self._canvas_overlay.set_welcome_visible(show_welcome_screen)
         self._canvas_overlay.sig_dropped.connect(self.dropEvent)
 
         main_widget = QWidget()
@@ -480,7 +480,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        if self._welcome:
+        if self._show_welcome_screen:
             self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
     def screenshot(self, path=None):
@@ -755,7 +755,7 @@ class QtViewer(QSplitter):
 
     def set_welcome_visible(self, visible):
         """Show welcome screen widget."""
-        self._welcome = visible
+        self._show_welcome_screen = visible
         self._canvas_overlay.set_welcome_visible(visible)
 
     def keyPressEvent(self, event):

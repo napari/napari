@@ -75,16 +75,6 @@ class QtWelcomeWidget(QWidget):
 
         self.setLayout(layout)
 
-        self._update()
-
-    def _update(self, event=None):
-        icon = QColoredSVGIcon.from_resources('logo_silhouette')
-        self._image.setPixmap(
-            icon.colored(
-                theme=SETTINGS.appearance.theme, theme_key='background'
-            ).pixmap(300, 300)
-        )
-
     def paintEvent(self, event):
         """Override Qt method.
 

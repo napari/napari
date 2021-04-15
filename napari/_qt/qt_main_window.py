@@ -280,7 +280,7 @@ class Window:
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow()
-        self.qt_viewer = QtViewer(viewer, welcome=True)
+        self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
         self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
         self._qt_window.setWindowTitle(viewer.title)
         self._status_bar = self._qt_window.statusBar()
