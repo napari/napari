@@ -95,21 +95,24 @@ class PluginManager(_PM):
         ----------
         new_order : CallOrderDict
 
-        new_order =
-                {
-                    spec_name: [
-                            {
-                                name: plugin_name
-                                enabled: enabled
-                            },
-                            {
-                                name: plugin_name
-                                enabled: enabled
-                            },
-                            ...
-                    ],
-                    ...
-                }
+        Examples
+        --------
+        >>> new_order =
+        ...         {
+        ...             spec_name: [
+        ...                     {
+        ...                         name: plugin_name
+        ...                         enabled: enabled
+        ...                     },
+        ...                     {
+        ...                         name: plugin_name
+        ...                         enabled: enabled
+        ...                     },
+        ...                     ...
+        ...             ],
+        ...             ...
+        ...         }
+        ... plugin_manager.set_call_order(new_order)
         """
 
         for spec_name, hook_caller in self.hooks.items():
@@ -378,7 +381,6 @@ def available_samples() -> Tuple[Tuple[str, str], ...]:
 
     Examples
     --------
-
     .. code-block:: python
 
         from napari.plugins import available_samples
