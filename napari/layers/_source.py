@@ -20,8 +20,8 @@ class Source(BaseModel):
     reader_plugin: str, optional
         name of reader plugin that loaded the file (if applicable)
     sample: Tuple[str, str], optional
-        Tuple of (sample_plugin, sample_name), if layer was loaded via the
-        open_sample.
+        Tuple of (sample_plugin, sample_name), if layer was loaded via
+        `viewer.open_sample`.
     widget: FunctionGui, optional
         magicgui widget, if the layer was added via a magicgui widget.
     """
