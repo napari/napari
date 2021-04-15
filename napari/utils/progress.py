@@ -35,6 +35,7 @@ class progress:
         self,
         iterable: Optional[Iterable] = None,
         total: Optional[int] = None,
+        step: Optional[int] = None,
         description: Optional[str] = None,
     ) -> None:
         self._iterable = iterable
@@ -47,10 +48,13 @@ class progress:
                 self._total = total if total is not None else 0
         else:
             if total is not None:
-                self._iterable = range(total + 1)
                 self._total = total
+                # TODO: figure out the half open range thing...
+                self._step = step if step else 1
+                self._iterable = range(0, total + 1, step)
             else:
                 self._total = 0
+                self._step = 0
 
         self._pbar._set_total(self._total)
 
@@ -67,6 +71,16 @@ class progress:
         for n, i in enumerate(self._iterable):
             self._pbar._set_value(n)
             yield i
+
+    def increment(self):
+        """Increment progress bar using current step"""
+        self._pbar._set_value(
+            min(self._total, self._pbar._get_value() + self._step)
+        )
+
+    def decrement(self):
+        """Decrement progress bar using current step"""
+        self._pbar._set_value(max(0, self._pbar._get_value() - self._step))
 
     def update(self, val, desc=None):
         """Update progress bar with new value and, optionally, a description.
@@ -106,11 +120,11 @@ class progress:
 
 
 class ProgressBar:
-    def __init__(self, description="") -> None:
+    def __init__(self) -> None:
         self.baseWidget = QWidget()
         self.baseWidget.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.pbar = QProgressBar()
-        self.label = QLabel(description)
+        self.label = QLabel()
 
         layout = QHBoxLayout()
         layout.addWidget(self.label)
@@ -125,6 +139,9 @@ class ProgressBar:
 
     def _set_value(self, value):
         self.pbar.setValue(value)
+
+    def _get_value(self):
+        return self.pbar.value()
 
     def _set_description(self, desc):
         self.label.setText(desc)
