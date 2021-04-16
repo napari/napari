@@ -222,6 +222,13 @@ class Action:
     description: str
     keymapprovider: KeymapProvider
 
+    def call(self, context):
+        if not hasattr(self, '_command_with_context'):
+            self._command_with_context = lambda: call_with_context(
+                self.command, context
+            )
+        return self._command_with_context
+
 
 class ActionManager:
     """
@@ -338,6 +345,14 @@ class ActionManager:
 
         for button in buttons:
             button.setToolTip(desc + sht_str)
+            action = self._actions[name]
+
+            try:
+                # not sure how to check whether things are connected already
+                button.clicked.disconnect(action.call(self.context))
+            except Exception:
+                pass
+            button.clicked.connect(action.call(self.context))
         if name in self._qactions:
             action = self._actions[name]
             qaction = self._qactions[name]
@@ -394,14 +409,8 @@ class ActionManager:
         """
         Bind `button` to trigger Action `name` on click.
         """
-        action = self._actions[name]
-
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
-
-        button.clicked.connect(
-            lambda: call_with_context(action.command, self.context)
-        )
         button.clicked.connect(lambda: self.push(name))
 
         button.destroyed.connect(lambda: self._buttons[name].remove(button))
