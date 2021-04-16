@@ -11,6 +11,7 @@ from ._layer_delegate import LayerDelegate
 from .qt_list_view import QtListView
 
 if TYPE_CHECKING:
+    from qtpy.QtGui import QKeyEvent
     from qtpy.QtWidgets import QWidget
 
     from ...components.layerlist import LayerList
@@ -49,3 +50,7 @@ class QtLayerList(QtListView[Layer]):
         # This reverses the order of the items in the view,
         # so items at the end of the list are at the top.
         self.setModel(ReverseProxyModel(self.model()))
+
+    def keyPressEvent(self, e: QKeyEvent) -> None:
+        super().keyPressEvent(e)
+        e.ignore()  # pass key events up to viewer
