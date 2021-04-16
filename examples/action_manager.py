@@ -6,7 +6,7 @@ from skimage import data
 import napari
 from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 from napari.components import ViewerModel
-from napari.utils.key_bindings import action_manager
+from napari.utils.action_manager import action_manager
 
 
 def rotate45(viewer):

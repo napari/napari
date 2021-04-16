@@ -17,6 +17,7 @@ from ..utils.history import (
     update_open_history,
     update_save_history,
 )
+from ..utils.action_manager import action_manager
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -25,7 +26,7 @@ from ..utils.interactions import (
     mouse_wheel_callbacks,
 )
 from ..utils.io import imsave
-from ..utils.key_bindings import KeymapHandler, action_manager
+from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList

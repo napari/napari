@@ -7,8 +7,8 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 
+from ...utils.action_manager import action_manager
 from ...utils.interactions import KEY_SYMBOLS
-from ...utils.key_bindings import action_manager
 from ...utils.translations import trans
 
 

@@ -1,4 +1,4 @@
-from ..utils.key_bindings import action_manager
+from ..utils.action_manager import action_manager
 from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
