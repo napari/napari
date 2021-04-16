@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from qtpy.QtCore import QItemSelection, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView
 
-from ..utils import qt_signals_blocked
 from ._base_item_model import ItemRole
 from ._factory import create_model
 
@@ -75,9 +74,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         sel = {i.data(ItemRole) for i in selected.indexes()}
         desel = {i.data(ItemRole) for i in deselected.indexes()}
 
-        print("selectionChanged", sel, desel)
         if not self._root.selection.events.changed._emitting:
-            print("set root selection")
             self._root.selection.update(sel)
             self._root.selection.difference_update(desel)
         return super().selectionChanged(selected, deselected)
@@ -116,7 +113,6 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     def _sync_selection_models(self):
         """Clear and re-sync the Qt selection view from the python selection."""
-        print("_sync_selection_models")
         sel_model = self.selectionModel()
         selection = QItemSelection()
         for i in self._root.selection:
