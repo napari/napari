@@ -107,7 +107,7 @@ class ActionManager:
         An action is generally a callback associated with
          - a name (unique),
          - a description
-         - A keymapable (easier for focus and backward compatibility).
+         - A keymap provider (easier for focus and backward compatibility).
 
         Actions can then be later bound/unbound from button elements, and
         shortcuts; and the action manager will take care of modifying the keymap
