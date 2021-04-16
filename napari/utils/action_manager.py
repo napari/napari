@@ -3,10 +3,15 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
-from typing import Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
 
 from .interactions import format_shortcut
 from .key_bindings import KeymapProvider
+
+if TYPE_CHECKING:
+    from qtpy.QtWidgets import QAction, QPushButton
+
+    from napari.qt import QtStateButton
 
 
 def call_with_context(function, context):
@@ -89,14 +94,15 @@ class ActionManager:
 
     def __init__(self):
         # map associating a name/id with a Comm
-        self._actions = {}
-        self._buttons = defaultdict(lambda: [])
-        self._qactions = defaultdict(lambda: [])
-        self._shortcuts = {}
-        self._orphans = {}
-        self.context = {}
-        self._stack = []
-        self._recording = False
+        self._actions: Dict[str, Action] = {}
+        self._buttons: Dict[
+            str, List[Union[QPushButton, QtStateButton]]
+        ] = defaultdict(lambda: [])
+        self._qactions: Dict[str, QAction] = defaultdict(lambda: [])
+        self._shortcuts: Dict[str, str] = {}
+        self.context: Dict[str, Any] = {}
+        self._stack: List[str] = []
+        self._recording: bool = False
 
     def register_action(
         self, name, command, description, keymapprovider: KeymapProvider
@@ -138,12 +144,6 @@ class ActionManager:
         #    )
         self._actions[name] = Action(command, description, keymapprovider)
         self._update_shortcut_bindings(name)
-        # shortcuts may have been bound before the command was actually
-        # registered, remove it from orphan and bind shortcuts.
-        if command in self._orphans:
-            # print('Found orphan shortcut')
-            sht = self._orphans.pop(command)
-            self.bind_shortcut(name, sht)
         self._update_gui_elements(name)
 
     def _update_gui_elements(self, name):
