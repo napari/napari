@@ -85,5 +85,8 @@ def layer_source(**source_kwargs):
 
 
 def current_source():
-    """Get the current layer :class:`Source` (inferred from context)."""
+    """Get the current layer :class:`Source` (inferred from context).
+
+    The main place this function is used is in :meth:`Layer.__init__`.
+    """
     return Source(**_LAYER_SOURCE.get())
