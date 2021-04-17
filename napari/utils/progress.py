@@ -16,7 +16,7 @@ from .._qt.utils import get_viewer_instance
 
 def get_pbar(viewer_instance):
     pbar = ProgressBar()
-    viewer_instance.activityDock.widget().layout.addWidget(pbar.baseWidget)
+    viewer_instance.activityDock.widget().layout.addWidget(pbar)
 
     return pbar
 
@@ -82,29 +82,29 @@ class progress(tqdm):
 
     def hide(self):
         """Hide the progress bar"""
-        self._pbar.baseWidget.hide()
+        self._pbar.hide()
 
     def show(self):
         """Show the progress bar"""
-        self._pbar.baseWidget.show()
+        self._pbar.show()
 
     def close(self):
         """Closes and deletes the progress bar widget"""
         super().close()
-        self._pbar.baseWidget.close()
+        self._pbar.close()
 
 
-class ProgressBar:
-    def __init__(self) -> None:
-        self.baseWidget = QWidget()
-        self.baseWidget.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+class ProgressBar(QWidget):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.pbar = QProgressBar()
         self.label = QLabel()
 
         layout = QHBoxLayout()
         layout.addWidget(self.label)
         layout.addWidget(self.pbar)
-        self.baseWidget.setLayout(layout)
+        self.setLayout(layout)
 
     def setRange(self, min, max):
         self.pbar.setRange(min, max)
