@@ -36,8 +36,10 @@ General rendering flow:
 from __future__ import annotations
 
 from enum import Flag, auto
+from functools import partial
 from typing import TYPE_CHECKING
 
+from PyQt5.QtCore import QTimer
 from qtpy import QtCore
 from qtpy.QtCore import QPoint, QSize, Qt
 from qtpy.QtGui import QPixmap
@@ -59,7 +61,13 @@ from napari.layers.utils._link_layers import get_linked_layers, layer_is_linked
 class LayerCtx(Flag):
     MULTIPLE_LAYERS_SELECTED = auto()
     ALL_LAYERS_ARE_LINKED = auto()
-    LINKED_LAYERS_ARE_UNSELECTED = auto()
+    LINKED_LAYERS_UNSELECTED = auto()
+    IS_RGB = auto()
+    ALL_IMAGES = auto()
+    ALL_LABELS = auto()
+    CAN_SPLIT_IMAGE = auto()
+    CAN_STACK_IMAGES = auto()
+    CAN_STACK_RGB = auto()
 
 
 def _select_linked_layers(layer, layer_list):
@@ -74,9 +82,71 @@ def _unlink_selection(layer, layer_list):
     unlink_layers(layer_list.selection)
 
 
+def _duplicate_layer(layer, layer_list):
+    from copy import deepcopy
+
+    for lay in list(layer_list.selection):
+        new = deepcopy(lay)
+        new.name += ' copy'
+        layer_list.insert(layer_list.index(lay) + 1, new)
+
+
+def split_stack(layer, layer_list, axis=0):
+    from ...layers.utils import stack_utils
+
+    if layer.rgb:
+        images = stack_utils.split_rgb(layer)
+    else:
+        images = stack_utils.stack_to_images(layer, axis)
+    layer_list.remove(layer)
+    layer_list.extend(images)
+    layer_list.selection = set(images)
+
+
+def convert(layer, layer_list, type_):
+    from napari.layers import Layer
+
+    for lay in list(layer_list.selection):
+        idx = layer_list.index(lay)
+        data = lay.data.astype(int) if layer_list == 'labels' else lay.data
+        layer_list.pop(idx)
+        layer_list.insert(idx, Layer.create(data, {'name': lay.name}, type_))
+
+
+def merge_stack(layer, layer_list, rgb=False):
+    from ...layers.utils import stack_utils
+
+    selection = list(layer_list.selection)
+    for layer in selection:
+        layer_list.remove(layer)
+    if rgb:
+        new = stack_utils.merge_rgb(selection)
+    else:
+        new = stack_utils.images_to_stack(selection)
+    layer_list.append(new)
+
+
 class LayerContextMenu(QMenu):
     def __init__(self):
         super().__init__()
+        self._duplicate_layer = self.addAction('Duplicate Layer')
+        self._duplicate_layer.setData(_duplicate_layer)
+        self._convert_to_labels = self.addAction('Convert to Labels')
+        self._convert_to_labels.setData(partial(convert, type_='labels'))
+        self._convert_to_image = self.addAction('Convert to Image')
+        self._convert_to_image.setData(partial(convert, type_='image'))
+
+        self.addSeparator()
+        self._split_stack = self.addAction('Split Stack')
+        self._split_stack.setData(split_stack)
+        self._split_rgb = self.addAction('Split RGB')
+        self._split_rgb.setData(split_stack)
+        self._merge_stack = self.addAction('Merge to Stack')
+        self._merge_stack.setData(merge_stack)
+        self._merge_rgb = self.addAction('Merge to RGB')
+        self._merge_rgb.setData(partial(merge_stack, rgb=True))
+
+        self.addSeparator()
         self._link_layers = self.addAction('Link Layers')
         # putting callback as data() feels weird, but it still needs to be
         # assigned a specific layer/layer_list argument
@@ -86,35 +156,68 @@ class LayerContextMenu(QMenu):
         self._select_linked_layers = self.addAction('Select Linked Layers')
         self._select_linked_layers.setData(_select_linked_layers)
 
-    def _update(self, flags: LayerCtx) -> None:
+    def _update(self, c: LayerCtx) -> None:
         self._link_layers.setVisible(True)
-        self._link_layers.setEnabled(False)
         self._unlink_layers.setVisible(False)
-        if flags & flags.ALL_LAYERS_ARE_LINKED:  # type: ignore
+        self._split_stack.setVisible(True)
+        self._split_rgb.setVisible(False)
+
+        self._convert_to_labels.setEnabled(bool(c & c.ALL_IMAGES))
+        self._convert_to_image.setEnabled(bool(c & c.ALL_LABELS))
+
+        if c & c.IS_RGB:
+            self._split_rgb.setVisible(True)
+            self._split_stack.setVisible(False)
+        else:
+            self._split_stack.setEnabled(bool(c & c.CAN_SPLIT_IMAGE))
+
+        # self._merge_rgb.setEnabled(bool(c & c.ALL_IMAGES))
+        self._merge_rgb.setEnabled(False)  # TODO
+        self._merge_stack.setEnabled(bool(c & c.CAN_STACK_IMAGES))
+
+        if c & c.ALL_LAYERS_ARE_LINKED:  # type: ignore
             self._unlink_layers.setVisible(True)
             self._unlink_layers.setEnabled(True)
             self._link_layers.setVisible(False)
-        elif flags & flags.MULTIPLE_LAYERS_SELECTED:  # type: ignore
-            self._link_layers.setEnabled(True)
-        if flags & flags.LINKED_LAYERS_ARE_UNSELECTED:  # type: ignore
-            self._select_linked_layers.setEnabled(True)
         else:
-            self._select_linked_layers.setEnabled(False)
+            self._link_layers.setEnabled(bool(c & c.MULTIPLE_LAYERS_SELECTED))
+
+        self._select_linked_layers.setEnabled(
+            bool(c & c.LINKED_LAYERS_UNSELECTED)
+        )
 
 
 def get_flags(layer, layer_list):
-    flags = LayerCtx(0)
-    if len(layer_list.selection) > 1:
-        flags |= LayerCtx.MULTIPLE_LAYERS_SELECTED
+    from ...layers import Image, Labels
+    from ...utils.events.containers import Selection
 
-    are_linked = [layer_is_linked(x) for x in layer_list.selection]
+    selection: Selection = layer_list.selection
+    active = selection.active
+
+    flags = LayerCtx(0)
+    if len(selection) > 1:
+        flags |= LayerCtx.MULTIPLE_LAYERS_SELECTED
+    elif isinstance(active, Image):
+        if active.rgb:
+            flags |= LayerCtx.IS_RGB
+            # Determine initial shape
+        shp = active.data[0].shape if active.multiscale else active.data.shape
+        if any(x < 16 for x in shp):
+            flags |= LayerCtx.CAN_SPLIT_IMAGE
+
+    are_linked = [layer_is_linked(x) for x in selection]
     if all(are_linked):
         flags |= LayerCtx.ALL_LAYERS_ARE_LINKED
     if any(are_linked):
-        all_links = get_linked_layers(*layer_list.selection)
-        if len(all_links - layer_list.selection):
-            flags |= LayerCtx.LINKED_LAYERS_ARE_UNSELECTED
-
+        all_links = get_linked_layers(*selection)
+        if len(all_links - selection):
+            flags |= LayerCtx.LINKED_LAYERS_UNSELECTED
+    if all(isinstance(x, Image) for x in selection):
+        flags |= LayerCtx.ALL_IMAGES
+        if len({x.data.shape for x in selection}) == 1 and len(selection) > 1:
+            flags |= LayerCtx.CAN_STACK_IMAGES
+    if all(isinstance(x, Labels) for x in selection):
+        flags |= LayerCtx.ALL_LABELS
     return flags
 
 
@@ -244,100 +347,4 @@ class LayerDelegate(QStyledItemDelegate):
         self._context_menu._update(flags)
         action = self._context_menu.exec_(pos)
         if action is not None:
-            f = action.data()
-            f(layer, layer_list)
-
-
-# from qtpy.QtCore import QTimer
-# from qtpy.QtWidgets import QApplication
-
-# from napari.layers.utils import stack_utils
-
-
-# def split_stack(layer, axis, layer_list):
-#     if layer.rgb:
-#         images = stack_utils.split_rgb(layer)
-#     else:
-#         images = stack_utils.stack_to_images(layer, axis)
-#     layer_list.remove(layer)
-#     layer_list.extend(images)
-#     layer_list.selection = set(images)
-
-
-# def merge_stack(layers, layer_list, position=0, rgb=False):
-#     if rgb:
-#         new = stack_utils.merge_rgb(layers)
-#     else:
-#         new = stack_utils.images_to_stack(layers)
-#     for layer in layers:
-#         layer_list.remove(layer)
-#     layer_list.insert(position, new)
-#     layer_list.selection.active = new
-
-
-# def duplicate(layer, layer_list):
-#     from copy import deepcopy
-
-#     new = deepcopy(layer)
-#     new.name += ' copy'
-#     layer_list.insert(layer_list.index(layer) + 1, new)
-
-
-# def convert(layer, new_type, layer_list):
-#     from napari.layers import Layer
-
-#     layer_list.remove(layer)
-#     data = layer.data.astype(int) if layer_list == 'labels' else layer.data
-#     layer_list.append(Layer.create(data, {}, new_type))
-
-
-# def get_actions(layer, layer_list):
-#     from napari.layers import Image, Labels
-
-#     selection = layer_list.selection
-#     layer_in_selection = len(selection) > 1 and layer in selection
-
-#     if len(selection) <= 1:
-#         yield ('Duplicate', partial(duplicate, layer, layer_list))
-#     else:
-#         yield ('Link layers', partial(link_layers, selection))
-#     if isinstance(layer, Image):
-#         if layer_in_selection:
-#             try:
-#                 # not sure whether layer.data.shape is always going to work
-#                 if (
-#                     len({x.data.shape for x in selection}) == 1
-#                     and len({type(x) for x in selection}) == 1
-#                 ):
-#                     # use the layer that was clicked on as the "template" for merge
-#                     lst = list(selection)
-#                     lst.insert(0, lst.pop(lst.index(layer)))
-#                     yield (
-#                         'Stack images',
-#                         partial(merge_stack, lst, layer_list),
-#                     )
-#             except Exception:
-#                 pass
-#             # not working
-#             # if len(selection) == 3:
-#             #     yield (
-#             #         'Make RGB',
-#             #         partial(merge_stack, lst, layer_list, rgb=True),
-#             #     )
-#         elif layer.rgb:
-#             yield ('Split RGB', partial(split_stack, layer, -1, layer_list))
-#         else:
-#             for ax in (i for i, s in enumerate(layer.data.shape) if s < 8):
-#                 yield (
-#                     f'Split Image (axis {ax})',
-#                     partial(split_stack, layer, ax, layer_list),
-#                 )
-#             yield (
-#                 'Convert to Labels',
-#                 partial(convert, layer, 'labels', layer_list),
-#             )
-#     if isinstance(layer, Labels) and not layer_in_selection:
-#         yield (
-#             'Convert to Image',
-#             partial(convert, layer, 'image', layer_list),
-#         )
+            QTimer.singleShot(0, partial(action.data(), layer, layer_list))
