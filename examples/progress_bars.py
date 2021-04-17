@@ -16,16 +16,13 @@ def arbitrary_steps():
 
     sleep(1)
     pbr.set_description("Step 2 Complete")
-    pbr.update(2)
+    pbr.update(1)
 
     sleep(2)
     pbr.set_description("Step 3 Done!")
-    pbr.update(3)
+    pbr.update(1)
 
-    sleep(1)
-    pbr.set_description("Total Exceeded...")
-    pbr.update(4)
-
+    pbr.close()
 
 def indeterminate():
     """By passing a total of 0, we can have an indeterminate progress bar
@@ -42,14 +39,6 @@ def iterable():
         pbr.set_description(f"{animal}")
         sleep(0.4)
 
-
-def total_iterable():
-    """progress also generates an iterable for us when a total is passed
-    """
-    pbr = progress(total=10)
-    for _ in pbr:
-        sleep(0.1)
-
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()
 
@@ -64,10 +53,6 @@ button_layout.addWidget(indeterminate_btn)
 iterable_btn = QPushButton("Iterable")
 iterable_btn.clicked.connect(iterable)
 button_layout.addWidget(iterable_btn)
-
-total_btn = QPushButton("Total Iterable")
-total_btn.clicked.connect(total_iterable)
-button_layout.addWidget(total_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
