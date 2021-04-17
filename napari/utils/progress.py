@@ -81,6 +81,16 @@ class progress:
             self.n = n
             self.close()
 
+    def __len__(self):
+        if self._iterable is None:
+            return self._total
+        elif hasattr(self._iterable, 'shape'):
+            return self._iterable.shape[0]
+        elif hasattr(self._iterable, '__len__'):
+            return len(self._iterable)
+        else:
+            return None
+
     def increment(self):
         """Increment progress bar using current step"""
         self._pbar._set_value(

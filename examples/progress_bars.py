@@ -1,4 +1,3 @@
-from PyQt5 import QtWidgets
 import napari
 from time import sleep
 from napari.utils.progress import progress
@@ -42,7 +41,7 @@ def iterable():
     for animal in pbr:
         pbr.set_description(f"{animal}")
         sleep(0.4)
-        
+
 
 def total_iterable():
     """progress also generates an iterable for us when a total is passed
