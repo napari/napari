@@ -668,6 +668,10 @@ class Labels(_image_base_class):
     def preserve_labels(self, preserve_labels: bool):
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
+
+    @property
+    def contrast_limits(self):
+        return self._contrast_limits
         
     @contrast_limits.setter
     def contrast_limits(self, value):
