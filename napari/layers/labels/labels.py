@@ -668,6 +668,10 @@ class Labels(_image_base_class):
     def preserve_labels(self, preserve_labels: bool):
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
+        
+    @contrast_limits.setter
+    def contrast_limits(self, value):
+        raise AttributeError("Setting contrast_limits on labels layers is not allowed.")
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
