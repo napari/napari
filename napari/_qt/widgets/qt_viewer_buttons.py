@@ -100,7 +100,8 @@ class QtViewerButtons(QFrame):
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
-            trans._("Open IPython terminal ({key1}-{key2}-C)").format(
+            trans._(
+                "Open IPython terminal ({key1}-{key2}-C)",
                 key1=KEY_SYMBOLS['Control'],
                 key2=KEY_SYMBOLS['Shift'],
             ),
@@ -109,23 +110,25 @@ class QtViewerButtons(QFrame):
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._("Roll dimensions order for display ({key}-E)").format(
-                key=KEY_SYMBOLS['Control']
+            trans._(
+                "Roll dimensions order for display ({key}-E)",
+                key=KEY_SYMBOLS['Control'],
             ),
             lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._("Transpose displayed dimensions ({key}-T)").format(
-                key=KEY_SYMBOLS['Control']
+            trans._(
+                "Transpose displayed dimensions ({key}-T)",
+                key=KEY_SYMBOLS['Control'],
             ),
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
             self.viewer,
             'home',
-            trans._("Reset view ({key}-R)").format(key=KEY_SYMBOLS['Control']),
+            trans._("Reset view ({key}-R)", key=KEY_SYMBOLS['Control']),
             lambda: self.viewer.reset_view(),
         )
 
@@ -136,9 +139,7 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.events,
         )
         self.gridViewButton.setToolTip(
-            trans._("Toggle grid view ({key}-G)").format(
-                key=KEY_SYMBOLS['Control']
-            )
+            trans._("Toggle grid view ({key}-G)", key=KEY_SYMBOLS['Control'])
         )
 
         self.ndisplayButton = QtStateButton(
@@ -150,8 +151,9 @@ class QtViewerButtons(QFrame):
             3,
         )
         self.ndisplayButton.setToolTip(
-            trans._("Toggle number of displayed dimensions ({key}-Y)").format(
-                key=KEY_SYMBOLS['Control']
+            trans._(
+                "Toggle number of displayed dimensions ({key}-Y)",
+                key=KEY_SYMBOLS['Control'],
             )
         )
 
@@ -188,8 +190,10 @@ class QtDeleteButton(QPushButton):
 
         self.viewer = viewer
         self.setToolTip(
-            trans._("Delete selected layers ({key1}-{key2})").format(
-                key1=KEY_SYMBOLS['Control'], key2=KEY_SYMBOLS['Backspace']
+            trans._(
+                "Delete selected layers ({key1}-{key2})",
+                key1=KEY_SYMBOLS['Control'],
+                key2=KEY_SYMBOLS['Backspace'],
             )
         )
         self.setAcceptDrops(True)
@@ -308,13 +312,7 @@ class QtStateButton(QtViewerPushButton):
         self._on_change()
 
     def change(self):
-        """Toggle between the multiple states of this button.
-
-        Parameters
-        ----------
-        state : qtpy.QtCore.Qt.CheckState
-            State of the checkbox.
-        """
+        """Toggle between the multiple states of this button."""
         if self.isChecked():
             newstate = self._onstate
         else:

@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import xarray as xr
 from numpy.core.numerictypes import issubdtype
+from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -229,6 +230,15 @@ def test_seed():
 
     layer = Labels(data, seed=0.7)
     assert layer.seed == 0.7
+
+    # ensure setting seed triggers
+    # recalculation of _all_vals
+    _all_vals_07 = layer._all_vals.copy()
+    layer.seed = 0.4
+    _all_vals_04 = layer._all_vals.copy()
+    assert_raises(
+        AssertionError, assert_array_almost_equal, _all_vals_04, _all_vals_07
+    )
 
 
 def test_num_colors():

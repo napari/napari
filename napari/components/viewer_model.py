@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import inspect
 import itertools
 import os
 import warnings
 from functools import lru_cache
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,8 +23,10 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..layers import Image, Layer
+from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -30,6 +35,7 @@ from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.theme import available_themes
+from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -658,9 +664,77 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             return layer_list
 
+    def open_sample(
+        self,
+        plugin: str,
+        sample: str,
+        reader_plugin: Optional[str] = None,
+        **kwargs,
+    ) -> List[Layer]:
+        """Open `sample` from `plugin` and add it to the viewer.
+
+        To see all available samples registered by plugins, use
+        :func:`napari.plugins.available_samples`
+
+        Parameters
+        ----------
+        plugin : str
+            name of a plugin providing a sample
+        sample : str
+            name of the sample
+        reader_plugin : str, optional
+            reader plugin to pass to viewer.open (only used if the sample data
+            is a string).  by default None.
+        **kwargs
+            additional kwargs will be passed to the sample data loader provided
+            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            not match the sample data loader.
+
+        Returns
+        -------
+        layers : list
+            A list of any layers that were added to the viewer.
+
+        Raises
+        ------
+        KeyError
+            If `plugin` does not provide a sample named `sample`.
+        """
+        from ..plugins import _sample_data, available_samples
+
+        try:
+            data = _sample_data[plugin][sample]['data']
+        except KeyError:
+            samples = available_samples()
+            msg = trans._(
+                f"Plugin {plugin!r} does not provide sample data "
+                f"named {sample!r}. "
+            )
+            if samples:
+                msg += trans._(
+                    'Available samples include: {samples}', samples=samples
+                )
+            else:
+                msg += trans._("No plugin samples have been registered.")
+            raise KeyError(msg)
+
+        with layer_source(sample=(plugin, sample)):
+            if callable(data):
+                added = []
+                for datum in data(**kwargs):
+                    added.extend(self._add_layer_from_data(*datum))
+                return added
+            elif isinstance(data, (str, Path)):
+                return self.open(data, plugin=reader_plugin)
+            else:
+                raise TypeError(
+                    'Got unexpected type for sample '
+                    f'({plugin!r}, {sample!r}): {type(data)}'
+                )
+
     def open(
         self,
-        path: Union[str, Sequence[str]],
+        path: PathOrPaths,
         *,
         stack: bool = False,
         plugin: Optional[str] = None,
@@ -702,7 +776,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers : list
             A list of any layers that were added to the viewer.
         """
-        paths = [path] if isinstance(path, str) else path
+        paths = [path] if isinstance(path, (Path, str)) else path
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
@@ -762,7 +836,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin) or []
+        layer_data, hookimpl = read_data_with_plugins(
+            path_or_paths, plugin=plugin
+        )
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
@@ -780,21 +856,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added
+        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
                 data, kwargs, layer_type, fallback_name=basename
             )
             # actually add the layer
-            new = self._add_layer_from_data(*_data)
-            # some add_* methods return a List[Layer], others just a Layer
-            # we want to always return a list
-            added.extend(new if isinstance(new, list) else [new])
+            with layer_source(path=filename, reader_plugin=plugin):
+                added.extend(self._add_layer_from_data(*_data))
         return added
 
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> Union[Layer, List[Layer]]:
+    ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -813,6 +888,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             on the viewer instance.  If not provided, the layer is assumed to
             be "image", unless data.dtype is one of (np.int32, np.uint32,
             np.int64, np.uint64), in which case it is assumed to be "labels".
+
+        Returns
+        -------
+        layers : list of layers
+            A list of layers added to the viewer.
 
         Raises
         ------
@@ -851,25 +931,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         try:
             add_method = getattr(self, 'add_' + layer_type)
-        except AttributeError:
-            raise NotImplementedError(
-                f"Sorry! {layer_type} is a valid layer type, but there is no "
-                f"viewer.add_{layer_type} available yet."
-            )
-
-        try:
             layer = add_method(data, **(meta or {}))
         except TypeError as exc:
-            if 'unexpected keyword argument' in str(exc):
-                bad_key = str(exc).split('keyword argument ')[-1]
-                raise TypeError(
-                    "_add_layer_from_data received an unexpected keyword "
-                    f"argument ({bad_key}) for layer type {layer_type}"
-                ) from exc
-            else:
+            if 'unexpected keyword argument' not in str(exc):
                 raise exc
+            bad_key = str(exc).split('keyword argument ')[-1]
+            raise TypeError(
+                f'_add_layer_from_data received an unexpected keyword argument'
+                f' ({bad_key}) for layer type {layer_type}'
+            ) from exc
 
-        return layer
+        return layer if isinstance(layer, list) else [layer]
 
 
 def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':

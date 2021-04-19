@@ -103,7 +103,7 @@ class NapariQtNotification(QDialog):
         self.message.setText(message)
         if source:
             self.source_label.setText(
-                trans._('Source: {source}').format(source=source)
+                trans._('Source: {source}', source=source)
             )
 
         self.close_button.clicked.connect(self.close)
@@ -326,7 +326,19 @@ class NapariQtNotification(QDialog):
                 text = QTextEdit()
                 text.setHtml(notification.as_html())
                 text.setReadOnly(True)
+                btn = QPushButton('Enter Debugger')
+
+                def _enter_debug_mode():
+                    btn.setText(
+                        'Now Debugging. Please quit debugger in console '
+                        'to continue'
+                    )
+                    _debug_tb(notification.exception.__traceback__)
+                    btn.setText('Enter Debugger')
+
+                btn.clicked.connect(_enter_debug_mode)
                 tbdialog.layout().addWidget(text)
+                tbdialog.layout().addWidget(btn, 0, Qt.AlignRight)
                 tbdialog.show()
 
             actions = tuple(notification.actions) + (
@@ -354,3 +366,16 @@ class NapariQtNotification(QDialog):
             >= SETTINGS.application.gui_notification_level
         ):
             cls.from_notification(notification).show()
+
+
+def _debug_tb(tb):
+    import pdb
+
+    from ..utils import event_hook_removed
+
+    QApplication.processEvents()
+    QApplication.processEvents()
+    with event_hook_removed():
+        print("Entering debugger. Type 'q' to return to napari.\n")
+        pdb.post_mortem(tb)
+        print("\nDebugging finished.  Napari active again.")

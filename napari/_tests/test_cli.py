@@ -1,6 +1,5 @@
 import gc
 import sys
-from contextlib import contextmanager
 from unittest import mock
 
 import pytest
@@ -41,10 +40,6 @@ def test_cli_parses_unknowns(mock_run, monkeypatch):
     def assert_kwargs(*args, **kwargs):
         assert args == (["file"],)
         assert kwargs['contrast_limits'] == (0, 1)
-
-    @contextmanager
-    def gui_qt(**kwargs):
-        yield
 
     # testing all the variants of literal_evals
     monkeypatch.setattr(napari.__main__, 'view_path', assert_kwargs)

@@ -4,7 +4,7 @@
 import pydantic
 import pytest
 
-from napari.utils.settings._manager import SettingsManager
+from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -138,3 +138,27 @@ def test_custom_theme_settings(settings):
 
 def test_settings_string(settings):
     assert 'application:\n' in str(settings)
+
+
+def test_settings_load_invalid_content(tmp_path):
+    # This is invalid content
+    data = ":"
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(data)
+
+    with pytest.warns(UserWarning):
+        SettingsManager(tmp_path)
+
+
+def test_model_fields_are_annotated():
+    errors = []
+    for model in CORE_SETTINGS:
+        difference = set(model.__fields__) - set(model.__annotations__)
+        if difference:
+            errors.append(
+                f"Model '{model.__name__}' does not provide annotations "
+                f"for the fields:\n{', '.join(repr(f) for f in difference)}"
+            )
+
+    if errors:
+        raise ValueError("\n\n".join(errors))

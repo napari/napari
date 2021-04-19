@@ -27,6 +27,7 @@ class ScreenshotDialog(QFileDialog):
         save_function: Callable[[str], Any],
         parent=None,
         directory=str(Path.home()),
+        history=None,
     ):
         super().__init__(parent, trans._("Save screenshot"))
         self.setAcceptMode(QFileDialog.AcceptSave)
@@ -35,6 +36,7 @@ class ScreenshotDialog(QFileDialog):
             trans._("Image files (*.png *.bmp *.gif *.tif *.tiff)")
         )
         self.setDirectory(directory)
+        self.setHistory(history)
 
         self.save_function = save_function
 
@@ -47,8 +49,9 @@ class ScreenshotDialog(QFileDialog):
                     self,
                     trans._("Confirm overwrite"),
                     trans._(
-                        "{save_path} already exists. Do you want to replace it?"
-                    ).format(save_path=save_path),
+                        "{save_path} already exists. Do you want to replace it?",
+                        save_path=save_path,
+                    ),
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.No,
                 )

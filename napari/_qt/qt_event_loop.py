@@ -217,8 +217,7 @@ def quit_app():
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
 
-    NOTE: This context manager may be deprecated in the future. Prefer using
-    :func:`napari.run` instead.
+    NOTE: This context manager is deprecated!. Prefer using :func:`napari.run`.
 
     Parameters
     ----------
@@ -238,6 +237,19 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
+    warn(
+        "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running "
+        "napari from a script, please use 'napari.run()' as follows:\n\n"
+        "    import napari\n\n"
+        "    viewer = napari.Viewer()  # no prior setup needed\n"
+        "    # other code using the viewer...\n"
+        "    napari.run()\n\n"
+        "In IPython or Jupyter, 'napari.run()' is not necessary. napari will "
+        "automatically\nstart an interactive event loop for you: \n\n"
+        "    import napari\n"
+        "    viewer = napari.Viewer()  # that's it!\n",
+        FutureWarning,
+    )
 
     app = get_app()
     splash = None

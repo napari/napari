@@ -147,8 +147,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is

@@ -2,6 +2,7 @@ import pytest
 from qtpy.QtCore import QModelIndex, Qt
 
 from napari._qt.containers import QtNodeTreeModel, QtNodeTreeView
+from napari._qt.containers._base_item_view import index_of
 from napari.utils.events._tests.test_evented_list import NESTED_POS_INDICES
 from napari.utils.tree import Group, Node
 
@@ -111,8 +112,8 @@ def test_find_nodes():
     _assert_models_synced(root, qt_tree)
     node = Node(name='212')
     root[2, 1].append(node)
-    assert qt_tree.indexOf(node).row() == 2
-    assert not qt_tree.indexOf(Node(name='new node')).isValid()
+    assert index_of(qt_tree, node).row() == 2
+    assert not index_of(qt_tree, Node(name='new node')).isValid()
 
 
 def test_node_tree_view(qtbot):

@@ -1,6 +1,7 @@
 """Settings management.
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -83,7 +84,7 @@ class SettingsManager:
         return super().__dir__() + list(self._settings)
 
     def __str__(self):
-        return safe_dump(self._to_dict())
+        return safe_dump(self._to_dict(safe=True))
 
     @staticmethod
     def _get_section_name(setting) -> str:
@@ -92,11 +93,16 @@ class SettingsManager:
         """
         return setting.__name__.replace("Settings", "").lower()
 
-    def _to_dict(self) -> dict:
+    def _to_dict(self, safe: bool = False) -> dict:
         """Convert the settings to a dictionary."""
         data = {}
         for section, model in self._settings.items():
-            data[section] = model.dict()
+            if safe:
+                # We roundtrip to keep string objects (like SchemaVersion)
+                # yaml representable
+                data[section] = json.loads(model.json())
+            else:
+                data[section] = model.dict()
 
         return data
 
@@ -118,8 +124,19 @@ class SettingsManager:
             self._settings[section] = setting()
 
         if path.is_file():
-            with open(path) as fh:
-                data = safe_load(fh.read()) or {}
+            try:
+                with open(path) as fh:
+                    data = safe_load(fh.read()) or {}
+            except Exception as err:
+                import warnings
+
+                warnings.warn(
+                    "The content of the napari settings file could "
+                    "not be read.\n\nThe default settings will be used "
+                    "and the content of the file will be replaced the "
+                    f"next time settings are changed.\n\nError: \n{err}"
+                )
+                data = {}
 
             # Check with models
             for section, model_data in data.items():

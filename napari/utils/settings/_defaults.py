@@ -1,16 +1,88 @@
 """Settings management.
 """
 
+import os
 from enum import Enum
+from pathlib import Path
 from typing import List, Tuple
 
 from pydantic import BaseSettings, Field
 
+from ...plugins import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
+
+
+class SchemaVersion(str):
+    """
+    Custom schema version type to handle both tuples and version strings.
+
+    Provides also a `as_tuple` method for convenience when doing version
+    comparison.
+    """
+
+    def __new__(cls, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        return str.__new__(cls, value)
+
+    def __init__(self, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        self._value = value
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if isinstance(v, (tuple, list)):
+            v = ".".join(str(item) for item in v)
+
+        if not isinstance(v, str):
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        parts = v.split(".")
+        if len(parts) != 3:
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        for part in parts:
+            try:
+                int(part)
+            except Exception:
+                raise ValueError(
+                    trans._(
+                        "A schema version subparts must be positive integers or parseable as integers!"
+                    ),
+                    deferred=True,
+                )
+
+        return cls(v)
+
+    def __repr__(self):
+        return f'SchemaVersion("{self._value}")'
+
+    def __str__(self):
+        return f'"{self._value}"'
+
+    def as_tuple(self):
+        return tuple(int(p) for p in self._value.split('.'))
 
 
 class Theme(str):
@@ -33,15 +105,18 @@ class Theme(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string'))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         value = v.lower()
         themes = available_themes()
         if value not in available_themes():
             raise ValueError(
                 trans._(
-                    '"{value}" is not valid. It must be one of {themes}'
-                ).format(value=value, themes=", ".join(themes))
+                    '"{value}" is not valid. It must be one of {themes}',
+                    deferred=True,
+                    value=value,
+                    themes=", ".join(themes),
+                )
             )
 
         return value
@@ -74,8 +149,11 @@ class Language(str):
         if v not in language_packs:
             raise ValueError(
                 trans._(
-                    '"{value}" is not valid. It must be one of {language_packs}.'
-                ).format(value=v, language_packs=", ".join(language_packs))
+                    '"{value}" is not valid. It must be one of {language_packs}.',
+                    deferred=True,
+                    value=v,
+                    language_packs=", ".join(language_packs),
+                )
             )
 
         return v
@@ -106,7 +184,7 @@ class AppearanceSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
+    schema_version: SchemaVersion = (0, 1, 0)
 
     theme: Theme = Field(
         "dark",
@@ -133,7 +211,7 @@ class ApplicationSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
+    schema_version: SchemaVersion = (0, 1, 0)
 
     first_time: bool = True
 
@@ -171,6 +249,9 @@ class ApplicationSettings(BaseNapariSettings):
         NotificationSeverity.NONE
     )
 
+    open_history: List = [os.path.dirname(Path.home())]
+    save_history: List = [os.path.dirname(Path.home())]
+
     class Config:
         # Pydantic specific configuration
         title = trans._("Application")
@@ -189,17 +270,21 @@ class ApplicationSettings(BaseNapariSettings):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
+            "open_history",
+            "save_history",
         ]
 
 
 class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
-    schema_version = (0, 1, 0)
-    plugins_call_order: List[str] = Field(
-        [],
-        title=trans._("Plugin call order"),
-        description=trans._("Sort plugins call order"),
+    schema_version: SchemaVersion = (0, 1, 1)
+    call_order: CallOrderDict = Field(
+        None,
+        title=trans._("Plugin sort order"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called.",
+        ),
     )
 
     class Config:
@@ -208,7 +293,7 @@ class PluginsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'plugins_call_order']
+        preferences_exclude = ['schema_version']
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

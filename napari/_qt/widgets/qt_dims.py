@@ -293,8 +293,10 @@ class QtDims(QWidget):
             if loop_mode not in _modes:
                 raise ValueError(
                     trans._(
-                        'loop_mode must be one of {_modes}.  Got: {loop_mode}'
-                    ).format(_modes=_modes, loop_mode=loop_mode)
+                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
+                        _modes=_modes,
+                        loop_mode=loop_mode,
+                    )
                 )
             loop_mode = LoopMode(loop_mode)
 

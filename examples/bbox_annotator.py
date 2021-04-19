@@ -15,8 +15,8 @@ text_size = 20
 def create_label_menu(shapes_layer, label_property, labels):
     """Create a label menu widget that can be added to the napari viewer dock
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     shapes_layer : napari.layers.Shapes
         a napari shapes layer
     label_property : str
@@ -24,8 +24,8 @@ def create_label_menu(shapes_layer, label_property, labels):
     labels : List[str]
         list of the possible text labels values.
 
-    Returns:
-    --------
+    Returns
+    -------
     label_widget : magicgui.widgets.Container
         the container widget with the label combobox
     """
@@ -66,32 +66,33 @@ for slice_idx in range(n_slices):
     image[slice_idx, ...] = np.pad(base_image, ((0, 0), (shift, 0)), mode='constant')[:, :-shift]
 
 
-with napari.gui_qt():
-    # create a viewer with a fake t+2D image
-    viewer = napari.view_image(image)
+# create a viewer with a fake t+2D image
+viewer = napari.view_image(image)
 
-    # create an empty shapes layer initialized with
-    # text set to display the box label
-    text_kwargs = {
-        'text': text_property,
-        'size': text_size,
-        'color': text_color
-    }
-    shapes = viewer.add_shapes(
-        face_color='black',
-        properties={text_property: box_annotations},
-        text=text_kwargs,
-        ndim=3
-    )
+# create an empty shapes layer initialized with
+# text set to display the box label
+text_kwargs = {
+    'text': text_property,
+    'size': text_size,
+    'color': text_color
+}
+shapes = viewer.add_shapes(
+    face_color='black',
+    properties={text_property: box_annotations},
+    text=text_kwargs,
+    ndim=3
+)
 
-    # create the label section gui
-    label_widget = create_label_menu(
-        shapes_layer=shapes,
-        label_property=text_property,
-        labels=box_annotations
-    )
-    # add the label selection gui to the viewer as a dock widget
-    viewer.window.add_dock_widget(label_widget, area='right', name='label_widget')
+# create the label section gui
+label_widget = create_label_menu(
+    shapes_layer=shapes,
+    label_property=text_property,
+    labels=box_annotations
+)
+# add the label selection gui to the viewer as a dock widget
+viewer.window.add_dock_widget(label_widget, area='right', name='label_widget')
 
-    # set the shapes layer mode to adding rectangles
-    shapes.mode = 'add_rectangle'
+# set the shapes layer mode to adding rectangles
+shapes.mode = 'add_rectangle'
+
+napari.run()

@@ -6,6 +6,8 @@ from qtpy import QtCore, QtGui, QtWidgets
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
 
+from ...._qt.widgets.qt_plugin_sorter import QtPluginSorter
+
 
 class SchemaWidgetMixin:
     on_changed = Signal()
@@ -118,6 +120,19 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
+
+class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+    @state.setter
+    def state(self, state: int):
+        return None
+        # self.setValue(state)
+
+    def configure(self):
+        self.hook_list.order_changed.connect(self.on_changed.emit)
 
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
@@ -507,7 +522,7 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
 
         # Populate rows
         widgets = {}
-
+        layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
