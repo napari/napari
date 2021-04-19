@@ -1,6 +1,6 @@
 import warnings
 from logging import getLogger
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Tuple, Union
 
 from napari_plugin_engine import (
     HookImplementation,
@@ -20,7 +20,7 @@ def read_data_with_plugins(
     path: Union[str, Sequence[str]],
     plugin: Optional[str] = None,
     plugin_manager: PluginManager = napari_plugin_manager,
-) -> Optional[List[LayerData]]:
+) -> Tuple[Optional[List[LayerData]], Optional[HookImplementation]]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -60,6 +60,7 @@ def read_data_with_plugins(
     """
     hook_caller = plugin_manager.hook.napari_get_reader
 
+    hookimpl: Optional[HookImplementation] = None
     if plugin:
         if plugin not in plugin_manager.plugins:
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
@@ -70,12 +71,13 @@ def read_data_with_plugins(
         reader = hook_caller._call_plugin(plugin, path=path)
         if not callable(reader):
             raise ValueError(f'Plugin {plugin!r} does not support file {path}')
+        hookimpl = hook_caller.get_plugin_implementation(plugin)
         layer_data = reader(path)
         # if the reader returns a "null layer" sentinel indicating an empty
         # file, return an empty list, otherwise return the result or None
         if _is_null_layer_sentinel(layer_data):
-            return []
-        return layer_data or None
+            return [], hookimpl
+        return layer_data or None, hookimpl
 
     errors: List[PluginCallError] = []
     path = abspath_or_url(path)
@@ -92,6 +94,7 @@ def read_data_with_plugins(
         try:
             layer_data = reader(path)  # try to read data
             if layer_data:
+                hookimpl = result.implementation
                 break
         except Exception as exc:
             # collect the error and log it, but don't raise it.
@@ -121,9 +124,8 @@ def read_data_with_plugins(
 
     # if the reader returns a "null layer" sentinel indicating an empty file,
     # return an empty list, otherwise return the result or None
-    if _is_null_layer_sentinel(layer_data):
-        return []
-    return layer_data or None
+    _data = [] if _is_null_layer_sentinel(layer_data) else layer_data or None
+    return _data, hookimpl
 
 
 def save_layers(

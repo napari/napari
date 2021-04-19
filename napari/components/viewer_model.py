@@ -23,6 +23,7 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..layers import Image, Layer
+from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
 from ..types import PathOrPaths
@@ -669,7 +670,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample: str,
         reader_plugin: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> List[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
 
         To see all available samples registered by plugins, use
@@ -688,6 +689,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of **kwargs may raise an error if the kwargs do
             not match the sample data loader.
+
+        Returns
+        -------
+        layers : list
+            A list of any layers that were added to the viewer.
 
         Raises
         ------
@@ -712,16 +718,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 msg += trans._("No plugin samples have been registered.")
             raise KeyError(msg)
 
-        if callable(data):
-            for datum in data(**kwargs):
-                self._add_layer_from_data(*datum)
-        elif isinstance(data, (str, Path)):
-            self.open(data, plugin=reader_plugin)
-        else:
-            raise TypeError(
-                'Got unexpected type for sample '
-                f'({plugin!r}, {sample!r}): {type(data)}'
-            )
+        with layer_source(sample=(plugin, sample)):
+            if callable(data):
+                added = []
+                for datum in data(**kwargs):
+                    added.extend(self._add_layer_from_data(*datum))
+                return added
+            elif isinstance(data, (str, Path)):
+                return self.open(data, plugin=reader_plugin)
+            else:
+                raise TypeError(
+                    'Got unexpected type for sample '
+                    f'({plugin!r}, {sample!r}): {type(data)}'
+                )
 
     def open(
         self,
@@ -827,7 +836,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin) or []
+        layer_data, hookimpl = read_data_with_plugins(
+            path_or_paths, plugin=plugin
+        )
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
@@ -845,21 +856,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added
+        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
             basename, ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
                 data, kwargs, layer_type, fallback_name=basename
             )
             # actually add the layer
-            new = self._add_layer_from_data(*_data)
-            # some add_* methods return a List[Layer], others just a Layer
-            # we want to always return a list
-            added.extend(new if isinstance(new, list) else [new])
+            with layer_source(path=filename, reader_plugin=plugin):
+                added.extend(self._add_layer_from_data(*_data))
         return added
 
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> Union[Layer, List[Layer]]:
+    ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -878,6 +888,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             on the viewer instance.  If not provided, the layer is assumed to
             be "image", unless data.dtype is one of (np.int32, np.uint32,
             np.int64, np.uint64), in which case it is assumed to be "labels".
+
+        Returns
+        -------
+        layers : list of layers
+            A list of layers added to the viewer.
 
         Raises
         ------
@@ -916,25 +931,17 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         try:
             add_method = getattr(self, 'add_' + layer_type)
-        except AttributeError:
-            raise NotImplementedError(
-                f"Sorry! {layer_type} is a valid layer type, but there is no "
-                f"viewer.add_{layer_type} available yet."
-            )
-
-        try:
             layer = add_method(data, **(meta or {}))
         except TypeError as exc:
-            if 'unexpected keyword argument' in str(exc):
-                bad_key = str(exc).split('keyword argument ')[-1]
-                raise TypeError(
-                    "_add_layer_from_data received an unexpected keyword "
-                    f"argument ({bad_key}) for layer type {layer_type}"
-                ) from exc
-            else:
+            if 'unexpected keyword argument' not in str(exc):
                 raise exc
+            bad_key = str(exc).split('keyword argument ')[-1]
+            raise TypeError(
+                f'_add_layer_from_data received an unexpected keyword argument'
+                f' ({bad_key}) for layer type {layer_type}'
+            ) from exc
 
-        return layer
+        return layer if isinstance(layer, list) else [layer]
 
 
 def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
