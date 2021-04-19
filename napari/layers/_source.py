@@ -71,10 +71,10 @@ def layer_source(**source_kwargs):
     Examples
     --------
 
-    >>> with layer_source(path='file.ext', reader_plugin='plugin'):
-    >>>     points = some_function_that_creates_points()
+    >>> with layer_source(path='file.ext', reader_plugin='plugin'):  # doctest: +SKIP
+    ...     points = some_function_that_creates_points()
     ...
-    >>> assert points.source == Source(path='file.ext', reader_plugin='plugin')
+    >>> assert points.source == Source(path='file.ext', reader_plugin='plugin')  # doctest: +SKIP
 
     """
     token = _LAYER_SOURCE.set({**_LAYER_SOURCE.get(), **source_kwargs})
