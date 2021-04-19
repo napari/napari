@@ -7,7 +7,7 @@ import napari
 from napari.types import ImageData
 
 
-# at the moment (April, 2021), if you want to call an asynchronous function
+# As of napari 0.4.7, if you want to call an asynchronous function
 # such as something decorated with `napari.qt.thread_worker` inside of a
 # magicgui widget, then it won't work if you use the standard return type
 # annotation method.  Instead, you need to manipulate the viewer yourself when
