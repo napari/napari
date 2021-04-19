@@ -56,6 +56,10 @@ def register_types_with_magicgui():
     """
     from magicgui.widgets import FunctionGui
 
+    # the widget field in `_source.py` was defined with a forward reference
+    # to avoid having to import magicgui when we define the layer `Source` obj.
+    # Now that we know we have imported magicgui, we update that forward ref
+    # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
     Source.update_forward_refs(FunctionGui=FunctionGui)
 
     register_type(
