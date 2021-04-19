@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import inspect
 import itertools
 import os
+import warnings
 from functools import lru_cache
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,14 +25,16 @@ from .. import layers
 from ..layers import Image, Layer
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..utils import config
+from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
+from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
 from ..utils.theme import available_themes
+from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
 from .axes import Axes
 from .camera import Camera
@@ -94,9 +100,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     )  # Need to create custom JSON encoder for layer!
     scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
 
-    active_layer: Optional[
-        Layer
-    ] = None  # Would be nice to remove this/ make it layer name instead of layer?
     help: str = ''
     status: str = 'Ready'
     theme: str = DEFAULT_THEME
@@ -134,9 +137,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.layers.events.removed.connect(self._on_remove_layer)
         self.layers.events.reordered.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_layers_change)
+        self.layers.selection.events.active.connect(self._on_active_layer)
 
         # Add mouse callback
         self.mouse_wheel_callbacks.append(dims_scroll)
+
+        self.events.add(
+            active_layer=WarningEmitter(
+                "'viewer.events.active_layer' is deprecated and will be "
+                "removed in napari v0.4.9, use "
+                "'viewer.layers.selection.events.active' instead",
+                type='active_layer',
+            )
+        )
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -253,44 +266,42 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
 
-    def _toggle_theme(self):
-        """Switch to next theme in list of themes"""
-        theme_names = available_themes()
-        cur_theme = theme_names.index(self.theme)
-        self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
-
-    def _update_active_layer(self, event):
-        """Set the active layer by iterating over the layers list and
-        finding the first selected layer. If multiple layers are selected the
-        iteration stops and the active layer is set to be None
-
-        Parameters
-        ----------
-        event : Event
-            No Event parameters are used
-        """
-        # iteration goes backwards to find top most selected layer if any
-        # if multiple layers are selected sets the active layer to None
-
-        active_layer = None
-        for layer in self.layers:
-            if active_layer is None and layer.selected:
-                active_layer = layer
-            elif active_layer is not None and layer.selected:
-                active_layer = None
-                break
-
+    def _on_active_layer(self, event):
+        """Update viewer state for a new active layer."""
+        active_layer = event.value
         if active_layer is None:
             self.help = ''
             self.cursor.style = 'standard'
             self.camera.interactive = True
-            self.active_layer = None
         else:
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.cursor.size = active_layer.cursor_size
             self.camera.interactive = active_layer.interactive
-            self.active_layer = active_layer
+
+    @property
+    def active_layer(self):
+        warnings.warn(
+            "'viewer.active_layer' is deprecated and will be removed in napari"
+            " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self.layers.selection.active
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        # this method is only for the deprecation warning, because pydantic
+        # prevents using @active_layer.setter
+        if name != 'active_layer':
+            return super().__setattr__(name, value)
+
+        warnings.warn(
+            "'viewer.active_layer' is deprecated and will be removed in napari"
+            " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        self.layers.selection.active = value
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:
@@ -306,7 +317,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.cursor.position = (0,) * self.dims.ndim
         self.events.layers_change()
-        self._update_active_layer(event)
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
@@ -322,15 +332,19 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     def _on_cursor_position_change(self, event):
         """Set the layer cursor position."""
-        for layer in self.layers:
-            layer.position = self.cursor.position
+        with warnings.catch_warnings():
+            # Catch the deprecation warning on layer.position
+            warnings.filterwarnings(
+                'ignore', message='layer.position is deprecated'
+            )
+            for layer in self.layers:
+                layer.position = self.cursor.position
 
         # Update status and help bar based on active layer
-        if self.active_layer is not None:
-            self.status = self.active_layer.get_status(
-                self.cursor.position, world=True
-            )
-            self.help = self.active_layer.help
+        active = self.layers.selection.active
+        if active is not None:
+            self.status = active.get_status(self.cursor.position, world=True)
+            self.help = active.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
@@ -379,8 +393,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer = event.value
 
         # Connect individual layer events to viewer events
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
+        # TODO: in a future PR, we should now be able to connect viewer *only*
+        # to viewer.layers.events... and avoid direct viewer->layer connections
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
@@ -391,10 +405,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layer.events.shear.connect(self._on_layers_change)
         layer.events.affine.connect(self._on_layers_change)
         layer.events.name.connect(self.layers._update_name)
-
-        # Make layer selected and unselect all others
-        layer.selected = True
-        self.layers.unselect_all(ignore=layer)
 
         # Update dims and grid model
         self._on_layers_change(None)
@@ -627,9 +637,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             'metadata',
         }
 
-        # Image or OctreeImage.
-        image_class = _get_image_class()
-
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
             kwargs['blending'] = kwargs['blending'] or 'translucent'
@@ -641,7 +648,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                         f"Received sequence for argument '{k}', "
                         "did you mean to specify a 'channel_axis'? "
                     )
-            layer = image_class(data, **kwargs)
+            layer = Image(data, **kwargs)
             self.layers.append(layer)
 
             return layer
@@ -650,15 +657,76 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = image_class(image, **i_kwargs)
+                layer = Image(image, **i_kwargs)
                 self.layers.append(layer)
                 layer_list.append(layer)
 
             return layer_list
 
+    def open_sample(
+        self,
+        plugin: str,
+        sample: str,
+        reader_plugin: Optional[str] = None,
+        **kwargs,
+    ):
+        """Open `sample` from `plugin` and add it to the viewer.
+
+        To see all available samples registered by plugins, use
+        :func:`napari.plugins.available_samples`
+
+        Parameters
+        ----------
+        plugin : str
+            name of a plugin providing a sample
+        sample : str
+            name of the sample
+        reader_plugin : str, optional
+            reader plugin to pass to viewer.open (only used if the sample data
+            is a string).  by default None.
+
+        **kwargs:
+            additional kwargs will be passed to the sample data loader provided
+            by `plugin`.  Use of **kwargs may raise an error if the kwargs do
+            not match the sample data loader.
+
+        Raises
+        ------
+        KeyError
+            If `plugin` does not provide a sample named `sample`.
+        """
+        from ..plugins import _sample_data, available_samples
+
+        try:
+            data = _sample_data[plugin][sample]['data']
+        except KeyError:
+            samples = available_samples()
+            msg = trans._(
+                f"Plugin {plugin!r} does not provide sample data "
+                f"named {sample!r}. "
+            )
+            if samples:
+                msg += trans._(
+                    'Available samples include: {samples}', samples=samples
+                )
+            else:
+                msg += trans._("No plugin samples have been registered.")
+            raise KeyError(msg)
+
+        if callable(data):
+            for datum in data(**kwargs):
+                self._add_layer_from_data(*datum)
+        elif isinstance(data, (str, Path)):
+            self.open(data, plugin=reader_plugin)
+        else:
+            raise TypeError(
+                'Got unexpected type for sample '
+                f'({plugin!r}, {sample!r}): {type(data)}'
+            )
+
     def open(
         self,
-        path: Union[str, Sequence[str]],
+        path: PathOrPaths,
         *,
         stack: bool = False,
         plugin: Optional[str] = None,
@@ -700,7 +768,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         layers : list
             A list of any layers that were added to the viewer.
         """
-        paths = [path] if isinstance(path, str) else path
+        paths = [path] if isinstance(path, (Path, str)) else path
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
@@ -868,16 +936,6 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 raise exc
 
         return layer
-
-
-def _get_image_class() -> Image:
-    """Return Image or OctreeImage based config settings."""
-    if config.async_octree:
-        from ..layers.image.experimental.octree_image import OctreeImage
-
-        return OctreeImage
-
-    return Image
 
 
 def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':

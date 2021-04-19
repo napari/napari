@@ -37,14 +37,14 @@ def hold_to_lock_aspect_ratio(layer):
     else:
         layer._aspect_ratio = 1
     if layer._is_moving:
-        _move(layer, layer.coordinates)
+        _move(layer, layer._moving_coordinates)
 
     yield
 
     # on key release
     layer._fixed_aspect = False
     if layer._is_moving:
-        _move(layer, layer.coordinates)
+        _move(layer, layer._moving_coordinates)
 
 
 @Shapes.bind_key('R')

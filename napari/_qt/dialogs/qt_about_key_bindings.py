@@ -13,6 +13,7 @@ import napari
 
 from ...utils.interactions import get_key_bindings_summary
 from ...utils.theme import get_theme
+from ...utils.translations import trans
 
 
 class QtAboutKeyBindings(QDialog):
@@ -48,7 +49,7 @@ class QtAboutKeyBindings(QDialog):
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    ALL_ACTIVE_KEYBINDINGS = 'All active key bindings'
+    ALL_ACTIVE_KEYBINDINGS = trans._('All active key bindings')
 
     def __init__(self, viewer, key_map_handler, parent=None):
         super().__init__(parent=parent)
@@ -56,7 +57,7 @@ class QtAboutKeyBindings(QDialog):
         self.viewer = viewer
         self.layout = QVBoxLayout()
 
-        self.setWindowTitle('Keybindings')
+        self.setWindowTitle(trans._('Keybindings'))
         self.setWindowModality(Qt.NonModal)
         self.setLayout(self.layout)
 
@@ -80,7 +81,7 @@ class QtAboutKeyBindings(QDialog):
         ]
         for layer in layers:
             if len(layer.class_keymap) == 0:
-                text = 'No key bindings'
+                text = trans._('No key bindings')
             else:
                 text = get_key_bindings_summary(layer.class_keymap, col=col)
             self.key_bindings_strs[f"{layer.__name__} layer"] = text

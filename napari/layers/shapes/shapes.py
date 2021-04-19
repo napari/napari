@@ -15,6 +15,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
+from ...utils.translations import trans
 from ..base import Layer
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
@@ -326,7 +327,9 @@ class Shapes(Layer):
         else:
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError("Shape dimensions must be equal to ndim")
+                raise ValueError(
+                    trans._("Shape dimensions must be equal to ndim")
+                )
             ndim = data_ndim
 
         super().__init__(
@@ -391,7 +394,7 @@ class Shapes(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError('text should be a string, array, or dict')
+            raise TypeError(trans._('text should be a string, array, or dict'))
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -419,6 +422,9 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+        # _moving_coordinates are needed for fixing aspect ratio during
+        # a resize
+        self._moving_coordinates = None
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -429,7 +435,7 @@ class Shapes(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
-        self._help = 'enter a selection mode to edit shape properties'
+        self._help = trans._('enter a selection mode to edit shape properties')
 
         self._init_shapes(
             data,
@@ -538,21 +544,9 @@ class Shapes(Layer):
         self.events.data(value=self.data)
         self._set_editable()
 
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        return self._selected
-
-    @selected.setter
-    def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+    def _on_selection(self, selected: bool):
+        # this method is slated for removal.  don't add anything new.
+        if not selected:
             self._finish_drawing()
 
     @property
@@ -1358,20 +1352,22 @@ class Shapes(Layer):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter a selection mode to edit shape properties'
+            self.help = trans._(
+                'enter a selection mode to edit shape properties'
+            )
         elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = (
-                'hold <space> to pan/zoom, '
-                f'press <{BACKSPACE}> to remove selected'
+            self.help = trans._(
+                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
+                BACKSPACE=BACKSPACE,
             )
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.VERTEX_INSERT:
                 self.mouse_drag_callbacks.append(vertex_insert)
             else:
@@ -1380,7 +1376,7 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.ADD_RECTANGLE:
                 self.mouse_drag_callbacks.append(add_rectangle)
             elif mode == Mode.ADD_ELLIPSE:
@@ -1390,13 +1386,13 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = (
+            self.help = trans._(
                 'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
             )
             self.mouse_drag_callbacks.append(add_path_polygon)
             self.mouse_move_callbacks.append(add_path_polygon_creating)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(trans._("Mode not recognized"))
 
         self._mode = mode
 

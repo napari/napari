@@ -8,7 +8,7 @@ def test_empty_text_manager_property():
     """Test creating an empty text manager in property mode.
     This is for creating an empty layer with text initialized.
     """
-    properties = {'confidence': np.empty(0, dtype=np.float)}
+    properties = {'confidence': np.empty(0, dtype=float)}
     text_manager = TextManager(
         text='confidence', n_text=0, properties=properties
     )
@@ -25,7 +25,7 @@ def test_empty_text_manager_format():
     """Test creating an empty text manager in formatted mode.
     This is for creating an empty layer with text initialized.
     """
-    properties = {'confidence': np.empty(0, dtype=np.float)}
+    properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
     text_manager = TextManager(text=text, n_text=0, properties=properties)
     assert text_manager.mode == 'formatted'

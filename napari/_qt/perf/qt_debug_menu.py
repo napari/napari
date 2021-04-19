@@ -12,6 +12,7 @@ from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
 from ...utils import perf
+from ...utils.translations import trans
 
 
 def _ensure_extension(filename: str, extension: str):
@@ -30,10 +31,10 @@ class DebugMenu:
         main_window : qtpy.QtWidgets.QMainWindow.menuBar
             We add ourselves to this menu.
         """
-        self.debug_menu = main_window.main_menu.addMenu('&Debug')
+        self.debug_menu = main_window.main_menu.addMenu(trans._('&Debug'))
 
         self.perf = PerformanceSubMenu(
-            main_window, self.debug_menu.addMenu("Performance Trace")
+            main_window, self.debug_menu.addMenu(trans._("Performance Trace"))
         )
 
 
@@ -69,9 +70,11 @@ class PerformanceSubMenu:
 
     def _add_start(self):
         """Add Start Recording action."""
-        start = QAction('Start Recording...', self.main_window._qt_window)
+        start = QAction(
+            trans._('Start Recording...'), self.main_window._qt_window
+        )
         start.setShortcut('Alt+T')
-        start.setStatusTip('Start recording a trace file')
+        start.setStatusTip(trans._('Start recording a trace file'))
         start.triggered.connect(self._start_trace_dialog)
         self.sub_menu.addAction(start)
         return start
@@ -80,7 +83,7 @@ class PerformanceSubMenu:
         """Add Stop Recording action."""
         stop = QAction('Stop Recording', self.main_window._qt_window)
         stop.setShortcut('Shift+Alt+T')
-        stop.setStatusTip('Stop recording a trace file')
+        stop.setStatusTip(trans._('Stop recording a trace file'))
         stop.triggered.connect(self._stop_trace)
         self.sub_menu.addAction(stop)
         return stop
@@ -91,9 +94,9 @@ class PerformanceSubMenu:
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=viewer,
-            caption='Record performance trace file',
+            caption=trans._('Record performance trace file'),
             directory=viewer._last_visited_dir,
-            filter="Trace Files (*.json)",
+            filter=trans._("Trace Files (*.json)"),
         )
         if filename:
             filename = _ensure_extension(filename, '.json')

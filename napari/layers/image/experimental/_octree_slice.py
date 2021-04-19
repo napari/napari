@@ -4,13 +4,11 @@ For viewing one slice of a multiscale image using an octree.
 """
 import logging
 import math
-from typing import Callable, Optional
+from typing import Optional
 
 import numpy as np
 
 from ....components.experimental.chunk import ChunkRequest, LayerRef
-from ....types import ArrayLike
-from .._image_view import ImageView
 from ._octree_loader import OctreeLoader
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
@@ -32,14 +30,11 @@ class OctreeSlice:
         Reference to the layer containing the slice.
     meta : OctreeMetadata
         The base shape and other info.
-    image_converter : Callable[[ArrayLike], ArrayLike]
-        For converting to displaying data.
 
     Attributes
     ----------
     loader : OctreeLoader
         Uses the napari ChunkLoader to load OctreeChunks.
-
     """
 
     def __init__(
@@ -47,7 +42,6 @@ class OctreeSlice:
         data,
         layer_ref: LayerRef,
         meta: OctreeMetadata,
-        image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
         self._meta = meta
@@ -58,9 +52,9 @@ class OctreeSlice:
         self.loader: OctreeLoader = OctreeLoader(self._octree, layer_ref)
 
         thumbnail_image = np.zeros(
-            (64, 64, 3)
+            (32, 32, 3)
         )  # blank until we have a real one
-        self.thumbnail: ImageView = ImageView(thumbnail_image, image_converter)
+        self.thumbnail = thumbnail_image
 
     @property
     def loaded(self) -> bool:

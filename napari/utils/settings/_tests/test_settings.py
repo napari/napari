@@ -4,7 +4,7 @@
 import pydantic
 import pytest
 
-from napari.utils.settings._manager import SettingsManager
+from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -27,23 +27,22 @@ def test_settings_file_not_created(tmp_path):
 
 def test_settings_get_section_name():
     class SomeSectionSettings:
-        class Config:
-            title = "Some Section Settings"
+        pass
 
-    section = SettingsManager._get_section_name(SomeSectionSettings())
-    assert section == "some_section"
+    section = SettingsManager._get_section_name(SomeSectionSettings)
+    assert section == "somesection"
 
 
 def test_settings_loads(tmp_path):
     data = """
-application:
+appearance:
   theme: light
 """
     with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
         fh.write(data)
 
     settings = SettingsManager(tmp_path)
-    assert settings.application.theme == "light"
+    assert settings.appearance.theme == "light"
 
 
 def test_settings_load_invalid_type(tmp_path):
@@ -93,11 +92,11 @@ def test_settings_to_dict(settings):
 
 def test_settings_reset(settings):
     settings.reset()
-    assert settings.application.theme == "dark"
-    settings.application.theme = "light"
-    assert settings.application.theme == "light"
+    assert settings.appearance.theme == "dark"
+    settings.appearance.theme = "light"
+    assert settings.appearance.theme == "light"
     settings.reset()
-    assert settings.application.theme == "dark"
+    assert settings.appearance.theme == "dark"
 
 
 def test_settings_schemas(settings):
@@ -109,11 +108,11 @@ def test_settings_schemas(settings):
 def test_settings_model(settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be string
-        settings.application.theme = 1
+        settings.appearance.theme = 1
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be a valid string
-        settings.application.theme = "vaporwave"
+        settings.appearance.theme = "vaporwave"
 
 
 def test_custom_theme_settings(settings):
@@ -122,7 +121,7 @@ def test_custom_theme_settings(settings):
 
     # No theme registered yet, this should fail
     with pytest.raises(pydantic.error_wrappers.ValidationError):
-        settings.application.theme = custom_theme_name
+        settings.appearance.theme = custom_theme_name
 
     blue_theme = get_theme('dark')
     blue_theme.update(
@@ -134,4 +133,32 @@ def test_custom_theme_settings(settings):
     register_theme(custom_theme_name, custom_theme_name)
 
     # Theme registered, should pass validation
-    settings.application.theme = custom_theme_name
+    settings.appearance.theme = custom_theme_name
+
+
+def test_settings_string(settings):
+    assert 'application:\n' in str(settings)
+
+
+def test_settings_load_invalid_content(tmp_path):
+    # This is invalid content
+    data = ":"
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(data)
+
+    with pytest.warns(UserWarning):
+        SettingsManager(tmp_path)
+
+
+def test_model_fields_are_annotated():
+    errors = []
+    for model in CORE_SETTINGS:
+        difference = set(model.__fields__) - set(model.__annotations__)
+        if difference:
+            errors.append(
+                f"Model '{model.__name__}' does not provide annotations "
+                f"for the fields:\n{', '.join(repr(f) for f in difference)}"
+            )
+
+    if errors:
+        raise ValueError("\n\n".join(errors))

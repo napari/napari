@@ -14,10 +14,10 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from . import __version__, layers, run, view_path
-from .components.viewer_model import valid_add_kwargs
-from .utils import citation_text, sys_info
-from .utils.settings import SETTINGS
+from napari import Viewer, __version__, layers, run, view_path
+from napari.components.viewer_model import valid_add_kwargs
+from napari.utils import citation_text, sys_info
+from napari.utils.settings import SETTINGS
 
 
 class InfoAction(argparse.Action):
@@ -25,7 +25,7 @@ class InfoAction(argparse.Action):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from .plugins import discover_dock_widgets, plugin_manager
+        from napari.plugins import discover_dock_widgets, plugin_manager
 
         discover_dock_widgets()
         errors = plugin_manager.get_errors()
@@ -33,7 +33,7 @@ class InfoAction(argparse.Action):
             names = {e.plugin_name for e in errors}
             print("\n‼️  Errors were detected in the following plugins:")
             print("(Run 'napari --plugin-info -v' for more details)")
-            print("\n".join([f"  - {n}" for n in names]))
+            print("\n".join(f"  - {n}" for n in names))
         sys.exit()
 
 
@@ -41,15 +41,15 @@ class PluginInfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
-        from .plugins import discover_dock_widgets, plugin_manager
+        from napari.plugins import discover_dock_widgets, plugin_manager
 
         discover_dock_widgets()
         print(plugin_manager)
 
-        verbose = '-v' in sys.argv or '--verbose' in sys.argv
         errors = plugin_manager.get_errors()
         if errors:
             print("‼️  Some errors occurred:")
+            verbose = '-v' in sys.argv or '--verbose' in sys.argv
             if not verbose:
                 print("   (use '-v') to show full tracebacks")
             print("-" * 38)
@@ -125,7 +125,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     return out
 
 
-def _run():
+def parse_sys_argv():
+    """Parse command line arguments."""
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
@@ -214,6 +215,13 @@ def _run():
             unknown.append(args.paths.pop(len(args.paths) - idx - 1))
     kwargs = validate_unknown_args(unknown) if unknown else {}
 
+    return args, kwargs
+
+
+def _run():
+    """Main program."""
+    args, kwargs = parse_sys_argv()
+
     # parse -v flags and set the appropriate logging level
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = levels[min(2, args.verbose)]  # prevent index error
@@ -240,16 +248,25 @@ def _run():
         sys.argv.remove('--plugin')
 
     if any(p.endswith('.py') for p in args.paths):
+        # we're running a script
         if len(args.paths) > 1:
             sys.exit(
                 'When providing a python script, only a '
                 'single positional argument may be provided'
             )
-        runpy.run_path(args.paths[0])
+
+        # run the file
+        mod = runpy.run_path(args.paths[0])
+
+        from napari_plugin_engine.markers import HookImplementationMarker
+
+        # if this file had any hook implementations, register and run as plugin
+        if any(isinstance(i, HookImplementationMarker) for i in mod.values()):
+            _run_plugin_module(mod, os.path.basename(args.paths[0]))
 
     else:
         if args.with_:
-            from . import plugins
+            from napari import plugins
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
@@ -261,7 +278,7 @@ def _run():
             else:
                 plugins.get_plugin_widget(pname)
 
-        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
@@ -289,6 +306,36 @@ def _run():
                 viewer.window.add_plugin_dock_widget(pname)
 
         run(gui_exceptions=True)
+
+
+def _run_plugin_module(mod, plugin_name):
+    """Register `mod` as a plugin, find/create viewer, and run napari."""
+    from napari.plugins import plugin_manager
+
+    plugin_manager.register(mod, name=plugin_name)
+
+    # now, check if a viewer was created, and if not, create one.
+    for obj in mod.values():
+        if isinstance(obj, Viewer):
+            _v = obj
+            break
+    else:
+        _v = Viewer()
+
+    try:
+        _v.window._qt_window.parent()
+    except RuntimeError:
+        # this script had a napari.run() in it, and the viewer has already been
+        # used and cleaned up... if we eventually have "reusable viewers", we
+        # can continue here
+        return
+
+    # finally, if the file declared a dock widget, add it to the viewer.
+    dws = plugin_manager.hooks.napari_experimental_provide_dock_widget
+    if any(i.plugin_name == plugin_name for i in dws.get_hookimpls()):
+        _v.window.add_plugin_dock_widget(plugin_name)
+
+    run()
 
 
 def _run_pythonw(python_path):

@@ -211,7 +211,8 @@ def images_to_stack(
     kwargs : dict
         Dictionary of parameters values to override parameters
         from the first image in images list.
-    Returns.
+
+    Returns
     -------
     stack : napari.layers.Image
         Combined image stack

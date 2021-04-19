@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os.path
 import warnings
 from pathlib import Path
@@ -21,12 +23,13 @@ from ..utils.interactions import (
 from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
+from ..utils.translations import trans
+from .containers import QtLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
-from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
@@ -38,6 +41,9 @@ from .._vispy import (  # isort:skip
     VispyWelcomeVisual,
     create_vispy_visual,
 )
+
+if TYPE_CHECKING:
+    from ..viewer import Viewer
 
 
 class QtViewer(QSplitter):
@@ -83,7 +89,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer, welcome=False):
+    def __init__(self, viewer: Viewer, welcome=False):
 
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
@@ -104,7 +110,6 @@ class QtViewer(QSplitter):
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
         self._key_bindings_dialog = None
-        self._active_layer = None
         self._console = None
 
         layerList = QWidget()
@@ -118,24 +123,27 @@ class QtViewer(QSplitter):
         self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
-            name='layer list',
+            name=trans._('layer list'),
             area='left',
             allowed_areas=['left', 'right'],
+            object_name='layer list',
         )
         self.dockLayerControls = QtViewerDockWidget(
             self,
             self.controls,
-            name='layer controls',
+            name=trans._('layer controls'),
             area='left',
             allowed_areas=['left', 'right'],
+            object_name='layer controls',
         )
         self.dockConsole = QtViewerDockWidget(
             self,
             QWidget(),
-            name='console',
+            name=trans._('console'),
             area='bottom',
             allowed_areas=['top', 'bottom'],
             shortcut='Ctrl+Shift+C',
+            object_name='console',
         )
         self.dockConsole.setVisible(False)
         # because the console is loaded lazily in the @getter, this line just
@@ -178,9 +186,8 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._on_active_layer_change()
-
-        self.viewer.events.active_layer.connect(self._on_active_layer_change)
+        self._on_active_change()
+        viewer.layers.selection.events.active.connect(self._on_active_change)
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -213,6 +220,17 @@ class QtViewer(QSplitter):
             self.viewer.layers, self._qt_poll
         )
 
+        # moved from the old layerlist... still feels misplaced.
+        # can you help me move this elsewhere?
+        if config.async_loading:
+            from .experimental.qt_chunk_receiver import QtChunkReceiver
+
+            # The QtChunkReceiver object allows the ChunkLoader to pass newly
+            # loaded chunks to the layers that requested them.
+            self.chunk_receiver = QtChunkReceiver(self.layers)
+        else:
+            self.chunk_receiver = None
+
     def __getattr__(self, name):
         if name == 'raw_stylesheet':
             import warnings
@@ -220,7 +238,7 @@ class QtViewer(QSplitter):
             from .qt_resources import get_stylesheet
 
             warnings.warn(
-                (
+                trans._(
                     "The 'raw_stylesheet' attribute is deprecated and will be"
                     "removed in version 0.4.7.  Please use "
                     "`napari.qt.get_stylesheet` instead"
@@ -291,7 +309,7 @@ class QtViewer(QSplitter):
             return QtViewerDockWidget(
                 self,
                 QtPerformance(),
-                name='performance',
+                name=trans._('performance'),
                 area='bottom',
                 shortcut='Ctrl+Shift+P',
             )
@@ -307,8 +325,10 @@ class QtViewer(QSplitter):
                 self.console = QtConsole(self.viewer)
             except ImportError:
                 warnings.warn(
-                    'napari-console not found. It can be installed with'
-                    ' "pip install napari_console"'
+                    trans._(
+                        'napari-console not found. It can be installed with'
+                        ' "pip install napari_console"'
+                    )
                 )
                 self._console = None
         return self._console
@@ -332,7 +352,7 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _on_active_layer_change(self, event=None):
+    def _on_active_change(self, event=None):
         """When active layer changes change keymap handler.
 
         Parameters
@@ -340,15 +360,12 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.active_layer
-
-        if self._active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(self._active_layer)
+        active_layer = self.viewer.layers.selection.active
+        if active_layer in self._key_map_handler.keymap_providers:
+            self._key_map_handler.keymap_providers.remove(active_layer)
 
         if active_layer is not None:
             self._key_map_handler.keymap_providers.insert(0, active_layer)
-
-        self._active_layer = active_layer
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -430,18 +447,19 @@ class QtViewer(QSplitter):
         """
         msg = ''
         if not len(self.viewer.layers):
-            msg = "There are no layers in the viewer to save"
+            msg = trans._("There are no layers in the viewer to save")
         elif selected and not len(self.viewer.layers.selected):
-            msg = (
+            msg = trans._(
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
             )
         if msg:
-            raise OSError("Nothing to save")
+            raise OSError(trans._("Nothing to save"))
 
+        msg = trans._("selected") if selected else trans._("all")
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
-            caption=f'Save {"selected" if selected else "all"} layers',
+            caption=trans._('Save {msg} layers', msg=msg),
             directory=self._last_visited_dir,  # home dir by default
         )
 
@@ -453,7 +471,12 @@ class QtViewer(QSplitter):
                 )
             if not saved:
                 raise OSError(
-                    f"File {filename} save failed.\n{error_messages}"
+                    trans._(
+                        "File {filename} save failed.\n{error_messages}",
+                        deferred=True,
+                        filename=filename,
+                        error_messages=error_messages,
+                    )
                 )
 
     def screenshot(self, path=None):
@@ -485,7 +508,7 @@ class QtViewer(QSplitter):
         """Add files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select file(s)...',
+            caption=trans._('Select file(s)...'),
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
@@ -495,7 +518,7 @@ class QtViewer(QSplitter):
         """Add files as a stack, from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select files...',
+            caption=trans._('Select files...'),
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
@@ -505,7 +528,7 @@ class QtViewer(QSplitter):
         """Add a folder of files from the menubar."""
         folder = QFileDialog.getExistingDirectory(
             parent=self,
-            caption='Select folder...',
+            caption=trans._('Select folder...'),
             directory=self._last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:
@@ -513,10 +536,10 @@ class QtViewer(QSplitter):
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
-        from ..layers.image.experimental.octree_image import OctreeImage
+        from ..layers.image.experimental.octree_image import _OctreeImageBase
 
         for layer in self.viewer.layers:
-            if isinstance(layer, OctreeImage):
+            if isinstance(layer, _OctreeImageBase):
                 layer.display.show_grid = not layer.display.show_grid
 
     def _on_interactive(self, event):
@@ -644,78 +667,71 @@ class QtViewer(QSplitter):
         """
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
+    def _process_mouse_event(self, mouse_callbacks, event):
+        """Called whenever mouse pressed in canvas.
+        Parameters
+        ----------
+        mouse_callbacks : function
+            Mouse callbacks function.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
+        """
+        if event.pos is None:
+            return
+
+        # Update the cursor position
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
+
+        # Add the cursor position to the event
+        event.position = self.viewer.cursor.position
+
+        # Put a read only wrapper on the event
+        event = ReadOnlyWrapper(event)
+        mouse_callbacks(self.viewer, event)
+
+        layer = self.viewer.layers.selection.active
+        if layer is not None:
+            mouse_callbacks(layer, event)
+
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        event = ReadOnlyWrapper(event)
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_wheel_callbacks(self.viewer, event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_wheel_callbacks(layer, event)
+        self._process_mouse_event(mouse_wheel_callbacks, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        event = ReadOnlyWrapper(event)
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_press_callbacks(self.viewer, event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_press_callbacks(layer, event)
+        self._process_mouse_event(mouse_press_callbacks, event)
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_move_callbacks(self.viewer, event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_move_callbacks(layer, event)
+        self._process_mouse_event(mouse_move_callbacks, event)
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
 
         Parameters
         ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
+        event : vispy.event.Event
+            The vispy event that triggered this method.
         """
-        if event.pos is None:
-            return
-
-        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
-        mouse_release_callbacks(self.viewer, event)
-
-        layer = self.viewer.active_layer
-        if layer is not None:
-            mouse_release_callbacks(layer, event)
+        self._process_mouse_event(mouse_release_callbacks, event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
