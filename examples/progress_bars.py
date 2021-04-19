@@ -39,6 +39,14 @@ def iterable():
         pbr.set_description(f"{animal}")
         sleep(0.4)
 
+def nested():
+    """progress can be used in nested loops
+    """
+    for i in progress(range(10)):
+        for j in progress(range(100)):
+            print(i, j)
+            sleep(0.1)
+
 viewer = napari.Viewer()
 button_layout = QVBoxLayout()
 
@@ -53,6 +61,10 @@ button_layout.addWidget(indeterminate_btn)
 iterable_btn = QPushButton("Iterable")
 iterable_btn.clicked.connect(iterable)
 button_layout.addWidget(iterable_btn)
+
+nested_btn = QPushButton("Nested")
+nested_btn.clicked.connect(nested)
+button_layout.addWidget(nested_btn)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
