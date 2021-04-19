@@ -15,6 +15,18 @@ from .._qt.utils import get_viewer_instance
 
 
 def get_pbar(viewer_instance, **kwargs):
+    """Adds ProgressBar to viewer Activity Dock and returns it.
+
+    Parameters
+    ----------
+    viewer_instance : qtViewer
+        current napari qtViewer instance
+
+    Returns
+    -------
+    ProgressBar
+        progress bar to associate with current iterable
+    """
     pbar = ProgressBar(**kwargs)
     viewer_instance.activityDock.widget().layout.addWidget(pbar)
 
@@ -38,6 +50,40 @@ _tqdm_kwargs = {
 
 
 class progress(tqdm):
+    """This class inherits from tqdm and provides an interface for
+    progress bars in the napari viewer. Progress bars can be created
+    directly by wrapping an iterable or by providing a total number
+    of expected updates.
+
+    See tqdm.tqdm API for valid args and kwargs: https://tqdm.github.io/docs/tqdm/
+
+    Also, any keyword arguments to the :class:`ProgressBar` `QWidget`
+    are also accepted and will be passed to the ``ProgressBar``.
+
+    Examples
+    --------
+
+    >>> def long_running(steps=10, delay=0.1):
+    ...     for i in progress(range(steps)):
+    ...         sleep(delay)
+
+    it can also be used as a context manager:
+
+    >>> def long_running(steps=10, repeats=4, delay=0.1):
+    ...     with progress(range(steps)) as pbr:
+    ...         for i in pbr:
+    ...             sleep(delay)
+
+    or for manual updates:
+
+    >>> def manual_updates(total):
+    ...     pbr = progress(total=total)
+    ...     sleep(10)
+    ...     pbr.set_description("Step 1 Complete")
+    ...     pbr.update(1)
+
+    """
+
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
@@ -118,6 +164,42 @@ class progress(tqdm):
         unit_divisor=1000,
         initial=0,
     ):
+        """Formats iteration and time estimates for display.
+
+        Taken from tqdm.format_meter, this function computes and formats estimates
+        for iterations per second, iterations remaining and current elapsed time.
+
+        All parameters are filtered from self.format_dict
+
+        Parameters
+        ----------
+        n  : int or float
+            Number of finished iterations.
+        total  : int or float
+            The expected total number of iterations. If meaningless (None),
+            only basic progress statistics are displayed (no ETA).
+        elapsed  : float
+            Number of seconds passed since start.
+        unit  : str, optional
+            The iteration unit [default: 'it'].
+        unit_scale  : bool or int or float, optional
+            If 1 or True, the number of iterations will be printed with an
+            appropriate SI metric prefix (k = 10^3, M = 10^6, etc.)
+            [default: False]. If any other non-zero number, will scale
+            `total` and `n`.
+        rate  : float, optional
+            Manual override for iteration rate.
+            If [default: None], uses n/elapsed.
+        unit_divisor  : float, optional
+            [default: 1000], ignored unless `unit_scale` is True.
+        initial  : int or float, optional
+            The initial counter value [default: 0].
+
+        Returns
+        -------
+        str
+            formatted estimates ready for display
+        """
 
         # sanity check: total
         if total and n >= (total + 0.5):  # allow float imprecision (#849)
