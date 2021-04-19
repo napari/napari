@@ -221,64 +221,78 @@ void main() {{
 
     // Compute the distance to the front surface or near clipping plane
     float distance = dot(nearpos-v_position, view_ray);
-    distance = max(distance, min((u_bbox_x_min - 0.5 - v_position.x) / view_ray.x,
-                            (u_bbox_x_max - 0.5 - v_position.x) / view_ray.x));
-    distance = max(distance, min((u_bbox_y_min - 0.5 - v_position.y) / view_ray.y,
-                            (u_bbox_y_max - 0.5 - v_position.y) / view_ray.y));
-    distance = max(distance, min((u_bbox_z_min - 0.5 - v_position.z) / view_ray.z,
-                            (u_bbox_z_max - 0.5 - v_position.z) / view_ray.z));
+    distance = max(distance, min((-0.5 - v_position.x) / view_ray.x,
+                            (u_shape.x - 0.5 - v_position.x) / view_ray.x));
+    distance = max(distance, min((-0.5 - v_position.y) / view_ray.y,
+                            (u_shape.y - 0.5 - v_position.y) / view_ray.y));
+    distance = max(distance, min((-0.5 - v_position.z) / view_ray.z,
+                            (u_shape.z - 0.5 - v_position.z) / view_ray.z));
 
-    // Now we have the starting position on the front surface of the volume
+    // Now we have the starting position on the front surface
     vec3 front = v_position + view_ray * distance;
 
-    // Compute the distance to the front surface of the bounding box
-    float distance_to_bbox = dot(nearpos-v_position, view_ray);
-    
-    distance_to_bbox = max(distance_to_bbox, min((u_bbox_x_min - 0.5 - front.x) / -view_ray.x,
-                            (u_bbox_x_max - 0.5 - front.x) / -view_ray.x));
-    distance_to_bbox = max(distance_to_bbox, min((u_bbox_y_min - 0.5 - front.y) / -view_ray.y,
-                            (u_bbox_y_max - 0.5 - front.y) / -view_ray.y));
-    distance_to_bbox = max(distance_to_bbox, min((u_bbox_z_min - 0.5 - front.z) / -view_ray.z,
-                            (u_bbox_z_max - 0.5 - front.z) / -view_ray.z));
-
     // Decide how many steps to take
-    int nsteps = int(-distance_to_bbox / u_relative_step_size + 0.5);
-
-    vec3 back = front - view_ray * distance_to_bbox;
+    int nsteps = int(-distance / u_relative_step_size + 0.5);
     float f_nsteps = float(nsteps);
     if( nsteps < 1 )
         discard;
 
     // Get starting location and step vector in texture coordinates
-    vec3 step = ((back - front) / u_shape) / f_nsteps;
+    vec3 step = ((v_position - front) / u_shape) / f_nsteps;
     vec3 start_loc = front / u_shape;
 
     // For testing: show the number of steps. This helps to establish
     // whether the rays are correctly oriented
     //gl_FragColor = vec4(0.0, f_nsteps / 3.0 / u_shape.x, 1.0, 1.0);
     //return;
-
     {before_loop}
-
     // This outer loop seems necessary on some systems for large
     // datasets. Ugly, but it works ...
     vec3 loc = start_loc;
     int iter = 0;
+    bool something_to_render = false;
+    float u_bbox_x_min_tex = u_bbox_x_min / u_shape.x;
+    float u_bbox_x_max_tex = u_bbox_x_max / u_shape.x;
+    float u_bbox_y_min_tex = u_bbox_y_min / u_shape.y;
+    float u_bbox_y_max_tex = u_bbox_y_max / u_shape.y;
+    float u_bbox_z_min_tex = u_bbox_z_min / u_shape.z;
+    float u_bbox_z_max_tex = u_bbox_z_max / u_shape.z;
+    
     while (iter < nsteps) {{
         for (iter=iter; iter<nsteps; iter++)
         {{
+            // check if this position is in the rendered volume
+            if((loc.x < u_bbox_x_min_tex) || loc.x > u_bbox_x_max_tex){{
+                loc += step;
+                continue;
+            }}
+            if((loc.y < u_bbox_y_min_tex) || loc.y > u_bbox_y_max_tex){{
+                loc += step;
+                continue;
+            }}
+            if((loc.z < u_bbox_z_min_tex) || loc.z > u_bbox_z_max_tex){{
+                loc += step;
+                continue;
+            }}
+            
+            // since the ray is in the rendered volume, we will render
+            something_to_render = true;
+            
             // Get sample color
             vec4 color = $sample(u_volumetex, loc);
             float val = color.g;
-
+            
             {in_loop}
-
             // Advance location deeper into the volume
             loc += step;
         }}
     }}
-
-    {after_loop}
+    if (something_to_render == true) {{
+        {after_loop}
+    }}
+    else {{
+        discard;
+    }}
 
     /* Set depth value - from visvis TODO
     int iter_depth = int(maxi);
