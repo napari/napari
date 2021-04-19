@@ -106,6 +106,20 @@ def qt_signals_blocked(obj):
     obj.blockSignals(False)
 
 
+@contextmanager
+def event_hook_removed():
+    """Context manager to temporarily remove the PyQt5 input hook"""
+    from qtpy import QtCore
+
+    if hasattr(QtCore, 'pyqtRemoveInputHook'):
+        QtCore.pyqtRemoveInputHook()
+    try:
+        yield
+    finally:
+        if hasattr(QtCore, 'pyqtRestoreInputHook'):
+            QtCore.pyqtRestoreInputHook()
+
+
 def disable_with_opacity(obj, widget_list, disabled):
     """Set enabled state on a list of widgets. If disabled, decrease opacity"""
     for wdg in widget_list:
