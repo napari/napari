@@ -1,4 +1,12 @@
-"""Copy docs from the napari repo into the napari.github.io repo
+"""
+Copy docs from the napari repo into the napari.github.io repo
+and update the table of contents.
+By default, will assume that there is a folder named napari.github.io
+in the same directory as the napari folder, if not a different copy
+destination can be provided.
+
+Read ORGANIZATION.md to learn more about how the documentation sources
+are organized, and how everything comes together.
 
 python -m copy-docs.py [dstdir]
 """
@@ -14,6 +22,7 @@ import yaml
 
 # path to copy and locations to copy to if different
 TO_COPY = [
+    'ORGANIZATION.md',
     'developers',
     'community',
     'release',
@@ -35,7 +44,13 @@ SRC = osp.dirname(__file__)
 
 DOC_EXTS = ['.md', '.rst', '.ipynb']
 
-TOC_IGNORE = ['release', 'api/stable', 'images', '_templates']
+TOC_IGNORE = [
+    'release',
+    'api/stable',
+    'images',
+    '_templates',
+    'ORGANIZATION.md',
+]
 
 
 def exclude_filter(path):
