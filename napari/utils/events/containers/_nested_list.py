@@ -441,10 +441,10 @@ class NestableEventedList(EventedList[_T]):
             if not any(isinstance(e, t) for t in _types):
                 raise TypeError(
                     trans._(
-                        'Cannot add object with type {dtype} to TypedList expecting type {types_}',
+                        'Cannot add object with type {dtype!r} to TypedList expecting type {types_!r}',
                         deferred=True,
-                        dtype=f"{type(e)!r}",
-                        types_=f"{_types!r}",
+                        dtype=type(e),
+                        types_=_types,
                     )
                 )
         return e

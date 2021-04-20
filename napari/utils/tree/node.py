@@ -91,8 +91,8 @@ class Node:
             return self
         raise IndexError(
             trans._(
-                "Cannot unparent orphaned Node: {node}",
+                "Cannot unparent orphaned Node: {node!r}",
                 deferred=True,
-                node=f"{self!r}",
+                node=self,
             ),
         )

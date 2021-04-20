@@ -52,9 +52,9 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         if value not in self:
             raise ValueError(
                 trans._(
-                    "Cannot select item that is not in list: {value}",
+                    "Cannot select item that is not in list: {value!r}",
                     deferred=True,
-                    value=f"{value!r}",
+                    value=value,
                 )
             )
         return value

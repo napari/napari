@@ -311,10 +311,10 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
     return module
 
 
-def find_untranslated_strings(
+def find_issues(
     paths: List[str], skip_words: List[str]
 ) -> Tuple[StringIssuesDict, OutdatedStringsDict, TranslationErrorsDict]:
-    """Find strings that have not been translated.
+    """Find strings that have not been translated, and errors in translations.
 
     This will not raise errors but return a list with found issues wo they
     can be fixed at once.
@@ -400,9 +400,7 @@ if __name__ == "__main__":
     else:
         paths = find_files(path, SKIP_FOLDERS, SKIP_FILES)
 
-    issues, outdated_strings, trans_errors = find_untranslated_strings(
-        paths, SKIP_WORDS
-    )
+    issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
     print("\n\n")
     if issues:
         print(

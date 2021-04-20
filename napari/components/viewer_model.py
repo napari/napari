@@ -1025,9 +1025,9 @@ def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
         if _data[2] not in layers.NAMES:
             raise ValueError(
                 trans._(
-                    "The third item in a LayerData tuple must be one of: {layers}.",
+                    "The third item in a LayerData tuple must be one of: {layers!r}.",
                     deferred=True,
-                    layers=f"{layers.NAMES!r}",
+                    layers=layers.NAMES,
                 )
             )
     else:

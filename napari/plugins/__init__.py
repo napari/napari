@@ -156,9 +156,9 @@ def register_dock_widget(
             if not arg:
                 warn(
                     trans._(
-                        'Plugin {plugin_name} provided an invalid tuple to {hook_name}. Skipping',
+                        'Plugin {plugin_name!r} provided an invalid tuple to {hook_name}. Skipping',
                         deferred=True,
-                        plugin_name=f"{plugin_name!r}",
+                        plugin_name=plugin_name,
                         hook_name=hook_name,
                     )
                 )
@@ -171,11 +171,11 @@ def register_dock_widget(
         if not callable(_cls):
             warn(
                 trans._(
-                    'Plugin {plugin_name} provided a non-callable object (widget) to {hook_name}: {_cls}. Widget ignored.',
+                    'Plugin {plugin_name!r} provided a non-callable object (widget) to {hook_name}: {_cls!r}. Widget ignored.',
                     deferred=True,
-                    plugin_name=f"{plugin_name!r}",
+                    plugin_name=plugin_name,
                     hook_name=hook_name,
-                    _cls=f"{_cls!r}",
+                    _cls=_cls,
                 )
             )
             continue
@@ -183,9 +183,9 @@ def register_dock_widget(
         if not isinstance(kwargs, dict):
             warn(
                 trans._(
-                    'Plugin {plugin_name} provided invalid kwargs to {hook_name} for class {class_name}. Widget ignored.',
+                    'Plugin {plugin_name!r} provided invalid kwargs to {hook_name} for class {class_name}. Widget ignored.',
                     deferred=True,
-                    plugin_name=f"{plugin_name!r}",
+                    plugin_name=plugin_name,
                     hook_name=hook_name,
                     class_name=_cls.__name__,
                 )
@@ -248,9 +248,9 @@ def get_plugin_widget(
     if not plg_wdgs:
         raise KeyError(
             trans._(
-                'Plugin {plugin_name} does not provide any dock widgets',
+                'Plugin {plugin_name!r} does not provide any dock widgets',
                 deferred=True,
-                plugin_name=f"{plugin_name!r}",
+                plugin_name=plugin_name,
             )
         )
 
@@ -260,7 +260,7 @@ def get_plugin_widget(
                 trans._(
                     'Plugin {plugin_name!r} provides more than 1 dock_widget. Must also provide "widget_name" from {widgets}',
                     deferred=True,
-                    plugin_name=f"{plugin_name!r}",
+                    plugin_name=plugin_name,
                     widgets=set(plg_wdgs),
                 )
             )
@@ -269,10 +269,10 @@ def get_plugin_widget(
         if widget_name not in plg_wdgs:
             raise KeyError(
                 trans._(
-                    'Plugin {plugin_name!r} does not provide a widget named {widget_name}',
+                    'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}',
                     deferred=True,
-                    plugin_name=f"{plugin_name!r}",
-                    widget_name=f"{widget_name!r}",
+                    plugin_name=plugin_name,
+                    widget_name=widget_name,
                 )
             )
     return plg_wdgs[widget_name]
@@ -295,11 +295,11 @@ def register_function_widget(
         if not isinstance(func, FunctionType):
             msg = [
                 trans._(
-                    'Plugin {plugin_name} provided a non-callable type to {hook_name}: {func_type}. Function widget ignored.',
+                    'Plugin {plugin_name!r} provided a non-callable type to {hook_name}: {func_type!r}. Function widget ignored.',
                     deferred=True,
-                    plugin_name=f"{plugin_name!r}",
+                    plugin_name=plugin_name,
                     hook_name=hook_name,
-                    func_type=f"{type(func)!r}",
+                    func_type=type(func),
                 )
             ]
             if isinstance(func, tuple):
@@ -356,10 +356,10 @@ def register_sample_data(
     if not isinstance(data, dict):
         warn(
             trans._(
-                'Plugin {plugin_name} provided a non-dict object to {hook_name}: data ignored.',
+                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
                 deferred=True,
-                plugin_name=f"{plugin_name!r}",
-                hook_name=f"{hook_name!r}",
+                plugin_name=plugin_name,
+                hook_name=hook_name,
             )
         )
         return
@@ -370,11 +370,11 @@ def register_sample_data(
             if 'data' not in datum or 'display_name' not in datum:
                 warn(
                     trans._(
-                        'In {hook_name}, plugin {plugin_name} provided an invalid dict object for key {name} that does not have required keys: "data" and "display_name".  Ignoring',
+                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that does not have required keys: "data" and "display_name".  Ignoring',
                         deferred=True,
-                        hook_name=f"{hook_name!r}",
-                        plugin_name=f"{plugin_name!r}",
-                        name=f"{name!r}",
+                        hook_name=hook_name,
+                        plugin_name=plugin_name,
+                        name=name,
                     )
                 )
                 continue
@@ -386,11 +386,11 @@ def register_sample_data(
         ):
             warn(
                 trans._(
-                    'Plugin {plugin_name} provided invalid data for key {name} in the dict returned by {hook_name}. (Must be str, callable, or dict), got ({data_type}).',
+                    'Plugin {plugin_name!r} provided invalid data for key {name!r} in the dict returned by {hook_name!r}. (Must be str, callable, or dict), got ({data_type}).',
                     deferred=True,
-                    plugin_name=f"{plugin_name!r}",
-                    name=f"{name!r}",
-                    hook_name=f"{hook_name!r}",
+                    plugin_name=plugin_name,
+                    name=name,
+                    hook_name=hook_name,
                     data_type=type(datum["data"]),
                 )
             )

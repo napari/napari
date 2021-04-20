@@ -157,9 +157,9 @@ class EventedList(TypedMutableSequence[_T]):
         valid = {int, slice}.union(set(self._lookup))
         raise TypeError(
             trans._(
-                "Deletion index must be {valid}, got {dtype}",
+                "Deletion index must be {valid!r}, got {dtype}",
                 deferred=True,
-                valid=f"{valid!r}",
+                valid=valid,
                 dtype=type(key),
             )
         )

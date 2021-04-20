@@ -159,10 +159,10 @@ class TypedMutableSequence(MutableSequence[_T]):
         ):
             raise TypeError(
                 trans._(
-                    'Cannot add object with type {dtype} to TypedList expecting type {basetypes}',
+                    'Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}',
                     deferred=True,
-                    dtype=f"{type(e)!r}",
-                    basetypes=f"{self._basetypes!r}",
+                    dtype=type(e),
+                    basetypes=self._basetypes,
                 )
             )
         return e
@@ -237,9 +237,9 @@ class TypedMutableSequence(MutableSequence[_T]):
 
         raise ValueError(
             trans._(
-                "{value} is not in list",
+                "{value!r} is not in list",
                 deferred=True,
-                value=f"{value!r}",
+                value=value,
             )
         )
 

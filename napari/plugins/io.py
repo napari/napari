@@ -77,9 +77,9 @@ def read_data_with_plugins(
         if not callable(reader):
             raise ValueError(
                 trans._(
-                    'Plugin {plugin} does not support file {path}',
+                    'Plugin {plugin!r} does not support file {path}',
                     deferred=True,
-                    plugin=f"{plugin!r}",
+                    plugin=plugin,
                     path=path,
                 )
             )

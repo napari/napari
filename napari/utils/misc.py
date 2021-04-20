@@ -386,9 +386,9 @@ def ensure_layer_data_tuple(val):
     if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
         raise TypeError(
             trans._(
-                'Not a valid layer data tuple: {value}',
+                'Not a valid layer data tuple: {value!r}',
                 deferred=True,
-                value=f"{val!r}",
+                value=val,
             )
         )
     return val

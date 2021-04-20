@@ -383,9 +383,9 @@ class Tracks(Layer):
             warn(
                 (
                     trans._(
-                        "Previous color_by key {key} not present in new properties. Falling back to track_id",
+                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
                         deferred=True,
-                        key=f"{self._color_by!r}",
+                        key=self._color_by,
                     )
                 ),
                 UserWarning,

@@ -174,7 +174,11 @@ class WorkerBase(QRunnable):
                         time.sleep(0.5)
         """
         raise NotImplementedError(
-            f'"{self.__class__.__name__}" failed to define work() method'
+            trans._(
+                '"{name}" failed to define work() method',
+                deferred=True,
+                name=self.__class__.__name__,
+            )
         )
 
     def start(self):
@@ -192,7 +196,12 @@ class WorkerBase(QRunnable):
            worker.start -> worker.run -> worker.work
         """
         if self in WorkerBase._worker_set:
-            raise RuntimeError('This worker is already started!')
+            raise RuntimeError(
+                trans._(
+                    'This worker is already started!',
+                    deferred=True,
+                )
+            )
 
         # This will raise a RunTimeError if the worker is already deleted
         repr(self)
@@ -230,8 +239,11 @@ class FunctionWorker(WorkerBase):
     def __init__(self, func: Callable, *args, **kwargs):
         if inspect.isgeneratorfunction(func):
             raise TypeError(
-                f"Generator function {func} cannot be used with "
-                "FunctionWorker, use GeneratorWorker instead"
+                trans._(
+                    "Generator function {func} cannot be used with FunctionWorker, use GeneratorWorker instead",
+                    deferred=True,
+                    func=func,
+                )
             )
         super().__init__()
 
@@ -280,8 +292,11 @@ class GeneratorWorker(WorkerBase):
     ):
         if not inspect.isgeneratorfunction(func):
             raise TypeError(
-                f"Regular function {func} cannot be used with "
-                "GeneratorWorker, use FunctionWorker instead"
+                trans._(
+                    "Regular function {func} cannot be used with GeneratorWorker, use FunctionWorker instead",
+                    deferred=True,
+                    func=func,
+                )
             )
         super().__init__(SignalsClass=SignalsClass)
 
@@ -433,7 +448,11 @@ def wait_for_workers_to_quit(msecs: int = None):
     msecs = msecs if msecs is not None else -1
     if not QThreadPool.globalInstance().waitForDone(msecs):
         raise RuntimeError(
-            f"Workers did not quit gracefully in the time allotted ({msecs} ms)"
+            trans._(
+                "Workers did not quit gracefully in the time allotted ({msecs} ms)",
+                deferred=True,
+                msecs=msecs,
+            )
         )
 
 
@@ -521,14 +540,23 @@ def create_worker(
         and issubclass(_worker_class, WorkerBase)
     ):
         raise TypeError(
-            f'Worker {_worker_class} must be a subclass of WorkerBase'
+            trans._(
+                'Worker {_worker_class} must be a subclass of WorkerBase',
+                deferred=True,
+                _worker_class=_worker_class,
+            )
         )
 
     worker = _worker_class(func, *args, **kwargs)
 
     if _connect is not None:
         if not isinstance(_connect, dict):
-            raise TypeError("The '_connect' argument must be a dict")
+            raise TypeError(
+                trans._(
+                    "The '_connect' argument must be a dict",
+                    deferred=True,
+                )
+            )
 
         if _start_thread is None:
             _start_thread = True
@@ -538,8 +566,11 @@ def create_worker(
             for v in _val:
                 if not callable(v):
                     raise TypeError(
-                        f'"_connect[{key!r}]" must be a function or '
-                        'sequence of functions'
+                        trans._(
+                            '"_connect[{key!r}]" must be a function or sequence of functions',
+                            deferred=True,
+                            key=key,
+                        )
                     )
                 getattr(worker, key).connect(v)
 
@@ -782,7 +813,9 @@ def _new_worker_qthread(
     """
 
     if _connect and not isinstance(_connect, dict):
-        raise TypeError('_connect parameter must be a dict')
+        raise TypeError(
+            trans._('_connect parameter must be a dict', deferred=True)
+        )
 
     thread = QThread()
     worker = Worker(*args, **kwargs)

@@ -100,9 +100,9 @@ def split_channels(
             except StopIteration:
                 raise IndexError(
                     trans._(
-                        "Error adding multichannel image with data shape {data_shape}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
+                        "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
                         deferred=True,
-                        data_shape=f"{data.shape!r}",
+                        data_shape=data.shape,
                         channel_axis=channel_axis,
                         n_channels=n_channels,
                         key=key,
