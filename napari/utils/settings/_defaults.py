@@ -1,14 +1,15 @@
 """Settings management.
 """
+from __future__ import annotations
 
 import os
 from enum import Enum
 from pathlib import Path
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from pydantic import BaseSettings, Field
+from typing_extensions import TypedDict
 
-from ...plugins import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
@@ -273,6 +274,16 @@ class ApplicationSettings(BaseNapariSettings):
             "open_history",
             "save_history",
         ]
+
+
+class PluginHookOption(TypedDict):
+    """Custom type specifying plugin and enabled state."""
+
+    plugin: str
+    enabled: bool
+
+
+CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class PluginsSettings(BaseNapariSettings):
