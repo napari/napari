@@ -10,6 +10,7 @@ of those custom classes, magicgui will know what to do with it.
 
 """
 import weakref
+from concurrent.futures import Future
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
@@ -71,7 +72,7 @@ def register_types_with_magicgui():
         return_callback=add_layer_data_tuples_to_viewer,
     )
     register_type(
-        types.FutureLayerDataTuple,
+        Future[types.LayerDataTuple],
         return_callback=add_future_layer_data_tuples_to_viewer,
     )
     register_type(

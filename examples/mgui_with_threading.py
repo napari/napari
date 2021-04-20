@@ -5,7 +5,7 @@ from typing_extensions import Annotated
 from concurrent.futures import Future
 
 import napari
-from napari.types import FutureLayerDataTuple, ImageData, LayerDataTuple
+from napari.types import ImageData, LayerDataTuple
 
 
 # at the moment (April, 2021), if you want to call an asynchronous function
@@ -21,11 +21,11 @@ def make_widget(
     max_sigma: Annotated[float, {"min": 1, "max": 200, "step": 0.5}] = 120,
     num_sigma: Annotated[int, {"min": 1, "max": 20}] = 10,
     threshold: Annotated[float, {"min": 0, "max": 1000, "step": 0.1}] = 0.3,
-) -> FutureLayerDataTuple:
+) -> Future[LayerDataTuple]:
 
     from napari.qt import thread_worker
 
-    future: FutureLayerDataTuple = Future()
+    future: Future[LayerDataTuple] = Future()
     pbar = widgets.ProgressBar()
     pbar.range = (0, 0)  # unknown duration
     make_widget.insert(0, pbar)  # add progress bar to the top of widget
