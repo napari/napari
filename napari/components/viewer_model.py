@@ -974,13 +974,13 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 raise exc
             bad_key = str(exc).split('keyword argument ')[-1]
             raise TypeError(
-                    trans._(
-                        "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
-                        deferred=True,
-                        bad_key=bad_key,
-                        layer_type=layer_type,
-                    )
-                ) from exc
+                trans._(
+                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    deferred=True,
+                    bad_key=bad_key,
+                    layer_type=layer_type,
+                )
+            ) from exc
         return layer if isinstance(layer, list) else [layer]
 
 

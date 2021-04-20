@@ -15,8 +15,8 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
-from .._source import current_source
 from ...utils.translations import trans
+from .._source import current_source
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
