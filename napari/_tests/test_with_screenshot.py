@@ -355,7 +355,7 @@ def test_changing_image_attenuation(make_napari_viewer):
 @skip_local_popups
 def test_labels_painting(make_napari_viewer):
     """Test painting labels updates image."""
-    data = np.zeros((100, 100))
+    data = np.zeros((100, 100), dtype=np.int32)
 
     viewer = make_napari_viewer(show=True)
     viewer.add_labels(data)
@@ -374,24 +374,48 @@ def test_labels_painting(make_napari_viewer):
 
     # Simulate click
     Event = collections.namedtuple(
-        'Event', field_names=['type', 'is_dragging']
+        'Event', field_names=['type', 'is_dragging', 'position']
     )
 
     # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_press_callbacks(layer, event)
 
     viewer.cursor.position = (100, 100)
 
     # Simulate drag
-    event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_move',
+            is_dragging=True,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_move_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_release',
+            is_dragging=False,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_release_callbacks(layer, event)
 
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(
+            type='mouse_press',
+            is_dragging=False,
+            position=viewer.cursor.position,
+        )
+    )
     mouse_press_callbacks(layer, event)
 
     screenshot = viewer.screenshot(canvas_only=True)
@@ -430,6 +454,7 @@ def test_welcome(make_napari_viewer):
 def test_axes_visible(make_napari_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_napari_viewer(show=True)
+    viewer.window.qt_viewer.set_welcome_visible(False)
 
     # Check axes are not visible
     launch_screenshot = viewer.screenshot(canvas_only=True)
@@ -453,6 +478,7 @@ def test_axes_visible(make_napari_viewer):
 def test_scale_bar_visible(make_napari_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_napari_viewer(show=True)
+    viewer.window.qt_viewer.set_welcome_visible(False)
 
     # Check scale bar is not visible
     launch_screenshot = viewer.screenshot(canvas_only=True)

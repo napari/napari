@@ -373,6 +373,38 @@ def test_rectangles():
     assert np.all([s == 'rectangle' for s in layer.shape_type])
 
 
+def test_rectangles_with_shape_type():
+    """Test instantiating rectangles with shape_type in data"""
+    # Test (rectangle, shape_type) tuple
+    shape = (1, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "rectangle")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+    # Test (list of rectangles, shape_type) tuple
+    shape = (10, 4, 2)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "rectangle")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+    # Test list of (rectangle, shape_type) tuples
+    data = [(vertices[i], "rectangle") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+
 def test_rectangles_roundtrip():
     """Test a full roundtrip with rectangles data."""
     shape = (10, 4, 2)
@@ -477,6 +509,74 @@ def test_ellipses():
     assert np.all([s == 'ellipse' for s in layer.shape_type])
 
 
+def test_ellipses_with_shape_type():
+    """Test instantiating ellipses with shape_type in data"""
+    # Test single four corner (vertices, shape_type) tuple
+    shape = (1, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == data[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test multiple four corner (list of vertices, shape_type) tuple
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test list of four corner (vertices, shape_type) tuples
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = [(vertices[i], "ellipse") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test single (center-radii, shape_type) ellipse
+    shape = (1, 2, 2)
+    np.random.seed(0)
+    data = (20 * np.random.random(shape), "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == 1
+    assert len(layer.data[0]) == 4
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test (list of center-radii, shape_type) tuple
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    center_radii = 20 * np.random.random(shape)
+    data = (center_radii, "ellipse")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([len(ld) == 4 for ld in layer.data])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # Test list of (center-radii, shape_type) tuples
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    center_radii = 20 * np.random.random(shape)
+    data = [(center_radii[i], "ellipse") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([len(ld) == 4 for ld in layer.data])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+
 def test_4D_ellispse():
     """Test instantiating Shapes layer with 4D planar ellipse."""
     # Test a single 4D ellipse
@@ -529,6 +629,42 @@ def test_lines():
     assert np.all([s == 'line' for s in layer.shape_type])
 
 
+def test_lines_with_shape_type():
+    """Test instantiating lines with shape_type"""
+    # Test (single line, shape_type) tuple
+    shape = (1, 2, 2)
+    np.random.seed(0)
+    end_points = 20 * np.random.random(shape)
+    data = (end_points, 'line')
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == end_points[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_type])
+
+    # Test (multiple lines, shape_type) tuple
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    end_points = 20 * np.random.random(shape)
+    data = (end_points, "line")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, end_points)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_type])
+
+    # Test list of (line, shape_type) tuples
+    shape = (10, 2, 2)
+    np.random.seed(0)
+    end_points = 20 * np.random.random(shape)
+    data = [(end_points[i], "line") for i in range(shape[0])]
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, end_points)])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'line' for s in layer.shape_type])
+
+
 def test_lines_roundtrip():
     """Test a full roundtrip with line data."""
     shape = (10, 2, 2)
@@ -558,6 +694,39 @@ def test_paths():
     layer = Shapes(data, shape_type='path')
     assert layer.nshapes == len(data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    assert layer.ndim == 2
+    assert np.all([s == 'path' for s in layer.shape_type])
+
+
+def test_paths_with_shape_type():
+    """Test instantiating paths with shape_type in data"""
+    # Test (single path, shape_type) tuple
+    shape = (1, 6, 2)
+    np.random.seed(0)
+    path_points = 20 * np.random.random(shape)
+    data = (path_points, "path")
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == path_points[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'path' for s in layer.shape_type])
+
+    # Test (list of paths, shape_type) tuple
+    path_points = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+    ]
+    data = (path_points, "path")
+    layer = Shapes(data)
+    assert layer.nshapes == len(path_points)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, path_points)])
+    assert layer.ndim == 2
+    assert np.all([s == 'path' for s in layer.shape_type])
+
+    # Test list of  (path, shape_type) tuples
+    data = [(path_points[i], "path") for i in range(len(path_points))]
+    layer = Shapes(data)
+    assert layer.nshapes == len(data)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, path_points)])
     assert layer.ndim == 2
     assert np.all([s == 'path' for s in layer.shape_type])
 
@@ -598,6 +767,40 @@ def test_polygons():
     assert np.all([s == 'polygon' for s in layer.shape_type])
 
 
+def test_polygons_with_shape_type():
+    """Test 2D polygons with shape_type in data"""
+
+    # Test single (polygon, shape_type) tuple
+    shape = (1, 6, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, 'polygon')
+    layer = Shapes(data)
+    assert layer.nshapes == shape[0]
+    assert np.all(layer.data[0] == vertices[0])
+    assert layer.ndim == shape[2]
+    assert np.all([s == 'polygon' for s in layer.shape_type])
+
+    # Test (list of polygons, shape_type) tuple
+    polygons = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(10)
+    ]
+    data = (polygons, 'polygon')
+    layer = Shapes(data)
+    assert layer.nshapes == len(polygons)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, polygons)])
+    assert layer.ndim == 2
+    assert np.all([s == 'polygon' for s in layer.shape_type])
+
+    # Test list of (polygon, shape_type) tuples
+    data = [(polygons[i], 'polygon') for i in range(len(polygons))]
+    layer = Shapes(data)
+    assert layer.nshapes == len(polygons)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, polygons)])
+    assert layer.ndim == 2
+    assert np.all([s == 'polygon' for s in layer.shape_type])
+
+
 def test_polygon_roundtrip():
     """Test a full roundtrip with polygon data."""
     np.random.seed(0)
@@ -615,13 +818,15 @@ def test_mixed_shapes():
     """Test instantiating Shapes layer with a mix of random 2D shapes."""
     # Test multiple polygons with different numbers of points
     np.random.seed(0)
-    data = [
+    shape_vertices = [
         20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
     ] + list(np.random.random((5, 4, 2)))
     shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
-    layer = Shapes(data, shape_type=shape_type)
-    assert layer.nshapes == len(data)
-    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data)])
+    layer = Shapes(shape_vertices, shape_type=shape_type)
+    assert layer.nshapes == len(shape_vertices)
+    assert np.all(
+        [np.all(ld == d) for ld, d in zip(layer.data, shape_vertices)]
+    )
     assert layer.ndim == 2
     assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
 
@@ -635,20 +840,98 @@ def test_mixed_shapes():
     )
 
 
+def test_mixed_shapes_with_shape_type():
+    """Test adding mixed shapes with shape_type in data"""
+    np.random.seed(0)
+    shape_vertices = [
+        20 * np.random.random((np.random.randint(2, 12), 2)) for i in range(5)
+    ] + list(np.random.random((5, 4, 2)))
+    shape_type = ['polygon'] * 5 + ['rectangle'] * 3 + ['ellipse'] * 2
+
+    # Test multiple (shape, shape_type) tuples
+    data = list(zip(shape_vertices, shape_type))
+    layer = Shapes(data)
+    assert layer.nshapes == len(shape_vertices)
+    assert np.all(
+        [np.all(ld == d) for ld, d in zip(layer.data, shape_vertices)]
+    )
+    assert layer.ndim == 2
+    assert np.all([s == so for s, so in zip(layer.shape_type, shape_type)])
+
+
+def test_data_shape_type_overwrites_meta():
+    """Test shape type passed through data property overwrites metadata shape type"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    vertices = 20 * np.random.random(shape)
+    data = (vertices, "ellipse")
+    layer = Shapes(data, shape_type='rectangle')
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    data = [(vertices[i], "ellipse") for i in range(shape[0])]
+    layer = Shapes(data, shape_type='rectangle')
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+
 def test_changing_shapes():
     """Test changing Shapes data."""
     shape_a = (10, 4, 2)
     shape_b = (20, 4, 2)
     np.random.seed(0)
-    data_a = 20 * np.random.random(shape_a)
-    data_b = 20 * np.random.random(shape_b)
-    layer = Shapes(data_a)
+    vertices_a = 20 * np.random.random(shape_a)
+    vertices_b = 20 * np.random.random(shape_b)
+    layer = Shapes(vertices_a)
     assert layer.nshapes == shape_a[0]
-    layer.data = data_b
+    layer.data = vertices_b
     assert layer.nshapes == shape_b[0]
-    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, data_b)])
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices_b)])
     assert layer.ndim == shape_b[2]
     assert np.all([s == 'rectangle' for s in layer.shape_type])
+
+    # setting data with shape type
+    data_a = (vertices_a, "ellipse")
+    layer.data = data_a
+    assert layer.nshapes == shape_a[0]
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, vertices_a)])
+    assert layer.ndim == shape_a[2]
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
+
+    # setting data with fewer shapes
+    smaller_data = vertices_a[:5]
+    current_edge_color = layer._data_view.edge_color
+    current_edge_width = layer._data_view.edge_widths
+    current_face_color = layer._data_view.face_color
+    current_z = layer._data_view.z_indices
+
+    layer.data = smaller_data
+    assert layer.nshapes == smaller_data.shape[0]
+    assert np.allclose(layer._data_view.edge_color, current_edge_color[:5])
+    assert np.allclose(layer._data_view.face_color, current_face_color[:5])
+    assert np.allclose(layer._data_view.edge_widths, current_edge_width[:5])
+    assert np.allclose(layer._data_view.z_indices, current_z[:5])
+
+    # setting data with added shapes
+    current_edge_color = layer._data_view.edge_color
+    current_edge_width = layer._data_view.edge_widths
+    current_face_color = layer._data_view.face_color
+    current_z = layer._data_view.z_indices
+
+    bigger_data = vertices_b
+    layer.data = bigger_data
+    assert layer.nshapes == bigger_data.shape[0]
+    assert np.allclose(layer._data_view.edge_color[:5], current_edge_color)
+    assert np.allclose(layer._data_view.face_color[:5], current_face_color)
+    assert np.allclose(layer._data_view.edge_widths[:5], current_edge_width)
+    assert np.allclose(layer._data_view.z_indices[:5], current_z)
+
+
+def test_changing_shape_type():
+    """Test changing shape type"""
+    np.random.seed(0)
+    rectangles = 20 * np.random.random((10, 4, 2))
+    layer = Shapes(rectangles, shape_type='rectangle')
+    layer.shape_type = "ellipse"
+    assert np.all([s == 'ellipse' for s in layer.shape_type])
 
 
 def test_adding_shapes():
@@ -667,6 +950,18 @@ def test_adding_shapes():
     all_shape_type = ['polygon'] * 5 + new_shape_type
     assert layer.nshapes == len(all_data)
     assert np.all([np.all(ld == d) for ld, d in zip(layer.data, all_data)])
+    assert layer.ndim == 2
+    assert np.all([s == so for s, so in zip(layer.shape_type, all_shape_type)])
+
+    # test adding data with shape_type
+    new_vertices = np.random.random((5, 4, 2))
+    new_shape_type2 = ['ellipse'] * 3 + ['rectangle'] * 2
+    new_data2 = list(zip(new_vertices, new_shape_type2))
+    layer.add(new_data2)
+    all_vertices = all_data + list(new_vertices)
+    all_shape_type = all_shape_type + new_shape_type2
+    assert layer.nshapes == len(all_vertices)
+    assert np.all([np.all(ld == d) for ld, d in zip(layer.data, all_vertices)])
     assert layer.ndim == 2
     assert np.all([s == so for s, so in zip(layer.shape_type, all_shape_type)])
 
@@ -1453,17 +1748,16 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1, :] = [[0, 0], [0, 10], [10, 0], [10, 10]]
     layer = Shapes(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0,) * 2)
     assert value == (9, None)
 
     layer.mode = 'select'
     layer.selected_data = {9}
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0,) * 2)
     assert value == (9, 7)
 
     layer = Shapes(data + 5)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0,) * 2)
     assert value == (None, None)
 
 
@@ -1473,7 +1767,7 @@ def test_message():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 

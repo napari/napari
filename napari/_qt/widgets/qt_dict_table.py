@@ -89,9 +89,9 @@ class QtDictTable(QTableWidget):
                 if h not in _headers:
                     raise ValueError(
                         trans._(
-                            "Argument 'headers' got item '{h}', which was not found in any of the items in 'data'".format(
-                                h=h
-                            )
+                            "Argument 'headers' got item '{header}', which was not found in any of the items in 'data'",
+                            deferred=True,
+                            header=h,
                         )
                     )
             _headers = headers

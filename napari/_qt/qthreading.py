@@ -724,10 +724,10 @@ def _new_worker_qthread(
     Worker : QObject
         QObject type that implements a work() method.  The Worker should also
         emit a finished signal when the work is done.
-    start_thread : bool
+    _start_thread : bool
         If True, thread will be started immediately, otherwise, thread must
         be manually started with thread.start().
-    connections : dict, optional
+    _connect : dict, optional
         Optional dictionary of {signal: function} to connect to the new worker.
         for instance:  connections = {'incremented': myfunc} will result in:
         worker.incremented.connect(myfunc)

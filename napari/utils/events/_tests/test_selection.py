@@ -11,18 +11,18 @@ def test_selection():
         sel: Selection[int]
 
     t = T(sel=[])
-    t.sel.events.current = Mock()
-    assert not t.sel.current
+    t.sel.events._current = Mock()
+    assert not t.sel._current
     assert not t.sel
     t.sel.add(1)
-    t.sel.current = 1
-    t.sel.events.current.assert_called_once()
+    t.sel._current = 1
+    t.sel.events._current.assert_called_once()
 
     assert 1 in t.sel
-    assert t.sel.current == 1
+    assert t.sel._current == 1
 
-    assert t.json() == r'{"sel": {"data": [1], "current": 1}}'
-    assert T(sel={"data": [1], "current": 1}) == t
+    assert t.json() == r'{"sel": {"selection": [1], "_current": 1}}'
+    assert T(sel={"selection": [1], "_current": 1}) == t
 
     t.sel.remove(1)
     assert not t.sel
@@ -31,4 +31,4 @@ def test_selection():
         T(sel=['asdf'])
 
     with pytest.raises(ValidationError):
-        T(sel={"data": [1], "current": 'asdf'})
+        T(sel={"selection": [1], "_current": 'asdf'})

@@ -1,6 +1,7 @@
 from .event import EmitterGroup, Event, EventEmitter  # isort:skip
 from .containers._evented_list import EventedList
 from .containers._nested_list import NestableEventedList
+from .containers._selectable_list import SelectableEventedList
 from .containers._selection import Selection
 from .containers._set import EventedSet
 from .containers._typed import TypedMutableSequence
@@ -17,6 +18,7 @@ __all__ = [
     'EventedSet',
     'EventEmitter',
     'NestableEventedList',
+    'SelectableEventedList',
     'Selection',
     'SupportsEvents',
     'TypedMutableSequence',

@@ -1,15 +1,88 @@
 """Settings management.
 """
 
+import os
 from enum import Enum
+from pathlib import Path
 from typing import List, Tuple
 
 from pydantic import BaseSettings, Field
 
+from ...plugins import CallOrderDict
+from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
-from ..translations import trans
+from ..translations import _load_language, get_language_packs, trans
+
+
+class SchemaVersion(str):
+    """
+    Custom schema version type to handle both tuples and version strings.
+
+    Provides also a `as_tuple` method for convenience when doing version
+    comparison.
+    """
+
+    def __new__(cls, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        return str.__new__(cls, value)
+
+    def __init__(self, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        self._value = value
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if isinstance(v, (tuple, list)):
+            v = ".".join(str(item) for item in v)
+
+        if not isinstance(v, str):
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        parts = v.split(".")
+        if len(parts) != 3:
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        for part in parts:
+            try:
+                int(part)
+            except Exception:
+                raise ValueError(
+                    trans._(
+                        "A schema version subparts must be positive integers or parseable as integers!"
+                    ),
+                    deferred=True,
+                )
+
+        return cls(v)
+
+    def __repr__(self):
+        return f'SchemaVersion("{self._value}")'
+
+    def __str__(self):
+        return f'"{self._value}"'
+
+    def as_tuple(self):
+        return tuple(int(p) for p in self._value.split('.'))
 
 
 class Theme(str):
@@ -25,21 +98,65 @@ class Theme(str):
 
     @classmethod
     def __modify_schema__(cls, field_schema):
+        # TODO: Provide a way to handle keys so we can display human readable
+        # option in the preferences dropdown
         field_schema.update(enum=available_themes())
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise ValueError(trans._('must be a string', deferred=True))
+
+        value = v.lower()
+        themes = available_themes()
+        if value not in available_themes():
+            raise ValueError(
+                trans._(
+                    '"{value}" is not valid. It must be one of {themes}',
+                    deferred=True,
+                    value=value,
+                    themes=", ".join(themes),
+                )
+            )
+
+        return value
+
+
+class Language(str):
+    """
+    Custom theme type to dynamically load all installed language packs.
+    """
+
+    # https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def __modify_schema__(cls, field_schema):
+        # TODO: Provide a way to handle keys so we can display human readable
+        # option in the preferences dropdown
+        language_packs = list(get_language_packs(_load_language()).keys())
+        field_schema.update(enum=language_packs)
 
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
             raise ValueError(trans._('must be a string'))
 
-        value = v.lower()
-        themes = available_themes()
-        if value not in available_themes():
+        language_packs = list(get_language_packs(_load_language()).keys())
+        if v not in language_packs:
             raise ValueError(
-                trans._('must be one of {}'.format(", ".join(themes)))
+                trans._(
+                    '"{value}" is not valid. It must be one of {language_packs}.',
+                    deferred=True,
+                    value=v,
+                    language_packs=", ".join(language_packs),
+                )
             )
 
-        return value
+        return v
 
 
 class QtBindingChoice(str, Enum):
@@ -49,7 +166,42 @@ class QtBindingChoice(str, Enum):
     pyqt5 = 'pyqt5'
 
 
-class ApplicationSettings(BaseSettings, EventedModel):
+class BaseNapariSettings(BaseSettings, EventedModel):
+    class Config:
+        # Pydantic specific configuration
+        env_prefix = 'napari_'
+        use_enum_values = True
+        validate_all = True
+
+
+class AppearanceSettings(BaseNapariSettings):
+    """Appearance Settings."""
+
+    # 1. If you want to *change* the default value of a current option, you need to
+    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+    # 2. If you want to *remove* options that are no longer needed in the codebase,
+    #    or if you want to *rename* options, then you need to do a MAJOR update in
+    #    version, e.g. from 3.0.0 to 4.0.0
+    # 3. You don't need to touch this value if you're just adding a new option
+
+    schema_version: SchemaVersion = (0, 1, 0)
+
+    theme: Theme = Field(
+        "dark",
+        title=trans._("Theme"),
+        description=trans._("Theme selection."),
+    )
+
+    class Config:
+        # Pydantic specific configuration
+        title = trans._("Appearance")
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version']
+
+
+class ApplicationSettings(BaseNapariSettings):
     """Main application settings."""
 
     # 1. If you want to *change* the default value of a current option, you need to
@@ -59,18 +211,30 @@ class ApplicationSettings(BaseSettings, EventedModel):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
-
-    theme: Theme = Field(
-        "dark",
-        description=trans._("Theme selection."),
-    )
+    schema_version: SchemaVersion = (0, 1, 0)
 
     first_time: bool = True
 
+    ipy_interactive: bool = Field(
+        default=True,
+        title=trans._('IPython interactive'),
+        description=(
+            r'Use interactive %gui qt event loop when creating '
+            'napari Viewers in IPython'
+        ),
+    )
+
+    language: Language = Field(
+        _DEFAULT_LOCALE,
+        title=trans._("Language"),
+        description=trans._("Interface display language."),
+    )
+
     # Window state, geometry and position
     save_window_geometry: bool = Field(
-        True, description="Save window size and position."
+        True,
+        title=trans._("Save Window Geometry"),
+        description=trans._("Save window size and position."),
     )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
@@ -85,12 +249,12 @@ class ApplicationSettings(BaseSettings, EventedModel):
         NotificationSeverity.NONE
     )
 
+    open_history: List = [os.path.dirname(Path.home())]
+    save_history: List = [os.path.dirname(Path.home())]
+
     class Config:
         # Pydantic specific configuration
-        env_prefix = 'napari_'
-        title = "Application settings"
-        use_enum_values = True
-        validate_all = True
+        title = trans._("Application")
 
     class NapariConfig:
         # Napari specific configuration
@@ -106,24 +270,30 @@ class ApplicationSettings(BaseSettings, EventedModel):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
+            "open_history",
+            "save_history",
         ]
 
 
-class PluginSettings(BaseSettings, EventedModel):
-    """Plugin Settings."""
+class PluginsSettings(BaseNapariSettings):
+    """Plugins Settings."""
 
-    schema_version = (0, 1, 0)
-    plugins_call_order: List[str] = []
+    schema_version: SchemaVersion = (0, 1, 1)
+    call_order: CallOrderDict = Field(
+        None,
+        title=trans._("Plugin sort order"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called.",
+        ),
+    )
 
     class Config:
         # Pydantic specific configuration
-        env_prefix = 'napari_'
-        title = "Plugin settings"
-        use_enum_values = True
+        title = trans._("Plugins")
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'plugins_call_order']
+        preferences_exclude = ['schema_version']
 
 
-CORE_SETTINGS = [ApplicationSettings, PluginSettings]
+CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

@@ -34,7 +34,7 @@ def split_channels(
     data : array or list of array
     channel_axis : int
         Axis to split the image along.
-    kwargs : dict
+    **kwargs : dict
         Keyword arguments will override the default image meta keys
         returned in each layer data tuple.
 
@@ -208,10 +208,11 @@ def images_to_stack(
         List of Image Layers
     axis : int
         Index to to insert the new axis
-    kwargs : dict
+    **kwargs : dict
         Dictionary of parameters values to override parameters
         from the first image in images list.
-    Returns.
+
+    Returns
     -------
     stack : napari.layers.Image
         Combined image stack

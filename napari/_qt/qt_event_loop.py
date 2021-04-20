@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 import sys
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy.QtCore import Qt
@@ -14,9 +17,13 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
+from ..utils.settings import SETTINGS
 from .dialogs.qt_notification import NapariQtNotification
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
+
+if TYPE_CHECKING:
+    from IPython import InteractiveShell
 
 NAPARI_ICON_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'resources', 'logo.png'
@@ -53,6 +60,7 @@ def get_app(
     org_name: str = None,
     org_domain: str = None,
     app_id: str = None,
+    ipy_interactive: bool = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -78,6 +86,9 @@ def get_app(
         Set organization domain (if creating for the first time).  Will be
         passed to set_app_id (which may also be called independently), by
         default NAPARI_APP_ID
+    ipy_interactive : bool, optional
+        Use the IPython Qt event loop ('%gui qt' magic) if running in an
+        interactive IPython terminal.
 
     Returns
     -------
@@ -103,6 +114,7 @@ def get_app(
 
     app = QApplication.instance()
     if app:
+        set_values.discard("ipy_interactive")
         if set_values:
 
             warn(
@@ -132,7 +144,6 @@ def get_app(
         app.setApplicationVersion(kwargs.get('app_version'))
         app.setOrganizationName(kwargs.get('org_name'))
         app.setOrganizationDomain(kwargs.get('org_domain'))
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
         set_app_id(kwargs.get('app_id'))
 
         notification_manager.notification_ready.connect(
@@ -141,6 +152,13 @@ def get_app(
         notification_manager.notification_ready.connect(
             show_console_notification
         )
+
+    if app.windowIcon().isNull():
+        app.setWindowIcon(QIcon(kwargs.get('icon')))
+
+    if ipy_interactive is None:
+        ipy_interactive = SETTINGS.application.ipy_interactive
+    _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
@@ -163,7 +181,10 @@ def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
-    if QApplication.applicationName() == 'napari':
+    if (
+        QApplication.applicationName() == 'napari'
+        and not _ipython_has_eventloop()
+    ):
         QApplication.quit()
 
     # otherwise, something else created the QApp before us (such as
@@ -196,8 +217,7 @@ def quit_app():
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
 
-    NOTE: This context manager may be deprecated in the future. Prefer using
-    :func:`napari.run` instead.
+    NOTE: This context manager is deprecated!. Prefer using :func:`napari.run`.
 
     Parameters
     ----------
@@ -217,6 +237,19 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
+    warn(
+        "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running "
+        "napari from a script, please use 'napari.run()' as follows:\n\n"
+        "    import napari\n\n"
+        "    viewer = napari.Viewer()  # no prior setup needed\n"
+        "    # other code using the viewer...\n"
+        "    napari.run()\n\n"
+        "In IPython or Jupyter, 'napari.run()' is not necessary. napari will "
+        "automatically\nstart an interactive event loop for you: \n\n"
+        "    import napari\n"
+        "    viewer = napari.Viewer()  # that's it!\n",
+        FutureWarning,
+    )
 
     app = get_app()
     splash = None
@@ -240,12 +273,28 @@ def _ipython_has_eventloop() -> bool:
     at the prompt.  So it will likely "appear" like there is no event loop
     running, but we still don't need to start one.
     """
-    try:
-        from IPython import get_ipython
-
-        return get_ipython().active_eventloop == 'qt'
-    except (ImportError, AttributeError):
+    ipy_module = sys.modules.get("IPython")
+    if not ipy_module:
         return False
+
+    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    if not shell:
+        return False
+
+    return shell.active_eventloop == 'qt'
+
+
+def _try_enable_ipython_gui(gui='qt'):
+    """Start %gui qt the eventloop."""
+    ipy_module = sys.modules.get("IPython")
+    if not ipy_module:
+        return
+
+    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    if not shell:
+        return
+    if shell.active_eventloop != gui:
+        shell.enable_gui(gui)
 
 
 def run(

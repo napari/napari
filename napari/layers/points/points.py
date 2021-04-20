@@ -197,8 +197,8 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
         If properties is not provided, it will be {} (empty dictionary).
@@ -473,22 +473,13 @@ class Points(Layer):
         self.events.data(value=self.data)
         self._set_editable()
 
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        return self._selected
-
-    @selected.setter
-    def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
+    def _on_selection(self, selected):
         if selected:
-            self.events.select()
+            self._set_highlight()
         else:
-            self.events.deselect()
-        self._set_highlight()
+            self._highlight_box = None
+            self._highlight_index = []
+            self.events.highlight()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -1306,65 +1297,56 @@ class Points(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any point ids have changed since last call
-        if self.selected:
-            if (
-                self.selected_data == self._selected_data_stored
-                and self._value == self._value_stored
-                and np.all(self._drag_box == self._drag_box_stored)
-            ) and not force:
-                return
-            self._selected_data_stored = copy(self.selected_data)
-            self._value_stored = copy(self._value)
-            self._drag_box_stored = copy(self._drag_box)
+        if (
+            self.selected_data == self._selected_data_stored
+            and self._value == self._value_stored
+            and np.all(self._drag_box == self._drag_box_stored)
+        ) and not force:
+            return
+        self._selected_data_stored = copy(self.selected_data)
+        self._value_stored = copy(self._value)
+        self._drag_box_stored = copy(self._drag_box)
 
-            if self._value is not None or len(self._selected_view) > 0:
-                if len(self._selected_view) > 0:
-                    index = copy(self._selected_view)
-                    # highlight the hovered point if not in adding mode
-                    if (
-                        self._value in self._indices_view
-                        and self._mode == Mode.SELECT
-                        and not self._is_selecting
-                    ):
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        if hover_point in index:
-                            pass
-                        else:
-                            index.append(hover_point)
-                    index.sort()
-                else:
-                    # only highlight hovered points in select mode
-                    if (
-                        self._value in self._indices_view
-                        and self._mode == Mode.SELECT
-                        and not self._is_selecting
-                    ):
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        index = [hover_point]
+        if self._value is not None or len(self._selected_view) > 0:
+            if len(self._selected_view) > 0:
+                index = copy(self._selected_view)
+                # highlight the hovered point if not in adding mode
+                if (
+                    self._value in self._indices_view
+                    and self._mode == Mode.SELECT
+                    and not self._is_selecting
+                ):
+                    hover_point = list(self._indices_view).index(self._value)
+                    if hover_point in index:
+                        pass
                     else:
-                        index = []
-
-                self._highlight_index = index
+                        index.append(hover_point)
+                index.sort()
             else:
-                self._highlight_index = []
+                # only highlight hovered points in select mode
+                if (
+                    self._value in self._indices_view
+                    and self._mode == Mode.SELECT
+                    and not self._is_selecting
+                ):
+                    hover_point = list(self._indices_view).index(self._value)
+                    index = [hover_point]
+                else:
+                    index = []
 
-            # only display dragging selection box in 2D
-            if self._ndisplay == 2 and self._is_selecting:
-                pos = create_box(self._drag_box)
-                pos = pos[list(range(4)) + [0]]
-            else:
-                pos = None
-
-            self._highlight_box = pos
-            self.events.highlight()
+            self._highlight_index = index
         else:
-            self._highlight_box = None
             self._highlight_index = []
-            self.events.highlight()
+
+        # only display dragging selection box in 2D
+        if self._ndisplay == 2 and self._is_selecting:
+            pos = create_box(self._drag_box)
+            pos = pos[list(range(4)) + [0]]
+        else:
+            pos = None
+
+        self._highlight_box = pos
+        self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

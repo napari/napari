@@ -49,7 +49,11 @@ def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
-    app_module = sys.modules['__main__'].__package__
+    # note that a module may not have a __package__ attribute
+    try:
+        app_module = sys.modules['__main__'].__package__
+    except AttributeError:
+        return False
     try:
         metadata = importlib_metadata.metadata(app_module)
     except importlib_metadata.PackageNotFoundError:

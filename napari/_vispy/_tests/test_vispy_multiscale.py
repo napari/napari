@@ -38,17 +38,17 @@ def test_multiscale(make_napari_viewer):
 
     # Test value at top left corner of image
     viewer.cursor.position = (0, 0)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value(viewer.cursor.position, world=True)
     np.testing.assert_allclose(value, (2, data[2][(0, 0)]))
 
     # Test value at bottom right corner of image
     viewer.cursor.position = (3995, 2995)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value(viewer.cursor.position, world=True)
     np.testing.assert_allclose(value, (2, data[2][(999, 749)]))
 
     # Test value outside image
     viewer.cursor.position = (4000, 3000)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value(viewer.cursor.position, world=True)
     assert value[1] is None
 
 
@@ -169,6 +169,8 @@ def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
     viewer = make_napari_viewer(show=True)
+    view = viewer.window.qt_viewer
+    view.set_welcome_visible(False)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]

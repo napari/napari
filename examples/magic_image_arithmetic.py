@@ -22,7 +22,7 @@ class Operation(enum.Enum):
 # really matter. But this syntax would let you specify that a parameter is a
 # napari object type without actually importing or depending on napari.
 # Note: here we use `napari.types.ImageData` as our parameter annotations,
-# which means our function will be passed layer.data instead of 
+# which means our function will be passed layer.data instead of
 # the full layer instance
 def image_arithmetic(
     layerA: 'napari.types.ImageData',
@@ -34,11 +34,12 @@ def image_arithmetic(
         return operation.value(layerA, layerB)
 
 
-with napari.gui_qt():
-    # create a new viewer with a couple image layers
-    viewer = napari.Viewer()
-    viewer.add_image(np.random.rand(20, 20), name="Layer 1")
-    viewer.add_image(np.random.rand(20, 20), name="Layer 2")
+# create a new viewer with a couple image layers
+viewer = napari.Viewer()
+viewer.add_image(np.random.rand(20, 20), name="Layer 1")
+viewer.add_image(np.random.rand(20, 20), name="Layer 2")
 
-    # Add our magic function to napari
-    viewer.window.add_function_widget(image_arithmetic)
+# Add our magic function to napari
+viewer.window.add_function_widget(image_arithmetic)
+
+napari.run()

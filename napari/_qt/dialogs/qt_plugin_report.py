@@ -158,9 +158,7 @@ class QtPluginErrReporter(QDialog):
         if not self.plugin_manager.get_errors(plugin):
             raise ValueError(
                 trans._(
-                    "No errors reported for plugin '{plugin}'".format(
-                        plugin=plugin
-                    )
+                    "No errors reported for plugin '{plugin}'", plugin=plugin
                 )
             )
 

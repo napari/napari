@@ -12,6 +12,7 @@ from ...utils.colormaps import (
 )
 from ...utils.events import Event
 from ...utils.translations import trans
+from ..image._image_utils import guess_multiscale
 from ..image.image import _get_image_base_class
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
@@ -31,7 +32,7 @@ class Labels(_image_base_class):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or multiscale.
+        Labels data as an array or multiscale. Must be integer type or bools
     num_colors : int
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
@@ -84,7 +85,7 @@ class Labels(_image_base_class):
     Attributes
     ----------
     data : array
-        Integer valued label data. Can be N dimensional. Every pixel contains
+        Integer label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
     multiscale : bool
@@ -141,8 +142,8 @@ class Labels(_image_base_class):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
@@ -177,10 +178,16 @@ class Labels(_image_base_class):
         self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = label_colormap(self.num_colors)
+        self._all_vals = low_discrepancy_image(
+            np.arange(self.num_colors), self._seed
+        )
+        self._all_vals[0] = 0
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
         self._contour = 0
+
+        data = self._ensure_int_labels(data)
 
         if properties is None:
             self._properties = {}
@@ -307,6 +314,9 @@ class Labels(_image_base_class):
     def seed(self, seed):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
+        # invalidate _all_vals to trigger re-generation
+        # in _raw_to_displayed
+        self._all_vals = np.array([])
         self.refresh()
         self.events.selected_label()
 
@@ -324,6 +334,19 @@ class Labels(_image_base_class):
         self.events.selected_label()
 
     @property
+    def data(self):
+        """array: Image data."""
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        data = self._ensure_int_labels(data)
+        self._data = data
+        self._update_dims()
+        self.events.data(value=self.data)
+        self._set_editable()
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Properties for each label."""
         return self._properties
@@ -334,8 +357,8 @@ class Labels(_image_base_class):
             properties, label_index = dataframe_to_properties(properties)
             if label_index is None:
                 label_index = self._map_index(properties)
+            self._label_index = label_index
         self._properties = self._validate_properties(properties)
-        self._label_index = label_index
         self.events.properties()
 
     @property
@@ -365,6 +388,29 @@ class Labels(_image_base_class):
 
         self._color = colors
         self.color_mode = color_mode
+
+    def _ensure_int_labels(self, data):
+        """Ensure data is integer by converting from bool if required, raising an error otherwise."""
+        looks_multiscale, data = guess_multiscale(data)
+        if not looks_multiscale:
+            data = [data]
+        int_data = []
+        for data_level in data:
+            if np.issubdtype(data_level.dtype, np.floating):
+                raise TypeError(
+                    trans._(
+                        "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
+                        data_level_type=data_level.dtype,
+                    )
+                )
+            if data_level.dtype == bool:
+                int_data.append(data_level.astype(np.int8))
+            else:
+                int_data.append(data_level)
+        data = int_data
+        if not looks_multiscale:
+            data = data[0]
+        return data
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
@@ -565,7 +611,7 @@ class Labels(_image_base_class):
             )
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
-            self.cursor = self.brush_shape
+            self.cursor = str(self._brush_shape)
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
@@ -589,7 +635,7 @@ class Labels(_image_base_class):
             )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
-            self.cursor = self.brush_shape
+            self.cursor = str(self._brush_shape)
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
@@ -651,6 +697,9 @@ class Labels(_image_base_class):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+        if raw.dtype == bool:
+            raw = raw.view(dtype=np.uint8)
+
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -668,19 +717,29 @@ class Labels(_image_base_class):
             not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = np.where(
-                raw > 0, low_discrepancy_image(raw, self._seed), 0
-            )
+            try:
+                image = self._all_vals[raw]
+            except IndexError:
+                max_val = np.max(raw)
+                self._all_vals = low_discrepancy_image(
+                    np.arange(max_val + 1), self._seed
+                )
+                self._all_vals[0] = 0
+                image = self._all_vals[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            selected = self._selected_label
-            image = np.where(
-                raw == selected,
-                low_discrepancy_image(selected, self._seed),
-                0,
+            selected_color = low_discrepancy_image(
+                self._selected_label, self._seed
             )
+            if self.selected_label > len(self._all_vals):
+                self._all_vals = low_discrepancy_image(
+                    np.arange(self.selected_label + 1), self._seed
+                )
+            colors = np.zeros(len(self._all_vals))
+            colors[self.selected_label] = selected_color
+            image = colors[raw]
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -712,9 +771,7 @@ class Labels(_image_base_class):
                 raw, footprint=struct_elem
             ) != ndi.grey_erosion(raw, footprint=thick_struct_elem)
             image[boundaries] = raw[boundaries]
-            image = np.where(
-                image > 0, low_discrepancy_image(image, self._seed), 0
-            )
+            image = self._all_vals[image]
         elif self.contour > 0 and raw.ndim > 2:
             warnings.warn("Contours are not displayed during 3D rendering")
 
@@ -727,6 +784,8 @@ class Labels(_image_base_class):
         """Return the color corresponding to a specific label."""
         if label == 0:
             col = None
+        elif label is None:
+            col = self.colormap.map([0, 0, 0, 0])[0]
         else:
             val = self._raw_to_displayed(np.array([label]))
             col = self.colormap.map(val)[0]
@@ -755,7 +814,7 @@ class Labels(_image_base_class):
 
         Parameters
         ----------
-        value: 3-tuple of arrays
+        value : 3-tuple of arrays
             The value is a 3-tuple containing:
 
             - a numpy multi-index, pointing to the array elements that were
@@ -787,7 +846,7 @@ class Labels(_image_base_class):
 
         See Also
         --------
-        `Labels._save_history`
+        Labels._save_history
         """
         if len(before) == 0:
             return
@@ -901,7 +960,7 @@ class Labels(_image_base_class):
             calls.
         """
         shape = self.data.shape
-        if self.brush_shape == "square":
+        if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if not self.n_dimensional and self.ndim > 2:
                 for i in self._dims_not_displayed:
@@ -923,7 +982,7 @@ class Labels(_image_base_class):
             )
             slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
             slice_coord = indices_in_shape(slice_coord, shape)
-        elif self.brush_shape == "circle":
+        elif str(self._brush_shape) == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
             if not self.n_dimensional and self.ndim > 2:
                 coord = [coord[i] for i in self._dims_displayed]

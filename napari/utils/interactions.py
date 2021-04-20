@@ -211,12 +211,63 @@ KEY_SYMBOLS = {
 }
 
 
+joinchar = '-'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
         {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
     )
+    joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
+
+
+class Shortcut:
+    """
+    Wrapper object around shortcuts,
+
+    Mostly help to handle cross platform differences in UI:
+      - whether the joiner is -,'' or something else.
+      - replace the corresponding modifier with their equivalents.
+
+    As well as integration with qt which uses a different convention with +
+    instead of -.
+    """
+
+    def __init__(self, shortcut: str):
+        """
+        Parameters
+        ----------
+        shortcut : string
+            shortcut to format in the form of dash separated keys to press
+
+        """
+        self._values = shortcut.split('-')
+        for v in self._values:
+            if len(v) > 1:
+                assert v in KEY_SYMBOLS.keys()
+
+    @property
+    def qt(self) -> str:
+        return '+'.join(self._values)
+
+    @property
+    def platform(self) -> str:
+        """
+        Format the given shortcut for the current platform.
+
+        Replace Cmd, Ctrl, Meta...etc by appropriate symbols if relevant for the
+        given platform.
+
+        Returns
+        -------
+        string
+            Shortcut formatted to be displayed on current paltform.
+        """
+
+        return joinchar.join(KEY_SYMBOLS.get(x, x) for x in self._values)
+
+    def __str__(self):
+        return self.platform
 
 
 def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):

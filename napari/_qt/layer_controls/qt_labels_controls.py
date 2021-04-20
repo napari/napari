@@ -17,7 +17,7 @@ from ...layers.labels._labels_constants import (
     Mode,
 )
 from ...utils.events import disconnect_events
-from ...utils.interactions import KEY_SYMBOLS
+from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -167,9 +167,8 @@ class QtLabelsControls(QtLayerControls):
             'fill',
             Mode.FILL,
             tooltip=trans._(
-                "Fill mode (F) \nToggle with {key}".format(
-                    key=KEY_SYMBOLS['Control']
-                )
+                "Fill mode (F) \nToggle with {shortcut}",
+                shortcut=Shortcut("Control"),
             ),
         )
         self.erase_button = QtModeRadioButton(
@@ -177,9 +176,8 @@ class QtLabelsControls(QtLayerControls):
             'erase',
             Mode.ERASE,
             tooltip=trans._(
-                "Erase mode (E) \nToggle with {key}".format(
-                    key=KEY_SYMBOLS['Alt']
-                )
+                "Erase mode (E) \nToggle with {shortcut}",
+                shortcut=Shortcut("Alt"),
             ),
         )
 
@@ -374,17 +372,6 @@ class QtLabelsControls(QtLayerControls):
         """
         self.layer.color_mode = self.colorModeComboBox.currentData()
 
-    def change_brush_shape(self, brush_shape):
-        """Change paintbrush shape of label layer.
-
-        Parameters
-        ----------
-        brush_shape : str
-            CIRCLE (default) uses circle paintbrush (case insensitive).
-            SQUARE uses square paintbrush (case insensitive).
-        """
-        self.layer.brush_shape = self.brushShapeComboBox.currentData()
-
     def _on_contour_change(self, event=None):
         """Receive layer model contour value change event and update spinbox.
 
@@ -464,13 +451,9 @@ class QtLabelsControls(QtLayerControls):
             The napari event that triggered this method.
         """
         with self.layer.events.color_mode.blocker():
-            # `self.colorModeComboBox.findData` is not returning the correct index.
-            for index in range(self.colorModeComboBox.count()):
-                if self.layer.color_mode == self.colorModeComboBox.itemData(
-                    index
-                ):
-                    self.colorModeComboBox.setCurrentIndex(index)
-                    break
+            self.colorModeComboBox.setCurrentIndex(
+                self.colorModeComboBox.findData(self.layer.color_mode)
+            )
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

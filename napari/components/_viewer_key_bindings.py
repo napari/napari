@@ -1,3 +1,5 @@
+from ..utils.settings import SETTINGS
+from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
 
@@ -26,6 +28,19 @@ def toggle_ndisplay(viewer):
 
 
 toggle_ndisplay.__doc__ = trans._("Toggle ndisplay.")
+
+
+@ViewerModel.bind_key('Control-Shift-T')
+def toggle_theme(viewer):
+    """Toggle theme for viewer"""
+    themes = available_themes()
+    current_theme = SETTINGS.appearance.theme
+    idx = themes.index(current_theme)
+    idx += 1
+    if idx == len(themes):
+        idx = 0
+
+    SETTINGS.appearance.theme = themes[idx]
 
 
 @ViewerModel.bind_key('Left')
@@ -88,72 +103,6 @@ def transpose_axes(viewer):
 transpose_axes.__doc__ = trans._(
     "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
 )
-
-
-@ViewerModel.bind_key('Control-Backspace')
-@ViewerModel.bind_key('Control-Delete')
-def remove_selected(viewer):
-    """Remove selected layers."""
-    viewer.layers.remove_selected()
-
-
-remove_selected.__doc__ = trans._("Remove selected layers.")
-
-
-@ViewerModel.bind_key('Control-A')
-def select_all(viewer):
-    """Selected all layers."""
-    viewer.layers.select_all()
-
-
-select_all.__doc__ = trans._("Selected all layers.")
-
-
-@ViewerModel.bind_key('Control-Shift-Backspace')
-@ViewerModel.bind_key('Control-Shift-Delete')
-def remove_all_layers(viewer):
-    """Remove all layers."""
-    viewer.layers.select_all()
-    viewer.layers.remove_selected()
-
-
-remove_all_layers.__doc__ = trans._("Remove all layers.")
-
-
-@ViewerModel.bind_key('Up')
-def select_layer_above(viewer):
-    """Select layer above."""
-    viewer.layers.select_next()
-
-
-select_layer_above.__doc__ = trans._("Select layer above.")
-
-
-@ViewerModel.bind_key('Down')
-def select_layer_below(viewer):
-    """Select layer below."""
-    viewer.layers.select_previous()
-
-
-select_layer_below.__doc__ = trans._("Select layer below.")
-
-
-@ViewerModel.bind_key('Shift-Up')
-def also_select_layer_above(viewer):
-    """Also select layer above."""
-    viewer.layers.select_next(shift=True)
-
-
-also_select_layer_above.__doc__ = trans._("Also select layer above.")
-
-
-@ViewerModel.bind_key('Shift-Down')
-def also_select_layer_below(viewer):
-    """Also select layer below."""
-    viewer.layers.select_previous(shift=True)
-
-
-also_select_layer_below.__doc__ = trans._("Also select layer below.")
 
 
 @ViewerModel.bind_key('Control-R')
