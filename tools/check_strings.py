@@ -254,7 +254,7 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
 
 def find_untranslated_strings(
     paths: List[str], skip_words: List[str]
-) -> Dict[str, List[Tuple[int, str]]]:
+) -> Tuple[Dict[str, List[Tuple[int, str]]], List[str]]:
     """Find strings that have not been translated.
 
     This will not raise errors but return a list with found issues wo they
@@ -269,11 +269,14 @@ def find_untranslated_strings(
 
     Returns
     -------
-    dict of tuples
-        List of issues found per path. Each issue is a tuple with line number
-        and the untranslated string.
+    tuple of dict of list of tuples
+        The first item is a dictionary of the list of issues found per path.
+        Each issue is a tuple with line number and the untranslated string.
+        The second item is a dictionary of files that contain outdated
+        skipped strings.
     """
     issues = {}
+    outdated_strings = {}
     for fpath in paths:
         issues[fpath] = []
         strings = find_strings(fpath)
@@ -281,6 +284,7 @@ def find_untranslated_strings(
         doc_strings = find_docstrings(fpath)
 
         skip_words_for_file = skip_words.get(fpath, [])
+        skip_words_for_file_check = skip_words_for_file[:]
         module = import_module_by_path(fpath)
         try:
             __all__strings = module.__all__
@@ -301,6 +305,12 @@ def find_untranslated_strings(
                 and value not in SKIP_WORDS_GLOBAL
             ):
                 issues[fpath].append((_lineno, value))
+            elif value in skip_words_for_file_check:
+                skip_words_for_file_check.remove(value)
+
+        if skip_words_for_file_check:
+            outdated_strings[fpath] = skip_words_for_file_check
+            print(skip_words_for_file_check)
 
         try:
             _content = (
@@ -317,7 +327,7 @@ def find_untranslated_strings(
         if not issues[fpath]:
             issues.pop(fpath)
 
-    return issues
+    return issues, outdated_strings
 
 
 if __name__ == "__main__":
@@ -327,7 +337,7 @@ if __name__ == "__main__":
     else:
         paths = find_files(path, SKIP_FOLDERS, SKIP_FILES)
 
-    issues = find_untranslated_strings(paths, SKIP_WORDS)
+    issues, outdated_strings = find_untranslated_strings(paths, SKIP_WORDS)
     print("\n\n")
     if issues:
         print(
@@ -340,6 +350,20 @@ if __name__ == "__main__":
             print(values)
             print("\n")
 
+    if outdated_strings:
+        print(
+            "Some strings on the skip list on the `tools/strings_list.py` "
+            "are outdated.\nPlease remove them from the skip list.\n\n"
+        )
+        for fpath, values in outdated_strings.items():
+            print(fpath)
+            print(values)
+            print("\n")
+
+    if issues or outdated_strings:
         sys.exit(1)
     else:
-        print("All strings seem to be using translations. Good job!\n\n")
+        print(
+            "All strings seem to be using translations and the skip list "
+            "is up to date!.\nGood job!\n\n"
+        )
