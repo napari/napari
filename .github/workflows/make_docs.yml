@@ -33,7 +33,7 @@ jobs:
           path: 'napari.github.io'
           token: ${{ secrets.DOCS_GITHUB_TOKEN }}
       - name: copy doc sources
-        run: python -m copy-docs.py
+        run: python -m copy-docs
         working-directory: main/docs
       - name: update repo
         uses: EndBug/add-and-commit@v4

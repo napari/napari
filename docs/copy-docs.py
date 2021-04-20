@@ -8,7 +8,7 @@ destination can be provided.
 Read ORGANIZATION.md to learn more about how the documentation sources
 are organized, and how everything comes together.
 
-python -m copy-docs.py [dstdir]
+python -m copy-docs [dstdir]
 """
 
 import copy
