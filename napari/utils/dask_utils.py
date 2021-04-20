@@ -167,7 +167,6 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     ...    data[0, 2].compute()
     """
     if _is_dask_data(data):
-        create_dask_cache()  # creates one if it doesn't exist
         if dask.__version__ < LooseVersion('2.15.0'):
             warnings.warn(
                 'For best performance with Dask arrays in napari, please '
