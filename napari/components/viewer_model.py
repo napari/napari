@@ -726,19 +726,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             samples = available_samples()
             if samples:
                 msg = trans._(
-                    "Plugin {plugin} does not provide sample data named {sample}. Available samples include: {samples}.",
+                    "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
                     deferred=True,
-                    plugin=f"{plugin!r}",
-                    sample=f"{sample!r}",
+                    plugin=plugin,
+                    sample=sample,
                     samples=samples,
                 )
             else:
                 msg = trans._(
-                    "Plugin {plugin} does not provide sample data named {sample}. No plugin samples have been registered.",
+                    "Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.",
                     deferred=True,
-                    plugin=f"{plugin!r}",
-                    sample=f"{sample!r}",
-                    samples=samples,
+                    plugin=plugin,
+                    sample=sample,
                 )
 
             raise KeyError(msg)
@@ -754,11 +753,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             else:
                 raise TypeError(
                     trans._(
-                        'Got unexpected type for sample ({plugin}, {sample}): {data_type}',
+                        'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
                         deferred=True,
-                        plugin=f"{plugin!r}",
-                        sample=f"{sample!r}",
-                        datatype=f"{type(data)}",
+                        plugin=plugin,
+                        sample=sample,
+                        data_type=type(data),
                     )
                 )
 

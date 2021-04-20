@@ -68,6 +68,7 @@ class PolygonBase(Shape):
                 trans._(
                     "Shape needs at least two vertices, {number} provided.",
                     deferred=True,
+                    number=len(data),
                 )
             )
 

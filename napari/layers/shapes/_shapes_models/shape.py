@@ -344,7 +344,7 @@ class Shape(ABC):
         else:
             raise ValueError(
                 trans._(
-                    'Axis not recognized, must be one of "{0, 1}"',
+                    'Axis not recognized, must be one of "{{0, 1}}"',
                     deferred=True,
                 )
             )

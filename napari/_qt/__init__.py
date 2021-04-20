@@ -31,8 +31,9 @@ if API_NAME == 'PySide2':
 # When QT is not the specific version, we raise a warning:
 if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
     warn_message = trans._(
-        "napari was tested with QT library `>=5.12.3`.\nThe version installed is {QtCore.__version__}. Please report any issues with this specific QT version at https://github.com/Napari/napari/issues.",
+        "napari was tested with QT library `>=5.12.3`.\nThe version installed is {version}. Please report any issues with this specific QT version at https://github.com/Napari/napari/issues.",
         deferred=True,
+        version=QtCore.__version__,
     )
     warn(message=warn_message)
 

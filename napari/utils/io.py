@@ -195,7 +195,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
         raise ValueError(
             trans._(
                 "No files found in {filenames} after removing subdirectories",
-                deferre=True,
+                deferred=True,
                 filenames=filenames,
             )
         )

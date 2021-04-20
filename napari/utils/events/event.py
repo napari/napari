@@ -456,7 +456,7 @@ class EventEmitter:
                     if count != 1:
                         raise ValueError(
                             trans._(
-                                'criteria "{criteria}" is in the current callback list {count} times:\n{callback_refs}\n{callback}',
+                                'criteria "{criteria}" is in the current callback list {count} times:\n{callback_refs}\n{callbacks}',
                                 deferred=True,
                                 criteria=criteria,
                                 count=count,
@@ -475,11 +475,11 @@ class EventEmitter:
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError(
                 trans._(
-                    'cannot place callback before "{before}" and after "{after}" for callbacks: {callback}',
+                    'cannot place callback before "{before}" and after "{after}" for callbacks: {callback_refs}',
                     deferred=True,
                     before=before,
                     after=after,
-                    callback_ref=callback_refs,
+                    callback_refs=callback_refs,
                 )
             )
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'

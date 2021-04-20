@@ -321,7 +321,12 @@ class QtDims(QWidget):
             else:
                 self._animation_worker, self._animation_thread = None, None
         else:
-            warnings.warn(str(trans._('Refusing to play a hidden axis')))
+            warnings.warn(
+                trans._(
+                    'Refusing to play a hidden axis',
+                    deferred=True,
+                )
+            )
 
     def stop(self):
         """Stop axis animation"""

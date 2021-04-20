@@ -2,7 +2,6 @@
 Script to check for string in the codebase not using `trans`.
 
 TODO:
-  * Add lines where text is found for convenience?
   * Find all logger calls and add to skips?
   * Find nested funcs inside if/else?
 """
@@ -21,6 +20,11 @@ from strings_list import (
     SKIP_WORDS_GLOBAL,
 )
 
+# Types
+StringIssuesDict = Dict[str, List[Tuple[int, str]]]
+OutdatedStringsDict = Dict[str, List[str]]
+TranslationErrorsDict = Dict[str, List[Tuple[str, str]]]
+
 
 class FindTransStrings(ast.NodeVisitor):
     """This node visitor finds translated strings."""
@@ -28,16 +32,71 @@ class FindTransStrings(ast.NodeVisitor):
     def __init__(self):
         super().__init__()
         self._found = set()
+        self._trans_errors = []
+
+    def _check_vars(self, method_name, args, kwargs):
+        """Find interpolation variables inside a translation string."""
+        singular_kwargs = set(kwargs) - set({"n"})
+        plural_kwargs = set(kwargs)
+        if method_name in ["_p", "_np"]:
+            args = args[1:]
+
+        for idx, arg in enumerate(args):
+            found_vars = set()
+            check_arg = arg[:]
+            check_kwargs = {}
+            while True:
+                try:
+                    check_arg.format(**check_kwargs)
+                except KeyError as err:
+                    key = err.args[0]
+                    found_vars.add(key)
+                    check_kwargs[key] = 0
+                    continue
+
+                break
+
+            if idx == 0:
+                check_1 = singular_kwargs - found_vars
+                check_2 = found_vars - singular_kwargs
+            else:
+                check_1 = plural_kwargs - found_vars
+                check_2 = found_vars - plural_kwargs
+
+            if check_1 or check_2:
+                error = (arg, check_1.union(check_2))
+                self._trans_errors.append(error)
 
     def visit_Call(self, node):
+        method_name, args, kwargs = "", [], []
         try:
             if node.func.value.id == "trans":
+                method_name = node.func.attr
+
+                # Args
+                args = []
                 for item in [arg.value for arg in node.args]:
+                    args.append(item)
                     self._found.add(item)
+
+                # Kwargs
+                kwargs = []
+                for item in [kw.arg for kw in node.keywords]:
+                    if item != "deferred":
+                        kwargs.append(item)
+
         except Exception:
             pass
 
+        if method_name:
+            self._check_vars(method_name, args, kwargs)
+
         self.generic_visit(node)
+
+    def reset(self):
+        """Reset variables storing found strings and translation errors."""
+        self._found = set()
+        self._trans_errors = []
 
 
 show_trans_strings = FindTransStrings()
@@ -220,9 +279,9 @@ def find_trans_strings(fpath: str) -> Dict[str, str]:
         key = " ".join([it for it in string.split()])
         trans_strings[key] = string
 
-    show_trans_strings._found = set()
-
-    return trans_strings
+    errors = list(show_trans_strings._trans_errors)
+    show_trans_strings.reset()
+    return trans_strings, errors
 
 
 def import_module_by_path(fpath: str) -> Optional[ModuleType]:
@@ -254,7 +313,7 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
 
 def find_untranslated_strings(
     paths: List[str], skip_words: List[str]
-) -> Tuple[Dict[str, List[Tuple[int, str]]], List[str]]:
+) -> Tuple[StringIssuesDict, OutdatedStringsDict, TranslationErrorsDict]:
     """Find strings that have not been translated.
 
     This will not raise errors but return a list with found issues wo they
@@ -269,18 +328,22 @@ def find_untranslated_strings(
 
     Returns
     -------
-    tuple of dict of list of tuples
+    tuple
         The first item is a dictionary of the list of issues found per path.
         Each issue is a tuple with line number and the untranslated string.
         The second item is a dictionary of files that contain outdated
-        skipped strings.
+        skipped strings. The third item is a dictionary of the translation
+        errors found per path. Translation errors referes to missing
+        interpolation variables, or spelling errors of the `deferred` keyword.
     """
     issues = {}
     outdated_strings = {}
+    trans_errors = {}
     for fpath in paths:
+        print(f"    {repr(fpath)}", end="", flush=True)
         issues[fpath] = []
         strings = find_strings(fpath)
-        trans_strings = find_trans_strings(fpath)
+        trans_strings, errors = find_trans_strings(fpath)
         doc_strings = find_docstrings(fpath)
 
         skip_words_for_file = skip_words.get(fpath, [])
@@ -310,34 +373,36 @@ def find_untranslated_strings(
 
         if skip_words_for_file_check:
             outdated_strings[fpath] = skip_words_for_file_check
-            print(skip_words_for_file_check)
+
+        if errors:
+            trans_errors[fpath] = errors
 
         try:
             _content = (
-                "    "
-                + repr(fpath)
-                + ": "
-                + repr(sorted({it[-1] for it in issues[fpath]}))
-                + ","
+                ": " + repr(sorted({it[-1] for it in issues[fpath]})) + ","
             )
-            print(_content)
         except Exception:
-            pass
+            _content = ": [],"
+
+        print(_content, flush=True)
 
         if not issues[fpath]:
             issues.pop(fpath)
 
-    return issues, outdated_strings
+    return issues, outdated_strings, trans_errors
 
 
 if __name__ == "__main__":
+    sys.tracebacklimit = 0
     path = sys.argv[1]
     if os.path.isfile(path):
         paths = [path]
     else:
         paths = find_files(path, SKIP_FOLDERS, SKIP_FILES)
 
-    issues, outdated_strings = find_untranslated_strings(paths, SKIP_WORDS)
+    issues, outdated_strings, trans_errors = find_untranslated_strings(
+        paths, SKIP_WORDS
+    )
     print("\n\n")
     if issues:
         print(
@@ -360,7 +425,19 @@ if __name__ == "__main__":
             print(values)
             print("\n")
 
-    if issues or outdated_strings:
+    if trans_errors:
+        print(
+            "The following translation strings do not provide some "
+            "interpolation variables:\n\n"
+        )
+        for fpath, errors in trans_errors.items():
+            print(fpath)
+            for string, variables in errors:
+                print(string, variables)
+
+            print("\n")
+
+    if issues or outdated_strings or trans_errors:
         sys.exit(1)
     else:
         print(

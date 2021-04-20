@@ -134,7 +134,8 @@ class WorkerBase(QRunnable):
                     warnings.warn(
                         trans._(
                             "RuntimeError in aborted thread: {result}",
-                        ).format(result=str(result)),
+                            result=result,
+                        ),
                         RuntimeWarning,
                     )
                     return

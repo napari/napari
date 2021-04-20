@@ -95,6 +95,7 @@ def fix_data_dtype(data):
                 trans._(
                     'type {dtype} not allowed for texture; must be one of {textures}',  # noqa: E501
                     deferred=True,
+                    dtype=dtype,
                     textures=set(texture_dtypes),
                 )
             )
