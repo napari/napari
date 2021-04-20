@@ -133,12 +133,13 @@ def add_layer_data_to_viewer(gui, result, return_type):
             adder(data=result, name=gui.result_name)
 
 
-_FUTURES = []
+_FUTURES: List[Future] = []
 
 
 def add_future_layer_data_tuples_to_viewer(gui, future, return_type):
     def _on_done(_finished, gui=gui, return_type=return_type):
         add_layer_data_tuples_to_viewer(gui, _finished.result(), return_type)
+        _FUTURES.remove(_finished)
 
     future.add_done_callback(_on_done)
     _FUTURES.append(future)
