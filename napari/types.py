@@ -1,3 +1,4 @@
+from concurrent.futures import Future
 from functools import wraps
 from pathlib import Path
 from types import TracebackType
@@ -92,8 +93,19 @@ ShapesData = NewType("ShapesData", List[ArrayBase])
 SurfaceData = NewType("SurfaceData", Tuple[ArrayBase, ArrayBase, ArrayBase])
 TracksData = NewType("TracksData", ArrayBase)
 VectorsData = NewType("VectorsData", ArrayBase)
-
 LayerDataTuple = NewType("LayerDataTuple", tuple)
+
+
+FutureImageData = NewType("FutureImageData", Future[ArrayBase])
+FutureLabelsData = NewType("FutureLabelsData", Future[ArrayBase])
+FuturePointsData = NewType("FuturePointsData", Future[ArrayBase])
+FutureShapesData = NewType("FutureShapesData", Future[List[ArrayBase]])
+FutureSurfaceData = NewType(
+    "FutureSurfaceData", Future[Tuple[ArrayBase, ArrayBase, ArrayBase]]
+)
+FutureTracksData = NewType("FutureTracksData", Future[ArrayBase])
+FutureVectorsData = NewType("FutureVectorsData", Future[ArrayBase])
+FutureLayerDataTuple = NewType("FutureLayerDataTuple", Future[LayerData])
 
 
 def image_reader_to_layerdata_reader(

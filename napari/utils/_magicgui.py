@@ -71,6 +71,10 @@ def register_types_with_magicgui():
         return_callback=add_layer_data_tuples_to_viewer,
     )
     register_type(
+        types.FutureLayerDataTuple,
+        return_callback=add_future_layer_data_tuples_to_viewer,
+    )
+    register_type(
         List[types.LayerDataTuple],
         return_callback=add_layer_data_tuples_to_viewer,
     )
@@ -126,6 +130,17 @@ def add_layer_data_to_viewer(gui, result, return_type):
             layer_type = return_type.__name__.replace("Data", "").lower()
             adder = getattr(viewer, f'add_{layer_type}')
             adder(data=result, name=gui.result_name)
+
+
+_FUTURES = []
+
+
+def add_future_layer_data_tuples_to_viewer(gui, future, return_type):
+    def _on_done(_finished, gui=gui, return_type=return_type):
+        add_layer_data_tuples_to_viewer(gui, _finished.result(), return_type)
+
+    future.add_done_callback(_on_done)
+    _FUTURES.append(future)
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
