@@ -114,11 +114,14 @@ class progress(tqdm):
             self._pbar.setRange(0, 0)
 
         if desc:
-            self._pbar._set_description(desc)
+            self.set_description(desc)
         else:
             desc = get_calling_function_name(max_depth=5)
             if desc:
-                self._pbar._set_description(desc)
+                self.set_description(desc)
+            else:
+                # TODO: pick a better default
+                self.set_description("Progress Bar")
 
         self.show()
         QApplication.processEvents()
@@ -279,8 +282,8 @@ class progress(tqdm):
 
     def close(self):
         """Closes and deletes the progress bar widget"""
-        super().close()
         self._pbar.close()
+        super().close()
 
 
 class ProgressBar(QWidget):
