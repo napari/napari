@@ -1,3 +1,5 @@
+import bisect
+
 import numpy as np
 from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
@@ -25,8 +27,11 @@ class VispyScaleBarVisual:
             ]
         )
         self._default_color = np.array([1, 0, 1, 1])
-        self._target_length = 100
+        self._target_length = 150
         self._scale = 1
+        self._px_size = 1
+        _Dimension, current_unit = DIMENSIONS["pixel-length"]
+        self._dimension: Dimension = _Dimension.from_unit(current_unit)
 
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
@@ -34,12 +39,12 @@ class VispyScaleBarVisual:
         self.node.order = order
         self.node.transform = STTransform()
 
-        self.text_node = Text(pos=[0, 0], parent=parent)
+        self.text_node = Text(pos=[0.5, -1], parent=self.node)
         self.text_node.order = order
         self.text_node.transform = STTransform()
         self.text_node.font_size = 10
-        self.text_node.anchors = ('center', 'center')
-        self.text_node.text = f'{1}'
+        self.text_node.anchors = ("center", "center")
+        self.text_node.text = f"{1}px"
 
         self._viewer.events.theme.connect(self._on_data_change)
         self._viewer.scale_bar.events.visible.connect(self._on_visible_change)
@@ -49,12 +54,41 @@ class VispyScaleBarVisual:
             self._on_position_change
         )
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
+        self._viewer.scale_bar.events.font_size.connect(self._on_text_change)
+        self._viewer.scale_bar.events.px_size.connect(self._on_dimension_change)
+        self._viewer.scale_bar.events.dimension.connect(self._on_dimension_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
+        self._on_dimension_change(None)
         self._on_position_change(None)
+        self._on_dimension_change(None)
 
-    def _on_zoom_change(self, event):
+    def _on_dimension_change(self, _evt=None):
+        """Update dimension"""
+        self._px_size = 1 if self._viewer.scale_bar.dimension == "pixel-length" else self._viewer.scale_bar.px_size
+        _Dimension, current_unit = DIMENSIONS[self._viewer.scale_bar.dimension]
+        self._dimension = _Dimension.from_unit(current_unit)
+        self._on_zoom_change(None, True)
+
+    def _calculate_best_length(self, px_length):
+        px_size = self._px_size
+        value = px_length * px_size
+
+        new_value, new_units = self._dimension.calculate_preferred(value)
+        factor = value / new_value
+
+        index = bisect.bisect_left(PREFERRED_VALUES, new_value)
+        if index > 0:
+            # When we get the lowest index of the list, removing -1 will
+            # return the last index.
+            index -= 1
+        new_value = PREFERRED_VALUES[index]
+
+        length_px = new_value * factor / px_size
+        return length_px, new_value, new_units
+
+    def _on_zoom_change(self, _evt=None, force: bool = False):
         """Update axes length based on zoom scale."""
         if not self._viewer.scale_bar.visible:
             return
@@ -62,7 +96,7 @@ class VispyScaleBarVisual:
         scale = 1 / self._viewer.camera.zoom
 
         # If scale has not changed, do not redraw
-        if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
+        if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
             return
         self._scale = scale
 
@@ -70,34 +104,15 @@ class VispyScaleBarVisual:
         target_canvas_pixels = self._target_length
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
-        # Round scalebar to nearest factor of 1, 2, 5, 10 in world pixels on a log scale
-        resolutions = [1, 2, 5, 10]
-        log_target = np.log10(target_world_pixels)
-        mult_ind = np.argmin(
-            np.abs(np.subtract(np.log10(resolutions), log_target % 1))
-        )
-        power_val = np.floor(log_target)
-        target_world_pixels_rounded = resolutions[mult_ind] * np.power(
-            10, power_val
-        )
-
-        # Convert back to canvas pixels to get actual length of scale bar
-        target_canvas_pixels_rounded = (
-            target_world_pixels_rounded / scale_canvas2world
-        )
+        target_world_pixels_rounded, new_value, new_units = self._calculate_best_length(target_world_pixels)
+        target_canvas_pixels_rounded = target_world_pixels_rounded / scale_canvas2world
         scale = target_canvas_pixels_rounded
 
-        if self._viewer.scale_bar.position in [
-            Position.TOP_RIGHT,
-            Position.BOTTOM_RIGHT,
-        ]:
-            sign = -1
-        else:
-            sign = 1
+        sign = -1 if self._viewer.scale_bar.position in [Position.TOP_RIGHT, Position.BOTTOM_RIGHT] else 1
 
         # Update scalebar and text
         self.node.transform.scale = [sign * scale, 1, 1, 1]
-        self.text_node.text = f'{target_world_pixels_rounded:.4g}'
+        self.text_node.text = f"{new_value}{new_units}"
 
     def _on_data_change(self, event):
         """Change color and data of scale bar."""
@@ -118,52 +133,33 @@ class VispyScaleBarVisual:
         self.text_node.color = color
 
     def _on_visible_change(self, event):
-        """Change visibiliy of scale bar."""
+        """Change visibility of scale bar."""
         self.node.visible = self._viewer.scale_bar.visible
         self.text_node.visible = self._viewer.scale_bar.visible
         self._on_zoom_change(None)
 
-    def _on_position_change(self, event):
+    def _on_text_change(self, event):
+        """Update text information"""
+        self.text_node.font_size = self._viewer.scale_bar.font_size
+
+    def _on_position_change(self, _evt=None):
         """Change position of scale bar."""
-        if self._viewer.scale_bar.position == Position.TOP_LEFT:
+        position = self._viewer.scale_bar.position
+        x_bar_offset = 10
+        canvas_size = list(self.node.canvas.size)
+
+        if position == Position.TOP_LEFT:
             sign = 1
-            self.node.transform.translate = [66, 14, 0, 0]
-            self.text_node.transform.translate = [33, 16, 0, 0]
-        elif self._viewer.scale_bar.position == Position.TOP_RIGHT:
+            bar_transform = [x_bar_offset, 10, 0, 0]
+        elif position == Position.TOP_RIGHT:
             sign = -1
-            canvas_size = list(self.node.canvas.size)
-            self.node.transform.translate = [canvas_size[0] - 66, 14, 0, 0]
-            self.text_node.transform.translate = [
-                canvas_size[0] - 33,
-                16,
-                0,
-                0,
-            ]
-        elif self._viewer.scale_bar.position == Position.BOTTOM_RIGHT:
+            bar_transform = [canvas_size[0] - x_bar_offset, 10, 0, 0]
+        elif position == Position.BOTTOM_RIGHT:
             sign = -1
-            canvas_size = list(self.node.canvas.size)
-            self.node.transform.translate = [
-                canvas_size[0] - 66,
-                canvas_size[1] - 16,
-                0,
-                0,
-            ]
-            self.text_node.transform.translate = [
-                canvas_size[0] - 33,
-                canvas_size[1] - 14,
-                0,
-                0,
-            ]
-        elif self._viewer.scale_bar.position == Position.BOTTOM_LEFT:
+            bar_transform = [canvas_size[0] - x_bar_offset, canvas_size[1] - 30, 0, 0]
+        elif position == Position.BOTTOM_LEFT:
             sign = 1
-            canvas_size = list(self.node.canvas.size)
-            self.node.transform.translate = [66, canvas_size[1] - 16, 0, 0]
-            self.text_node.transform.translate = [
-                33,
-                canvas_size[1] - 14,
-                0,
-                0,
-            ]
+            bar_transform = [x_bar_offset, canvas_size[1] - 30, 0, 0]
         else:
             raise ValueError(
                 trans._(
@@ -173,5 +169,7 @@ class VispyScaleBarVisual:
                 )
             )
 
+        self.node.transform.translate = bar_transform
         scale = abs(self.node.transform.scale[0])
         self.node.transform.scale = [sign * scale, 1, 1, 1]
+        self.text_node.transform.translate = (0, 20, 0, 0)
