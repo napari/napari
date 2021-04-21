@@ -2,13 +2,32 @@ import inspect
 import time
 import warnings
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
+from types import FunctionType, GeneratorType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    Generic,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
 
+_Y = TypeVar("_Y")
+_S = TypeVar("_S")
+_R = TypeVar("_R")
 
-def as_generator_function(func: Callable) -> Callable:
+
+def as_generator_function(
+    func: Callable[..., _R]
+) -> Callable[..., Generator[None, None, _R]]:
     """Turns a regular function (single return) into a generator function."""
 
     @wraps(func)
@@ -124,18 +143,17 @@ class WorkerBase(QRunnable):
         try:
             result = self.work()
             if isinstance(result, Exception):
-                if isinstance(result, RuntimeError):
-                    # The Worker object has likely been deleted.
-                    # A deleted wrapped C/C++ object may result in a runtime
-                    # error that will cause segfault if we try to do much other
-                    # than simply notify the user.
-                    warnings.warn(
-                        f"RuntimeError in aborted thread: {str(result)}",
-                        RuntimeWarning,
-                    )
-                    return
-                else:
+                if not isinstance(result, RuntimeError):
                     raise result
+                # The Worker object has likely been deleted.
+                # A deleted wrapped C/C++ object may result in a runtime
+                # error that will cause segfault if we try to do much other
+                # than simply notify the user.
+                warnings.warn(
+                    f"RuntimeError in aborted thread: {str(result)}",
+                    RuntimeWarning,
+                )
+                return
             self.returned.emit(result)
         except Exception as exc:
             self.errored.emit(exc)
@@ -197,7 +215,7 @@ class WorkerBase(QRunnable):
         QThreadPool.globalInstance().start(self)
 
 
-class FunctionWorker(WorkerBase):
+class FunctionWorker(WorkerBase, Generic[_R]):
     """QRunnable with signals that wraps a simple long-running function.
 
     .. note::
@@ -222,7 +240,7 @@ class FunctionWorker(WorkerBase):
         If ``func`` is a generator function and not a regular function.
     """
 
-    def __init__(self, func: Callable, *args, **kwargs):
+    def __init__(self, func: Callable[..., _R], *args, **kwargs):
         if inspect.isgeneratorfunction(func):
             raise TypeError(
                 f"Generator function {func} cannot be used with "
@@ -234,7 +252,7 @@ class FunctionWorker(WorkerBase):
         self._args = args
         self._kwargs = kwargs
 
-    def work(self):
+    def work(self) -> _R:
         return self._func(*self._args, **self._kwargs)
 
 
@@ -246,7 +264,7 @@ class GeneratorWorkerSignals(WorkerBaseSignals):
     aborted = Signal()  # emitted when a running job is successfully aborted
 
 
-class GeneratorWorker(WorkerBase):
+class GeneratorWorker(WorkerBase, Generic[_Y, _S, _R]):
     """QRunnable with signals that wraps a long-running generator.
 
     Provides a convenient way to run a generator function in another thread,
@@ -268,7 +286,7 @@ class GeneratorWorker(WorkerBase):
 
     def __init__(
         self,
-        func: Callable,
+        func: Callable[..., Generator[_Y, _S, _R]],
         *args,
         SignalsClass: Type[WorkerBaseSignals] = GeneratorWorkerSignals,
         **kwargs,
@@ -281,14 +299,14 @@ class GeneratorWorker(WorkerBase):
         super().__init__(SignalsClass=SignalsClass)
 
         self._gen = func(*args, **kwargs)
-        self._incoming_value = None
+        self._incoming_value: Optional[_S] = None
         self._pause_requested = False
         self._resume_requested = False
         self._paused = False
         # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
 
-    def work(self):
+    def work(self) -> Union[_R, Exception]:
         """Core event loop that calls the original function.
 
         Enters a continual loop, yielding and returning from the original
@@ -315,7 +333,7 @@ class GeneratorWorker(WorkerBase):
                 continue
             try:
                 input = self._next_value()
-                output = self._gen.send(input)
+                output = self._gen.send(input)  # type: ignore
                 self.yielded.emit(output)
             except StopIteration as exc:
                 return exc.value
@@ -324,11 +342,11 @@ class GeneratorWorker(WorkerBase):
                 # emitted in ``WorkerBase.run``
                 return exc
 
-    def send(self, value: Any):
+    def send(self, value: _S):
         """Send a value into the function (if a generator was used)."""
         self._incoming_value = value
 
-    def _next_value(self) -> Any:
+    def _next_value(self) -> Optional[_S]:
         out = None
         if self._incoming_value is not None:
             out = self._incoming_value
@@ -443,14 +461,14 @@ def active_thread_count() -> int:
 
 
 def create_worker(
-    func: Callable,
+    func: Union[FunctionType, GeneratorType],
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
-) -> WorkerBase:
+) -> Union[FunctionWorker, GeneratorWorker]:
     """Convenience function to start a function in another thread.
 
     By default, uses :class:`Worker`, but a custom ``WorkerBase`` subclass may
@@ -555,12 +573,12 @@ def create_worker(
 
 @tz.curry
 def thread_worker(
-    function: Callable,
+    function: Union[FunctionType, GeneratorType],
     start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
-) -> Callable:
+) -> Callable[..., Union[FunctionWorker, GeneratorWorker]]:
     """Decorator that runs a function in a separate thread when called.
 
     When called, the decorated function returns a :class:`WorkerBase`.  See

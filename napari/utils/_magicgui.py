@@ -39,6 +39,8 @@ except ImportError:
 if TYPE_CHECKING:
     from magicgui.widgets._bases import CategoricalWidget
 
+    from .._qt.qthreading import FunctionWorker
+
 
 def register_types_with_magicgui():
     """Register napari types with magicgui.
@@ -66,6 +68,8 @@ def register_types_with_magicgui():
     """
     from magicgui.widgets import FunctionGui
 
+    from .._qt.qthreading import FunctionWorker
+
     # the widget field in `_source.py` was defined with a forward reference
     # to avoid having to import magicgui when we define the layer `Source` obj.
     # Now that we know we have imported magicgui, we update that forward ref
@@ -80,6 +84,7 @@ def register_types_with_magicgui():
     for _type in (types.LayerDataTuple, List[types.LayerDataTuple]):
         register_type(_type, return_callback=add_layer_data_tuples_to_viewer)
         register_type(Future[_type], return_callback=add_future_data)  # type: ignore
+        register_type(FunctionWorker[_type], return_callback=add_worker_data)  # type: ignore
 
     for layer_name in layers.NAMES:
         data_type = getattr(types, f'{layer_name.title()}Data')
@@ -92,6 +97,11 @@ def register_types_with_magicgui():
             Future[data_type],  # type: ignore
             choices=get_layers_data,
             return_callback=partial(add_future_data, _from_tuple=False),
+        )
+        register_type(
+            FunctionWorker[data_type],  # type: ignore
+            choices=get_layers_data,
+            return_callback=partial(add_worker_data, _from_tuple=False),
         )
 
 
@@ -212,6 +222,51 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
 _FUTURES: Set[Future] = set()
 
 
+def add_worker_data(gui, worker: 'FunctionWorker', return_type, _tup=True):
+    """Handle a thread_worker object returned from a magicgui widget.
+
+    This allows someone annotate their magicgui with a return type of
+    `FunctionWorker[...]`, create a napari thread worker (e.g. with the
+    @thread_worker decorator), then simply return the worker.  We will hook up
+    the `returned` signal to the machinery to add the result of the
+    long-running function to the viewer.
+
+    Parameters
+    ----------
+    gui : MagicGui
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    worker : WorkerBase
+        An instance of `napari._qt.qthreading.WorkerBase`, on worker.returned,
+        the result will be added to the viewer.
+    return_type : type
+        The return annotation that was used in the decorated function.
+    _tup : bool, optional
+        (only for internal use). True if the worker returns `LayerDataTuple`,
+        False if it returns one of the `LayerData` types.
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        @magicgui
+        def my_widget(...) -> FunctionWorker[ImageData]:
+
+            @thread_worker
+            def do_something_slowly(...) -> ImageData:
+                ...
+
+            return do_something_slowly(...)
+
+
+    """
+
+    cb = add_layer_data_tuples_to_viewer if _tup else add_layer_data_to_viewer
+    _return_type = get_args(return_type)[0]
+    worker.signals.returned.connect(partial(cb, gui, return_type=_return_type))
+
+
 def add_future_data(gui, future, return_type, _from_tuple=True):
     """Process a Future object from a magicgui widget.
 
@@ -219,6 +274,7 @@ def add_future_data(gui, future, return_type, _from_tuple=True):
     return annotation of one of the `napari.types.<layer_name>Data` ... and
     will add the data in ``result`` to the current viewer as the corresponding
     layer type.
+
     Parameters
     ----------
     gui : MagicGui
