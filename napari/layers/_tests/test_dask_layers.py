@@ -10,7 +10,7 @@ from napari import layers, utils, viewer
 
 
 def test_dask_array_doesnt_create_cache():
-    """Test that adding a dask array creates a dask cache and turns of fusion."""
+    """Test that dask arrays don't create cache but turns off fusion."""
     # by default we have no dask_cache and task fusion is active
     original = dask.config.get("optimization.fuse.active", None)
 
