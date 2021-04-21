@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import sys
 from inspect import signature
@@ -35,15 +37,7 @@ if TYPE_CHECKING:
     from magicgui.widgets import FunctionGui
     from qtpy.QtWidgets import QWidget
 
-
-class PluginHookOption(TypedDict):
-    """Custom type specifying plugin and enabled state."""
-
-    plugin: str
-    enabled: bool
-
-
-CallOrderDict = Dict[str, List[PluginHookOption]]
+    from ..utils.settings._defaults import CallOrderDict
 
 
 class PluginManager(_PM):

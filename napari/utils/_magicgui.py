@@ -219,10 +219,11 @@ def add_future_data(gui, future, return_type, _from_tuple=True):
     return annotation of one of the `napari.types.<layer_name>Data` ... and
     will add the data in ``result`` to the current viewer as the corresponding
     layer type.
+
     Parameters
     ----------
-    gui : MagicGui
-        The instantiated MagicGui widget.  May or may not be docked in a
+    gui : FunctionGui
+        The instantiated magicgui widget.  May or may not be docked in a
         dock widget.
     future : Future
         An instance of `concurrent.futures.Future` (or any third-party) object
