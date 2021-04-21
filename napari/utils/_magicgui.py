@@ -12,7 +12,7 @@ of those custom classes, magicgui will know what to do with it.
 import weakref
 from concurrent.futures import Future
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, get_args
 
 from .. import layers, types
 from ..layers._source import Source, layer_source
@@ -87,6 +87,26 @@ def register_types_with_magicgui():
             return_callback=add_layer_data_to_viewer,
         )
 
+    register_type(
+        Future[types.ImageData],
+        choices=get_layers_data,
+        return_callback=add_future_layer_data_to_viewer,
+    )
+
+
+_FUTURES: List[Future] = []
+
+
+def add_future_layer_data_to_viewer(gui, future, return_type):
+
+    _return_type = get_args(return_type)[0]
+
+    def _on_done(_future):
+        add_layer_data_to_viewer(gui, _future.result(), _return_type)
+        _FUTURES.remove(_future)
+
+    future.add_done_callback(_on_done)
+
 
 def add_layer_data_to_viewer(gui, result, return_type):
     """Show a magicgui result in the viewer.
@@ -133,16 +153,13 @@ def add_layer_data_to_viewer(gui, result, return_type):
             adder(data=result, name=gui.result_name)
 
 
-_FUTURES: List[Future] = []
-
-
 def add_future_layer_data_tuples_to_viewer(gui, future, return_type):
     def _on_done(_finished, gui=gui, return_type=return_type):
         add_layer_data_tuples_to_viewer(gui, _finished.result(), return_type)
         _FUTURES.remove(_finished)
 
     future.add_done_callback(_on_done)
-    _FUTURES.append(future)
+    _FUTURES.add(future)
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
