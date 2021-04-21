@@ -4,7 +4,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from PyQt5.QtWidgets import QMainWindow
+from qtpy.QtWidgets import QMainWindow
 from qtpy.QtCore import QByteArray, QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
