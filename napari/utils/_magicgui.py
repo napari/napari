@@ -222,7 +222,9 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
 _FUTURES: Set[Future] = set()
 
 
-def add_worker_data(gui, worker: 'FunctionWorker', return_type, _tup=True):
+def add_worker_data(
+    gui, worker: 'FunctionWorker', return_type, _from_tuple=True
+):
     """Handle a thread_worker object returned from a magicgui widget.
 
     This allows someone annotate their magicgui with a return type of
@@ -241,7 +243,7 @@ def add_worker_data(gui, worker: 'FunctionWorker', return_type, _tup=True):
         the result will be added to the viewer.
     return_type : type
         The return annotation that was used in the decorated function.
-    _tup : bool, optional
+    _from_tuple : bool, optional
         (only for internal use). True if the worker returns `LayerDataTuple`,
         False if it returns one of the `LayerData` types.
 
@@ -258,11 +260,13 @@ def add_worker_data(gui, worker: 'FunctionWorker', return_type, _tup=True):
                 ...
 
             return do_something_slowly(...)
-
-
     """
 
-    cb = add_layer_data_tuples_to_viewer if _tup else add_layer_data_to_viewer
+    cb = (
+        add_layer_data_tuples_to_viewer
+        if _from_tuple
+        else add_layer_data_to_viewer
+    )
     _return_type = get_args(return_type)[0]
     worker.signals.returned.connect(partial(cb, gui, return_type=_return_type))
 
@@ -277,8 +281,8 @@ def add_future_data(gui, future, return_type, _from_tuple=True):
 
     Parameters
     ----------
-    gui : MagicGui
-        The instantiated MagicGui widget.  May or may not be docked in a
+    gui : FunctionGui
+        The instantiated magicgui widget.  May or may not be docked in a
         dock widget.
     future : Future
         An instance of `concurrent.futures.Future` (or any third-party) object
