@@ -4,7 +4,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QSize, Qt
+from qtpy.QtCore import QByteArray, QObject, QSize, Qt, Signal
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -268,3 +268,13 @@ def delete_qapp(app):
     # calling a second time is necessary on PySide2...
     # see: https://bugreports.qt.io/browse/PYSIDE-1470
     QApplication.instance()
+
+
+class Sentry(QObject):
+    """Small object to trigger events across threads."""
+
+    alerted = Signal()
+
+    def alert(self, *_):
+        self.alerted.emit()
+        self.deleteLater()

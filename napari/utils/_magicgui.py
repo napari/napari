@@ -11,8 +11,17 @@ of those custom classes, magicgui will know what to do with it.
 """
 import weakref
 from concurrent.futures import Future
-from functools import lru_cache
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type, get_args
+from functools import lru_cache, partial
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    get_args,
+)
 
 from .. import layers, types
 from ..layers._source import Source, layer_source
@@ -67,18 +76,11 @@ def register_types_with_magicgui():
         layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
     )
     register_type(Viewer, bind=find_viewer_ancestor)
-    register_type(
-        types.LayerDataTuple,
-        return_callback=add_layer_data_tuples_to_viewer,
-    )
-    register_type(
-        Future[types.LayerDataTuple],
-        return_callback=add_future_layer_data_tuples_to_viewer,
-    )
-    register_type(
-        List[types.LayerDataTuple],
-        return_callback=add_layer_data_tuples_to_viewer,
-    )
+
+    for _type in (types.LayerDataTuple, List[types.LayerDataTuple]):
+        register_type(_type, return_callback=add_layer_data_tuples_to_viewer)
+        register_type(Future[_type], return_callback=add_future_data)  # type: ignore
+
     for layer_name in layers.NAMES:
         data_type = getattr(types, f'{layer_name.title()}Data')
         register_type(
@@ -86,26 +88,11 @@ def register_types_with_magicgui():
             choices=get_layers_data,
             return_callback=add_layer_data_to_viewer,
         )
-
-    register_type(
-        Future[types.ImageData],
-        choices=get_layers_data,
-        return_callback=add_future_layer_data_to_viewer,
-    )
-
-
-_FUTURES: List[Future] = []
-
-
-def add_future_layer_data_to_viewer(gui, future, return_type):
-
-    _return_type = get_args(return_type)[0]
-
-    def _on_done(_future):
-        add_layer_data_to_viewer(gui, _future.result(), _return_type)
-        _FUTURES.remove(_future)
-
-    future.add_done_callback(_on_done)
+        register_type(
+            Future[data_type],  # type: ignore
+            choices=get_layers_data,
+            return_callback=partial(add_future_data, _from_tuple=False),
+        )
 
 
 def add_layer_data_to_viewer(gui, result, return_type):
@@ -136,7 +123,6 @@ def add_layer_data_to_viewer(gui, result, return_type):
     ...     return np.random.rand(256, 256)
 
     """
-
     if result is None:
         return
 
@@ -151,15 +137,6 @@ def add_layer_data_to_viewer(gui, result, return_type):
             layer_type = return_type.__name__.replace("Data", "").lower()
             adder = getattr(viewer, f'add_{layer_type}')
             adder(data=result, name=gui.result_name)
-
-
-def add_future_layer_data_tuples_to_viewer(gui, future, return_type):
-    def _on_done(_finished, gui=gui, return_type=return_type):
-        add_layer_data_tuples_to_viewer(gui, _finished.result(), return_type)
-        _FUTURES.remove(_finished)
-
-    future.add_done_callback(_on_done)
-    _FUTURES.add(future)
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
@@ -230,6 +207,60 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
                     pass
             # otherwise create a new layer from the layer data
             viewer._add_layer_from_data(*layer_datum)
+
+
+_FUTURES: Set[Future] = set()
+
+
+def add_future_data(gui, future, return_type, _from_tuple=True):
+    """Process a Future object from a magicgui widget.
+
+    This function will be called when a magicgui-decorated function has a
+    return annotation of one of the `napari.types.<layer_name>Data` ... and
+    will add the data in ``result`` to the current viewer as the corresponding
+    layer type.
+    Parameters
+    ----------
+    gui : MagicGui
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+    future : Future
+        An instance of `concurrent.futures.Future` (or any third-party) object
+        with the same interface, that provides `add_done_callback` and `result`
+        methods.  When the future is `done()`, the `result()` will be added
+        to the viewer.
+    return_type : type
+        The return annotation that was used in the decorated function.
+    _from_tuple : bool, optional
+        (only for internal use). True if the future returns `LayerDataTuple`,
+        False if it returns one of the `LayerData` types.
+    """
+    from .._qt.utils import Sentry
+
+    # get the actual return type from the Future type annotation
+    _return_type = get_args(return_type)[0]
+
+    if _from_tuple:
+        # when the future is done, add layer data to viewer, dispatching
+        # to the appropriate method based on the Future data type.
+
+        def _on_future_ready():
+            add_layer_data_tuples_to_viewer(gui, future.result(), return_type)
+            _FUTURES.remove(future)
+
+    else:
+
+        def _on_future_ready():
+            add_layer_data_to_viewer(gui, future.result(), _return_type)
+            _FUTURES.remove(future)
+
+    # some future types (such as a dask Future) will call the callback in
+    # another thread, which wont always work here.  So we create a very small
+    # QObject that can signal back to the main thread to call `_on_done`.
+    sentry = Sentry()
+    sentry.alerted.connect(_on_future_ready)
+    future.add_done_callback(sentry.alert)
+    _FUTURES.add(future)
 
 
 def find_viewer_ancestor(widget) -> Optional[Viewer]:
