@@ -277,4 +277,3 @@ class Sentry(QObject):
 
     def alert(self, *_):
         self.alerted.emit()
-        self.deleteLater()
