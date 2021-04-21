@@ -2,8 +2,8 @@
 Script to check for string in the codebase not using `trans`.
 
 TODO:
-  * Find all logger calls and add to skips?
-  * Find nested funcs inside if/else?
+  * Find all logger calls and add to skips
+  * Find nested funcs inside if/else
 """
 
 import ast
@@ -11,7 +11,7 @@ import os
 import sys
 import tokenize
 from types import ModuleType
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from strings_list import (
     SKIP_FILES,
@@ -31,16 +31,38 @@ class FindTransStrings(ast.NodeVisitor):
 
     def __init__(self):
         super().__init__()
+
         self._found = set()
         self._trans_errors = []
 
     def _check_vars(self, method_name, args, kwargs):
-        """Find interpolation variables inside a translation string."""
+        """Find interpolation variables inside a translation string.
+
+        This helps find any variables that need to be interpolated inside
+        a string so we can check against the `kwargs` for both singular
+        and plural strings (if present) inside `args`.
+
+        Parameters
+        ----------
+        method_name : str
+            Translation method used. Options include "_", "_n", "_p" and
+            "_np".
+        args : list
+            List of arguments passed to translation method.
+        kwargs : kwargs
+            List of keyword arguments passed to translation method.
+        """
         singular_kwargs = set(kwargs) - set({"n"})
         plural_kwargs = set(kwargs)
+
+        # If using trans methods with `context`, remove it since we are
+        # only interested in the singular and plural strings (if any)
         if method_name in ["_p", "_np"]:
             args = args[1:]
 
+        # Iterate on strings passed to the trans method. Could be just a
+        # singular string or a singular and a plural. We use the index to
+        # determine which one is used.
         for idx, arg in enumerate(args):
             found_vars = set()
             check_arg = arg[:]
@@ -139,7 +161,7 @@ def find_files(
     skip_folders: tuple,
     skip_files: tuple,
     extensions: tuple = (".py",),
-):
+) -> List[str]:
     """Find recursively all files in path.
 
     Parameters
@@ -175,7 +197,7 @@ def find_files(
     return list(sorted(found_files))
 
 
-def find_docstrings(fpath: str):
+def find_docstrings(fpath: str) -> Dict[str, str]:
     """Find all docstrings in file path.
 
     Parameters
@@ -233,7 +255,7 @@ def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
 
     Returns
     -------
-    dict of tuples
+    dict
         A dict with a tuple for key and a tuple for value. The tuple contains
         the line number and the stripped string. The value containes the line
         number and the original string.
@@ -256,7 +278,9 @@ def find_strings(fpath: str) -> Dict[Tuple[int, str], Tuple[int, str]]:
     return strings
 
 
-def find_trans_strings(fpath: str) -> Dict[str, str]:
+def find_trans_strings(
+    fpath: str,
+) -> Tuple[Dict[str, str], List[Tuple[str, Set[str]]]]:
     """Find all translation strings for the given file.
 
     Parameters
@@ -266,8 +290,10 @@ def find_trans_strings(fpath: str) -> Dict[str, str]:
 
     Returns
     -------
-    dict
-        A dict with a stripped string as key and the orginal string for value.
+    tuple
+        The first item is a dict with a stripped string as key and the
+        orginal string for value. The second item is a list of tuples that
+        includes errors in translations.
     """
     with open(fpath) as fh:
         data = fh.read()
@@ -294,7 +320,7 @@ def import_module_by_path(fpath: str) -> Optional[ModuleType]:
 
     Returns
     -------
-    ModuleType
+    ModuleType or None
         The imported module or `None`.
     """
     import importlib.util
@@ -394,6 +420,10 @@ def find_issues(
 
 if __name__ == "__main__":
     sys.tracebacklimit = 0
+    if len(sys.argv) <= 1:
+        print("\n\nMust provide a path!\n\n")
+        sys.exit(1)
+
     path = sys.argv[1]
     if os.path.isfile(path):
         paths = [path]
@@ -439,6 +469,6 @@ if __name__ == "__main__":
         sys.exit(1)
     else:
         print(
-            "All strings seem to be using translations and the skip list "
-            "is up to date!.\nGood job!\n\n"
+            "All strings seem to be using translations, the skip list "
+            "is up to date and no translation errors were found!.\n\nGood job!\n\n"
         )
