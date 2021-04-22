@@ -298,7 +298,6 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-
         self.label = VispyLabelVisual(
             self.viewer,
             parent=self.view,
