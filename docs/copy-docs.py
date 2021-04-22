@@ -28,7 +28,7 @@ TO_COPY = [
     'release',
     'roadmaps',
     'images',
-    '_templates',
+    osp.join('_templates', 'autosummary'),
     *[
         (dire, osp.join(dire, 'stable'))
         for dire in ('api', 'guides', 'plugins')
