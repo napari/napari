@@ -24,7 +24,6 @@ from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
 INT32_MAX = 2 ** 31 - 1
-INT32_MIN = -INT32_MAX
 
 
 class QtLabelsControls(QtLayerControls):
@@ -95,7 +94,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setSingleStep(1)
         # spinboxes use i32 internally
         # use the smaller range of i32 and label dtype
-        self.selectionSpinBox.setMinimum(max(iinfo.min, INT32_MIN))
+        self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
@@ -130,7 +129,7 @@ class QtLabelsControls(QtLayerControls):
         self.contourSpinBox.setSingleStep(1)
         # spinboxes use i32 internally
         # use the smaller range of i32 and label dtype
-        self.contourSpinBox.setMinimum(max(iinfo.min, INT32_MIN))
+        self.contourSpinBox.setMinimum(0)
         self.contourSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.contourSpinBox.setAlignment(Qt.AlignCenter)
         self._on_contour_change()
