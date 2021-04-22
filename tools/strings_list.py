@@ -1456,7 +1456,6 @@ SKIP_WORDS = {
     'napari/plugins/io.py': [
         "({len(errors)}) error{'s' if len(errors) > 1 else ''} ",
         'See full error logs in "Plugins → Plugin Errors..."',
-        '[n, ...] as stack',
         'napari_write_{layer._type_string}',
         "occurred in plugins: {', '.join(names)}. ",
     ],

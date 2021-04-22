@@ -433,7 +433,10 @@ def checks():
 # ----------------------------------------------------------------------------
 def test_missing_translations(checks):
     issues, _, _ = checks
-    print("Some strings on the following files might need to be translated or added to the skip list on the `tools/strings_list.py` file.\n\n")
+    print(
+        "Some strings on the following files might need to be translated or "
+        "added to the skip list on the `tools/strings_list.py` file.\n\n"
+    )
     for fpath, values in issues.items():
         print(fpath)
         print(values)
@@ -442,7 +445,10 @@ def test_missing_translations(checks):
 
 def test_outdated_string_skips(checks):
     _,  outdated_strings, _ = checks
-    print("Some strings on the skip list on the `tools/strings_list.py` are outdated.\nPlease remove them from the skip list.\n\n")
+    print(
+        "Some strings on the skip list on the `tools/strings_list.py` are "
+        "outdated.\nPlease remove them from the skip list.\n\n"
+    )
     for fpath, values in outdated_strings.items():
         print(fpath)
         print(values)
@@ -453,7 +459,10 @@ def test_outdated_string_skips(checks):
 
 def test_translation_errors(checks):
     _,  _, trans_errors = checks
-    print("The following translation strings do not provide some interpolation variables:\n\n")
+    print(
+        "The following translation strings do not provide some "
+        "interpolation variables:\n\n"
+    )
     for fpath, errors in trans_errors.items():
         print(fpath)
         for string, variables in errors:
