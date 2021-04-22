@@ -49,7 +49,7 @@ def try_thresholds():
     thresholded_nuclei = []
     thresholded_membranes = []
 
-    # we decorate our iterable with progress
+    # we wrap our iterable with `progress`
     # this will automatically add a progress bar to our activity dock
     for threshold_func in progress(all_thresholds):
         current_threshold = threshold_func(nuclei_im)
@@ -80,10 +80,60 @@ def try_thresholds():
         blending='translucent',
     )
 
+# In the previous example, we were able to see the progress bar, but were not
+# able to control it. By using `progress` within a context manager, we can 
+# manipulate the `progress` object and still get the benefit of automatic
+# clean up
+def try_thresholds_context_manager():
+    """Tries each threshold for both nuclei and membranes, and adds result to viewer.
+
+    Sets description of progress bar to current thresholding function being applied
+    """
+    nuclei_im = viewer.layers['Nuclei'].data
+    membranes_im = viewer.layers['Membranes'].data
+
+    thresholded_nuclei = []
+    thresholded_membranes = []
+
+    # using the `with` keyword we can use `progress` inside a context manager
+    with progress(all_thresholds) as pbar:
+        for threshold_func in pbar:
+            pbar.set_description(threshold_func.__name__.split("_")[1])
+            current_threshold = threshold_func(nuclei_im)
+            binarised_im = nuclei_im > current_threshold
+            thresholded_nuclei.append(binarised_im)
+
+            current_threshold = threshold_func(membranes_im)
+            binarised_im = membranes_im > current_threshold
+            thresholded_membranes.append(binarised_im)
+
+    # progress bar is still automatically closed
+
+    binarised_nuclei = np.stack(thresholded_nuclei)
+    binarised_membranes = np.stack(thresholded_membranes)
+    viewer.add_labels(
+        binarised_nuclei,
+        color={1: 'lightgreen'},
+        opacity=0.7,
+        name="Binary Nuclei",
+        blending='translucent',
+    )
+    viewer.add_labels(
+        binarised_membranes,
+        color={1: 'violet'},
+        opacity=0.7,
+        name="Binary Membranes",
+        blending='translucent',
+    )
+
 button_layout = QVBoxLayout()
 thresh_btn = QPushButton("Try Thresholds")
 thresh_btn.clicked.connect(try_thresholds)
 button_layout.addWidget(thresh_btn)
+
+thresh_w_desc_btn = QPushButton("Try Thresholds - Context Manager")
+thresh_w_desc_btn.clicked.connect(try_thresholds_context_manager)
+button_layout.addWidget(thresh_w_desc_btn)
 
 action_widget = QWidget()
 action_widget.setLayout(button_layout)
