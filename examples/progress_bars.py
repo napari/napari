@@ -18,9 +18,7 @@ from skimage.measure import label
 all_thresholds = [
     threshold_isodata,
     threshold_li,
-    threshold_niblack,
     threshold_otsu,
-    threshold_sauvola,
     threshold_triangle,
     threshold_yen,
 ]
@@ -45,6 +43,9 @@ def try_thresholds():
         current_threshold = threshold_func(cell_nuclei)
         binarised_im = cell_nuclei > current_threshold
         thresholded_nuclei.append(binarised_im)
+
+        # uncomment if processing is too fast
+        # sleep(0.5)
 
     # working with a wrapped interval, the progress bar will be closed
     # as soon as the iteration is complete
