@@ -36,9 +36,7 @@ def test_dask_array_doesnt_create_cache():
 
     # make sure we can resize the cache
     utils.resize_dask_cache(10000)
-    assert utils.dask_cache.cache.total_bytes > 1000
-    utils.resize_dask_cache(1000)
-    assert utils.dask_cache.cache.total_bytes <= 1000
+    assert utils.dask_cache.cache.available_bytes == 10000
 
     # This should only affect dask arrays, and not numpy data
     def mock_set_view_slice2():
