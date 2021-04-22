@@ -32,9 +32,9 @@ viewer.add_image(
     cell_nuclei, name="Nuclei", blending='additive', colormap="green"
 )
 
+
 def try_thresholds():
-    """Tries each threshold for both nuclei and membranes, and adds result to viewer.
-    """
+    """Tries each threshold for both nuclei and membranes, and adds result to viewer."""
     thresholded_nuclei = []
 
     # we wrap our iterable with `progress`
@@ -59,12 +59,13 @@ def try_thresholds():
         blending='translucent',
     )
 
+
 # In the previous example, we were able to see the progress bar, but were not
-# able to control it. By using `progress` within a context manager, we can 
+# able to control it. By using `progress` within a context manager, we can
 # manipulate the `progress` object and still get the benefit of automatic
 # clean up
 def segment_binarised_ims():
-    """Segments each of the binarised ims. 
+    """Segments each of the binarised ims.
 
     Uses `progress` within a context manager allowing us to manipulate
     the progress bar within the loop
@@ -95,6 +96,7 @@ def segment_binarised_ims():
     )
     viewer.layers['Binarised'].visible = False
 
+
 # we can also manually control `progress` objects using their
 # `update` method (inherited from tqdm)
 def process_ims():
@@ -117,7 +119,6 @@ def process_ims():
     # if manually updating the progress bar, we must also
     # manually close it
     pbar.close()
-
 
 
 button_layout = QVBoxLayout()
