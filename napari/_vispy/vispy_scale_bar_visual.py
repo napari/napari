@@ -30,8 +30,7 @@ class VispyScaleBarVisual:
         self._target_length = 150
         self._scale = 1
         self._px_size = 1
-        _Dimension, current_unit = DIMENSIONS["pixel-length"]
-        self._dimension: Dimension = _Dimension.from_unit(current_unit)
+        self._dimension: Dimension = NullDimension()
 
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
@@ -55,8 +54,10 @@ class VispyScaleBarVisual:
         )
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
         self._viewer.scale_bar.events.font_size.connect(self._on_text_change)
-        self._viewer.scale_bar.events.px_size.connect(self._on_dimension_change)
-        self._viewer.scale_bar.events.dimension.connect(self._on_dimension_change)
+        self._viewer.scale_bar.events.unit.connect(self._on_dimension_change)
+        self._viewer.scale_bar.events.px_size.connect(
+            self._on_dimension_change
+        )
 
         self._on_visible_change(None)
         self._on_data_change(None)
@@ -66,9 +67,12 @@ class VispyScaleBarVisual:
 
     def _on_dimension_change(self, _evt=None):
         """Update dimension"""
-        self._px_size = 1 if self._viewer.scale_bar.dimension == "pixel-length" else self._viewer.scale_bar.px_size
-        _Dimension, current_unit = DIMENSIONS[self._viewer.scale_bar.dimension]
-        self._dimension = _Dimension.from_unit(current_unit)
+        self._px_size = (
+            1
+            if self._viewer.scale_bar.unit in ONE_PIXEL_SIZE
+            else self._viewer.scale_bar.px_size
+        )
+        self._dimension = get_dimension(self._viewer.scale_bar.unit)
         self._on_zoom_change(None, True)
 
     def _calculate_best_length(self, px_length):
@@ -104,11 +108,22 @@ class VispyScaleBarVisual:
         target_canvas_pixels = self._target_length
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
-        target_world_pixels_rounded, new_value, new_units = self._calculate_best_length(target_world_pixels)
-        target_canvas_pixels_rounded = target_world_pixels_rounded / scale_canvas2world
+        (
+            target_world_pixels_rounded,
+            new_value,
+            new_units,
+        ) = self._calculate_best_length(target_world_pixels)
+        target_canvas_pixels_rounded = (
+            target_world_pixels_rounded / scale_canvas2world
+        )
         scale = target_canvas_pixels_rounded
 
-        sign = -1 if self._viewer.scale_bar.position in [Position.TOP_RIGHT, Position.BOTTOM_RIGHT] else 1
+        sign = (
+            -1
+            if self._viewer.scale_bar.position
+            in [Position.TOP_RIGHT, Position.BOTTOM_RIGHT]
+            else 1
+        )
 
         # Update scalebar and text
         self.node.transform.scale = [sign * scale, 1, 1, 1]
@@ -156,7 +171,12 @@ class VispyScaleBarVisual:
             bar_transform = [canvas_size[0] - x_bar_offset, 10, 0, 0]
         elif position == Position.BOTTOM_RIGHT:
             sign = -1
-            bar_transform = [canvas_size[0] - x_bar_offset, canvas_size[1] - 30, 0, 0]
+            bar_transform = [
+                canvas_size[0] - x_bar_offset,
+                canvas_size[1] - 30,
+                0,
+                0,
+            ]
         elif position == Position.BOTTOM_LEFT:
             sign = 1
             bar_transform = [x_bar_offset, canvas_size[1] - 30, 0, 0]

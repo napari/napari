@@ -16,7 +16,7 @@ PREFIXES_FACTORS = {
     "c": 1e-2,
     "m": 1e-3,
     "\u00b5": 1e-6,
-    # "u": 1e-6,
+    "u": 1e-6,
     "n": 1e-9,
     "p": 1e-12,
     "f": 1e-15,
@@ -73,6 +73,11 @@ class Dimension(object):
                 "Could not find appropriate unit for specified factor"
             )
         return cls.from_unit(unit)
+
+    @property
+    def units(self):
+        """List of units"""
+        return list(self._units.keys())
 
     @property
     def current_unit(self) -> str:
@@ -140,7 +145,7 @@ class NullDimension(Dimension):
     """Null dimension where no units are provided"""
 
     def __init__(self, current_unit: Optional[str] = None):
-        super(NullDimension, self).__init__("")
+        super().__init__("")
         self.current_unit = current_unit
 
 
@@ -160,7 +165,7 @@ class SILengthReciprocalDimension(Dimension):
     def __init__(self, current_unit: Optional[str] = None):
         super().__init__("1/m")
         for prefix, factor in PREFIXES_FACTORS.items():
-            self.add_units("1/{0}m".format(prefix), 1 / factor)
+            self.add_units(f"1/{prefix}m", 1 / factor)
         self.current_unit = current_unit
 
 
@@ -189,3 +194,14 @@ class PixelLengthDimension(Dimension):
                 continue
             self.add_units(prefix + "px", factor)
         self.current_unit = current_unit
+
+
+# Dictionary of registered Dimensions : units
+DIMENSIONS = {
+    PixelLengthDimension: PixelLengthDimension().units,
+    SILengthDimension: SILengthDimension().units,
+    SILengthReciprocalDimension: SILengthReciprocalDimension().units,
+    ImperialLengthDimension: ImperialLengthDimension().units,
+}
+# list of units where pixel size should be 1
+ONE_PIXEL_SIZE = [""] + PixelLengthDimension().units
