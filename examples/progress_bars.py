@@ -3,18 +3,16 @@ Use napari's tqdm wrapper to display the progress of long-running operations
 in the viewer.  
 """
 
+from time import sleep
 import numpy as np
-from skimage.filters.thresholding import (
-    threshold_isodata,
-    threshold_li,
-    threshold_local,
-)
+from skimage.morphology import closing, square
 import napari
 from napari.utils.progress import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from skimage.filters import *
 from skimage.data import cells3d
+from skimage.measure import label
 
 # we will try each of these thresholds on our image
 all_thresholds = [
@@ -29,13 +27,9 @@ all_thresholds = [
 
 viewer = napari.Viewer()
 
-# load cells data and split channels out
+# load cells data and take just nuclei
 cells_im = cells3d()
-cell_membranes = cells_im[:, 0, :, :]
 cell_nuclei = cells_im[:, 1, :, :]
-viewer.add_image(
-    cell_membranes, name="Membranes", blending='additive', colormap="magenta"
-)
 viewer.add_image(
     cell_nuclei, name="Nuclei", blending='additive', colormap="green"
 )
@@ -44,7 +38,6 @@ def try_thresholds():
     """Tries each threshold for both nuclei and membranes, and adds result to viewer.
     """
     thresholded_nuclei = []
-    thresholded_membranes = []
 
     # we wrap our iterable with `progress`
     # this will automatically add a progress bar to our activity dock
@@ -53,27 +46,15 @@ def try_thresholds():
         binarised_im = cell_nuclei > current_threshold
         thresholded_nuclei.append(binarised_im)
 
-        current_threshold = threshold_func(cell_membranes)
-        binarised_im = cell_membranes > current_threshold
-        thresholded_membranes.append(binarised_im)
-
     # working with a wrapped interval, the progress bar will be closed
     # as soon as the iteration is complete
 
     binarised_nuclei = np.stack(thresholded_nuclei)
-    binarised_membranes = np.stack(thresholded_membranes)
     viewer.add_labels(
         binarised_nuclei,
         color={1: 'lightgreen'},
         opacity=0.7,
-        name="Binary Nuclei",
-        blending='translucent',
-    )
-    viewer.add_labels(
-        binarised_membranes,
-        color={1: 'violet'},
-        opacity=0.7,
-        name="Binary Membranes",
+        name="Binarised",
         blending='translucent',
     )
 
@@ -81,56 +62,47 @@ def try_thresholds():
 # able to control it. By using `progress` within a context manager, we can 
 # manipulate the `progress` object and still get the benefit of automatic
 # clean up
-def try_thresholds_context_manager():
-    """Tries each threshold for both nuclei and membranes, and adds result to viewer.
+def segment_binarised_ims():
+    """Segments each of the binarised ims. 
 
-    Sets description of progress bar to current thresholding function being applied
+    Uses `progress` within a context manager allowing us to manipulate
+    the progress bar within the loop
     """
-    thresholded_nuclei = []
-    thresholded_membranes = []
+    segmented_nuclei = []
+    binarised_data = viewer.layers['Binarised'].data
 
     # using the `with` keyword we can use `progress` inside a context manager
-    with progress(all_thresholds) as pbar:
-        for threshold_func in pbar:
+    with progress(binarised_data) as pbar:
+        for i, binarised_cells in enumerate(pbar):
             # this allows us to manipulate the pbar object within the loop
             # e.g. setting the description. `progress` inherits from tqdm
             # and therefore provides the same API
-            pbar.set_description(threshold_func.__name__.split("_")[1])
+            pbar.set_description(all_thresholds[i].__name__.split("_")[1])
+            labelled_im = label(binarised_cells)
+            segmented_nuclei.append(labelled_im)
 
-            current_threshold = threshold_func(cell_nuclei)
-            binarised_im = cell_nuclei > current_threshold
-            thresholded_nuclei.append(binarised_im)
-
-            current_threshold = threshold_func(cell_membranes)
-            binarised_im = cell_membranes > current_threshold
-            thresholded_membranes.append(binarised_im)
+            # uncomment if processing is too fast
+            # sleep(0.5)
 
     # progress bar is still automatically closed
 
-    binarised_nuclei = np.stack(thresholded_nuclei)
-    binarised_membranes = np.stack(thresholded_membranes)
+    segmented_nuclei = np.stack(segmented_nuclei)
     viewer.add_labels(
-        binarised_nuclei,
-        color={1: 'lightgreen'},
-        opacity=0.7,
-        name="Binary Nuclei",
+        segmented_nuclei,
+        name="Segmented",
         blending='translucent',
     )
-    viewer.add_labels(
-        binarised_membranes,
-        color={1: 'violet'},
-        opacity=0.7,
-        name="Binary Membranes",
-        blending='translucent',
-    )
+    viewer.layers['Binarised'].visible = False
+
+# TODO: manual updates
 
 button_layout = QVBoxLayout()
 thresh_btn = QPushButton("Try Thresholds")
 thresh_btn.clicked.connect(try_thresholds)
 button_layout.addWidget(thresh_btn)
 
-thresh_w_desc_btn = QPushButton("Try Thresholds - Context Manager")
-thresh_w_desc_btn.clicked.connect(try_thresholds_context_manager)
+thresh_w_desc_btn = QPushButton("Segment - Context Manager")
+thresh_w_desc_btn.clicked.connect(segment_binarised_ims)
 button_layout.addWidget(thresh_w_desc_btn)
 
 action_widget = QWidget()
