@@ -43,21 +43,18 @@ viewer.add_image(
 def try_thresholds():
     """Tries each threshold for both nuclei and membranes, and adds result to viewer.
     """
-    nuclei_im = viewer.layers['Nuclei'].data
-    membranes_im = viewer.layers['Membranes'].data
-
     thresholded_nuclei = []
     thresholded_membranes = []
 
     # we wrap our iterable with `progress`
     # this will automatically add a progress bar to our activity dock
     for threshold_func in progress(all_thresholds):
-        current_threshold = threshold_func(nuclei_im)
-        binarised_im = nuclei_im > current_threshold
+        current_threshold = threshold_func(cell_nuclei)
+        binarised_im = cell_nuclei > current_threshold
         thresholded_nuclei.append(binarised_im)
 
-        current_threshold = threshold_func(membranes_im)
-        binarised_im = membranes_im > current_threshold
+        current_threshold = threshold_func(cell_membranes)
+        binarised_im = cell_membranes > current_threshold
         thresholded_membranes.append(binarised_im)
 
     # working with a wrapped interval, the progress bar will be closed
@@ -89,22 +86,23 @@ def try_thresholds_context_manager():
 
     Sets description of progress bar to current thresholding function being applied
     """
-    nuclei_im = viewer.layers['Nuclei'].data
-    membranes_im = viewer.layers['Membranes'].data
-
     thresholded_nuclei = []
     thresholded_membranes = []
 
     # using the `with` keyword we can use `progress` inside a context manager
     with progress(all_thresholds) as pbar:
         for threshold_func in pbar:
+            # this allows us to manipulate the pbar object within the loop
+            # e.g. setting the description. `progress` inherits from tqdm
+            # and therefore provides the same API
             pbar.set_description(threshold_func.__name__.split("_")[1])
-            current_threshold = threshold_func(nuclei_im)
-            binarised_im = nuclei_im > current_threshold
+
+            current_threshold = threshold_func(cell_nuclei)
+            binarised_im = cell_nuclei > current_threshold
             thresholded_nuclei.append(binarised_im)
 
-            current_threshold = threshold_func(membranes_im)
-            binarised_im = membranes_im > current_threshold
+            current_threshold = threshold_func(cell_membranes)
+            binarised_im = cell_membranes > current_threshold
             thresholded_membranes.append(binarised_im)
 
     # progress bar is still automatically closed
