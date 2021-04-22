@@ -13,6 +13,7 @@ from qtpy.QtCore import (
     QTimer,
 )
 from qtpy.QtWidgets import (
+    QApplication,
     QDialog,
     QGraphicsOpacityEffect,
     QHBoxLayout,
