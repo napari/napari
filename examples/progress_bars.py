@@ -95,20 +95,46 @@ def segment_binarised_ims():
     )
     viewer.layers['Binarised'].visible = False
 
-# TODO: manual updates
+# we can also manually control `progress` objects using their
+# `update` method (inherited from tqdm)
+def process_ims():
+    # we instantiate a manually controlled `progress` object
+    # by just passing a total with no iterable
+    pbar = progress(total=2)
+    pbar.set_description("Thresholding")
+    try_thresholds()
+    # once one processing step is complete, we increment
+    # the value of our progress bar
+    pbar.update(1)
+
+    pbar.set_description("Segmenting")
+    segment_binarised_ims()
+    pbar.update(1)
+
+    # uncomment this line to see the 100% progress bar
+    # sleep(0.5)
+
+    # if manually updating the progress bar, we must also
+    # manually close it
+    pbar.close()
+
+
 
 button_layout = QVBoxLayout()
-thresh_btn = QPushButton("Try Thresholds")
+process_btn = QPushButton("Full Process")
+process_btn.clicked.connect(process_ims)
+button_layout.addWidget(process_btn)
+
+thresh_btn = QPushButton("Threshold")
 thresh_btn.clicked.connect(try_thresholds)
 button_layout.addWidget(thresh_btn)
 
-thresh_w_desc_btn = QPushButton("Segment - Context Manager")
-thresh_w_desc_btn.clicked.connect(segment_binarised_ims)
-button_layout.addWidget(thresh_w_desc_btn)
+segment_btn = QPushButton("Segment")
+segment_btn.clicked.connect(segment_binarised_ims)
+button_layout.addWidget(segment_btn)
 
 action_widget = QWidget()
 action_widget.setLayout(button_layout)
-
 viewer.window.add_dock_widget(action_widget)
 
 napari.run()
