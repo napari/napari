@@ -123,17 +123,20 @@ def read_data_with_plugins(
         # we just want to provide some useful feedback, which includes
         # whether or not paths were passed to plugins as a list.
         if isinstance(path, (tuple, list)):
-            path_repr = f"[{path[0]}, ...] as stack"
-        else:
-            path_repr = repr(path)
-        # TODO: change to a warning notification in a later PR
-        raise ValueError(
-            trans._(
-                'No plugin found capable of reading {path_repr}.',
+            message = trans._(
+                'No plugin found capable of reading [{repr_path}, ...] as stack.',
                 deferred=True,
-                path_repr=path_repr,
+                repr_path=path[0],
             )
-        )
+        else:
+            message = trans._(
+                'No plugin found capable of reading {repr_path}.',
+                deferred=True,
+                repr_path=repr(path),
+            )
+
+        # TODO: change to a warning notification in a later PR
+        raise ValueError(message)
 
     if errors:
         names = {repr(e.plugin_name) for e in errors}

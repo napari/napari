@@ -426,40 +426,52 @@ def checks():
 def test_missing_translations(checks):
     issues, _, _ = checks
     print(
-        "Some strings on the following files might need to be translated or "
-        "added to the skip list on the `tools/strings_list.py` file.\n\n"
+        "\nSome strings on the following files might need to be translated "
+        "or added to the skip list.\nSkip list is located at "
+        "`tools/strings_list.py` file.\n\n"
     )
     for fpath, values in issues.items():
-        print(fpath)
-        print(values)
-        print("\n")
+        print(f"{fpath}\n{'*' * len(fpath)}")
+        for line, value in values:
+            print(f"{line}:\t{repr(value)}")
+
+        print("")
+
+    no_issues = not issues
+    assert no_issues
 
 
 def test_outdated_string_skips(checks):
     _, outdated_strings, _ = checks
     print(
-        "Some strings on the skip list on the `tools/strings_list.py` are "
+        "\nSome strings on the skip list on the `tools/strings_list.py` are "
         "outdated.\nPlease remove them from the skip list.\n\n"
     )
     for fpath, values in outdated_strings.items():
-        print(fpath)
-        print(values)
-        print("\n")
+        print(f"{fpath}\n{'*' * len(fpath)}")
+        print(", ".join(repr(value) for value in values))
+        print("")
 
-    assert not outdated_strings
+    no_outdated_strings = not outdated_strings
+    assert no_outdated_strings
 
 
 def test_translation_errors(checks):
     _, _, trans_errors = checks
     print(
-        "The following translation strings do not provide some "
+        "\nThe following translation strings do not provide some "
         "interpolation variables:\n\n"
     )
     for fpath, errors in trans_errors.items():
-        print(fpath)
+        print(f"{fpath}\n{'*' * len(fpath)}")
         for string, variables in errors:
-            print(string, variables)
+            print(f"String:\t\t{repr(string)}")
+            print(
+                f"Variables:\t{', '.join(repr(value) for value in variables)}"
+            )
+            print("")
 
-        print("\n")
+        print("")
 
-    assert not trans_errors
+    no_trans_errors = not trans_errors
+    assert no_trans_errors

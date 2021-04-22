@@ -21,4 +21,4 @@ jobs:
           pip install -e .[testing]
       - name: Run check
         run: |
-          pytest tools/
+          pytest tools/ --tb=short

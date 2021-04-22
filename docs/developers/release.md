@@ -53,13 +53,16 @@ release though we need to generate the release notes.
 ## update translation strings
 
 As new code is included in the codebase, some of the strings that need to be translated might
-may not yet be using the `trans` helpers. To help in keeping the code base up to date in terms
-of translations we added an [automatic test](https://github.com/napari/napari/actions/workflows/test_translations.yml)
-that runs daily on CI and can be also run locally to ensure that a release includes the most up
-to date translatable strings.
+not yet be using the `trans` methods. To help keep the codebase up to date in terms
+of translations we added a test script that
+[runs daily on CI](https://github.com/napari/napari/actions/workflows/test_translations.yml) 
+and can be also run locally to ensure that a release includes the most up to date translatable
+strings.
 
-The test is available on the `/tools/test_strings.py` file and it relies on an additional file
-`/tools/strings_list.py` to include strings to skip safely from translation. The test checks:
+The test script is available on the `/tools/test_strings.py` file and it relies on an additional
+file `/tools/strings_list.py` to include strings to skip safely from translation.
+
+The test checks:
 
   1. **Untranslated strings**: not using the `trans` methods.
   2. **Outdated skip strings**: should no longer be included in the `/tools/strings_list.py` file.
@@ -69,7 +72,7 @@ You can execute tests locally from the repository root, and follow the instructi
 on the `stdout` if any test fails.
 
   ```bash
-  pytest tools/
+  pytest tools/ --tb=short
   ```
 
 ## tagging the new release candidate
