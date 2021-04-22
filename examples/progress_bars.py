@@ -2,11 +2,10 @@
 Use napari's tqdm wrapper to display the progress of long-running operations
 in the viewer.  
 """
+import numpy as np
+import napari
 
 from time import sleep
-import numpy as np
-from skimage.morphology import closing, square
-import napari
 from napari.utils.progress import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
@@ -34,7 +33,7 @@ viewer.add_image(
 
 
 def try_thresholds():
-    """Tries each threshold for both nuclei and membranes, and adds result to viewer."""
+    """Tries each threshold, and adds result to viewer."""
     thresholded_nuclei = []
 
     # we wrap our iterable with `progress`
@@ -47,7 +46,7 @@ def try_thresholds():
         # uncomment if processing is too fast
         # sleep(0.5)
 
-    # working with a wrapped interval, the progress bar will be closed
+    # working with a wrapped iterable, the progress bar will be closed
     # as soon as the iteration is complete
 
     binarised_nuclei = np.stack(thresholded_nuclei)
@@ -100,6 +99,11 @@ def segment_binarised_ims():
 # we can also manually control `progress` objects using their
 # `update` method (inherited from tqdm)
 def process_ims():
+    """
+    First performs thresholding, then segmentation on our image.
+
+    Manually updates a `progress` object.
+    """
     # we instantiate a manually controlled `progress` object
     # by just passing a total with no iterable
     pbar = progress(total=2)
