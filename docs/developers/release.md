@@ -50,6 +50,10 @@ release though we need to generate the release notes.
 
 4. Make and merge a PR with these release notes before moving onto the next steps.
 
+## update translation strings
+
+
+
 ## tagging the new release candidate
 
 First we will generate a release candidate, which will contain the letters `rc`.

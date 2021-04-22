@@ -8,8 +8,10 @@ TODO:
 
 import ast
 import os
+import pytest
 import sys
 import tokenize
+from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -19,6 +21,9 @@ from strings_list import (
     SKIP_WORDS,
     SKIP_WORDS_GLOBAL,
 )
+
+REPO_ROOT = Path(__file__).resolve()
+NAPARI_MODULE = (REPO_ROOT / "napari").relative_to(REPO_ROOT)
 
 # Types
 StringIssuesDict = Dict[str, List[Tuple[int, str]]]
@@ -366,7 +371,6 @@ def find_issues(
     outdated_strings = {}
     trans_errors = {}
     for fpath in paths:
-        print(f"    {repr(fpath)}", end="", flush=True)
         issues[fpath] = []
         strings = find_strings(fpath)
         trans_strings, errors = find_trans_strings(fpath)
@@ -410,65 +414,51 @@ def find_issues(
         except Exception:
             _content = ": [],"
 
-        print(_content, flush=True)
-
         if not issues[fpath]:
             issues.pop(fpath)
 
     return issues, outdated_strings, trans_errors
 
 
-if __name__ == "__main__":
-    sys.tracebacklimit = 0
-    if len(sys.argv) <= 1:
-        print("\n\nMust provide a path!\n\n")
-        sys.exit(1)
-
-    path = sys.argv[1]
-    if os.path.isfile(path):
-        paths = [path]
-    else:
-        paths = find_files(path, SKIP_FOLDERS, SKIP_FILES)
-
+# --- Fixture
+# ----------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def checks():
+    paths = find_files(NAPARI_MODULE, SKIP_FOLDERS, SKIP_FILES)
     issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
-    print("\n\n")
-    if issues:
-        print(
-            "Some strings on the following files might need to be translated "
-            "or added to the skip list on the `tools/strings_list.py` "
-            "file.\n\n"
-        )
-        for fpath, values in issues.items():
-            print(fpath)
-            print(values)
-            print("\n")
+    return issues, outdated_strings, trans_errors
 
-    if outdated_strings:
-        print(
-            "Some strings on the skip list on the `tools/strings_list.py` "
-            "are outdated.\nPlease remove them from the skip list.\n\n"
-        )
-        for fpath, values in outdated_strings.items():
-            print(fpath)
-            print(values)
-            print("\n")
 
-    if trans_errors:
-        print(
-            "The following translation strings do not provide some "
-            "interpolation variables:\n\n"
-        )
-        for fpath, errors in trans_errors.items():
-            print(fpath)
-            for string, variables in errors:
-                print(string, variables)
+# --- Tests
+# ----------------------------------------------------------------------------
+def test_missing_translations(checks):
+    issues, _, _ = checks
+    print("Some strings on the following files might need to be translated or added to the skip list on the `tools/strings_list.py` file.\n\n")
+    for fpath, values in issues.items():
+        print(fpath)
+        print(values)
+        print("\n")
 
-            print("\n")
 
-    if issues or outdated_strings or trans_errors:
-        sys.exit(1)
-    else:
-        print(
-            "All strings seem to be using translations, the skip list "
-            "is up to date and no translation errors were found!.\n\nGood job!\n\n"
-        )
+def test_outdated_string_skips(checks):
+    _,  outdated_strings, _ = checks
+    print("Some strings on the skip list on the `tools/strings_list.py` are outdated.\nPlease remove them from the skip list.\n\n")
+    for fpath, values in outdated_strings.items():
+        print(fpath)
+        print(values)
+        print("\n")
+
+    assert not outdated_strings
+
+
+def test_translation_errors(checks):
+    _,  _, trans_errors = checks
+    print("The following translation strings do not provide some interpolation variables:\n\n")
+    for fpath, errors in trans_errors.items():
+        print(fpath)
+        for string, variables in errors:
+            print(string, variables)
+
+        print("\n")
+
+    assert not trans_errors
