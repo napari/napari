@@ -5,15 +5,16 @@ from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
+    QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
     QSlider,
-    QSpinBox,
     QWidget,
 )
 
 from ...layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
+    MAX_FLOAT64_INT,
     Mode,
 )
 from ...utils.events import disconnect_events
@@ -23,7 +24,16 @@ from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
-INT32_MAX = 2 ** 31 - 1
+
+def double_as_uint_spinbox(dtype: np.dtype):
+    iinfo = np.iinfo(dtype)
+
+    spinbox = QDoubleSpinBox()
+    spinbox.setSingleStep(1)
+    spinbox.setMinimum(max(iinfo.min, 0))
+    spinbox.setMaximum(min(iinfo.max, MAX_FLOAT64_INT))
+    spinbox.setDecimals(0)
+    return spinbox
 
 
 class QtLabelsControls(QtLayerControls):
@@ -59,7 +69,7 @@ class QtLabelsControls(QtLayerControls):
         Button to select PICKER mode on Labels layer.
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
-    selectionSpinBox : qtpy.QtWidgets.QSpinBox
+    selectionSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Widget to select a specific label by its index.
 
     Raises
@@ -86,16 +96,9 @@ class QtLabelsControls(QtLayerControls):
         )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
-        iinfo = np.iinfo(self.layer.data.dtype)
-
         # selection spinbox
-        self.selectionSpinBox = QSpinBox()
+        self.selectionSpinBox = double_as_uint_spinbox(self.layer.data.dtype)
         self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.setSingleStep(1)
-        # spinboxes use i32 internally
-        # use the smaller range of i32 and label dtype
-        self.selectionSpinBox.setMinimum(0)
-        self.selectionSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
@@ -121,16 +124,11 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dimensional_change()
 
-        contour_sb = QSpinBox()
+        contour_sb = double_as_uint_spinbox(self.layer.data.dtype)
         contour_sb.setToolTip(trans._('display contours of labels'))
         contour_sb.valueChanged.connect(self.change_contour)
         self.contourSpinBox = contour_sb
         self.contourSpinBox.setKeyboardTracking(False)
-        self.contourSpinBox.setSingleStep(1)
-        # spinboxes use i32 internally
-        # use the smaller range of i32 and label dtype
-        self.contourSpinBox.setMinimum(0)
-        self.contourSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.contourSpinBox.setAlignment(Qt.AlignCenter)
         self._on_contour_change()
 
@@ -298,7 +296,7 @@ class QtLabelsControls(QtLayerControls):
         value : int
             Index of label to select.
         """
-        self.layer.selected_label = value
+        self.layer.selected_label = int(value)
         self.selectionSpinBox.clearFocus()
         self.setFocus()
 
@@ -352,7 +350,7 @@ class QtLabelsControls(QtLayerControls):
         value : int
             Thickness of contour.
         """
-        self.layer.contour = value
+        self.layer.contour = int(value)
         self.contourSpinBox.clearFocus()
         self.setFocus()
 
