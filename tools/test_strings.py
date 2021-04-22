@@ -8,13 +8,12 @@ TODO:
 
 import ast
 import os
-import pytest
-import sys
 import tokenize
 from pathlib import Path
 from types import ModuleType
 from typing import Dict, List, Optional, Set, Tuple
 
+import pytest
 from strings_list import (
     SKIP_FILES,
     SKIP_FOLDERS,
@@ -407,13 +406,6 @@ def find_issues(
         if errors:
             trans_errors[fpath] = errors
 
-        try:
-            _content = (
-                ": " + repr(sorted({it[-1] for it in issues[fpath]})) + ","
-            )
-        except Exception:
-            _content = ": [],"
-
         if not issues[fpath]:
             issues.pop(fpath)
 
@@ -444,7 +436,7 @@ def test_missing_translations(checks):
 
 
 def test_outdated_string_skips(checks):
-    _,  outdated_strings, _ = checks
+    _, outdated_strings, _ = checks
     print(
         "Some strings on the skip list on the `tools/strings_list.py` are "
         "outdated.\nPlease remove them from the skip list.\n\n"
@@ -458,7 +450,7 @@ def test_outdated_string_skips(checks):
 
 
 def test_translation_errors(checks):
-    _,  _, trans_errors = checks
+    _, _, trans_errors = checks
     print(
         "The following translation strings do not provide some "
         "interpolation variables:\n\n"

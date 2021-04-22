@@ -683,7 +683,10 @@ def _load_language(
                 import warnings
 
                 warnings.warn(
-                    f"The `language` setting defined in the napari configuration file could not be read.\n\nThe default language will be used.\n\nError:\n{err}"
+                    "The `language` setting defined in the napari "
+                    "configuration file could not be read.\n\n"
+                    "The default language will be used.\n\n"
+                    f"Error:\n{err}"
                 ),
                 data = {}
 
