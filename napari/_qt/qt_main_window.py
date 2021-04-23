@@ -905,9 +905,14 @@ class Window:
             `dock_widget` that can pass viewer events.
         """
         if not name:
-            name = widget.objectName() or trans._(
-                "Dock widget {number}", number=self._unnamed_dockwidget_count
-            )
+            try:
+                name = widget.objectName()
+            except AttributeError:
+                name = trans._(
+                    "Dock widget {number}",
+                    number=self._unnamed_dockwidget_count,
+                )
+
             self._unnamed_dockwidget_count += 1
 
         dock_widget = QtViewerDockWidget(
