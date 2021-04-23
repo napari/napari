@@ -248,19 +248,19 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.colorModeComboBox, 6, 1, 1, 3)
         self.grid_layout.addWidget(QLabel(trans._('contour:')), 7, 0, 1, 1)
         self.grid_layout.addWidget(self.contourSpinBox, 7, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('contiguous:')), 8, 0, 1, 1)
-        self.grid_layout.addWidget(self.contigCheckBox, 8, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 8, 2, 1, 1)
-        self.grid_layout.addWidget(self.ndimCheckBox, 8, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel(trans._('n edit dim:')), 8, 0, 1, 1)
+        self.grid_layout.addWidget(self.ndimSpinBox, 8, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel(trans._('contiguous:')), 9, 0, 1, 1)
+        self.grid_layout.addWidget(self.contigCheckBox, 9, 1, 1, 1)
         self.grid_layout.addWidget(
-            QLabel(trans._('preserve labels:')), 9, 0, 1, 2
+            QLabel(trans._('preserve labels:')), 10, 0, 1, 2
         )
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 9, 1, 1, 1)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 10, 1, 1, 1)
         self.grid_layout.addWidget(
-            QLabel(trans._('show selected:')), 9, 2, 1, 1
+            QLabel(trans._('show selected:')), 10, 2, 1, 1
         )
-        self.grid_layout.addWidget(self.selectedColorCheckbox, 9, 3, 1, 1)
-        self.grid_layout.setRowStretch(9, 1)
+        self.grid_layout.addWidget(self.selectedColorCheckbox, 10, 3, 1, 1)
+        self.grid_layout.setRowStretch(10, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
