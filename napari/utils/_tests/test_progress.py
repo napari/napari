@@ -1,14 +1,7 @@
 import numpy as np
 import pytest
 
-try:
-    import qtpy  # noqa
-except ImportError:
-    pytest.skip('Cannot test progress without qtpy.', allow_module_level=True)
-except RuntimeError:
-    pytest.skip(
-        'Cannot test progress without Qt bindings.', allow_module_level=True
-    )
+pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 from ..progress import ProgressBar, progress
 
 
