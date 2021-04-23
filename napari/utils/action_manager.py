@@ -134,14 +134,16 @@ class ActionManager:
 
     def _update_buttons(self, buttons, tooltip, callback):
         for button in buttons:
+            # test if only tooltip makes crash
             button.setToolTip(tooltip)
 
-            try:
-                # not sure how to check whether things are connected already
-                button.clicked.disconnect(callback)
-            except Exception:
-                pass
-            button.clicked.connect(callback)
+            # Comment callbacks for now
+            # try:
+            #    # not sure how to check whether things are connected already
+            #    button.clicked.disconnect(callback)
+            # except Exception:
+            #    pass
+            # button.clicked.connect(callback)
 
     def _update_qactions(self, name):
         if name in self._qactions:
