@@ -26,8 +26,8 @@ from qtpy.QtWidgets import (
 
 from .. import plugins
 from ..utils import config, perf
-from ..utils.history import get_save_history, update_save_history
 from ..utils.action_manager import action_manager
+from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
