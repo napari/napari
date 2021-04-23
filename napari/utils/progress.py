@@ -1,8 +1,8 @@
 import inspect
 from typing import Iterable, Optional
 
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import (
+from qtpy import QtCore
+from qtpy.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QLabel,
@@ -228,7 +228,7 @@ class progress(tqdm):
         format_sizeof = tqdm.format_sizeof
         rate_noinv_fmt = (
             (
-                (format_sizeof(rate) if unit_scale else '{:5.2f}'.format(rate))
+                (format_sizeof(rate) if unit_scale else f'{rate:5.2f}')
                 if rate
                 else '?'
             )
@@ -237,11 +237,7 @@ class progress(tqdm):
         )
         rate_inv_fmt = (
             (
-                (
-                    format_sizeof(inv_rate)
-                    if unit_scale
-                    else '{:5.2f}'.format(inv_rate)
-                )
+                (format_sizeof(inv_rate) if unit_scale else f'{inv_rate:5.2f}')
                 if inv_rate
                 else '?'
             )
@@ -282,6 +278,9 @@ class progress(tqdm):
 
     def close(self):
         """Closes and deletes the progress bar widget"""
+        if self.disable:
+            return
+
         self._pbar.close()
         super().close()
 
