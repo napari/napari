@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
-from ..progress import ProgressBar, progress
+from napari.utils.progress import ProgressBar, progress    # noqa
 
 
 def activity_dock_children(viewer):
