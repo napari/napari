@@ -701,11 +701,11 @@ def test_paint_3d(brush_shape, expected_sum):
     layer.paint((10, 10, 10), 3)
 
     # Paint in 3D
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.paint((10, 25, 10), 4)
 
     # Paint in 3D, preserve labels
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
@@ -795,7 +795,7 @@ def test_undo_redo(
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
-    layer.n_dimensional = n_dimensional
+    layer.n_edit_dimensions = 3 if n_dimensional else 2
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)

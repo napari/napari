@@ -990,11 +990,13 @@ class Labels(_image_base_class):
             calls.
         """
         shape = self.data.shape
+        dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
         if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
-            if self.n_edit_dimensions == 2 and self.ndim > 2:
-                for i in self._dims_not_displayed:
-                    brush_size_dims[i] = 1
+            if self.n_edit_dimensions < self.ndim:
+                for i in range(self.ndim):
+                    if i not in dims_to_paint:
+                        brush_size_dims[i] = 1
 
             slice_coord = tuple(
                 slice(
@@ -1014,17 +1016,21 @@ class Labels(_image_base_class):
             slice_coord = indices_in_shape(slice_coord, shape)
         elif str(self._brush_shape) == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
-            if self.n_edit_dimensions == 2 and self.ndim > 2:
-                coord = [coord[i] for i in self._dims_displayed]
-                shape = [shape[i] for i in self._dims_displayed]
+            if self.n_edit_dimensions < self.ndim:
+                coord_paint = [coord[i] for i in dims_to_paint]
+                shape = [shape[i] for i in dims_to_paint]
+            else:
+                coord_paint = coord
 
-            sphere_dims = len(coord)
+            sphere_dims = len(coord_paint)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
             radius = np.floor(self.brush_size / 2) + 0.5
             mask_indices = sphere_indices(radius, sphere_dims)
 
-            mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
+            mask_indices = mask_indices + np.round(
+                np.array(coord_paint)
+            ).astype(int)
 
             # discard candidate coordinates that are out of bounds
             mask_indices = indices_in_shape(mask_indices, shape)
@@ -1032,7 +1038,7 @@ class Labels(_image_base_class):
             # Transfer valid coordinates to slice_coord,
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
-            if self.n_edit_dimensions == 2 and self.ndim > 2:
+            if self.n_edit_dimensions < self.ndim:
                 for j, i in enumerate(self._dims_displayed):
                     slice_coord[i] = slice_coord_temp[j]
                 for i in self._dims_not_displayed:
