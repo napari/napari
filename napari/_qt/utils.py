@@ -4,7 +4,6 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtWidgets import QMainWindow
 from qtpy.QtCore import QByteArray, QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
@@ -12,6 +11,7 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QMainWindow,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
