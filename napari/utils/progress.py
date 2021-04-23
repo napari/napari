@@ -278,6 +278,9 @@ class progress(tqdm):
 
     def close(self):
         """Closes and deletes the progress bar widget"""
+        if self.disable:
+            return
+
         self._pbar.close()
         super().close()
 
