@@ -48,9 +48,12 @@ def toggle_ndisplay(viewer):
         viewer.dims.ndisplay = 3
 
 
-@register_viewer_action(
-    trans._("Reset view to original state."), 'Control-Shift-T'
-)
+# Making this an action makes vispy really unhappy during the tests
+# on mac only with:
+# ```
+# RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
+# ```
+@ViewerModel.bind_key('Control-Shift-T')
 def toggle_theme(viewer):
     """Toggle theme for viewer"""
     themes = available_themes()
