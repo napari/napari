@@ -180,13 +180,18 @@ class _QtMainWindow(QMainWindow):
             preferences_dialog_size,
         ) = self._get_window_settings()
 
-        SETTINGS.application.window_size = window_size
-        SETTINGS.application.window_maximized = window_maximized
-        SETTINGS.application.window_fullscreen = window_fullscreen
-        SETTINGS.application.window_position = window_position
-        SETTINGS.application.window_state = window_state
-        SETTINGS.application.preferences_size = preferences_dialog_size
-        SETTINGS.application.window_statusbar = not self._status_bar.isHidden()
+        if SETTINGS.application.save_window_geometry:
+            SETTINGS.application.window_maximized = window_maximized
+            SETTINGS.application.window_fullscreen = window_fullscreen
+            SETTINGS.application.window_position = window_position
+            SETTINGS.application.window_size = window_size
+            SETTINGS.application.window_statusbar = (
+                not self._status_bar.isHidden()
+            )
+            SETTINGS.application.preferences_size = preferences_dialog_size
+
+        if SETTINGS.application.save_window_state:
+            SETTINGS.application.window_state = window_state
 
     def _update_preferences_dialog_size(self, size):
         """Save preferences dialog size."""
@@ -221,8 +226,7 @@ class _QtMainWindow(QMainWindow):
             if dock.isFloating():
                 dock.setFloating(False)
 
-        if SETTINGS.application.save_window_geometry:
-            self._save_current_window_settings()
+        self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
