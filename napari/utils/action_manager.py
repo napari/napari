@@ -55,6 +55,33 @@ class Action:
         return self._command_with_context
 
 
+class ButtonWrapper:
+    def __init__(self, button):
+        """
+        wrapper around button to disconnect an action only
+        if it has been connected before.
+        """
+        self._button = button
+        self._connected = None
+
+    def setToolTip(self, *args, **kwargs):
+        return self._button.setToolTip(*args, **kwargs)
+
+    def click_maybe_connect(self, callback):
+        if callback is not self._connected:
+            if self._connected is not None:
+                self._button.clicked.disconnect(self._connected)
+            self._button.clicked.connect(callback)
+            self._connected = callback
+        else:
+            # do nothing it's the same callback.
+            pass
+
+    @property
+    def destroyed(self):
+        return self._button.destroyed
+
+
 class ActionManager:
     """
     Manage the bindings between buttons; shortcuts, callbacks gui elements...
@@ -145,7 +172,7 @@ class ActionManager:
             #    pass
             # Comment only connect callbacks for now
             # does this ?
-            button.clicked.connect(callback)
+            button.click_maybe_connect(callback)
 
     def _update_qactions(self, name):
         if name in self._qactions:
@@ -211,10 +238,10 @@ class ActionManager:
         """
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
-        button.clicked.connect(lambda: self.push(name))
+        button = ButtonWrapper(button)
+        assert button not in [x._button for x in self._buttons['name']]
 
         button.destroyed.connect(lambda: self._buttons[name].remove(button))
-        assert button not in self._buttons['name']
         self._buttons[name].add(button)
         self._update_gui_elements(name)
 
