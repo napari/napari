@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
@@ -92,8 +92,8 @@ class ActionManager:
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
         self._buttons: Dict[
-            str, List[Union[QPushButton, QtStateButton]]
-        ] = defaultdict(lambda: [])
+            str, Set[Union[QPushButton, QtStateButton]]
+        ] = defaultdict(lambda: set())
         self._qactions: Dict[str, QAction] = defaultdict(lambda: [])
         self._shortcuts: Dict[str, str] = {}
         self.context: Dict[str, Any] = {}
@@ -170,7 +170,7 @@ class ActionManager:
         """
         if name not in self._actions:
             return
-        buttons = self._buttons.get(name, [])
+        buttons = self._buttons.get(name, set())
         desc = self._actions[name].description
 
         # update buttons with shortcut and description
@@ -211,7 +211,7 @@ class ActionManager:
 
         button.destroyed.connect(lambda: self._buttons[name].remove(button))
 
-        self._buttons[name].append(button)
+        self._buttons[name].add(button)
         self._update_gui_elements(name)
 
     def bind_shortcut(self, name, shortcut):
