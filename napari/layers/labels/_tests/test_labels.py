@@ -831,3 +831,32 @@ def test_ndim_fill():
 
     np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
     np.testing.assert_equal(layer.data[1:, 1:3, 1:3, 1:3], 3)
+
+
+def test_ndim_paint():
+    test_array = np.zeros((5, 6, 7, 8), dtype=int)
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+    layer.brush_shape = 'circle'
+    layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
+    layer.paint((1, 1, 1, 1), 1)
+
+    assert np.sum(layer.data) == 19  # 18 + center
+    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+
+    layer.n_edit_dimensions = 2  # 3x3 square
+    layer._dims_order = [1, 2, 0, 3]
+    layer.paint((4, 5, 6, 7), 8)
+    assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
+    np.testing.assert_array_equal(
+        test_array[:, 5, 6, :],
+        np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+            ]
+        ),
+    )
