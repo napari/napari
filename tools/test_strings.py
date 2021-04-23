@@ -139,7 +139,7 @@ def _find_func_definitions(
     ----------
     node : ast.Node
         The initial node of the ast.
-    def : list of ast.FunctionDef
+    defs : list of ast.FunctionDef
         A list of function definitions to accumulate.
 
     Returns
@@ -176,7 +176,7 @@ def find_files(
         Skip folders containing folder to skip
     skip_files : tuple
         Skip files.
-    extensions: tuple, optional
+    extensions : tuple, optional
         Extensions to filter by. Default is (".py", )
 
     Returns
