@@ -282,6 +282,8 @@ class Window:
         # create QApplication if it doesn't already exist
         get_app()
 
+        self._unnamed_dockwidget_count = 1
+
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow()
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
@@ -901,7 +903,10 @@ class Window:
         allowed_areas=None,
         shortcut=None,
     ):
-        """Convenience method to add a QDockWidget to the main window
+        """Convenience method to add a QDockWidget to the main window.
+
+        If name is not provided a generic name will be addded to avoid
+        `saveState` warnings on close.
 
         Parameters
         ----------
@@ -924,6 +929,16 @@ class Window:
         dock_widget : QtViewerDockWidget
             `dock_widget` that can pass viewer events.
         """
+        if not name:
+            try:
+                name = widget.objectName()
+            except AttributeError:
+                name = trans._(
+                    "Dock widget {number}",
+                    number=self._unnamed_dockwidget_count,
+                )
+
+            self._unnamed_dockwidget_count += 1
 
         dock_widget = QtViewerDockWidget(
             self.qt_viewer,
