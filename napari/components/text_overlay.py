@@ -1,9 +1,9 @@
 """Text label model"""
 from ..utils.events import EventedModel
-from ._viewer_constants import Position
+from ._viewer_constants import TextOverlayPosition
 
 
-class Label(EventedModel):
+class TextOverlay(EventedModel):
     """Label model to display arbitrary text in the canvas
 
     Attributes
@@ -16,7 +16,8 @@ class Label(EventedModel):
         Size of the font
     position : str
         Position of the label in the canvas. Must be one of
-        'top left', 'top right', 'bottom right', 'bottom left'.
+        'top left', 'top right', 'top center', 'bottom right',
+        'bottom left', 'bottom_center'.
         Default value is 'top left'
     text : str
         Text to be displayed in the canvas
@@ -26,5 +27,5 @@ class Label(EventedModel):
     visible: bool = False
     color: str = "#FFFFFF"
     font_size: int = 10
-    position: Position = Position.TOP_LEFT
+    position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
     text: str = ""
