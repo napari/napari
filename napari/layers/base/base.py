@@ -15,6 +15,7 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
+from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
@@ -230,9 +231,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             data2world_transform = affine
         else:
             raise TypeError(
-                'affine input not recognized. '
-                'must be either napari.utils.transforms.Affine, '
-                f'ndarray, or None. Got {type(affine)}'
+                trans._(
+                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
+                    deferred=True,
+                    dtype=type(affine),
+                )
             )
 
         self._transforms = TransformChain(
@@ -277,17 +280,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             loaded=Event,
             _ndisplay=Event,
             select=WarningEmitter(
-                "'layer.events.select' is deprecated and will be "
-                "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.changed' instead, and inspect"
-                " the 'added' attribute on the event.",
+                trans._(
+                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
+                    deferred=True,
+                ),
                 type='select',
             ),
             deselect=WarningEmitter(
-                "'layer.events.deselect' is deprecated and will be "
-                "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.changed' instead, and inspect"
-                " the 'removed' attribute on the event.",
+                trans._(
+                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
+                    deferred=True,
+                ),
                 type='deselect',
             ),
         )
@@ -341,7 +344,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
-                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+                trans._(
+                    'opacity must be between 0.0 and 1.0; got {opacity}',
+                    deferred=True,
+                    opacity=opacity,
+                )
             )
 
         self._opacity = opacity
@@ -458,9 +465,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._transforms['data2world'] = affine
         else:
             raise TypeError(
-                'affine input not recognized. '
-                'must be either napari.utils.transforms.Affine '
-                f'or ndarray. Got {type(affine)}'
+                trans._(
+                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                    deferred=True,
+                    dtype=type(affine),
+                )
             )
         self._update_dims()
         self.events.affine()
@@ -481,10 +490,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def position(self):
         """tuple: Cursor position in world slice coordinates."""
         warnings.warn(
-            "layer.position is deprecated and will be removed in version 0.4.9."
-            " It should no longer be used as layers should no longer know where the"
-            " cursor position is. You can get the cursor position in world coordinates"
-            " from viewer.cursor.position.",
+            trans._(
+                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )
@@ -493,10 +502,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @position.setter
     def position(self, position):
         warnings.warn(
-            "layer.position is deprecated and will be removed in version 0.4.9."
-            " It should no longer be used as layers should no longer know where the"
-            " cursor position is. You can get the cursor position in world coordinates"
-            " from viewer.cursor.position.",
+            trans._(
+                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )
@@ -644,9 +653,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # Check that displayed subspace is null
             if not np.allclose(displayed_mapped_subspace, 0):
                 warnings.warn(
-                    'Non-orthogonal slicing is being requested, but'
-                    ' is not fully supported. Data is displayed without'
-                    ' applying an out-of-slice rotation or shear component.',
+                    trans._(
+                        'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
+                        deferred=True,
+                    ),
                     category=UserWarning,
                 )
 
@@ -744,8 +754,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def selected(self):
         """bool: Whether this layer is selected or not."""
         warnings.warn(
-            "'layer.selected' is deprecated and will be removed in v0.4.9. "
-            "Please use `layer in viewer.layers.selection`",
+            trans._(
+                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `layer in viewer.layers.selection`",
+                deferred=True,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -757,9 +769,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @selected.setter
     def selected(self, selected):
         warnings.warn(
-            "'layer.selected' is deprecated and will be removed in v0.4.9. "
-            "Please use `viewer.layers.selection.add(layer)` or "
-            "`viewer.layers.selection.remove(layer)`",
+            trans._(
+                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `viewer.layers.selection.add(layer)` or `viewer.layers.selection.remove(layer)`",
+                deferred=True,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -965,11 +978,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def coordinates(self):
         """Cursor position in data coordinates."""
         warnings.warn(
-            "layer.coordinates is deprecated and will be removed in version 0.4.9."
-            " It should no longer be used as layers should no longer know where the"
-            " cursor position is. You can get the cursor position in world coordinates"
-            " from viewer.cursor.position. You can then transform that into data"
-            " coordinates using the layer.world_to_data method.",
+            trans._(
+                "layer.coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position. You can then transform that into data coordinates using the layer.world_to_data method.",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )
@@ -1054,10 +1066,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         `[layer.coordinates[d] for d in viewer.dims.displayed]
         """
         warnings.warn(
-            "displayed_coordinates is deprecated and will be removed in version 0.4.9."
-            " It should no longer be used as layers should will soon not know"
-            " which dimensions are displayed. Instead you should use"
-            " [layer.coordinates[d] for d in viewer.dims.displayed]",
+            trans._(
+                "displayed_coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should use [layer.coordinates[d] for d in viewer.dims.displayed]",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )

@@ -27,6 +27,7 @@ from typing_extensions import TypedDict
 from ..types import AugmentedWidget, LayerData, SampleDict
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
+from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
 if sys.platform.startswith('linux') and running_as_bundled_app():
@@ -154,8 +155,12 @@ def register_dock_widget(
         if isinstance(arg, tuple):
             if not arg:
                 warn(
-                    f'Plugin {plugin_name!r} provided an invalid tuple to '
-                    f'{hook_name}.  Skipping'
+                    trans._(
+                        'Plugin {plugin_name!r} provided an invalid tuple to {hook_name}. Skipping',
+                        deferred=True,
+                        plugin_name=plugin_name,
+                        hook_name=hook_name,
+                    )
                 )
                 continue
             _cls = arg[0]
@@ -165,15 +170,25 @@ def register_dock_widget(
 
         if not callable(_cls):
             warn(
-                f'Plugin {plugin_name!r} provided a non-callable object '
-                f'(widget) to {hook_name}: {_cls!r}. Widget ignored.'
+                trans._(
+                    'Plugin {plugin_name!r} provided a non-callable object (widget) to {hook_name}: {_cls!r}. Widget ignored.',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    hook_name=hook_name,
+                    _cls=_cls,
+                )
             )
             continue
 
         if not isinstance(kwargs, dict):
             warn(
-                f'Plugin {plugin_name!r} provided invalid kwargs '
-                f'to {hook_name} for class {_cls.__name__}. Widget ignored.'
+                trans._(
+                    'Plugin {plugin_name!r} provided invalid kwargs to {hook_name} for class {class_name}. Widget ignored.',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    hook_name=hook_name,
+                    class_name=_cls.__name__,
+                )
             )
             continue
 
@@ -185,8 +200,12 @@ def register_dock_widget(
             dock_widgets[plugin_name] = {}
         elif name in dock_widgets[plugin_name]:
             warn(
-                "Plugin '{}' has already registered a dock widget '{}' "
-                'which has now been overwritten'.format(plugin_name, name)
+                trans._(
+                    "Plugin '{plugin_name}' has already registered a dock widget '{name}' which has now been overwritten",
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    name=name,
+                )
             )
 
         dock_widgets[plugin_name][name] = (_cls, kwargs)
@@ -228,21 +247,33 @@ def get_plugin_widget(
     plg_wdgs = dock_widgets.get(plugin_name)
     if not plg_wdgs:
         raise KeyError(
-            f'Plugin {plugin_name!r} does not provide any dock widgets'
+            trans._(
+                'Plugin {plugin_name!r} does not provide any dock widgets',
+                deferred=True,
+                plugin_name=plugin_name,
+            )
         )
 
     if not widget_name:
         if len(plg_wdgs) > 1:
             raise ValueError(
-                f'Plugin {plugin_name!r} provides more than 1 dock_widget. '
-                f'Must also provide "widget_name" from {set(plg_wdgs)}'
+                trans._(
+                    'Plugin {plugin_name!r} provides more than 1 dock_widget. Must also provide "widget_name" from {widgets}',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    widgets=set(plg_wdgs),
+                )
             )
         widget_name = list(plg_wdgs)[0]
     else:
         if widget_name not in plg_wdgs:
             raise KeyError(
-                f'Plugin {plugin_name!r} does not provide '
-                f'a widget named {widget_name!r}'
+                trans._(
+                    'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    widget_name=widget_name,
+                )
             )
     return plg_wdgs[widget_name]
 
@@ -262,16 +293,24 @@ def register_function_widget(
     hook_name = '`napari_experimental_provide_function`'
     for func in args if isinstance(args, list) else [args]:
         if not isinstance(func, FunctionType):
-            msg = (
-                f'Plugin {plugin_name!r} provided a non-callable type to '
-                f'{hook_name}: {type(func)!r}. Function widget ignored.'
-            )
-            if isinstance(func, tuple):
-                msg += (
-                    " To provide multiple function widgets please use "
-                    "a LIST of callables"
+            msg = [
+                trans._(
+                    'Plugin {plugin_name!r} provided a non-callable type to {hook_name}: {func_type!r}. Function widget ignored.',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    hook_name=hook_name,
+                    func_type=type(func),
                 )
-            warn(msg)
+            ]
+            if isinstance(func, tuple):
+                msg.append(
+                    trans._(
+                        " To provide multiple function widgets please use a LIST of callables",
+                        deferred=True,
+                    )
+                )
+
+            warn("".join(msg))
             continue
 
         # Get function name
@@ -282,8 +321,12 @@ def register_function_widget(
             function_widgets[plugin_name] = {}
         elif name in function_widgets[plugin_name]:
             warn(
-                "Plugin '{}' has already registered a function widget '{}' "
-                'which has now been overwritten'.format(plugin_name, name)
+                trans._(
+                    "Plugin '{plugin_name}' has already registered a function widget '{name}' which has now been overwritten",
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    name=name,
+                )
             )
 
         function_widgets[plugin_name][name] = func
@@ -312,8 +355,12 @@ def register_sample_data(
     hook_name = 'napari_provide_sample_data'
     if not isinstance(data, dict):
         warn(
-            f'Plugin {plugin_name!r} provided a non-dict object to '
-            f'{hook_name!r}: data ignored.'
+            trans._(
+                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
+                deferred=True,
+                plugin_name=plugin_name,
+                hook_name=hook_name,
+            )
         )
         return
 
@@ -322,9 +369,13 @@ def register_sample_data(
         if isinstance(datum, dict):
             if 'data' not in datum or 'display_name' not in datum:
                 warn(
-                    f'In {hook_name!r}, plugin {plugin_name!r} provided an '
-                    f'invalid dict object for key {name!r} that does not have '
-                    'required keys: "data" and "display_name".  Ignoring'
+                    trans._(
+                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that does not have required keys: "data" and "display_name".  Ignoring',
+                        deferred=True,
+                        hook_name=hook_name,
+                        plugin_name=plugin_name,
+                        name=name,
+                    )
                 )
                 continue
         else:
@@ -334,9 +385,14 @@ def register_sample_data(
             callable(datum['data']) or isinstance(datum['data'], (str, Path))
         ):
             warn(
-                f'Plugin {plugin_name!r} provided invalid data for key '
-                f'{name!r} in the dict returned by {hook_name!r}. '
-                f'(Must be str, callable, or dict), got ({type(datum["data"])}).'
+                trans._(
+                    'Plugin {plugin_name!r} provided invalid data for key {name!r} in the dict returned by {hook_name!r}. (Must be str, callable, or dict), got ({data_type}).',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    name=name,
+                    hook_name=hook_name,
+                    data_type=type(datum["data"]),
+                )
             )
             continue
         _data[name] = datum

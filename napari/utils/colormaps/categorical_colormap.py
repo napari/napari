@@ -5,6 +5,7 @@ from pydantic import validator
 
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
+from ..translations import trans
 from .categorical_colormap_utils import ColorCycle, compare_colormap_dicts
 from .standardize_color import transform_color
 
@@ -101,7 +102,12 @@ class CategoricalColormap(EventedModel):
         elif isinstance(val, dict):
             return cls.from_dict(val)
         else:
-            raise TypeError('colormap should be an array or dict')
+            raise TypeError(
+                trans._(
+                    'colormap should be an array or dict',
+                    deferred=True,
+                )
+            )
 
     def __eq__(self, other):
         if isinstance(other, CategoricalColormap):

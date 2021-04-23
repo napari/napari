@@ -3,16 +3,17 @@ from distutils.version import StrictVersion
 from pathlib import Path
 from warnings import warn
 
+from ..utils.translations import trans
+
 try:
     from qtpy import API_NAME, QtCore
 except Exception as e:
     if 'No Qt bindings could be found' in str(e):
         raise type(e)(
-            "No Qt bindings could be found.\n\nnapari requires either PyQt5 or"
-            " PySide2 to be installed in the environment.\nTo install the "
-            'default backend (currently PyQt5), run "pip install napari[all]"'
-            '\nYou may also use "pip install napari[pyside2]" for Pyside2, '
-            'or "pip install napari[pyqt5]" for PyQt5'
+            trans._(
+                "No Qt bindings could be found.\n\nnapari requires either PyQt5 or PySide2 to be installed in the environment.\nTo install the default backend (currently PyQt5), run \"pip install napari[all]\" \nYou may also use \"pip install napari[pyside2]\"for Pyside2, or \"pip install napari[pyqt5]\" for PyQt5",
+                deferred=True,
+            )
         ) from e
     raise
 
@@ -29,11 +30,11 @@ if API_NAME == 'PySide2':
 
 # When QT is not the specific version, we raise a warning:
 if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
-    warn_message = f"""
-    napari was tested with QT library `>=5.12.3`.
-    The version installed is {QtCore.__version__}. Please report any issues with this
-    specific QT version at https://github.com/Napari/napari/issues.
-    """
+    warn_message = trans._(
+        "napari was tested with QT library `>=5.12.3`.\nThe version installed is {version}. Please report any issues with this specific QT version at https://github.com/Napari/napari/issues.",
+        deferred=True,
+        version=QtCore.__version__,
+    )
     warn(message=warn_message)
 
 

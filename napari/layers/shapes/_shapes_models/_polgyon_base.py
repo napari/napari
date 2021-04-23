@@ -1,5 +1,6 @@
 import numpy as np
 
+from ....utils.translations import trans
 from .._shapes_utils import create_box
 from .shape import Shape
 
@@ -64,8 +65,11 @@ class PolygonBase(Shape):
 
         if len(data) < 2:
             raise ValueError(
-                f"""Shape needs at least two vertices,
-                 {len(data)} provided."""
+                trans._(
+                    "Shape needs at least two vertices, {number} provided.",
+                    deferred=True,
+                    number=len(data),
+                )
             )
 
         self._data = data

@@ -67,6 +67,8 @@ from typing import (
 from typing_extensions import Literal
 from vispy.util.logs import _handle_exception
 
+from ..translations import trans
+
 
 class Event:
 
@@ -306,8 +308,10 @@ class EventEmitter:
     ):
         if val not in ('first', 'reminders', 'always', 'never'):
             raise ValueError(
-                'print_callback_errors must be "first", '
-                '"reminders", "always", or "never"'
+                trans._(
+                    'print_callback_errors must be "first", "reminders", "always", or "never"',
+                    deferred=True,
+                )
             )
         self._print_callback_errors = val
 
@@ -413,14 +417,25 @@ class EventEmitter:
         elif isinstance(ref, str):
             _ref = ref
         else:
-            raise TypeError('ref must be a bool or string')
+            raise TypeError(
+                trans._(
+                    'ref must be a bool or string',
+                    deferred=True,
+                )
+            )
         if _ref is not None and _ref in self._callback_refs:
-            raise ValueError('ref "%s" is not unique' % _ref)
+            raise ValueError(
+                trans._('ref "{ref}" is not unique', deferred=True, ref=_ref)
+            )
 
         # positions
         if position not in ('first', 'last'):
             raise ValueError(
-                'position must be "first" or "last", not %s' % position
+                trans._(
+                    'position must be "first" or "last", not {position}',
+                    deferred=True,
+                    position=position,
+                )
             )
 
         # bounds: upper & lower bnds (inclusive) of possible cb locs
@@ -440,9 +455,14 @@ class EventEmitter:
                     )
                     if count != 1:
                         raise ValueError(
-                            'criteria "%s" is in the current '
-                            'callback list %s times:\n%s\n%s'
-                            % (criteria, count, callback_refs, callbacks)
+                            trans._(
+                                'criteria "{criteria}" is in the current callback list {count} times:\n{callback_refs}\n{callbacks}',
+                                deferred=True,
+                                criteria=criteria,
+                                count=count,
+                                callback_refs=callback_refs,
+                                callbacks=callbacks,
+                            )
                         )
                 matches = [
                     ci
@@ -454,9 +474,13 @@ class EventEmitter:
                 bounds.append(matches[0] if ri == 0 else (matches[-1] + 1))
         if bounds[0] < bounds[1]:  # i.e., "place before" < "place after"
             raise RuntimeError(
-                'cannot place callback before "%s" '
-                'and after "%s" for callbacks: %s'
-                % (before, after, callback_refs)
+                trans._(
+                    'cannot place callback before "{before}" and after "{after}" for callbacks: {callback_refs}',
+                    deferred=True,
+                    before=before,
+                    after=after,
+                    callback_refs=callback_refs,
+                )
             )
         idx = bounds[1] if position == 'first' else bounds[0]  # 'last'
 
@@ -555,7 +579,12 @@ class EventEmitter:
                 self.disconnect(cb)
         finally:
             if event._pop_source() != self.source:
-                raise RuntimeError("Event source-stack mismatch.")
+                raise RuntimeError(
+                    trans._(
+                        "Event source-stack mismatch.",
+                        deferred=True,
+                    )
+                )
 
         return event
 
@@ -584,8 +613,10 @@ class EventEmitter:
             event = self.event_class(**_kwargs)
         else:
             raise ValueError(
-                "Event emitters can be called with an Event "
-                "instance or with keyword arguments only."
+                trans._(
+                    "Event emitters can be called with an Event instance or with keyword arguments only.",
+                    deferred=True,
+                )
             )
         return event
 
@@ -614,8 +645,12 @@ class EventEmitter:
         """
         if callback not in self._blocked or self._blocked[callback] == 0:
             raise RuntimeError(
-                "Cannot unblock %s for callback %s; emitter "
-                "was not previously blocked." % (self, callback)
+                trans._(
+                    "Cannot unblock {self_} for callback {callback}; emitter was not previously blocked.",
+                    deferred=True,
+                    self_=self,
+                    callback=callback,
+                )
             )
         b = self._blocked[callback] - 1
         if b == 0 and callback is not None:
@@ -779,12 +814,19 @@ class EmitterGroup(EventEmitter):
         for name in kwargs:
             if name in self._emitters:
                 raise ValueError(
-                    "EmitterGroup already has an emitter named '%s'" % name
+                    trans._(
+                        "EmitterGroup already has an emitter named '{name}'",
+                        deferred=True,
+                        name=name,
+                    )
                 )
             elif hasattr(self, name):
                 raise ValueError(
-                    "The name '%s' cannot be used as an emitter; "
-                    "it is already an attribute of EmitterGroup" % name
+                    trans._(
+                        "The name '{name}' cannot be used as an emitter; it is already an attribute of EmitterGroup",
+                        deferred=True,
+                        name=name,
+                    )
                 )
 
         # add each emitter specified in the keyword arguments
@@ -798,9 +840,12 @@ class EmitterGroup(EventEmitter):
                 )
             elif not isinstance(emitter, EventEmitter):
                 raise Exception(
-                    'Emitter must be specified as either an '
-                    'EventEmitter instance or Event subclass. '
-                    '(got %s=%s)' % (name, emitter)
+                    trans._(
+                        'Emitter must be specified as either an EventEmitter instance or Event subclass. (got {name}={emitter})',
+                        deferred=True,
+                        name=name,
+                        emitter=emitter,
+                    )
                 )
 
             # give this emitter the same source as the group.

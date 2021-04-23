@@ -280,7 +280,7 @@ class NapariQtNotification(QDialog):
 
             def call_back_with_self(callback, self):
                 """
-                we need a higher order function this to capture the reference to self.
+                We need a higher order function this to capture the reference to self.
                 """
 
                 def _inner():
@@ -326,15 +326,16 @@ class NapariQtNotification(QDialog):
                 text = QTextEdit()
                 text.setHtml(notification.as_html())
                 text.setReadOnly(True)
-                btn = QPushButton('Enter Debugger')
+                btn = QPushButton(trans._('Enter Debugger'))
 
                 def _enter_debug_mode():
                     btn.setText(
-                        'Now Debugging. Please quit debugger in console '
-                        'to continue'
+                        trans._(
+                            'Now Debugging. Please quit debugger in console to continue'
+                        )
                     )
                     _debug_tb(notification.exception.__traceback__)
-                    btn.setText('Enter Debugger')
+                    btn.setText(trans._('Enter Debugger'))
 
                 btn.clicked.connect(_enter_debug_mode)
                 tbdialog.layout().addWidget(text)

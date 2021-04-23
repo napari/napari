@@ -9,6 +9,7 @@ exclude requirements.txt
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
+recursive-exclude tools *
 recursive-exclude docs *
 recursive-exclude examples *
 recursive-exclude napari *.pyc

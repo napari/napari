@@ -340,10 +340,11 @@ class Window:
 
             warnings.warn(
                 (
-                    trans._(
-                        "The 'raw_stylesheet' attribute is deprecated and will be "
-                        "removed in version 0.4.7.  Please use "
-                        "`napari.qt.get_stylesheet` instead"
+                    str(
+                        trans._(
+                            "The 'raw_stylesheet' attribute is deprecated and will be removed in version 0.4.7. Please use `napari.qt.get_stylesheet` instead",
+                            deferred=True,
+                        )
                     )
                 ),
                 category=DeprecationWarning,
@@ -1098,8 +1099,8 @@ class Window:
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
-                    "This viewer has already been closed and deleted. "
-                    "Please create a new one."
+                    "This viewer has already been closed and deleted. Please create a new one.",
+                    deferred=True,
                 )
             )
 
@@ -1110,8 +1111,8 @@ class Window:
             except (AttributeError, RuntimeError):
                 raise RuntimeError(
                     trans._(
-                        "This viewer has already been closed and deleted. "
-                        "Please create a new one."
+                        "This viewer has already been closed and deleted. Please create a new one.",
+                        deferred=True,
                     )
                 )
         else:
@@ -1125,8 +1126,7 @@ class Window:
 
                 warnings.warn(
                     trans._(
-                        "The window geometry settings could not be "
-                        "loaded due to the following error: {err}",
+                        "The window geometry settings could not be loaded due to the following error: {err}",
                         deferred=True,
                         err=err,
                     ),

@@ -334,7 +334,10 @@ class Shapes(Layer):
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
                 raise ValueError(
-                    trans._("Shape dimensions must be equal to ndim")
+                    trans._(
+                        "Shape dimensions must be equal to ndim",
+                        deferred=True,
+                    )
                 )
             ndim = data_ndim
 
@@ -400,7 +403,12 @@ class Shapes(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError(trans._('text should be a string, array, or dict'))
+            raise TypeError(
+                trans._(
+                    'text should be a string, array, or dict',
+                    deferred=True,
+                )
+            )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -615,7 +623,11 @@ class Shapes(Layer):
         ):
             self._face_color_property = ''
             warnings.warn(
-                'property used for face_color dropped', RuntimeWarning
+                trans._(
+                    'property used for face_color dropped',
+                    deferred=True,
+                ),
+                RuntimeWarning,
             )
 
         if self._edge_color_property and (
@@ -623,7 +635,11 @@ class Shapes(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn(
-                'property used for edge_color dropped', RuntimeWarning
+                trans._(
+                    'property used for edge_color dropped',
+                    deferred=True,
+                ),
+                RuntimeWarning,
             )
 
         if self.text.values is not None:
@@ -912,13 +928,20 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        f'_{attribute}_color_property was not set, '
-                        f'setting to: {new_color_property}'
+                        trans._(
+                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            deferred=True,
+                            attribute=attribute,
+                            new_color_property=new_color_property,
+                        )
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Shapes.properties to use '
-                        f'{color_mode}'
+                        trans._(
+                            'There must be a valid Shapes.properties to use {color_mode}',
+                            deferred=True,
+                            color_mode=color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -927,7 +950,10 @@ class Shapes(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
@@ -1296,7 +1322,10 @@ class Shapes(Layer):
             return False
         else:
             raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an property'
+                trans._(
+                    'face_color should be the name of a color, an array of colors, or the name of an property',
+                    deferred=True,
+                )
             )
 
     def _get_state(self):
@@ -1457,12 +1486,17 @@ class Shapes(Layer):
             self.cursor = 'cross'
             self.interactive = False
             self.help = trans._(
-                'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
+                'hold <space> to pan/zoom, press <esc> to finish drawing'
             )
             self.mouse_drag_callbacks.append(add_path_polygon)
             self.mouse_move_callbacks.append(add_path_polygon_creating)
         else:
-            raise ValueError(trans._("Mode not recognized"))
+            raise ValueError(
+                trans._(
+                    "Mode not recognized",
+                    deferred=True,
+                )
+            )
 
         self._mode = mode
 
@@ -1828,7 +1862,10 @@ class Shapes(Layer):
         for k, v in properties.items():
             if len(v) != n_shapes:
                 raise ValueError(
-                    'the number of properties must equal the number of shapes'
+                    trans._(
+                        'the number of properties must equal the number of shapes',
+                        deferred=True,
+                    )
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -2236,10 +2273,10 @@ class Shapes(Layer):
             Full D dimensional data array of the shape.
         """
         warnings.warn(
-            "expand_shape is deprecated and will be removed in version 0.4.9."
-            " It should no longer be used as layers should will soon not know"
-            " which dimensions are displayed. Instead you should work with"
-            " full nD shape data as much as possible.",
+            trans._(
+                "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )

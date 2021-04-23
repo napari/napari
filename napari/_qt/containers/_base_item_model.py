@@ -7,6 +7,7 @@ from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from ...utils.events import disconnect_events
 from ...utils.events.containers import SelectableEventedList
+from ...utils.translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
@@ -194,7 +195,11 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Call during __init__, to set the python model and connections"""
         if not isinstance(root, SelectableEventedList):
             raise TypeError(
-                f"root must be an instance of {SelectableEventedList}"
+                trans._(
+                    "root must be an instance of {class_name}",
+                    deferred=True,
+                    class_name=SelectableEventedList,
+                )
             )
         current_root = getattr(self, "_root", None)
         if root is current_root:

@@ -144,7 +144,7 @@ class Language(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string'))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         language_packs = list(get_language_packs(_load_language()).keys())
         if v not in language_packs:
@@ -219,9 +219,8 @@ class ApplicationSettings(BaseNapariSettings):
     ipy_interactive: bool = Field(
         default=True,
         title=trans._('IPython interactive'),
-        description=(
-            r'Use interactive %gui qt event loop when creating '
-            'napari Viewers in IPython'
+        description=trans._(
+            r'Use interactive %gui qt event loop when creating napari Viewers in IPython'
         ),
     )
 

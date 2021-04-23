@@ -8,6 +8,7 @@ from ...layers.utils.color_transformations import (
     transform_color,
     transform_color_cycle,
 )
+from ..translations import trans
 
 
 @dataclass(eq=False)
@@ -57,7 +58,10 @@ def _coerce_colorcycle_from_dict(
     # validate values
     color_values = val.get('values')
     if color_values is None:
-        raise ValueError('ColorCycle requires a values argument')
+        raise ValueError(
+            trans._('ColorCycle requires a values argument', deferred=True)
+        )
+
     transformed_color_values = transform_color(color_values)
 
     # validate cycle

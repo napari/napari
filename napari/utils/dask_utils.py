@@ -10,6 +10,7 @@ import dask.array as da
 from dask.cache import Cache
 
 from .. import utils
+from ..utils.translations import trans
 
 
 def create_dask_cache(
@@ -169,9 +170,11 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     if _is_dask_data(data):
         if dask.__version__ < LooseVersion('2.15.0'):
             warnings.warn(
-                'For best performance with Dask arrays in napari, please '
-                'upgrade Dask to v2.15.0 or later. Current version is '
-                f'{dask.__version__}'
+                trans._(
+                    'For best performance with Dask arrays in napari, please upgrade Dask to v2.15.0 or later. Current version is {dask_version}',
+                    deferred=True,
+                    dask_version=dask.__version__,
+                )
             )
 
         def dask_optimized_slicing():
