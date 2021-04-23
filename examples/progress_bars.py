@@ -44,7 +44,7 @@ def try_thresholds():
         thresholded_nuclei.append(binarised_im)
 
         # uncomment if processing is too fast
-        # sleep(0.5)
+        sleep(0.5)
 
     # working with a wrapped iterable, the progress bar will be closed
     # as soon as the iteration is complete
@@ -73,17 +73,19 @@ def segment_binarised_ims():
     binarised_data = viewer.layers['Binarised'].data
 
     # using the `with` keyword we can use `progress` inside a context manager
-    with progress(binarised_data) as pbar:
+    # `progress` inherits from tqdm and therefore provides the same API
+    # e.g. we can provide the miniters argument if we want to see the
+    # progress bar update with each iteration
+    with progress(binarised_data, miniters=0) as pbar:
         for i, binarised_cells in enumerate(pbar):
             # this allows us to manipulate the pbar object within the loop
-            # e.g. setting the description. `progress` inherits from tqdm
-            # and therefore provides the same API
+            # e.g. setting the description. 
             pbar.set_description(all_thresholds[i].__name__.split("_")[1])
             labelled_im = label(binarised_cells)
             segmented_nuclei.append(labelled_im)
 
             # uncomment if processing is too fast
-            # sleep(0.5)
+            sleep(0.5)
 
     # progress bar is still automatically closed
 
@@ -118,7 +120,7 @@ def process_ims():
     pbar.update(1)
 
     # uncomment this line to see the 100% progress bar
-    # sleep(0.5)
+    sleep(0.5)
 
     # if manually updating the progress bar, we must also
     # manually close it
@@ -130,11 +132,11 @@ process_btn = QPushButton("Full Process")
 process_btn.clicked.connect(process_ims)
 button_layout.addWidget(process_btn)
 
-thresh_btn = QPushButton("Threshold")
+thresh_btn = QPushButton("1.Threshold")
 thresh_btn.clicked.connect(try_thresholds)
 button_layout.addWidget(thresh_btn)
 
-segment_btn = QPushButton("Segment")
+segment_btn = QPushButton("2.Segment")
 segment_btn.clicked.connect(segment_binarised_ims)
 button_layout.addWidget(segment_btn)
 
