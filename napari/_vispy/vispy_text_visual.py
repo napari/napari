@@ -23,7 +23,7 @@ class VispyTextVisual:
             self._on_visible_change
         )
         self._viewer.text_overlay.events.text.connect(self._on_data_change)
-        self._viewer.text_overlay.events.color.connect(self._on_data_change)
+        self._viewer.text_overlay.events.color.connect(self._on_text_change)
         self._viewer.text_overlay.events.font_size.connect(
             self._on_text_change
         )
