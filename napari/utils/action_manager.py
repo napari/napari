@@ -137,12 +137,12 @@ class ActionManager:
             # test if only tooltip makes crash
             button.setToolTip(tooltip)
 
-            # Comment callbacks for now
-            # try:
-            #    # not sure how to check whether things are connected already
-            #    button.clicked.disconnect(callback)
-            # except Exception:
-            #    pass
+            try:
+                # not sure how to check whether things are connected already
+                button.clicked.disconnect(callback)
+            except Exception:
+                pass
+            # Comment only connect callbacks for now
             # button.clicked.connect(callback)
 
     def _update_qactions(self, name):
