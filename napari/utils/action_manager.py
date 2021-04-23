@@ -212,7 +212,7 @@ class ActionManager:
         button.clicked.connect(lambda: self.push(name))
 
         button.destroyed.connect(lambda: self._buttons[name].remove(button))
-
+        assert button not in self._buttons['name']
         self._buttons[name].add(button)
         self._update_gui_elements(name)
 
