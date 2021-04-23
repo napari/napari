@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
 
-from ..progress import ProgressBar, progress
-
 try:
     import qtpy  # noqa
 except ImportError:
@@ -11,6 +9,7 @@ except RuntimeError:
     pytest.skip(
         'Cannot test progress without Qt bindings.', allow_module_level=True
     )
+from ..progress import ProgressBar, progress
 
 
 def activity_dock_children(viewer):
