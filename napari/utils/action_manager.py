@@ -137,13 +137,15 @@ class ActionManager:
             # test if only tooltip makes crash
             button.setToolTip(tooltip)
 
-            try:
-                # not sure how to check whether things are connected already
-                button.clicked.disconnect(callback)
-            except Exception:
-                pass
+            # for sure this segfault pyside
+            # try:
+            #    # not sure how to check whether things are connected already
+            #    button.clicked.disconnect(callback)
+            # except Exception:
+            #    pass
             # Comment only connect callbacks for now
-            # button.clicked.connect(callback)
+            # does this ?
+            button.clicked.connect(callback)
 
     def _update_qactions(self, name):
         if name in self._qactions:
