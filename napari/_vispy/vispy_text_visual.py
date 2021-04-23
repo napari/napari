@@ -7,7 +7,7 @@ from vispy.visuals.transforms import STTransform
 from ..components._viewer_constants import TextOverlayPosition
 
 
-class VispyLabelVisual:
+class VispyTextVisual:
     """Text overlay visual."""
 
     def __init__(self, viewer, parent=None, order=1e6):

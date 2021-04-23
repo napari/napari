@@ -4,7 +4,7 @@ import pytest
 from napari.components._viewer_constants import TextOverlayPosition
 
 
-def test_vispy_label_visual_image(make_napari_viewer):
+def test_vispy_text_visual(make_napari_viewer):
     viewer = make_napari_viewer()
     qt_widget = viewer.window.qt_viewer
     assert viewer.text_overlay is not None

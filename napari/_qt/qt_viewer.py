@@ -43,7 +43,7 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarVisual,
-    VispyLabelVisual,
+    VispyTextVisual,
     create_vispy_visual,
 )
 
@@ -298,7 +298,7 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.text_overlay = VispyLabelVisual(
+        self.text_overlay = VispyTextVisual(
             self.viewer,
             parent=self.view,
             order=1e6 + 2,
