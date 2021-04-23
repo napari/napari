@@ -236,3 +236,50 @@ QtPlayButton[playing=True] {
     width: 12px;
     padding: 2px;
 }
+
+
+/* Testing */
+QtStateButton[mode="sidebar_plugins"] {
+  background: {{ background }};
+  image: url(":/themes/{{ folder }}/3D.svg");
+}
+
+QtStateButton[mode="sidebar_plugins"]:hover {
+  background: {{ highlight }};
+  image: url(":/themes/{{ folder }}/3D.svg");
+}
+
+QtStateButton[mode="sidebar_plugins"]:checked {
+  background: {{ highlight }};
+  image: url(":/themes/{{ folder }}/3D.svg");
+}
+
+QtStateButton[mode="sidebar_help"] {
+  background: {{ background }};
+  image: url(":/themes/{{ folder }}/2D.svg");
+}
+
+QtStateButton[mode="sidebar_help"]:hover {
+  background: {{ highlight }};
+  image: url(":/themes/{{ folder }}/2D.svg");
+}
+
+QtStateButton[mode="sidebar_help"]:checked {
+  background: {{ highlight }};
+  image: url(":/themes/{{ folder }}/2D.svg");
+}
+
+QtStateButton[mode="sidebar_other"] {
+  background: {{ background }};
+  image: url(":/themes/{{ folder }}/copy_to_clipboard.svg");
+}
+
+QtStateButton[mode="sidebar_other"]:hover {
+  background: {{ highlight }};
+  image: url(":/themes/{{ folder }}/copy_to_clipboard.svg");
+}
+
+QtStateButton[mode="sidebar_other"]:checked {
+  background: {{ highlight }};
+  image: url(":/themes/{{ folder }}/copy_to_clipboard.svg");
+}

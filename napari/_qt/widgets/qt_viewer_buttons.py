@@ -310,7 +310,9 @@ class QtStateButton(QtViewerPushButton):
         self._onstate = onstate
         self._offstate = offstate
         self._events = events
-        self._events.connect(self._on_change)
+        if events:
+            self._events.connect(self._on_change)
+
         self.clicked.connect(self.change)
         self._on_change()
 
@@ -320,6 +322,7 @@ class QtStateButton(QtViewerPushButton):
             newstate = self._onstate
         else:
             newstate = self._offstate
+
         setattr(self._target, self._attribute, newstate)
 
     def _on_change(self, event=None):
@@ -330,8 +333,9 @@ class QtStateButton(QtViewerPushButton):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self._events.blocker():
-            if self.isChecked() != (
-                getattr(self._target, self._attribute) == self._onstate
-            ):
-                self.toggle()
+        if self._events:
+            with self._events.blocker():
+                if self.isChecked() != (
+                    getattr(self._target, self._attribute) == self._onstate
+                ):
+                    self.toggle()

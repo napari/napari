@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QLabel,
+    QListWidget,
     QMainWindow,
     QMenu,
     QShortcut,
@@ -40,6 +41,7 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from .widgets.qt_sidebar import QtSideBar
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
@@ -300,6 +302,7 @@ class Window:
         self._add_window_menu()
         self._add_plugins_menu()
         self._add_help_menu()
+        self._add_sidebars()
 
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
@@ -1239,3 +1242,30 @@ class Window:
             self.qt_viewer.close()
             self._qt_window.close()
             del self._qt_window
+
+    def _add_sidebars(self):
+        self._left_sidebar = QtSideBar(self._qt_window, "left")
+        self._right_sidebar = QtSideBar(self._qt_window, "right")
+        self._qt_window.addToolBar(Qt.LeftToolBarArea, self._left_sidebar)
+        self._qt_window.addToolBar(Qt.RightToolBarArea, self._right_sidebar)
+
+        list_1 = QListWidget(self._qt_window)
+        list_1.addItem("Hello World!")
+        list_1.addItem("Hello World!")
+        list_2 = QListWidget(self._qt_window)
+        list_2.addItem("List 2!")
+        list_2.addItem("List 2!")
+        list_2.addItem("List 2!")
+        list_3 = QListWidget(self._qt_window)
+        list_3.addItem("List 3!")
+        list_3.addItem("List 3!")
+        list_3.addItem("List 3!")
+        list_3.addItem("List 3!")
+
+        self._left_sidebar.add_widget(
+            "sidebar_plugins", trans._("Plugins"), list_1
+        )
+        self._left_sidebar.add_widget(
+            "sidebar_other", trans._("Other"), list_2
+        )
+        self._right_sidebar.add_widget("sidebar_help", trans._("Help"), list_3)
