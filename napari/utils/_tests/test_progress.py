@@ -5,8 +5,16 @@ pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 from napari.utils.progress import ProgressBar, progress    # noqa
 
 
-def activity_dock_children(viewer):
-    return viewer.window.qt_viewer.activityDock.children()[4].children()
+from contextlib import contextmanager
+
+def qt_viewer_has_pbar(qt_viewer):
+    return bool(qt_viewer.activityDock.widget().findChild(ProgressBar))
+
+@contextmanager
+def assert_pbar_added_to(viewer):
+    assert not qt_viewer_has_pbar(viewer.window.qt_viewer)
+    yield
+    assert qt_viewer_has_pbar(viewer.window.qt_viewer)
 
 
 def test_progress_with_iterable(make_napari_viewer):
