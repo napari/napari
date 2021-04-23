@@ -132,33 +132,18 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def _update_gui_elements(self, name):
-        """
-        Update the description and shortcuts of all the (known) gui elements.
-        """
-        if name not in self._actions:
-            return
-        buttons = self._buttons.get(name, [])
-        desc = self._actions[name].description
-
-        # update buttons with shortcut and description
-        if name in self._shortcuts:
-            sht = self._shortcuts[name]
-            sht_str = f' ({Shortcut(sht).platform})'
-        else:
-            sht = ''
-            sht_str = ''
-
+    def _update_buttons(self, buttons, tooltip, callback):
         for button in buttons:
-            button.setToolTip(desc + sht_str)
-            action = self._actions[name]
+            button.setToolTip(tooltip)
 
             try:
                 # not sure how to check whether things are connected already
-                button.clicked.disconnect(action.callable(self.context))
+                button.clicked.disconnect(callback)
             except Exception:
                 pass
-            button.clicked.connect(action.callable(self.context))
+            button.clicked.connect(callback)
+
+    def _update_qactions(self, name):
         if name in self._qactions:
             action = self._actions[name]
             qaction = self._qactions[name]
@@ -178,6 +163,28 @@ class ActionManager:
                 menu_name = ' '.join(components)
             qaction.setText(menu_name)
             qaction.setStatusTip(action.description)
+
+    def _update_gui_elements(self, name):
+        """
+        Update the description and shortcuts of all the (known) gui elements.
+        """
+        if name not in self._actions:
+            return
+        buttons = self._buttons.get(name, [])
+        desc = self._actions[name].description
+
+        # update buttons with shortcut and description
+        if name in self._shortcuts:
+            sht = self._shortcuts[name]
+            sht_str = f' ({Shortcut(sht).platform})'
+        else:
+            sht = ''
+            sht_str = ''
+
+        callable_ = self._actions[name].callable(self.context)
+        self._update_buttons(buttons, desc + sht_str, callable_)
+
+        self._update_qactions(name)
 
     def _update_shortcut_bindings(self, name):
         """
