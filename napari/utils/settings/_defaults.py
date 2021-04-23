@@ -272,6 +272,7 @@ class ApplicationSettings(BaseNapariSettings):
             "console_notification_level",
             "open_history",
             "save_history",
+            "ipy_interactive",
         ]
 
 
