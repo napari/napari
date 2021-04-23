@@ -991,6 +991,7 @@ class Labels(_image_base_class):
         """
         shape = self.data.shape
         dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
+        dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
         if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if self.n_edit_dimensions < self.ndim:
@@ -1039,9 +1040,9 @@ class Labels(_image_base_class):
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
             if self.n_edit_dimensions < self.ndim:
-                for j, i in enumerate(self._dims_displayed):
+                for j, i in enumerate(dims_to_paint):
                     slice_coord[i] = slice_coord_temp[j]
-                for i in self._dims_not_displayed:
+                for i in dims_not_painted:
                     slice_coord[i] = slice_coord[i] * np.ones(
                         mask_indices.shape[0], dtype=int
                     )
