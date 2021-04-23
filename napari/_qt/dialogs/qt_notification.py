@@ -88,9 +88,11 @@ class NapariQtNotification(QDialog):
                     # TODO: making the canvas the parent makes it easier to
                     # move/resize, but also means that the notification can get
                     # clipped on the left if the canvas is too small.
-                    canvas = wdg.centralWidget().children()[1].canvas.native
-                    self.setParent(canvas)
-                    canvas.resized.connect(self.move_to_bottom_right)
+                    qt_viewer = wdg.centralWidget().children()[1]
+                    self.setParent(qt_viewer._canvas_overlay)
+                    qt_viewer._canvas_overlay.resized.connect(
+                        self.move_to_bottom_right
+                    )
                     break
                 except Exception:
                     pass
