@@ -59,10 +59,11 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_highlight_change(self, event=None):
-        # Compute the vertices and faces of any shape outlines
-        vertices, faces = self.layer._outline_shapes()
 
         self.layer._highlight_width = SETTINGS.appearance.highlight_thickness
+
+        # Compute the vertices and faces of any shape outlines
+        vertices, faces = self.layer._outline_shapes()
 
         if vertices is None or len(vertices) == 0 or len(faces) == 0:
             vertices = np.zeros((3, self.layer._ndisplay))
