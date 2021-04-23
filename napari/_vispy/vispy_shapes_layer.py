@@ -62,12 +62,16 @@ class VispyShapesLayer(VispyBaseLayer):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
 
+        self.layer._highlight_width = SETTINGS.appearance.highlight_thickness
+
         if vertices is None or len(vertices) == 0 or len(faces) == 0:
             vertices = np.zeros((3, self.layer._ndisplay))
             faces = np.array([[0, 1, 2]])
 
         self.node._subvisuals[1].set_data(
-            vertices=vertices, faces=faces, color=self.layer._highlight_color
+            vertices=vertices,
+            faces=faces,
+            color=self.layer._highlight_color,
         )
 
         # Compute the location and properties of the vertices and box that
