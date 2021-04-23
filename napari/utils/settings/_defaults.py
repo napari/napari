@@ -236,6 +236,11 @@ class ApplicationSettings(BaseNapariSettings):
         title=trans._("Save Window Geometry"),
         description=trans._("Save window size and position."),
     )
+    save_window_state: bool = Field(
+        True,
+        title=trans._("Save Window State"),
+        description=trans._("Save window state of dock widgets."),
+    )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
     window_maximized: bool = None
