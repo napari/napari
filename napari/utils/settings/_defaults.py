@@ -160,6 +160,14 @@ class Language(str):
         return v
 
 
+class HighlightThickness(int):
+    """Highlight thickness to use when hovering over shapes/points."""
+
+    highlight_thickness = 1
+    minimum = 1
+    maximum = 10
+
+
 class QtBindingChoice(str, Enum):
     """Python Qt binding to use with the application."""
 
@@ -191,6 +199,12 @@ class AppearanceSettings(BaseNapariSettings):
         "dark",
         title=trans._("Theme"),
         description=trans._("Theme selection."),
+    )
+
+    highlight_thickness: HighlightThickness = Field(
+        1,
+        description="Customize the highlight weight indicating "
+        + "selected shapes and points.",
     )
 
     class Config:

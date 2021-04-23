@@ -2,6 +2,7 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
 
 from ..utils.events import disconnect_events
+from ..utils.settings import SETTINGS
 from ._text_utils import update_text
 from .vispy_base_layer import VispyBaseLayer
 
@@ -79,6 +80,8 @@ class VispyShapesLayer(VispyBaseLayer):
             width,
         ) = self.layer._compute_vertices_and_box()
 
+        width = SETTINGS.appearance.highlight_thickness
+
         if vertices is None or len(vertices) == 0:
             vertices = np.zeros((1, self.layer._ndisplay))
             size = 0
@@ -90,7 +93,7 @@ class VispyShapesLayer(VispyBaseLayer):
             size=size,
             face_color=face_color,
             edge_color=edge_color,
-            edge_width=1.5,
+            edge_width=width,
             symbol='square',
             scaling=False,
         )
