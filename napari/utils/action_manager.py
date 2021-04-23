@@ -56,6 +56,18 @@ class Action:
 
 
 class ButtonWrapper:
+    """
+    Pyside seem to have an issue where calling disconnect/connect
+    seem to segfault.
+
+    We wrap our buttons in this to no call disconnect and reconnect the same callback
+    When not necessary.
+
+    This also make it simpler to make connecting a callback idempotent, and make
+    it easier to re-update all gui elements when a shortcut or description is
+    changed.
+    """
+
     def __init__(self, button):
         """
         wrapper around button to disconnect an action only
@@ -67,7 +79,7 @@ class ButtonWrapper:
     def setToolTip(self, *args, **kwargs):
         return self._button.setToolTip(*args, **kwargs)
 
-    def click_maybe_connect(self, callback):
+    def clicked_maybe_connect(self, callback):
         if callback is not self._connected:
             if self._connected is not None:
                 self._button.clicked.disconnect(self._connected)
@@ -163,16 +175,7 @@ class ActionManager:
         for button in buttons:
             # test if only tooltip makes crash
             button.setToolTip(tooltip)
-
-            # for sure this segfault pyside
-            # try:
-            #    # not sure how to check whether things are connected already
-            #    button.clicked.disconnect(callback)
-            # except Exception:
-            #    pass
-            # Comment only connect callbacks for now
-            # does this ?
-            button.click_maybe_connect(callback)
+            button.clicked_maybe_connect(callback)
 
     def _update_qactions(self, name):
         if name in self._qactions:
