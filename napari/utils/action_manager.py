@@ -128,15 +128,6 @@ class ActionManager:
             tooltips.
 
         """
-        # if name in self._actions:
-        #    import warnings
-
-        #    warnings.warn(
-        #        f'Warning, action {name} already exists, make sure '
-        #        'you are not overwriting an existing action',
-        #        stacklevel=2,
-        #    )
-        assert description is not None
         self._actions[name] = Action(command, description, keymapprovider)
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
