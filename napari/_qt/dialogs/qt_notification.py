@@ -91,7 +91,6 @@ class NapariQtNotification(QDialog):
             viewer_instance._canvas_overlay.resized.connect(
                 self.move_to_bottom_right
             )
-            break
         except Exception:
             pass
 
