@@ -295,9 +295,9 @@ class Labels(_image_base_class):
             stacklevel=2,
         )
         if n_dimensional:
-            self._n_edit_dimensions = self.ndim
+            self.n_edit_dimensions = self.ndim
         else:
-            self._n_edit_dimensions = 2
+            self.n_edit_dimensions = 2
         self.events.n_dimensional()
 
     @property
