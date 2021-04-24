@@ -140,7 +140,7 @@ class progress(tqdm):
         if not self.has_viewer:
             return super().display(msg=msg, pos=pos)
 
-        etas = self.get_formatted_etas()
+        etas = str(self).split('|')[-1]
         self._pbar._set_value(self.n)
         self._pbar._set_eta(etas)
         QApplication.processEvents()
@@ -150,17 +150,6 @@ class progress(tqdm):
         super().set_description(desc, refresh=True)
         if self.has_viewer:
             self._pbar._set_description(self.desc)
-
-    def get_formatted_etas(self):
-        """Strip ascii formatted progress bar and return formatted etas.
-
-        Returns
-        -------
-        str
-            formatted eta and remaining iteration details
-        """
-        formatted_bar = str(self)
-        return formatted_bar.split("|")[-1]
 
     def hide(self):
         """Hide the progress bar"""
