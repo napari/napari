@@ -23,6 +23,8 @@ from ..utils import disable_with_opacity
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
+INT32_MAX = 2 ** 31 - 1
+
 
 class QtLabelsControls(QtLayerControls):
     """Qt view and controls for the napari Labels layer.
@@ -84,12 +86,16 @@ class QtLabelsControls(QtLayerControls):
         )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
+        iinfo = np.iinfo(self.layer.data.dtype)
+
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.setSingleStep(1)
+        # spinboxes use i32 internally
+        # use the smaller range of i32 and label dtype
         self.selectionSpinBox.setMinimum(0)
-        self.selectionSpinBox.setMaximum(1024)
+        self.selectionSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
@@ -121,8 +127,10 @@ class QtLabelsControls(QtLayerControls):
         self.contourSpinBox = contour_sb
         self.contourSpinBox.setKeyboardTracking(False)
         self.contourSpinBox.setSingleStep(1)
+        # spinboxes use i32 internally
+        # use the smaller range of i32 and label dtype
         self.contourSpinBox.setMinimum(0)
-        self.contourSpinBox.setMaximum(2147483647)
+        self.contourSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.contourSpinBox.setAlignment(Qt.AlignCenter)
         self._on_contour_change()
 

@@ -5,6 +5,7 @@ from vispy.visuals.transforms import STTransform
 from ..components._viewer_constants import Position
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.theme import get_theme
+from ..utils.translations import trans
 
 
 class VispyScaleBarVisual:
@@ -165,8 +166,11 @@ class VispyScaleBarVisual:
             ]
         else:
             raise ValueError(
-                f'Position {self._viewer.scale_bar.position}'
-                ' not recognized.'
+                trans._(
+                    'Position {position} not recognized.',
+                    deferred=True,
+                    position=self._viewer.scale_bar.position,
+                )
             )
 
         scale = abs(self.node.transform.scale[0])

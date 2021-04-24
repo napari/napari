@@ -150,6 +150,7 @@ class QtWidgetOverlay(QStackedWidget):
     """
 
     sig_dropped = Signal("QEvent")
+    resized = Signal()
 
     def __init__(self, parent, widget):
         super().__init__(parent)
@@ -167,3 +168,7 @@ class QtWidgetOverlay(QStackedWidget):
     def set_welcome_visible(self, visible=True):
         """Show welcome screen widget on stack."""
         self.setCurrentIndex(int(visible))
+
+    def resizeEvent(self, event):
+        self.resized.emit()
+        return super().resizeEvent(event)

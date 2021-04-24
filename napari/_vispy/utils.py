@@ -9,6 +9,7 @@ from ..layers import (
     Vectors,
 )
 from ..utils.config import async_octree
+from ..utils.translations import trans
 from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -56,5 +57,9 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
             return visual_class(layer)
 
     raise TypeError(
-        f'Could not find VispyLayer for layer of type {type(layer)}'
+        trans._(
+            'Could not find VispyLayer for layer of type {dtype}',
+            deferred=True,
+            dtype=type(layer),
+        )
     )

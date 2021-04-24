@@ -10,6 +10,7 @@ import numpy as np
 
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
+from ....utils.translations import trans
 from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
@@ -218,7 +219,13 @@ class _OctreeImageBase(_ImageBase):
         # Quickly check for less than 0. We can't check for a level
         # that's too high because the Octree might have extended levels?
         if level < 0:
-            raise ValueError(f"Octree level {level} is negative.")
+            raise ValueError(
+                trans._(
+                    "Octree level {level} is negative.",
+                    deferred=True,
+                    level=level,
+                )
+            )
 
         self._data_level = level
         self.events.octree_level()

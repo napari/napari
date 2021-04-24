@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..utils.misc import is_sequence
+from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 
@@ -58,7 +59,10 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
+            trans._(
+                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
+                QBYTE_FLAG=QBYTE_FLAG,
+            )
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -248,7 +252,9 @@ def combine_widgets(
             container.layout.addStretch()
         return container
     else:
-        raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+        raise TypeError(
+            trans._('"widget" must be a QWidget or a sequence of QWidgets')
+        )
 
 
 def delete_qapp(app):

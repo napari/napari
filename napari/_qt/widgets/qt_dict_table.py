@@ -81,7 +81,11 @@ class QtDictTable(QTableWidget):
         if not isinstance(data, list) or any(
             not isinstance(i, dict) for i in data
         ):
-            raise ValueError("'data' argument must be a list of dicts")
+            raise ValueError(
+                trans._(
+                    "'data' argument must be a list of dicts", deferred=True
+                )
+            )
         nrows = len(data)
         _headers = sorted(set().union(*data))
         if headers:

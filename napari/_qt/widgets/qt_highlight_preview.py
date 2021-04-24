@@ -530,7 +530,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             self._refresh()
         else:
             raise ValueError(
-                f"Minimum value must be smaller than {self._max_value}"
+                trans._(
+                    "Minimum value must be smaller than {max_value}",
+                    deferred=True,
+                    max_value=self._max_value,
+                )
             )
 
     def minimum(self):
@@ -565,7 +569,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             self._refresh()
         else:
             raise ValueError(
-                f"Maximum value must be larger than {self._min_value}"
+                trans._(
+                    "Maximum value must be larger than {min_value}",
+                    deferred=True,
+                    min_value=self._min_value,
+                )
             )
 
     def maximum(self):

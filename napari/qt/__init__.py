@@ -13,8 +13,7 @@ class QtNDisplayButton(QtStateButton):
     def __init__(self, viewer):
         warnings.warn(
             trans._(
-                "QtNDisplayButton is deprecated and will be removed in 0.4.9."
-                " Instead a more general QtStateButton is provided."
+                "QtNDisplayButton is deprecated and will be removed in 0.4.9. Instead a more general QtStateButton is provided."
             ),
             stacklevel=2,
         )

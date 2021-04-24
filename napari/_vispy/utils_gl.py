@@ -9,6 +9,8 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.gloo.context import get_current_canvas
 
+from ..utils.translations import trans
+
 texture_dtypes = [
     np.dtype(np.int8),
     np.dtype(np.uint8),
@@ -90,6 +92,11 @@ def fix_data_dtype(data):
             ]
         except KeyError:  # not an int or float
             raise TypeError(
-                f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
+                trans._(
+                    'type {dtype} not allowed for texture; must be one of {textures}',  # noqa: E501
+                    deferred=True,
+                    dtype=dtype,
+                    textures=set(texture_dtypes),
+                )
             )
         return data.astype(dtype)

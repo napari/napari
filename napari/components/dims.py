@@ -5,6 +5,7 @@ from pydantic import root_validator, validator
 from typing_extensions import Literal  # Added to typing in 3.8
 
 from ..utils.events import EventedModel
+from ..utils.translations import trans
 
 
 class Dims(EventedModel):
@@ -122,7 +123,12 @@ class Dims(EventedModel):
         # Check the order is a permutation of 0, ..., ndim - 1
         if not set(values['order']) == set(range(ndim)):
             raise ValueError(
-                f"Invalid ordering {values['order']} for {ndim} dimensions"
+                trans._(
+                    "Invalid ordering {order} for {ndim} dimensions",
+                    deferred=True,
+                    order=values['order'],
+                    ndim=ndim,
+                )
             )
 
         # Check the axis labels tuple has same number of elements as ndim
@@ -351,9 +357,12 @@ def assert_axis_in_bounds(axis: int, ndim: int) -> int:
         The given axis index is out of bounds.
     """
     if axis not in range(-ndim, ndim):
-        msg = (
-            f'Axis {axis} not defined for dimensionality {ndim}. '
-            f'Must be in [{-ndim}, {ndim}).'
+        msg = trans._(
+            'Axis {axis} not defined for dimensionality {ndim}. Must be in [{ndim_lower}, {ndim}).',
+            deferred=True,
+            axis=axis,
+            ndim=ndim,
+            ndim_lower=-ndim,
         )
         raise ValueError(msg)
 

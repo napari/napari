@@ -25,6 +25,7 @@
     - file: developers/code_of_conduct_reporting
     - file: developers/contributing
     - file: developers/core_dev_guide
+    - file: developers/docs
     - file: developers/governance
     - file: developers/mission_and_values
     - file: developers/release

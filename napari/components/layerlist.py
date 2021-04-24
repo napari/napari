@@ -8,6 +8,7 @@ import numpy as np
 from ..layers import Layer
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
+from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
@@ -90,8 +91,10 @@ class LayerList(SelectableEventedList[Layer]):
     def selected(self):
         """List of selected layers."""
         warnings.warn(
-            "'viewer.layers.selected' is deprecated and will be removed in or "
-            "after v0.4.9. Please use 'viewer.layers.selection'",
+            trans._(
+                "'viewer.layers.selected' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection'",
+                deferred=True,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -131,10 +134,11 @@ class LayerList(SelectableEventedList[Layer]):
             Layer that should not be unselected if specified.
         """
         warnings.warn(
-            "'viewer.layers.unselect_all()' is deprecated and will be removed "
-            "in or after v0.4.9. Please use 'viewer.layers.selection.clear()'."
-            " To unselect everything but a set of ignored layers, use "
-            r"'viewer.layers.selection.intersection_update({ignored})'",
+            trans._(
+                "'viewer.layers.unselect_all()' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection.clear()'. To unselect everything but a set of ignored layers, use 'viewer.layers.selection.intersection_update({ignored})'",
+                deferred=True,
+                ignored=ignore,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -181,7 +185,10 @@ class LayerList(SelectableEventedList[Layer]):
                 # behaviour is acceptable and we can filter the
                 # warning
                 warnings.filterwarnings(
-                    'ignore', message='All-NaN axis encountered'
+                    'ignore',
+                    message=str(
+                        trans._('All-NaN axis encountered', deferred=True)
+                    ),
                 )
                 min_v = np.nanmin(
                     list(itertools.zip_longest(*mins, fillvalue=np.nan)),
@@ -310,8 +317,13 @@ class LayerList(SelectableEventedList[Layer]):
 
         layers = list(self.selection) if selected else list(self)
 
+        if selected:
+            msg = trans._("No layers selected", deferred=True)
+        else:
+            msg = trans._("No layers to save", deferred=True)
+
         if not layers:
-            warnings.warn(f"No layers {'selected' if selected else 'to save'}")
+            warnings.warn(msg)
             return []
 
         return save_layers(path, layers, plugin=plugin)

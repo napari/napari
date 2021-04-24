@@ -87,9 +87,11 @@ class NapariQtNotification(QDialog):
             # TODO: making the canvas the parent makes it easier to
             # move/resize, but also means that the notification can get
             # clipped on the left if the canvas is too small.
-            canvas = viewer_instance.canvas.native
-            self.setParent(canvas)
-            canvas.resized.connect(self.move_to_bottom_right)
+            self.setParent(viewer_instance._canvas_overlay)
+            viewer_instance._canvas_overlay.resized.connect(
+                self.move_to_bottom_right
+            )
+            break
         except Exception:
             pass
 
@@ -279,7 +281,7 @@ class NapariQtNotification(QDialog):
 
             def call_back_with_self(callback, self):
                 """
-                we need a higher order function this to capture the reference to self.
+                We need a higher order function this to capture the reference to self.
                 """
 
                 def _inner():
@@ -325,15 +327,16 @@ class NapariQtNotification(QDialog):
                 text = QTextEdit()
                 text.setHtml(notification.as_html())
                 text.setReadOnly(True)
-                btn = QPushButton('Enter Debugger')
+                btn = QPushButton(trans._('Enter Debugger'))
 
                 def _enter_debug_mode():
                     btn.setText(
-                        'Now Debugging. Please quit debugger in console '
-                        'to continue'
+                        trans._(
+                            'Now Debugging. Please quit debugger in console to continue'
+                        )
                     )
                     _debug_tb(notification.exception.__traceback__)
-                    btn.setText('Enter Debugger')
+                    btn.setText(trans._('Enter Debugger'))
 
                 btn.clicked.connect(_enter_debug_mode)
                 tbdialog.layout().addWidget(text)
