@@ -275,7 +275,8 @@ class Labels(_image_base_class):
         warnings.warn(
             trans._(
                 'Labels.n_dimensional is deprecated. '
-                'Use Labels.n_edit_dimensions instead.'
+                'Use Labels.n_edit_dimensions instead.',
+                deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
@@ -287,7 +288,8 @@ class Labels(_image_base_class):
         warnings.warn(
             trans._(
                 'Labels.n_dimensional is deprecated. '
-                'Use Labels.n_edit_dimensions instead.'
+                'Use Labels.n_edit_dimensions instead.',
+                deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
