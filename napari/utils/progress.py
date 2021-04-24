@@ -160,10 +160,7 @@ class progress(tqdm):
             formatted eta and remaining iteration details
         """
         formatted_bar = str(self)
-        if "|" in formatted_bar:
-            return formatted_bar.split("|")[-1]
-        else:
-            return ""
+        return formatted_bar.split("|")[-1]
 
     def hide(self):
         """Hide the progress bar"""
