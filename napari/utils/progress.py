@@ -140,21 +140,7 @@ class progress(tqdm):
         if not self.has_viewer:
             return super().display(msg=msg, pos=pos)
 
-        eta_params = {
-            k: self.format_dict[k]
-            for k in [
-                'n',
-                'total',
-                'elapsed',
-                'unit',
-                'unit_scale',
-                'rate',
-                'unit_divisor',
-                'initial',
-            ]
-        }
-        etas = self.format_time(**eta_params)
-
+        etas = self.get_formatted_etas()
         self._pbar._set_value(self.n)
         self._pbar._set_eta(etas)
         QApplication.processEvents()
@@ -165,117 +151,19 @@ class progress(tqdm):
         if self.has_viewer:
             self._pbar._set_description(self.desc)
 
-    @staticmethod
-    def format_time(
-        n,
-        total,
-        elapsed,
-        unit='it',
-        unit_scale=False,
-        rate=None,
-        unit_divisor=1000,
-        initial=0,
-    ):
-        """Formats iteration and time estimates for display.
-
-        Taken from tqdm.format_meter, this function computes and formats estimates
-        for iterations per second, iterations remaining and current elapsed time.
-
-        All parameters are filtered from self.format_dict
-
-        Parameters
-        ----------
-        n  : int or float
-            Number of finished iterations.
-        total  : int or float
-            The expected total number of iterations. If meaningless (None),
-            only basic progress statistics are displayed (no ETA).
-        elapsed  : float
-            Number of seconds passed since start.
-        unit  : str, optional
-            The iteration unit [default: 'it'].
-        unit_scale  : bool or int or float, optional
-            If 1 or True, the number of iterations will be printed with an
-            appropriate SI metric prefix (k = 10^3, M = 10^6, etc.)
-            [default: False]. If any other non-zero number, will scale
-            `total` and `n`.
-        rate  : float, optional
-            Manual override for iteration rate.
-            If [default: None], uses n/elapsed.
-        unit_divisor  : float, optional
-            [default: 1000], ignored unless `unit_scale` is True.
-        initial  : int or float, optional
-            The initial counter value [default: 0].
+    def get_formatted_etas(self):
+        """Strip ascii formatted progress bar and return formatted etas.
 
         Returns
         -------
         str
-            formatted estimates ready for display
+            formatted eta and remaining iteration details
         """
-
-        # sanity check: total
-        if total and n >= (total + 0.5):  # allow float imprecision (#849)
-            total = None
-
-        # apply custom scale if necessary
-        if unit_scale and unit_scale not in (True, 1):
-            if total:
-                total *= unit_scale
-            n *= unit_scale
-            if rate:
-                rate *= (
-                    unit_scale  # by default rate = self.avg_dn / self.avg_dt
-                )
-            unit_scale = False
-
-        elapsed_str = tqdm.format_interval(elapsed)
-        # if unspecified, attempt to use rate = average speed
-        # (we allow manual override since predicting time is an arcane art)
-        if rate is None and elapsed:
-            rate = (n - initial) / elapsed
-        inv_rate = 1 / rate if rate else None
-        format_sizeof = tqdm.format_sizeof
-        rate_noinv_fmt = (
-            (
-                (format_sizeof(rate) if unit_scale else f'{rate:5.2f}')
-                if rate
-                else '?'
-            )
-            + unit
-            + '/s'
-        )
-        rate_inv_fmt = (
-            (
-                (format_sizeof(inv_rate) if unit_scale else f'{inv_rate:5.2f}')
-                if inv_rate
-                else '?'
-            )
-            + 's/'
-            + unit
-        )
-        rate_fmt = (
-            rate_inv_fmt if inv_rate and inv_rate > 1 else rate_noinv_fmt
-        )
-
-        if unit_scale:
-            n_fmt = format_sizeof(n, divisor=unit_divisor)
-            total_fmt = (
-                format_sizeof(total, divisor=unit_divisor)
-                if total is not None
-                else '?'
-            )
+        formatted_bar = str(self)
+        if "|" in formatted_bar:
+            return formatted_bar.split("|")[-1]
         else:
-            n_fmt = str(n)
-            total_fmt = str(total) if total is not None else '?'
-
-        remaining = (total - n) / rate if rate and total else 0
-        remaining_str = tqdm.format_interval(remaining) if rate else '?'
-
-        bar_etas = ' {}/{} [{}<{}, {}]'.format(
-            n_fmt, total_fmt, elapsed_str, remaining_str, rate_fmt
-        )
-
-        return bar_etas
+            return ""
 
     def hide(self):
         """Hide the progress bar"""
