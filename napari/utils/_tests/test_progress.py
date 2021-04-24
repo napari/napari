@@ -1,14 +1,16 @@
+from contextlib import contextmanager
+
 import numpy as np
 import pytest
 
 pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
-from napari.utils.progress import ProgressBar, progress    # noqa
 
+from napari.utils.progress import ProgressBar, progress  # noqa
 
-from contextlib import contextmanager
 
 def qt_viewer_has_pbar(qt_viewer):
     return bool(qt_viewer.activityDock.widget().findChild(ProgressBar))
+
 
 @contextmanager
 def assert_pbar_added_to(viewer):
@@ -19,37 +21,38 @@ def assert_pbar_added_to(viewer):
 
 def test_progress_with_iterable(make_napari_viewer):
     viewer = make_napari_viewer()
-    r = range(100)
-    pbr = progress(r)
 
-    assert any(
-        isinstance(wdg, ProgressBar) for wdg in activity_dock_children(viewer)
-    )
+    with assert_pbar_added_to(viewer):
+        r = range(100)
+        pbr = progress(r)
+
     assert pbr.iterable is r
     assert pbr.n == 0
     assert pbr._pbar.pbar.maximum() == pbr.total == 100
 
+    pbr.close()
+
 
 def test_progress_with_ndarray(make_napari_viewer):
     viewer = make_napari_viewer()
-    iter = np.random.random((100, 100))
-    pbr = progress(iter)
 
-    assert any(
-        isinstance(wdg, ProgressBar) for wdg in activity_dock_children(viewer)
-    )
+    with assert_pbar_added_to(viewer):
+        iter = np.random.random((100, 100))
+        pbr = progress(iter)
+
     assert pbr.iterable is iter
     assert pbr.n == 0
     assert pbr._pbar.pbar.maximum() == pbr.total
 
+    pbr.close()
+
 
 def test_progress_with_total(make_napari_viewer):
     viewer = make_napari_viewer()
-    pbr = progress(total=5)
 
-    assert any(
-        isinstance(wdg, ProgressBar) for wdg in activity_dock_children(viewer)
-    )
+    with assert_pbar_added_to(viewer):
+        pbr = progress(total=5)
+
     assert pbr.n == 0
     assert pbr._pbar.pbar.maximum() == pbr.total == 5
 
@@ -62,13 +65,21 @@ def test_progress_with_total(make_napari_viewer):
 def test_progress_with_context(make_napari_viewer):
     viewer = make_napari_viewer()
 
-    with progress(range(100)) as pbr:
-        assert any(
-            isinstance(wdg, ProgressBar)
-            for wdg in activity_dock_children(viewer)
-        )
-        assert pbr.n == 0
-        assert pbr._pbar.pbar.maximum() == pbr.total == 100
+    with assert_pbar_added_to(viewer):
+        with progress(range(100)) as pbr:
+            assert pbr.n == 0
+            assert pbr._pbar.pbar.maximum() == pbr.total == 100
+
+
+def test_progress_no_viewer():
+    assert list(progress(range(10))) == list(range(10))
+
+    with progress(total=5) as pbr:
+        pbr.set_description('Test')
+        assert pbr.desc == "Test: "
+
+        pbr.update(3)
+        assert pbr.n == 3
 
 
 def test_progress_update(make_napari_viewer):
@@ -91,6 +102,8 @@ def test_progress_update(make_napari_viewer):
     assert pbr.n == 3
     assert pbr._pbar.pbar.value() == 3
 
+    pbr.close()
+
 
 def test_progress_set_description(make_napari_viewer):
     make_napari_viewer()
@@ -100,3 +113,5 @@ def test_progress_set_description(make_napari_viewer):
 
     assert pbr.desc == "Test: "
     assert pbr._pbar.description_label.text() == "Test: "
+
+    pbr.close()

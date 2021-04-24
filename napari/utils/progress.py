@@ -95,16 +95,16 @@ class progress(tqdm):
 
         # check if there's a napari viewer instance
         viewer = get_viewer_instance()
-        if viewer is not None:
+        self.has_viewer = viewer is not None
+        if self.has_viewer:
             kwargs['gui'] = True
 
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
 
         super().__init__(iterable, desc, total, *args, **kwargs)
-        if viewer is None:
+        if not self.has_viewer:
             return
-        self.viewer = viewer
 
         self._pbar = get_pbar(viewer, **pbar_kwargs)
         if self.total is not None:
@@ -128,7 +128,7 @@ class progress(tqdm):
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
-        if not self.viewer:
+        if not self.has_viewer:
             return super().display(msg=msg, pos=pos)
 
         eta_params = {
@@ -153,8 +153,8 @@ class progress(tqdm):
     def set_description(self, desc):
         """Update progress bar description"""
         super().set_description(desc, refresh=True)
-
-        self._pbar._set_description(self.desc)
+        if self.has_viewer:
+            self._pbar._set_description(self.desc)
 
     @staticmethod
     def format_time(
@@ -270,18 +270,20 @@ class progress(tqdm):
 
     def hide(self):
         """Hide the progress bar"""
-        self._pbar.hide()
+        if self.has_viewer:
+            self._pbar.hide()
 
     def show(self):
         """Show the progress bar"""
-        self._pbar.show()
+        if self.has_viewer:
+            self._pbar.show()
 
     def close(self):
         """Closes and deletes the progress bar widget"""
         if self.disable:
             return
-
-        self._pbar.close()
+        if self.has_viewer:
+            self._pbar.close()
         super().close()
 
 
