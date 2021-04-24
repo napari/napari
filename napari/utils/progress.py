@@ -55,7 +55,8 @@ class progress(tqdm):
     directly by wrapping an iterable or by providing a total number
     of expected updates.
 
-    See tqdm.tqdm API for valid args and kwargs: https://tqdm.github.io/docs/tqdm/
+    See tqdm.tqdm API for valid args and kwargs:
+    https://tqdm.github.io/docs/tqdm/
 
     Also, any keyword arguments to the :class:`ProgressBar` `QWidget`
     are also accepted and will be passed to the ``ProgressBar``.
@@ -74,13 +75,21 @@ class progress(tqdm):
     ...         for i in pbr:
     ...             sleep(delay)
 
-    or for manual updates:
+    or equivalently, using the `progrange` shorthand
+    ...     with progrange(steps) as pbr:
+    ...         for i in pbr:
+    ...             sleep(delay)
+
+    For manual updates:
 
     >>> def manual_updates(total):
     ...     pbr = progress(total=total)
     ...     sleep(10)
     ...     pbr.set_description("Step 1 Complete")
     ...     pbr.update(1)
+    ...     # must call pbr.close() when using outside for loop
+    ...     # or context manager
+    ...     pbr.close()
 
     """
 
@@ -285,6 +294,10 @@ class progress(tqdm):
         if self.has_viewer:
             self._pbar.close()
         super().close()
+
+
+def progrange(*args, **kwargs):
+    return progress(range(*args), **kwargs)
 
 
 class ProgressBar(QWidget):

@@ -5,7 +5,7 @@ import pytest
 
 pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 
-from napari.utils.progress import ProgressBar, progress  # noqa
+from napari.utils.progress import ProgressBar, progrange, progress  # noqa
 
 
 def qt_viewer_has_pbar(qt_viewer):
@@ -115,3 +115,7 @@ def test_progress_set_description(make_napari_viewer):
     assert pbr._pbar.description_label.text() == "Test: "
 
     pbr.close()
+
+
+def test_progrange():
+    assert progress(range(10)).iterable == progrange(10).iterable
