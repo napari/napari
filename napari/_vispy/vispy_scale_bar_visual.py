@@ -1,6 +1,7 @@
 import bisect
 
 import numpy as np
+import pint
 from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
 
@@ -29,8 +30,7 @@ class VispyScaleBarVisual:
         self._default_color = np.array([1, 0, 1, 1])
         self._target_length = 150
         self._scale = 1
-        self._px_size = 1
-        self._dimension: Dimension = NullDimension()
+        self._quantity = UNIT_REG("")  # unit-less
 
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
@@ -55,9 +55,6 @@ class VispyScaleBarVisual:
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)
         self._viewer.scale_bar.events.font_size.connect(self._on_text_change)
         self._viewer.scale_bar.events.unit.connect(self._on_dimension_change)
-        self._viewer.scale_bar.events.px_size.connect(
-            self._on_dimension_change
-        )
 
         self._on_visible_change(None)
         self._on_data_change(None)
@@ -67,30 +64,30 @@ class VispyScaleBarVisual:
 
     def _on_dimension_change(self, _evt=None):
         """Update dimension"""
-        self._px_size = (
-            1
-            if self._viewer.scale_bar.unit in ONE_PIXEL_SIZE
-            else self._viewer.scale_bar.px_size
-        )
-        self._dimension = get_dimension(self._viewer.scale_bar.unit)
+        self._quantity = UNIT_REG(self._viewer.scale_bar.unit)
         self._on_zoom_change(None, True)
 
-    def _calculate_best_length(self, px_length):
-        px_size = self._px_size
-        value = px_length * px_size
+    def _calculate_best_length(self, px_length: float):
+        # calculate new quantity based on the pixel length of the bar
+        current_quantity = self._quantity * px_length
+        # convert the value to compact representation
+        new_quantity = current_quantity.to_compact()
+        # calculate the scaling factor taking into account any conversion
+        # that might have occurred (e.g. um -> cm)
+        factor = current_quantity / new_quantity
 
-        new_value, new_units = self._dimension.calculate_preferred(value)
-        factor = value / new_value
-
-        index = bisect.bisect_left(PREFERRED_VALUES, new_value)
+        # select value closest to one of our preferred values
+        index = bisect.bisect_left(PREFERRED_VALUES, new_quantity.magnitude)
         if index > 0:
             # When we get the lowest index of the list, removing -1 will
             # return the last index.
             index -= 1
         new_value = PREFERRED_VALUES[index]
 
-        length_px = new_value * factor / px_size
-        return length_px, new_value, new_units
+        # get the new pixel length utilizing the user-specified units
+        length_px = ((new_value * factor) / self._quantity.magnitude).magnitude
+        new_quantity = new_value * new_quantity.units
+        return length_px, new_quantity
 
     def _on_zoom_change(self, _evt=None, force: bool = False):
         """Update axes length based on zoom scale."""
@@ -106,13 +103,13 @@ class VispyScaleBarVisual:
 
         scale_canvas2world = self._scale
         target_canvas_pixels = self._target_length
+        # convert desired length to world size
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
-        (
-            target_world_pixels_rounded,
-            new_value,
-            new_units,
-        ) = self._calculate_best_length(target_world_pixels)
+        # calculate the desired length as well as update the value and new units
+        target_world_pixels_rounded, new_dim = self._calculate_best_length(
+            target_world_pixels
+        )
         target_canvas_pixels_rounded = (
             target_world_pixels_rounded / scale_canvas2world
         )
@@ -127,7 +124,7 @@ class VispyScaleBarVisual:
 
         # Update scalebar and text
         self.node.transform.scale = [sign * scale, 1, 1, 1]
-        self.text_node.text = f"{new_value}{new_units}"
+        self.text_node.text = f'{new_dim:~}'
 
     def _on_data_change(self, event):
         """Change color and data of scale bar."""

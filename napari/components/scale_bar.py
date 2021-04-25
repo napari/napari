@@ -25,11 +25,9 @@ class ScaleBar(EventedModel):
         Background color of canvas. If scale bar is not colored
         then it has the color opposite of this color.
     font_size : int
-        Font size of the scale label
-    px_size : int
-        Scaling of single pixel
+        Font size of the scale label.
     unit : str
-        Unit to be used by the scale bar
+        Unit to be used by the scale bar.
     """
 
     visible: bool = False
@@ -38,4 +36,3 @@ class ScaleBar(EventedModel):
     position: Position = Position.BOTTOM_RIGHT
     font_size: int = 10
     unit: str = ""
-    px_size: int = 1
