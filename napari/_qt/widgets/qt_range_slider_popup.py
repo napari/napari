@@ -3,11 +3,11 @@ from functools import partial
 from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QDoubleValidator, QFont, QFontMetrics
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
+from qtrangeslider import QRangeSlider
 
 from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
-from ..utils import qt_signals_blocked
-from .qt_range_slider import QHRangeSlider, QVRangeSlider
+from ..utils import ResizeFilter, qt_signals_blocked
 
 
 class LabelEdit(QLineEdit):
@@ -127,19 +127,19 @@ class QRangeSliderPopup(QtPopup):
         self.precision = precision
 
         # create slider
-        self.slider = (
-            QHRangeSlider(parent=parent, **kwargs)
-            if horizontal
-            else QVRangeSlider(parent=parent, **kwargs)
-        )
+        orient = Qt.Horizontal if horizontal else Qt.Vertical
+        self.slider = QRangeSlider(orient, self)
         self.slider.setMinimumHeight(18)
         self.slider.setFocus()
-        self.slider.valuesChanged.connect(self._on_values_change)
+        self.slider.valueChanged.connect(self._on_values_change)
         self.slider.rangeChanged.connect(self._on_range_change)
-        self.slider.resized.connect(self._update_cur_label_positions)
+
+        resize_filter = ResizeFilter()
+        resize_filter.resized.connect(self._update_cur_label_positions)
+        self.slider.installEventFilter(resize_filter)
 
         # create "floating" min/max value labels
-        cmin, cmax = self.slider.values()
+        cmin, cmax = self.slider.value()
         get_min_pos = partial(getattr, self.slider, 'display_min')
         get_max_pos = partial(getattr, self.slider, 'display_max')
         self.curmin_label = LabelEdit(self._numformat(cmin), self, get_min_pos)
@@ -212,7 +212,7 @@ class QRangeSliderPopup(QtPopup):
             self.range_min_label.setText(self._numformat(cmin_))
             self.range_max_label.setText(self._numformat(cmax_))
             # changing range may also change values
-            vmin_, vmax_ = self.slider.values()
+            vmin_, vmax_ = self.slider.value()
             self.curmin_label.setText(self._numformat(vmin_))
             self.curmax_label.setText(self._numformat(vmax_))
 
@@ -220,17 +220,15 @@ class QRangeSliderPopup(QtPopup):
         """Update minimum value of current contrast range."""
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
-        if cmin > cmax:
-            cmin = cmax
-        self.slider.setValues((cmin, cmax))
+        cmin = min(cmin, cmax)
+        self.slider.setValue((cmin, cmax))
 
     def _curmax_label_changed(self):
         """Update maximum value of current contrast range."""
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
-        if cmax < cmin:
-            cmax = cmin
-        self.slider.setValues((cmin, cmax))
+        cmax = max(cmax, cmin)
+        self.slider.setValue((cmin, cmax))
 
     def _range_label_changed(self):
         """Update values for minimum & maximum slider range to match labels."""

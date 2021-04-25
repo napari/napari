@@ -382,20 +382,12 @@ QWidget[emphasized="true"] QSlider::handle:hover {
 }
 
 
-
 QRangeSlider {
   qproperty-barColor: {{ primary }};
-  qproperty-backgroundColor: {{ foreground }};
-  qproperty-handleColor: {{ highlight }};
-  qproperty-handleBorderColor: {{ highlight }};
-  min-height: 18px;
 }
 
 QWidget[emphasized="true"] QRangeSlider {
   qproperty-barColor: {{ highlight }};
-  qproperty-backgroundColor: {{ primary }};
-  qproperty-handleColor: {{ secondary }};
-  qproperty-handleBorderColor: {{ secondary }};
 }
 
 /* ----------------- QScrollBar ------------------ */
