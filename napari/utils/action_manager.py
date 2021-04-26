@@ -18,7 +18,7 @@ def call_with_context(function, context):
     """
     call function `function` with the corresponding value taken from context
 
-    This is use in the action manager to pass the rights instances to the actions,
+    This is use in the action manager to pass the right instances to the actions,
     without having the need for them to take a **kwarg, and is mostly needed when
     triggering actions via buttons, or to record.
 
