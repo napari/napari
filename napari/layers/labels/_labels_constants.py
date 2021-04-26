@@ -5,9 +5,6 @@ from enum import auto
 from ...utils.misc import StringEnum
 from ...utils.translations import trans
 
-# The highest integer representable by a float64
-MAX_FLOAT64_INT = 2 ** 53
-
 
 class Mode(StringEnum):
     """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
