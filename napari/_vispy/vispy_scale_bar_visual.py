@@ -1,11 +1,12 @@
+"""Scale Bar visual"""
 import bisect
 
 import numpy as np
-import pint
 from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
 
 from ..components._viewer_constants import Position
+from ..utils._units import PREFERRED_VALUES, UNIT_REG
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.theme import get_theme
 from ..utils.translations import trans
@@ -68,7 +69,7 @@ class VispyScaleBarVisual:
         self._on_zoom_change(None, True)
 
     def _calculate_best_length(self, px_length: float):
-        # calculate new quantity based on the pixel length of the bar
+        """calculate new quantity based on the pixel length of the bar."""
         current_quantity = self._quantity * px_length
         # convert the value to compact representation
         new_quantity = current_quantity.to_compact()
