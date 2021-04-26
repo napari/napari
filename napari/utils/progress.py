@@ -140,9 +140,10 @@ class progress(tqdm):
         if not self.has_viewer:
             return super().display(msg=msg, pos=pos)
 
-        etas = str(self).split('|')[-1]
-        self._pbar._set_value(self.n)
-        self._pbar._set_eta(etas)
+        if self.total != 0:
+            etas = str(self).split('|')[-1]
+            self._pbar._set_value(self.n)
+            self._pbar._set_eta(etas)
         QApplication.processEvents()
 
     def set_description(self, desc):
