@@ -8,7 +8,6 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QSlider,
-    QSpinBox,
     QWidget,
 )
 
@@ -20,6 +19,7 @@ from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
+from ..widgets.qt_arbitary_int_spinbox import ArbitraryIntDoubleSpinBox
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
@@ -86,16 +86,12 @@ class QtLabelsControls(QtLayerControls):
         )
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
-        iinfo = np.iinfo(self.layer.data.dtype)
-
         # selection spinbox
-        self.selectionSpinBox = QSpinBox()
+        self.selectionSpinBox = ArbitraryIntDoubleSpinBox(
+            self.layer.data.dtype
+        )
         self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.setSingleStep(1)
-        # spinboxes use i32 internally
-        # use the smaller range of i32 and label dtype
         self.selectionSpinBox.setMinimum(0)
-        self.selectionSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
@@ -121,16 +117,13 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dimensional_change()
 
-        contour_sb = QSpinBox()
+        contour_sb = ArbitraryIntDoubleSpinBox(self.layer.data.dtype)
         contour_sb.setToolTip(trans._('display contours of labels'))
         contour_sb.valueChanged.connect(self.change_contour)
         self.contourSpinBox = contour_sb
         self.contourSpinBox.setKeyboardTracking(False)
         self.contourSpinBox.setSingleStep(1)
-        # spinboxes use i32 internally
-        # use the smaller range of i32 and label dtype
         self.contourSpinBox.setMinimum(0)
-        self.contourSpinBox.setMaximum(min(iinfo.max, INT32_MAX))
         self.contourSpinBox.setAlignment(Qt.AlignCenter)
         self._on_contour_change()
 
@@ -390,7 +383,7 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.contour.blocker():
             value = self.layer.contour
-            self.contourSpinBox.setValue(int(value))
+            self.contourSpinBox.setValue(value)
 
     def _on_selected_label_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
@@ -402,7 +395,7 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
-            self.selectionSpinBox.setValue(int(value))
+            self.selectionSpinBox.setValue(value)
 
     def _on_brush_size_change(self, event=None):
         """Receive layer model brush size change event and update the slider.
