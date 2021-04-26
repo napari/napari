@@ -1,5 +1,11 @@
 """Text label model"""
+from typing import Optional
+
+from pydantic import validator
+
+from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import EventedModel
+from ..utils.events.custom_types import Array
 from ._viewer_constants import TextOverlayPosition
 
 
@@ -10,8 +16,8 @@ class TextOverlay(EventedModel):
     ----------
     visible : bool
         If label is visible or not
-    color : str
-        Color (hex) of the label
+    color : Optional[np.ndarray]
+        A (4,) color array of the text overlay
     font_size : int
         Size of the font
     position : str
@@ -25,7 +31,16 @@ class TextOverlay(EventedModel):
 
     # fields
     visible: bool = False
-    color: str = "#FFFFFF"
+    color: Optional[Array[float, (4,)]] = (1.0, 1.0, 1.0, 1.0)
     font_size: int = 10
     position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
     text: str = ""
+
+    @validator('color', pre=True)
+    def _coerce_color(cls, v):
+        if v is None:
+            return v
+        elif len(v) == 0:
+            return None
+        else:
+            return transform_color(v)[0]
