@@ -7,7 +7,20 @@ from qtpy.QtWidgets import QDoubleSpinBox
 logger = logging.getLogger(__name__)
 
 
-class ArbitraryIntDoubleSpinBox(QDoubleSpinBox):
+class QtLargeIntSpinBox(QDoubleSpinBox):
+    """
+    A class for integer spinboxes backed by a double (i.e. float64).
+
+    Qt's built-in ``QSpinBox`` is backed by a signed 32-bit integer.
+    This could become limiting, particularly in large dense segmentations.
+    This class behaves like a ``QSpinBox`` backed by a signed 54-bit integer.
+
+    Instances are associated with a ``numpy.dtype``
+    which can further constrain their maximum range,
+    and ensures that values are clamped and cast correctly
+    when using setter and getter methods.
+    """
+
     MAX_FLOAT64_INT = 2 ** 53
     MIN_FLOAT64_INT = -MAX_FLOAT64_INT
 

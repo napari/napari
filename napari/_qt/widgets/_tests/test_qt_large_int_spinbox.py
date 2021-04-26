@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ..qt_arbitary_int_spinbox import ArbitraryIntDoubleSpinBox
+from ..qt_large_int_spinbox import QtLargeIntSpinBox
 
 
 @pytest.mark.parametrize(
@@ -18,7 +18,7 @@ from ..qt_arbitary_int_spinbox import ArbitraryIntDoubleSpinBox
     ],
 )
 def test_clamp_dtype(qtbot, dtype):
-    spinbox = ArbitraryIntDoubleSpinBox(dtype)
+    spinbox = QtLargeIntSpinBox(dtype)
     iinfo = np.iinfo(dtype)
     assert spinbox.minimum() == iinfo.min
     assert spinbox.maximum() == iinfo.max
@@ -26,7 +26,7 @@ def test_clamp_dtype(qtbot, dtype):
 
 def test_clamp_float(qtbot):
     dtype = np.uint64
-    spinbox = ArbitraryIntDoubleSpinBox(dtype)
+    spinbox = QtLargeIntSpinBox(dtype)
     iinfo = np.iinfo(dtype)
     assert spinbox.minimum() == iinfo.min
     assert spinbox.maximum() < iinfo.max
@@ -34,7 +34,7 @@ def test_clamp_float(qtbot):
 
 def test_digitize_value(qtbot):
     dtype = np.dtype(np.uint32)
-    spinbox = ArbitraryIntDoubleSpinBox(dtype)
+    spinbox = QtLargeIntSpinBox(dtype)
 
     assert isinstance(spinbox.value(), dtype.type)
 
@@ -53,6 +53,6 @@ def test_event_emits_int(qtbot):
     def fn(value):
         assert isinstance(value, dtype.type)
 
-    spinbox = ArbitraryIntDoubleSpinBox(dtype)
+    spinbox = QtLargeIntSpinBox(dtype)
     spinbox.valueChanged.connect(fn)
     spinbox.setValue(1)
