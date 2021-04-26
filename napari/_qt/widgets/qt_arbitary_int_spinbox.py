@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QDoubleSpinBox
 
 logger = logging.getLogger(__name__)
@@ -9,6 +10,8 @@ logger = logging.getLogger(__name__)
 class ArbitraryIntDoubleSpinBox(QDoubleSpinBox):
     MAX_FLOAT64_INT = 2 ** 53
     MIN_FLOAT64_INT = -MAX_FLOAT64_INT
+
+    valueChanged = Signal(int)
 
     def __init__(self, dtype=int, parent=None):
         super().__init__(parent)
@@ -46,7 +49,7 @@ class ArbitraryIntDoubleSpinBox(QDoubleSpinBox):
         raise NotImplementedError
 
     def setValue(self, value):
-        return super().setValue(self._cast(value))
+        super().setValue(self._cast(value))
 
     def value(self):
         return self._cast(super().value())
