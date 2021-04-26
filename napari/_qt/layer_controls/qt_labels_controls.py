@@ -61,9 +61,6 @@ class QtLabelsControls(QtLayerControls):
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : qtpy.QtWidgets.QSpinBox
         Widget to select a specific label by its index.
-        Note that values are represented as float64,
-        as this allows 2**53+1 values, where an integer spinbox
-        only allows 2**31.
 
     Raises
     ------
