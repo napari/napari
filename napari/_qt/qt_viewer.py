@@ -282,7 +282,15 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
-        self.viewer.events.theme.connect(self.canvas._on_theme_change)
+        theme = self.viewer.events.theme
+
+        on_theme_change = self.canvas._on_theme_change
+        theme.connect(on_theme_change)
+
+        def disconnect():
+            theme.disconnect(on_theme_change)
+
+        self.canvas.destroyed.connect(disconnect)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""

@@ -204,6 +204,16 @@ class VispyAxesVisual:
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
 
+        # Note:
+        # There are issues on MacOS + GitHub action about destroyed
+        # C/C++ object during test if those don't get disconnected.
+        def set_none():
+            self.node._set_canvas(None)
+            self.text_node._set_canvas(None)
+
+        self.node.canvas._backend.destroyed.connect(set_none)
+        # End Note
+
         self._viewer.events.theme.connect(self._on_data_change)
         self._viewer.axes.events.visible.connect(self._on_visible_change)
         self._viewer.axes.events.colored.connect(self._on_data_change)
