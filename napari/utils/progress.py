@@ -147,7 +147,16 @@ class progress(tqdm):
         QApplication.processEvents()
 
     def increment(self):
+        """Update current value by 1."""
         self.update(1)
+
+    def increment_with_overflow(self):
+        """Update if not exceeding total, else set indeterminate range."""
+        if self.n == self.total:
+            self.total = 0
+            self._pbar.setRange(0, 0)
+        else:
+            self.update(1)
 
     def set_description(self, desc):
         """Update progress bar description"""

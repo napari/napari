@@ -474,7 +474,7 @@ def create_worker(
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    _progress: Optional[Dict[str, int]] = None,
+    _progress: Optional[Dict[str, Union[int, bool]]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -497,9 +497,11 @@ def create_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
-    _progress : Dict[str, int], optional
-        Mapping of 'total' to number of expected yields. Will connect progress
-        bar update to yields and display this progress in the viewer. By default
+    _progress: Dict[str, Union[int, bool]], optional
+        Mapping of total' to number of expected yields. Will connect progress
+        bar update to yields and display this progress in the viewer. If
+        'may_exceed_total' is True, will turn progress bar into an
+        indeterminate one when number of yields exceeds 'total'.By default
         None.
     _worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
@@ -591,7 +593,11 @@ def create_worker(
             )
 
         pbar = progress(total=_progress['total'])
-        worker.yielded.connect(pbar.increment)
+        indeterminate = _progress.get('may_exceed_total', False)
+        if indeterminate:
+            worker.yielded.connect(pbar.increment_with_overflow)
+        else:
+            worker.yielded.connect(pbar.increment)
         worker.finished.connect(pbar.close)
         worker.pbar = pbar
 
@@ -615,7 +621,7 @@ def thread_worker(
     function: Callable,
     start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    progress: Optional[Dict[str, int]] = None,
+    progress: Optional[Dict[str, Union[int, bool]]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
@@ -666,7 +672,9 @@ def thread_worker(
         worker class. by default None
     progress : Dict[str, int], optional
         Mapping of 'total' to number of expected yields. Will connect progress
-        bar update to yields and display this progress in the viewer. By default
+        bar update to yields and display this progress in the viewer. If
+        'may_exceed_total' is True, will turn progress bar into an
+        indeterminate one when number of `yields` exceeds 'total'. By default
         None. Must be used in conjunction with a generator function.
     worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
