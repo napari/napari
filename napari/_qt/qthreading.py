@@ -7,6 +7,8 @@ from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
 
+from napari.utils.progress import progress
+
 from ..utils.translations import trans
 
 
@@ -307,6 +309,7 @@ class GeneratorWorker(WorkerBase):
         self._paused = False
         # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
+        self.pbar = None
 
     def work(self):
         """Core event loop that calls the original function.
@@ -471,6 +474,7 @@ def create_worker(
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    _progress: Optional[Dict[str, int]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -493,6 +497,10 @@ def create_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
+    _progress : Dict[str, int], optional
+        Mapping of 'total' to number of expected yields. Will connect progress
+        bar update to yields and display this progress in the viewer. By default
+        None.
     _worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -517,6 +525,8 @@ def create_worker(
         If a worker_class is provided that is not a subclass of WorkerBase.
     TypeError
         If _connect is provided and is not a dict of ``{str: callable}``
+    TypeError
+        If _progress is provided and function is not a generator
 
     Examples
     --------
@@ -574,6 +584,17 @@ def create_worker(
                     )
                 getattr(worker, key).connect(v)
 
+    if _progress is not None:
+        if not isinstance(worker, GeneratorWorker):
+            raise TypeError(
+                "_progress argument was passed but worker is not GeneratorWorker"
+            )
+
+        pbar = progress(total=_progress['total'])
+        worker.yielded.connect(pbar.increment)
+        worker.finished.connect(pbar.close)
+        worker.pbar = pbar
+
     # if the user has not provided a default connection for the "errored"
     # signal... and they have not explicitly set ``ignore_errors=True``
     # Then rereaise any errors from the thread.
@@ -594,6 +615,7 @@ def thread_worker(
     function: Callable,
     start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    progress: Optional[Dict[str, int]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
@@ -642,6 +664,10 @@ def thread_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
+    progress : Dict[str, int], optional
+        Mapping of 'total' to number of expected yields. Will connect progress
+        bar update to yields and display this progress in the viewer. By default
+        None. Must be used in conjunction with a generator function.
     worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -685,6 +711,7 @@ def thread_worker(
         # underscore-prefixed version of the kwarg.
         kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
         kwargs['_connect'] = kwargs.get('_connect', connect)
+        kwargs['_progress'] = kwargs.get('_progress', progress)
         kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
         kwargs['_ignore_errors'] = kwargs.get('_ignore_errors', ignore_errors)
         return create_worker(

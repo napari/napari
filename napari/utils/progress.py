@@ -146,6 +146,9 @@ class progress(tqdm):
             self._pbar._set_eta(etas)
         QApplication.processEvents()
 
+    def increment(self):
+        self.update(1)
+
     def set_description(self, desc):
         """Update progress bar description"""
         super().set_description(desc, refresh=True)
