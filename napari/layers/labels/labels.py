@@ -11,6 +11,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _get_image_base_class
@@ -228,7 +229,13 @@ class Labels(_image_base_class):
             mode=Event,
             preserve_labels=Event,
             properties=Event,
-            n_dimensional=Event,
+            n_dimensional=WarningEmitter(
+                trans._(
+                    "'Labels.events.n_dimensional' is deprecated and will be removed in napari v0.4.9. Use 'Labels.event.n_edit_dimensions' instead.",
+                    deferred=True,
+                ),
+                type='n_dimensional',
+            ),
             n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
