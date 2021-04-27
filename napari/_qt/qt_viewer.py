@@ -43,7 +43,7 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarVisual,
-    VispyLabelVisual,
+    VispyTextVisual,
     create_vispy_visual,
 )
 
@@ -298,12 +298,14 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-        self.label = VispyLabelVisual(
+        self.text_overlay = VispyTextVisual(
             self.viewer,
             parent=self.view,
             order=1e6 + 2,
         )
-        self.canvas.events.resize.connect(self.label._on_position_change)
+        self.canvas.events.resize.connect(
+            self.text_overlay._on_position_change
+        )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
