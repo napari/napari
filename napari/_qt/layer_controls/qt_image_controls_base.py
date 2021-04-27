@@ -115,14 +115,26 @@ class QtBaseImageControls(QtLayerControls):
             The napari event that triggered this method.
         """
         if event.button() == Qt.RightButton:
-            self.clim_pop = create_range_popup(
-                self.layer, 'contrast_limits', parent=self
+            self.clim_pop = QRangeSliderPopup(self)
+            self.clim_pop.slider.setRange(*self.layer.contrast_limits_range)
+            self.clim_pop.slider.setValue(self.layer.contrast_limits)
+
+            set_values = partial(setattr, self.layer, 'contrast_limits')
+            set_range = partial(setattr, self.layer, 'contrast_limits_range')
+            self.clim_pop.slider.valueChanged.connect(set_values)
+            self.clim_pop.slider.rangeChanged.connect(set_range)
+            self.clim_pop.slider.valueChanged.connect(
+                lambda e: print("value changed", e)
             )
+            self.clim_pop.slider.rangeChanged.connect(
+                lambda e: print("range changed", e)
+            )
+
             self.clim_pop.finished.connect(self.clim_pop.deleteLater)
             reset, fullrange = create_clim_reset_buttons(self.layer)
-            self.clim_pop.layout.addWidget(reset)
+            self.clim_pop._layout.addWidget(reset)
             if fullrange is not None:
-                self.clim_pop.layout.addWidget(fullrange)
+                self.clim_pop._layout.addWidget(fullrange)
             self.clim_pop.move_to('top', min_length=650)
             self.clim_pop.show()
         else:
@@ -247,7 +259,6 @@ def create_range_popup(layer, attr, parent=None):
     popup = QRangeSliderPopup(
         initial_values=getattr(layer, attr),
         data_range=d_range,
-        collapsible=False,
         precision=(
             0
             if is_integer_type
@@ -263,7 +274,7 @@ def create_range_popup(layer, attr, parent=None):
 
     set_values = partial(setattr, layer, attr)
     set_range = partial(setattr, layer, range_attr)
-    popup.slider.valuesChanged.connect(set_values)
+    popup.slider.valueChanged.connect(set_values)
     popup.slider.rangeChanged.connect(set_range)
     return popup
 
