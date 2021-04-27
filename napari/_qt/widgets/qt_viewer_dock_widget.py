@@ -1,4 +1,5 @@
 from functools import reduce
+from itertools import count
 from operator import ior
 from typing import List, Optional
 
@@ -16,6 +17,8 @@ from qtpy.QtWidgets import (
 
 from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
+
+counter = count()
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -50,6 +53,7 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: Optional[List[str]] = None,
         shortcut=None,
         object_name: str = '',
+        add_stretch=True,
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
@@ -82,7 +86,7 @@ class QtViewerDockWidget(QDockWidget):
                     )
                 )
 
-            if not all(area in areas for area in allowed_areas):
+            if any(area not in areas for area in allowed_areas):
                 raise ValueError(
                     trans._(
                         'all allowed_areas argument must be in {areas}',
@@ -102,7 +106,7 @@ class QtViewerDockWidget(QDockWidget):
         is_vertical = area in {'left', 'right'}
         widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
-        if is_vertical:
+        if is_vertical and add_stretch:
             # add vertical stretch to the bottom of a vertical layout only
             # if there is not already a widget that wants vertical space
             # (like a textedit or something)
@@ -113,7 +117,7 @@ class QtViewerDockWidget(QDockWidget):
                 for i in range(wlayout.count())
                 if wlayout.itemAt(i).widget()
             ):
-                wlayout.addStretch()
+                wlayout.addStretch(next(counter))
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
