@@ -1,6 +1,9 @@
 """Units utilities."""
 import pint
 
+# UnitRegistry treats empty string as unit-less quantity
+NoUnit = ""
+
 # instantiate default unit registry
 UNIT_REG = pint.UnitRegistry()
 

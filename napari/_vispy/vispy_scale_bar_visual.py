@@ -6,7 +6,7 @@ from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
 
 from ..components._viewer_constants import Position
-from ..utils._units import PREFERRED_VALUES, UNIT_REG
+from ..utils._units import PREFERRED_VALUES, UNIT_REG, NoUnit
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.theme import get_theme
 from ..utils.translations import trans
@@ -31,7 +31,7 @@ class VispyScaleBarVisual:
         self._default_color = np.array([1, 0, 1, 1])
         self._target_length = 150
         self._scale = 1
-        self._quantity = UNIT_REG("")  # unit-less
+        self._quantity = UNIT_REG(NoUnit)
 
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
