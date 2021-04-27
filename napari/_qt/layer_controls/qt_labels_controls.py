@@ -78,7 +78,9 @@ class QtLabelsControls(QtLayerControls):
         )
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
-        self.layer.events.n_dimensional.connect(self._on_n_dimensional_change)
+        self.layer.events.n_edit_dimensions.connect(
+            self._on_n_edit_dimensions_change
+        )
         self.layer.events.contour.connect(self._on_contour_change)
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.events.preserve_labels.connect(
@@ -115,11 +117,15 @@ class QtLabelsControls(QtLayerControls):
         self.contigCheckBox = contig_cb
         self._on_contiguous_change()
 
-        ndim_cb = QCheckBox()
-        ndim_cb.setToolTip(trans._('edit all dimensions'))
-        ndim_cb.stateChanged.connect(self.change_ndim)
-        self.ndimCheckBox = ndim_cb
-        self._on_n_dimensional_change()
+        ndim_sb = QSpinBox()
+        self.ndimSpinBox = ndim_sb
+        ndim_sb.setToolTip(trans._('number of dimensions for label editing'))
+        ndim_sb.valueChanged.connect(self.change_n_edit_dim)
+        ndim_sb.setMinimum(2)
+        ndim_sb.setMaximum(self.layer.ndim)
+        ndim_sb.setSingleStep(1)
+        ndim_sb.setAlignment(Qt.AlignCenter)
+        self._on_n_edit_dimensions_change()
 
         contour_sb = QSpinBox()
         contour_sb.setToolTip(trans._('display contours of labels'))
@@ -242,19 +248,19 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.colorModeComboBox, 6, 1, 1, 3)
         self.grid_layout.addWidget(QLabel(trans._('contour:')), 7, 0, 1, 1)
         self.grid_layout.addWidget(self.contourSpinBox, 7, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('contiguous:')), 8, 0, 1, 1)
-        self.grid_layout.addWidget(self.contigCheckBox, 8, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel(trans._('n-dim:')), 8, 2, 1, 1)
-        self.grid_layout.addWidget(self.ndimCheckBox, 8, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel(trans._('n edit dim:')), 8, 0, 1, 1)
+        self.grid_layout.addWidget(self.ndimSpinBox, 8, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel(trans._('contiguous:')), 9, 0, 1, 1)
+        self.grid_layout.addWidget(self.contigCheckBox, 9, 1, 1, 1)
         self.grid_layout.addWidget(
-            QLabel(trans._('preserve labels:')), 9, 0, 1, 2
+            QLabel(trans._('preserve labels:')), 10, 0, 1, 2
         )
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 9, 1, 1, 1)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 10, 1, 1, 1)
         self.grid_layout.addWidget(
-            QLabel(trans._('show selected:')), 9, 2, 1, 1
+            QLabel(trans._('show selected:')), 10, 2, 1, 1
         )
-        self.grid_layout.addWidget(self.selectedColorCheckbox, 9, 3, 1, 1)
-        self.grid_layout.setRowStretch(9, 1)
+        self.grid_layout.addWidget(self.selectedColorCheckbox, 10, 3, 1, 1)
+        self.grid_layout.setRowStretch(10, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -331,18 +337,17 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.contiguous = False
 
-    def change_ndim(self, state):
-        """Toggle n-dimensional state of label layer.
+    def change_n_edit_dim(self, value):
+        """Change the number of editable dimensions of label layer.
 
         Parameters
         ----------
-        state : QCheckBox
-            Checkbox indicating if label layer is n-dimensional.
+        value : int
+            The number of editable dimensions to set.
         """
-        if state == Qt.Checked:
-            self.layer.n_dimensional = True
-        else:
-            self.layer.n_dimensional = False
+        self.layer.n_edit_dimensions = value
+        self.ndimSpinBox.clearFocus()
+        self.setFocus()
 
     def change_contour(self, value):
         """Change contour thickness.
@@ -417,7 +422,7 @@ class QtLabelsControls(QtLayerControls):
             value = np.clip(int(value), 1, 40)
             self.brushSizeSlider.setValue(value)
 
-    def _on_n_dimensional_change(self, event=None):
+    def _on_n_edit_dimensions_change(self, event=None):
         """Receive layer model n-dim mode change event and update the checkbox.
 
         Parameters
@@ -425,8 +430,9 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
-        with self.layer.events.n_dimensional.blocker():
-            self.ndimCheckBox.setChecked(self.layer.n_dimensional)
+        with self.layer.events.n_edit_dimensions.blocker():
+            value = self.layer.n_edit_dimensions
+            self.ndimSpinBox.setValue(int(value))
 
     def _on_contiguous_change(self, event=None):
         """Receive layer model contiguous change event and update the checkbox.
