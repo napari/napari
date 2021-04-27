@@ -47,7 +47,7 @@ class QRangeSliderPopup(QtPopup):
 
         # create slider
         orient = Qt.Horizontal if horizontal else Qt.Vertical
-        self.slider = QLabeledRangeSlider(orient, self)
+        self.slider = QLabeledRangeSlider(orient, parent)
         self.slider.setFocus()
 
         resize_filter = ResizeFilter()
@@ -73,7 +73,3 @@ class QRangeSliderPopup(QtPopup):
             self.slider.setFocus()
             return
         super().keyPressEvent(event)
-
-    def closeEvent(self, event):
-        self.deleteLater()
-        event.accept()

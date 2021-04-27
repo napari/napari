@@ -1,4 +1,3 @@
-from contextlib import suppress
 from functools import partial
 
 import numpy as np
@@ -115,28 +114,25 @@ class QtBaseImageControls(QtLayerControls):
             The napari event that triggered this method.
         """
         if event.button() == Qt.RightButton:
-            self.clim_pop = QRangeSliderPopup(self)
-            self.clim_pop.slider.setRange(*self.layer.contrast_limits_range)
-            self.clim_pop.slider.setValue(self.layer.contrast_limits)
+            clim_pop = QRangeSliderPopup(self)
+            clim_pop.slider.setRange(*self.layer.contrast_limits_range)
+            clim_pop.slider.setValue(self.layer.contrast_limits)
 
             set_values = partial(setattr, self.layer, 'contrast_limits')
-            set_range = partial(setattr, self.layer, 'contrast_limits_range')
-            self.clim_pop.slider.valueChanged.connect(set_values)
-            self.clim_pop.slider.rangeChanged.connect(set_range)
-            self.clim_pop.slider.valueChanged.connect(
-                lambda e: print("value changed", e)
-            )
-            self.clim_pop.slider.rangeChanged.connect(
-                lambda e: print("range changed", e)
-            )
+            clim_pop.slider.valueChanged.connect(set_values)
 
-            self.clim_pop.finished.connect(self.clim_pop.deleteLater)
+            def set_range(min_, max_):
+                self.layer.contrast_limits_range = (min_, max_)
+
+            clim_pop.slider.rangeChanged.connect(set_range)
+
+            clim_pop.finished.connect(clim_pop.deleteLater)
             reset, fullrange = create_clim_reset_buttons(self.layer)
-            self.clim_pop._layout.addWidget(reset)
+            clim_pop._layout.addWidget(reset)
             if fullrange is not None:
-                self.clim_pop._layout.addWidget(fullrange)
-            self.clim_pop.move_to('top', min_length=650)
-            self.clim_pop.show()
+                clim_pop._layout.addWidget(fullrange)
+            clim_pop.move_to('top', min_length=650)
+            clim_pop.exec_()
         else:
             QRangeSlider.mousePressEvent(self.contrastLimitsSlider, event)
 
@@ -153,16 +149,6 @@ class QtBaseImageControls(QtLayerControls):
                 *self.layer.contrast_limits_range
             )
             self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
-
-        # clim_popup will throw an AttributeError if not yet created
-        # and a RuntimeError if it has already been cleaned up.
-        # we only want to update the slider if it's active
-        with suppress(AttributeError, RuntimeError):
-            self.clim_pop.slider.setRange(*self.layer.contrast_limits_range)
-            with qt_signals_blocked(self.clim_pop.slider):
-                clims = self.layer.contrast_limits
-                self.clim_pop.slider.setValue(clims)
-                self.clim_pop._on_values_change(clims)
 
     def _on_colormap_change(self, event=None):
         """Receive layer model colormap change event and update dropdown menu.
