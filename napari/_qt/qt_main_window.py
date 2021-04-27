@@ -902,7 +902,7 @@ class Window:
         area: str = 'bottom',
         allowed_areas=None,
         shortcut=None,
-        add_stretch=True,
+        add_vertical_stretch=True,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -924,6 +924,10 @@ class Window:
             By default, all areas are allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
+        add_vertical_stretch : bool, optional
+            Whether to add stretch to the bottom of vertical widgets (pushing
+            widgets up towards the top of the allotted area, instead of letting
+            them distribute across the vertical space).  By default, True.
 
         Returns
         -------
@@ -948,7 +952,7 @@ class Window:
             area=area,
             allowed_areas=allowed_areas,
             shortcut=shortcut,
-            add_stretch=add_stretch,
+            add_vertical_stretch=add_vertical_stretch,
         )
         self._add_viewer_dock_widget(dock_widget)
 

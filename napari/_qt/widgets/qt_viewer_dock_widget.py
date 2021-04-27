@@ -41,6 +41,11 @@ class QtViewerDockWidget(QDockWidget):
         By default, all areas are allowed.
     shortcut : str, optional
         Keyboard shortcut to appear in dropdown menu.
+    add_vertical_stretch : bool, optional
+        Whether to add stretch to the bottom of vertical widgets (pushing
+        widgets up towards the top of the allotted area, instead of letting
+        them distribute across the vertical space).  By default, True.
+
     """
 
     def __init__(
@@ -53,7 +58,7 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: Optional[List[str]] = None,
         shortcut=None,
         object_name: str = '',
-        add_stretch=True,
+        add_vertical_stretch=True,
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
@@ -106,7 +111,7 @@ class QtViewerDockWidget(QDockWidget):
         is_vertical = area in {'left', 'right'}
         widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
-        if is_vertical and add_stretch:
+        if is_vertical and add_vertical_stretch:
             # add vertical stretch to the bottom of a vertical layout only
             # if there is not already a widget that wants vertical space
             # (like a textedit or something)
