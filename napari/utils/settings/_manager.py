@@ -9,6 +9,7 @@ from appdirs import user_config_dir
 from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
+from ...utils.translations import trans
 from .._base import _APPAUTHOR, _APPNAME, _FILENAME
 from ._defaults import (
     CORE_SETTINGS,
@@ -131,10 +132,10 @@ class SettingsManager:
                 import warnings
 
                 warnings.warn(
-                    "The content of the napari settings file could "
-                    "not be read.\n\nThe default settings will be used "
-                    "and the content of the file will be replaced the "
-                    f"next time settings are changed.\n\nError: \n{err}"
+                    trans._(
+                        "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
+                        err=err,
+                    )
                 )
                 data = {}
 

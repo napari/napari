@@ -12,12 +12,16 @@ try:
 except Exception:
     use_gradients = False
 
+from ..utils.translations import trans
+
 
 def __getattr__(attr):
     if attr == "palettes":
         warnings.warn(
-            "palette is deprecated and will be removed after version 0.4.6."
-            " Please use get_theme and register_theme instead",
+            trans._(
+                "palette is deprecated and will be removed after version 0.4.6. Please use get_theme and register_theme instead",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )
@@ -155,7 +159,12 @@ def get_theme(name):
         return theme.copy()
     else:
         raise ValueError(
-            f"Unrecognized theme {name}. Availabe themes are {available_themes()}"
+            trans._(
+                "Unrecognized theme {name}. Availabe themes are {themes}",
+                deferred=True,
+                name=name,
+                themes=available_themes(),
+            )
         )
 
 

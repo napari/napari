@@ -26,6 +26,8 @@ def test_sample_hook(test_plugin_manager, monkeypatch):
 
     with pytest.raises(KeyError) as e:
         viewer.open_sample('test_plugin', 'random data')
+
+        print([str(e)])
     assert (
         "Plugin 'test_plugin' does not provide sample data named 'random data'"
         in str(e)

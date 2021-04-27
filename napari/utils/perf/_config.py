@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import wrapt
 
+from ..translations import trans
 from ._patcher import patch_callables
 from ._timers import perf_timer
 
@@ -106,7 +107,12 @@ class PerfmonConfig:
             return self.data["callable_lists"][list_name]
         except KeyError:
             raise PerfmonConfigError(
-                f"{self.config_path} has no callable list '{list_name}'"
+                trans._(
+                    "{path} has no callable list '{list_name}'",
+                    deferred=True,
+                    path=self.config_path,
+                    list_name=list_name,
+                )
             )
 
     def _patch_callables(self):

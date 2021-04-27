@@ -152,11 +152,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying'
-                    'vertices, faces, and optionally vertex values,'
-                    'instead got length {data_length}.',
+                    'Surface data tuple must be 2 or 3, specifying verictes, faces, and optionally vertex values, instead got length {length}.',
                     deferred=True,
-                    data_length=len(data),
+                    length=len(data),
                 )
             )
         self._vertices = data[0]
@@ -200,9 +198,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if len(data) not in (2, 3):
             raise ValueError(
                 trans._(
-                    'Surface data tuple must be 2 or 3, specifying'
-                    'vertices, faces, and optionally vertex values,'
-                    'instead got length {data_length}.',
+                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.',
                     deferred=True,
                     data_length=len(data),
                 )
@@ -319,10 +315,10 @@ class Surface(IntensityVisualizationMixin, Layer):
             values = self.vertex_values[values_indices]
             if values.ndim > 1:
                 warnings.warn(
-                    """Assigning multiple values per vertex after slicing is
-                    not allowed. All dimensions corresponding to vertex_values
-                    must be non-displayed dimensions. Data will not be
-                    visible."""
+                    trans._(
+                        "Assigning multiple values per vertex after slicing is not allowed. All dimensions corresponding to vertex_values must be non-displayed dimensions. Data will not be visible.",
+                        deferred=True,
+                    )
                 )
                 self._data_view = np.zeros((0, self._ndisplay))
                 self._view_faces = np.zeros((0, 3))

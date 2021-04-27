@@ -43,6 +43,7 @@ jobs:
           pip install check-manifest
       - name: Check Manifest
         run: check-manifest
+
   localization_syntax:
     # make sure all necessary files will be bundled in the release
     name: Check l18n syntax

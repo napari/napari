@@ -82,7 +82,7 @@ class PerformanceSubMenu:
 
     def _add_stop(self):
         """Add Stop Recording action."""
-        stop = QAction('Stop Recording', self.main_window._qt_window)
+        stop = QAction(trans._('Stop Recording'), self.main_window._qt_window)
         stop.setShortcut('Shift+Alt+T')
         stop.setStatusTip(trans._('Stop recording a trace file'))
         stop.triggered.connect(self._stop_trace)

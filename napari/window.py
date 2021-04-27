@@ -10,6 +10,7 @@ __all__ = ['Window']
 
 try:
     from ._qt import Window
+    from .utils.translations import trans
 
 except ImportError:
 
@@ -22,5 +23,5 @@ except ImportError:
 
         def __getattr__(self, name):
             raise ImportError(
-                "could not import qtpy.  Cannot show napari window."
+                trans._("could not import `qtpy`. Cannot show napari window.")
             )

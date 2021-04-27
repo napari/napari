@@ -124,7 +124,10 @@ def convert_vispy_colormap(colormap, name='vispy'):
     """
     if not isinstance(colormap, VispyColormap):
         raise TypeError(
-            'Colormap must be a vispy colormap ' 'if passed to from_vispy'
+            trans._(
+                'Colormap must be a vispy colormap if passed to from_vispy',
+                deferred=True,
+            )
         )
 
     # Not all vispy colormaps have an `_controls`
@@ -386,8 +389,8 @@ def vispy_or_mpl_colormap(name):
         except AttributeError:
             raise KeyError(
                 trans._(
-                    'Colormap "{name}" not found in either vispy '
-                    'or matplotlib.',
+                    'Colormap "{name}" not found in either vispy or matplotlib.',
+                    deferred=True,
                     name=name,
                 )
             )
@@ -518,8 +521,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a tuple as a colormap argument, the first "
-                        "element must be a string and the second a Colormap instance"
+                        "When providing a tuple as a colormap argument, the first element must be a string and the second a Colormap instance",
+                        deferred=True,
                     )
                 )
             name, cmap = colormap
@@ -544,8 +547,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
             ):
                 raise TypeError(
                     trans._(
-                        "When providing a dict as a colormap, "
-                        "all values must be Colormap instances"
+                        "When providing a dict as a colormap, all values must be Colormap instances",
+                        deferred=True,
                     )
                 )
             else:
@@ -567,22 +570,24 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
 
                     warnings.warn(
                         trans._(
-                            "only the first item in a colormap dict is used as an argument"
+                            "only the first item in a colormap dict is used as an argument",
+                            deferred=True,
                         )
                     )
                 else:
                     raise ValueError(
                         trans._(
-                            "Received an empty dict as a colormap argument."
+                            "Received an empty dict as a colormap argument.",
+                            deferred=True,
                         )
                     )
         else:
             raise TypeError(
                 trans._(
-                    'invalid type for colormap: {colormap_type}. '
-                    'Must be a {{str, tuple, dict, napari.utils.Colormap, '
-                    'vispy.colors.Colormap}}'
-                ).format(colormap_type=type(colormap))
+                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}',
+                    deferred=True,
+                    cm_type=type(colormap),
+                )
             )
 
     return AVAILABLE_COLORMAPS[name]

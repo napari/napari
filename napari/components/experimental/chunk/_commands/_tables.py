@@ -5,6 +5,7 @@ the IPython console window.
 """
 from typing import Any, List, Tuple, Union
 
+from .....utils.translations import trans
 from ._utils import highlight
 
 
@@ -95,8 +96,12 @@ class RowTable:
         header_cols = len(self.columns)
         if row_cols != header_cols:
             raise ValueError(
-                f"Row with {row_cols} columns not compatible "
-                f"with headers ({header_cols} columns)"
+                trans._(
+                    "Row with {row_cols} columns not compatible with headers ({header_cols} columns)",
+                    deferred=True,
+                    row_cols=row_cols,
+                    header_cols=header_cols,
+                )
             )
         self.rows.append(row)
 
