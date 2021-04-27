@@ -17,7 +17,7 @@
 
 We're developing **napari** in the open! But the project is in an **alpha** stage, and there will still likely be **breaking changes** with each release. You can follow progress on this repository, test out new versions as we release them, and contribute ideas and code.
 
-We're working on [tutorials](https://napari.org/tutorials/), but you can also quickly get started by looking below.
+We're working on [tutorials](https://napari.org/tutorials/) (update), but you can also quickly get started by looking below.
 
 ## installation
 
