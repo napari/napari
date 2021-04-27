@@ -281,8 +281,7 @@ class Labels(_image_base_class):
         """bool: paint and fill edits labels across all dimensions."""
         warnings.warn(
             trans._(
-                'Labels.n_dimensional is deprecated. '
-                'Use Labels.n_edit_dimensions instead.',
+                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
                 deferred=True,
             ),
             category=FutureWarning,
@@ -294,8 +293,7 @@ class Labels(_image_base_class):
     def n_dimensional(self, n_dimensional):
         warnings.warn(
             trans._(
-                'Labels.n_dimensional is deprecated. '
-                'Use Labels.n_edit_dimensions instead.',
+                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
                 deferred=True,
             ),
             category=FutureWarning,
