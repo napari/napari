@@ -154,7 +154,8 @@ class progress(tqdm):
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
-            self._pbar.setRange(0, 0)
+            if self.has_viewer:
+                self._pbar.setRange(0, 0)
         else:
             self.update(1)
 
