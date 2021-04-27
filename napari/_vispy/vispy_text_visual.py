@@ -60,7 +60,7 @@ class VispyTextVisual:
             transform = [x_offset, y_offset, 0, 0]
             anchors = ("left", "bottom")
         elif position == TextOverlayPosition.TOP_RIGHT:
-            transform = [canvas_size[0] - 5, y_offset, 0, 0]
+            transform = [canvas_size[0] - x_offset, y_offset, 0, 0]
             anchors = ("right", "bottom")
         elif position == TextOverlayPosition.TOP_CENTER:
             transform = [canvas_size[0] // 2, y_offset, 0, 0]
