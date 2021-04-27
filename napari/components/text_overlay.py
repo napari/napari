@@ -1,6 +1,4 @@
-"""Text label model"""
-from typing import Optional
-
+"""Text label model."""
 from pydantic import validator
 
 from ..utils.colormaps.standardize_color import transform_color
@@ -15,32 +13,27 @@ class TextOverlay(EventedModel):
     Attributes
     ----------
     visible : bool
-        If label is visible or not
-    color : Optional[np.ndarray]
-        A (4,) color array of the text overlay
-    font_size : int
-        Size of the font
+        If text overlay is visible or not.
+    color : np.ndarray
+        A (4,) color array of the text overlay.
+    font_size : float
+        The font size (in points) of the text.
     position : str
-        Position of the label in the canvas. Must be one of
-        'top left', 'top right', 'top center', 'bottom right',
+        Position of the text overlay in the canvas. Must be one
+         of 'top left', 'top right', 'top center', 'bottom right',
         'bottom left', 'bottom_center'.
         Default value is 'top left'
     text : str
-        Text to be displayed in the canvas
+        Text to be displayed in the canvas.
     """
 
     # fields
     visible: bool = False
-    color: Optional[Array[float, (4,)]] = (1.0, 1.0, 1.0, 1.0)
-    font_size: int = 10
+    color: Array[float, (4,)] = (1.0, 1.0, 1.0, 1.0)
+    font_size: float = 10
     position: TextOverlayPosition = TextOverlayPosition.TOP_LEFT
     text: str = ""
 
     @validator('color', pre=True)
     def _coerce_color(cls, v):
-        if v is None:
-            return v
-        elif len(v) == 0:
-            return None
-        else:
-            return transform_color(v)[0]
+        return transform_color(v)[0]
