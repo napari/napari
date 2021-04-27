@@ -62,17 +62,33 @@ class QtViewerDockWidget(QDockWidget):
             'bottom': Qt.BottomDockWidgetArea,
         }
         if area not in areas:
-            raise ValueError(f'area argument must be in {list(areas.keys())}')
+            raise ValueError(
+                trans._(
+                    'area argument must be in {areas}',
+                    deferred=True,
+                    areas=list(areas.keys()),
+                )
+            )
         self.area = area
         self.qt_area = areas[area]
         self.shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
-                raise TypeError('`allowed_areas` must be a list or tuple')
+                raise TypeError(
+                    trans._(
+                        '`allowed_areas` must be a list or tuple',
+                        deferred=True,
+                    )
+                )
+
             if not all(area in areas for area in allowed_areas):
                 raise ValueError(
-                    f'all allowed_areas argument must be in {list(areas.keys())}'
+                    trans._(
+                        'all allowed_areas argument must be in {areas}',
+                        deferred=True,
+                        areas=list(areas.keys()),
+                    )
                 )
             allowed_areas = reduce(ior, [areas[a] for a in allowed_areas])
         else:

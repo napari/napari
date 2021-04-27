@@ -180,13 +180,18 @@ class _QtMainWindow(QMainWindow):
             preferences_dialog_size,
         ) = self._get_window_settings()
 
-        SETTINGS.application.window_size = window_size
-        SETTINGS.application.window_maximized = window_maximized
-        SETTINGS.application.window_fullscreen = window_fullscreen
-        SETTINGS.application.window_position = window_position
-        SETTINGS.application.window_state = window_state
-        SETTINGS.application.preferences_size = preferences_dialog_size
-        SETTINGS.application.window_statusbar = not self._status_bar.isHidden()
+        if SETTINGS.application.save_window_geometry:
+            SETTINGS.application.window_maximized = window_maximized
+            SETTINGS.application.window_fullscreen = window_fullscreen
+            SETTINGS.application.window_position = window_position
+            SETTINGS.application.window_size = window_size
+            SETTINGS.application.window_statusbar = (
+                not self._status_bar.isHidden()
+            )
+            SETTINGS.application.preferences_size = preferences_dialog_size
+
+        if SETTINGS.application.save_window_state:
+            SETTINGS.application.window_state = window_state
 
     def _update_preferences_dialog_size(self, size):
         """Save preferences dialog size."""
@@ -221,8 +226,7 @@ class _QtMainWindow(QMainWindow):
             if dock.isFloating():
                 dock.setFloating(False)
 
-        if SETTINGS.application.save_window_geometry:
-            self._save_current_window_settings()
+        self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
@@ -277,6 +281,8 @@ class Window:
     def __init__(self, viewer, *, show: bool = True):
         # create QApplication if it doesn't already exist
         get_app()
+
+        self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
         self._qt_window = _QtMainWindow()
@@ -340,10 +346,11 @@ class Window:
 
             warnings.warn(
                 (
-                    trans._(
-                        "The 'raw_stylesheet' attribute is deprecated and will be "
-                        "removed in version 0.4.7.  Please use "
-                        "`napari.qt.get_stylesheet` instead"
+                    str(
+                        trans._(
+                            "The 'raw_stylesheet' attribute is deprecated and will be removed in version 0.4.7. Please use `napari.qt.get_stylesheet` instead",
+                            deferred=True,
+                        )
                     )
                 ),
                 category=DeprecationWarning,
@@ -571,6 +578,7 @@ class Window:
             self.view_menu.addAction(toggle_outline)
 
         # Add axes menu
+        axes = self.qt_viewer.viewer.axes
         axes_menu = QMenu(trans._('Axes'), parent=self._qt_window)
         axes_visible_action = QAction(
             trans._('Visible'),
@@ -579,6 +587,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.visible,
         )
         axes_visible_action.triggered.connect(self._toggle_axes_visible)
+        self._event_to_action(axes_visible_action, axes.events.visible)
         axes_colored_action = QAction(
             trans._('Colored'),
             parent=self._qt_window,
@@ -586,6 +595,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        self._event_to_action(axes_colored_action, axes.events.colored)
         axes_labels_action = QAction(
             trans._('Labels'),
             parent=self._qt_window,
@@ -593,6 +603,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.labels,
         )
         axes_labels_action.triggered.connect(self._toggle_axes_labels)
+        self._event_to_action(axes_labels_action, axes.events.labels)
         axes_dashed_action = QAction(
             trans._('Dashed'),
             parent=self._qt_window,
@@ -600,6 +611,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.dashed,
         )
         axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
+        self._event_to_action(axes_dashed_action, axes.events.dashed)
         axes_arrows_action = QAction(
             trans._('Arrows'),
             parent=self._qt_window,
@@ -607,6 +619,8 @@ class Window:
             checked=self.qt_viewer.viewer.axes.arrows,
         )
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
+        self._event_to_action(axes_arrows_action, axes.events.arrows)
+
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
         axes_menu.addAction(axes_labels_action)
@@ -615,6 +629,7 @@ class Window:
         self.view_menu.addMenu(axes_menu)
 
         # Add scale bar menu
+        scale_bar = self.qt_viewer.viewer.scale_bar
         scale_bar_menu = QMenu(trans._('Scale Bar'), parent=self._qt_window)
         scale_bar_visible_action = QAction(
             trans._('Visible'),
@@ -625,6 +640,9 @@ class Window:
         scale_bar_visible_action.triggered.connect(
             self._toggle_scale_bar_visible
         )
+        self._event_to_action(
+            scale_bar_visible_action, scale_bar.events.visible
+        )
         scale_bar_colored_action = QAction(
             trans._('Colored'),
             parent=self._qt_window,
@@ -634,6 +652,9 @@ class Window:
         scale_bar_colored_action.triggered.connect(
             self._toggle_scale_bar_colored
         )
+        self._event_to_action(
+            scale_bar_colored_action, scale_bar.events.colored
+        )
         scale_bar_ticks_action = QAction(
             trans._('Ticks'),
             parent=self._qt_window,
@@ -641,12 +662,19 @@ class Window:
             checked=self.qt_viewer.viewer.scale_bar.ticks,
         )
         scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
+        self._event_to_action(scale_bar_ticks_action, scale_bar.events.ticks)
+
         scale_bar_menu.addAction(scale_bar_visible_action)
         scale_bar_menu.addAction(scale_bar_colored_action)
         scale_bar_menu.addAction(scale_bar_ticks_action)
         self.view_menu.addMenu(scale_bar_menu)
 
         self.view_menu.addSeparator()
+
+    def _event_to_action(self, action, event):
+        """Connect triggered event in model to respective action in menu."""
+        # TODO: use action manager to keep in sync
+        event.connect(lambda e: action.setChecked(e.value))
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
@@ -875,7 +903,10 @@ class Window:
         allowed_areas=None,
         shortcut=None,
     ):
-        """Convenience method to add a QDockWidget to the main window
+        """Convenience method to add a QDockWidget to the main window.
+
+        If name is not provided a generic name will be addded to avoid
+        `saveState` warnings on close.
 
         Parameters
         ----------
@@ -898,6 +929,16 @@ class Window:
         dock_widget : QtViewerDockWidget
             `dock_widget` that can pass viewer events.
         """
+        if not name:
+            try:
+                name = widget.objectName()
+            except AttributeError:
+                name = trans._(
+                    "Dock widget {number}",
+                    number=self._unnamed_dockwidget_count,
+                )
+
+            self._unnamed_dockwidget_count += 1
 
         dock_widget = QtViewerDockWidget(
             self.qt_viewer,
@@ -1098,8 +1139,8 @@ class Window:
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
-                    "This viewer has already been closed and deleted. "
-                    "Please create a new one."
+                    "This viewer has already been closed and deleted. Please create a new one.",
+                    deferred=True,
                 )
             )
 
@@ -1110,8 +1151,8 @@ class Window:
             except (AttributeError, RuntimeError):
                 raise RuntimeError(
                     trans._(
-                        "This viewer has already been closed and deleted. "
-                        "Please create a new one."
+                        "This viewer has already been closed and deleted. Please create a new one.",
+                        deferred=True,
                     )
                 )
         else:
@@ -1125,8 +1166,7 @@ class Window:
 
                 warnings.warn(
                     trans._(
-                        "The window geometry settings could not be "
-                        "loaded due to the following error: {err}",
+                        "The window geometry settings could not be loaded due to the following error: {err}",
                         deferred=True,
                         err=err,
                     ),

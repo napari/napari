@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
 
-from ...utils.interactions import KEY_SYMBOLS
+from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 
 
@@ -101,9 +101,8 @@ class QtViewerButtons(QFrame):
             self.viewer,
             'console',
             trans._(
-                "Open IPython terminal ({key1}-{key2}-C)",
-                key1=KEY_SYMBOLS['Control'],
-                key2=KEY_SYMBOLS['Shift'],
+                "Open IPython terminal ({shortcut})",
+                shortcut=Shortcut('Control-Shift-C').platform,
             ),
         )
         self.consoleButton.setProperty('expanded', False)
@@ -111,8 +110,8 @@ class QtViewerButtons(QFrame):
             self.viewer,
             'roll',
             trans._(
-                "Roll dimensions order for display ({key}-E)",
-                key=KEY_SYMBOLS['Control'],
+                "Roll dimensions order for display ({shortcut})",
+                shortcut=Shortcut('Control-E').platform,
             ),
             lambda: self.viewer.dims._roll(),
         )
@@ -120,15 +119,18 @@ class QtViewerButtons(QFrame):
             self.viewer,
             'transpose',
             trans._(
-                "Transpose displayed dimensions ({key}-T)",
-                key=KEY_SYMBOLS['Control'],
+                "Transpose displayed dimensions ({shortcut})",
+                shortcut=Shortcut('Control-T').platform,
             ),
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
             self.viewer,
             'home',
-            trans._("Reset view ({key}-R)", key=KEY_SYMBOLS['Control']),
+            trans._(
+                "Reset view ({shortcut})",
+                shortcut=Shortcut('Control-R').platform,
+            ),
             lambda: self.viewer.reset_view(),
         )
 
@@ -139,7 +141,9 @@ class QtViewerButtons(QFrame):
             self.viewer.grid.events,
         )
         self.gridViewButton.setToolTip(
-            trans._("Toggle grid view ({key}-G)", key=KEY_SYMBOLS['Control'])
+            trans._(
+                "Toggle grid view ({shortcut})", shortcut=Shortcut("Control-R")
+            )
         )
 
         self.ndisplayButton = QtStateButton(
@@ -152,8 +156,8 @@ class QtViewerButtons(QFrame):
         )
         self.ndisplayButton.setToolTip(
             trans._(
-                "Toggle number of displayed dimensions ({key}-Y)",
-                key=KEY_SYMBOLS['Control'],
+                "Toggle number of displayed dimensions ({shortcut})",
+                shortcut=Shortcut("Control-Y"),
             )
         )
 
@@ -191,9 +195,8 @@ class QtDeleteButton(QPushButton):
         self.viewer = viewer
         self.setToolTip(
             trans._(
-                "Delete selected layers ({key1}-{key2})",
-                key1=KEY_SYMBOLS['Control'],
-                key2=KEY_SYMBOLS['Backspace'],
+                "Delete selected layers ({shortcut})",
+                shortcut=Shortcut("Control-Backspace"),
             )
         )
         self.setAcceptDrops(True)

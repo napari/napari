@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Callable, Iterable, Tuple
 if TYPE_CHECKING:
     from napari.layers import Layer
 
+from ...utils.translations import trans
+
 #: Record of already linked layers... to avoid duplicating callbacks
 #  in the form of {(id(layer1), id(layer2), attribute_name) -> callback}
 LinkKey = Tuple[int, int, str]
@@ -69,8 +71,12 @@ def link_layers(
         extra = attr_set - valid_attrs
         if extra:
             raise ValueError(
-                "Cannot link attributes that are not shared by all "
-                f"layers: {extra}. Allowable attrs include:\n{valid_attrs}"
+                trans._(
+                    "Cannot link attributes that are not shared by all layers: {extra}. Allowable attrs include:\n{valid_attrs}",
+                    deferred=True,
+                    extra=extra,
+                    valid_attrs=valid_attrs,
+                )
             )
     else:
         # if no attributes are specified, ALL valid attributes are linked.
@@ -126,7 +132,12 @@ def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
     """
     layer_ids = [id(layer) for layer in layers]
     if not layer_ids:
-        raise ValueError("Must provide at least one layer to unlink")
+        raise ValueError(
+            trans._(
+                "Must provide at least one layer to unlink",
+                deferred=True,
+            )
+        )
     elif len(layer_ids) == 1:
         layer_id = layer_ids[0]
         keys = (k for k in list(_LINKED_LAYERS) if layer_id in k[:2])
@@ -179,7 +190,13 @@ def _get_common_evented_attributes(
     try:
         first_layer = next(iter(layers))
     except StopIteration:
-        raise ValueError("``layers`` iterable must have at least one layer")
+        raise ValueError(
+            trans._(
+                "``layers`` iterable must have at least one layer",
+                deferred=True,
+            )
+        )
+
     common_events = set.intersection(*(set(lay.events) for lay in layers))
     common_attrs = set.intersection(*(set(dir(lay)) for lay in layers))
     if not with_private:
