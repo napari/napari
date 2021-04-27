@@ -1,4 +1,4 @@
-"""Scale Bar visual"""
+"""Scale Bar visual."""
 import bisect
 
 import numpy as np
@@ -39,6 +39,8 @@ class VispyScaleBarVisual:
         self.node.order = order
         self.node.transform = STTransform()
 
+        # In order for the text to always appear centered on the scale bar,
+        # the text node should use the line node as the parent.
         self.text_node = Text(pos=[0.5, -1], parent=self.node)
         self.text_node.order = order
         self.text_node.transform = STTransform()
@@ -63,14 +65,28 @@ class VispyScaleBarVisual:
         self._on_position_change(None)
         self._on_dimension_change(None)
 
-    def _on_dimension_change(self, _evt=None):
-        """Update dimension"""
+    def _on_dimension_change(self, event):
+        """Update dimension."""
         self._quantity = UNIT_REG(self._viewer.scale_bar.unit)
         self._on_zoom_change(None, True)
 
-    def _calculate_best_length(self, px_length: float):
-        """calculate new quantity based on the pixel length of the bar."""
-        current_quantity = self._quantity * px_length
+    def _calculate_best_length(self, desired_length: float):
+        """Calculate new quantity based on the pixel length of the bar.
+
+        Parameters
+        ----------
+        desired_length : float
+            Desired length of the scale bar in world size.
+
+        Returns
+        -------
+        new_length : float
+            New length of the scale bar in world size based
+            on the preferred scale bar value.
+        new_quantity : pint.Quantity
+            New quantity with abbreviated base unit.
+        """
+        current_quantity = self._quantity * desired_length
         # convert the value to compact representation
         new_quantity = current_quantity.to_compact()
         # calculate the scaling factor taking into account any conversion
@@ -86,11 +102,13 @@ class VispyScaleBarVisual:
         new_value = PREFERRED_VALUES[index]
 
         # get the new pixel length utilizing the user-specified units
-        length_px = ((new_value * factor) / self._quantity.magnitude).magnitude
+        new_length = (
+            (new_value * factor) / self._quantity.magnitude
+        ).magnitude
         new_quantity = new_value * new_quantity.units
-        return length_px, new_quantity
+        return new_length, new_quantity
 
-    def _on_zoom_change(self, _evt=None, force: bool = False):
+    def _on_zoom_change(self, event, force: bool = False):
         """Update axes length based on zoom scale."""
         if not self._viewer.scale_bar.visible:
             return
@@ -155,10 +173,10 @@ class VispyScaleBarVisual:
         """Update text information"""
         self.text_node.font_size = self._viewer.scale_bar.font_size
 
-    def _on_position_change(self, _evt=None):
+    def _on_position_change(self, event):
         """Change position of scale bar."""
         position = self._viewer.scale_bar.position
-        x_bar_offset = 10
+        x_bar_offset, y_bar_offset = 10, 30
         canvas_size = list(self.node.canvas.size)
 
         if position == Position.TOP_LEFT:
@@ -171,7 +189,7 @@ class VispyScaleBarVisual:
             sign = -1
             bar_transform = [
                 canvas_size[0] - x_bar_offset,
-                canvas_size[1] - 30,
+                canvas_size[1] - y_bar_offset,
                 0,
                 0,
             ]

@@ -1,4 +1,4 @@
-"""Units utilities"""
+"""Units utilities."""
 import pint
 
 # instantiate default unit registry

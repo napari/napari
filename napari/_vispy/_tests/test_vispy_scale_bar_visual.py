@@ -1,4 +1,4 @@
-"""Test scale bar"""
+"""Test scale bar."""
 import pytest
 from pint import UndefinedUnitError
 

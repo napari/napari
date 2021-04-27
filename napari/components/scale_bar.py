@@ -1,4 +1,4 @@
-"""Scale bar model"""
+"""Scale bar model."""
 from ..utils.events import EventedModel
 from ._viewer_constants import Position
 
@@ -24,8 +24,8 @@ class ScaleBar(EventedModel):
     background_color : np.ndarray
         Background color of canvas. If scale bar is not colored
         then it has the color opposite of this color.
-    font_size : int
-        Font size of the scale label.
+    font_size : float
+        The font size (in points) of the text.
     unit : str
         Unit to be used by the scale bar.
     """
@@ -34,5 +34,5 @@ class ScaleBar(EventedModel):
     colored: bool = False
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
-    font_size: int = 10
+    font_size: float = 10
     unit: str = ""
