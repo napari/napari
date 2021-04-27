@@ -33,7 +33,7 @@ class QtBaseImageControls(QtLayerControls):
         Label text of colorbar widget.
     colormapComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget for selecting the layer colormap.
-    contrastLimitsSlider : qtpy.QtWidgets.QHRangeSlider
+    contrastLimitsSlider : qtrangeslider.QRangeSlider
         Contrast range slider widget.
     gammaSlider : qtpy.QtWidgets.QSlider
         Gamma adjustment slider widget.
@@ -114,25 +114,7 @@ class QtBaseImageControls(QtLayerControls):
             The napari event that triggered this method.
         """
         if event.button() == Qt.RightButton:
-            clim_pop = QRangeSliderPopup(self)
-            clim_pop.slider.setRange(*self.layer.contrast_limits_range)
-            clim_pop.slider.setValue(self.layer.contrast_limits)
-
-            set_values = partial(setattr, self.layer, 'contrast_limits')
-            clim_pop.slider.valueChanged.connect(set_values)
-
-            def set_range(min_, max_):
-                self.layer.contrast_limits_range = (min_, max_)
-
-            clim_pop.slider.rangeChanged.connect(set_range)
-
-            clim_pop.finished.connect(clim_pop.deleteLater)
-            reset, fullrange = create_clim_reset_buttons(self.layer)
-            clim_pop._layout.addWidget(reset)
-            if fullrange is not None:
-                clim_pop._layout.addWidget(fullrange)
-            clim_pop.move_to('top', min_length=650)
-            clim_pop.exec_()
+            self.open_clim_popup()
         else:
             QRangeSlider.mousePressEvent(self.contrastLimitsSlider, event)
 
@@ -205,64 +187,25 @@ class QtBaseImageControls(QtLayerControls):
         self.deleteLater()
         event.accept()
 
+    def open_clim_popup(self):
+        clim_pop = QRangeSliderPopup(self)
+        clim_pop.slider.setRange(*self.layer.contrast_limits_range)
+        clim_pop.slider.setValue(self.layer.contrast_limits)
 
-def create_range_popup(layer, attr, parent=None):
-    """Create a QRangeSliderPopup linked to a specific layer attribute.
+        set_values = partial(setattr, self.layer, 'contrast_limits')
+        clim_pop.slider.valueChanged.connect(set_values)
 
-    This assumes the layer has an attribute named both `attr` and `attr`_range.
+        def set_range(min_, max_):
+            self.layer.contrast_limits_range = (min_, max_)
 
-    Parameters
-    ----------
-    layer : napari.layers.Layer
-        probably an instance of Image or Surface layer
-    attr : str
-        the attribute to control with the slider.
-    parent : QWidget
-        probably an instance of QtLayerControls. important for styling.
+        clim_pop.slider.rangeChanged.connect(set_range)
 
-    Returns
-    -------
-    QRangeSliderPopup
-
-    Raises
-    ------
-    AttributeError
-        if `layer` does not have an attribute named `{attr}_range`
-    """
-    range_attr = f'{attr}_range'
-    if not hasattr(layer, range_attr):
-        raise AttributeError(
-            trans._(
-                'Layer {layer} must have attribute {range_attr} to use "create_range_popup"',
-                deferred=True,
-                layer=layer,
-                range_attr=range_attr,
-            )
-        )
-    is_integer_type = np.issubdtype(layer.dtype, np.integer)
-
-    d_range = getattr(layer, range_attr)
-    popup = QRangeSliderPopup(
-        initial_values=getattr(layer, attr),
-        data_range=d_range,
-        precision=(
-            0
-            if is_integer_type
-            # scale precision with the log of the data range order of magnitude
-            # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
-            #       0 - 10  (1 order of mag)  -> 2 decimals
-            #       0 - 100 (2 orders of mag) -> 1 decimal
-            #       ≥ 3 orders of mag -> no decimals
-            else int(max(3 - np.log10(max(d_range[1] - d_range[0], 0.01)), 0))
-        ),
-        parent=parent,
-    )
-
-    set_values = partial(setattr, layer, attr)
-    set_range = partial(setattr, layer, range_attr)
-    popup.slider.valueChanged.connect(set_values)
-    popup.slider.rangeChanged.connect(set_range)
-    return popup
+        reset, fullrange = create_clim_reset_buttons(self.layer)
+        clim_pop._layout.addWidget(reset)
+        if fullrange is not None:
+            clim_pop._layout.addWidget(fullrange)
+        clim_pop.move_to('top', min_length=650)
+        clim_pop.open()
 
 
 def create_clim_reset_buttons(layer):
