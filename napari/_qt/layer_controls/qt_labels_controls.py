@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QSlider,
+    QSpinBox,
     QWidget,
 )
 
