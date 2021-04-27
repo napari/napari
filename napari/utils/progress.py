@@ -1,4 +1,5 @@
 import inspect
+from contextvars import ContextVar
 from typing import Iterable, Optional
 
 from qtpy import QtCore
@@ -12,6 +13,8 @@ from qtpy.QtWidgets import (
 from tqdm import tqdm
 
 from .._qt.utils import get_viewer_instance
+
+IS_NESTED = ContextVar('IS_NESTED', default=False)
 
 
 def get_pbar(viewer_instance, **kwargs):
@@ -28,7 +31,21 @@ def get_pbar(viewer_instance, **kwargs):
         progress bar to associate with current iterable
     """
     pbar = ProgressBar(**kwargs)
-    viewer_instance.activityDock.widget().layout.addWidget(pbar)
+    pbr_layout = viewer_instance.activityDock.widget().layout
+    # if is nested
+    if IS_NESTED.get():
+        # add to group in activity dock (?)
+        print("NESTED!!")
+        last_added_idx = pbr_layout.count() - 1
+        unnested_widg = pbr_layout.itemAt(last_added_idx).widget()
+        print(f"Belongs to {unnested_widg.description_label.text()}")
+    # else
+    else:
+        # just add normally
+        print("New Pbar")
+        # this should actually create a vbox containing the pbar, with a given name
+        # if we then later nest this pbar, we can access parent of unnested_widg and add our pbar to that group instead
+        pbr_layout.addWidget(pbar)
 
     return pbar
 
@@ -132,8 +149,18 @@ class progress(tqdm):
                 # TODO: pick a better default
                 self.set_description("Progress Bar")
 
+        self.nested_token = None
         self.show()
         QApplication.processEvents()
+
+    def __enter__(self):
+        self.nested_token = IS_NESTED.set(True)  # noqa
+        return super().__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if IS_NESTED.get():
+            IS_NESTED.reset(self.nested_token)
+        return super().__exit__(exc_type, exc_value, traceback)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
