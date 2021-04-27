@@ -5,6 +5,7 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...utils import config
 from ...utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
@@ -14,17 +15,15 @@ from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
-from ..image.image import _get_image_base_class
+from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
-_image_base_class = _get_image_base_class()
 
-
-class Labels(_image_base_class):
+class Labels(_ImageBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -1123,3 +1122,10 @@ class Labels(_image_base_class):
                 else:
                     msg += ' ' + trans._('[No Properties]')
         return msg
+
+
+if config.async_octree:
+    from ..image.experimental.octree_image import _OctreeImageBase
+
+    class Labels(Labels, _OctreeImageBase):
+        pass
