@@ -44,6 +44,7 @@ from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
+from .text_overlay import TextOverlay
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -100,6 +101,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
+    text_overlay: TextOverlay = Field(
+        default_factory=TextOverlay, allow_mutation=False
+    )
 
     help: str = ''
     status: str = 'Ready'
