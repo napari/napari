@@ -7,7 +7,11 @@ from qtpy.QtWidgets import (
     QStyleOptionViewItem,
 )
 
-from ...utils.colormaps import ensure_colormap, make_colorbar
+from ...utils.colormaps import (
+    display_name_to_name,
+    ensure_colormap,
+    make_colorbar,
+)
 
 COLORMAP_WIDTH = 50
 TEXT_WIDTH = 130
@@ -52,7 +56,8 @@ class ColorStyledDelegate(QStyledItemDelegate):
         )
         style2.rect = text_rect
         super().paint(painter, style2, model)
-        cbar = make_colorbar(ensure_colormap(model.data()), (18, 100))
+        name = display_name_to_name(model.data())
+        cbar = make_colorbar(ensure_colormap(name), (18, 100))
         image = QImage(
             cbar,
             cbar.shape[1],

@@ -18,10 +18,10 @@ dtypes = [
 
 
 @pytest.mark.parametrize('dtype', dtypes)
-def test_image_dytpes(make_test_viewer, dtype):
+def test_image_dytpes(make_napari_viewer, dtype):
     """Test different dtype images."""
     np.random.seed(0)
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # add dtype image data
     data = np.random.randint(20, size=(30, 40)).astype(dtype)

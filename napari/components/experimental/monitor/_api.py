@@ -153,8 +153,8 @@ class MonitorApi:
         The wrapper Monitor class accesses this and passes it to the
         MonitorService.
 
-        Return
-        ------
+        Returns
+        -------
         SharedMemoryManager
             The manager we created and are using.
         """

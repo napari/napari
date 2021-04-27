@@ -1,4 +1,3 @@
-import magicgui
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
@@ -44,7 +43,7 @@ dwidget_args = {
 # monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
 def test_dock_widget_registration(
-    arg, test_plugin_manager, add_implementation, monkeypatch, request, recwarn
+    arg, test_plugin_manager, monkeypatch, request, recwarn
 ):
     """Test that dock widgets get validated and registerd correctly."""
     test_plugin_manager.project_name = 'napari'
@@ -55,11 +54,13 @@ def test_dock_widget_registration(
         registered = {}
         m.setattr(plugins, "dock_widgets", registered)
 
-        @napari_hook_implementation
-        def napari_experimental_provide_dock_widget():
-            return arg
+        class Plugin:
+            @napari_hook_implementation
+            def napari_experimental_provide_dock_widget():
+                return arg
 
-        add_implementation(napari_experimental_provide_dock_widget)
+        test_plugin_manager.register(Plugin)
+
         hook.call_historic(
             result_callback=plugins.register_dock_widget, with_impl=True
         )
@@ -68,9 +69,9 @@ def test_dock_widget_registration(
             assert not registered
         else:
             assert len(recwarn) == 0
-            assert registered[(None, 'Widg1')][0] == Widg1
+            assert registered['Plugin']['Widg1'][0] == Widg1
             if 'tuple_list' in request.node.name:
-                assert registered[(None, 'Widg2')][0] == Widg2
+                assert registered['Plugin']['Widg2'][0] == Widg2
 
 
 @pytest.fixture
@@ -78,26 +79,19 @@ def test_plugin_widgets(monkeypatch):
     """A smattering of example registered dock widgets and function widgets."""
     with monkeypatch.context() as m:
         dock_widgets = {
-            ("TestP1", "Widg1"): (Widg1, {}),
-            ("TestP1", "Widg2"): (Widg2, {}),
-            ("TestP2", "Widg3"): (Widg3, {}),
+            "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
+            "TestP2": {"Widg3": (Widg3, {})},
         }
         m.setattr(plugins, "dock_widgets", dock_widgets)
 
-        function_widgets = {
-            ("TestP3", "magic"): (
-                magicfunc,
-                {'call_button': True},
-                {'area': 'right'},
-            ),
-        }
+        function_widgets = {'TestP3': {'magic': magicfunc}}
         m.setattr(plugins, "function_widgets", function_widgets)
         yield
 
 
-def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
+def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     """Test the plugin widgets get added to the window menu correctly."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     assert len(actions) == 3
     expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
@@ -113,9 +107,9 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_test_viewer):
     assert not actions[2].menu()
 
 
-def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
+def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
     # trigger the 'TestP2: Widg3' action
@@ -126,9 +120,8 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
     assert isinstance(dw.widget(), Widg3)
     # This widget uses the parameter annotation method to receive a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        actions[1].trigger()
+    # Add twice is ok, only does a show
+    actions[1].trigger()
 
     # trigger the 'TestP1 > Widg2' action (it's in a submenu)
     action = actions[0].menu().actions()[1]
@@ -140,14 +133,15 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_test_viewer):
     assert isinstance(dw.widget(), Widg2)
     # This widget uses parameter *name* "napari_viewer" to get a viewer
     assert isinstance(dw.widget().viewer, napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        action.trigger()
+    # Add twice is ok, only does a show
+    action.trigger()
 
 
-def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
+def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create magicgui widgets, and they get the viewer."""
-    viewer = make_test_viewer()
+    import magicgui
+
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
 
     # trigger the 'TestP3: magic' action
@@ -157,19 +151,22 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_test_viewer):
     dw = viewer.window._dock_widgets['TestP3: magic']
     # make sure that it contains a magicgui widget
     magic_widget = dw.widget()._magic_widget
-    assert isinstance(magic_widget, magicgui.FunctionGui)
+    FGui = getattr(magicgui.widgets, 'FunctionGui', None)
+    if FGui is None:
+        # pre magicgui 0.2.6
+        FGui = magicgui.FunctionGui
+    assert isinstance(magic_widget, FGui)
     # This magicgui widget uses the parameter annotation to receive a viewer
     assert isinstance(magic_widget.viewer.value, napari.Viewer)
     # The function just returns the viewer... make sure we can call it
     assert isinstance(magic_widget(), napari.Viewer)
-    # Cannot add twice
-    with pytest.warns(UserWarning):
-        actions[2].trigger()
+    # Add twice is ok, only does a show
+    actions[2].trigger()
 
 
-def test_clear_all_plugin_widgets(test_plugin_widgets, make_test_viewer):
+def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
     actions = viewer.window._plugin_dock_widget_menu.actions()
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()

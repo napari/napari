@@ -9,18 +9,22 @@ class ElidingLabel(QLabel):
     def __init__(self, text='', parent=None):
         super().__init__(parent)
         self._text = text
-        self.fm = QFontMetrics(self.font())
 
     def setText(self, txt):
         self._text = txt
-        short = self.fm.elidedText(self._text, Qt.ElideRight, self.width())
+        short = self._getShortText(self.width())
         super().setText(short)
 
     def resizeEvent(self, rEvent):
         width = rEvent.size().width()
-        short = self.fm.elidedText(self._text, Qt.ElideRight, width)
+        short = self._getShortText(width)
         super().setText(short)
         rEvent.accept()
+
+    def _getShortText(self, width):
+        self.fm = QFontMetrics(self.font())
+        short = self.fm.elidedText(self._text, Qt.ElideRight, width)
+        return short
 
 
 class MultilineElidedLabel(QFrame):

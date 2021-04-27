@@ -18,7 +18,6 @@ To generate a screenshot within python:
 
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QApplication,
     QCheckBox,
     QComboBox,
     QDoubleSpinBox,
@@ -42,12 +41,9 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils.io import imsave
-from ...utils.theme import available_themes, get_theme, template
 from ..qt_resources import get_stylesheet
 from ..utils import QImg2array
 from .qt_range_slider import QHRangeSlider
-
-raw_stylesheet = get_stylesheet()
 
 blurb = """
 <h3>Heading</h3>
@@ -95,7 +91,7 @@ class SampleWidget(QWidget):
     def __init__(self, theme='dark', emphasized=False):
         super().__init__(None)
         self.setProperty('emphasized', emphasized)
-        self.setStyleSheet(template(raw_stylesheet, **get_theme(theme)))
+        self.setStyleSheet(get_stylesheet(theme))
         lay = QVBoxLayout()
         self.setLayout(lay)
         lay.addWidget(QPushButton('push button'))
@@ -160,8 +156,11 @@ class SampleWidget(QWidget):
 if __name__ == "__main__":
     import sys
 
+    from ...utils.theme import available_themes
+    from ..qt_event_loop import get_app
+
     themes = [sys.argv[1]] if len(sys.argv) > 1 else available_themes()
-    app = QApplication([])
+    app = get_app()
     widgets = []
     for n, theme in enumerate(themes):
         try:

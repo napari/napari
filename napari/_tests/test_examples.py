@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 import napari
+from napari.utils.notifications import notification_manager
 
 # not testing these examples
 skip = [
@@ -12,6 +13,7 @@ skip = [
     '3d_kymograph.py',  # needs tqdm
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
+    'embed_ipython.py',  # fails without monkeypatch
 ]
 EXAMPLE_DIR = Path(napari.__file__).parent.parent / 'examples'
 # using f.name here and re-joining at `run_path()` for test key presentation
@@ -36,23 +38,23 @@ def qapp():
     yield app
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
     """Test that all of our examples are still working without warnings."""
 
-    from napari._qt.exceptions import ExceptionHandler
     from napari._qt.qt_main_window import Window
 
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
 
-    # make sure our sys.excepthook override in gui_qt doesn't hide errors
-    def raise_errors(self, etype, value, tb):
+    # make sure our sys.excepthook override doesn't hide errors
+    def raise_errors(etype, value, tb):
         raise value
 
-    monkeypatch.setattr(ExceptionHandler, 'handle', raise_errors)
+    monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
-    assert runpy.run_path(str(EXAMPLE_DIR / fname))
+    runpy.run_path(str(EXAMPLE_DIR / fname))

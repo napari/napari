@@ -1,9 +1,8 @@
-from ..utils.events.dataclass import Property, evented_dataclass
+from ..utils.events import EventedModel
 from ._viewer_constants import Position
 
 
-@evented_dataclass
-class ScaleBar:
+class ScaleBar(EventedModel):
     """Scale bar indicating size in world coordinates.
 
     Attributes
@@ -29,4 +28,4 @@ class ScaleBar:
     visible: bool = False
     colored: bool = False
     ticks: bool = True
-    position: Property[Position, str, Position] = Position.BOTTOM_RIGHT
+    position: Position = Position.BOTTOM_RIGHT

@@ -5,6 +5,8 @@ from qtpy.QtCore import QSize, Slot
 from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
+from ...utils.translations import trans
+
 email_pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 url_pattern = re.compile(
     r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}"
@@ -79,15 +81,22 @@ class QtDictTable(QTableWidget):
         if not isinstance(data, list) or any(
             not isinstance(i, dict) for i in data
         ):
-            raise ValueError("'data' argument must be a list of dicts")
+            raise ValueError(
+                trans._(
+                    "'data' argument must be a list of dicts", deferred=True
+                )
+            )
         nrows = len(data)
         _headers = sorted(set().union(*data))
         if headers:
             for h in headers:
                 if h not in _headers:
                     raise ValueError(
-                        f"Argument 'headers' got item '{h}', which was "
-                        "not found in any of the items in 'data'"
+                        trans._(
+                            "Argument 'headers' got item '{header}', which was not found in any of the items in 'data'",
+                            deferred=True,
+                            header=h,
+                        )
                     )
             _headers = headers
         self.setRowCount(nrows)

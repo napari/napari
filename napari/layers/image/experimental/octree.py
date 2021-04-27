@@ -5,6 +5,7 @@ import math
 from typing import List, Optional
 
 from ....utils.perf import block_timer
+from ....utils.translations import trans
 from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
@@ -62,22 +63,31 @@ class Octree:
         if not self.levels:
             # Probably we will allow empty trees, but for now raise:
             raise ValueError(
-                f"Data of shape {data.shape} resulted " "no octree levels?"
+                trans._(
+                    "Data of shape {shape} resulted no octree levels?",
+                    deferred=True,
+                    shape=data.shape,
+                )
             )
 
         LOGGER.info("Multiscale data has %d levels.", len(self.levels))
 
-        # If root level contains more than one tile, add extra levels
-        # until the root does consist of a single tile. We have to do this
-        # because we cannot draw tiles larger than the standard size right now.
-        if self.levels[-1].info.num_tiles > 1:
+        # If there is more than one level and the root level contains more
+        # than one tile, add extra levels until the root does consist of a
+        # single tile. We have to do this because we cannot draw tiles larger
+        # than the standard size right now.
+        # If there is only one level than we'll only ever be able to show tiles
+        # from that level.
+        if len(self.data) > 1 and self.levels[-1].info.num_tiles > 1:
             self.levels.extend(self._get_extra_levels())
 
         LOGGER.info("Octree now has %d total levels:", len(self.levels))
         log_levels(self.levels)
 
-        # Now the root should definitely contain only a single tile.
-        assert self.levels[-1].info.num_tiles == 1
+        # Now the root should definitely contain only a single tile if there is
+        # more than one level
+        if len(self.data) > 1:
+            assert self.levels[-1].info.num_tiles == 1
 
         # This is now the total number of levels, including the extra ones.
         self.num_levels = len(self.data)
@@ -99,7 +109,12 @@ class Octree:
             return self.levels[level_index]
         except IndexError as exc:
             raise IndexError(
-                f"Level {level_index} is not in range(0, {len(self.levels)})"
+                trans._(
+                    "Level {level_index} is not in range(0, {top})",
+                    deferred=True,
+                    level_index=level_index,
+                    top=len(self.levels),
+                )
             ) from exc
 
     def get_chunk_at_location(
@@ -156,10 +171,19 @@ class Octree:
         Optional[OctreeChunk]
             The parent of the chunk if there was one or we created it.
         """
-        return self.get_ancestors(octree_chunk, 1, create=create)
+        ancestors = self.get_ancestors(octree_chunk, 1, create=create)
+        # If no parent exists yet then returns None
+        if len(ancestors) == 0:
+            return None
+        else:
+            return ancestors[0]
 
     def get_ancestors(
-        self, octree_chunk: OctreeChunk, num_levels: int, create=False
+        self,
+        octree_chunk: OctreeChunk,
+        num_levels=None,
+        create=False,
+        in_memory: bool = False,
     ) -> List[OctreeChunk]:
         """Return the num_levels nearest ancestors.
 
@@ -170,6 +194,13 @@ class Octree:
         ----------
         octree_chunk : OctreeChunk
             Return the nearest ancestors of this chunk.
+        num_levels : int, optional
+            Number of levels to look. If not provided then all are looked back till
+            the root level.
+        create : bool
+            Whether to create the chunk of not is it doesn't exist.
+        in_memory : bool
+            Whether to return only in memory chunks or not.
 
         Returns
         -------
@@ -184,7 +215,10 @@ class Octree:
         level_index = location.level_index
         row, col = location.row, location.col
 
-        stop_level = min(self.num_levels - 1, level_index + num_levels)
+        if num_levels is None:
+            stop_level = self.num_levels - 1
+        else:
+            stop_level = min(self.num_levels - 1, level_index + num_levels)
 
         # Search up one level at a time.
         while level_index < stop_level:
@@ -195,11 +229,18 @@ class Octree:
 
             # Get chunk at this location.
             ancestor = self.get_chunk(level_index, row, col, create=create)
-            assert ancestor  # Since create=True
+            if create:
+                assert ancestor  # Since create=True
             ancestors.append(ancestor)
 
+        # Keep non-None children, and if requested in-memory ones.
+        def keep_chunk(octree_chunk) -> bool:
+            return octree_chunk is not None and (
+                not in_memory or octree_chunk.in_memory
+            )
+
         # Reverse to provide the most distant ancestor first.
-        return list(reversed(ancestors))
+        return list(filter(keep_chunk, reversed(ancestors)))
 
     def get_children(
         self,
@@ -275,11 +316,9 @@ class Octree:
         data fits inside a single tile.
 
         Parameters
-        -----------
+        ----------
         slice_id : int
             The id of the slice this octree is in.
-        tile_size : int
-            Keep creating levels until one fits with a tile of this size.
 
         Returns
         -------
@@ -361,7 +400,11 @@ def _check_downscale_ratio(data) -> None:
     # if its off, so allow a small fudge factor.
     if not math.isclose(ratio, 2, rel_tol=0.01):
         raise ValueError(
-            f"Multiscale data has downsampling ratio of {ratio}, expected 2."
+            trans._(
+                "Multiscale data has downsampling ratio of {ratio}, expected 2.",
+                deferred=True,
+                ratio=ratio,
+            )
         )
 
 

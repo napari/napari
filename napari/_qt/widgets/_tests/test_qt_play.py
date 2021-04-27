@@ -14,7 +14,7 @@ def make_worker(
     qtbot, nframes=8, fps=20, frame_range=None, loop_mode=LoopMode.LOOP
 ):
     # sets up an AnimationWorker ready for testing, and breaks down when done
-    dims = Dims(4)
+    dims = Dims(ndim=4)
     qtdims = QtDims(dims)
     qtbot.addWidget(qtdims)
     nz = 8
@@ -98,9 +98,9 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(make_test_viewer):
+def view(make_napari_viewer):
     """basic viewer with data that we will use a few times"""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))

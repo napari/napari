@@ -15,6 +15,7 @@ from scipy import stats  # noqa: F401
 
 # register napari object types with magicgui if it is installed
 from .utils import _magicgui, sys_info
+from .utils.notifications import notification_manager
 
 # This must come before .plugins
 _magicgui.register_types_with_magicgui()
@@ -37,6 +38,12 @@ del _magicgui
 
 del stats
 
+
+import os
+
+os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
+
+
 __all__ = [
     'Viewer',
     'save_layers',
@@ -50,4 +57,5 @@ __all__ = [
     'view_tracks',
     'view_vectors',
     'gui_qt',
+    'run',
 ]

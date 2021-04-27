@@ -2,6 +2,7 @@ from copy import copy
 
 import numpy as np
 
+from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
 
 
@@ -31,7 +32,11 @@ def vectors_to_coordinates(vectors):
         coords = convert_image_to_coordinates(vectors)
     else:
         raise TypeError(
-            "Vector data of shape %s is not supported" % str(vectors.shape)
+            trans._(
+                "Vector data of shape {shape} is not supported",
+                deferred=True,
+                shape=vectors.shape,
+            )
         )
 
     return coords

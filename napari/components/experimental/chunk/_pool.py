@@ -87,8 +87,8 @@ class LoaderPool:
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """

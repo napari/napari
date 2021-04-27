@@ -10,28 +10,29 @@ import napari
 import numpy as np
 
 
-with napari.gui_qt():
-    # create the viewer and window
-    viewer = napari.Viewer()
+# create the viewer and window
+viewer = napari.Viewer()
 
-    n = 20
-    m = 40
+n = 20
+m = 40
 
-    image = 0.2 * np.random.random((n, m)) + 0.5
-    layer = viewer.add_image(image, contrast_limits=[0, 1], name='background')
+image = 0.2 * np.random.random((n, m)) + 0.5
+layer = viewer.add_image(image, contrast_limits=[0, 1], name='background')
 
-    # sample vector image-like data
-    # n x m grid of slanted lines
-    # random data on the open interval (-1, 1)
-    pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
-    rand1 = 2 * (np.random.random_sample(n * m) - 0.5)
-    rand2 = 2 * (np.random.random_sample(n * m) - 0.5)
+# sample vector image-like data
+# n x m grid of slanted lines
+# random data on the open interval (-1, 1)
+pos = np.zeros(shape=(n, m, 2), dtype=np.float32)
+rand1 = 2 * (np.random.random_sample(n * m) - 0.5)
+rand2 = 2 * (np.random.random_sample(n * m) - 0.5)
 
-    # assign projections for each vector
-    pos[:, :, 0] = rand1.reshape((n, m))
-    pos[:, :, 1] = rand2.reshape((n, m))
+# assign projections for each vector
+pos[:, :, 0] = rand1.reshape((n, m))
+pos[:, :, 1] = rand2.reshape((n, m))
 
-    # add the vectors
-    vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
+# add the vectors
+vect = viewer.add_vectors(pos, edge_width=0.2, length=2.5)
 
-    print(image.shape, pos.shape)
+print(image.shape, pos.shape)
+
+napari.run()

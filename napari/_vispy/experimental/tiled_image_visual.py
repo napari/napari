@@ -10,11 +10,13 @@ Instead, we'll probably just have a function signature that takes things
 like the pos, size and depth of each tile as separate arguments. But
 for now the visual and Octree both depend on OctreeChunk.
 """
-from typing import List, Set
+from typing import Callable, List, Set
 
 import numpy as np
 
 from ...layers.image.experimental import OctreeChunk
+from ...types import ArrayLike
+from ...utils.translations import trans
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
@@ -76,10 +78,19 @@ class TiledImageVisual(ImageVisual):
     ----------
     tile_shape : np.ndarray
         The shape of one tile like (256, 256, 3).
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting raw to displayed data.
     """
 
-    def __init__(self, tile_shape: np.ndarray, *args, **kwargs):
+    def __init__(
+        self,
+        tile_shape: np.ndarray,
+        image_converter: Callable[[ArrayLike], ArrayLike],
+        *args,
+        **kwargs,
+    ):
         self.tile_shape = tile_shape
+        self.image_converter = image_converter
 
         self._tiles: TileSet = TileSet()  # The tiles we are drawing.
 
@@ -107,13 +118,18 @@ class TiledImageVisual(ImageVisual):
         tile_shape : np.ndarray
             The shape of our tiles such as (256, 256, 4).
 
-        Return
-        ------
+        Returns
+        -------
         TextureAtlas2D
             The newly created texture atlas.
         """
         interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
-        return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
+        return TextureAtlas2D(
+            tile_shape,
+            SHAPE_IN_TILES,
+            interpolation=interp,
+            image_converter=self.image_converter,
+        )
 
     def set_data(self, image) -> None:
         """Set data of the ImageVisual.
@@ -163,8 +179,8 @@ class TiledImageVisual(ImageVisual):
     def num_tiles(self) -> int:
         """The number tiles currently being drawn.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles currently being drawn.
         """
@@ -187,8 +203,8 @@ class TiledImageVisual(ImageVisual):
         chunks : List[OctreeChunk]
             Chunks that we may or may not already be drawing.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks that still need to be added.
         """
@@ -225,13 +241,18 @@ class TiledImageVisual(ImageVisual):
         octree_chunk : OctreeChunk
             The chunk we are adding.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The newly added chunk's index.
         """
         # Add to the texture atlas.
-        atlas_tile = self._texture_atlas.add_tile(octree_chunk)
+        # Note that clim data is currently provided to do a normalization. This
+        # will not be required after https://github.com/vispy/vispy/pull/1920/
+        # and at that point should be changed.
+        atlas_tile = self._texture_atlas.add_tile(
+            octree_chunk, clim=self._clim
+        )
 
         if atlas_tile is None:
             # TODO_OCTREE: No slot was available in the atlas. That's bad,
@@ -249,8 +270,8 @@ class TiledImageVisual(ImageVisual):
     def chunk_set(self) -> Set[OctreeChunk]:
         """Return the set of chunks we are drawing.
 
-        Return
-        ------
+        Returns
+        -------
         Set[OctreeChunk]
             The set of chunks we are drawing.
         """
@@ -285,7 +306,13 @@ class TiledImageVisual(ImageVisual):
         except IndexError as exc:
             # Fatal error right now, but maybe in weird situation we should
             # ignore this error? Let's see when it happens.
-            raise RuntimeError(f"Tile index {tile_index} not found.") from exc
+            raise RuntimeError(
+                trans._(
+                    "Tile index {tile_index} not found.",
+                    deferred=True,
+                    tile_index=tile_index,
+                )
+            ) from exc
 
     def _build_vertex_data(self) -> None:
         """Build vertex and texture coordinate buffers.
@@ -329,9 +356,14 @@ class TiledImageVisual(ImageVisual):
     def _build_texture(self) -> None:
         """Override of ImageVisual._build_texture()."""
 
-        # clim not implemented yet, use code from base ImageVisual?
-        self._clim = np.array([0, 1])
-        self._texture_limits = np.array([0, 1])
+        if isinstance(self._clim, str) and self._clim == 'auto':
+            raise ValueError(
+                trans._(
+                    'Auto clims not supported for tiled image visual',
+                    deferred=True,
+                )
+            )
+        self._texture_limits = np.array(self._clim)
         self._need_colortransform_update = True
 
         self._need_texture_upload = False

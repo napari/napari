@@ -135,7 +135,6 @@ def test_nested_type_enforcement():
         _ = NestableEventedList([1, 2, [3, ['string']]], basetype=int)
 
 
-@pytest.mark.xfail(reason="Need to enable custom indexing on nestable lists")
 def test_nested_custom_lookup():
     class Custom:
         def __init__(self, name=''):

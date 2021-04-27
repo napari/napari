@@ -8,12 +8,15 @@ import numpy as np
 
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
+from ...utils.events.event import WarningEmitter
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
-from ...utils.status_messages import format_float, status_format
+from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
+from ...utils.translations import trans
+from .._source import current_source
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -45,7 +48,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -99,7 +102,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -122,8 +125,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Cursor position in world coordinates.
     ndim : int
         Dimensionality of the layer.
-    selected : bool
-        Flag if layer is selected in the viewer or not.
     thumbnail : (N, M, 4) array
         Array of thumbnail data for the layer.
     status : str
@@ -174,12 +175,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
+        self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._selected = True
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
@@ -230,9 +231,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             data2world_transform = affine
         else:
             raise TypeError(
-                'affine input not recognized. '
-                'must be either napari.utils.transforms.Affine, '
-                f'ndarray, or None. Got {type(affine)}'
+                trans._(
+                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
+                    deferred=True,
+                    dtype=type(affine),
+                )
             )
 
         self._transforms = TransformChain(
@@ -260,8 +263,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             blending=Event,
             opacity=Event,
             visible=Event,
-            select=Event,
-            deselect=Event,
             scale=Event,
             translate=Event,
             rotate=Event,
@@ -278,6 +279,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             editable=Event,
             loaded=Event,
             _ndisplay=Event,
+            select=WarningEmitter(
+                trans._(
+                    "'layer.events.select' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'added' attribute on the event.",
+                    deferred=True,
+                ),
+                type='select',
+            ),
+            deselect=WarningEmitter(
+                trans._(
+                    "'layer.events.deselect' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.changed' instead, and inspect the 'removed' attribute on the event.",
+                    deferred=True,
+                ),
+                type='deselect',
+            ),
         )
         self.name = name
 
@@ -297,6 +312,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def name(self):
         """str: Unique name of the layer."""
         return self._name
+
+    @property
+    def source(self):
+        return self._source
 
     @property
     def loaded(self) -> bool:
@@ -325,12 +344,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
-                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+                trans._(
+                    'opacity must be between 0.0 and 1.0; got {opacity}',
+                    deferred=True,
+                    opacity=opacity,
+                )
             )
 
         self._opacity = opacity
         self._update_thumbnail()
-        self.status = format_float(self.opacity)
         self.events.opacity()
 
     @property
@@ -443,9 +465,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self._transforms['data2world'] = affine
         else:
             raise TypeError(
-                'affine input not recognized. '
-                'must be either napari.utils.transforms.Affine '
-                f'or ndarray. Got {type(affine)}'
+                trans._(
+                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                    deferred=True,
+                    dtype=type(affine),
+                )
             )
         self._update_dims()
         self.events.affine()
@@ -465,15 +489,30 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def position(self):
         """tuple: Cursor position in world slice coordinates."""
+        warnings.warn(
+            trans._(
+                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
+                deferred=True,
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         return self._position
 
     @position.setter
     def position(self, position):
+        warnings.warn(
+            trans._(
+                "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
+                deferred=True,
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         _position = position[-self.ndim :]
         if self._position == _position:
             return
         self._position = _position
-        self._update_value_and_status()
 
     @property
     def _dims_displayed(self):
@@ -529,7 +568,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndim = ndim
 
         self.refresh()
-        self._update_value_and_status()
 
     @property
     @abstractmethod
@@ -615,9 +653,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             # Check that displayed subspace is null
             if not np.allclose(displayed_mapped_subspace, 0):
                 warnings.warn(
-                    'Non-orthogonal slicing is being requested, but'
-                    ' is not fully supported. Data is displayed without'
-                    ' applying an out-of-slice rotation or shear component.',
+                    trans._(
+                        'Non-orthogonal slicing is being requested, but is not fully supported. Data is displayed without applying an out-of-slice rotation or shear component.',
+                        deferred=True,
+                    ),
                     category=UserWarning,
                 )
 
@@ -714,30 +753,35 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def selected(self):
         """bool: Whether this layer is selected or not."""
-        return self._selected
+        warnings.warn(
+            trans._(
+                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `layer in viewer.layers.selection`",
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        layers = getattr(self, '_deprecated_layerlist', None)
+        if layers is not None:
+            return self in layers.selection
+        return False
 
     @selected.setter
     def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
-
-    @property
-    def status(self):
-        """str: displayed in status bar bottom left."""
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        if status == self.status:
-            return
-        self.events.status(status=status)
-        self._status = status
+        warnings.warn(
+            trans._(
+                "'layer.selected' is deprecated and will be removed in v0.4.9. Please use `viewer.layers.selection.add(layer)` or `viewer.layers.selection.remove(layer)`",
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        layers = getattr(self, '_deprecated_layerlist', None)
+        if layers is not None:
+            if selected:
+                layers.selection.add(self)
+            else:
+                layers.selection.discard(self)
 
     @property
     def help(self):
@@ -862,21 +906,49 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value(self):
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
+
+        Returns
+        -------
+        value : tuple
+            Value of the data.
+        """
         raise NotImplementedError()
 
-    def get_value(self):
-        """Value of data at current coordinates.
+    def get_value(self, position, *, world=False):
+        """Value of the data at a position.
+
+        If the layer is not visible, return None.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
         Returns
         -------
         value : tuple, None
-            Value of the data at the coordinates.
+            Value of the data. If the layer is not visible return None.
         """
         if self.visible:
-            return self._get_value()
+            if world:
+                position = self.world_to_data(position)
+            value = self._get_value(position=tuple(position))
         else:
-            return None
+            value = None
+        # This should be removed as soon as possible, it is still
+        # used in Points and Shapes.
+        self._value = value
+        return value
 
     @contextmanager
     def block_update_properties(self):
@@ -900,19 +972,43 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
-            self._update_value_and_status()
             self._set_highlight(force=True)
 
     @property
     def coordinates(self):
         """Cursor position in data coordinates."""
+        warnings.warn(
+            trans._(
+                "layer.coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position. You can then transform that into data coordinates using the layer.world_to_data method.",
+                deferred=True,
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         # Note we ignore the first transform which is tile2data
-        return tuple(self._transforms[1:].simplified.inverse(self.position))
+        return self.world_to_data(self._position)
 
-    def _update_value_and_status(self):
-        """Update value and status message."""
-        self._value = self.get_value()
-        self.status = self.get_message()
+    def world_to_data(self, position):
+        """Convert from world coordinates to data coordinates.
+
+        Parameters
+        ----------
+        position : tuple, list, 1D array
+            Position in world coorindates. If longer then the
+            number of dimensions of the layer, the later
+            dimensions will be used.
+
+        Returns
+        -------
+        tuple
+            Position in data coordinates.
+        """
+        if len(position) >= self.ndim:
+            coords = list(position[-self.ndim :])
+        else:
+            coords = [0] * (self.ndim - len(position)) + list(position)
+
+        return tuple(self._transforms[1:].simplified.inverse(coords))
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
@@ -962,33 +1058,42 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def displayed_coordinates(self):
-        """list: List of currently displayed coordinates."""
-        coordinates = self.coordinates
+        """list: List of currently displayed coordinates.
+
+        displayed_coordinates is deprecated and will be removed in version 0.4.9.
+        It should no longer be used as layers should will soon not know
+        which dimensions are displayed. Instead you should use
+        `[layer.coordinates[d] for d in viewer.dims.displayed]
+        """
+        warnings.warn(
+            trans._(
+                "displayed_coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should use [layer.coordinates[d] for d in viewer.dims.displayed]",
+                deferred=True,
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        coordinates = self.world_to_data(self._position)
         return [coordinates[i] for i in self._dims_displayed]
 
-    def get_message(self):
-        """Generate a status message based on the coordinates and value
+    def get_status(self, position, *, world=False):
+        """Status message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
 
         Returns
         -------
         msg : string
             String containing a message that can be used as a status update.
         """
-        full_coord = np.round(self.coordinates).astype(int)
-
-        msg = f'{self.name} {full_coord}'
-
-        value = self._value
-        if value is not None:
-            if isinstance(value, tuple) and value != (None, None):
-                # it's a multiscale -> value = (data_level, value)
-                msg += f': {status_format(value[0])}'
-                if value[1] is not None:
-                    msg += f', {status_format(value[1])}'
-            else:
-                # it's either a grayscale or rgb image (scalar or list)
-                msg += f': {status_format(value)}'
-        return msg
+        value = self.get_value(position, world=world)
+        return generate_layer_status(self.name, position, value)
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.
@@ -1012,3 +1117,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    def _on_selection(self, selected: bool):
+        # This method is a temporary workaround to the fact that the Points
+        # layer needs to know when its selection state changes so that it can
+        # update the highlight state.  This, along with the events.select and
+        # events.deselect emitters, (and the LayerList._on_selection_event
+        # method) can be removed once highlighting logic has been removed from
+        # the layer model.
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()

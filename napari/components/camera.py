@@ -1,15 +1,12 @@
-from functools import partial
 from typing import Tuple
 
-from ..utils.events.dataclass import Property, evented_dataclass
+from pydantic import validator
+
+from ..utils.events import EventedModel
 from ..utils.misc import ensure_n_tuple
 
-Len_3_Tuple = Tuple[float, float, float]
-ensure_3_tuple = partial(ensure_n_tuple, n=3)
 
-
-@evented_dataclass
-class Camera:
+class Camera(EventedModel):
     """Camera object modeling position and view of the camera.
 
     Attributes
@@ -21,11 +18,19 @@ class Camera:
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
+        Note that Euler angles's intrinsic degeneracy means different
+        sets of Euler angles may lead to the same view.
     interactive : bool
         If the camera interactivity is enabled or not.
     """
 
-    center: Property[Len_3_Tuple, None, ensure_3_tuple] = (0, 0, 0)
-    zoom: float = 1
-    angles: Property[Len_3_Tuple, None, ensure_3_tuple] = (0, 0, 90)
+    # fields
+    center: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+    zoom: float = 1.0
+    angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
     interactive: bool = True
+
+    # validators
+    @validator('center', 'angles', pre=True)
+    def _ensure_3_tuple(v):
+        return ensure_n_tuple(v, n=3)

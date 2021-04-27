@@ -1,5 +1,15 @@
-from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
+from ..layers import (
+    Image,
+    Labels,
+    Layer,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 from ..utils.config import async_octree
+from ..utils.translations import trans
 from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -10,6 +20,7 @@ from .vispy_vectors_layer import VispyVectorsLayer
 
 layer_to_visual = {
     Image: VispyImageLayer,
+    Labels: VispyImageLayer,
     Points: VispyPointsLayer,
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
@@ -19,11 +30,11 @@ layer_to_visual = {
 
 
 if async_octree:
-    from ..layers.image.experimental.octree_image import OctreeImage
+    from ..layers.image.experimental.octree_image import _OctreeImageBase
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
-    # Insert OctreeImage in front so it gets picked over plain Image.
-    new_mapping = {OctreeImage: VispyTiledImageLayer}
+    # Insert _OctreeImageBase in front so it gets picked over plain Image.
+    new_mapping = {_OctreeImageBase: VispyTiledImageLayer}
     new_mapping.update(layer_to_visual)
     layer_to_visual = new_mapping
 
@@ -46,5 +57,9 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
             return visual_class(layer)
 
     raise TypeError(
-        f'Could not find VispyLayer for layer of type {type(layer)}'
+        trans._(
+            'Could not find VispyLayer for layer of type {dtype}',
+            deferred=True,
+            dtype=type(layer),
+        )
     )

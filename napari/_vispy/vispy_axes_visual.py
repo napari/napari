@@ -5,6 +5,7 @@ from vispy.visuals.transforms import STTransform
 from ..layers.shapes._shapes_utils import triangulate_ellipse
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.theme import get_theme
+from ..utils.translations import trans
 
 
 def make_dashed_line(num_dashes, axis):
@@ -40,7 +41,7 @@ def make_arrow_head(num_segments, axis):
     ----------
     num_segments : int
         Number of segments in the arrowhead.
-    axis :
+    axis
         Arrowhead direction.
 
     Returns
@@ -72,7 +73,11 @@ def color_lines(colors):
         )
     else:
         return ValueError(
-            f'Either 2 or 3 colors must be provided, got {len(colors)}.'
+            trans._(
+                'Either 2 or 3 colors must be provided, got {number}.',
+                deferred=True,
+                number=len(colors),
+            )
         )
 
 
@@ -89,7 +94,11 @@ def color_dashed_lines(colors):
         )
     else:
         return ValueError(
-            f'Either 2 or 3 colors must be provided, got {len(colors)}.'
+            trans._(
+                'Either 2 or 3 colors must be provided, got {number}.',
+                deferred=True,
+                number=len(colors),
+            )
         )
 
 
@@ -110,7 +119,11 @@ def color_arrowheads(colors, num_segments):
         )
     else:
         return ValueError(
-            f'Either 2 or 3 colors must be provided, got {len(colors)}.'
+            trans._(
+                'Either 2 or 3 colors must be provided, got {number}.',
+                deferred=True,
+                number=len(colors),
+            )
         )
 
 
@@ -262,7 +275,10 @@ class VispyAxesVisual:
             text_data = self._line_data3D[1::2]
         else:
             raise ValueError(
-                'Axes dash status and ndisplay combination not supported'
+                trans._(
+                    'Axes dash status and ndisplay combination not supported',
+                    deferred=True,
+                )
             )
 
         if self._viewer.axes.arrows and ndisplay == 2:

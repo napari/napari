@@ -1,4 +1,4 @@
-Sphinx==3.0.1
-sphinx-rtd-theme==0.4.3
-recommonmark==0.6.0
-scikit-image
+jupyter-book==0.10.2
+jupytext==1.10.3
+sphinx_autodoc_typehints==1.11.0
+furo

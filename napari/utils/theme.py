@@ -12,12 +12,16 @@ try:
 except Exception:
     use_gradients = False
 
+from ..utils.translations import trans
+
 
 def __getattr__(attr):
     if attr == "palettes":
         warnings.warn(
-            "palette is deprecated and will be removed after version 0.4.6."
-            " Please use get_theme and register_theme instead",
+            trans._(
+                "palette is deprecated and will be removed after version 0.4.6. Please use get_theme and register_theme instead",
+                deferred=True,
+            ),
             category=DeprecationWarning,
             stacklevel=2,
         )
@@ -143,8 +147,8 @@ def get_theme(name):
     name : str
         Name of requested theme.
 
-    Returns:
-    --------
+    Returns
+    -------
     theme: dict of str: str
         Theme mapping elements to colors. A copy is created
         so that manipulating this theme can be done without
@@ -155,7 +159,12 @@ def get_theme(name):
         return theme.copy()
     else:
         raise ValueError(
-            f"Unrecognized theme {name}. Availabe themes are {available_themes()}"
+            trans._(
+                "Unrecognized theme {name}. Availabe themes are {themes}",
+                deferred=True,
+                name=name,
+                themes=available_themes(),
+            )
         )
 
 
@@ -166,7 +175,7 @@ def register_theme(name, theme):
     ----------
     name : str
         Name of requested theme.
-    theme: dict of str: str
+    theme : dict of str: str
         Theme mapping elements to colors.
     """
     _themes[name] = theme
@@ -175,9 +184,9 @@ def register_theme(name, theme):
 def available_themes():
     """List available themes
 
-    Returns:
-    --------
+    Returns
+    -------
     list of str
         Names of available themes.
     """
-    return list(_themes)
+    return tuple(_themes)

@@ -3,9 +3,9 @@ from unittest.mock import patch
 import numpy as np
 
 
-def test_data_change_ndisplay_image(make_test_viewer):
+def test_data_change_ndisplay_image(make_napari_viewer):
     """Test change data calls for image layer with ndisplay change."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 15, 8))
@@ -22,9 +22,9 @@ def test_data_change_ndisplay_image(make_test_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_labels(make_test_viewer):
+def test_data_change_ndisplay_labels(make_napari_viewer):
     """Test change data calls for labels layer with ndisplay change."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15, 8))
@@ -42,9 +42,9 @@ def test_data_change_ndisplay_labels(make_test_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_points(make_test_viewer):
+def test_data_change_ndisplay_points(make_napari_viewer):
     """Test change data calls for points layer with ndisplay change."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 3))
@@ -61,9 +61,9 @@ def test_data_change_ndisplay_points(make_test_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_vectors(make_test_viewer):
+def test_data_change_ndisplay_vectors(make_napari_viewer):
     """Test change data calls for vectors layer with ndisplay change."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 3))
@@ -80,9 +80,9 @@ def test_data_change_ndisplay_vectors(make_test_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_shapes(make_test_viewer):
+def test_data_change_ndisplay_shapes(make_napari_viewer):
     """Test change data calls for shapes layer with ndisplay change."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 3))
@@ -100,9 +100,9 @@ def test_data_change_ndisplay_shapes(make_test_viewer):
     test_ndisplay_change(ndisplay=2)
 
 
-def test_data_change_ndisplay_surface(make_test_viewer):
+def test_data_change_ndisplay_surface(make_napari_viewer):
     """Test change data calls for surface layer with ndisplay change."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     vertices = np.random.random((10, 3))

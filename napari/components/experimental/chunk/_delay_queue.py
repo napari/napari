@@ -126,8 +126,8 @@ class DelayQueue(threading.Thread):
         should_cancel : Callable[[ChunkRequest], bool]
             Cancel the request if this returns True.
 
-        Return
-        ------
+        Returns
+        -------
         List[ChunkRequests]
             The requests that were cancelled, if any.
         """
@@ -153,8 +153,8 @@ class DelayQueue(threading.Thread):
         now : float
             Current time in seconds.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if the entry was submitted.
         """

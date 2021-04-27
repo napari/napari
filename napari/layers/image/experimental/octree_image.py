@@ -10,7 +10,8 @@ import numpy as np
 
 from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
-from ..image import Image
+from ....utils.translations import trans
+from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
@@ -20,7 +21,7 @@ from .octree_util import OctreeDisplayOptions, OctreeMetadata
 LOGGER = logging.getLogger("napari.octree.image")
 
 
-class OctreeImage(Image):
+class _OctreeImageBase(_ImageBase):
     """Image layer rendered using an octree.
 
     Experimental variant of Image that renders using an octree. For 2D
@@ -81,8 +82,8 @@ class OctreeImage(Image):
         # this event after super().__init__(). Needs to be cleaned up.
         self._display.loaded_event = self.events.loaded
 
-    def _get_value(self):
-        """Override Image._get_value()."""
+    def _get_value(self, position):
+        """Override Image._get_value(position)."""
         return (0, (0, 0))  # TODO_OCTREE: need to implement this.
 
     @property
@@ -218,7 +219,13 @@ class OctreeImage(Image):
         # Quickly check for less than 0. We can't check for a level
         # that's too high because the Octree might have extended levels?
         if level < 0:
-            raise ValueError(f"Octree level {level} is negative.")
+            raise ValueError(
+                trans._(
+                    "Octree level {level} is negative.",
+                    deferred=True,
+                    level=level,
+                )
+            )
 
         self._data_level = level
         self.events.octree_level()
@@ -402,6 +409,12 @@ class OctreeImage(Image):
         this class OctreeImage becomes Image. And the non-tiled multiscale
         logic in Image._set_view_slice goes away entirely.
         """
+        # Consider non-multiscale data as just having a single level
+        if self.multiscale:
+            multilevel_data = self.data
+        else:
+            multilevel_data = [self.data]
+
         if self._slice is not None:
             # For now bail out so we don't nuke an existing slice which
             # contains an existing octree. Soon we'll need to figure out
@@ -416,18 +429,21 @@ class OctreeImage(Image):
         indices = self._get_slice_indices()
 
         # TODO_OCTREE: easier way to do this?
-        base_shape = self.data[0].shape
+        base_shape = multilevel_data[0].shape
         base_shape_2d = [base_shape[i] for i in self._dims_displayed]
 
         layer_ref = LayerRef.from_layer(self)
 
         meta = OctreeMetadata(
-            layer_ref, base_shape_2d, len(self.data), self._display.tile_size
+            layer_ref,
+            base_shape_2d,
+            len(multilevel_data),
+            self._display.tile_size,
         )
 
         # OctreeSlice wants all the levels, but only the dimensions
         # of each level that we are currently viewing.
-        slice_data = [level_data[indices] for level_data in self.data]
+        slice_data = [level_data[indices] for level_data in multilevel_data]
         layer_ref = LayerRef.from_layer(self)
 
         # Create the slice, it will create the actual Octree.
@@ -435,7 +451,6 @@ class OctreeImage(Image):
             slice_data,
             layer_ref,
             meta,
-            self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:

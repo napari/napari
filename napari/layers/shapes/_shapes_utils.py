@@ -1,7 +1,10 @@
+from typing import Tuple
+
 import numpy as np
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 
+from ...utils.translations import trans
 from ..utils.layer_utils import segment_normal
 
 
@@ -397,8 +400,10 @@ def rectangle_to_box(data):
     """
     if not data.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, D]`
-                         shape specifying corners for the rectangle"""
+            trans._(
+                "Data shape does not match expected `[4, D]` shape specifying corners for the rectangle",
+                deferred=True,
+            )
         )
     box = np.array(
         [
@@ -490,8 +495,10 @@ def triangulate_ellipse(corners, num_segments=100):
     """
     if not corners.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, D]`
-                         shape specifying corners for the ellipse"""
+            trans._(
+                "Data shape does not match expected `[4, D]` shape specifying corners for the ellipse",
+                deferred=True,
+            )
         )
 
     center = corners.mean(axis=0)
@@ -977,6 +984,34 @@ def points_in_poly(points, vertices):
     # if the number of crossings is odd then the point is inside the polygon
 
     return inside
+
+
+def extract_shape_type(data, shape_type=None):
+    """Separates shape_type from data if present, and returns both.
+
+    Parameters
+    ----------
+    data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+        list or array of vertices belonging to each shape, optionally containing shape type strings
+    shape_type : str | None
+        metadata shape type string, or None if none was passed
+
+    Returns
+    -------
+    data : Array | List[Array]
+        list or array of vertices belonging to each shape
+    shape_type : List[str] | None
+        type of each shape in data, or None if none was passed
+    """
+    # Tuple for one shape or list of shapes with shape_type
+    if isinstance(data, Tuple):
+        shape_type = data[1]
+        data = data[0]
+    # List of (vertices, shape_type) tuples
+    elif len(data) != 0 and all(isinstance(datum, Tuple) for datum in data):
+        shape_type = [datum[1] for datum in data]
+        data = [datum[0] for datum in data]
+    return data, shape_type
 
 
 def get_shape_ndim(data):

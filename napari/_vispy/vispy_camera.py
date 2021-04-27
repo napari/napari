@@ -44,7 +44,10 @@ class VispyCamera:
 
     @property
     def angles(self):
-        """3-tuple: Euler angles of camera in 3D viewing, in degrees."""
+        """3-tuple: Euler angles of camera in 3D viewing, in degrees.
+        Note that angles might be different than the ones that might have generated the quaternion.
+        """
+
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
             angles = quaternion2euler(
@@ -73,12 +76,13 @@ class VispyCamera:
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
         if self._view.camera == self._3D_camera:
-            center = self._view.camera.center
+            center = tuple(self._view.camera.center)
         else:
-            center = self._view.camera.center[:2]
-
-        # Switch from VisPy ordering to NumPy ordering
-        return tuple(center[::-1])
+            # in 2D, we arbitrarily choose 0.0 as the center in z
+            center = tuple(self._view.camera.center[:2]) + (0.0,)
+        # switch from VisPy xyz ordering to NumPy prc ordering
+        center = center[::-1]
+        return center
 
     @center.setter
     def center(self, center):

@@ -9,7 +9,7 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
-from ...utils.status_messages import format_float
+from ...utils.translations import trans
 from ..base import Layer
 from ._track_utils import TrackManager
 
@@ -64,7 +64,7 @@ class Tracks(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -237,10 +237,22 @@ class Tracks(Layer):
 
         return
 
-    def _get_value(self) -> int:
-        """ use a kd-tree to lookup the ID of the nearest tree """
-        coords = np.array(self.coordinates)
-        return self._manager.get_value(coords)
+    def _get_value(self, position) -> int:
+        """Value of the data at a position in data coordinates.
+
+        Use a kd-tree to lookup the ID of the nearest tree.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
+
+        Returns
+        -------
+        value : int or None
+            Index of track that is at the current coordinate if any.
+        """
+        return self._manager.get_value(np.array(position))
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
@@ -370,8 +382,11 @@ class Tracks(Layer):
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by!r} not present in"
-                    " new properties. Falling back to track_id"
+                    trans._(
+                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
+                        deferred=True,
+                        key=self._color_by,
+                    )
                 ),
                 UserWarning,
             )
@@ -401,7 +416,6 @@ class Tracks(Layer):
     def tail_width(self, tail_width: Union[int, float]):
         self._tail_width = tail_width
         self.events.tail_width()
-        self.status = format_float(self.tail_width)
 
     @property
     def tail_length(self) -> Union[int, float]:
@@ -412,7 +426,6 @@ class Tracks(Layer):
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
         self.events.tail_length()
-        self.status = format_float(self.tail_length)
 
     @property
     def display_id(self) -> bool:
@@ -453,7 +466,13 @@ class Tracks(Layer):
     def color_by(self, color_by: str):
         """ set the property to color vertices by """
         if color_by not in self.properties_to_color_by:
-            raise ValueError(f'{color_by} is not a valid property key')
+            raise ValueError(
+                trans._(
+                    '{color_by} is not a valid property key',
+                    deferred=True,
+                    color_by=color_by,
+                )
+            )
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -466,7 +485,13 @@ class Tracks(Layer):
     def colormap(self, colormap: str):
         """ set the default colormap """
         if colormap not in AVAILABLE_COLORMAPS:
-            raise ValueError(f'Colormap {colormap} not available')
+            raise ValueError(
+                trans._(
+                    'Colormap {colormap} not available',
+                    deferred=True,
+                    colormap=colormap,
+                )
+            )
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()
@@ -487,7 +512,8 @@ class Tracks(Layer):
         # updated before the properties are. properties should always contain
         # a track_id key
         if self.color_by not in self.properties_to_color_by:
-            self.color_by = 'track_id'
+            self._color_by = 'track_id'
+            self.events.color_by()
 
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = self._manager.vertex_properties(self.color_by)

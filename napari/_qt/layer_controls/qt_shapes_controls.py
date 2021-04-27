@@ -12,6 +12,8 @@ from qtpy.QtWidgets import (
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.events import disconnect_events
+from ...utils.interactions import Shortcut
+from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
@@ -108,53 +110,78 @@ class QtShapesControls(QtLayerControls):
         self.widthSlider = sld
 
         self.select_button = QtModeRadioButton(
-            layer, 'select', Mode.SELECT, tooltip='Select shapes'
+            layer, 'select', Mode.SELECT, tooltip=trans._('Select shapes (S)')
         )
         self.direct_button = QtModeRadioButton(
-            layer, 'direct', Mode.DIRECT, tooltip='Select vertices'
+            layer,
+            'direct',
+            Mode.DIRECT,
+            tooltip=trans._('Select vertices (D)'),
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom', checked=True
+            layer,
+            'zoom',
+            Mode.PAN_ZOOM,
+            tooltip=trans._('Pan/zoom (Space)'),
+            checked=True,
         )
         self.rectangle_button = QtModeRadioButton(
-            layer, 'rectangle', Mode.ADD_RECTANGLE, tooltip='Add rectangles'
+            layer,
+            'rectangle',
+            Mode.ADD_RECTANGLE,
+            tooltip=trans._('Add rectangles (R)'),
         )
         self.ellipse_button = QtModeRadioButton(
-            layer, 'ellipse', Mode.ADD_ELLIPSE, tooltip='Add ellipses'
+            layer,
+            'ellipse',
+            Mode.ADD_ELLIPSE,
+            tooltip=trans._('Add ellipses (E)'),
         )
         self.line_button = QtModeRadioButton(
-            layer, 'line', Mode.ADD_LINE, tooltip='Add lines'
+            layer, 'line', Mode.ADD_LINE, tooltip=trans._('Add lines (L)')
         )
         self.path_button = QtModeRadioButton(
-            layer, 'path', Mode.ADD_PATH, tooltip='Add paths'
+            layer, 'path', Mode.ADD_PATH, tooltip=trans._('Add paths (T)')
         )
         self.polygon_button = QtModeRadioButton(
-            layer, 'polygon', Mode.ADD_POLYGON, tooltip='Add polygons'
+            layer,
+            'polygon',
+            Mode.ADD_POLYGON,
+            tooltip=trans._('Add polygons (P)'),
         )
         self.vertex_insert_button = QtModeRadioButton(
-            layer, 'vertex_insert', Mode.VERTEX_INSERT, tooltip='Insert vertex'
+            layer,
+            'vertex_insert',
+            Mode.VERTEX_INSERT,
+            tooltip=trans._('Insert vertex (I)'),
         )
         self.vertex_remove_button = QtModeRadioButton(
-            layer, 'vertex_remove', Mode.VERTEX_REMOVE, tooltip='Remove vertex'
+            layer,
+            'vertex_remove',
+            Mode.VERTEX_REMOVE,
+            tooltip=trans._('Remove vertex (X)'),
         )
 
         self.move_front_button = QtModePushButton(
             layer,
             'move_front',
             slot=self.layer.move_to_front,
-            tooltip='Move to front',
+            tooltip=trans._('Move to front'),
         )
         self.move_back_button = QtModePushButton(
             layer,
             'move_back',
             slot=self.layer.move_to_back,
-            tooltip='Move to back',
+            tooltip=trans._('Move to back'),
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
             slot=self.layer.remove_selected,
-            tooltip='Delete selected shapes',
+            tooltip=trans._(
+                "Delete selected shapes ({shortcut})",
+                shortcut=Shortcut('Backspace').platform,
+            ),
         )
 
         self.button_group = QButtonGroup(self)
@@ -189,19 +216,19 @@ class QtShapesControls(QtLayerControls):
 
         self.faceColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_face_color,
-            tooltip='click to set current face color',
+            tooltip=trans._('click to set current face color'),
         )
         self._on_current_face_color_change()
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.current_edge_color,
-            tooltip='click to set current edge color',
+            tooltip=trans._('click to set current edge color'),
         )
         self._on_current_edge_color_change()
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
         text_disp_cb = QCheckBox()
-        text_disp_cb.setToolTip('toggle text visibility')
+        text_disp_cb.setToolTip(trans._('toggle text visibility'))
         text_disp_cb.setChecked(self.layer.text.visible)
         text_disp_cb.stateChanged.connect(self.change_text_visibility)
         self.textDispCheckBox = text_disp_cb
@@ -209,31 +236,21 @@ class QtShapesControls(QtLayerControls):
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_grid, 0, 0, 1, 2)
-        self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 1, 0)
         self.grid_layout.addWidget(self.opacitySlider, 1, 1)
-        self.grid_layout.addWidget(QLabel('edge width:'), 2, 0)
+        self.grid_layout.addWidget(QLabel(trans._('edge width:')), 2, 0)
         self.grid_layout.addWidget(self.widthSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 3, 0)
         self.grid_layout.addWidget(self.blendComboBox, 3, 1)
-        self.grid_layout.addWidget(QLabel('face color:'), 4, 0)
+        self.grid_layout.addWidget(QLabel(trans._('face color:')), 4, 0)
         self.grid_layout.addWidget(self.faceColorEdit, 4, 1)
-        self.grid_layout.addWidget(QLabel('edge color:'), 5, 0)
+        self.grid_layout.addWidget(QLabel(trans._('edge color:')), 5, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1)
-        self.grid_layout.addWidget(QLabel('display text:'), 6, 0)
+        self.grid_layout.addWidget(QLabel(trans._('display text:')), 6, 0)
         self.grid_layout.addWidget(self.textDispCheckBox, 6, 1)
         self.grid_layout.setRowStretch(7, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
-
-    def mouseMoveEvent(self, event):
-        """On mouse move, update layer mode status.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
         """Update ticks in checkbox widgets when shapes layer mode changed.
@@ -276,7 +293,9 @@ class QtShapesControls(QtLayerControls):
         if event.mode in mode_buttons:
             mode_buttons[event.mode].setChecked(True)
         else:
-            raise ValueError(f"Mode '{event.mode}'not recognized")
+            raise ValueError(
+                trans._("Mode '{mode}'not recognized", mode=event.mode)
+            )
 
     def changeFaceColor(self, color: np.ndarray):
         """Change face color of shapes.

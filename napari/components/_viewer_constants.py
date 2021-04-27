@@ -1,9 +1,7 @@
-from enum import auto
-
-from ..utils.misc import StringEnum
+from enum import Enum
 
 
-class Position(StringEnum):
+class Position(str, Enum):
     """Position: Position on an object in the canvas.
 
     Sets the position of an object (e.g. scale bar) in the canvas
@@ -13,13 +11,33 @@ class Position(StringEnum):
             * bottom_left: Bottom left of the canvas
     """
 
-    TOP_LEFT = auto()
-    TOP_RIGHT = auto()
-    BOTTOM_RIGHT = auto()
-    BOTTOM_LEFT = auto()
+    TOP_LEFT = 'top_left'
+    TOP_RIGHT = 'top_right'
+    BOTTOM_RIGHT = 'bottom_right'
+    BOTTOM_LEFT = 'bottom_left'
 
 
-class CursorStyle(StringEnum):
+class TextOverlayPosition(str, Enum):
+    """Text overlay position: Position of the text overlay in the canvas.
+
+    Sets the position of an object (e.g. scale bar) in the canvas
+            * top_left: Top left of the canvas
+            * top_right: Top right of the canvas
+            * top_center: Top center of the canvas
+            * bottom_right: Bottom right of the canvas
+            * bottom_left: Bottom left of the canvas
+            * bottom_center: Bottom center of the canvas
+    """
+
+    TOP_LEFT = 'top_left'
+    TOP_RIGHT = 'top_right'
+    TOP_CENTER = "top_center"
+    BOTTOM_RIGHT = 'bottom_right'
+    BOTTOM_LEFT = 'bottom_left'
+    BOTTOM_CENTER = "bottom_center"
+
+
+class CursorStyle(str, Enum):
     """CursorStyle: Style on the cursor.
 
     Sets the style of the cursor
@@ -31,9 +49,9 @@ class CursorStyle(StringEnum):
             * standard: The standard cursor
     """
 
-    SQUARE = auto()
-    CIRCLE = auto()
-    CROSS = auto()
-    FORBIDDEN = auto()
-    POINTING = auto()
-    STANDARD = auto()
+    SQUARE = 'square'
+    CIRCLE = 'circle'
+    CROSS = 'cross'
+    FORBIDDEN = 'forbidden'
+    POINTING = 'pointing'
+    STANDARD = 'standard'

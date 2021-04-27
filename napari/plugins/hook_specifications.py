@@ -30,19 +30,21 @@ For more general background on the plugin hook calling mechanism, see the
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
-
 # These hook specifications also serve as the API reference for plugin
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
+from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from types import FunctionType
+from typing import Any, Dict, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
 from ..types import (
-    AugmentedFunction,
     AugmentedWidget,
     ReaderFunction,
+    SampleData,
+    SampleDict,
     WriterFunction,
 )
 
@@ -51,12 +53,69 @@ from ..types import (
 # -------------------------------------------------------------------------- #
 
 
+@napari_hook_specification(historic=True)
+def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
+    """Provide sample data.
+
+    Plugins may implement this hook to provide sample data for use in napari.
+    Sample data is accessible in the `File > Open Sample` menu, or
+    programmatically, with :meth:`napari.Viewer.open_sample`.
+
+    Plugins implementing this hook specification must return a ``dict``, where
+    each key is a `sample_key` (the string that will appear in the
+    `Open Sample` menu), and the value is either a string, or
+    a callable that returns an iterable of ``LayerData`` tuples, where each
+    tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
+    meta, layer_type)`` (thus, an individual sample-loader may provide multiple
+    layers).  If the value is a string, it will be opened with
+    :meth:`napari.Viewer.open`.
+
+    Examples
+    --------
+    Here's a minimal example of a plugin that provides three samples:
+
+        1. random data from numpy
+        2. a random image pulled from the internet
+        3. random data from numpy, provided as a dict with the keys:
+            'display_name': a string that will show in the menu (by default,
+                the `sample_key` will be shown)
+            'data': a string or callable, as in 1/2.
+
+    .. code-block:: python
+
+        import numpy as np
+        from napari_plugin_engine import napari_hook_implementation
+
+        def _generate_random_data(shape=(512, 512)):
+            data = np.random.rand(*shape)
+            return [(data, {'name': 'random data'})]
+
+        @napari_hook_implementation
+        def napari_provide_sample_data():
+            return {
+                'random data': _generate_random_data,
+                'random image': 'https://picsum.photos/1024'
+                'sample_key': {
+                    'display_name': 'Some Random Data (512 x 512)'
+                    'data': _generate_random_data,
+                }
+            }
+
+    Returns
+    -------
+    Dict[ str, Union[str, Callable[..., Iterable[LayerData]]] ]
+        A mapping of `sample_key` to `data_loader`
+    """
+
+
 @napari_hook_specification(firstresult=True)
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Return a function capable of loading ``path`` into napari, or ``None``.
 
     This is the primary "**reader plugin**" function.  It accepts a path or
     list of paths, and returns a list of data to be added to the ``Viewer``.
+    The function may return ``[(None, )]`` to indicate that the file was read
+    successfully, but did not contain any data.
 
     The main place this hook is used is in :func:`Viewer.open()
     <napari.components.viewer_model.ViewerModel.open>`, via the
@@ -330,10 +389,10 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_function_widget() -> Union[
-    AugmentedFunction, List[AugmentedFunction]
+def napari_experimental_provide_function() -> Union[
+    FunctionType, List[FunctionType]
 ]:
-    """Provide functions and args that can be passed to magicgui.
+    """Provide function(s) that can be passed to magicgui.
 
     This hook specification is marked as experimental as the API or how the
     returned value is handled may change here more frequently then the
@@ -341,17 +400,13 @@ def napari_experimental_provide_function_widget() -> Union[
 
     Returns
     -------
-    function(s) : callable, tuple of callable & dict(s), or list thereof
+    function(s) : FunctionType or list of FunctionType
         Implementations should provide either a single function, or a list of
-        functions. The functions should have Python type annotations so that
+        functions. Note that this does not preclude specifying multiple
+        separate implementations in the same module or class.
+        The functions should have Python type annotations so that
         `magicgui <https://napari.org/magicgui>`_ can generate a widget from
-        them. Each function can be provided as-is or as part of a 2-tuple or 3-tuple
-        with configuration dicts. The second element in the tuple should be a
-        dictionary defining magicgui `configuration options
-        <https://napari.org/magicgui/usage/configuration.html#magicgui-options>`_,
-        while the third element should provide keyword arguments for
-        :meth:`napari.qt.Window.add_dock_widget` (though note that the
-        ``shortcut=`` keyword is not yet supported).
+        them.
 
     Examples
     --------
@@ -364,7 +419,7 @@ def napari_experimental_provide_function_widget() -> Union[
     >>>     return result, {'colormap':'turbo'}
     >>>
     >>> @napari_hook_implementation
-    >>> def napari_experimental_provide_function_widget():
+    >>> def napari_experimental_provide_function():
     >>>     return my_function
     """
 
@@ -393,7 +448,9 @@ def napari_experimental_provide_dock_widget() -> Union[
         that ``shortcut=`` keyword is not yet supported).
 
         Implementations may also return a list, in which each item must be a
-        callable or ``(callable, dict)`` tuple.
+        callable or ``(callable, dict)`` tuple. Note that this does not
+        preclude specifying multiple separate implementations in the same module
+        or class.
 
     Examples
     --------

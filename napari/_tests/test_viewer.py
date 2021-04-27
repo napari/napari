@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-from napari import layers
+from napari import Viewer, layers
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -13,16 +13,55 @@ from napari._tests.utils import (
 from napari.utils._tests.test_naming import eval_with_filename
 
 
-def test_viewer(make_test_viewer):
+def _get_all_keybinding_methods(type_):
+    obj_methods = set(super(type_, type_).class_keymap.values())
+    obj_methods.update(type_.class_keymap.values())
+    return obj_methods
+
+
+viewer_methods = _get_all_keybinding_methods(Viewer)
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 12
+
+
+def test_len_methods_viewer():
+    """
+    Make sure we do find all the methods attached to a viewer via keybindings
+    """
+    assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
+
+
+@pytest.mark.xfail
+def test_non_existing_bindings():
+    """
+    Those are condition tested in next unittest; but do not exists; this is
+    likely due to an oversight somewhere.
+    """
+    assert 'play' in [x.__name__ for x in viewer_methods]
+    assert 'toggle_fullscreen' in [x.__name__ for x in viewer_methods]
+
+
+@pytest.mark.parametrize('func', viewer_methods)
+def test_viewer_methods(make_napari_viewer, func):
     """Test instantiating viewer."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
+
+    if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
+        pytest.skip("Fullscreen cannot be tested in CI")
+    if func.__name__ == 'play':
+        pytest.skip("Play cannot be tested with Pytest")
+    func(viewer)
+
+
+def test_viewer(make_napari_viewer):
+    """Test instantiating viewer."""
+    viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
-    assert view.layers.vbox_layout.count() == 2
+    assert view.layers.model().rowCount() == 0
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -34,35 +73,56 @@ def test_viewer(make_test_viewer):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
-    # Run all class key bindings
-    for func in viewer.class_keymap.values():
-        # skip fullscreen test locally
-        if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
-            continue
-        if func.__name__ == 'play':
-            continue
-        func(viewer)
+
+EXPECTED_NUMBER_OF_LAYER_METHODS = {
+    'Image': 0,
+    'Vectors': 0,
+    'Surface': 0,
+    'Tracks': 0,
+    'Points': 8,
+    'Labels': 14,
+    'Shapes': 17,
+}
 
 
-@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+# We unroll the layer data, with the all the methods of the layer that we are
+# going to test, so that if one method fails we know which one, as well as
+# remove potential issues that would be triggered by calling methods after each
+# other.
+
+
+unrolled_layer_data = []
+for layer_class, data, ndim in layer_test_data:
+    methods = _get_all_keybinding_methods(layer_class)
+    for func in methods:
+        unrolled_layer_data.append(
+            (layer_class, data, ndim, func, len(methods))
+        )
+
+
+@pytest.mark.parametrize(
+    'layer_class, data, ndim, func, Nmeth', unrolled_layer_data
+)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
-    viewer = make_test_viewer()
+def test_add_layer(
+    make_napari_viewer, layer_class, data, ndim, func, Nmeth, visible
+):
+    viewer = make_napari_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
-    # Run all class key bindings
-    for func in layer.class_keymap.values():
-        func(layer)
+    func(layer)
+
+    assert Nmeth == EXPECTED_NUMBER_OF_LAYER_METHODS[layer_class.__name__]
 
 
 @pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
 def test_add_layer_magic_name(
-    make_test_viewer, layer_class, a_unique_name, ndim
+    make_napari_viewer, layer_class, a_unique_name, ndim
 ):
     """Test magic_name works when using add_* for layers"""
     # Tests for issue #1709
-    viewer = make_test_viewer()  # noqa: F841
+    viewer = make_napari_viewer()  # noqa: F841
     layer = eval_with_filename(
         "add_layer_by_type(viewer, layer_class, a_unique_name)",
         "somefile.py",
@@ -70,9 +130,9 @@ def test_add_layer_magic_name(
     assert layer.name == "a_unique_name"
 
 
-def test_screenshot(make_test_viewer):
+def test_screenshot(make_napari_viewer):
     """Test taking a screenshot."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
     # Add image
@@ -104,18 +164,21 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
-def test_changing_theme(make_test_viewer):
+def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer(show=False)
+    viewer.window.qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
-    assert viewer.theme == 'dark'
+    size = viewer.window.qt_viewer.size()
+    viewer.window.qt_viewer.setFixedSize(size)
 
+    assert viewer.theme == 'dark'
     screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.theme == 'light'
-
     screenshot_light = viewer.screenshot(canvas_only=False)
+
     equal = (screenshot_dark == screenshot_light).min(-1)
 
     # more than 99.5% of the pixels have changed
@@ -126,10 +189,10 @@ def test_changing_theme(make_test_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
+def test_roll_traspose_update(make_napari_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     np.random.seed(0)
 
@@ -158,9 +221,9 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
 
-def test_toggling_axes(make_test_viewer):
+def test_toggling_axes(make_napari_viewer):
     """Test toggling axes."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # Check axes are not visible
     assert not viewer.axes.visible
@@ -178,9 +241,9 @@ def test_toggling_axes(make_test_viewer):
     assert not viewer.axes.visible
 
 
-def test_toggling_scale_bar(make_test_viewer):
+def test_toggling_scale_bar(make_napari_viewer):
     """Test toggling scale bar."""
-    viewer = make_test_viewer()
+    viewer = make_napari_viewer()
 
     # Check scale bar is not visible
     assert not viewer.scale_bar.visible
@@ -196,3 +259,24 @@ def test_toggling_scale_bar(make_test_viewer):
     # Make scale bar not visible
     viewer.scale_bar.visible = False
     assert not viewer.scale_bar.visible
+
+
+def test_removing_points_data(make_napari_viewer):
+    viewer = make_napari_viewer()
+    points = np.random.random((4, 2)) * 4
+
+    pts_layer = viewer.add_points(points)
+    pts_layer.data = np.zeros([0, 2])
+
+    assert len(pts_layer.data) == 0
+
+
+def test_deleting_points(make_napari_viewer):
+    viewer = make_napari_viewer()
+    points = np.random.random((4, 2)) * 4
+
+    pts_layer = viewer.add_points(points)
+    pts_layer.selected_data = {0}
+    pts_layer.remove_selected()
+
+    assert len(pts_layer.data) == 3

@@ -9,7 +9,7 @@ from typing import List
 from vispy.scene.visuals import create_visual_node
 
 from ...layers.image.experimental import OctreeChunk
-from ...layers.image.experimental.octree_image import OctreeImage
+from ...layers.image.image import Image
 from ...utils.events import EmitterGroup
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
@@ -63,7 +63,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     Parameters
     ----------
-    layer : OctreeImage
+    layer : Image
         The layer we are drawing.
 
     Attributes
@@ -72,10 +72,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         Optional grid outlining the tiles.
     """
 
-    def __init__(self, layer: OctreeImage):
+    def __init__(self, layer: Image):
 
         # All tiles are stored in a single TileImageVisual.
-        visual = TiledImageNode(tile_shape=layer.tile_shape)
+        visual = TiledImageNode(
+            tile_shape=layer.tile_shape,
+            image_converter=layer._raw_to_displayed,
+        )
 
         # Pass our TiledImageVisual to the base class, it will become our
         # self.node which VispyBaseImage holds.
@@ -97,8 +100,8 @@ class VispyTiledImageLayer(VispyImageLayer):
     def num_tiles(self) -> int:
         """The number of tiles currently being drawn.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of tiles currently being drawn.
         """
@@ -163,10 +166,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         if the camera isn't moving. We expect to be polled and drawn until
         we can finish adding the rest of the drawable chunks.
 
-        Return
-        ------
+        Returns
+        -------
         int
-             The number of chunks that still need to be added.
+            The number of chunks that still need to be added.
         """
         if not self.node.visible:
             return 0
@@ -196,8 +199,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         3) Create tiles for newly drawable chunks, one or more.
         4) Optionally update our grid based on the now drawable chunks.
 
-        Return
-        ------
+        Returns
+        -------
         ChunkStats
             Statistics about the update process.
         """
@@ -240,7 +243,14 @@ class VispyTiledImageLayer(VispyImageLayer):
         # The grid is only for debugging and demos, yet it's quite useful
         # otherwise you can't really see the borders between the tiles.
         if self.layer.display.show_grid:
-            self.grid.update_grid(self.node.octree_chunks)
+            # If a only a single scale octree then show the outline of the base shape too
+            if self.layer._slice._meta.num_levels == 1:
+                base_shape = self.layer._slice._meta.base_shape
+            else:
+                base_shape = None
+            self.grid.update_grid(
+                self.node.octree_chunks, base_shape=base_shape
+            )
         else:
             self.grid.clear()
 
@@ -254,8 +264,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         drawable_chunks : List[OctreeChunk]
             Chunks we should add, if not already in the tiled image.
 
-        Return
-        ------
+        Returns
+        -------
         int
             The number of chunks that still need to be added.
         """

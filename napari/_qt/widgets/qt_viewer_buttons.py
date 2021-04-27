@@ -1,5 +1,7 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+
+from ...utils.interactions import Shortcut
+from ...utils.translations import trans
 
 
 class QtLayerButtons(QFrame):
@@ -32,7 +34,7 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             self.viewer,
             'new_points',
-            'New points layer',
+            trans._('New points layer'),
             lambda: self.viewer.add_points(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -42,7 +44,7 @@ class QtLayerButtons(QFrame):
         self.newShapesButton = QtViewerPushButton(
             self.viewer,
             'new_shapes',
-            'New shapes layer',
+            trans._('New shapes layer'),
             lambda: self.viewer.add_shapes(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -51,7 +53,7 @@ class QtLayerButtons(QFrame):
         self.newLabelsButton = QtViewerPushButton(
             self.viewer,
             'new_labels',
-            'New labels layer',
+            trans._('New labels layer'),
             lambda: self.viewer._new_labels(),
         )
 
@@ -83,9 +85,9 @@ class QtViewerButtons(QFrame):
         Button to transpose dimensions in the napari viewer.
     resetViewButton : QtViewerPushButton
         Button resetting the view of the rendered scene.
-    gridViewButton : QtGridViewButton
+    gridViewButton : QtStateButton
         Button to toggle grid view mode of layers on and off.
-    ndisplayButton : QtNDisplayButton
+    ndisplayButton : QtStateButton
         Button to toggle number of displayed dimensions.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -96,26 +98,68 @@ class QtViewerButtons(QFrame):
 
         self.viewer = viewer
         self.consoleButton = QtViewerPushButton(
-            self.viewer, 'console', 'Open IPython terminal'
+            self.viewer,
+            'console',
+            trans._(
+                "Open IPython terminal ({shortcut})",
+                shortcut=Shortcut('Control-Shift-C').platform,
+            ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            'Roll dimensions order for display',
+            trans._(
+                "Roll dimensions order for display ({shortcut})",
+                shortcut=Shortcut('Control-E').platform,
+            ),
             lambda: self.viewer.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            'Transpose displayed dimensions',
+            trans._(
+                "Transpose displayed dimensions ({shortcut})",
+                shortcut=Shortcut('Control-T').platform,
+            ),
             lambda: self.viewer.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
-            self.viewer, 'home', 'Reset view', lambda: self.viewer.reset_view()
+            self.viewer,
+            'home',
+            trans._(
+                "Reset view ({shortcut})",
+                shortcut=Shortcut('Control-R').platform,
+            ),
+            lambda: self.viewer.reset_view(),
         )
-        self.gridViewButton = QtGridViewButton(self.viewer)
-        self.ndisplayButton = QtNDisplayButton(self.viewer)
+
+        self.gridViewButton = QtStateButton(
+            'grid_view_button',
+            self.viewer.grid,
+            'enabled',
+            self.viewer.grid.events,
+        )
+        self.gridViewButton.setToolTip(
+            trans._(
+                "Toggle grid view ({shortcut})", shortcut=Shortcut("Control-R")
+            )
+        )
+
+        self.ndisplayButton = QtStateButton(
+            "ndisplay_button",
+            self.viewer.dims,
+            'ndisplay',
+            self.viewer.dims.events.ndisplay,
+            2,
+            3,
+        )
+        self.ndisplayButton.setToolTip(
+            trans._(
+                "Toggle number of displayed dimensions ({shortcut})",
+                shortcut=Shortcut("Control-Y"),
+            )
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
@@ -149,7 +193,12 @@ class QtDeleteButton(QPushButton):
         super().__init__()
 
         self.viewer = viewer
-        self.setToolTip('Delete selected layers')
+        self.setToolTip(
+            trans._(
+                "Delete selected layers ({shortcut})",
+                shortcut=Shortcut("Control-Backspace"),
+            )
+        )
         self.setAcceptDrops(True)
         self.clicked.connect(lambda: self.viewer.layers.remove_selected())
 
@@ -222,90 +271,67 @@ class QtViewerPushButton(QPushButton):
             self.clicked.connect(slot)
 
 
-class QtGridViewButton(QCheckBox):
-    """Button to toggle grid view mode of layers on and off.
+class QtStateButton(QtViewerPushButton):
+    """Button to toggle between two states.
 
     Parameters
     ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-
-    Attributes
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
+    button_name : str
+        A string that will be used in qss to style the button with the
+        QtStateButton[mode=...] selector,
+    target : object
+        object on which you want to change the property when button pressed.
+    attribute:
+        name of attribute on `object` you wish to change.
+    events: EventEmitter
+        event emitter that will trigger when value is changed
+    onstate: Any
+        value to use for ``setattr(object, attribute, onstate)`` when clicking
+        this button
+    offstate: Any
+        value to use for ``setattr(object, attribute, offstate)`` when clicking
+        this button.
     """
 
-    def __init__(self, viewer):
-        super().__init__()
+    def __init__(
+        self,
+        button_name,
+        target,
+        attribute,
+        events,
+        onstate=True,
+        offstate=False,
+    ):
+        super().__init__(target, button_name)
+        self.setCheckable(True)
 
-        self.viewer = viewer
-        self.setToolTip('Toggle grid view')
-        self.viewer.grid.events.connect(self._on_grid_change)
-        self.stateChanged.connect(self.change_grid)
-        self._on_grid_change()
+        self._target = target
+        self._attribute = attribute
+        self._onstate = onstate
+        self._offstate = offstate
+        self._events = events
+        self._events.connect(self._on_change)
+        self.clicked.connect(self.change)
+        self._on_change()
 
-    def change_grid(self, state):
-        """Toggle between grid view mode and (the ordinary) stack view mode.
+    def change(self):
+        """Toggle between the multiple states of this button."""
+        if self.isChecked():
+            newstate = self._onstate
+        else:
+            newstate = self._offstate
+        setattr(self._target, self._attribute, newstate)
 
-        Parameters
-        ----------
-        state : qtpy.QtCore.Qt.CheckState
-            State of the checkbox.
-        """
-        self.viewer.grid.enabled = not state == Qt.Checked
-
-    def _on_grid_change(self, event=None):
-        """Update grid layout size.
+    def _on_change(self, event=None):
+        """Called wen mirrored value changes
 
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.viewer.grid.events.blocker():
-            self.setChecked(not self.viewer.grid.enabled)
-
-
-class QtNDisplayButton(QCheckBox):
-    """Button to toggle number of displayed dimensions.
-
-    Parameters
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-    """
-
-    def __init__(self, viewer):
-        super().__init__()
-
-        self.viewer = viewer
-        self.setToolTip('Toggle number of displayed dimensions')
-        self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
-
-        self.setChecked(self.viewer.dims.ndisplay == 3)
-        self.stateChanged.connect(self.change_ndisplay)
-
-    def change_ndisplay(self, state):
-        """Toggle between 2D and 3D display.
-
-        Parameters
-        ----------
-        state : bool
-            If state is True the display view is 3D, if False display is 2D.
-        """
-        if state == Qt.Checked:
-            self.viewer.dims.ndisplay = 3
-        else:
-            self.viewer.dims.ndisplay = 2
-
-    def _on_ndisplay_change(self, event=None):
-        """Update number of displayed dimensions, while blocking events.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
-        """
-        with self.viewer.dims.events.ndisplay.blocker():
-            self.setChecked(self.viewer.dims.ndisplay == 3)
+        with self._events.blocker():
+            if self.isChecked() != (
+                getattr(self._target, self._attribute) == self._onstate
+            ):
+                self.toggle()

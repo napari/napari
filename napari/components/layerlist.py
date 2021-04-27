@@ -6,13 +6,14 @@ from typing import List, Optional
 import numpy as np
 
 from ..layers import Layer
-from ..utils.events import EventedList
+from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
+from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
 
 
-class LayerList(EventedList):
+class LayerList(SelectableEventedList[Layer]):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
@@ -27,6 +28,20 @@ class LayerList(EventedList):
             basetype=Layer,
             lookup={str: lambda e: e.name},
         )
+
+        # temporary: see note in _on_selection_event
+        self.selection.events.changed.connect(self._on_selection_changed)
+
+    def _on_selection_changed(self, event):
+        # This method is a temporary workaround to the fact that the Points
+        # layer needs to know when its selection state changes so that it can
+        # update the highlight state.  This (and the layer._on_selection
+        # method) can be removed once highlighting logic has been removed from
+        # the layer model.
+        for layer in event.added:
+            layer._on_selection(True)
+        for layer in event.removed:
+            layer._on_selection(False)
 
     def __newlike__(self, data):
         return LayerList(data)
@@ -69,10 +84,21 @@ class LayerList(EventedList):
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)
 
+        # required for deprecated layer.selected property.  remove after 0.4.9
+        new_layer._deprecated_layerlist = self
+
     @property
     def selected(self):
         """List of selected layers."""
-        return [layer for layer in self if layer.selected]
+        warnings.warn(
+            trans._(
+                "'viewer.layers.selected' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection'",
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self.selection
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
@@ -91,12 +117,11 @@ class LayerList(EventedList):
         insert : int
             Index that item(s) will be inserted at
         """
-        if not self[index].selected:
-            self.unselect_all()
-            self[index].selected = True
-            moving = (index,)
+        if self[index] not in self.selection:
+            self.selection.select_only(self[index])
+            moving = [index]
         else:
-            moving = [i for i, item in enumerate(self) if item.selected]
+            moving = [i for i, x in enumerate(self) if x in self.selection]
         offset = insert >= index
         self.move_multiple(moving, insert + offset)
 
@@ -108,71 +133,21 @@ class LayerList(EventedList):
         ignore : Layer | None
             Layer that should not be unselected if specified.
         """
-        for layer in self:
-            if layer.selected and layer != ignore:
-                layer.selected = False
-
-    def select_all(self):
-        """Selects all layers."""
-        for layer in self:
-            if not layer.selected:
-                layer.selected = True
-
-    def remove_selected(self):
-        """Removes selected items from list."""
-        to_delete = []
-        for i in range(len(self)):
-            if self[i].selected:
-                to_delete.append(i)
-        to_delete.reverse()
-        for i in to_delete:
-            self.pop(i)
-        if len(to_delete) > 0:
-            first_to_delete = to_delete[-1]
-            if first_to_delete == 0 and len(self) > 0:
-                self[0].selected = True
-            elif first_to_delete > 0:
-                self[first_to_delete - 1].selected = True
-
-    def select_next(self, shift=False):
-        """Selects next item from list."""
-        selected = []
-        for i in range(len(self)):
-            if self[i].selected:
-                selected.append(i)
-        if len(selected) > 0:
-            if selected[-1] == len(self) - 1:
-                if shift is False:
-                    self.unselect_all(ignore=self[selected[-1]])
-            elif selected[-1] < len(self) - 1:
-                if shift is False:
-                    self.unselect_all(ignore=self[selected[-1] + 1])
-                self[selected[-1] + 1].selected = True
-        elif len(self) > 0:
-            self[-1].selected = True
-
-    def select_previous(self, shift=False):
-        """Selects previous item from list."""
-        selected = []
-        for i in range(len(self)):
-            if self[i].selected:
-                selected.append(i)
-        if len(selected) > 0:
-            if selected[0] == 0:
-                if shift is False:
-                    self.unselect_all(ignore=self[0])
-            elif selected[0] > 0:
-                if shift is False:
-                    self.unselect_all(ignore=self[selected[0] - 1])
-                self[selected[0] - 1].selected = True
-        elif len(self) > 0:
-            self[0].selected = True
+        warnings.warn(
+            trans._(
+                "'viewer.layers.unselect_all()' is deprecated and will be removed in or after v0.4.9. Please use 'viewer.layers.selection.clear()'. To unselect everything but a set of ignored layers, use 'viewer.layers.selection.intersection_update({ignored})'",
+                deferred=True,
+                ignored=ignore,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        self.selection.intersection_update({ignore} if ignore else {})
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
-        for layer in self:
-            if layer.selected:
-                layer.visible = not layer.visible
+        for layer in self.selection:
+            layer.visible = not layer.visible
 
     @property
     def _extent_world(self) -> np.ndarray:
@@ -210,7 +185,10 @@ class LayerList(EventedList):
                 # behaviour is acceptable and we can filter the
                 # warning
                 warnings.filterwarnings(
-                    'ignore', message='All-NaN axis encountered'
+                    'ignore',
+                    message=str(
+                        trans._('All-NaN axis encountered', deferred=True)
+                    ),
                 )
                 min_v = np.nanmin(
                     list(itertools.zip_longest(*mins, fillvalue=np.nan)),
@@ -337,10 +315,15 @@ class LayerList(EventedList):
         """
         from ..plugins.io import save_layers
 
-        layers = self.selected if selected else list(self)
+        layers = list(self.selection) if selected else list(self)
+
+        if selected:
+            msg = trans._("No layers selected", deferred=True)
+        else:
+            msg = trans._("No layers to save", deferred=True)
 
         if not layers:
-            warnings.warn(f"No layers {'selected' if selected else 'to save'}")
+            warnings.warn(msg)
             return []
 
         return save_layers(path, layers, plugin=plugin)

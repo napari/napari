@@ -4,18 +4,11 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
+from ..utils.translations import trans
 from .image import Image as ImageNode
+from .utils_gl import fix_data_dtype
 from .vispy_base_layer import VispyBaseLayer
 from .volume import Volume as VolumeNode
-
-texture_dtypes = [
-    np.dtype(np.int8),
-    np.dtype(np.uint8),
-    np.dtype(np.int16),
-    np.dtype(np.uint16),
-    np.dtype(np.float32),
-    np.dtype(np.float64),
-]
 
 
 class ImageLayerNode:
@@ -82,10 +75,6 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.order = self.order
         self.reset()
 
-    def _data_astype(self, data, dtype):
-        """Broken out as a separate function so we can time with perfmon."""
-        return data.astype(dtype)
-
     def _on_data_change(self, event=None):
         if not self.layer.loaded:
             # Do nothing if we are not yet loaded. Calling astype below could
@@ -97,17 +86,7 @@ class VispyImageLayer(VispyBaseLayer):
     def _set_node_data(self, node, data):
         """Our self.layer._data_view has been updated, update our node."""
 
-        dtype = np.dtype(data.dtype)
-        if dtype not in texture_dtypes:
-            try:
-                dtype = dict(
-                    i=np.int16, f=np.float32, u=np.uint16, b=np.uint8
-                )[dtype.kind]
-            except KeyError:  # not an int or float
-                raise TypeError(
-                    f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
-                )
-            data = self._data_astype(data, dtype)
+        data = fix_data_dtype(data)
 
         if self.layer._ndisplay == 3 and self.layer.ndim == 2:
             data = np.expand_dims(data, axis=0)
@@ -190,16 +169,22 @@ class VispyImageLayer(VispyBaseLayer):
         if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
             if self.layer.multiscale:
                 raise ValueError(
-                    f"Shape of individual tiles in multiscale {data.shape} "
-                    f"cannot exceed GL_MAX_TEXTURE_SIZE "
-                    f"{MAX_TEXTURE_SIZE}. Rendering is currently in "
-                    f"{self.layer._ndisplay}D mode."
+                    trans._(
+                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
+                        deferred=True,
+                        shape=data.shape,
+                        texture_size=MAX_TEXTURE_SIZE,
+                        ndisplay=self.layer._ndisplay,
+                    )
                 )
             warnings.warn(
-                f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE "
-                f"{MAX_TEXTURE_SIZE} in at least one axis and "
-                f"will be downsampled. Rendering is currently in "
-                f"{self.layer._ndisplay}D mode."
+                trans._(
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
+                    deferred=True,
+                    shape=data.shape,
+                    texture_size=MAX_TEXTURE_SIZE,
+                    ndisplay=self.layer._ndisplay,
+                )
             )
             downsample = np.ceil(
                 np.divide(data.shape, MAX_TEXTURE_SIZE)

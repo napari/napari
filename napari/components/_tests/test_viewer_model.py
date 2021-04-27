@@ -4,6 +4,7 @@ import pytest
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
 from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
+from napari.utils.events.event import WarningEmitter
 
 
 def test_viewer_model():
@@ -462,18 +463,17 @@ def test_selection():
     """Test only last added is selected."""
     viewer = ViewerModel()
     viewer.add_image(np.random.random((10, 10)))
-    assert viewer.layers[0].selected is True
+    assert viewer.layers[0] in viewer.layers.selection
 
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay.selected for lay in viewer.layers] == [False, True]
+    assert viewer.layers.selection == {viewer.layers[-1]}
 
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay.selected for lay in viewer.layers] == [False] * 2 + [True]
+    assert viewer.layers.selection == {viewer.layers[-1]}
 
-    for lay in viewer.layers:
-        lay.selected = True
+    viewer.layers.selection.update(viewer.layers)
     viewer.add_image(np.random.random((10, 10)))
-    assert [lay.selected for lay in viewer.layers] == [False] * 3 + [True]
+    assert viewer.layers.selection == {viewer.layers[-1]}
 
 
 def test_add_delete_layers():
@@ -496,29 +496,29 @@ def test_active_layer():
     viewer = ViewerModel()
     np.random.seed(0)
     # Check no active layer present
-    assert viewer.active_layer is None
+    assert viewer.layers.selection.active is None
 
     # Check added layer is active
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     assert len(viewer.layers) == 1
-    assert viewer.active_layer == viewer.layers[0]
+    assert viewer.layers.selection.active == viewer.layers[0]
 
     # Check newly added layer is active
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.active == viewer.layers[1]
 
     # Check no active layer after unselecting all
-    viewer.layers.unselect_all()
-    assert viewer.active_layer is None
+    viewer.layers.selection.clear()
+    assert viewer.layers.selection.active is None
 
     # Check selected layer is active
-    viewer.layers[0].selected = True
-    assert viewer.active_layer == viewer.layers[0]
+    viewer.layers.selection.add(viewer.layers[0])
+    assert viewer.layers.selection.active == viewer.layers[0]
 
     # Check no layer is active if both layers are selected
-    viewer.layers[1].selected = True
-    assert viewer.active_layer is None
+    viewer.layers.selection.add(viewer.layers[1])
+    assert viewer.layers.selection.active is None
 
 
 def test_active_layer_status_update():
@@ -528,10 +528,12 @@ def test_active_layer_status_update():
     viewer.add_image(np.random.random((5, 5, 10, 15)))
     viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.active == viewer.layers[1]
 
     viewer.cursor.position = [1, 1, 1, 1, 1]
-    assert viewer.status == viewer.active_layer.status
+    assert viewer.status == viewer.layers.selection.active.get_status(
+        viewer.cursor.position, world=True
+    )
 
 
 def test_active_layer_cursor_size():
@@ -542,9 +544,9 @@ def test_active_layer_cursor_size():
     # Base layer has a default cursor size of 1
     assert viewer.cursor.size == 1
 
-    viewer.add_labels(np.random.random((10, 10)))
+    viewer.add_labels(np.random.randint(0, 10, size=(10, 10)))
     assert len(viewer.layers) == 2
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.active == viewer.layers[1]
 
     viewer.layers[1].mode = 'paint'
     # Labels layer has a default cursor size of 10
@@ -664,7 +666,8 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     # Check that no internal callbacks have been registered
     len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -680,4 +683,26 @@ def test_add_remove_layer_external_callbacks(Layer, data, ndim):
     # Check that all internal callbacks have been removed
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
+
+
+@pytest.mark.parametrize(
+    'field', ['camera', 'cursor', 'dims', 'grid', 'layers', 'scale_bar']
+)
+def test_not_mutable_fields(field):
+    """Test appropriate fields are not mutable."""
+    viewer = ViewerModel()
+
+    # Check attribute lives on the viewer
+    assert hasattr(viewer, field)
+    # Check attribute does not have an event emitter
+    assert not hasattr(viewer.events, field)
+
+    # Check attribute is not settable
+    with pytest.raises(TypeError) as err:
+        setattr(viewer, field, 'test')
+
+    assert 'has allow_mutation set to False and cannot be assigned' in str(
+        err.value
+    )

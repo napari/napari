@@ -4,7 +4,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QSize, Qt
+from qtpy.QtCore import QByteArray, QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -16,6 +16,54 @@ from qtpy.QtWidgets import (
 )
 
 from ..utils.misc import is_sequence
+from ..utils.translations import trans
+
+QBYTE_FLAG = "!QBYTE_"
+
+
+def is_qbyte(string: str) -> bool:
+    """Check if a string is a QByteArray string.
+
+    Parameters
+    ----------
+    string : bool
+        State string.
+    """
+    return isinstance(string, str) and string.startswith(QBYTE_FLAG)
+
+
+def qbytearray_to_str(qbyte: QByteArray) -> str:
+    """Convert a window state to a string.
+
+    Used for restoring the state of the main window.
+
+    Parameters
+    ----------
+    qbyte : QByteArray
+        State array.
+    """
+    return QBYTE_FLAG + qbyte.toBase64().data().decode()
+
+
+def str_to_qbytearray(string: str) -> QByteArray:
+    """Convert a string to a QbyteArray.
+
+    Used for restoring the state of the main window.
+
+    Parameters
+    ----------
+    string : str
+        State string.
+    """
+    if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
+        raise ValueError(
+            trans._(
+                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
+                QBYTE_FLAG=QBYTE_FLAG,
+            )
+        )
+
+    return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
 def QImg2array(img):
@@ -59,6 +107,20 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+@contextmanager
+def event_hook_removed():
+    """Context manager to temporarily remove the PyQt5 input hook"""
+    from qtpy import QtCore
+
+    if hasattr(QtCore, 'pyqtRemoveInputHook'):
+        QtCore.pyqtRemoveInputHook()
+    try:
+        yield
+    finally:
+        if hasattr(QtCore, 'pyqtRestoreInputHook'):
+            QtCore.pyqtRestoreInputHook()
 
 
 def disable_with_opacity(obj, widget_list, disabled):
@@ -180,7 +242,9 @@ def combine_widgets(
             container.layout().addWidget(widget)
         return container
     else:
-        raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+        raise TypeError(
+            trans._('"widget" must be a QWidget or a sequence of QWidgets')
+        )
 
 
 def delete_qapp(app):

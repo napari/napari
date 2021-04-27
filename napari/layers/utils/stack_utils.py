@@ -8,6 +8,7 @@ from ...layers.image._image_utils import guess_multiscale
 from ...types import FullLayerData
 from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from ...utils.translations import trans
 
 
 def split_channels(
@@ -34,7 +35,7 @@ def split_channels(
     data : array or list of array
     channel_axis : int
         Axis to split the image along.
-    kwargs : dict
+    **kwargs : dict
         Keyword arguments will override the default image meta keys
         returned in each layer data tuple.
 
@@ -98,10 +99,15 @@ def split_channels(
                 i_kwargs[key] = next(val)
             except StopIteration:
                 raise IndexError(
-                    "Error adding multichannel image with data shape "
-                    f"{data.shape!r}.\nRequested channel_axis "
-                    f"({channel_axis}) had length {n_channels}, but "
-                    f"the '{key}' argument only provided {i} values. "
+                    trans._(
+                        "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
+                        deferred=True,
+                        data_shape=data.shape,
+                        channel_axis=channel_axis,
+                        n_channels=n_channels,
+                        key=key,
+                        i=i,
+                    )
                 )
 
         layerdata = (image, i_kwargs, 'image')
@@ -150,13 +156,19 @@ def stack_to_images(
 
     if num_dim < 3:
         raise ValueError(
-            "The image needs more than 2 dimensions for splitting",
+            trans._(
+                "The image needs more than 2 dimensions for splitting",
+                deferred=True,
+            )
         )
 
     if axis >= num_dim:
         raise ValueError(
-            "Can't split along axis {}. The image has {} dimensions".format(
-                axis, num_dim
+            trans._(
+                "Can't split along axis {axis}. The image has {num_dim} dimensions",
+                deferred=True,
+                axis=axis,
+                num_dim=num_dim,
             )
         )
 
@@ -208,18 +220,23 @@ def images_to_stack(
         List of Image Layers
     axis : int
         Index to to insert the new axis
-    kwargs : dict
+    **kwargs : dict
         Dictionary of parameters values to override parameters
         from the first image in images list.
 
-    Returns.
+    Returns
     -------
     stack : napari.layers.Image
         Combined image stack
     """
 
     if len(images) == 0:
-        raise IndexError("images list is empty")
+        raise IndexError(
+            trans._(
+                "images list is empty",
+                deferred=True,
+            )
+        )
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
