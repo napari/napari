@@ -1,4 +1,5 @@
 import inspect
+from contextvars import ContextVar
 from typing import Iterable, Optional
 
 from qtpy import QtCore
@@ -7,11 +8,14 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QProgressBar,
+    QVBoxLayout,
     QWidget,
 )
 from tqdm import tqdm
 
 from .._qt.utils import get_viewer_instance
+
+IS_NESTED = ContextVar('IS_NESTED', default=False)
 
 
 def get_pbar(viewer_instance, **kwargs):
@@ -28,7 +32,16 @@ def get_pbar(viewer_instance, **kwargs):
         progress bar to associate with current iterable
     """
     pbar = ProgressBar(**kwargs)
-    viewer_instance.activityDock.widget().layout.addWidget(pbar)
+    pbr_layout = viewer_instance.activityDock.widget().layout
+    if IS_NESTED.get():
+        last_added_idx = pbr_layout.count() - 1
+        unnested_widg_layout = (
+            pbr_layout.itemAt(last_added_idx).widget().layout()
+        )
+        unnested_widg_layout.addWidget(pbar)
+    else:
+        pbr_group = ProgressBarGroup(pbar)
+        pbr_layout.addWidget(pbr_group)
 
     return pbar
 
@@ -132,8 +145,19 @@ class progress(tqdm):
                 # TODO: pick a better default
                 self.set_description("Progress Bar")
 
+        self.nested_token = None
         self.show()
         QApplication.processEvents()
+
+    def __enter__(self):
+        self.nested_token = IS_NESTED.set(True)  # noqa
+        return super().__enter__()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if IS_NESTED.get():
+            IS_NESTED.reset(self.nested_token)
+        self._pbar.parentWidget().close()
+        return super().__exit__(exc_type, exc_value, traceback)
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
@@ -181,6 +205,9 @@ class progress(tqdm):
             return
         if self.has_viewer:
             self._pbar.close()
+        # still need to close groups of pbars outside context
+        if not IS_NESTED.get():
+            self._pbar.parentWidget().close()
         super().close()
 
 
@@ -216,3 +243,13 @@ class ProgressBar(QWidget):
 
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
+
+
+class ProgressBarGroup(QWidget):
+    def __init__(self, pbar, parent=None) -> None:
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        pbr_group_layout = QVBoxLayout()
+        pbr_group_layout.addWidget(pbar)
+        self.setLayout(pbr_group_layout)

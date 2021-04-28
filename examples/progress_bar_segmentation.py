@@ -9,7 +9,13 @@ from time import sleep
 from napari.utils.progress import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
-from skimage.filters import *
+from skimage.filters import (
+    threshold_isodata,
+    threshold_li,
+    threshold_otsu,
+    threshold_triangle,
+    threshold_yen,
+)
 from skimage.data import cells3d
 from skimage.measure import label
 
