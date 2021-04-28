@@ -19,7 +19,7 @@ IS_NESTED = ContextVar('IS_NESTED', default=False)
 
 
 def get_pbar(viewer_instance, **kwargs):
-    """Adds ProgressBar to viewer Activity Dock and returns it.
+    """Adds ProgressBar to viewer Activity Dialog and returns it.
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def get_pbar(viewer_instance, **kwargs):
         progress bar to associate with current iterable
     """
     pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.activityDock.widget().layout
+    pbr_layout = viewer_instance.window()._activity_dialog.layout()
     if IS_NESTED.get():
         last_added_idx = pbr_layout.count() - 1
         unnested_widg_layout = (

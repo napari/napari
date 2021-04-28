@@ -67,7 +67,7 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
 
-        self._activity_dialog = None
+        self._activity_dialog = ActivityDialog(parent=self)
         self._status_bar = self.statusBar()
 
         # set SETTINGS plugin defaults.
@@ -795,14 +795,10 @@ class Window:
     def _toggle_activity_dock(self, state):
         if state:
             self._activity_btn.setArrowType(Qt.DownArrow)
-            if self._qt_window._activity_dialog is None:
-                win = ActivityDialog(parent=self._qt_window)
-                self._qt_window._activity_dialog = win
             self._qt_window._activity_dialog.show()
         else:
             self._activity_btn.setArrowType(Qt.UpArrow)
-            if self._qt_window._activity_dialog:
-                self._qt_window._activity_dialog.hide()
+            self._qt_window._activity_dialog.hide()
 
     def _toggle_scale_bar_visible(self, state):
         self.qt_viewer.viewer.scale_bar.visible = state

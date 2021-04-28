@@ -14,11 +14,9 @@ class ActivityDialog(QDialog):
         super().__init__(parent)
         self.setObjectName('Activity')
 
-        # Setup
         self.setWindowTitle(trans._('Activity'))
 
-        # Layout
-        left_layout = QVBoxLayout()
-        left_layout.addStretch()
+        activity_layout = QVBoxLayout()
+        activity_layout.addStretch()
 
-        self.setLayout(left_layout)
+        self.setLayout(activity_layout)
