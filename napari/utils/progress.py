@@ -124,6 +124,8 @@ class progress(tqdm):
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
 
+        self.nested_token = None
+
         super().__init__(iterable, desc, total, *args, **kwargs)
         if not self.has_viewer:
             return
@@ -145,7 +147,6 @@ class progress(tqdm):
                 # TODO: pick a better default
                 self.set_description("Progress Bar")
 
-        self.nested_token = None
         self.show()
         QApplication.processEvents()
 
@@ -156,7 +157,8 @@ class progress(tqdm):
     def __exit__(self, exc_type, exc_value, traceback):
         if IS_NESTED.get():
             IS_NESTED.reset(self.nested_token)
-        self._pbar.parentWidget().close()
+        if self.has_viewer:
+            self._pbar.parentWidget().close()
         return super().__exit__(exc_type, exc_value, traceback)
 
     def display(self, msg: str = None, pos: int = None) -> None:
@@ -191,10 +193,11 @@ class progress(tqdm):
         if self.disable:
             return
         if self.has_viewer:
+            # still need to close groups of pbars outside context
+            if not IS_NESTED.get():
+                self._pbar.parentWidget().close()
+            # otherwise we just close the current progress bar
             self._pbar.close()
-        # still need to close groups of pbars outside context
-        if not IS_NESTED.get():
-            self._pbar.parentWidget().close()
         super().close()
 
 
