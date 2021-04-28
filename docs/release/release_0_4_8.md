@@ -1,6 +1,6 @@
 # napari 0.4.7
 
-We're happy to announce the release of napari 0.4.7!
+We're happy to announce the release of napari 0.4.8!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
@@ -155,4 +155,3 @@ https://github.com/napari/napari
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
-
