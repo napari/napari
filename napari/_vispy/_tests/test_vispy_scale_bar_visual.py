@@ -11,6 +11,10 @@ def test_vispy_text_visual(make_napari_viewer):
     assert viewer.scale_bar is not None
     assert qt_widget.scale_bar is not None
 
+    # make sure units are not set yet
+    assert qt_widget.scale_bar._unit_reg is None
+    assert qt_widget.scale_bar._quantity is None
+
     # check visible attribute
     assert qt_widget.scale_bar.node.visible == viewer.scale_bar.visible
     viewer.scale_bar.visible = True
@@ -51,15 +55,22 @@ def test_vispy_text_visual(make_napari_viewer):
         viewer.scale_bar.position = "top_centre"
 
     # check a couple of pint's units
-    for magnitude, unit in [
-        (1, ""),
-        (12, "12um"),
-        (13, "13 meters"),
-        (0.5, "0.5ft"),
-        (60, "60s"),
+    for magnitude, unit, quantity in [
+        (1, "", None),
+        (1, "", ""),
+        (12, "micrometer", "12um"),
+        (13, "meter", "13 meters"),
+        (0.5, "foot", "0.5ft"),
+        (60, "second", "60s"),
     ]:
-        viewer.scale_bar.unit = unit
+        viewer.scale_bar.unit = quantity
         assert qt_widget.scale_bar._quantity.magnitude == magnitude
+        assert qt_widget.scale_bar._quantity.units == unit
 
     with pytest.raises(UndefinedUnitError):
         viewer.scale_bar.unit = "snail speed"
+
+    # test to make sure unit is updated when scale bar is not visible
+    viewer.scale_bar.visible = False
+    viewer.scale_bar.unit = "pixel"
+    assert qt_widget.scale_bar._quantity.units == "pixel"

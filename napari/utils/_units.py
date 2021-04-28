@@ -1,11 +1,5 @@
 """Units utilities."""
-import pint
-
-# UnitRegistry treats empty string as unit-less quantity
-NoUnit = ""
-
-# instantiate default unit registry
-UNIT_REG = pint.UnitRegistry()
+from functools import lru_cache
 
 # define preferred scale bar values
 PREFERRED_VALUES = [
@@ -25,3 +19,14 @@ PREFERRED_VALUES = [
     500,
     750,
 ]
+
+
+@lru_cache(maxsize=1)
+def get_unit_registry():
+    """Get pint's UnitRegistry.
+
+    This method is preferred
+    """
+    import pint
+
+    return pint.UnitRegistry()

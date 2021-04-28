@@ -1,4 +1,6 @@
 """Scale bar model."""
+from typing import Optional
+
 from ..utils.events import EventedModel
 from ._viewer_constants import Position
 
@@ -26,8 +28,9 @@ class ScaleBar(EventedModel):
         then it has the color opposite of this color.
     font_size : float
         The font size (in points) of the text.
-    unit : str
-        Unit to be used by the scale bar.
+    unit : Optional[str]
+        Unit to be used by the scale bar. The value can be set
+        to `None` to display no units.
     """
 
     visible: bool = False
@@ -35,4 +38,4 @@ class ScaleBar(EventedModel):
     ticks: bool = True
     position: Position = Position.BOTTOM_RIGHT
     font_size: float = 10
-    unit: str = ""
+    unit: Optional[str] = None

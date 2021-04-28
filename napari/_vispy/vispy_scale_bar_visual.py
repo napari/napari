@@ -6,7 +6,7 @@ from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
 
 from ..components._viewer_constants import Position
-from ..utils._units import PREFERRED_VALUES, UNIT_REG, NoUnit
+from ..utils._units import PREFERRED_VALUES, get_unit_registry
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.theme import get_theme
 from ..utils.translations import trans
@@ -31,7 +31,8 @@ class VispyScaleBarVisual:
         self._default_color = np.array([1, 0, 1, 1])
         self._target_length = 150
         self._scale = 1
-        self._quantity = UNIT_REG(NoUnit)
+        self._quantity = None
+        self._unit_reg = None
 
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
@@ -63,11 +64,30 @@ class VispyScaleBarVisual:
         self._on_data_change(None)
         self._on_dimension_change(None)
         self._on_position_change(None)
-        self._on_dimension_change(None)
+
+    @property
+    def unit_registry(self):
+        """Get unit registry.
+
+        Rather than instantiating UnitRegistry earlier on, it is instantiated
+        only when it is needed. The reason for this is that importing `pint`
+        at module level can be time consuming.
+
+        Notes
+        -----
+        https://github.com/napari/napari/pull/2617#issuecomment-827716325
+        https://github.com/napari/napari/pull/2325
+        """
+        if self._unit_reg is None:
+            self._unit_reg = get_unit_registry()
+        return self._unit_reg
 
     def _on_dimension_change(self, event):
         """Update dimension."""
-        self._quantity = UNIT_REG(self._viewer.scale_bar.unit)
+        if not self._viewer.scale_bar.visible and self._unit_reg is None:
+            return
+        unit = self._viewer.scale_bar.unit
+        self._quantity = self.unit_registry(unit)
         self._on_zoom_change(None, True)
 
     def _calculate_best_length(self, desired_length: float):
@@ -113,9 +133,8 @@ class VispyScaleBarVisual:
         if not self._viewer.scale_bar.visible:
             return
 
-        scale = 1 / self._viewer.camera.zoom
-
         # If scale has not changed, do not redraw
+        scale = 1 / self._viewer.camera.zoom
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4 and not force:
             return
         self._scale = scale
@@ -125,7 +144,7 @@ class VispyScaleBarVisual:
         # convert desired length to world size
         target_world_pixels = scale_canvas2world * target_canvas_pixels
 
-        # calculate the desired length as well as update the value and new units
+        # calculate the desired length as well as update the value and units
         target_world_pixels_rounded, new_dim = self._calculate_best_length(
             target_world_pixels
         )
@@ -167,7 +186,17 @@ class VispyScaleBarVisual:
         """Change visibility of scale bar."""
         self.node.visible = self._viewer.scale_bar.visible
         self.text_node.visible = self._viewer.scale_bar.visible
-        self._on_zoom_change(None)
+
+        # update unit if scale bar is visible and quantity
+        # has not been specified yet or current unit is not
+        # equivalent
+        if self._viewer.scale_bar.visible and (
+            self._quantity is None
+            or self._quantity.units != self._viewer.scale_bar.unit
+        ):
+            self._quantity = self.unit_registry(self._viewer.scale_bar.unit)
+        # only force zoom update if the scale bar is visible
+        self._on_zoom_change(None, self._viewer.scale_bar.visible)
 
     def _on_text_change(self, event):
         """Update text information"""
