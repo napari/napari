@@ -902,6 +902,7 @@ class Window:
         area: str = 'bottom',
         allowed_areas=None,
         shortcut=None,
+        add_vertical_stretch=True,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -923,6 +924,10 @@ class Window:
             By default, all areas are allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
+        add_vertical_stretch : bool, optional
+            Whether to add stretch to the bottom of vertical widgets (pushing
+            widgets up towards the top of the allotted area, instead of letting
+            them distribute across the vertical space).  By default, True.
 
         Returns
         -------
@@ -947,6 +952,7 @@ class Window:
             area=area,
             allowed_areas=allowed_areas,
             shortcut=shortcut,
+            add_vertical_stretch=add_vertical_stretch,
         )
         self._add_viewer_dock_widget(dock_widget)
 
@@ -979,20 +985,26 @@ class Window:
             Flag to tabify dockwidget or not.
         """
         # Find if any othe dock widgets are currently in area
-        current_dws_in_area = []
-        for dw in self._qt_window.findChildren(QDockWidget):
-            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area:
-                current_dws_in_area.append(dw)
-
+        current_dws_in_area = [
+            dw
+            for dw in self._qt_window.findChildren(QDockWidget)
+            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area
+        ]
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
 
         # If another dock widget present in area then tabify
-        if len(current_dws_in_area) > 0 and tabify:
-            self._qt_window.tabifyDockWidget(
-                current_dws_in_area[-1], dock_widget
-            )
-            dock_widget.show()
-            dock_widget.raise_()
+        if current_dws_in_area:
+            if tabify:
+                self._qt_window.tabifyDockWidget(
+                    current_dws_in_area[-1], dock_widget
+                )
+                dock_widget.show()
+                dock_widget.raise_()
+            elif dock_widget.area in ('right', 'left'):
+                _wdg = current_dws_in_area + [dock_widget]
+                # add sizes to push lower widgets up
+                sizes = list(range(1, len(_wdg) * 4, 4))
+                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
