@@ -209,9 +209,10 @@ class QtBaseImageControls(QtLayerControls):
         clim_popup.slider.rangeChanged.connect(set_range)
 
         reset, fullrange = create_clim_reset_buttons(self.layer)
-        clim_popup._layout.addWidget(reset)
+        clim_popup._layout.addWidget(reset, alignment=Qt.AlignBottom)
+
         if fullrange is not None:
-            clim_popup._layout.addWidget(fullrange)
+            clim_popup._layout.addWidget(fullrange, alignment=Qt.AlignBottom)
         clim_popup.move_to('top', min_length=650)
         clim_popup.show()
         self.clim_popup = clim_popup

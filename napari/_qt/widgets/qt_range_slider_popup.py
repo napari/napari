@@ -30,10 +30,13 @@ class QRangeSliderPopup(QtPopup):
 
         # create slider
         self.slider = QLabeledRangeSlider(Qt.Horizontal, parent)
+        self.slider.label_shift_x = 2
+        self.slider.label_shift_y = 2
         self.slider.setFocus()
 
         # add widgets to layout
         self._layout = QHBoxLayout()
+        self._layout.setContentsMargins(10, 0, 10, 16)
         self.frame.setLayout(self._layout)
         self._layout.addWidget(self.slider)
         QApplication.processEvents()

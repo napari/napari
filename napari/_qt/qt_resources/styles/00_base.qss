@@ -227,6 +227,10 @@ QAbstractSpinBox::down-arrow {
    image: url(":/themes/{{ folder }}/minus_50.svg");
 }
 
+QLabeledRangeSlider > QAbstractSpinBox {
+  min-width: 5px;
+}
+
 /* ----------------- QCheckBox ------------------ */
 
 QCheckBox {
