@@ -1,4 +1,4 @@
-# napari 0.4.7
+# napari 0.4.8
 
 We're happy to announce the release of napari 0.4.8!
 napari is a fast, interactive, multi-dimensional image viewer for Python.
