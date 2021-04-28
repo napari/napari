@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QShortcut,
+    QToolButton,
     QWidget,
 )
 
@@ -30,6 +31,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
+from .dialogs.activity_dialog import ActivityDialog
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
@@ -64,6 +66,8 @@ class _QtMainWindow(QMainWindow):
         self._maximized_flag = False
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
+
+        self._activity_dialog = None
         self._status_bar = self.statusBar()
 
         # set SETTINGS plugin defaults.
@@ -311,6 +315,14 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
+        self._activity_btn = QToolButton()
+        self._activity_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self._activity_btn.setArrowType(Qt.UpArrow)
+        self._activity_btn.setText(trans._('Activity'))
+        self._activity_btn.setCheckable(True)
+        self._activity_btn.clicked.connect(self._toggle_activity_dock)
+        self._status_bar.addPermanentWidget(self._activity_btn)
+
         self.qt_viewer.viewer.theme = SETTINGS.appearance.theme
         self._update_theme()
 
@@ -321,7 +333,7 @@ class Window:
         self._add_viewer_dock_widget(
             self.qt_viewer.dockLayerList, tabify=False
         )
-        self._add_viewer_dock_widget(self.qt_viewer.activityDock, tabify=False)
+        # self._add_viewer_dock_widget(self.qt_viewer.activityDock, tabify=False)
         self.window_menu.addSeparator()
 
         SETTINGS.appearance.events.theme.connect(self._update_theme)
@@ -779,6 +791,18 @@ class Window:
             self.qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
+
+    def _toggle_activity_dock(self, state):
+        if state:
+            self._activity_btn.setArrowType(Qt.DownArrow)
+            if self._qt_window._activity_dialog is None:
+                win = ActivityDialog(parent=self._qt_window)
+                self._qt_window._activity_dialog = win
+            self._qt_window._activity_dialog.show()
+        else:
+            self._activity_btn.setArrowType(Qt.UpArrow)
+            if self._qt_window._activity_dialog:
+                self._qt_window._activity_dialog.hide()
 
     def _toggle_scale_bar_visible(self, state):
         self.qt_viewer.viewer.scale_bar.visible = state
