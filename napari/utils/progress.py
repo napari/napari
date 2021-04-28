@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QProgressBar,
+    QVBoxLayout,
     QWidget,
 )
 from tqdm import tqdm
@@ -32,20 +33,15 @@ def get_pbar(viewer_instance, **kwargs):
     """
     pbar = ProgressBar(**kwargs)
     pbr_layout = viewer_instance.activityDock.widget().layout
-    # if is nested
     if IS_NESTED.get():
-        # add to group in activity dock (?)
-        print("NESTED!!")
         last_added_idx = pbr_layout.count() - 1
-        unnested_widg = pbr_layout.itemAt(last_added_idx).widget()
-        print(f"Belongs to {unnested_widg.description_label.text()}")
-    # else
+        unnested_widg_layout = (
+            pbr_layout.itemAt(last_added_idx).widget().layout()
+        )
+        unnested_widg_layout.addWidget(pbar)
     else:
-        # just add normally
-        print("New Pbar")
-        # this should actually create a vbox containing the pbar, with a given name
-        # if we then later nest this pbar, we can access parent of unnested_widg and add our pbar to that group instead
-        pbr_layout.addWidget(pbar)
+        pbr_group = ProgressBarGroup(pbar)
+        pbr_layout.addWidget(pbr_group)
 
     return pbar
 
@@ -160,6 +156,7 @@ class progress(tqdm):
     def __exit__(self, exc_type, exc_value, traceback):
         if IS_NESTED.get():
             IS_NESTED.reset(self.nested_token)
+        self._pbar.parentWidget().close()
         return super().__exit__(exc_type, exc_value, traceback)
 
     def display(self, msg: str = None, pos: int = None) -> None:
@@ -195,6 +192,9 @@ class progress(tqdm):
             return
         if self.has_viewer:
             self._pbar.close()
+        # still need to close groups of pbars outside context
+        if not IS_NESTED.get():
+            self._pbar.parentWidget().close()
         super().close()
 
 
@@ -230,3 +230,13 @@ class ProgressBar(QWidget):
 
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
+
+
+class ProgressBarGroup(QWidget):
+    def __init__(self, pbar, parent=None) -> None:
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        pbr_group_layout = QVBoxLayout()
+        pbr_group_layout.addWidget(pbar)
+        self.setLayout(pbr_group_layout)
