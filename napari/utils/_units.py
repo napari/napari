@@ -25,7 +25,12 @@ PREFERRED_VALUES = [
 def get_unit_registry():
     """Get pint's UnitRegistry.
 
-    This method is preferred
+    Pint greedily imports many libraries, (including dask, xarray, pandas, and babel) to check for 
+    compatibility.  Some of those libraries may be slow to import.  This accessor function should
+    be used (and only when units are actually necessary) to avoid incurring a large import time
+    penalty.
+         
+    See comment for details: https://github.com/napari/napari/pull/2617#issuecomment-827747792
     """
     import pint
 
