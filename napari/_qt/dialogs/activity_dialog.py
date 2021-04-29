@@ -10,8 +10,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-MIN_WIDTH = 400
-MIN_HEIGHT = 120
+MIN_WIDTH = 350
+MIN_HEIGHT = 140
 
 
 class ActivityDialog(QDialog):

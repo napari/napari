@@ -494,6 +494,10 @@ NapariQtNotification #severity_icon {
   font-size: 11pt;  
 }
 
+#QtActivityButton:hover {
+  background-color: {{ lighten(background, 10) }};
+}
+
 /* ------------ Plugin Dialog ------------ */
 
 QPluginList {

@@ -322,9 +322,10 @@ class Window:
         self._status_bar.addPermanentWidget(self._help)
 
         self._activity_btn = QToolButton()
+        self._activity_btn.setObjectName("QtActivityButton")
         self._activity_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self._activity_btn.setArrowType(Qt.UpArrow)
-        self._activity_btn.setText(trans._('Activity'))
+        self._activity_btn.setText(trans._('activity'))
         self._activity_btn.setCheckable(True)
         self._activity_btn.clicked.connect(self._toggle_activity_dock)
 
