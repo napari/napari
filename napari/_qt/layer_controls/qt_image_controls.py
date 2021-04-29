@@ -214,15 +214,17 @@ class QtImageControls(QtBaseImageControls):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        with self.layer.events.interpolation.blocker():
-            index = self.interpComboBox.findText(
+
+        def get_index():
+            return self.interpComboBox.findText(
                 self.layer.interpolation, Qt.MatchFixedString
             )
+
+        with self.layer.events.interpolation.blocker():
+            index = get_index()
             if index == -1:
                 self.interpComboBox.addItem(self.layer.interpolation)
-                index = self.interpComboBox.findText(
-                    self.layer.interpolation, Qt.MatchFixedString
-                )
+                index = get_index()
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
