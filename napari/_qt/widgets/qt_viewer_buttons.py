@@ -113,17 +113,19 @@ class QtViewerButtons(QFrame):
             'roll',
         )
 
-        action_manager.bind_button('roll_axes', self.rollDimsButton)
+        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
 
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
         )
 
-        action_manager.bind_button('transpose_axes', self.transposeDimsButton)
+        action_manager.bind_button(
+            'napari:transpose_axes', self.transposeDimsButton
+        )
 
         self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
-        action_manager.bind_button('reset_view', self.resetViewButton)
+        action_manager.bind_button('napari:reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -131,7 +133,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        action_manager.bind_button('toggle_grid', self.gridViewButton)
+        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -142,7 +144,9 @@ class QtViewerButtons(QFrame):
             3,
         )
 
-        action_manager.bind_button('toggle_ndisplay', self.ndisplayButton)
+        action_manager.bind_button(
+            'napari:toggle_ndisplay', self.ndisplayButton
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)

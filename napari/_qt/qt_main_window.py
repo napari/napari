@@ -26,7 +26,6 @@ from qtpy.QtWidgets import (
 
 from .. import plugins
 from ..utils import config, perf
-from ..utils.action_manager import action_manager
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
@@ -343,16 +342,6 @@ class Window:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
-
-        for name, action in action_manager._actions.items():
-            qa = QAction(self.qt_viewer)
-            action_manager.bind_qaction(name, qa)
-            # Note: do not bind shortcut here.
-            # while it would be nice to have the shortcut in the menu, this does
-            # bind the shortctut at the window level and will bypass custom handling
-            # of shortcuts at the KeymapProvider level. While it could work for
-            # globals instances, like viewer; it wont for others like layers.
-            self.window_menu.addAction(qa)
 
         if show:
             self.show()
@@ -980,6 +969,7 @@ class Window:
                 area=area,
                 allowed_areas=allowed_areas,
                 shortcut=shortcut,
+                add_vertical_stretch=add_vertical_stretch,
             )
         else:
             dock_widget = QtViewerDockWidget(
@@ -988,17 +978,9 @@ class Window:
                 name=name,
                 area=area,
                 allowed_areas=allowed_areas,
+                add_vertical_stretch=add_vertical_stretch,
             )
 
-        dock_widget = QtViewerDockWidget(
-            self.qt_viewer,
-            widget,
-            name=name,
-            area=area,
-            allowed_areas=allowed_areas,
-            shortcut=shortcut,
-            add_vertical_stretch=add_vertical_stretch,
-        )
         self._add_viewer_dock_widget(dock_widget)
 
         if hasattr(widget, 'reset_choices'):
@@ -1059,9 +1041,9 @@ class Window:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             # deprecating with 0.4.8, but let's try to keep compatibility.
-            sht = dock_widget.shortcut
-        if sht is not None:
-            action.setShortcut(sht)
+            shortcut = dock_widget.shortcut
+        if shortcut is not None:
+            action.setShortcut(shortcut)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget: QWidget):

@@ -167,16 +167,17 @@ class QtViewer(QSplitter):
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
         action_manager.register_action(
-            "toggle_console_visibility",
+            "napari:toggle_console_visibility",
             self.toggle_console_visibility,
             "Show/Hide IPython console",
             self.viewer,
         )
         action_manager.bind_button(
-            'toggle_console_visibility', self.viewerButtons.consoleButton
+            'napari:toggle_console_visibility',
+            self.viewerButtons.consoleButton,
         )
         action_manager.bind_shortcut(
-            'toggle_console_visibility', 'Control-Shift-C'
+            'napari:toggle_console_visibility', 'Control-Shift-C'
         )
 
         self._create_canvas()

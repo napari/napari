@@ -7,9 +7,10 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
 
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
+from .translations import trans
 
 if TYPE_CHECKING:
-    from qtpy.QtWidgets import QAction, QPushButton
+    from qtpy.QtWidgets import QPushButton
 
     from napari.qt import QtStateButton
 
@@ -133,10 +134,19 @@ class ActionManager:
         self._buttons: Dict[
             str, Set[Union[QPushButton, QtStateButton]]
         ] = defaultdict(lambda: set())
-        self._qactions: Dict[str, QAction] = defaultdict(lambda: [])
         self._shortcuts: Dict[str, str] = {}
         self.context: Dict[str, Any] = {}
         self._stack: List[str] = []
+
+    def _validate_action_name(self, name):
+        if ":" not in name:
+            raise ValueError(
+                trans._(
+                    'Action names need to be in the form `package:name`, got {name}',
+                    name=name,
+                    delayed=True,
+                )
+            )
 
     def register_action(
         self, name, command, description, keymapprovider: KeymapProvider
@@ -167,6 +177,7 @@ class ActionManager:
             tooltips.
 
         """
+        self._validate_action_name(name)
         self._actions[name] = Action(command, description, keymapprovider)
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
@@ -176,27 +187,6 @@ class ActionManager:
             # test if only tooltip makes crash
             button.setToolTip(tooltip)
             button.clicked_maybe_connect(callback)
-
-    def _update_qactions(self, name):
-        if name in self._qactions:
-            action = self._actions[name]
-            qaction = self._qactions[name]
-            # We can't set the shortcut yet, or this will later break the layers
-            # when we use the action manager for those. Setting the key sequence
-            # there will _also_ bind the shortcuts but at the window level which
-            # has a higher priority. SO this conflict with KeymapProvider
-            #
-            # qaction.setShortcut(
-            #     QKeySequence(sht.replace('-', '+').replace('Control', 'Ctrl'))
-            # )
-            menu_name = name
-            if ' ' not in menu_name:
-                components = [
-                    word.capitalize() for word in menu_name.split('_')
-                ]
-                menu_name = ' '.join(components)
-            qaction.setText(menu_name)
-            qaction.setStatusTip(action.description)
 
     def _update_gui_elements(self, name):
         """
@@ -209,16 +199,13 @@ class ActionManager:
 
         # update buttons with shortcut and description
         if name in self._shortcuts:
-            sht = self._shortcuts[name]
-            sht_str = f' ({Shortcut(sht).platform})'
+            shortcut = self._shortcuts[name]
+            shortcut_str = f' ({Shortcut(shortcut).platform})'
         else:
-            sht = ''
-            sht_str = ''
+            shortcut_str = ''
 
         callable_ = self._actions[name].callable(self.context)
-        self._update_buttons(buttons, desc + sht_str, callable_)
-
-        self._update_qactions(name)
+        self._update_buttons(buttons, desc + shortcut_str, callable_)
 
     def _update_shortcut_bindings(self, name):
         """
@@ -230,15 +217,16 @@ class ActionManager:
         action = self._actions[name]
         if name not in self._shortcuts:
             return
-        sht = self._shortcuts.get(name)
+        shortcut = self._shortcuts.get(name)
         keymapprovider = action.keymapprovider
         if hasattr(keymapprovider, 'bind_key'):
-            keymapprovider.bind_key(sht, overwrite=True)(action.command)
+            keymapprovider.bind_key(shortcut, overwrite=True)(action.command)
 
     def bind_button(self, name, button):
         """
         Bind `button` to trigger Action `name` on click.
         """
+        self._validate_action_name(name)
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
         button = ButtonWrapper(button)
@@ -252,24 +240,9 @@ class ActionManager:
         """
         bind shortcut `shortcut` to trigger action `name`
         """
+        self._validate_action_name(name)
         self._shortcuts[name] = shortcut
         self._update_shortcut_bindings(name)
-        self._update_gui_elements(name)
-
-    def bind_qaction(self, name, qaction):
-        """
-        Bind the given qaction to an action.
-
-        This will also update the description and shortcut when those changes.
-
-        Same as for shortcut
-        """
-        self._qactions[name] = qaction
-        action = self._actions[name]
-
-        qaction.destroyed.connect(lambda: self._qactions.pop(name, None))
-        qaction.triggered.connect(action.callable(self.context))
-        qaction.triggered.connect(lambda: self.push(name))
         self._update_gui_elements(name)
 
     def unbind_shortcut(self, name):
@@ -277,9 +250,9 @@ class ActionManager:
         unbind shortcut for action name
         """
         action = self._actions[name]
-        sht = self._shortcuts.get(name)
+        shortcut = self._shortcuts.get(name)
         if hasattr(action.keymapprovider, 'bind_key'):
-            action.keymapprovider.bind_key(sht)(None)
+            action.keymapprovider.bind_key(shortcut)(None)
         del self._shortcuts[name]
         self._update_gui_elements(name)
 

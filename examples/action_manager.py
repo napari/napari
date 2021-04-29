@@ -9,14 +9,14 @@ from napari.components import ViewerModel
 from napari.utils.action_manager import action_manager
 
 
-def rotate45(viewer):
+def rotate45(viewer: napari.Viewer):
     """
     Rotate layer 0 of the viewer by 45º
 
     Parameters
     ----------
-    viewer
-        active (unique) instance of the naparia viewer
+    viewer: napari.Viewer
+        active (unique) instance of the napari viewer
 
     Notes
     -----
@@ -49,19 +49,27 @@ def register_action():
     # are trying to not change the KeymapProvider API too much for now.
     # we give an action name to the action for configuration purposes as we need
     # it to be storable in json.
+
+    # By convention (may be enforce later), we do give an action name which is iprefixed
+    # by the name of the package it is defined in, here napari,
     action_manager.register_action(
-        'rotate45', rotate45, 'Rotate layer 0 by 45deg', ViewerModel
+        name='napari:rotate45',
+        command=rotate45,
+        description='Rotate layer 0 by 45deg',
+        keymapprovider=ViewerModel,
     )
 
 
 def bind_shortcut():
     # note that the tooltip of the corresponding button will be updated to
     # remove the shortcut.
-    action_manager.unbind_shortcut('reset_view')  # Control-R
-    action_manager.bind_shortcut('rotate45', 'Control-R')
+    action_manager.unbind_shortcut('napari:reset_view')  # Control-R
+    action_manager.bind_shortcut('napari:rotate45', 'Control-R')
+
 
 def bind_button():
-    action_manager.bind_button('rotate45', rot_button)
+    action_manager.bind_button('napari:rotate45', rot_button)
+
 
 # we can all bind_shortcut or register_action or bind_button in any order;
 # this let us configure shortcuts even if plugins are loaded / unloaded.

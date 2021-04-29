@@ -156,9 +156,7 @@ class QtViewerDockWidget(QDockWidget):
     @property
     def shortcut(self):
         warnings.warn(
-            'The shortcut attribute of QtViewerDockWidget is deprecated '
-            'since version 0.4.8 and will be removed in future versions. '
-            'Shortcut are now managed via the action manager api.',
+            _SHORTCUT_DEPRECATION_STRING,
             DeprecationWarning,
             stacklevel=2,
         )

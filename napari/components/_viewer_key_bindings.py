@@ -5,7 +5,7 @@ from ..utils.translations import trans
 from .viewer_model import ViewerModel
 
 
-def register_viewer_action(description, shortcut):
+def register_viewer_action(description, shortcuts):
     """
     Convenient decorator to register an action with the current ViewerModel
 
@@ -14,13 +14,18 @@ def register_viewer_action(description, shortcut):
     """
 
     def _inner(func):
-        nonlocal shortcut
-        name = func.__name__
-        action_manager.register_action(name, func, description, ViewerModel)
-        if isinstance(shortcut, str):
-            shortcut = [shortcut]
-        for sht in shortcut:
-            action_manager.bind_shortcut(name, sht)
+        nonlocal shortcuts
+        name = 'napari:' + func.__name__
+        action_manager.register_action(
+            name=name,
+            command=func,
+            description=description,
+            keymapprovider=ViewerModel,
+        )
+        if isinstance(shortcuts, str):
+            shortcuts = [shortcuts]
+        for shortcut in shortcuts:
+            action_manager.bind_shortcut(name, shortcut)
         return func
 
     return _inner
