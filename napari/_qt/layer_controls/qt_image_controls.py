@@ -218,6 +218,11 @@ class QtImageControls(QtBaseImageControls):
             index = self.interpComboBox.findText(
                 self.layer.interpolation, Qt.MatchFixedString
             )
+            if index == -1:
+                self.interpComboBox.addItem(self.layer.interpolation)
+                index = self.interpComboBox.findText(
+                    self.layer.interpolation, Qt.MatchFixedString
+                )
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
