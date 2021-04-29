@@ -5,6 +5,7 @@ wrap.
 import inspect
 import sys
 import time
+from functools import partial
 from itertools import chain, repeat
 from typing import Dict
 
@@ -41,7 +42,12 @@ from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
-from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
+from .utils import (
+    QImg2array,
+    move_to_bottom_right,
+    qbytearray_to_str,
+    str_to_qbytearray,
+)
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
@@ -67,7 +73,7 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
 
-        self._activity_dialog = ActivityDialog(parent=self)
+        self._activity_dialog = ActivityDialog()
         self._status_bar = self.statusBar()
 
         # set SETTINGS plugin defaults.
@@ -321,6 +327,18 @@ class Window:
         self._activity_btn.setText(trans._('Activity'))
         self._activity_btn.setCheckable(True)
         self._activity_btn.clicked.connect(self._toggle_activity_dock)
+
+        self._qt_window._activity_dialog.setParent(
+            self.qt_viewer._canvas_overlay
+        )
+        move_activity_dialog_to_bottom_right = partial(
+            move_to_bottom_right, self._qt_window._activity_dialog
+        )
+        self.qt_viewer._canvas_overlay.resized.connect(
+            move_activity_dialog_to_bottom_right
+        )
+        move_to_bottom_right(self._qt_window._activity_dialog)
+        self._qt_window._activity_dialog.hide()
         self._status_bar.addPermanentWidget(self._activity_btn)
 
         self.qt_viewer.viewer.theme = SETTINGS.appearance.theme

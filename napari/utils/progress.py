@@ -32,7 +32,7 @@ def get_pbar(viewer_instance, **kwargs):
         progress bar to associate with current iterable
     """
     pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.window()._activity_dialog.layout()
+    pbr_layout = viewer_instance.window()._activity_dialog.baseWidget.layout()
     if IS_NESTED.get():
         last_added_idx = pbr_layout.count() - 1
         unnested_widg_layout = (
@@ -42,7 +42,6 @@ def get_pbar(viewer_instance, **kwargs):
     else:
         pbr_group = ProgressBarGroup(pbar)
         pbr_layout.addWidget(pbr_group)
-
     return pbar
 
 

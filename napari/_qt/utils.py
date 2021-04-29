@@ -4,7 +4,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QSize, Qt
+from qtpy.QtCore import QByteArray, QPoint, QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -290,3 +290,11 @@ def get_viewer_instance():
         if isinstance(wdg, QMainWindow):
             return wdg.centralWidget().children()[1]
     return None  # TODO: raise error here?
+
+
+def move_to_bottom_right(widg, offset=(8, 8)):
+    """Position widget at the bottom right edge of the parent."""
+    if not widg.parent():
+        return
+    sz = widg.parent().size() - widg.size() - QSize(*offset)
+    widg.move(QPoint(sz.width(), sz.height()))
