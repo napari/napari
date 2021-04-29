@@ -364,7 +364,7 @@ def open_perspective_popup(btns: QtViewerButtons):
 
     # make layout
     layout = QHBoxLayout()
-    layout.addWidget(QLabel('FOV', btns))
+    layout.addWidget(QLabel(trans._('FOV'), btns))
     layout.addWidget(sld)
 
     # popup and show
