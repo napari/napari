@@ -431,7 +431,7 @@ class Labels(_ImageBase):
             data = [data]
         int_data = []
         for data_level in data:
-            if np.issubdtype(data_level.dtype, np.floating):
+            if np.issubdtype(data_level.dtype.type, np.floating):
                 raise TypeError(
                     trans._(
                         "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
