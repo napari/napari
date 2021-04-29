@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-MIN_WIDTH = 350
+MIN_WIDTH = 250
 MIN_HEIGHT = 140
 
 

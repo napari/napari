@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
-    QHBoxLayout,
+    QGridLayout,
     QLabel,
     QProgressBar,
     QVBoxLayout,
@@ -225,10 +225,16 @@ class ProgressBar(QWidget):
         self.description_label = QLabel()
         self.eta_label = QLabel()
 
-        layout = QHBoxLayout()
-        layout.addWidget(self.description_label)
-        layout.addWidget(self.pbar)
-        layout.addWidget(self.eta_label)
+        # addWidget(widget, row, column, [row_span, column_span])
+        layout = QGridLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        layout.setColumnMinimumWidth(0, 86)
+        layout.setColumnStretch(1, 1)
+
+        layout.addWidget(self.description_label, 0, 0, 1, 2)
+        layout.addWidget(self.pbar, 0, 1, 1, 1)
+        layout.addWidget(self.eta_label, 0, 2, 1, 2)
         self.setLayout(layout)
 
     def setRange(self, min, max):
