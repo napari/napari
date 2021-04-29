@@ -1,7 +1,9 @@
+from PyQt5.QtWidgets import QLabel, QSlider
 from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
 
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
+from ..dialogs.qt_modal import QtPopup
 
 
 class QtLayerButtons(QFrame):
@@ -153,6 +155,28 @@ class QtViewerButtons(QFrame):
             self.viewer.dims.events.ndisplay,
             2,
             3,
+        )
+        from qtpy.QtCore import Qt
+
+        def open_perspective_popup(pos):
+            pop = QtPopup(self.ndisplayButton)
+            layout = QHBoxLayout()
+            lbl = QLabel('FOV', self)
+            sld = QSlider(Qt.Horizontal, self)
+            layout.addWidget(lbl)
+            layout.addWidget(sld)
+            pop.frame.setLayout(layout)
+            pop.show_above_mouse()
+            sld.setRange(0, 90)
+            sld.valueChanged.connect(
+                lambda v: setattr(
+                    self.viewer.window.qt_viewer.camera._3D_camera, 'fov', v
+                )
+            )
+
+        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ndisplayButton.customContextMenuRequested.connect(
+            open_perspective_popup
         )
         self.ndisplayButton.setToolTip(
             trans._(
