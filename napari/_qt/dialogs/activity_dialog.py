@@ -29,4 +29,9 @@ class ActivityDialog(QDialog):
         self.baseWidget.setLayout(self.activity_layout)
 
         self.scroll = QScrollArea()
+        self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.baseWidget)
+
+        self.base_layout = QVBoxLayout()
+        self.base_layout.addWidget(self.scroll)
+        self.setLayout(self.base_layout)
