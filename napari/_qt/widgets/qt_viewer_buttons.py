@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QLabel, QSlider
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from functools import partial
+
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
 
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
@@ -156,27 +158,9 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        from qtpy.QtCore import Qt
-
-        def open_perspective_popup(pos):
-            pop = QtPopup(self.ndisplayButton)
-            layout = QHBoxLayout()
-            lbl = QLabel('FOV', self)
-            sld = QSlider(Qt.Horizontal, self)
-            layout.addWidget(lbl)
-            layout.addWidget(sld)
-            pop.frame.setLayout(layout)
-            pop.show_above_mouse()
-            sld.setRange(0, 90)
-            sld.valueChanged.connect(
-                lambda v: setattr(
-                    self.viewer.window.qt_viewer.camera._3D_camera, 'fov', v
-                )
-            )
-
         self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ndisplayButton.customContextMenuRequested.connect(
-            open_perspective_popup
+            partial(open_perspective_popup, self)
         )
         self.ndisplayButton.setToolTip(
             trans._(
@@ -359,3 +343,31 @@ class QtStateButton(QtViewerPushButton):
                 getattr(self._target, self._attribute) == self._onstate
             ):
                 self.toggle()
+
+
+def open_perspective_popup(btns: QtViewerButtons):
+    """Show a slider above `btn` to control the viewer `camera.fov`.
+
+    Parameters
+    ----------
+    btn : QtViewerButtons
+        an instance of QtViewerButtons.
+    """
+    if btns.viewer.dims.ndisplay != 3:
+        return
+
+    # make slider connected to FOV parameter
+    sld = QSlider(Qt.Horizontal, btns)
+    sld.setRange(0, max(90, btns.viewer.camera.fov))
+    sld.setValue(btns.viewer.camera.fov)
+    sld.valueChanged.connect(lambda v: setattr(btns.viewer.camera, 'fov', v))
+
+    # make layout
+    layout = QHBoxLayout()
+    layout.addWidget(QLabel('FOV', btns))
+    layout.addWidget(sld)
+
+    # popup and show
+    pop = QtPopup(btns)
+    pop.frame.setLayout(layout)
+    pop.show_above_mouse()

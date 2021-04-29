@@ -20,6 +20,8 @@ class Camera(EventedModel):
         Only used during 3D viewing.
         Note that Euler angles's intrinsic degeneracy means different
         sets of Euler angles may lead to the same view.
+    fov : float
+        Field of view of the perspective camera (if 3D).
     interactive : bool
         If the camera interactivity is enabled or not.
     """
@@ -28,6 +30,7 @@ class Camera(EventedModel):
     center: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     zoom: float = 1.0
     angles: Tuple[float, float, float] = (0.0, 0.0, 90.0)
+    fov: float = 0
     interactive: bool = True
 
     # validators
