@@ -1,6 +1,14 @@
 from PyQt5.QtWidgets import QWidget
 from qtpy.QtCore import QSize, Signal
-from qtpy.QtWidgets import QDialog, QScrollArea, QSizePolicy, QVBoxLayout
+from qtpy.QtWidgets import (
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+)
 
 MIN_WIDTH = 400
 MIN_HEIGHT = 120
@@ -32,6 +40,24 @@ class ActivityDialog(QDialog):
         self.scroll.setWidgetResizable(True)
         self.scroll.setWidget(self.baseWidget)
 
+        self.title_bar = QLabel()
+
+        title = QLabel('activity', self)
+        title.setObjectName('QtCustomTitleLabel')
+        title.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        )
+        line = QFrame(self)
+        line.setObjectName("QtCustomTitleBarLine")
+        title_layout = QHBoxLayout()
+        title_layout.setSpacing(4)
+        title_layout.setContentsMargins(8, 1, 8, 0)
+        line.setFixedHeight(1)
+        title_layout.addWidget(line)
+        title_layout.addWidget(title)
+        self.title_bar.setLayout(title_layout)
+
         self.base_layout = QVBoxLayout()
+        self.base_layout.addWidget(self.title_bar)
         self.base_layout.addWidget(self.scroll)
         self.setLayout(self.base_layout)

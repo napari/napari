@@ -487,6 +487,12 @@ NapariQtNotification #severity_icon {
   color: {{ icon }};
 }
 
+/* ------------ Activity Dock ------------ */
+
+#QtCustomTitleLabel {
+  color: {{ primary }};
+  font-size: 11pt;  
+}
 
 /* ------------ Plugin Dialog ------------ */
 
