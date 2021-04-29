@@ -19,6 +19,23 @@ class Interpolation(StringEnum):
     SPLINE36 = auto()
 
 
+InterpolationSubset = StringEnum(
+    'InterpolationSubset',
+    [
+        (a.name, a.value)
+        for a in Interpolation
+        if a
+        in [
+            Interpolation.BICUBIC,
+            Interpolation.BILINEAR,
+            Interpolation.KAISER,
+            Interpolation.NEAREST,
+            Interpolation.SPLINE36,
+        ]
+    ],
+)
+
+
 class Interpolation3D(StringEnum):
     """INTERPOLATION: Vispy interpolation mode for volume rendering."""
 
