@@ -110,6 +110,11 @@ venv.bak/
 # Pycharm files
 .idea
 
+# Liclipse
+.project
+.pydevproject
+.settings/
+
 # OS stuff
 .DS_store
 
