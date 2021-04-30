@@ -93,8 +93,8 @@ class _QtMainWindow(QMainWindow):
                 _QtMainWindow._instances.remove(self)
             except ValueError:
                 pass
-        if e.type() == QEvent.WindowActivate:
-            # upon activation, put window at the end of the instances list
+        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+            # upon activation or raise_, put window at the end of _instances
             try:
                 inst = _QtMainWindow._instances
                 inst.append(inst.pop(inst.index(self)))
@@ -1234,8 +1234,10 @@ class Window:
 
     def activate(self):
         """Make the viewer the currently active window."""
-        self._qt_window.raise_()  # for macOS
+        print("activationg")
         self._qt_window.activateWindow()  # for Windows
+        self._qt_window.raise_()  # for macOS
+        print("activation222")
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
