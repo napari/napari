@@ -1,11 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
-from ...layers.image._image_constants import (
-    Interpolation3D,
-    InterpolationSubset,
-    Rendering,
-)
+from ...layers.image._image_constants import Interpolation3D, Rendering
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
 
@@ -260,12 +256,11 @@ class QtImageControls(QtBaseImageControls):
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
-        interp_enum = (
-            Interpolation3D
-            if self.layer._ndisplay == 3
-            else InterpolationSubset
+        interp_2d = ('bicubic', 'bilinear', 'kaiser', 'nearest', 'spline36')
+        interp = (
+            Interpolation3D.keys() if self.layer._ndisplay == 3 else interp_2d
         )
-        self.interpComboBox.addItems(interp_enum.keys())
+        self.interpComboBox.addItems(interp)
         index = self.interpComboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString
         )
