@@ -125,4 +125,4 @@ class Viewer(ViewerModel):
         from ._qt.qt_main_window import _QtMainWindow
 
         current_window = _QtMainWindow.current()
-        return current_window._viewer if current_window else None
+        return current_window.qt_viewer.viewer if current_window else None

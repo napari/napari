@@ -55,9 +55,9 @@ class _QtMainWindow(QMainWindow):
     # *no* active windows, so we want to track the most recently active windows
     _instances: ClassVar[List['_QtMainWindow']] = []
 
-    def __init__(self, viewer, parent=None) -> None:
+    def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
-        self._viewer = viewer
+        self.qt_viewer = qt_viewer
 
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
@@ -65,8 +65,11 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().addWidget(qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
+
+        self.setWindowTitle(qt_viewer.viewer.title)
 
         self._maximized_flag = False
         self._preferences_dialog = None
@@ -314,10 +317,8 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow(viewer)
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
-        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
-        self._qt_window.setWindowTitle(viewer.title)
+        self._qt_window = _QtMainWindow(self.qt_viewer)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
