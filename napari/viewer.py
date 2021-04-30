@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from .components import ViewerModel
 from .utils import config
@@ -118,3 +118,11 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+
+    @classmethod
+    def active(cls) -> Optional['Viewer']:
+        """Return the currently active viewer instance, if there is one."""
+        from ._qt.qt_main_window import _QtMainWindow
+
+        current_window = _QtMainWindow.current()
+        return current_window._viewer if current_window else None
