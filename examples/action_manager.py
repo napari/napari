@@ -15,7 +15,7 @@ def rotate45(viewer: napari.Viewer):
 
     Parameters
     ----------
-    viewer: napari.Viewer
+    viewer : napari.Viewer
         active (unique) instance of the napari viewer
 
     Notes
