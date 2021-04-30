@@ -120,8 +120,12 @@ class Viewer(ViewerModel):
                 chunk_loader.on_layer_deleted(layer)
 
     @classmethod
-    def active(cls) -> Optional['Viewer']:
-        """Return the currently active viewer instance, if there is one."""
+    def current(cls) -> Optional['Viewer']:
+        """Return the current ("active") viewer instance, if there is one.
+
+        In the case where the Qt app is in the background (i.e. all inactive),
+        this will be the last viewer that the user interacted with.
+        """
         from ._qt.qt_main_window import _QtMainWindow
 
         current_window = _QtMainWindow.current()
