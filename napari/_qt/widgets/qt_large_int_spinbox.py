@@ -58,6 +58,10 @@ class QtLargeIntSpinBox(QDoubleSpinBox):
     def singleStep(self):
         return int(super().singleStep())
 
+    def stepBy(self, steps: int) -> None:
+        super().stepBy(steps)
+        self.valueChanged.emit(self.value())
+
     def setDecimals(self):
         raise NotImplementedError
 
