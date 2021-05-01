@@ -66,7 +66,9 @@ class QtLargeIntSpinBox(QDoubleSpinBox):
         raise NotImplementedError
 
     def setValue(self, value):
-        super().setValue(self._cast(value))
+        val = self._cast(value)
+        super().setValue(val)
+        self.valueChanged.emit(val)
 
     def value(self):
         return self._cast(super().value())
