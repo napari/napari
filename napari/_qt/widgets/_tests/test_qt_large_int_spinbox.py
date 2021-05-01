@@ -51,7 +51,7 @@ def test_event_emits_int(qtbot):
     dtype = np.dtype(np.int32)
 
     def fn(value):
-        assert np.issubdtype(type(value), np.integer)
+        assert np.issubdtype(type(value), int)
 
     spinbox = QtLargeIntSpinBox(dtype)
     spinbox.valueChanged.connect(fn)
