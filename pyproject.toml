@@ -80,7 +80,7 @@ addopts = "--maxfail=5 --durations=5"
 # instead... assert the warning with `pytest.warns()` in the relevant test,
 # That way we can clean them up when no longer necessary
 filterwarnings = [
-  "error", # turn warnings from napari into errors
+  "error:::napari", # turn warnings from napari into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
