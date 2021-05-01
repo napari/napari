@@ -2,7 +2,7 @@ from napari._qt.qt_main_window import _QtMainWindow
 
 
 def test_current_viewer(make_napari_viewer, qapp):
-    """Test that we can retrieve the "current" viewer instance easily.
+    """Test that we can retrieve the "current" viewer window easily.
 
     ... where "current" means it was the last viewer the user interacted with.
     """
