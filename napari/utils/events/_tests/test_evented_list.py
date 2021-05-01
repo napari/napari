@@ -141,17 +141,17 @@ def test_move(test_list):
     assert test_list == [3, 2, 0, 1, 4]
 
 
-POS_INDICES = [
+BASIC_INDICES = [
     ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
     ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
-    ([3, 0, 2], 6, [1, 4, 5, 3, 0, 2, 6, 7]),  # move back reorder
     ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
-    ([7, 4], 1, [0, 7, 4, 1, 2, 3, 5, 6]),  # move forward reorder
     ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
     ([1, 3, 5, 7], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # same as above
     ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
 ]
-NEG_SLICE_INDICES = [
+OTHER_INDICES = [
+    ([7, 4], 1, [0, 7, 4, 1, 2, 3, 5, 6]),  # move forward reorder
+    ([3, 0, 2], 6, [1, 4, 5, 3, 0, 2, 6, 7]),  # move back reorder
     ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
     ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
     ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
@@ -159,7 +159,7 @@ NEG_SLICE_INDICES = [
     ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
     ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
 ]
-MOVING_INDICES = POS_INDICES + NEG_SLICE_INDICES
+MOVING_INDICES = BASIC_INDICES + OTHER_INDICES
 
 
 @pytest.mark.parametrize('sources,dest,expectation', MOVING_INDICES)

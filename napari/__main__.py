@@ -14,10 +14,10 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from . import Viewer, __version__, layers, run, view_path
-from .components.viewer_model import valid_add_kwargs
-from .utils import citation_text, sys_info
-from .utils.settings import SETTINGS
+from napari import Viewer, __version__, layers, run, view_path
+from napari.components.viewer_model import valid_add_kwargs
+from napari.utils import citation_text, sys_info
+from napari.utils.settings import SETTINGS
 
 
 class InfoAction(argparse.Action):
@@ -278,7 +278,7 @@ def _run():
             else:
                 plugin_manager.get_widget(pname)
 
-        from ._qt.widgets.qt_splash_screen import NapariSplashScreen
+        from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
         splash = NapariSplashScreen()
         splash.close()  # will close once event loop starts
@@ -310,7 +310,7 @@ def _run():
 
 def _run_plugin_module(mod, plugin_name):
     """Register `mod` as a plugin, find/create viewer, and run napari."""
-    from .plugins import plugin_manager
+    from napari.plugins import plugin_manager
 
     plugin_manager.register(mod, name=plugin_name)
 

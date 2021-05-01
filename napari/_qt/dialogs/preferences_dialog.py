@@ -22,6 +22,7 @@ class PreferencesDialog(QDialog):
 
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
+        "highlight_thickness": {"ui:widget": "highlight"},
     }
 
     resized = Signal(QSize)
@@ -75,6 +76,11 @@ class PreferencesDialog(QDialog):
         """Override to emit signal."""
         self.closed.emit()
         super().closeEvent(event)
+
+    def reject(self):
+        """Override to handle Escape."""
+        super().reject()
+        self.close()
 
     def resizeEvent(self, event):
         """Override to emit signal."""

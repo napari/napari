@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os.path
 import warnings
-from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -13,6 +11,12 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
+from ..utils.history import (
+    get_open_history,
+    get_save_history,
+    update_open_history,
+    update_save_history,
+)
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -24,21 +28,22 @@ from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 from ..utils.translations import trans
+from .containers import QtLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
-from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_welcome import QtWidgetOverlay
 
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
     VispyCamera,
     VispyCanvas,
     VispyScaleBarVisual,
-    VispyWelcomeVisual,
+    VispyTextVisual,
     create_vispy_visual,
 )
 
@@ -53,9 +58,9 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
-    welcome : bool
+    show_welcome_screen : bool, optional
         Flag to show a welcome message when no layers are present in the
-        canvas.
+        canvas. Default is `False`.
 
     Attributes
     ----------
@@ -89,13 +94,14 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    def __init__(self, viewer: Viewer, welcome=False):
-
+    def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
+
+        self._show_welcome_screen = show_welcome_screen
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -166,18 +172,21 @@ class QtViewer(QSplitter):
 
         self._create_canvas()
 
+        # Stacked widget to provide a welcome page
+        self._canvas_overlay = QtWidgetOverlay(self, self.canvas.native)
+        self._canvas_overlay.set_welcome_visible(show_welcome_screen)
+        self._canvas_overlay.sig_dropped.connect(self.dropEvent)
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
-        main_layout.addWidget(self.canvas.native)
+        main_layout.addWidget(self._canvas_overlay)
         main_layout.addWidget(self.dims)
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 
         self.setOrientation(Qt.Vertical)
         self.addWidget(main_widget)
-
-        self._last_visited_dir = str(Path.home())
 
         self._cursors = {
             'cross': Qt.CrossCursor,
@@ -187,7 +196,11 @@ class QtViewer(QSplitter):
         }
 
         self._on_active_change()
-        viewer.layers.selection.events.active.connect(self._on_active_change)
+        self.viewer.layers.events.inserted.connect(self._update_welcome_screen)
+        self.viewer.layers.events.removed.connect(self._update_welcome_screen)
+        self.viewer.layers.selection.events.active.connect(
+            self._on_active_change
+        )
         self.viewer.camera.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.cursor.events.size.connect(self._on_cursor)
@@ -209,8 +222,8 @@ class QtViewer(QSplitter):
         )
         self.canvas.connect(self.camera.on_draw)
 
-        # Add axes, scale bar and welcome visuals.
-        self._add_visuals(welcome)
+        # Add axes, scale bar
+        self._add_visuals()
 
         # Create the experimental QtPool for octree and/or monitor.
         self._qt_poll = _create_qt_poll(self, self.viewer.camera)
@@ -219,6 +232,17 @@ class QtViewer(QSplitter):
         self._remote_manager = _create_remote_manager(
             self.viewer.layers, self._qt_poll
         )
+
+        # moved from the old layerlist... still feels misplaced.
+        # can you help me move this elsewhere?
+        if config.async_loading:
+            from .experimental.qt_chunk_receiver import QtChunkReceiver
+
+            # The QtChunkReceiver object allows the ChunkLoader to pass newly
+            # loaded chunks to the layers that requested them.
+            self.chunk_receiver = QtChunkReceiver(self.layers)
+        else:
+            self.chunk_receiver = None
 
     def __getattr__(self, name):
         if name == 'raw_stylesheet':
@@ -258,16 +282,18 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
-        self.viewer.events.theme.connect(self.canvas._on_theme_change)
+        theme = self.viewer.events.theme
 
-    def _add_visuals(self, welcome: bool) -> None:
-        """Add visuals for axes, scale bar, and welcome text.
+        on_theme_change = self.canvas._on_theme_change
+        theme.connect(on_theme_change)
 
-        Parameters
-        ----------
-        welcome : bool
-            Show the welcome visual.
-        """
+        def disconnect():
+            theme.disconnect(on_theme_change)
+
+        self.canvas.destroyed.connect(disconnect)
+
+    def _add_visuals(self) -> None:
+        """Add visuals for axes, scale bar, and welcome text."""
 
         self.axes = VispyAxesVisual(
             self.viewer,
@@ -280,17 +306,14 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-
-        self._show_welcome = welcome and config.allow_welcome_visual
-        if self._show_welcome:
-            self.welcome = VispyWelcomeVisual(
-                self.viewer, parent=self.view, order=-100
-            )
-            self.viewer.events.layers_change.connect(
-                self.welcome._on_visible_change
-            )
-            self.viewer.events.theme.connect(self.welcome._on_theme_change)
-            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+        self.text_overlay = VispyTextVisual(
+            self.viewer,
+            parent=self.view,
+            order=1e6 + 2,
+        )
+        self.canvas.events.resize.connect(
+            self.text_overlay._on_position_change
+        )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""
@@ -437,7 +460,7 @@ class QtViewer(QSplitter):
         msg = ''
         if not len(self.viewer.layers):
             msg = trans._("There are no layers in the viewer to save")
-        elif selected and not len(self.viewer.layers.selected):
+        elif selected and not len(self.viewer.layers.selection):
             msg = trans._(
                 'Please select one or more layers to save,'
                 '\nor use "Save all layers..."'
@@ -446,10 +469,13 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         msg = trans._("selected") if selected else trans._("all")
-        filename, _ = QFileDialog.getSaveFileName(
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+        filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],  # home dir by default
         )
 
         if filename:
@@ -458,6 +484,7 @@ class QtViewer(QSplitter):
                 error_messages = "\n".join(
                     [str(x.message.args[0]) for x in wa]
                 )
+
             if not saved:
                 raise OSError(
                     trans._(
@@ -467,6 +494,19 @@ class QtViewer(QSplitter):
                         error_messages=error_messages,
                     )
                 )
+            else:
+                update_save_history(saved[0])
+
+    def _update_welcome_screen(self, event=None):
+        """Update welcome screen display based on layer count.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        if self._show_welcome_screen:
+            self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -489,39 +529,53 @@ class QtViewer(QSplitter):
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
-        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self, hist[0], hist)
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            update_save_history(dial.selectedFiles()[0])
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
-        filenames, _ = QFileDialog.getOpenFileNames(
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+        filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select file(s)...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],
         )
+
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
+            update_open_history(filenames[0])
 
     def _open_files_dialog_as_stack_dialog(self):
         """Add files as a stack, from the menubar."""
-        filenames, _ = QFileDialog.getOpenFileNames(
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+        filenames, _ = dlg.getOpenFileNames(
             parent=self,
             caption=trans._('Select files...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
+            update_open_history(filenames[0])
 
     def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
-        folder = QFileDialog.getExistingDirectory(
+        dlg = QFileDialog()
+        hist = get_open_history()
+        dlg.setHistory(hist)
+        folder = dlg.getExistingDirectory(
             parent=self,
             caption=trans._('Select folder...'),
-            directory=self._last_visited_dir,  # home dir by default
+            directory=hist[0],  # home dir by default
         )
         if folder not in {'', None}:
             self.viewer.open([folder])
+            update_open_history(folder)
 
     def _toggle_chunk_outlines(self):
         """Toggle whether we are drawing outlines around the chunks."""
@@ -738,6 +792,11 @@ class QtViewer(QSplitter):
                     shape_threshold=self.canvas.size,
                 )
 
+    def set_welcome_visible(self, visible):
+        """Show welcome screen widget."""
+        self._show_welcome_screen = visible
+        self._canvas_overlay.set_welcome_visible(visible)
+
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
 
@@ -792,6 +851,7 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
+
         self.viewer.open(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):

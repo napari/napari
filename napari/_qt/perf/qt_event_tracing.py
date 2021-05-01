@@ -27,7 +27,7 @@ def convert_app_for_tracing(app: QApplication) -> QApplication:
     if isinstance(app, QApplicationWithTracing):
         # We're already using QApplicationWithTracing so there is nothing
         # to do. This happens when napari is launched from the command
-        # line because we create a QApplicationWithTracing in gui_qt.
+        # line because we create a QApplicationWithTracing in get_app.
         return app
 
     if app is not None:

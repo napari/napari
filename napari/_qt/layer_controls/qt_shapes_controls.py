@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.events import disconnect_events
-from ...utils.interactions import KEY_SYMBOLS
+from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
@@ -179,7 +179,8 @@ class QtShapesControls(QtLayerControls):
             'delete_shape',
             slot=self.layer.remove_selected,
             tooltip=trans._(
-                "Delete selected shapes ({key})", key=KEY_SYMBOLS['Backspace']
+                "Delete selected shapes ({shortcut})",
+                shortcut=Shortcut('Backspace').platform,
             ),
         )
 

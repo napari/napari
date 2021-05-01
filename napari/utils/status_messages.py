@@ -31,6 +31,7 @@ def status_format(value):
     if isinstance(value, str):
         return value
     if isinstance(value, Iterable):
+        # FIMXE: use an f-string?
         return '[' + str.join(', ', [status_format(v) for v in value]) + ']'
     if value is None:
         return ''

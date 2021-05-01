@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Union
 
+from ...components.layerlist import LayerList
 from ...utils.events import SelectableEventedList
+from ...utils.translations import trans
 from ...utils.tree import Group
 
 if TYPE_CHECKING:
@@ -26,13 +28,21 @@ def create_view(
     Union[QtListView, QtNodeTreeView]
         A view instance appropriate for `obj`.
     """
-    from . import QtListView, QtNodeTreeView
+    from . import QtLayerList, QtListView, QtNodeTreeView
 
+    if isinstance(obj, LayerList):
+        return QtLayerList(obj, parent=parent)
     if isinstance(obj, Group):
         return QtNodeTreeView(obj, parent=parent)
-    elif isinstance(obj, SelectableEventedList):
+    if isinstance(obj, SelectableEventedList):
         return QtListView(obj, parent=parent)
-    raise TypeError(f"Cannot create Qt view for obj: {obj}")
+    raise TypeError(
+        trans._(
+            "Cannot create Qt view for obj: {obj}",
+            deferred=True,
+            obj=obj,
+        )
+    )
 
 
 def create_model(
@@ -52,10 +62,18 @@ def create_model(
     Union[QtListModel, QtNodeTreeModel]
         A model instance appropriate for `obj`.
     """
-    from . import QtListModel, QtNodeTreeModel
+    from . import QtLayerListModel, QtListModel, QtNodeTreeModel
 
+    if isinstance(obj, LayerList):
+        return QtLayerListModel(obj, parent=parent)
     if isinstance(obj, Group):
         return QtNodeTreeModel(obj, parent=parent)
-    elif isinstance(obj, SelectableEventedList):
+    if isinstance(obj, SelectableEventedList):
         return QtListModel(obj, parent=parent)
-    raise TypeError(f"Cannot create Qt model for obj: {obj}")
+    raise TypeError(
+        trans._(
+            "Cannot create Qt model for obj: {obj}",
+            deferred=True,
+            obj=obj,
+        )
+    )

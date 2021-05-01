@@ -330,9 +330,7 @@ class QtPluginSorter(QWidget):
 
         instructions = QLabel(
             trans._(
-                'Select a hook to rearrange, then drag and '
-                'drop plugins into the desired call order.\n\n'
-                'Disable plugins for a specific hook by unchecking their checkbox.'
+                'Select a hook to rearrange, then drag and drop plugins into the desired call order.\n\nDisable plugins for a specific hook by unchecking their checkbox.'
             )
         )
         instructions.setWordWrap(True)

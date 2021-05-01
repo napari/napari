@@ -23,6 +23,7 @@ from pydantic import Extra, Field, validator
 
 from .. import layers
 from ..layers import Image, Layer
+from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
 from ..types import PathOrPaths
@@ -43,6 +44,7 @@ from .dims import Dims
 from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
+from .text_overlay import TextOverlay
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -99,6 +101,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         default_factory=LayerList, allow_mutation=False
     )  # Need to create custom JSON encoder for layer!
     scale_bar: ScaleBar = Field(default_factory=ScaleBar, allow_mutation=False)
+    text_overlay: TextOverlay = Field(
+        default_factory=TextOverlay, allow_mutation=False
+    )
 
     help: str = ''
     status: str = 'Ready'
@@ -143,10 +148,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         self.mouse_wheel_callbacks.append(dims_scroll)
 
         self.events.add(
+            # FIXME: Deferred translation?
             active_layer=WarningEmitter(
-                "'viewer.events.active_layer' is deprecated and will be "
-                "removed in napari v0.4.9, use "
-                "'viewer.layers.selection.events.active' instead",
+                trans._(
+                    "'viewer.events.active_layer' is deprecated and will be removed in napari v0.4.9, use 'viewer.layers.selection.events.active' instead",
+                    deferred=True,
+                ),
                 type='active_layer',
             )
         )
@@ -156,8 +163,14 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         themes = available_themes()
         if v not in available_themes():
             raise ValueError(
-                f"Theme '{v}' not found; " f"options are {themes}."
+                trans._(
+                    "Theme '{theme_name}' not found; options are {themes}.",
+                    deferred=True,
+                    theme_name=v,
+                    themes=themes,
+                )
             )
+
         return v
 
     def json(self, **kwargs):
@@ -282,8 +295,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     @property
     def active_layer(self):
         warnings.warn(
-            "'viewer.active_layer' is deprecated and will be removed in napari"
-            " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+            trans._(
+                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+                deferred=True,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -296,8 +311,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             return super().__setattr__(name, value)
 
         warnings.warn(
-            "'viewer.active_layer' is deprecated and will be removed in napari"
-            " v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+            trans._(
+                "'viewer.active_layer' is deprecated and will be removed in napari v0.4.9.  Please use 'viewer.layers.selection.active' instead.",
+                deferred=True,
+            ),
             category=FutureWarning,
             stacklevel=2,
         )
@@ -335,7 +352,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         with warnings.catch_warnings():
             # Catch the deprecation warning on layer.position
             warnings.filterwarnings(
-                'ignore', message='layer.position is deprecated'
+                'ignore',
+                message=str(
+                    trans._('layer.position is deprecated', deferred=True)
+                ),
             )
             for layer in self.layers:
                 layer.position = self.cursor.position
@@ -645,8 +665,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             for k, v in kwargs.items():
                 if k not in iterable_kwargs and is_sequence(v):
                     raise TypeError(
-                        f"Received sequence for argument '{k}', "
-                        "did you mean to specify a 'channel_axis'? "
+                        trans._(
+                            "Received sequence for argument '{argument}', did you mean to specify a 'channel_axis'? ",
+                            deferred=True,
+                            argument=k,
+                        )
                     )
             layer = Image(data, **kwargs)
             self.layers.append(layer)
@@ -669,7 +692,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         sample: str,
         reader_plugin: Optional[str] = None,
         **kwargs,
-    ):
+    ) -> List[Layer]:
         """Open `sample` from `plugin` and add it to the viewer.
 
         To see all available samples registered by plugins, use
@@ -684,11 +707,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         reader_plugin : str, optional
             reader plugin to pass to viewer.open (only used if the sample data
             is a string).  by default None.
-
-        **kwargs:
+        **kwargs
             additional kwargs will be passed to the sample data loader provided
             by `plugin`.  Use of **kwargs may raise an error if the kwargs do
             not match the sample data loader.
+
+        Returns
+        -------
+        layers : list
+            A list of any layers that were added to the viewer.
 
         Raises
         ------
@@ -706,23 +733,41 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 f"named {sample!r}. "
             )
             if samples:
-                msg += trans._(
-                    'Available samples include: {samples}', samples=samples
+                msg = trans._(
+                    "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
+                    deferred=True,
+                    plugin=plugin,
+                    sample=sample,
+                    samples=samples,
                 )
             else:
-                msg += trans._("No plugin samples have been registered.")
+                msg = trans._(
+                    "Plugin {plugin!r} does not provide sample data named {sample!r}. No plugin samples have been registered.",
+                    deferred=True,
+                    plugin=plugin,
+                    sample=sample,
+                )
+
             raise KeyError(msg)
 
-        if callable(data):
-            for datum in data(**kwargs):
-                self._add_layer_from_data(*datum)
-        elif isinstance(data, (str, Path)):
-            self.open(data, plugin=reader_plugin)
-        else:
-            raise TypeError(
-                'Got unexpected type for sample '
-                f'({plugin!r}, {sample!r}): {type(data)}'
-            )
+        with layer_source(sample=(plugin, sample)):
+            if callable(data):
+                added = []
+                for datum in data(**kwargs):
+                    added.extend(self._add_layer_from_data(*datum))
+                return added
+            elif isinstance(data, (str, Path)):
+                return self.open(data, plugin=reader_plugin)
+            else:
+                raise TypeError(
+                    trans._(
+                        'Got unexpected type for sample ({plugin!r}, {sample!r}): {data_type}',
+                        deferred=True,
+                        plugin=plugin,
+                        sample=sample,
+                        data_type=type(data),
+                    )
+                )
 
     def open(
         self,
@@ -772,7 +817,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
-                "'path' argument must be a string, list, or tuple"
+                trans._(
+                    "'path' argument must be a string, list, or tuple",
+                    deferred=True,
+                )
             )
 
         if stack:
@@ -828,7 +876,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         """
         from ..plugins.io import read_data_with_plugins
 
-        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin) or []
+        layer_data, hookimpl = read_data_with_plugins(
+            path_or_paths, plugin=plugin
+        )
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
@@ -846,21 +896,20 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         # add each layer to the viewer
         added: List[Layer] = []  # for layers that get added
+        plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
-            basename, ext = os.path.splitext(os.path.basename(filename))
+            basename, _ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
                 data, kwargs, layer_type, fallback_name=basename
             )
             # actually add the layer
-            new = self._add_layer_from_data(*_data)
-            # some add_* methods return a List[Layer], others just a Layer
-            # we want to always return a list
-            added.extend(new if isinstance(new, list) else [new])
+            with layer_source(path=filename, reader_plugin=plugin):
+                added.extend(self._add_layer_from_data(*_data))
         return added
 
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> Union[Layer, List[Layer]]:
+    ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -879,6 +928,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             on the viewer instance.  If not provided, the layer is assumed to
             be "image", unless data.dtype is one of (np.int32, np.uint32,
             np.int64, np.uint64), in which case it is assumed to be "labels".
+
+        Returns
+        -------
+        layers : list of layers
+            A list of layers added to the viewer.
 
         Raises
         ------
@@ -911,31 +965,30 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
         if layer_type not in layers.NAMES:
             raise ValueError(
-                f"Unrecognized layer_type: '{layer_type}'. "
-                f"Must be one of: {layers.NAMES}."
+                trans._(
+                    "Unrecognized layer_type: '{layer_type}'. Must be one of: {layer_names}.",
+                    deferred=True,
+                    layer_type=layer_type,
+                    layer_names=layers.NAMES,
+                )
             )
 
         try:
             add_method = getattr(self, 'add_' + layer_type)
-        except AttributeError:
-            raise NotImplementedError(
-                f"Sorry! {layer_type} is a valid layer type, but there is no "
-                f"viewer.add_{layer_type} available yet."
-            )
-
-        try:
             layer = add_method(data, **(meta or {}))
         except TypeError as exc:
-            if 'unexpected keyword argument' in str(exc):
-                bad_key = str(exc).split('keyword argument ')[-1]
-                raise TypeError(
-                    "_add_layer_from_data received an unexpected keyword "
-                    f"argument ({bad_key}) for layer type {layer_type}"
-                ) from exc
-            else:
+            if 'unexpected keyword argument' not in str(exc):
                 raise exc
-
-        return layer
+            bad_key = str(exc).split('keyword argument ')[-1]
+            raise TypeError(
+                trans._(
+                    "_add_layer_from_data received an unexpected keyword argument ({bad_key}) for layer type {layer_type}",
+                    deferred=True,
+                    bad_key=bad_key,
+                    layer_type=layer_type,
+                )
+            ) from exc
+        return layer if isinstance(layer, list) else [layer]
 
 
 def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
@@ -958,20 +1011,32 @@ def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
         not a ``dict``, or the third item is not a valid layer_type ``str``
     """
     if not isinstance(data, tuple) and 0 < len(data) < 4:
-        raise ValueError("LayerData must be a 1-, 2-, or 3-tuple")
+        raise ValueError(
+            trans._(
+                "LayerData must be a 1-, 2-, or 3-tuple",
+                deferred=True,
+            )
+        )
+
     _data = list(data)
     if len(_data) > 1:
         if not isinstance(_data[1], dict):
             raise ValueError(
-                "The second item in a LayerData tuple must be a dict"
+                trans._(
+                    "The second item in a LayerData tuple must be a dict",
+                    deferred=True,
+                )
             )
     else:
         _data.append(dict())
     if len(_data) > 2:
         if _data[2] not in layers.NAMES:
             raise ValueError(
-                "The third item in a LayerData tuple must be one of: "
-                f"{layers.NAMES!r}."
+                trans._(
+                    "The third item in a LayerData tuple must be one of: {layers!r}.",
+                    deferred=True,
+                    layers=layers.NAMES,
+                )
             )
     else:
         _data.append(guess_labels(_data[0]))
@@ -1079,7 +1144,13 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     """
     add_method = getattr(ViewerModel, 'add_' + layer_type, None)
     if not add_method or layer_type == 'layer':
-        raise ValueError(f"Invalid layer_type: {layer_type}")
+        raise ValueError(
+            trans._(
+                "Invalid layer_type: {layer_type}",
+                deferred=True,
+                layer_type=layer_type,
+            )
+        )
 
     # get valid params for the corresponding add_<layer_type> method
     valid = valid_add_kwargs()[layer_type]

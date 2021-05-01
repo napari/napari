@@ -96,26 +96,28 @@ For more information or troubleshooting see our [installation tutorial](https://
 > ```
 
 ## simple example
+
 (The examples below require the `scikit-image` package to run. We just use data samples from this package for demonstration purposes. If you change the examples to use your own dataset, you may not need to install this package.)
 
-From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt`) you can open up an interactive viewer by calling
+From inside an IPython shell, you can open up an interactive viewer by calling
 
 ```python
 from skimage import data
 import napari
+
 viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
 
 ![image](resources/screenshot-add-image.png)
 
-To do the same thing inside a script call
+To use napari from inside a script, use `napari.run()`:
 
 ```python
 from skimage import data
 import napari
 
-with napari.gui_qt():
-    viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.view_image(data.astronaut(), rgb=True)
+napari.run()  # start the "event loop" and show the viewer
 ```
 
 ## features

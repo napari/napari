@@ -1,17 +1,89 @@
 """Settings management.
 """
+from __future__ import annotations
 
+import os
 from enum import Enum
-from typing import Tuple
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 from pydantic import BaseSettings, Field
+from typing_extensions import TypedDict
 
-from ...plugins._plugin_manager import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
+
+
+class SchemaVersion(str):
+    """
+    Custom schema version type to handle both tuples and version strings.
+
+    Provides also a `as_tuple` method for convenience when doing version
+    comparison.
+    """
+
+    def __new__(cls, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        return str.__new__(cls, value)
+
+    def __init__(self, value):
+        if isinstance(value, (tuple, list)):
+            value = ".".join(str(item) for item in value)
+
+        self._value = value
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if isinstance(v, (tuple, list)):
+            v = ".".join(str(item) for item in v)
+
+        if not isinstance(v, str):
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        parts = v.split(".")
+        if len(parts) != 3:
+            raise ValueError(
+                trans._(
+                    "A schema version must be a 3 element tuple or string!"
+                ),
+                deferred=True,
+            )
+
+        for part in parts:
+            try:
+                int(part)
+            except Exception:
+                raise ValueError(
+                    trans._(
+                        "A schema version subparts must be positive integers or parseable as integers!"
+                    ),
+                    deferred=True,
+                )
+
+        return cls(v)
+
+    def __repr__(self):
+        return f'SchemaVersion("{self._value}")'
+
+    def __str__(self):
+        return f'"{self._value}"'
+
+    def as_tuple(self):
+        return tuple(int(p) for p in self._value.split('.'))
 
 
 class Theme(str):
@@ -72,7 +144,7 @@ class Language(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string'))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         language_packs = list(get_language_packs(_load_language()).keys())
         if v not in language_packs:
@@ -86,6 +158,14 @@ class Language(str):
             )
 
         return v
+
+
+class HighlightThickness(int):
+    """Highlight thickness to use when hovering over shapes/points."""
+
+    highlight_thickness = 1
+    minimum = 1
+    maximum = 10
 
 
 class QtBindingChoice(str, Enum):
@@ -113,12 +193,20 @@ class AppearanceSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
+    schema_version: SchemaVersion = (0, 1, 0)
 
     theme: Theme = Field(
         "dark",
         title=trans._("Theme"),
         description=trans._("Theme selection."),
+    )
+
+    highlight_thickness: HighlightThickness = Field(
+        1,
+        description=trans._(
+            "Customize the highlight weight indicating "
+            + "selected shapes and points."
+        ),
     )
 
     class Config:
@@ -140,16 +228,15 @@ class ApplicationSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
 
-    schema_version = (0, 1, 0)
+    schema_version: SchemaVersion = (0, 1, 0)
 
     first_time: bool = True
 
     ipy_interactive: bool = Field(
         default=True,
         title=trans._('IPython interactive'),
-        description=(
-            r'Use interactive %gui qt event loop when creating '
-            'napari Viewers in IPython'
+        description=trans._(
+            r'Use interactive %gui qt event loop when creating napari Viewers in IPython'
         ),
     )
 
@@ -165,6 +252,11 @@ class ApplicationSettings(BaseNapariSettings):
         title=trans._("Save Window Geometry"),
         description=trans._("Save window size and position."),
     )
+    save_window_state: bool = Field(
+        True,
+        title=trans._("Save Window State"),
+        description=trans._("Save window state of dock widgets."),
+    )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
     window_maximized: bool = None
@@ -177,6 +269,9 @@ class ApplicationSettings(BaseNapariSettings):
     console_notification_level: NotificationSeverity = (
         NotificationSeverity.NONE
     )
+
+    open_history: List = [os.path.dirname(Path.home())]
+    save_history: List = [os.path.dirname(Path.home())]
 
     class Config:
         # Pydantic specific configuration
@@ -196,14 +291,26 @@ class ApplicationSettings(BaseNapariSettings):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
+            "open_history",
+            "save_history",
+            "ipy_interactive",
         ]
+
+
+class PluginHookOption(TypedDict):
+    """Custom type specifying plugin and enabled state."""
+
+    plugin: str
+    enabled: bool
+
+
+CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class PluginsSettings(BaseNapariSettings):
     """Plugins Settings."""
 
-    schema_version = (0, 1, 0)
-
+    schema_version: SchemaVersion = (0, 1, 1)
     call_order: CallOrderDict = Field(
         None,
         title=trans._("Plugin sort order"),

@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
 from ...utils.events import disconnect_events
-from ...utils.interactions import KEY_SYMBOLS
+from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
@@ -148,7 +148,8 @@ class QtPointsControls(QtLayerControls):
             'delete_shape',
             slot=self.layer.remove_selected,
             tooltip=trans._(
-                "Delete selected points ({key})", key=KEY_SYMBOLS['Backspace']
+                "Delete selected points ({shortcut})",
+                shortcut=Shortcut('Backspace').platform,
             ),
         )
 
@@ -300,12 +301,9 @@ class QtPointsControls(QtLayerControls):
             The napari event that triggered this method.
         """
         with self.layer.events.symbol.blocker():
-            # `self.symbolComboBox.findData` does not provide the correct value.
-            symbol = self.layer.symbol
-            for index in range(self.symbolComboBox.count()):
-                if self.symbolComboBox.itemData(index) == symbol:
-                    self.symbolComboBox.setCurrentIndex(index)
-                    break
+            self.symbolComboBox.setCurrentIndex(
+                self.symbolComboBox.findData(self.layer.symbol)
+            )
 
     def _on_size_change(self, event=None):
         """Receive layer model size change event and update point size slider.

@@ -112,7 +112,8 @@ def create_connected_widget():
 
 if __name__ == "__main__":
 
-    with napari.gui_qt():
-        viewer = napari.view_image(np.random.rand(512, 512))
-        w = create_connected_widget()
-        viewer.window.add_dock_widget(w)
+    viewer = napari.view_image(np.random.rand(512, 512))
+    w = create_connected_widget()
+    viewer.window.add_dock_widget(w)
+
+    napari.run()

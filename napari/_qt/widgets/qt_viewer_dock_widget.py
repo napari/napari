@@ -1,4 +1,5 @@
 from functools import reduce
+from itertools import count
 from operator import ior
 from typing import List, Optional
 
@@ -16,6 +17,8 @@ from qtpy.QtWidgets import (
 
 from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
+
+counter = count()
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -38,6 +41,11 @@ class QtViewerDockWidget(QDockWidget):
         By default, all areas are allowed.
     shortcut : str, optional
         Keyboard shortcut to appear in dropdown menu.
+    add_vertical_stretch : bool, optional
+        Whether to add stretch to the bottom of vertical widgets (pushing
+        widgets up towards the top of the allotted area, instead of letting
+        them distribute across the vertical space).  By default, True.
+
     """
 
     def __init__(
@@ -50,6 +58,7 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: Optional[List[str]] = None,
         shortcut=None,
         object_name: str = '',
+        add_vertical_stretch=True,
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
@@ -62,17 +71,33 @@ class QtViewerDockWidget(QDockWidget):
             'bottom': Qt.BottomDockWidgetArea,
         }
         if area not in areas:
-            raise ValueError(f'area argument must be in {list(areas.keys())}')
+            raise ValueError(
+                trans._(
+                    'area argument must be in {areas}',
+                    deferred=True,
+                    areas=list(areas.keys()),
+                )
+            )
         self.area = area
         self.qt_area = areas[area]
         self.shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
-                raise TypeError('`allowed_areas` must be a list or tuple')
-            if not all(area in areas for area in allowed_areas):
+                raise TypeError(
+                    trans._(
+                        '`allowed_areas` must be a list or tuple',
+                        deferred=True,
+                    )
+                )
+
+            if any(area not in areas for area in allowed_areas):
                 raise ValueError(
-                    f'all allowed_areas argument must be in {list(areas.keys())}'
+                    trans._(
+                        'all allowed_areas argument must be in {areas}',
+                        deferred=True,
+                        areas=list(areas.keys()),
+                    )
                 )
             allowed_areas = reduce(ior, [areas[a] for a in allowed_areas])
         else:
@@ -83,8 +108,21 @@ class QtViewerDockWidget(QDockWidget):
         # FIXME:
         self.setObjectName(object_name or name)
 
-        widget = combine_widgets(widget, vertical=area in {'left', 'right'})
+        is_vertical = area in {'left', 'right'}
+        widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
+        if is_vertical and add_vertical_stretch:
+            # add vertical stretch to the bottom of a vertical layout only
+            # if there is not already a widget that wants vertical space
+            # (like a textedit or something)
+            wlayout = widget.layout()
+            exp = QSizePolicy.Expanding
+            if hasattr(wlayout, 'addStretch') and all(
+                wlayout.itemAt(i).widget().sizePolicy().verticalPolicy() < exp
+                for i in range(wlayout.count())
+                if wlayout.itemAt(i).widget()
+            ):
+                wlayout.addStretch(next(counter))
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)

@@ -11,6 +11,7 @@ from ._factory import create_model
 ItemType = TypeVar("ItemType")
 
 if TYPE_CHECKING:
+    from qtpy.QtCore import QAbstractItemModel
     from qtpy.QtGui import QKeyEvent
 
     from ...utils.events import Event
@@ -46,14 +47,13 @@ class _BaseEventedItemView(Generic[ItemType]):
 
     # ########## Reimplemented Public Qt Functions ##################
 
-    def model(self) -> _BaseEventedItemModel:  # for type hints
+    def model(self) -> _BaseEventedItemModel[ItemType]:  # for type hints
         return super().model()
 
     def keyPressEvent(self, e: QKeyEvent) -> None:
         """Delete items with delete key."""
         if e.key() in (Qt.Key_Backspace, Qt.Key_Delete):
-            for i in self.selectionModel().selectedIndexes():
-                self._root.remove(i.internalPointer())
+            self._root.remove_selected()
             return
         return super().keyPressEvent(e)
 
@@ -61,7 +61,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         self: QAbstractItemView, current: QModelIndex, previous: QModelIndex
     ):
         """The Qt current item has changed. Update the python model."""
-        self._root.selection._current = current.internalPointer()
+        self._root.selection._current = current.data(Qt.UserRole)
         return super().currentChanged(current, previous)
 
     def selectionChanged(
@@ -71,8 +71,8 @@ class _BaseEventedItemView(Generic[ItemType]):
     ):
         """The Qt Selection has changed. Update the python model."""
         s = self._root.selection
-        s.difference_update(i.internalPointer() for i in deselected.indexes())
-        s.update(i.internalPointer() for i in selected.indexes())
+        s.difference_update(i.data(Qt.UserRole) for i in deselected.indexes())
+        s.update(i.data(Qt.UserRole) for i in selected.indexes())
         return super().selectionChanged(selected, deselected)
 
     # ###### Non-Qt methods added for SelectableEventedList Model ############
@@ -93,7 +93,7 @@ class _BaseEventedItemView(Generic[ItemType]):
         if not event.value:
             sm.clearCurrentIndex()
         else:
-            idx = self.model().indexOf(event.value)
+            idx = index_of(self.model(), event.value)
             sm.setCurrentIndex(idx, sm.Current)
 
     def _on_py_selection_change(self, event: Event):
@@ -103,7 +103,7 @@ class _BaseEventedItemView(Generic[ItemType]):
             zip(repeat(sm.Select), event.added),
             zip(repeat(sm.Deselect), event.removed),
         ):
-            model_idx = self.model().indexOf(idx)
+            model_idx = index_of(self.model(), idx)
             if model_idx.isValid():
                 sm.select(model_idx, is_selected)
 
@@ -112,6 +112,15 @@ class _BaseEventedItemView(Generic[ItemType]):
         sel_model = self.selectionModel()
         selection = QItemSelection()
         for i in self._root.selection:
-            idx = self.model().indexOf(i)
+            idx = index_of(self.model(), i)
             selection.select(idx, idx)
         sel_model.select(selection, sel_model.ClearAndSelect)
+
+
+def index_of(model: QAbstractItemModel, obj: ItemType) -> QModelIndex:
+    """Find the `QModelIndex` for a given object in the model."""
+    fl = Qt.MatchExactly | Qt.MatchRecursive
+    hits = model.match(
+        model.index(0, 0, QModelIndex()), Qt.UserRole, obj, hits=1, flags=fl
+    )
+    return hits[0] if hits else QModelIndex()

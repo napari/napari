@@ -85,8 +85,7 @@ class QtPluginErrReporter(QDialog):
         self.github_button = QPushButton(trans._('Open issue on GitHub'), self)
         self.github_button.setToolTip(
             trans._(
-                "Open a web browser to submit this error log\n"
-                "to the developer's GitHub issue tracker"
+                "Open a web browser to submit this error log\nto the developer's GitHub issue tracker",
             )
         )
         self.github_button.hide()

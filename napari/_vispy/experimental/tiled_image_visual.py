@@ -16,6 +16,7 @@ import numpy as np
 
 from ...layers.image.experimental import OctreeChunk
 from ...types import ArrayLike
+from ...utils.translations import trans
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
@@ -305,7 +306,13 @@ class TiledImageVisual(ImageVisual):
         except IndexError as exc:
             # Fatal error right now, but maybe in weird situation we should
             # ignore this error? Let's see when it happens.
-            raise RuntimeError(f"Tile index {tile_index} not found.") from exc
+            raise RuntimeError(
+                trans._(
+                    "Tile index {tile_index} not found.",
+                    deferred=True,
+                    tile_index=tile_index,
+                )
+            ) from exc
 
     def _build_vertex_data(self) -> None:
         """Build vertex and texture coordinate buffers.
@@ -350,7 +357,12 @@ class TiledImageVisual(ImageVisual):
         """Override of ImageVisual._build_texture()."""
 
         if isinstance(self._clim, str) and self._clim == 'auto':
-            raise ValueError('Auto clims not supported for tiled image visual')
+            raise ValueError(
+                trans._(
+                    'Auto clims not supported for tiled image visual',
+                    deferred=True,
+                )
+            )
         self._texture_limits = np.array(self._clim)
         self._need_colortransform_update = True
 

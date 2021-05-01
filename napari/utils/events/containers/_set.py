@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Any, Iterable, Iterator, MutableSet, TypeVar
 
 from napari.utils.events import EmitterGroup
 
+from ....utils.translations import trans
+
 _T = TypeVar("_T")
 
 if TYPE_CHECKING:
@@ -160,14 +162,20 @@ class EventedSet(MutableSet[_T]):
         from pydantic.utils import sequence_like
 
         if not sequence_like(v):
-            raise TypeError(f'Value is not a valid sequence: {v}')
+            raise TypeError(
+                trans._(
+                    'Value is not a valid sequence: {value}',
+                    deferred=True,
+                    value=v,
+                )
+            )
         if not field.sub_fields:
             return cls(v)
 
         type_field = field.sub_fields[0]
         errors = []
         for i, v_ in enumerate(v):
-            valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
+            _valid_value, error = type_field.validate(v_, {}, loc=f'[{i}]')
             if error:
                 errors.append(error)
         if errors:

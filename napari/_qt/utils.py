@@ -11,12 +11,12 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 from ..utils.misc import is_sequence
+from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 
@@ -57,7 +57,10 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
+            trans._(
+                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
+                QBYTE_FLAG=QBYTE_FLAG,
+            )
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -104,6 +107,20 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+@contextmanager
+def event_hook_removed():
+    """Context manager to temporarily remove the PyQt5 input hook"""
+    from qtpy import QtCore
+
+    if hasattr(QtCore, 'pyqtRemoveInputHook'):
+        QtCore.pyqtRemoveInputHook()
+    try:
+        yield
+    finally:
+        if hasattr(QtCore, 'pyqtRestoreInputHook'):
+            QtCore.pyqtRestoreInputHook()
 
 
 def disable_with_opacity(obj, widget_list, disabled):
@@ -220,20 +237,14 @@ def combine_widgets(
         return widgets
     elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
         container = QWidget()
-        container.layout = QVBoxLayout() if vertical else QHBoxLayout()
-        container.setLayout(container.layout)
+        container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
         for widget in widgets:
-            container.layout.addWidget(widget)
-        # if this is a vertical layout, and none of the widgets declare a size
-        # policy of "expanding", add our own stretch.
-        if vertical and not any(
-            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
-            for w in widgets
-        ):
-            container.layout.addStretch()
+            container.layout().addWidget(widget)
         return container
     else:
-        raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+        raise TypeError(
+            trans._('"widget" must be a QWidget or a sequence of QWidgets')
+        )
 
 
 def delete_qapp(app):

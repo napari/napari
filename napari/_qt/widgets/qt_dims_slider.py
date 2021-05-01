@@ -94,11 +94,17 @@ class QtDimSliderWidget(QWidget):
 
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
+        # On teardown some tests fail on OSX with an `IndexError`
+        try:
+            max_allowed = self.dims.nsteps[self.axis] - 1
+        except IndexError:
+            return
+
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.nsteps[self.axis] - 1
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
+
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
         self.dims.set_current_step(self.axis, val)

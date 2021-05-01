@@ -7,12 +7,16 @@ from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
 
 from ...utils.events import disconnect_events
 from ...utils.events.containers import SelectableEventedList
+from ...utils.translations import trans
 
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QWidget
 
 
 ItemType = TypeVar("ItemType")
+
+ItemRole = Qt.UserRole
+SortRole = Qt.UserRole + 1
 
 
 class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
@@ -89,8 +93,10 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         if role == Qt.DisplayRole:
             return str(self.getItem(index))
-        if role == Qt.UserRole:
+        if role == ItemRole:
             return self.getItem(index)
+        if role == SortRole:
+            return index.row()
         return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
@@ -130,7 +136,7 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """
         return 1
 
-    def rowCount(self, parent: QModelIndex) -> int:
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number
@@ -189,7 +195,11 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
         """Call during __init__, to set the python model and connections"""
         if not isinstance(root, SelectableEventedList):
             raise TypeError(
-                f"root must be an instance of {SelectableEventedList}"
+                trans._(
+                    "root must be an instance of {class_name}",
+                    deferred=True,
+                    class_name=SelectableEventedList,
+                )
             )
         current_root = getattr(self, "_root", None)
         if root is current_root:
@@ -262,12 +272,6 @@ class _BaseEventedItemModel(QAbstractItemModel, Generic[ItemType]):
     def _on_end_move(self, e):
         """Must be called after move operation to update model."""
         self.endMoveRows()
-
-    def indexOf(self, obj: ItemType) -> QModelIndex:
-        """Find the `QModelIndex` for a given object in the model."""
-        fl = Qt.MatchExactly | Qt.MatchRecursive
-        hits = self.match(self.index(0, 0), Qt.UserRole, obj, hits=1, flags=fl)
-        return hits[0] if hits else QModelIndex()
 
     def getItem(self, index: QModelIndex) -> ItemType:
         """Return python object for a given `QModelIndex`.
