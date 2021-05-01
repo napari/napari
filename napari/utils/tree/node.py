@@ -30,7 +30,15 @@ class Node:
 
     def __init__(self, name: str = "Node"):
         self.parent: Optional[Group] = None
-        self.name = name
+        self._name = name
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
 
     def is_group(self) -> bool:
         """Return True if this Node is a composite.

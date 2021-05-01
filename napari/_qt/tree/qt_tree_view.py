@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import chain, repeat
 from typing import TYPE_CHECKING
 
 from qtpy.QtCore import QItemSelection, QItemSelectionModel, QModelIndex
@@ -36,8 +37,13 @@ class QtNodeTreeView(QTreeView):
         self._redecorate_root()
 
         # connect selection events
-        root.selection.events.connect(self._on_py_selection_model_event)
+        root.selection.events.changed.connect(self._on_py_selection_change)
+        root.selection.events._current.connect(self._on_py_current_change)
+
         self._sync_selection_models()
+
+    def model(self) -> QtNodeTreeModel[Node]:
+        return super().model()
 
     def _redecorate_root(self, parent=None, *_):
         """Add a branch/arrow column only if there are Groups in the root.
@@ -53,42 +59,41 @@ class QtNodeTreeView(QTreeView):
         sel_model: QItemSelectionModel = self.selectionModel()
         selection = QItemSelection()
         for i in self._root.selection:
-            idx = self.model().nestedIndex(i)
+            idx = self.model().findIndex(i)
             selection.select(idx, idx)
         sel_model.select(selection, sel_model.ClearAndSelect)
 
     def currentChanged(self, current: QModelIndex, previous: QModelIndex):
         """The Qt current item has changed. Update the python model."""
         item = current.internalPointer()
-        idx = item.index_from_root() if item else None
-        self._root.selection.current = idx
+        self._root.selection._current = item or None
         return super().currentChanged(current, previous)
 
     def selectionChanged(
         self, selected: QItemSelection, deselected: QItemSelection
     ):
         """The Qt Selection has changed. Update the python model."""
-        self._root.selection.difference_update(
-            i.internalPointer().index_from_root() for i in deselected.indexes()
-        )
-        self._root.selection.update(
-            i.internalPointer().index_from_root() for i in selected.indexes()
-        )
+        s = self._root.selection
+        s.difference_update(i.internalPointer() for i in deselected.indexes())
+        s.update(i.internalPointer() for i in selected.indexes())
         return super().selectionChanged(selected, deselected)
 
-    def _on_py_selection_model_event(self, event: Event):
-        """The python model selection has changed.  Update the Qt view."""
-        sel_model: QItemSelectionModel = self.selectionModel()
-        if event.type == 'current':
-            if not event.value:
-                sel_model.clearCurrentIndex()
-            else:
-                idx = self.model().nestedIndex(event.value)
-                sel_model.setCurrentIndex(idx, sel_model.Current)
-            return
-        s = sel_model.Select if event.type == 'added' else sel_model.Deselect
-        for idx in event.value:
-            model_idx = self.model().nestedIndex(idx)
-            if not model_idx.isValid():
-                continue
-            sel_model.select(model_idx, s)
+    def _on_py_current_change(self, event: Event):
+        """The python model current item has changed. Update the Qt view."""
+        sm = self.selectionModel()
+        if not event.value:
+            sm.clearCurrentIndex()
+        else:
+            idx = self.model().findIndex(event.value)
+            sm.setCurrentIndex(idx, sm.Current)
+
+    def _on_py_selection_change(self, event: Event):
+        """The python model selection has changed. Update the Qt view."""
+        sm = self.selectionModel()
+        for is_selected, obj in chain(
+            zip(repeat(sm.Select), event.added),
+            zip(repeat(sm.Deselect), event.removed),
+        ):
+            model_idx = self.model().findIndex(obj)
+            if model_idx.isValid():
+                sm.select(model_idx, is_selected)

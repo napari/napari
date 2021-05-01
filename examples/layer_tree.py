@@ -34,10 +34,21 @@ root = LayerGroup(
     name="root",
 )
 root.events.reordered.connect(lambda e: print(e.value))
-root.selection.add((0,))  # start with a python-based selection
+root.selection.active = lg1
 
 tree = QtLayerTreeView(root)
-root.selection.events.connect(lambda e: print("selection", e.type, e.value))
+
+# spy on events
+root.events.reordered.connect(lambda e: print("reordered to: ", e.value))
+root.selection.events.changed.connect(
+    lambda e: print(
+        f"selection changed.  added: {e.added}, removed: {e.removed}"
+    )
+)
+root.selection.events._current.connect(
+    lambda e: print(f"current item changed to: {e.value}")
+)
+
 # model = tree.model()
 # tree.show()
 
