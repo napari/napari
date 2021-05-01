@@ -1,11 +1,19 @@
 from __future__ import annotations
 
+import itertools
+import warnings
+from collections import namedtuple
 from typing import Iterable
 
+import numpy as np
+
 from ...utils.naming import inc_name_count
+from ...utils.translations import trans
 from ...utils.tree import Group
 from ..base import Layer
 from ..utils.layer_utils import combine_extents
+
+Extent = namedtuple('Extent', 'data world step')
 
 
 class LayerGroup(Group[Layer], Layer):
@@ -75,6 +83,99 @@ class LayerGroup(Group[Layer], Layer):
         extent_data : array, shape (2, D)
         """
         return combine_extents([c._get_extent() for c in self])
+
+    @property
+    def _extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        return self._get_extent_world([layer.extent for layer in self])
+
+    def _get_extent_world(self, layer_extent_list):
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        if len(self) == 0:
+            min_v = [np.nan] * self.ndim
+            max_v = [np.nan] * self.ndim
+        else:
+            extrema = [extent.world for extent in layer_extent_list]
+            mins = [e[0][::-1] for e in extrema]
+            maxs = [e[1][::-1] for e in extrema]
+
+            with warnings.catch_warnings():
+                # Taking the nanmin and nanmax of an axis of all nan
+                # raises a warning and returns nan for that axis
+                # as we have do an explict nan_to_num below this
+                # behaviour is acceptable and we can filter the
+                # warning
+                warnings.filterwarnings(
+                    'ignore',
+                    message=str(
+                        trans._('All-NaN axis encountered', deferred=True)
+                    ),
+                )
+                min_v = np.nanmin(
+                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
+                    axis=1,
+                )
+                max_v = np.nanmax(
+                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
+                    axis=1,
+                )
+
+        min_vals = np.nan_to_num(min_v[::-1])
+        max_vals = np.copy(max_v[::-1])
+        max_vals[np.isnan(max_vals)] = 511
+
+        return np.vstack([min_vals, max_vals])
+
+    @property
+    def _step_size(self) -> np.ndarray:
+        """Ideal step size between planes in world coordinates.
+
+        Computes the best step size that allows all data planes to be
+        sampled if moving through the full range of world coordinates.
+        The current implementation just takes the minimum scale.
+
+        Returns
+        -------
+        step_size : array, shape (D,)
+        """
+        return self._get_step_size([layer.extent for layer in self])
+
+    def _get_step_size(self, layer_extent_list):
+        if len(self) == 0:
+            return np.ones(self.ndim)
+        else:
+            scales = [extent.step[::-1] for extent in layer_extent_list]
+            full_scales = list(
+                np.array(
+                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
+                ).T
+            )
+            min_scales = np.nanmin(full_scales, axis=0)
+            return min_scales[::-1]
+
+    @property
+    def extent(self) -> Extent:
+        """Extent of layers in data and world coordinates."""
+        extent_list = [layer.extent for layer in self]
+        return Extent(
+            data=None,
+            world=self._get_extent_world(extent_list),
+            step=self._get_step_size(extent_list),
+        )
 
     def _get_ndim(self):
         try:

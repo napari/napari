@@ -28,10 +28,12 @@ from ..utils.io import imsave
 from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 from ..utils.translations import trans
-from .containers import QtLayerList
+
+# from .containers import QtLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
+from .tree import QtLayerTreeView
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -110,7 +112,8 @@ class QtViewer(QSplitter):
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtLayerControlsContainer(self.viewer)
-        self.layers = QtLayerList(self.viewer.layers)
+        # self.layers = QtLayerList(self.viewer.layers)
+        self.layers = QtLayerTreeView(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._key_map_handler = KeymapHandler()
