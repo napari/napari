@@ -6,6 +6,7 @@ from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ...components.dims import Dims
+from ...utils.translations import trans
 from .._constants import LoopMode
 from .qt_dims_slider import QtDimSliderWidget
 
@@ -291,12 +292,16 @@ class QtDims(QWidget):
             _modes = LoopMode.keys()
             if loop_mode not in _modes:
                 raise ValueError(
-                    f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
+                    trans._(
+                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
+                        _modes=_modes,
+                        loop_mode=loop_mode,
+                    )
                 )
             loop_mode = LoopMode(loop_mode)
 
         if axis >= self.dims.ndim:
-            raise IndexError('axis argument out of range')
+            raise IndexError(trans._('axis argument out of range'))
 
         if self.is_playing:
             if self._animation_worker.axis == axis:
@@ -316,7 +321,12 @@ class QtDims(QWidget):
             else:
                 self._animation_worker, self._animation_thread = None, None
         else:
-            warnings.warn('Refusing to play a hidden axis')
+            warnings.warn(
+                trans._(
+                    'Refusing to play a hidden axis',
+                    deferred=True,
+                )
+            )
 
     def stop(self):
         """Stop axis animation"""

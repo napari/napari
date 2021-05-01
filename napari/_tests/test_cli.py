@@ -1,6 +1,5 @@
 import gc
 import sys
-from contextlib import contextmanager
 from unittest import mock
 
 import pytest
@@ -27,6 +26,8 @@ def test_cli_works(monkeypatch, capsys):
 
 def test_cli_shows_plugins(monkeypatch, capsys):
     """Test the cli --info runs and shows plugins"""
+    monkeypatch.setattr(napari.plugins, 'dock_widgets', dict())
+    monkeypatch.setattr(napari.plugins, 'function_widgets', dict())
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
         __main__._run()
@@ -39,10 +40,6 @@ def test_cli_parses_unknowns(mock_run, monkeypatch):
     def assert_kwargs(*args, **kwargs):
         assert args == (["file"],)
         assert kwargs['contrast_limits'] == (0, 1)
-
-    @contextmanager
-    def gui_qt(**kwargs):
-        yield
 
     # testing all the variants of literal_evals
     monkeypatch.setattr(napari.__main__, 'view_path', assert_kwargs)

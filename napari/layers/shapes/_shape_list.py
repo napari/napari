@@ -1,5 +1,6 @@
 import numpy as np
 
+from ...utils.translations import trans
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
 from ._shapes_models import Line, Path, Shape
@@ -41,8 +42,8 @@ class ShapeList:
     z_indices : (N, ) list of int
         z-index for each shape.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _vertices : np.ndarray
         Mx2 array of all displayed vertices from all shapes
     _index : np.ndarray
@@ -148,7 +149,12 @@ class ShapeList:
         n_shapes = len(self.data)
         if not np.all(colors.shape == (n_shapes, 4)):
             raise ValueError(
-                f'{attribute}_color must have shape ({n_shapes}, 4)'
+                trans._(
+                    '{attribute}_color must have shape ({n_shapes}, 4)',
+                    deferred=True,
+                    attribute=attribute,
+                    n_shapes=n_shapes,
+                )
             )
 
         update_method = getattr(self, f'update_{attribute}_color')
@@ -238,7 +244,12 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise ValueError('shape must be subclass of Shape')
+            raise ValueError(
+                trans._(
+                    'shape must be subclass of Shape',
+                    deferred=True,
+                )
+            )
 
         if shape_index is None:
             shape_index = len(self.shapes)
@@ -472,7 +483,12 @@ class ShapeList:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
-                        f'{shape_type} must be one of {set(shape_classes)}'
+                        trans._(
+                            '{shape_type} must be one of {shape_classes}',
+                            deferred=True,
+                            shape_type=shape_type,
+                            shape_classes=set(shape_classes),
+                        )
                     )
             else:
                 shape_cls = new_type

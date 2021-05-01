@@ -5,6 +5,7 @@ import numpy as np
 
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EmitterGroup, Event
+from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
 from ._text_utils import format_text_properties, get_text_anchors
@@ -107,10 +108,21 @@ class TextManager:
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
     ):
-        if len(properties) == 0 or n_text == 0 or text is None:
+        if text is None:
+            text = np.empty(0)
+        if n_text == 0 and len(text) != 0:
+            # initialize text but don't add text elements
+            formatted_text, text_mode = format_text_properties(
+                text, n_text, properties
+            )
+            self._text_format_string = text
+            self._mode = text_mode
+            self._values = formatted_text
+        elif len(properties) == 0 or len(text) == 0:
+            # set text mode to NONE if no props/text are provided
             self._mode = TextMode.NONE
             self._text_format_string = ''
-            self._values = None
+            self._values = np.empty(0)
         else:
             formatted_text, text_mode = format_text_properties(
                 text, n_text, properties
@@ -202,7 +214,10 @@ class TextManager:
         if blending_mode == Blending.OPAQUE:
             blending_mode = Blending.TRANSLUCENT
             warnings.warn(
-                'opaque blending mode is not allowed for text. setting to translucent.',
+                trans._(
+                    'opaque blending mode is not allowed for text. setting to translucent.',
+                    deferred=True,
+                ),
                 category=RuntimeWarning,
             )
 
@@ -288,7 +303,7 @@ class TextManager:
         anchor_y : str
             THe vispy text anchor for the y axis
         """
-        if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+        if len(self.values) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self._anchor
             )

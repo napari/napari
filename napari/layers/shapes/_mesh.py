@@ -42,8 +42,8 @@ class Mesh:
         Length P array of the z order of each triangle. Must be a permutation
         of (0, ..., P-1)
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _types : list
         Length two list of the different mesh types corresponding to faces and
         edges

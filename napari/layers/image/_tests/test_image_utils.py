@@ -1,6 +1,8 @@
 import dask.array as da
 import numpy as np
 import pytest
+from hypothesis import given
+from hypothesis.extra.numpy import array_shapes
 from skimage.transform import pyramid_gaussian
 
 from napari.layers.image._image_utils import guess_multiscale, guess_rgb
@@ -22,6 +24,11 @@ def test_guess_rgb():
 
     shape = (10, 15, 4)
     assert guess_rgb(shape)
+
+
+@given(shape=array_shapes(min_dims=3, min_side=0))
+def test_guess_rgb_property(shape):
+    assert guess_rgb(shape) == (shape[-1] in (3, 4))
 
 
 def test_guess_multiscale():

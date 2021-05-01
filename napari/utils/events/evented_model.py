@@ -4,11 +4,17 @@ import warnings
 from contextlib import contextmanager
 from typing import Any, Callable, ClassVar, Dict, Set
 
+import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
-from .custom_types import JSON_ENCODERS
+from ..translations import trans
 from .event import EmitterGroup, Event
+
+# encoders for non-napari specific field types.  To declare a custom encoder
+# for a napari type, add a `_json_encode` method to the class itself.
+# it will be added to the model json_encoders in :func:`EventedMetaclass.__new__`
+_BASE_JSON_ENCODERS = {np.ndarray: lambda arr: arr.tolist()}
 
 
 @contextmanager
@@ -71,10 +77,20 @@ class EventedMetaclass(main.ModelMetaclass):
     def __new__(mcs, name, bases, namespace, **kwargs):
         with no_class_attributes():
             cls = super().__new__(mcs, name, bases, namespace, **kwargs)
-        cls.__eq_operators__ = {
-            n: pick_equality_operator(f.type_)
-            for n, f in cls.__fields__.items()
-        }
+        cls.__eq_operators__ = {}
+        for n, f in cls.__fields__.items():
+            cls.__eq_operators__[n] = pick_equality_operator(f.type_)
+            # If a field type has a _json_encode method, add it to the json
+            # encoders for this model.
+            # NOTE: a _json_encode field must return an object that can be
+            # passed to json.dumps ... but it needn't return a string.
+            if hasattr(f.type_, '_json_encode'):
+                encoder = f.type_._json_encode
+                cls.__config__.json_encoders[f.type_] = encoder
+                # also add it to the base config
+                # required for pydantic>=1.8.0 due to:
+                # https://github.com/samuelcolvin/pydantic/pull/2064
+                EventedModel.__config__.json_encoders[f.type_] = encoder
         return cls
 
 
@@ -104,16 +120,21 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         use_enum_values = True
         # whether to validate field defaults (default: False)
         validate_all = True
-        # a dict used to customise the way types are encoded to JSON
         # https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeljson
-        json_encoders = JSON_ENCODERS
+        # NOTE: json_encoders are also added EventedMetaclass.__new__ if the
+        # field declares a _json_encode method.
+        json_encoders = _BASE_JSON_ENCODERS
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # add events for each field
         self._events.source = self
-        self._events.add(**dict.fromkeys(self.__fields__))
+        # add event emitters for each field which is mutable
+        fields = []
+        for name, field in self.__fields__.items():
+            if field.field_info.allow_mutation:
+                fields.append(name)
+        self._events.add(**dict.fromkeys(fields))
 
     def __setattr__(self, name, value):
         if name not in getattr(self, 'events', {}):
@@ -141,9 +162,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def asdict(self):
         """Convert a model to a dictionary."""
         warnings.warn(
-            (
-                "The `asdict` method has been renamed `dict` and is now "
-                "deprecated. It will be removed in 0.4.7"
+            trans._(
+                "The `asdict` method has been renamed `dict` and is now deprecated. It will be removed in 0.4.7",
+                deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
@@ -163,7 +184,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if isinstance(values, self.__class__):
             values = values.dict()
         if not isinstance(values, dict):
-            raise ValueError(f"Unsupported update from {type(values)}")
+            raise ValueError(
+                trans._(
+                    "Unsupported update from {values}",
+                    deferred=True,
+                    values=type(values),
+                )
+            )
 
         with self.events.blocker() as block:
             for key, value in values.items():

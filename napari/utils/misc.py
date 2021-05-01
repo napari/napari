@@ -4,10 +4,12 @@ import builtins
 import collections.abc
 import inspect
 import itertools
+import os
 import re
 import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,9 +18,12 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    Union,
 )
 
 import numpy as np
+
+from ..utils.translations import trans
 
 if TYPE_CHECKING:
     import packaging.version
@@ -46,7 +51,11 @@ def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
-    app_module = sys.modules['__main__'].__package__
+    # note that a module may not have a __package__ attribute
+    try:
+        app_module = sys.modules['__main__'].__package__
+    except AttributeError:
+        return False
     try:
         metadata = importlib_metadata.metadata(app_module)
     except importlib_metadata.PackageNotFoundError:
@@ -174,7 +183,14 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
 
     if obj is not None and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
-            raise ValueError(f"length of {obj} must equal {length}")
+            raise ValueError(
+                trans._(
+                    "length of {obj} must equal {length}",
+                    deferred=True,
+                    obj=obj,
+                    length=length,
+                )
+            )
         return obj
     return itertools.repeat(obj)
 
@@ -218,8 +234,12 @@ class StringEnumMeta(EnumMeta):
                 return value
             else:
                 raise ValueError(
-                    f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}. Got {builtins.type(value)}'
+                    trans._(
+                        '{class_name} may only be called with a `str` or an instance of {class_name}. Got {dtype}',
+                        deferred=True,
+                        class_name=cls,
+                        dtype=builtins.type(value),
+                    )
                 )
 
         # otherwise create new Enum class
@@ -295,7 +315,12 @@ def abspath_or_url(relpath: T) -> T:
             return relpath
         return path.abspath(path.expanduser(relpath))
 
-    raise TypeError("Argument must be a string, PathLike, or sequence thereof")
+    raise TypeError(
+        trans._(
+            "Argument must be a string, PathLike, or sequence thereof",
+            deferred=True,
+        )
+    )
 
 
 class CallDefault(inspect.Parameter):
@@ -359,7 +384,13 @@ def ensure_n_tuple(val, n, fill=0):
 
 def ensure_layer_data_tuple(val):
     if not (isinstance(val, tuple) and (0 < len(val) <= 3)):
-        raise TypeError(f'Not a valid layer data tuple: {val!r}')
+        raise TypeError(
+            trans._(
+                'Not a valid layer data tuple: {value!r}',
+                deferred=True,
+                value=val,
+            )
+        )
     return val
 
 
@@ -369,7 +400,9 @@ def ensure_list_of_layer_data_tuple(val):
             return [ensure_layer_data_tuple(v) for v in val]
         except TypeError:
             pass
-    raise TypeError('Not a valid list of layer data tuples!')
+    raise TypeError(
+        trans._('Not a valid list of layer data tuples!', deferred=True)
+    )
 
 
 def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
@@ -397,28 +430,50 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
 
     type_ = type(obj) if not inspect.isclass(obj) else obj
 
-    if issubclass(type_, np.ndarray):
-        return np.array_equal
-
-    import dask.array
-
-    if issubclass(type_, dask.array.Array):
-        return operator.is_
-
-    try:
-        import zarr.core
-
-        if issubclass(type_, zarr.core.Array):
-            return operator.is_
-    except ImportError:
-        pass
-
-    try:
-        import xarray.core.dataarray
-
-        if issubclass(type_, xarray.core.dataarray.DataArray):
-            return np.array_equal
-    except ImportError:
-        pass
+    # yes, it's a little riskier, but we are checking namespaces instead of
+    # actual `issubclass` here to avoid slow import times
+    _known_arrays = {
+        'numpy.ndarray': np.array_equal,  # numpy.ndarray
+        'dask.Array': operator.is_,  # dask.array.core.Array
+        'zarr.Array': operator.is_,  # zarr.core.Array
+        'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
+    }
+    for base in type_.mro():
+        key = f'{base.__module__.split(".", maxsplit=1)[0]}.{base.__name__}'
+        func = _known_arrays.get(key)
+        if func:
+            return func
 
     return operator.eq
+
+
+def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
+    """Compute the hash of a directory, based on structure and contents."""
+    import hashlib
+
+    hashfunc = hashlib.md5
+
+    if not Path(path).is_dir():
+        raise TypeError(
+            trans._(
+                "{path} is not a directory.",
+                deferred=True,
+                path=path,
+            )
+        )
+
+    _hash = hashfunc()
+    for root, _, files in os.walk(path):
+        for fname in sorted(files):
+            if fname.startswith(".") and ignore_hidden:
+                continue
+            # update the hash with the file contents
+            file = Path(root) / fname
+            _hash.update(file.read_bytes())
+
+            if include_paths:
+                # update the hash with the filename
+                fparts = file.relative_to(path).parts
+                _hash.update(''.join(fparts).encode())
+
+    return _hash.hexdigest()

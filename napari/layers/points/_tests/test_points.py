@@ -83,7 +83,7 @@ def test_empty_points_with_properties_list():
     np.testing.assert_equal(pts.properties, props)
 
 
-def test_empty_layer_with_face_colorap():
+def test_empty_layer_with_face_colormap():
     """Test creating an empty layer where the face color is a colormap
     See: https://github.com/napari/napari/pull/1069
     """
@@ -98,7 +98,7 @@ def test_empty_layer_with_face_colorap():
 
     # verify the current_face_color is correct
     face_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_face_color == face_color)
+    np.testing.assert_allclose(layer._face.current_color, face_color)
 
 
 def test_empty_layer_with_edge_colormap():
@@ -116,7 +116,38 @@ def test_empty_layer_with_edge_colormap():
 
     # verify the current_face_color is correct
     edge_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_edge_color == edge_color)
+    np.testing.assert_allclose(layer._edge.current_color, edge_color)
+
+
+def test_empty_layer_with_text_properties():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    text_kwargs = {'text': 'point_type', 'color': 'red'}
+    layer = Points(
+        properties=default_properties,
+        text=text_kwargs,
+    )
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['1.5'])
+    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+
+
+def test_empty_layer_with_text_formatted():
+    """Test initializing an empty layer with text defined"""
+    default_properties = {'point_type': np.array([1.5], dtype=float)}
+    layer = Points(
+        properties=default_properties,
+        text='point_type: {point_type:.2f}',
+    )
+    np.testing.assert_equal(layer.text.values, np.empty(0))
+
+    # add a point and check that the appropriate text value was added
+    layer.add([1, 1])
+    np.testing.assert_equal(layer.text.values, ['point_type: 1.50'])
 
 
 def test_random_points():
@@ -499,9 +530,14 @@ def test_adding_properties(attribute):
     assert isinstance(layer.properties['point_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
-    setattr(layer, f'_{attribute}_color_property', 'vector_type')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_manager.color_properties = {
+        'name': 'point_type',
+        'values': np.empty(0),
+        'current_value': 'A',
+    }
     properties_2 = {
-        'not_vector_type': _make_cycled_properties(['A', 'B'], shape[0])
+        'not_point_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
@@ -661,27 +697,6 @@ def test_points_errors():
         Points(data, properties=copy(annotations))
 
 
-def test_is_color_mapped():
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=annotations)
-
-    # giving the name of an annotation should return True
-    assert layer._is_color_mapped('point_type')
-
-    # giving a list should return false (i.e., could be an RGBA color)
-    assert not layer._is_color_mapped([1, 1, 1, 1])
-
-    # giving an ndarray should return false (i.e., could be an RGBA color)
-    assert not layer._is_color_mapped(np.array([1, 1, 1, 1]))
-
-    # give an invalid color argument
-    with pytest.raises(ValueError):
-        layer._is_color_mapped((123, 323))
-
-
 def test_edge_width():
     """Test setting edge width."""
     shape = (10, 2)
@@ -757,16 +772,18 @@ def test_switch_color_mode(attribute):
     )
 
     # there should not be an edge_color_property
-    color_property = getattr(layer, f'_{attribute}_color_property')
-    assert color_property == ''
+    color_manager = getattr(layer, f'_{attribute}')
+    color_property = color_manager.color_properties
+    assert color_property is None
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
-    color_property = getattr(layer, f'_{attribute}_color_property')
-    assert color_property == next(iter(properties))
+    color_manager = getattr(layer, f'_{attribute}')
+    color_property_name = color_manager.color_properties.name
+    assert color_property_name == next(iter(properties))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
 
@@ -948,16 +965,14 @@ def test_color_cycle(attribute, color_cycle):
         np.vstack((color_array[1], color_array[3:], transform_color('red'))),
     )
 
-    # refresh colors
-    layer.refresh_colors(update_color_mapping=True)
-
     # test adding a point with a new property value
     layer.selected_data = {}
     current_properties = layer.current_properties
     current_properties['point_type'] = np.array(['new'])
     layer.current_properties = current_properties
     layer.add([10, 10])
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_cycle_map = color_manager.categorical_colormap.colormap
 
     assert 'new' in color_cycle_map
     np.testing.assert_allclose(
@@ -977,7 +992,8 @@ def test_color_cycle_dict(attribute):
     }
     layer = Points(data, **points_kwargs)
 
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_cycle_map = color_manager.categorical_colormap.colormap
     np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
     np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
     np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
@@ -999,8 +1015,9 @@ def test_add_color_cycle_to_empty_layer(attribute):
     layer = Points(**points_kwargs)
 
     # verify the current_edge_color is correct
-    expected_color = transform_color(color_cycle[0])
-    current_color = getattr(layer, f'_current_{attribute}_color')
+    expected_color = transform_color(color_cycle[0])[0]
+    color_manager = getattr(layer, f'_{attribute}')
+    current_color = color_manager.current_color
     np.testing.assert_allclose(current_color, expected_color)
 
     # add a point
@@ -1044,12 +1061,14 @@ def test_adding_value_color_cycle(attribute):
     layer = Points(data, **points_kwargs)
 
     # make point 0 point_type C
-    point_types = layer.properties['point_type']
+    props = layer.properties
+    point_types = props['point_type']
     point_types[0] = 'C'
-    layer.properties['point_type'] = point_types
-    layer.refresh_colors(update_color_mapping=False)
+    props['point_type'] = point_types
+    layer.properties = props
 
-    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_manager = getattr(layer, f'_{attribute}')
+    color_cycle_map = color_manager.categorical_colormap.colormap
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
 
@@ -1110,7 +1129,6 @@ def test_color_colormap(attribute):
 
     # adjust the clims
     setattr(layer, f'{attribute}_contrast_limits', (0, 3))
-    layer.refresh_colors(update_color_mapping=False)
     attribute_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(attribute_color[-2], [0.5, 0.5, 0.5, 1])
 
@@ -1346,12 +1364,11 @@ def test_value():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0, 0))
     assert value == 9
 
     layer.data = layer.data + 20
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value((0, 0))
     assert value is None
 
 
@@ -1362,7 +1379,7 @@ def test_message():
     data = 20 * np.random.random(shape)
     data[-1] = [0, 0]
     layer = Points(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 
@@ -1490,3 +1507,45 @@ def test_world_data_extent():
     layer = Points(data)
     extent = np.array((min_val, max_val))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_slice_data():
+    data = [
+        (10, 2, 4),
+        (10 + 2 * 1e-7, 4, 6),
+        (8, 1, 7),
+        (10.1, 7, 2),
+        (10 - 2 * 1e-7, 1, 6),
+    ]
+    layer = Points(data)
+    assert len(layer._slice_data((8, slice(None), slice(None)))[0]) == 1
+    assert len(layer._slice_data((10, slice(None), slice(None)))[0]) == 3
+    assert (
+        len(layer._slice_data((10 + 2 * 1e-12, slice(None), slice(None)))[0])
+        == 3
+    )
+    assert len(layer._slice_data((10.1, slice(None), slice(None)))[0]) == 1
+
+
+def test_scale_init():
+    layer = Points(None, scale=(1, 1, 1, 1))
+    assert layer.ndim == 4
+    layer1 = Points([], scale=(1, 1, 1, 1))
+    assert layer1.ndim == 4
+    layer2 = Points([])
+    assert layer2.ndim == 2
+
+    with pytest.raises(ValueError):
+        Points([[1, 1, 1]], scale=(1, 1, 1, 1))
+
+
+def test_update_none():
+    layer = Points([(1, 2, 3), (1, 3, 2)])
+    assert layer.ndim == 3
+    assert layer.data.size == 6
+    layer.data = None
+    assert layer.ndim == 3
+    assert layer.data.size == 0
+    layer.data = [(1, 2, 3), (1, 3, 2)]
+    assert layer.ndim == 3
+    assert layer.data.size == 6

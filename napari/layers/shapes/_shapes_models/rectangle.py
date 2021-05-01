@@ -1,5 +1,6 @@
 import numpy as np
 
+from ....utils.translations import trans
 from .._shapes_utils import find_corners, rectangle_to_box
 from .shape import Shape
 
@@ -61,9 +62,11 @@ class Rectangle(Shape):
         if len(data) != 4:
             print(data)
             raise ValueError(
-                f"""Data shape does not match a rectangle.
-                             Rectangle expects four corner vertices,
-                             {len(data)} provided."""
+                trans._(
+                    "Data shape does not match a rectangle. Rectangle expects four corner vertices, {number} provided.",
+                    deferred=True,
+                    number=len(data),
+                )
             )
 
         self._data = data

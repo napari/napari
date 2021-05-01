@@ -243,3 +243,60 @@ def test_evented_model_signature():
     assert isinstance(T.__signature__, inspect.Signature)
     sig = inspect.signature(T)
     assert str(sig) == "(*, x: int, y: str = 'yyy', z: bytes = b'zzz') -> None"
+
+
+class MyObj:
+    def __init__(self, a: int, b: str) -> None:
+        self.a = a
+        self.b = b
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_type
+
+    @classmethod
+    def validate_type(cls, val):
+        # turn a generic dict into object
+        if isinstance(val, dict):
+            a = val.get('a')
+            b = val.get('b')
+        elif isinstance(val, MyObj):
+            return val
+        # perform additional validation here
+        return cls(a, b)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def _json_encode(self):
+        return self.__dict__
+
+
+def test_evented_model_serialization():
+    class Model(EventedModel):
+        """Demo evented model."""
+
+        obj: MyObj
+        shaped: Array[float, (-1,)]
+
+    m = Model(obj=MyObj(1, 'hi'), shaped=[1, 2, 3])
+    raw = m.json()
+    assert raw == '{"obj": {"a": 1, "b": "hi"}, "shaped": [1.0, 2.0, 3.0]}'
+    deserialized = Model.parse_raw(raw)
+    assert deserialized == m
+
+
+def test_nested_evented_model_serialization():
+    """Test that encoders on nested sub-models can be used by top model."""
+
+    class NestedModel(EventedModel):
+        obj: MyObj
+
+    class Model(EventedModel):
+        nest: NestedModel
+
+    m = Model(nest={'obj': {"a": 1, "b": "hi"}})
+    raw = m.json()
+    assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
+    deserialized = Model.parse_raw(raw)
+    assert deserialized == m

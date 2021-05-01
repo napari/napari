@@ -1,20 +1,19 @@
 from typing import Generator, Iterable, List, TypeVar
 
-from ..events import NestableEventedList
 from ..events.containers._nested_list import MaybeNestedIndex
+from ..events.containers._selectable_list import SelectableNestableEventedList
 from .node import Node
-from .selection import NestedListSelection
 
 NodeType = TypeVar("NodeType", bound=Node)
 
 
-class Group(NestableEventedList[NodeType], Node):
-    """An object that contain other objects in a composite Tree pattern.
+class Group(Node, SelectableNestableEventedList[NodeType]):
+    """An object that can contain other objects in a composite Tree pattern.
 
     The ``Group`` (aka composite) is an element that has sub-elements:
     which may be ``Nodes`` or other ``Groups``.  By inheriting from
     :class:`NestableEventedList`, ``Groups`` have basic python list-like
-    behavior and emit events when modified.  The main additions in this class
+    behavior and emit events when modified.  The main addition in this class
     is that when objects are added to a ``Group``, they are assigned a
     ``.parent`` attribute pointing to the group, which is removed upon
     deletion from the group.
@@ -38,22 +37,9 @@ class Group(NestableEventedList[NodeType], Node):
         basetype=Node,
     ):
         Node.__init__(self, name=name)
-        NestableEventedList.__init__(self, data=children, basetype=basetype)
-        self._selection = NestedListSelection()
-
-    @property
-    def selection(self) -> NestedListSelection:
-        return self._selection
-
-    def clear_invalid_selection_indices(self) -> None:
-        """Force all indices in the selection model to be valid for this model.
-
-        This is not always desirable.  It could be possible for multiple models
-        to share a single selection model, in which case some indices may not
-        be valid for all models.
-        """
-        invalid = {i for i in self.selection if not self.has_index(i)}
-        self.selection.difference_update(invalid)
+        SelectableNestableEventedList.__init__(
+            self, data=children, basetype=basetype
+        )
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""
@@ -75,10 +61,7 @@ class Group(NestableEventedList[NodeType], Node):
 
     def __contains__(self, other):
         """Return true if ``other`` appears anywhere under this group."""
-        for item in self.traverse():
-            if item is other:
-                return True
-        return False
+        return any(item is other for item in self.traverse())
 
     def traverse(
         self, leaves_only=False, with_ancestors=False

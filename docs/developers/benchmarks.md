@@ -82,10 +82,10 @@ Prior to running the true benchmark, it is often worthwhile to test that the
 code is free of typos. To do so, you may use the command:
 
 ```bash
-asv dev -b TransformSuite
+asv dev -b ViewImageSuite
 ```
 
-Where the ``TransformSuite`` above will be run once in your current environment
+Where the ``ViewImageSuite`` above will be run once in your current environment
 to test that everything is in order.
 
 ## Running your benchmark
@@ -98,17 +98,17 @@ the benchmark in your existing environment. This will save a significant amount
 of time since building napari can be a time consuming task:
 
 ```bash
-asv run -E existing -b TransformSuite
+asv run -E existing -b ViewImageSuite
 ```
 
 ## Comparing results to master
 
 Often, the goal of a PR is to compare the results of the modifications in terms
-speed to a snapshot of the code that is in the master branch of the
+of speed to a snapshot of the code that is in the master branch of the
 ``napari`` repository. The command ``asv continuous`` is of help here:
 
 ```bash
-asv continuous master -b TransformSuite
+asv continuous master your-current-branch -b ViewImageSuite
 ```
 
 This call will build out the environments specified in the ``asv.conf.json``
@@ -118,7 +118,7 @@ and the code in the master branch.
 The output may look something like:
 
 ```bash
-$ asv continuous master -b TransformSuite
+$ asv continuous master your-current-branch -b ViewImageSuite
 · Creating environments
 · Discovering benchmarks
 ·· Uninstalling from conda-py3.7-cython-numpy1.15-scipy
@@ -126,12 +126,12 @@ $ asv continuous master -b TransformSuite
 · Running 4 total benchmarks (2 commits * 2 environments * 1 benchmarks)
 [  0.00%] · For napari commit 37c764cb <benchmark_docs~1> (round 1/2):
 [...]
-[100.00%] ··· ...ansform.TransformSuite.time_hough_line           33.2±2ms
+[100.00%] ··· ...Image.ViewImageSuite.time_view_image           33.2±2ms
 
 BENCHMARKS NOT SIGNIFICANTLY CHANGED.
 ```
 
-In this case, the differences between HEAD and master are not significant
+In this case, the differences between HEAD on your-current-branch and master are not significant
 enough for airspeed velocity to report.
 
 ## profiling

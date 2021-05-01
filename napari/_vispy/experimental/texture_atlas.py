@@ -2,12 +2,15 @@
 
 A texture atlas is a large texture that stores many smaller tile textures.
 """
-from typing import NamedTuple, Optional, Tuple
+from typing import Callable, NamedTuple, Optional, Tuple
 
 import numpy as np
 from vispy.gloo import Texture2D
 
 from ...layers.image.experimental import OctreeChunk
+from ...types import ArrayLike
+from ...utils.translations import trans
+from ..utils_gl import fix_data_dtype
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(
@@ -142,12 +145,15 @@ class TextureAtlas2D(Texture2D):
         The (height, width) of one tile in texels.
     shape_in_tiles : Tuple[int, int]
         The (height, width) of the full texture in terms of tiles.
+    image_converter : Callable[[ArrayLike], ArrayLike]
+        For converting raw to displayed data.
     """
 
     def __init__(
         self,
         tile_shape: tuple,
         shape_in_tiles: Tuple[int, int],
+        image_converter: Callable[[ArrayLike], ArrayLike],
         **kwargs,
     ):
         # Each tile's shape in texels, for example (256, 256, 3).
@@ -178,6 +184,9 @@ class TextureAtlas2D(Texture2D):
             self._calc_tex_coords(tile_index, tile_shape)
             for tile_index in range(self.num_slots_total)
         ]
+
+        # Store an image converter that will convert from raw to displayed image
+        self.image_converter = image_converter
 
         super().__init__(shape=tuple(self.full_shape), **kwargs)
 
@@ -253,13 +262,17 @@ class TextureAtlas2D(Texture2D):
 
         return _quad(shape, pos)
 
-    def add_tile(self, octree_chunk: OctreeChunk) -> Optional[AtlasTile]:
+    def add_tile(
+        self, octree_chunk: OctreeChunk, clim=None
+    ) -> Optional[AtlasTile]:
         """Add one tile to the atlas.
 
         Parameters
         ----------
         octree_chunk : np.ndarray
             The image data for this one tile.
+        clim : tuple, optional
+            Contrast limits to normalize by if provided.
 
         Returns
         -------
@@ -268,17 +281,37 @@ class TextureAtlas2D(Texture2D):
         """
         data = octree_chunk.data
 
-        if data.dtype == np.float64:
-            data = data.astype(np.float32)
+        # Transform data from raw to displayed
+        # Ideally this should be removed and all transforming
+        # should happen on GPU
+        data = self.image_converter(data)
+
+        # normalize by contrast limits if provided. This normalization
+        # will not be required after https://github.com/vispy/vispy/pull/1920/
+        # and at that point should be changed.
+        if clim is not None and (data.ndim == 2 or data.shape[2] == 1):
+            clim = np.asarray(clim, dtype=np.float32)
+            data = data - clim[0]  # not inplace so we don't modify orig data
+            if clim[1] - clim[0] > 0:
+                data /= clim[1] - clim[0]
+            else:
+                data[:] = 1 if data[0, 0] != 0 else 0
 
         assert isinstance(data, np.ndarray)
+
+        # Make sure data is of a dtype acceptable to vispy
+        data = fix_data_dtype(data)
 
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
             # are wrong. Or if the data is too big to fit in one tile.
             raise ValueError(
-                f"Data with shape {octree_chunk.data.shape} is not compatible "
-                f"with this TextureAtlas2D which has tile shape {self.spec.shape}"
+                trans._(
+                    "Data with shape {shape} is not compatible with this TextureAtlas2D which has tile shape {spec_shape}",
+                    deferred=True,
+                    shape=octree_chunk.data.shape,
+                    spec_shape=self.spec.shape,
+                )
             )
 
         try:

@@ -118,6 +118,7 @@ jobs:
         run: |
           git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
+          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
       - name: Install dependencies
         run: |
@@ -145,6 +146,7 @@ jobs:
           TOXENV: ${{ matrix.toxenv }}
           NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: ${{ matrix.MIN_REQ || 1 }}
           PYVISTA_OFF_SCREEN: True
+          MIN_REQ: ${{ matrix.MIN_REQ }}
 
       - name: Coverage
         if: runner.os == 'Linux' && matrix.python == '3.9'

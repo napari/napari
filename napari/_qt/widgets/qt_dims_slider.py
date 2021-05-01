@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils.events import Event
+from ...utils.translations import trans
 from .._constants import LoopMode
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
@@ -47,7 +48,9 @@ class QtDimSliderWidget(QWidget):
         self.slider = None
         self.play_button = None
         self.curslice_label = QLineEdit(self)
-        self.curslice_label.setToolTip(f'Current slice for axis {axis}')
+        self.curslice_label.setToolTip(
+            trans._('Current slice for axis {axis}', axis=axis)
+        )
         # if we set the QIntValidator to actually reflect the range of the data
         # then an invalid (i.e. too large) index doesn't actually trigger the
         # editingFinished event (the user is expected to change the value)...
@@ -58,7 +61,9 @@ class QtDimSliderWidget(QWidget):
 
         self.curslice_label.editingFinished.connect(self._set_slice_from_label)
         self.totslice_label = QLabel(self)
-        self.totslice_label.setToolTip(f'Total slices for axis {axis}')
+        self.totslice_label.setToolTip(
+            trans._('Total slices for axis {axis}', axis=axis)
+        )
         self.curslice_label.setObjectName('slice_label')
         self.totslice_label.setObjectName('slice_label')
         sep = QFrame(self)
@@ -89,11 +94,17 @@ class QtDimSliderWidget(QWidget):
 
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
+        # On teardown some tests fail on OSX with an `IndexError`
+        try:
+            max_allowed = self.dims.nsteps[self.axis] - 1
+        except IndexError:
+            return
+
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.nsteps[self.axis] - 1
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
+
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
         self.dims.set_current_step(self.axis, val)
@@ -104,7 +115,7 @@ class QtDimSliderWidget(QWidget):
         label.setObjectName('axis_label')  # needed for _update_label
         label.setText(self.dims.axis_labels[self.axis])
         label.home(False)
-        label.setToolTip('Edit to change axis label')
+        label.setToolTip(trans._('Edit to change axis label'))
         label.setAcceptDrops(False)
         label.setEnabled(True)
         label.setAlignment(Qt.AlignRight)
@@ -294,11 +305,16 @@ class QtDimSliderWidget(QWidget):
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
         if not isinstance(value, (tuple, list, type(None))):
-            raise TypeError('frame_range value must be a list or tuple')
+            raise TypeError(
+                trans._('frame_range value must be a list or tuple')
+            )
+
         if value and not len(value) == 2:
-            raise ValueError('frame_range must have a length of 2')
+            raise ValueError(trans._('frame_range must have a length of 2'))
+
         if value is None:
             value = (None, None)
+
         self._minframe, self._maxframe = value
         self.range_changed.emit(tuple(value))
 
@@ -480,21 +496,23 @@ class QtPlayButton(QPushButton):
         fpsspin.setMaximum(500)
         fpsspin.setMinimum(0)
         form_layout.insertRow(
-            0, QLabel('frames per second:', parent=self.popup), fpsspin
+            0,
+            QLabel(trans._('frames per second:'), parent=self.popup),
+            fpsspin,
         )
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
         revcheck.setObjectName("playDirectionCheckBox")
         form_layout.insertRow(
-            1, QLabel('play direction:', parent=self.popup), revcheck
+            1, QLabel(trans._('play direction:'), parent=self.popup), revcheck
         )
         self.reverse_check = revcheck
 
         mode_combo = QComboBox(self.popup)
         mode_combo.addItems([str(i).replace('_', ' ') for i in LoopMode])
         form_layout.insertRow(
-            2, QLabel('play mode:', parent=self.popup), mode_combo
+            2, QLabel(trans._('play mode:'), parent=self.popup), mode_combo
         )
         mode_combo.setCurrentText(str(self.mode))
         self.mode_combo = mode_combo
@@ -608,11 +626,13 @@ class AnimationWorker(QObject):
 
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:
-                raise ValueError("frame_range[0] must be <= frame_range[1]")
+                raise ValueError(
+                    trans._("frame_range[0] must be <= frame_range[1]")
+                )
             if frame_range[0] < self.dimsrange[0]:
-                raise IndexError("frame_range[0] out of range")
+                raise IndexError(trans._("frame_range[0] out of range"))
             if frame_range[1] * self.dimsrange[2] >= self.dimsrange[1]:
-                raise IndexError("frame_range[1] out of range")
+                raise IndexError(trans._("frame_range[1] out of range"))
         self.frame_range = frame_range
 
         if self.frame_range is not None:

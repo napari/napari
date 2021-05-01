@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins.exceptions import format_exceptions
+from ...utils.translations import trans
 
 
 class QtPluginErrReporter(QDialog):
@@ -48,7 +49,7 @@ class QtPluginErrReporter(QDialog):
         A label that will show available plugin metadata (such as home page).
     """
 
-    NULL_OPTION = 'select plugin... '
+    NULL_OPTION = trans._('select plugin... ')
 
     def __init__(
         self,
@@ -65,7 +66,7 @@ class QtPluginErrReporter(QDialog):
         else:
             self.plugin_manager = plugin_manager
 
-        self.setWindowTitle('Recorded Plugin Exceptions')
+        self.setWindowTitle(trans._('Recorded Plugin Exceptions'))
         self.setWindowModality(Qt.NonModal)
         self.layout = QVBoxLayout()
         self.layout.setSpacing(0)
@@ -85,10 +86,11 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
         # create github button (gets connected in self.set_plugin)
-        self.github_button = QPushButton('Open issue on GitHub', self)
+        self.github_button = QPushButton(trans._('Open issue on GitHub'), self)
         self.github_button.setToolTip(
-            "Open a web browser to submit this error log\n"
-            "to the developer's GitHub issue tracker"
+            trans._(
+                "Open a web browser to submit this error log\nto the developer's GitHub issue tracker",
+            )
         )
         self.github_button.hide()
 
@@ -96,7 +98,9 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button = QPushButton()
         self.clipboard_button.hide()
         self.clipboard_button.setObjectName("QtCopyToClipboardButton")
-        self.clipboard_button.setToolTip("Copy error log to clipboard")
+        self.clipboard_button.setToolTip(
+            trans._("Copy error log to clipboard")
+        )
         self.clipboard_button.clicked.connect(self.copyToClipboard)
 
         # plugin_meta contains a URL to the home page, (and/or other details)
@@ -151,7 +155,12 @@ class QtPluginErrReporter(QDialog):
             return
 
         if not self.plugin_manager.get_errors(plugin):
-            raise ValueError(f"No errors reported for plugin '{plugin}'")
+            raise ValueError(
+                trans._(
+                    "No errors reported for plugin '{plugin}'", plugin=plugin
+                )
+            )
+
         self.plugin_combo.setCurrentText(plugin)
 
         err_string = format_exceptions(plugin, as_html=True)

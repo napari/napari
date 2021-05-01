@@ -16,6 +16,7 @@ jobs:
   test:
     name: ${{ matrix.platform }} py${{ matrix.python }} ${{ matrix.backend }} --pre
     runs-on: ${{ matrix.platform }}
+    if: github.repository == 'napari/napari'
     strategy:
       fail-fast: false
       matrix:
@@ -43,6 +44,7 @@ jobs:
         run: |
           git clone --depth 1 git://github.com/pyvista/gl-ci-helpers.git
           powershell gl-ci-helpers/appveyor/install_opengl.ps1
+          if (Test-Path -Path "C:\Windows\system32\opengl32.dll" -PathType Leaf) {Exit 0} else {Exit 1}
 
       - name: Install dependencies
         run: |

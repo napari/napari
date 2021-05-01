@@ -23,18 +23,26 @@ def test_set(request, regular_set):
         # METHOD, ARGS, EXPECTED EVENTS
         # primary interface
         ('add', 2, []),
-        ('add', 10, [call.added(value={10})]),
-        ('discard', 2, [call.removed(value={2})]),
-        ('remove', 2, [call.removed(value={2})]),
+        ('add', 10, [call.changed(added={10}, removed={})]),
+        ('discard', 2, [call.changed(added={}, removed={2})]),
+        ('remove', 2, [call.changed(added={}, removed={2})]),
         ('discard', 10, []),
         # parity with set
-        ('update', {3, 4, 5, 6}, [call.added(value={5, 6})]),
-        ('difference_update', {3, 4, 5, 6}, [call.removed(value={3, 4})]),
-        ('intersection_update', {3, 4, 5, 6}, [call.removed(value={0, 1, 2})]),
+        ('update', {3, 4, 5, 6}, [call.changed(added={5, 6}, removed={})]),
+        (
+            'difference_update',
+            {3, 4, 5, 6},
+            [call.changed(added={}, removed={3, 4})],
+        ),
+        (
+            'intersection_update',
+            {3, 4, 5, 6},
+            [call.changed(added={}, removed={0, 1, 2})],
+        ),
         (
             'symmetric_difference_update',
             {3, 4, 5, 6},
-            [call.removed(value={3, 4}), call.added(value={5, 6})],
+            [call.changed(added={5, 6}, removed={3, 4})],
         ),
     ],
     ids=lambda x: x[0],
@@ -55,11 +63,11 @@ def test_set_pop():
     test_set = EventedSet(range(3))
     test_set.events = Mock(wraps=test_set.events)
     test_set.pop()
-    assert len(test_set.events.removed.call_args_list) == 1
+    assert len(test_set.events.changed.call_args_list) == 1
     test_set.pop()
-    assert len(test_set.events.removed.call_args_list) == 2
+    assert len(test_set.events.changed.call_args_list) == 2
     test_set.pop()
-    assert len(test_set.events.removed.call_args_list) == 3
+    assert len(test_set.events.changed.call_args_list) == 3
     with pytest.raises(KeyError):
         test_set.pop()
     with pytest.raises(KeyError):
@@ -69,7 +77,9 @@ def test_set_pop():
 def test_set_clear(test_set):
     assert test_set.events.mock_calls == []
     test_set.clear()
-    assert test_set.events.mock_calls == [call.removed(value={0, 1, 2, 3, 4})]
+    assert test_set.events.mock_calls == [
+        call.changed(added={}, removed={0, 1, 2, 3, 4})
+    ]
 
 
 @pytest.mark.parametrize(

@@ -49,3 +49,6 @@ sphinx:
       napari_plugin_engine:
         - "https://napari-plugin-engine.readthedocs.io/en/latest/"
         - "https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv"
+      magicgui:
+        - "https://napari.org/magicgui/"
+        - "https://napari.org/magicgui/objects.inv"

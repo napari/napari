@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
+from ...utils.translations import trans
+
 if TYPE_CHECKING:
     from .group import Group
 
@@ -28,15 +30,7 @@ class Node:
 
     def __init__(self, name: str = "Node"):
         self.parent: Optional[Group] = None
-        self._name = name
-
-    @property
-    def name(self) -> str:
-        return self._name
-
-    @name.setter
-    def name(self, value: str) -> None:
-        self._name = value
+        self.name = name
 
     def is_group(self) -> bool:
         """Return True if this Node is a composite.
@@ -109,4 +103,10 @@ class Node:
         if self.parent is not None:
             self.parent.remove(self)
             return self
-        raise IndexError("Cannot unparent orphaned Node: {self!r}")
+        raise IndexError(
+            trans._(
+                "Cannot unparent orphaned Node: {node!r}",
+                deferred=True,
+                node=self,
+            ),
+        )

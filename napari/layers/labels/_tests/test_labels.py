@@ -1,10 +1,16 @@
+import itertools
+
 import numpy as np
 import pytest
 import xarray as xr
+from numpy.core.numerictypes import issubdtype
+from numpy.testing import assert_array_almost_equal, assert_raises
+from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
 from napari.utils import Colormap
+from napari.utils.colormaps import low_discrepancy_image
 
 
 def test_random_labels():
@@ -49,10 +55,38 @@ def test_3D_labels():
     assert layer.mode == 'pan_zoom'
 
 
+def test_float_labels():
+    """Test instantiating labels layer with floats"""
+    np.random.seed(0)
+    data = np.random.uniform(0, 20, size=(10, 10))
+    with pytest.raises(TypeError):
+        Labels(data)
+
+    data0 = np.random.uniform(20, size=(20, 20))
+    data1 = data0[::2, ::2].astype(np.int32)
+    data = [data0, data1]
+    with pytest.raises(TypeError):
+        Labels(data)
+
+
+def test_bool_labels():
+    """Test instantiating labels layer with bools"""
+    data = np.zeros((10, 10), dtype=bool)
+    layer = Labels(data)
+    assert issubdtype(layer.data.dtype, np.integer)
+
+    data0 = np.zeros((20, 20), dtype=bool)
+    data1 = data0[::2, ::2].astype(np.int32)
+    data = [data0, data1]
+    layer = Labels(data)
+    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
+
+
 def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
     shape_b = (20, 12)
+    shape_c = (10, 10)
     np.random.seed(0)
     data_a = np.random.randint(20, size=shape_a)
     data_b = np.random.randint(20, size=shape_b)
@@ -62,6 +96,14 @@ def test_changing_labels():
     assert layer.ndim == len(shape_b)
     np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
+
+    data_c = np.zeros(shape_c, dtype=bool)
+    layer.data = data_c
+    assert np.issubdtype(layer.data.dtype, np.integer)
+
+    data_c = data_c.astype(np.float32)
+    with pytest.raises(TypeError):
+        layer.data = data_c
 
 
 def test_changing_labels_dims():
@@ -189,6 +231,15 @@ def test_seed():
     layer = Labels(data, seed=0.7)
     assert layer.seed == 0.7
 
+    # ensure setting seed triggers
+    # recalculation of _all_vals
+    _all_vals_07 = layer._all_vals.copy()
+    layer.seed = 0.4
+    _all_vals_04 = layer._all_vals.copy()
+    assert_raises(
+        AssertionError, assert_array_almost_equal, _all_vals_04, _all_vals_07
+    )
+
 
 def test_num_colors():
     """Test setting number of colors in colormap."""
@@ -220,21 +271,33 @@ def test_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value(layer.coordinates)
-    layer_message = layer.get_status(layer.position)
+    current_label = layer.get_value((0, 0))
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
+
+
+def test_default_properties_assignment():
+    """Test that the default properties value can be assigned to properties
+    see https://github.com/napari/napari/issues/2477
+    """
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    layer.properties = {}
+    assert layer.properties == {}
 
 
 def test_multiscale_properties():
@@ -255,19 +318,19 @@ def test_multiscale_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value(layer.coordinates)[1]
-    layer_message = layer.get_status(layer.position)
+    current_label = layer.get_value((0, 0))[1]
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith(f'Class {current_label - 1}')
 
     properties = {'class': ['Background']}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer_message.endswith("[No Properties]")
 
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
-    layer_message = layer.get_status(layer.position)
+    layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
@@ -306,6 +369,20 @@ def test_custom_color_dict():
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
+def test_add_colors():
+    """Test adding new colors"""
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    assert len(layer._all_vals) == layer.num_colors
+
+    layer.selected_label = 51
+    assert len(layer._all_vals) == 52
+
+    layer.show_selected_label = True
+    layer.selected_label = 60
+    assert len(layer._all_vals) == 61
+
+
 def test_metadata():
     """Test setting labels metadata."""
     np.random.seed(0)
@@ -339,15 +416,128 @@ def test_contiguous():
     assert layer.contiguous is False
 
 
-def test_n_dimensional():
-    """Test changing n_dimensional."""
+def test_n_edit_dimensions():
+    """Test changing the number of editable dimensions."""
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional is False
+    layer.n_edit_dimensions = 2
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is False
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is True
 
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+
+@pytest.mark.parametrize(
+    "input_data, expected_data_view",
+    [
+        (
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (
+            np.array(
+                [
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+        ),
+        (
+            5 * np.ones((9, 10), dtype=np.uint32),
+            np.zeros((9, 10), dtype=np.uint32),
+        ),
+    ],
+)
+def test_contour(input_data, expected_data_view):
+    """Test changing contour."""
+    layer = Labels(input_data)
+    assert layer.contour == 0
+    np.testing.assert_array_equal(layer.data, input_data)
+
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(input_data), layer._data_view
+    )
+    data_view_before_contour = layer._data_view.copy()
+
+    layer.contour = 1
+    assert layer.contour == 1
+
+    # Check `layer.data` didn't change
+    np.testing.assert_array_equal(layer.data, input_data)
+
+    # Check what is returned in the view of the data
+    np.testing.assert_array_equal(
+        layer._data_view,
+        np.where(
+            expected_data_view > 0,
+            low_discrepancy_image(expected_data_view),
+            0,
+        ),
+    )
+
+    # Check the view of the data changed after setting the contour
+    with np.testing.assert_raises(AssertionError):
+        np.testing.assert_array_equal(
+            data_view_before_contour, layer._data_view
+        )
+
+    layer.contour = 0
+    assert layer.contour == 0
+
+    # Check it's in the same state as before setting the contour
+    np.testing.assert_array_equal(
+        layer._raw_to_displayed(input_data), layer._data_view
+    )
 
 
 def test_selecting_label():
@@ -430,7 +620,7 @@ def test_paint():
 
 def test_paint_with_preserve_labels():
     """Test painting labels with square brush while preserving existing labels."""
-    data = np.zeros((15, 10))
+    data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
     layer.brush_shape = 'square'
@@ -451,7 +641,7 @@ def test_paint_with_preserve_labels():
 )
 def test_paint_2d(brush_shape, expected_sum):
     """Test painting labels with circle/square brush."""
-    data = np.zeros((40, 40))
+    data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = brush_shape
@@ -484,7 +674,7 @@ def test_paint_2d(brush_shape, expected_sum):
 )
 def test_paint_2d_xarray(brush_shape, expected_sum):
     """Test the memory usage of painting an xarray indirectly via timeout."""
-    data = xr.DataArray(np.zeros((3, 3, 1024, 1024)))
+    data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
     layer.brush_size = 12
@@ -501,7 +691,7 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 )
 def test_paint_3d(brush_shape, expected_sum):
     """Test painting labels with circle/square brush on 3D image."""
-    data = np.zeros((30, 40, 40))
+    data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = brush_shape
@@ -511,11 +701,11 @@ def test_paint_3d(brush_shape, expected_sum):
     layer.paint((10, 10, 10), 3)
 
     # Paint in 3D
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.paint((10, 25, 10), 4)
 
     # Paint in 3D, preserve labels
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
@@ -544,8 +734,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    value = layer.get_value(layer.coordinates)
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0, 0))
     assert value == data[0, 0]
 
 
@@ -554,7 +743,7 @@ def test_message():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    msg = layer.get_status(layer.position)
+    msg = layer.get_status((0, 0))
     assert type(msg) == str
 
 
@@ -575,3 +764,99 @@ def test_world_data_extent():
     layer = Labels(data)
     extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+@pytest.mark.parametrize(
+    'brush_shape, brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    list(
+        itertools.product(
+            ['square', 'circle'],
+            list(range(1, 22, 5)),
+            ['fill', 'erase', 'paint'],
+            [1, 20, 100],
+            [True, False],
+            [True, False],
+        )
+    ),
+)
+def test_undo_redo(
+    brush_shape,
+    brush_size,
+    mode,
+    selected_label,
+    preserve_labels,
+    n_dimensional,
+):
+    blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
+    layer = Labels(blobs)
+    data_history = [blobs.copy()]
+    layer.brush_shape = brush_shape
+    layer.brush_size = brush_size
+    layer.mode = mode
+    layer.selected_label = selected_label
+    layer.preserve_labels = preserve_labels
+    layer.n_edit_dimensions = 3 if n_dimensional else 2
+    coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
+    while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
+        coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
+    if layer.mode == 'fill':
+        layer.fill(coord, layer.selected_label)
+    if layer.mode == 'erase':
+        layer.paint(coord, 0)
+    if layer.mode == 'paint':
+        layer.paint(coord, layer.selected_label)
+    data_history.append(np.copy(layer.data))
+    layer.undo()
+    np.testing.assert_array_equal(layer.data, data_history[0])
+    layer.redo()
+    np.testing.assert_array_equal(layer.data, data_history[1])
+
+
+def test_ndim_fill():
+    test_array = np.zeros((5, 5, 5, 5), dtype=int)
+
+    test_array[:, 1:3, 1:3, 1:3] = 1
+
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+
+    layer.fill((0, 1, 1, 1), 2)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1, 1:3, 1:3, 1:3], 1)
+
+    layer.n_edit_dimensions = 4
+
+    layer.fill((1, 1, 1, 1), 3)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1:, 1:3, 1:3, 1:3], 3)
+
+
+def test_ndim_paint():
+    test_array = np.zeros((5, 6, 7, 8), dtype=int)
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+    layer.brush_shape = 'circle'
+    layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
+    layer.paint((1, 1, 1, 1), 1)
+
+    assert np.sum(layer.data) == 19  # 18 + center
+    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+
+    layer.n_edit_dimensions = 2  # 3x3 square
+    layer._dims_order = [1, 2, 0, 3]
+    layer.paint((4, 5, 6, 7), 8)
+    assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
+    np.testing.assert_array_equal(
+        test_array[:, 5, 6, :],
+        np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+            ]
+        ),
+    )

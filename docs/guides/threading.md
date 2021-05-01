@@ -15,13 +15,13 @@ import napari
 import numpy as np
 
 
-with napari.gui_qt():
-    viewer = napari.Viewer()
-    # everything is fine so far... but if we trigger a long computation
-    image = np.random.rand(1024, 512, 512).mean(0)
-    viewer.add_image(image)
-    # the entire interface freezes!
+viewer = napari.Viewer()
+# everything is fine so far... but if we trigger a long computation
+image = np.random.rand(1024, 512, 512).mean(0)
+viewer.add_image(image)
+# the entire interface freezes!
 ```
+
 In order to avoid freezing the viewer during a long-running blocking function,
 you must run your function in another thread or process.
 
@@ -76,11 +76,11 @@ from napari.qt.threading import thread_worker
 def average_large_image():
     return np.random.rand(1024, 512, 512).mean(0)
 
-with napari.gui_qt():
-    viewer = napari.Viewer()
-    worker = average_large_image()  # create "worker" object
-    worker.returned.connect(viewer.add_image)  # connect callback functions
-    worker.start()  # start the thread!
+viewer = napari.Viewer()
+worker = average_large_image()  # create "worker" object
+worker.returned.connect(viewer.add_image)  # connect callback functions
+worker.start()  # start the thread!
+napari.run()
 ```
 
 The {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator
@@ -102,14 +102,14 @@ enable more concise syntax. The example below is equivalent to lines 7-15 in
 the above example:
 
 ```python
-with napari.gui_qt():
-    viewer = napari.Viewer()
+viewer = napari.Viewer()
 
-    @thread_worker(connect={"returned": viewer.add_image})
-    def average_large_image():
-        return np.random.rand(1024, 512, 512).mean(0)
+@thread_worker(connect={"returned": viewer.add_image})
+def average_large_image():
+    return np.random.rand(1024, 512, 512).mean(0)
 
-    average_large_image()
+average_large_image()
+napari.run()
 ```
 
 ```{note}
@@ -209,28 +209,28 @@ import numpy as np
 from napari.qt.threading import thread_worker
 
 
-with napari.gui_qt():
-    viewer = napari.Viewer()
+viewer = napari.Viewer()
 
-    def update_layer(new_image):
-        try:
-            # if the layer exists, update the data
-            viewer.layers['result'].data = new_image
-        except KeyError:
-            # otherwise add it to the viewer
-            viewer.add_image(
-                new_image, contrast_limits=(0.45, 0.55), name='result'
-            )
+def update_layer(new_image):
+    try:
+        # if the layer exists, update the data
+        viewer.layers['result'].data = new_image
+    except KeyError:
+        # otherwise add it to the viewer
+        viewer.add_image(
+            new_image, contrast_limits=(0.45, 0.55), name='result'
+        )
 
-    @thread_worker(connect={'yielded': update_layer})
-    def large_random_images():
-        cumsum = np.zeros((512, 512))
-        for i in range(1024):
-            cumsum += np.random.rand(512, 512)
-            if i % 16 == 0:
-                yield cumsum / (i + 1)
+@thread_worker(connect={'yielded': update_layer})
+def large_random_images():
+    cumsum = np.zeros((512, 512))
+    for i in range(1024):
+        cumsum += np.random.rand(512, 512)
+        if i % 16 == 0:
+            yield cumsum / (i + 1)
 
-    large_random_images()  # call the function!
+large_random_images()  # call the function!
+napari.run()
 ```
 
 Note how we periodically (every 16 iterations) `yield` the image result in
@@ -265,35 +265,35 @@ import time
 import napari
 from qtpy.QtWidgets import QPushButton
 
-with napari.gui_qt():
-    viewer = napari.Viewer()
+viewer = napari.Viewer()
 
-    def update_layer(new_image):
-        try:
-            viewer.layers['result'].data = new_image
-        except KeyError:
-            viewer.add_image(
-                new_image, name='result', contrast_limits=(-0.8, 0.8)
-            )
+def update_layer(new_image):
+    try:
+        viewer.layers['result'].data = new_image
+    except KeyError:
+        viewer.add_image(
+            new_image, name='result', contrast_limits=(-0.8, 0.8)
+        )
 
-    @thread_worker
-    def yield_random_images_forever():
-        i = 0
-        while True:  # infinite loop!
-            yield np.random.rand(512, 512) * np.cos(i * 0.2)
-            i += 1
-            time.sleep(0.05)
+@thread_worker
+def yield_random_images_forever():
+    i = 0
+    while True:  # infinite loop!
+        yield np.random.rand(512, 512) * np.cos(i * 0.2)
+        i += 1
+        time.sleep(0.05)
 
-    worker = yield_random_images_forever()
-    worker.yielded.connect(update_layer)
+worker = yield_random_images_forever()
+worker.yielded.connect(update_layer)
 
-    # add a button to the viewew that, when clicked, stops the worker
-    button = QPushButton("STOP!")
-    button.clicked.connect(worker.quit)
-    worker.finished.connect(button.clicked.disconnect)
-    viewer.window.add_dock_widget(button)
+# add a button to the viewew that, when clicked, stops the worker
+button = QPushButton("STOP!")
+button.clicked.connect(worker.quit)
+worker.finished.connect(button.clicked.disconnect)
+viewer.window.add_dock_widget(button)
 
-    worker.start()
+worker.start()
+napari.run()
 ```
 
 #### Graceful Exit
@@ -348,45 +348,44 @@ def multiplier():
         if total == 0:
             return "Game Over!"
 
+viewer = napari.Viewer()
 
-with napari.gui_qt():
-    viewer = napari.Viewer()
+# make a widget to control the worker
+# (not the main point of this example...)
+widget = QWidget()
+layout = QVBoxLayout()
+widget.setLayout(layout)
+result_label = QLabel()
+line_edit = QLineEdit()
+line_edit.setValidator(QDoubleValidator())
+layout.addWidget(line_edit)
+layout.addWidget(result_label)
+viewer.window.add_dock_widget(widget)
 
-    # make a widget to control the worker
-    # (not the main point of this example...)
-    widget = QWidget()
-    layout = QVBoxLayout()
-    widget.setLayout(layout)
-    result_label = QLabel()
-    line_edit = QLineEdit()
-    line_edit.setValidator(QDoubleValidator())
-    layout.addWidget(line_edit)
-    layout.addWidget(result_label)
-    viewer.window.add_dock_widget(widget)
+# create the worker
+worker = multiplier()
 
-    # create the worker
-    worker = multiplier()
+# define some callbacks
+def on_yielded(value):
+    worker.pause()
+    result_label.setText(str(value))
+    line_edit.setText('1')
 
-    # define some callbacks
-    def on_yielded(value):
-        worker.pause()
-        result_label.setText(str(value))
-        line_edit.setText('1')
+def on_return(value):
+    line_edit.setText('')
+    line_edit.setEnabled(False)
+    result_label.setText(value)
 
-    def on_return(value):
-        line_edit.setText('')
-        line_edit.setEnabled(False)
-        result_label.setText(value)
+def send_next_value():
+    worker.send(float(line_edit.text()))
+    worker.resume()
 
-    def send_next_value():
-        worker.send(float(line_edit.text()))
-        worker.resume()
+worker.yielded.connect(on_yielded)
+worker.returned.connect(on_return)
+line_edit.returnPressed.connect(send_next_value)
 
-    worker.yielded.connect(on_yielded)
-    worker.returned.connect(on_return)
-    line_edit.returnPressed.connect(send_next_value)
-
-    worker.start()
+worker.start()
+napari.run()
 ```
 
 Let's break it down:

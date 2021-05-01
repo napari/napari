@@ -66,6 +66,11 @@ QStatusBar {
   background-color: {{ foreground }};
 }
 
+#QtCustomTitleBar > QLabel {
+  color: {{ primary }};
+  font-size: 11pt;
+}
+
 #QTitleBarCloseButton{
     width: 12px;
     height: 12px;
@@ -103,28 +108,6 @@ QtConsole > QTextEdit {
 .out-prompt-number { font-weight: bold; }
 .in-prompt { color: #6ab825; }
 .out-prompt { color: #b72121; }
-
-/* ------------- Narrow scrollbar for qtlayer list --------- */
-
-QtLayerList QScrollBar:vertical {
-  max-width: 8px;
-  margin: 12px 0px;
-}
-
-QtLayerList QScrollBar::add-line:vertical,
-QtLayerList QScrollBar::sub-line:vertical  {
-    height: 10px;
-    width: 8px;
-}
-
-
-QtLayerList QScrollBar:up-arrow,
-QtLayerList QScrollBar:down-arrow {
-  min-height: 6px;
-  min-width: 6px;
-  max-height: 6px;
-  max-width: 6px;
-}
 
 
 /* controls the area around the canvas */
@@ -218,7 +201,7 @@ QtLayerWidget > QCheckBox#visibility::indicator{
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ folder }}/visibility_off_50.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
@@ -262,6 +245,10 @@ QLabel#Vectors {
   image: url(":/themes/{{ folder }}/new_vectors.svg");
 }
 
+QLabel#logo_silhouette {
+  image: url(":/themes/{{ folder }}/logo_silhouette.svg");
+}
+
 
 /* ------------------------------------------------------ */
 
@@ -269,8 +256,8 @@ QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 245px;
-    max-height: 245px;
+    min-height: 265px;
+    max-height: 265px;
     min-width: 240px;
     max-width: 240px;
     margin-left: 10px;
@@ -448,11 +435,11 @@ QtPluginErrReporter > QTextEdit {
 
 /* ------------ Notifications ------------ */
 
-NapariNotification > QWidget {
+NapariQtNotification > QWidget {
   background: none;
 }
 
-NapariNotification::hover{
+NapariQtNotification::hover{
   background: {{ lighten(background, 5) }};
 }
 
@@ -462,23 +449,23 @@ MultilineElidedLabel{
   font-size: 12px;
 }
 
-NapariNotification #expand_button {
+NapariQtNotification #expand_button {
   background: none;
   padding: 0px;
   margin: 0px;
   max-width: 20px;
 }
 
-NapariNotification[expanded="false"] #expand_button {
+NapariQtNotification[expanded="false"] #expand_button {
   image: url(":/themes/{{ folder }}/chevron_up.svg");
 }
 
-NapariNotification[expanded="true"] #expand_button {
+NapariQtNotification[expanded="true"] #expand_button {
   image: url(":/themes/{{ folder }}/chevron_down.svg");
 }
 
 
-NapariNotification #close_button {
+NapariQtNotification #close_button {
   background: none;
   image: url(":/themes/{{ folder }}/delete_shape.svg");
   padding: 0px;
@@ -486,12 +473,12 @@ NapariNotification #close_button {
   max-width: 20px;
 }
 
-NapariNotification #source_label {
+NapariQtNotification #source_label {
   color: {{ primary }};
   font-size: 11px;
 }
 
-NapariNotification #severity_icon {
+NapariQtNotification #severity_icon {
   padding: 0;
   margin: 0 0 -3px 0;
   min-width: 20px;
@@ -595,76 +582,111 @@ QtPluginSorter {
   padding: 20px;
 }
 
-/*  TreeView Styles */
 
-QTreeView {
-  margin-right: 4px;
-  min-width: 200px;
+QtFontSizePreview {
+  border: 1px solid {{ foreground }};
+  border-radius: 5px;
 }
 
-QTreeView::item {
+QListWidget#Preferences {
+ background: {{ background }};
+}
+
+
+QtWelcomeWidget, QtWelcomeWidget[drag=false] {
+  background: {{ canvas }};
+}
+
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+ color: {{ foreground }};
+ font-size: 20px;
+}
+
+QtShortcutLabel {
+ color: {{ foreground }};
+ font-size: 16px;
+}
+
+
+/* ------------- Narrow scrollbar for qtlayer list --------- */
+
+QtListView {
+  background: {{ background }};
+}
+
+QtListView QScrollBar:vertical {
+  max-width: 8px;
+}
+
+QtListView QScrollBar::add-line:vertical,
+QtListView QScrollBar::sub-line:vertical  {
+  height: 10px;
+  width: 8px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+QtListView QScrollBar:up-arrow,
+QtListView QScrollBar:down-arrow {
+  min-height: 6px;
+  min-width: 6px;
+  max-height: 6px;
+  max-width: 6px;
+}
+
+QtListView::item {
   padding: 4px;
-}
-
-QtLayerTreeView::item {
-  margin: 2px 0px 2px 32px;
+  margin: 2px 2px 2px 2px;
   background-color: {{ foreground }};
-  border-top-right-radius: 2px;
-  border-bottom-right-radius: 2px;
   border: 1px solid {{ foreground }};
 }
 
-QtLayerTreeView::item:hover {
-  border: 1px solid {{ highlight }};
+QtListView::item:hover {
+  background-color: {{ lighten(foreground, 3) }};
 }
 
-QtLayerTreeView::item::text {
-  font-size: 8px;
-}
-
-QTreeView::branch:closed:has-children {
-  image: url(":/themes/{{ folder }}/caret-right.svg");
-  padding: 6px;
-}
-QTreeView::branch:open:has-children {
-  image: url(":/themes/{{ folder }}/caret-down.svg");
-  padding: 5px;
-}
-QTreeView::branch:selected {
-  background-color: {{ background }};
-}
-
-QTreeView::item:selected:active{
+/* in the QSS context "active" means the window is active */
+/* (as opposed to focused on another application) */
+QtListView::item:selected:active{
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ current }}, stop: 1 {{ darken(current, 15) }});
 }
 
-QTreeView::item:selected:!active {
+
+QtListView::item:selected:!active {
   background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {{ darken(current, 10) }}, stop: 1 {{ darken(current, 25) }});
 }
 
-QTreeView::indicator{
-  width: 16px;
-  height: 16px;
-  position: absolute;
-  left: 0px;
-}
 
-QTreeView QLineEdit {
+QtListView QLineEdit {
   background-color: {{ darken(current, 20) }};
   selection-background-color: {{ lighten(current, 20) }};
   font-size: 12px;
 }
 
+QtLayerList::item {
+  margin: 2px 2px 2px 28px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border: 0;
+}
+
 /* the first one is the "partially checked" state */
-QtLayerTreeView::indicator {
+QtLayerList::indicator {
+  width: 16px;
+  height: 16px;
+  position: absolute;
+  left: 0px;
   image: url(":/themes/{{ folder }}/visibility_off.svg");
 }
 
-QtLayerTreeView::indicator:unchecked {
+QtLayerList::indicator:unchecked {
   image: url(":/themes/{{ folder }}/2D.svg");
 }
 
-QtLayerTreeView::indicator:checked {
+QtLayerList::indicator:checked {
   image: url(":/themes/{{ folder }}/visibility.svg");
 }
-

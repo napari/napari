@@ -38,17 +38,17 @@ def test_multiscale(make_napari_viewer):
 
     # Test value at top left corner of image
     viewer.cursor.position = (0, 0)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value(viewer.cursor.position, world=True)
     np.testing.assert_allclose(value, (2, data[2][(0, 0)]))
 
     # Test value at bottom right corner of image
     viewer.cursor.position = (3995, 2995)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value(viewer.cursor.position, world=True)
     np.testing.assert_allclose(value, (2, data[2][(999, 749)]))
 
     # Test value outside image
     viewer.cursor.position = (4000, 3000)
-    value = layer.get_value(layer.coordinates)
+    value = layer.get_value(viewer.cursor.position, world=True)
     assert value[1] is None
 
 
@@ -83,7 +83,7 @@ def test_multiscale_screenshot(make_napari_viewer):
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
 
     screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -119,7 +119,7 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
     assert viewer.layers[0].data_level == 0
 
     screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
@@ -150,7 +150,7 @@ def test_image_screenshot_zoomed(make_napari_viewer):
     viewer.window.qt_viewer.on_draw(None)
 
     screenshot = viewer.screenshot(canvas_only=True)
-    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
 
@@ -169,6 +169,8 @@ def test_5D_multiscale(make_napari_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
     viewer = make_napari_viewer(show=True)
+    view = viewer.window.qt_viewer
+    view.set_welcome_visible(False)
     shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]

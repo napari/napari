@@ -1,18 +1,30 @@
+from __future__ import annotations
+
 import os
 import sys
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 from warnings import warn
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from napari import __version__
-
+from .. import __version__
 from ..utils import config, perf
+from ..utils.notifications import (
+    notification_manager,
+    show_console_notification,
+)
 from ..utils.perf import perf_config
-from .exceptions import ExceptionHandler
+from ..utils.settings import SETTINGS
+from ..utils.translations import trans
+from .dialogs.qt_notification import NapariQtNotification
+from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
+
+if TYPE_CHECKING:
+    from IPython import InteractiveShell
 
 NAPARI_ICON_PATH = os.path.join(
     os.path.dirname(__file__), '..', 'resources', 'logo.png'
@@ -49,6 +61,7 @@ def get_app(
     org_name: str = None,
     org_domain: str = None,
     app_id: str = None,
+    ipy_interactive: bool = None,
 ) -> QApplication:
     """Get or create the Qt QApplication.
 
@@ -74,6 +87,9 @@ def get_app(
         Set organization domain (if creating for the first time).  Will be
         passed to set_app_id (which may also be called independently), by
         default NAPARI_APP_ID
+    ipy_interactive : bool, optional
+        Use the IPython Qt event loop ('%gui qt' magic) if running in an
+        interactive IPython terminal.
 
     Returns
     -------
@@ -95,14 +111,19 @@ def get_app(
     # then they are all used.
     set_values = {k for k, v in locals().items() if v}
     kwargs = locals() if set_values else _defaults
+    global _app_ref
 
     app = QApplication.instance()
     if app:
+        set_values.discard("ipy_interactive")
         if set_values:
 
             warn(
-                "QApplication already existed, these arguments to to 'get_app'"
-                " were ignored: {}".format(set_values)
+                trans._(
+                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
+                    deferred=True,
+                    args=set_values,
+                )
             )
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import convert_app_for_tracing
@@ -121,26 +142,43 @@ def get_app(
         else:
             app = QApplication(sys.argv)
 
-        global _app_ref
-        _app_ref = app  # prevent garbage collection
-
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
         app.setApplicationName(kwargs.get('app_name'))
         app.setApplicationVersion(kwargs.get('app_version'))
         app.setOrganizationName(kwargs.get('org_name'))
         app.setOrganizationDomain(kwargs.get('org_domain'))
-        app.setWindowIcon(QIcon(kwargs.get('icon')))
         set_app_id(kwargs.get('app_id'))
+
+    if not _ipython_has_eventloop():
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
+
+    if app.windowIcon().isNull():
+        app.setWindowIcon(QIcon(kwargs.get('icon')))
+
+    if ipy_interactive is None:
+        ipy_interactive = SETTINGS.application.ipy_interactive
+    _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
         # Will patch based on config file.
         perf_config.patch_callables()
 
-    # see docstring of `wait_for_workers_to_quit` for caveats on killing
-    # workers at shutdown.
-    app.aboutToQuit.connect(wait_for_workers_to_quit)
+    if not _app_ref:  # running get_app for the first time
+        # see docstring of `wait_for_workers_to_quit` for caveats on killing
+        # workers at shutdown.
+        app.aboutToQuit.connect(wait_for_workers_to_quit)
 
+        # this will register all of our resources (icons) with Qt, so that they
+        # can be used in qss files and elsewhere.
+        _register_napari_resources()
+
+    _app_ref = app  # prevent garbage collection
     return app
 
 
@@ -148,7 +186,10 @@ def quit_app():
     """Close all windows and quit the QApplication if napari started it."""
     QApplication.closeAllWindows()
     # if we started the application then the app will be named 'napari'.
-    if QApplication.applicationName() == 'napari':
+    if (
+        QApplication.applicationName() == 'napari'
+        and not _ipython_has_eventloop()
+    ):
         QApplication.quit()
 
     # otherwise, something else created the QApp before us (such as
@@ -181,8 +222,7 @@ def quit_app():
 def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     """Start a Qt event loop in which to run the application.
 
-    NOTE: This context manager may be deprecated in the future. Prefer using
-    :func:`napari.run` instead.
+    NOTE: This context manager is deprecated!. Prefer using :func:`napari.run`.
 
     Parameters
     ----------
@@ -202,6 +242,13 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
+    warn(
+        trans._(
+            "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running napari from a script, please use 'napari.run()' as follows:\n\n    import napari\n\n    viewer = napari.Viewer()  # no prior setup needed\n    # other code using the viewer...\n    napari.run()\n\nIn IPython or Jupyter, 'napari.run()' is not necessary. napari will automatically\nstart an interactive event loop for you: \n\n    import napari\n    viewer = napari.Viewer()  # that's it!\n",
+            deferred=True,
+        ),
+        FutureWarning,
+    )
 
     app = get_app()
     splash = None
@@ -210,8 +257,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
 
         splash = NapariSplashScreen()
         splash.close()
-
-    yield app
+    try:
+        yield app
+    except Exception:
+        notification_manager.receive_error(*sys.exc_info())
     run(force=force, gui_exceptions=gui_exceptions, _func_name='gui_qt')
 
 
@@ -223,12 +272,28 @@ def _ipython_has_eventloop() -> bool:
     at the prompt.  So it will likely "appear" like there is no event loop
     running, but we still don't need to start one.
     """
-    try:
-        from IPython import get_ipython
-
-        return get_ipython().active_eventloop == 'qt'
-    except (ImportError, AttributeError):
+    ipy_module = sys.modules.get("IPython")
+    if not ipy_module:
         return False
+
+    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    if not shell:
+        return False
+
+    return shell.active_eventloop == 'qt'
+
+
+def _try_enable_ipython_gui(gui='qt'):
+    """Start %gui qt the eventloop."""
+    ipy_module = sys.modules.get("IPython")
+    if not ipy_module:
+        return
+
+    shell: InteractiveShell = ipy_module.get_ipython()  # type: ignore
+    if not shell:
+        return
+    if shell.active_eventloop != gui:
+        shell.enable_gui(gui)
 
 
 def run(
@@ -268,42 +333,34 @@ def run(
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
-            'No Qt app has been created. '
-            'One can be created by calling `get_app()` '
-            'or qtpy.QtWidgets.QApplication([])'
+            trans._(
+                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                deferred=True,
+            )
         )
     if not app.topLevelWidgets() and not force:
         warn(
-            "Refusing to run a QApplication with no topLevelWidgets. "
-            f"To run the app anyway, use `{_func_name}(force=True)`"
+            trans._(
+                "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
+                deferred=True,
+                _func_name=_func_name,
+            )
         )
         return
 
     if app.thread().loopLevel() >= max_loop_level:
         loops = app.thread().loopLevel()
-        s = 's' if loops > 1 else ''
         warn(
-            f"A QApplication is already running with {loops} event loop{s}."
-            "To enter *another* event loop, use "
-            f"`{_func_name}(max_loop_level={loops + 1})`"
+            trans._n(
+                "A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                "A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                n=loops,
+                deferred=True,
+                _func_name=_func_name,
+                max_loop_level=loops + 1,
+            )
         )
         return
 
-    with _install_hooks(gui_exceptions):
+    with notification_manager:
         app.exec_()
-
-
-@contextmanager
-def _install_hooks(gui_exceptions=True):
-    """Install ExceptionHandler as sys.excepthook.
-
-    probably temporary until https://github.com/napari/napari/pull/2205
-    """
-    # instantiate the exception handler
-    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
-    orighook, sys.excepthook = sys.excepthook, exception_handler.handle
-    try:
-        yield
-    finally:
-        sys.excepthook = orighook
-        exception_handler.deleteLater()

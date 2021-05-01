@@ -26,8 +26,10 @@ else:
     SliceDataClass = ImageSliceData
 
 
+# It is important to contain at least one abstractmethod to properly exclude this class
+# in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class _ImageBase(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -145,8 +147,8 @@ class Image(IntensityVisualizationMixin, Layer):
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
@@ -316,7 +318,7 @@ class Image(IntensityVisualizationMixin, Layer):
             input_data = self.data[-1]
         else:
             input_data = self.data
-        return calc_data_range(input_data)
+        return calc_data_range(input_data, rgb=self.rgb)
 
     @property
     def dtype(self):
@@ -477,31 +479,6 @@ class Image(IntensityVisualizationMixin, Layer):
         for the current slice has not been loaded.
         """
         return self._slice.loaded
-
-    def _get_state(self):
-        """Get dictionary of layer state.
-
-        Returns
-        -------
-        state : dict
-            Dictionary of layer state.
-        """
-        state = self._get_base_state()
-        state.update(
-            {
-                'rgb': self.rgb,
-                'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
-                'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
-                'rendering': self.rendering,
-                'iso_threshold': self.iso_threshold,
-                'attenuation': self.attenuation,
-                'gamma': self.gamma,
-                'data': self.data,
-            }
-        )
-        return state
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
@@ -785,3 +762,37 @@ class Image(IntensityVisualizationMixin, Layer):
             # Convert the ChunkRequest to SliceData and use it.
             data = SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
+
+
+class Image(_ImageBase):
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'rgb': self.rgb,
+                'multiscale': self.multiscale,
+                'colormap': self.colormap.name,
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state
+
+
+if config.async_octree:
+    from ..image.experimental.octree_image import _OctreeImageBase
+
+    class Image(Image, _OctreeImageBase):
+        pass
