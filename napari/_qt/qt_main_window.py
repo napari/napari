@@ -1247,8 +1247,8 @@ class Window:
 
     def activate(self):
         """Make the viewer the currently active window."""
-        self._qt_window.activateWindow()  # for Windows
         self._qt_window.raise_()  # for macOS
+        self._qt_window.activateWindow()  # for Windows
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
