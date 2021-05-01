@@ -11,6 +11,7 @@ from napari.utils.notifications import notification_manager
 skip = [
     'surface_timeseries.py',  # needs nilearn
     '3d_kymograph.py',  # needs tqdm
+    'tiled-rendering-2d.py',  # too slow
     'live_tiffs.py',  # requires files
     'live_tiffs_generator.py',
     'embed_ipython.py',  # fails without monkeypatch
@@ -39,7 +40,7 @@ def qapp():
 
 
 @pytest.mark.filterwarnings("ignore")
-@pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
+# @pytest.mark.skipif(bool(os.getenv("CI")), reason="Need to debug segfaults.")
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -288,7 +289,8 @@ class QtViewer(QSplitter):
         theme.connect(on_theme_change)
 
         def disconnect():
-            theme.disconnect(on_theme_change)
+            with suppress(AttributeError):
+                theme.disconnect(on_theme_change)
 
         self.canvas.destroyed.connect(disconnect)
 
