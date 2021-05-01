@@ -6,7 +6,7 @@ import inspect
 import sys
 import time
 from itertools import chain, repeat
-from typing import ClassVar, Dict, List
+from typing import Any, ClassVar, Dict, List, Tuple
 
 from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -850,7 +850,7 @@ class Window:
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None
-    ):
+    ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -861,6 +861,12 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+
+        Returns
+        -------
+        tuple
+            A 2-tuple containing (the DockWidget instance, the plugin widget
+            instance).
         """
         from ..viewer import Viewer
 
@@ -874,8 +880,12 @@ class Window:
 
         full_name = plugins.menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
-            return
+            dock_widget = self._dock_widgets[full_name]
+            dock_widget.show()
+            wdg = dock_widget.widget()
+            if hasattr(wdg, '_magic_widget'):
+                wdg = wdg._magic_widget
+            return dock_widget, wdg
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
@@ -893,12 +903,14 @@ class Window:
         wdg = Widget(**kwargs)
 
         # Add dock widget
-        self.add_dock_widget(
+        dock_widget = self.add_dock_widget(
             wdg,
             name=full_name,
             area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
+
+        return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
         """Add plugin function widget if not already added.
