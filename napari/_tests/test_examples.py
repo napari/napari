@@ -40,7 +40,10 @@ def qapp():
 
 
 @pytest.mark.filterwarnings("ignore")
-@pytest.mark.skipif(bool(os.getenv("NAPARI_ASYNC")), reason="Need to debug segfaults.")
+@pytest.mark.skipif(
+    bool(os.getenv("NAPARI_ASYNC") or os.name == 'nt'),
+    reason="Need to debug segfaults.",
+)
 @pytest.mark.skipif(not examples, reason="No examples were found.")
 @pytest.mark.parametrize("fname", examples)
 def test_examples(qapp, fname, monkeypatch, capsys):
