@@ -2,10 +2,10 @@ from napari import Viewer
 from napari._qt.qt_main_window import _QtMainWindow
 
 
-def test_active_viewer(make_napari_viewer, qapp):
-    """Test that we can retrieve the "active" viewer instance easily.
+def test_current_viewer(make_napari_viewer, qapp):
+    """Test that we can retrieve the "current" viewer instance easily.
 
-    ... where "active" means it was the last viewer the user interacted with.
+    ... where "current" means it was the last viewer the user interacted with.
     """
     assert Viewer.current() is None
     assert _QtMainWindow.current() is None
