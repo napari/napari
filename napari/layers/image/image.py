@@ -764,20 +764,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._on_data_loaded(data, sync=False)
 
 
-def _get_image_base_class() -> _ImageBase:
-    """Return Image or OctreeImage based config settings."""
-    if config.async_octree:
-        from ..image.experimental.octree_image import _OctreeImageBase
-
-        return _OctreeImageBase
-
-    return _ImageBase
-
-
-_image_base_class = _get_image_base_class()
-
-
-class Image(_image_base_class):
+class Image(_ImageBase):
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -802,3 +789,10 @@ class Image(_image_base_class):
             }
         )
         return state
+
+
+if config.async_octree:
+    from ..image.experimental.octree_image import _OctreeImageBase
+
+    class Image(Image, _OctreeImageBase):
+        pass

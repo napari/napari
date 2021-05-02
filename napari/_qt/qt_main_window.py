@@ -6,7 +6,7 @@ import inspect
 import sys
 import time
 from itertools import chain, repeat
-from typing import Dict
+from typing import Any, Dict, Tuple
 
 from qtpy.QtCore import QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -820,7 +820,7 @@ class Window:
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None
-    ):
+    ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -831,6 +831,12 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+
+        Returns
+        -------
+        tuple
+            A 2-tuple containing (the DockWidget instance, the plugin widget
+            instance).
         """
         from ..viewer import Viewer
 
@@ -844,8 +850,12 @@ class Window:
 
         full_name = plugins.menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
-            return
+            dock_widget = self._dock_widgets[full_name]
+            dock_widget.show()
+            wdg = dock_widget.widget()
+            if hasattr(wdg, '_magic_widget'):
+                wdg = wdg._magic_widget
+            return dock_widget, wdg
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
@@ -863,12 +873,14 @@ class Window:
         wdg = Widget(**kwargs)
 
         # Add dock widget
-        self.add_dock_widget(
+        dock_widget = self.add_dock_widget(
             wdg,
             name=full_name,
             area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
+
+        return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
         """Add plugin function widget if not already added.
@@ -902,6 +914,7 @@ class Window:
         area: str = 'bottom',
         allowed_areas=None,
         shortcut=None,
+        add_vertical_stretch=True,
     ):
         """Convenience method to add a QDockWidget to the main window.
 
@@ -923,6 +936,10 @@ class Window:
             By default, all areas are allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
+        add_vertical_stretch : bool, optional
+            Whether to add stretch to the bottom of vertical widgets (pushing
+            widgets up towards the top of the allotted area, instead of letting
+            them distribute across the vertical space).  By default, True.
 
         Returns
         -------
@@ -947,6 +964,7 @@ class Window:
             area=area,
             allowed_areas=allowed_areas,
             shortcut=shortcut,
+            add_vertical_stretch=add_vertical_stretch,
         )
         self._add_viewer_dock_widget(dock_widget)
 
@@ -979,20 +997,26 @@ class Window:
             Flag to tabify dockwidget or not.
         """
         # Find if any othe dock widgets are currently in area
-        current_dws_in_area = []
-        for dw in self._qt_window.findChildren(QDockWidget):
-            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area:
-                current_dws_in_area.append(dw)
-
+        current_dws_in_area = [
+            dw
+            for dw in self._qt_window.findChildren(QDockWidget)
+            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area
+        ]
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
 
         # If another dock widget present in area then tabify
-        if len(current_dws_in_area) > 0 and tabify:
-            self._qt_window.tabifyDockWidget(
-                current_dws_in_area[-1], dock_widget
-            )
-            dock_widget.show()
-            dock_widget.raise_()
+        if current_dws_in_area:
+            if tabify:
+                self._qt_window.tabifyDockWidget(
+                    current_dws_in_area[-1], dock_widget
+                )
+                dock_widget.show()
+                dock_widget.raise_()
+            elif dock_widget.area in ('right', 'left'):
+                _wdg = current_dws_in_area + [dock_widget]
+                # add sizes to push lower widgets up
+                sizes = list(range(1, len(_wdg) * 4, 4))
+                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
