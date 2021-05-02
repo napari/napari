@@ -47,7 +47,7 @@ def create_qt_layer_controls(layer):
     for layer_type, controls in layer_to_controls.items():
         if isinstance(layer, layer_type):
             return controls(layer)
-
+    return
     raise TypeError(
         trans._(
             'Could not find QtControls for layer of type {type_}',
@@ -103,8 +103,9 @@ class QtLayerControlsContainer(QStackedWidget):
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            controls = self.widgets[layer]
-            self.setCurrentWidget(controls)
+            controls = self.widgets.get(layer)
+            if controls:
+                self.setCurrentWidget(controls)
 
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
@@ -116,6 +117,8 @@ class QtLayerControlsContainer(QStackedWidget):
         """
         layer = event.value
         controls = create_qt_layer_controls(layer)
+        if not controls:
+            return
         self.addWidget(controls)
         self.widgets[layer] = controls
 

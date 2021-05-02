@@ -56,12 +56,19 @@ class QtLayerButtons(QFrame):
             trans._('New labels layer'),
             lambda: self.viewer._new_labels(),
         )
+        self.newGroupButton = QtViewerPushButton(
+            self.viewer,
+            'new_group',
+            trans._('New layer group'),
+            self.viewer.layers.add_group,
+        )
 
         layout = QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.newPointsButton)
         layout.addWidget(self.newShapesButton)
         layout.addWidget(self.newLabelsButton)
+        layout.addWidget(self.newGroupButton)
         layout.addStretch(0)
         layout.addWidget(self.deleteButton)
         self.setLayout(layout)

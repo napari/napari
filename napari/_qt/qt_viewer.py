@@ -406,7 +406,8 @@ class QtViewer(QSplitter):
             Layer to be added.
         """
         vispy_layer = create_vispy_visual(layer)
-
+        if not vispy_layer:
+            return
         # QtPoll is experimental.
         if self._qt_poll is not None:
             # QtPoll will call VipyBaseImage._on_poll() when the camera

@@ -25,6 +25,11 @@ class LayerGroup(Group[Layer], Layer):
         self.refresh(None)  # TODO: why...
         self.events.connect(self._handle_child_events)
 
+    def add_group(self, index=-1):
+        lg = LayerGroup()
+        self.insert(index, lg)
+        return lg
+
     def _handle_child_events(self, event):
         # event.sources[0] is the original event emitter.
         # we only want child events here
@@ -250,3 +255,6 @@ class LayerGroup(Group[Layer], Layer):
 
     def save(self):
         raise NotImplementedError()
+
+    def _update_draw(self, *a, **k):
+        return

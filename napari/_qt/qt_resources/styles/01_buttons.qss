@@ -51,6 +51,10 @@ QtViewerPushButton[mode="home"] {
   image: url(":/themes/{{ folder }}/home.svg");
 }
 
+QtViewerPushButton[mode="new_group"] {
+  image: url(":/themes/{{ folder }}/folder.svg");
+}
+
 QtStateButton[mode="ndisplay_button"]:checked {
   image: url(":/themes/{{ folder }}/3D.svg");
 }
