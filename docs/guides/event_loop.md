@@ -20,9 +20,9 @@ no longer necessary to call `%gui qt` manually.  Just create a viewer:
 ```python
 In [1]: import napari
 
-In [2]: viewer = napari.Viewer()  # viewer will show in a new window
+In [2]: viewer = napari.Viewer()  # Viewer will show in a new window
 
-In [3]: ... # continue interactive usage
+In [3]: ... # Continue interactive usage
 ```
 
 ````{tip}
@@ -50,12 +50,12 @@ closes, execution of the script will proceed.
 import napari
 
 viewer = napari.Viewer()
-... # continue setting  up your program
+...  # Continue setting  up your program
 
-# start the program, show the viewer, wait for GUI interaction.
+# Start the program, show the viewer, wait for GUI interaction.
 napari.run() 
 
-# anything below here will execute only after the viewer is closed.
+# Anything below here will execute only after the viewer is closed.
 ```
 
 
@@ -107,7 +107,7 @@ Application:
    ```python
    from qtpy.QtWidgets import QApplication()
 
-   app = QApplication([])
+   app = QApplication([])  # where [] is a list of args passed to the App
    ```
 
 2) In order to actually show and interact with widgets, one must start the
@@ -129,9 +129,9 @@ The second step – starting the Qt event loop – is handled by {func}`napari.r
 ```python
 import napari
 
-viewer = napari.Viewer()  # this will create a Application if one doesn't exist
+viewer = napari.Viewer()  # This will create a Application if one doesn't exist
 
-napari.run()  # this will call `app.exec_()` and start the event loop.
+napari.run()  # This will call `app.exec_()` and start the event loop.
 ```
 
 (gui-qt-deprecated)=
