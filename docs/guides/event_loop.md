@@ -6,7 +6,7 @@
 ## tldr;
 
 It is not necessary to have a deep understanding of Qt or event loops to use
-napari.  napari attempts to use "sane defaults" for most scenarios. Here are the
+napari. napari attempts to use "sane defaults" for most scenarios. Here are the
 most important details:
 
 ### In IPython or Jupyter Notebook
