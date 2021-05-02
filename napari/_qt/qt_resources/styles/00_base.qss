@@ -639,3 +639,14 @@ QLCDNumber {
 QStatusBar::item{
   border: None;
 }
+
+/* ----------------- QHeaderView ----------------- */
+QHeaderView::section {
+  background-color: {{ background }};
+  border: 1px solid {{ foreground }};
+  border-bottom: 0px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  padding: 3px 6px;
+  background: vgradient({{ lighten(background, 15) }} - {{ background }});
+}
