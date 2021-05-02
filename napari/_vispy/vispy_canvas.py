@@ -20,6 +20,7 @@ class VispyCanvas(SceneCanvas):
     """
 
     def __init__(self, *args, **kwargs):
+
         # Since the base class is frozen we must create this attribute
         # before calling super().__init__().
         self.max_texture_sizes = None
