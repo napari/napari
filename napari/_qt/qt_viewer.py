@@ -44,6 +44,7 @@ from .._vispy import (  # isort:skip
     VispyCamera,
     VispyCanvas,
     VispyScaleBarVisual,
+    VispyTextVisual,
     create_vispy_visual,
 )
 
@@ -258,25 +259,6 @@ class QtViewer(QSplitter):
         else:
             self.chunk_receiver = None
 
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            from .qt_resources import get_stylesheet
-
-            warnings.warn(
-                trans._(
-                    "The 'raw_stylesheet' attribute is deprecated and will be"
-                    "removed in version 0.4.7.  Please use "
-                    "`napari.qt.get_stylesheet` instead"
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
-
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -296,7 +278,15 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
-        self.viewer.events.theme.connect(self.canvas._on_theme_change)
+        theme = self.viewer.events.theme
+
+        on_theme_change = self.canvas._on_theme_change
+        theme.connect(on_theme_change)
+
+        def disconnect():
+            theme.disconnect(on_theme_change)
+
+        self.canvas.destroyed.connect(disconnect)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
@@ -312,6 +302,14 @@ class QtViewer(QSplitter):
             order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
+        self.text_overlay = VispyTextVisual(
+            self.viewer,
+            parent=self.view,
+            order=1e6 + 2,
+        )
+        self.canvas.events.resize.connect(
+            self.text_overlay._on_position_change
+        )
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics."""

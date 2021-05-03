@@ -39,6 +39,10 @@ class VispyCanvas(SceneCanvas):
         self.context.set_depth_func('lequal')
 
     @property
+    def destroyed(self):
+        return self._backend.destroyed
+
+    @property
     def background_color_override(self):
         return self._background_color_override
 
