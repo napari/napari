@@ -162,7 +162,8 @@ class QtViewerButtons(QFrame):
         )
         self.ndisplayButton.setToolTip(
             trans._(
-                "Toggle number of displayed dimensions ({shortcut})",
+                "Toggle number of displayed dimensions ({shortcut}).\nIn 3D "
+                "mode, right-click to change camera perspective.",
                 shortcut=Shortcut("Control-Y"),
             )
         )
