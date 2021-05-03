@@ -10,7 +10,7 @@ most important details:
 
 ### In IPython or Jupyter Notebook
 
-napari will detect if you are running an an IPython or Jupyter shell, and will
+napari will detect if you are running an IPython or Jupyter shell, and will
 automatically use the [IPython GUI event
 loop](https://ipython.readthedocs.io/en/stable/config/eventloops.html#integrating-with-gui-event-loops).
 As of [version 0.4.7](https://github.com/napari/napari/releases/tag/v0.4.7) is
