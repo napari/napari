@@ -79,7 +79,7 @@ examples.
 ### Connection functions to native napari events
 
 If you want something to happen following some event that happens *within*
-napari, then trick becomes knowing which native signals any given napari object
+napari, the trick becomes knowing which native signals any given napari object
 provides for you to "connect" to.  Until we have centralized documentation for
 all of the events offered by napari objects, the best way to find these is to
 browse the source code.  Take for instance, the base
