@@ -4,6 +4,8 @@ import numpy as np
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import QDoubleSpinBox
 
+from ...utils._dtype import normalize_dtype
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,9 +28,9 @@ class QtLargeIntSpinBox(QDoubleSpinBox):
 
     valueChanged = Signal(int)
 
-    def __init__(self, dtype=int, parent=None):
+    def __init__(self, dtype=np.int64, parent=None):
         super().__init__(parent)
-        self._dtype = np.dtype(dtype.type)
+        self._dtype = normalize_dtype(dtype)
         if not np.issubdtype(self._dtype, np.integer):
             raise ValueError(f"Spinbox dtype must be integral, got {dtype}")
         iinfo = np.iinfo(self._dtype)
