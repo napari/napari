@@ -3,8 +3,6 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
-from .._qt.widgets.qt_progress_bar import get_pbar
-
 
 def get_calling_function_name(max_depth: int):
     """Inspect stack up to max_depth and return first function name outside of progress.py"""
@@ -78,7 +76,13 @@ class progress(tqdm):
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
 
         # get progress bar added to viewer
-        pbar = get_pbar(**pbar_kwargs)
+        try:
+            from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
+
+            pbar = get_pbar(**pbar_kwargs)
+        except ImportError:
+            pbar = None
+
         self.has_viewer = pbar is not None
         if self.has_viewer:
             kwargs['gui'] = True
