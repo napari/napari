@@ -1,5 +1,7 @@
 """LayerRef, ChunkLocation and ChunkRequest classes.
 """
+from __future__ import annotations
+
 import contextlib
 import logging
 import time
