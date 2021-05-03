@@ -53,7 +53,7 @@ example](https://github.com/napari/napari/blob/master/examples/custom_key_bindin
 ### Listening for mouse events
 
 You can also listen for and react to mouse events, like a click or drag event,
-as show here where we update the image with random data every time it is
+as shown here where we update the image with random data every time it is
 clicked.
 
 ```python
