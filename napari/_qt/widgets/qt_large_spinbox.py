@@ -85,6 +85,7 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
         state, *_ = self.validate(t, self.lineEdit().cursorPosition())
         if state == QValidator.Acceptable:
             self.setValue(int(t))
+            self.lineEdit().setFocus()
 
     def _bound(self, value):
         return max(self._minimum, min(self._maximum, value))
