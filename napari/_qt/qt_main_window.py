@@ -6,9 +6,9 @@ import inspect
 import sys
 import time
 from itertools import chain, repeat
-from typing import Any, Dict, Tuple
+from typing import Any, ClassVar, Dict, List, Tuple
 
-from qtpy.QtCore import QPoint, QProcess, QSize, Qt
+from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -49,8 +49,15 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, parent=None) -> None:
+    # To track window instances and facilitate getting the "active" viewer...
+    # We use this instead of QApplication.activeWindow for compatibility with
+    # IPython usage. When you activate IPython, it will appear that there are
+    # *no* active windows, so we want to track the most recently active windows
+    _instances: ClassVar[List['_QtMainWindow']] = []
+
+    def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
+        self.qt_viewer = qt_viewer
 
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
@@ -58,8 +65,11 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().addWidget(qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
+
+        self.setWindowTitle(qt_viewer.viewer.title)
 
         self._maximized_flag = False
         self._preferences_dialog = None
@@ -72,6 +82,28 @@ class _QtMainWindow(QMainWindow):
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
             plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+
+        _QtMainWindow._instances.append(self)
+
+    @classmethod
+    def current(cls):
+        return cls._instances[-1] if cls._instances else None
+
+    def event(self, e):
+        if e.type() == QEvent.Close:
+            # when we close the MainWindow, remove it from the instances list
+            try:
+                _QtMainWindow._instances.remove(self)
+            except ValueError:
+                pass
+        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+            # upon activation or raise_, put window at the end of _instances
+            try:
+                inst = _QtMainWindow._instances
+                inst.append(inst.pop(inst.index(self)))
+            except ValueError:
+                pass
+        return super().event(e)
 
     def _load_window_settings(self):
         """
@@ -285,10 +317,8 @@ class Window:
         self._unnamed_dockwidget_count = 1
 
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow()
         self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
-        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
-        self._qt_window.setWindowTitle(viewer.title)
+        self._qt_window = _QtMainWindow(self.qt_viewer)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -339,26 +369,6 @@ class Window:
 
         if show:
             self.show()
-
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            warnings.warn(
-                (
-                    str(
-                        trans._(
-                            "The 'raw_stylesheet' attribute is deprecated and will be removed in version 0.4.7. Please use `napari.qt.get_stylesheet` instead",
-                            deferred=True,
-                        )
-                    )
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
