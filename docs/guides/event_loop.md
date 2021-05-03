@@ -2,7 +2,6 @@
 
 # An Introduction to the Event Loop in napari
 
-
 ## Brief summary
 
 It is not necessary to have a deep understanding of Qt or event loops to use
@@ -35,10 +34,9 @@ from napari.utils import SETTINGS
 SETTINGS.application.ipy_interactive = False
 ```
 
-But then you will have to start the program yourself as described [below](#in-a-script).
-
-
+... but then you will have to start the program yourself as described [below](#in-a-script).
 ````
+
 ### In a script
 
 Outside of IPython, you must tell napari when to "start the program" using
@@ -58,9 +56,7 @@ napari.run()
 # Anything below here will execute only after the viewer is closed.
 ```
 
-
 -----------
-
 
 ## More in depth...
 
@@ -136,7 +132,8 @@ napari.run()  # This will call `app.exec_()` and start the event loop.
 
 (gui-qt-deprecated)=
 
-:::{admonition}  What about `napari.gui_qt`? :class: tip
+:::{admonition}  What about `napari.gui_qt`?
+:class: caution
 
 **{func}`napari.gui_qt` was deprecated in version 0.4.8.**
 
@@ -166,131 +163,5 @@ usage of napari.
 
 :::
 
-## Hooking up your own events
-
-If you're coming from a background of scripting or working with python in an
-interactive console, thinking in terms of the "event loop" can feel a bit
-strange at time.  Often we write code in a very procedural way: "do this ...
-then do that, etc...". With napari and other GUI programs however, usually you
-hook up a bunch of conditions and to callback functions (e.g. "If this event
-happens, then call this function") and *then* start the loop and hope you hooked
-everything up correctly!  Indeed, much of the ``napari`` source code is
-dedicated to creating and handling events: search the codebase for [`.emit(`](https://github.com/napari/napari/search?q=%22.emit%28%22&type=code)
-and [`.connect(`](https://github.com/napari/napari/search?q=%22.connect%28%22&type=code) to find examples of creating and handling internal events,
-respectively.
-
-If you would like to setup a custom event listener then you  need to hook into
-the napari event.  We offer a couple of convenience decorators to easily connect
-functions to key and mouse events.
-
-### Listening for keypress events
-
-One option is to use keybindings, that will listen for keypresses and then call
-some callback whenever pressed, with the viewer instance passed as an argument
-to that function. As a basic example, to add a random image to the viewer every
-time the `i` key is pressed, and delete the last layer when the `k` key is
-pressed:
-
-```python
-import numpy as np
-import napari
-
-viewer = napari.Viewer()
-
-@viewer.bind_key('i')
-def add_layer(viewer):
-    viewer.add_image(np.random.random((512, 512)))
-
-@viewer.bind_key('k')
-def delete_layer(viewer):
-    try:
-        viewer.layers.pop(0)
-    except IndexError:
-        pass
-
-napari.run()
-```
-
-See also this [custom key bindings
-example](https://github.com/napari/napari/blob/master/examples/custom_key_bindings.py).
-
-### Listening for mouse events
-
-You can also listen for and react to mouse events, like a click or drag event,
-as show here where we update the image with random data every time it is
-clicked.
-
-```python
-import numpy as np
-import napari
-
-viewer = napari.Viewer()
-layer = viewer.add_image(np.random.random((512, 512)))
-
-@layer.mouse_drag_callbacks.append
-def update_layer(layer, event):
-    layer.data = np.random.random((512, 512))
-
-napari.run()
-```
-
-See also the [custom mouse
-functions](https://github.com/napari/napari/blob/master/examples/custom_mouse_functions.py)
-and [mouse drag
-callback](https://github.com/napari/napari/blob/master/examples/mouse_drag_callback.py)
-examples.
-
-### Connection functions to native napari events
-
-If you want something to happen following some event that happens *within*
-napari, then trick becomes knowing which native signals any given napari object
-provides for you to "connect" to.  Until we have centralized documentation for
-all of the events offered by napari objects, the best way to find these is to
-browse the source code.  Take for instance, the base
-{class}`~napari.layers.Layer` class: you'll find in the `__init__` method a
-``self.events`` section that looks like this:
-
-```python
-self.events = EmitterGroup(
-    ...
-    data=Event,
-    name=Event,
-    ...
-)
-```
-
-That tells you that all layers are capable of emitting events called `data`, and
-`name` (among many others) that will (presumably) be emitted when that property
-changes. To provide your own response to that change, you can hook up a callback
-function that accepts the event object:
-
-```python
-def print_layer_name(event):
-    print(f"{event.source.name} changed its data!")
-
-layer.events.data.connect(print_layer_name)
-```
-
-## Long-running, blocking functions
-
-An important detail here is that the napari event loop is running in a *single
-thread*.  This works just fine if the handling of each event is very short, as
-is usually the case with moving sliders, and pressing buttons.  However, if one
-of the events in the queue takes a long time to process, then every other event
-must wait!
-
-Take this example in napari:
-
-```python
-viewer = napari.Viewer()
-# everything is fine so far... but if we trigger a long computation
-image = np.random.rand(512, 1024, 1024).mean(0)
-viewer.add_image(image)
-# the entire interface freezes!
-```
-
-Here we have a long computation (`np.random.rand(512, 1024, 1024).mean(0)`) that
-"blocks" the main thread, meaning *no button press, key press, or any other
-event can be processed until it's done*.  In this scenario, it's best to put
-your long-running function into another thread or process.  `napari` provides a
-convenience for that, described in {ref}`multithreading-in-napari`.
+Now that you have an understanding of how napari creates the event loop, you may
+wish to learn more about {ref}`hooking up your own actions <connecting-events >` and callbacks to specific events.  
