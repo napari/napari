@@ -4,7 +4,7 @@
 
 If you're coming from a background of scripting or working with python in an
 interactive console, thinking in terms of the "event loop" can feel a bit
-strange at time.  Often we write code in a very procedural way: "do this ...
+strange at times. Often we write code in a very procedural way: "do this ...
 then do that, etc...". With napari and other GUI programs however, usually you
 hook up a bunch of conditions and to callback functions (e.g. "If this event
 happens, then call this function") and *then* start the loop and hope you hooked
