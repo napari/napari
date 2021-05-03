@@ -370,26 +370,6 @@ class Window:
         if show:
             self.show()
 
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            warnings.warn(
-                (
-                    str(
-                        trans._(
-                            "The 'raw_stylesheet' attribute is deprecated and will be removed in version 0.4.7. Please use `napari.qt.get_stylesheet` instead",
-                            deferred=True,
-                        )
-                    )
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
-
     def _add_menubar(self):
         """Add menubar to napari app."""
         self.main_menu = self._qt_window.menuBar()
