@@ -157,7 +157,7 @@ Unlike a typical context manager, however, it did not actually *destroy* the
 `QApplication` (since it may still be needed in the same session)... and future
 calls to `gui_qt` were only needed to start the event loop.  By auto-creating
 the `QApplication` during {class}`~napari.Viewer` creation, introducing the
-explicit {func}`napari.run`, and using the [integrated IPython event
+explicit {func}`napari.run` function, and using the [integrated IPython event
 loop](#in-ipython-or-jupyter-notebook) when applicable, we hope to simplify the
 usage of napari.
 
