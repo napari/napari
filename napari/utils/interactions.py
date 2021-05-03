@@ -1,5 +1,6 @@
 import inspect
 import sys
+import warnings
 
 import wrapt
 from numpydoc.docscrape import FunctionDoc
@@ -215,6 +216,7 @@ KEY_SYMBOLS = {
     'Up': '↑',
     'Down': '↓',
     'Backspace': '⌫',
+    'Delete': '⌦',
     'Tab': '↹',
     'Escape': 'Esc',
     'Return': '⏎',
@@ -253,9 +255,19 @@ class Shortcut:
 
         """
         self._values = shortcut.split('-')
-        for v in self._values:
-            if len(v) > 1:
-                assert v in KEY_SYMBOLS.keys()
+        for shortcut_key in self._values:
+            if (
+                len(shortcut_key) > 1
+                and shortcut_key not in KEY_SYMBOLS.keys()
+            ):
+                warnings.warn(
+                    trans._(
+                        "{shortcut_key} does not seem to be a valid shortcut Key.",
+                        shortcut_key=shortcut_key,
+                    ),
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     @property
     def qt(self) -> str:

@@ -18,7 +18,6 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
-    QMainWindow,
     QPushButton,
     QSizePolicy,
     QTextEdit,
@@ -77,25 +76,16 @@ class NapariQtNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        """[summary]"""
-        super().__init__(None)
+        super().__init__()
 
-        # FIXME: this does not work with multiple viewers.
-        # we need a way to detect the viewer in which the error occured.
-        for wdg in QApplication.topLevelWidgets():
-            if isinstance(wdg, QMainWindow):
-                try:
-                    # TODO: making the canvas the parent makes it easier to
-                    # move/resize, but also means that the notification can get
-                    # clipped on the left if the canvas is too small.
-                    qt_viewer = wdg.centralWidget().children()[1]
-                    self.setParent(qt_viewer._canvas_overlay)
-                    qt_viewer._canvas_overlay.resized.connect(
-                        self.move_to_bottom_right
-                    )
-                    break
-                except Exception:
-                    pass
+        from ..qt_main_window import _QtMainWindow
+
+        current_window = _QtMainWindow.current()
+        if current_window is not None:
+            canvas = current_window.qt_viewer._canvas_overlay
+            self.setParent(canvas)
+            canvas.resized.connect(self.move_to_bottom_right)
+
         self.setupUi()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setup_buttons(actions)

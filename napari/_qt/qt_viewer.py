@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -244,25 +245,6 @@ class QtViewer(QSplitter):
         else:
             self.chunk_receiver = None
 
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            from .qt_resources import get_stylesheet
-
-            warnings.warn(
-                trans._(
-                    "The 'raw_stylesheet' attribute is deprecated and will be"
-                    "removed in version 0.4.7.  Please use "
-                    "`napari.qt.get_stylesheet` instead"
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
-
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -282,7 +264,18 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
-        self.viewer.events.theme.connect(self.canvas._on_theme_change)
+        theme = self.viewer.events.theme
+
+        on_theme_change = self.canvas._on_theme_change
+        theme.connect(on_theme_change)
+
+        def disconnect():
+            # strange EventEmitter has no attribute _callbacks errors sometimes
+            # maybe some sort of cleanup race condition?
+            with suppress(AttributeError):
+                theme.disconnect(on_theme_change)
+
+        self.canvas.destroyed.connect(disconnect)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
