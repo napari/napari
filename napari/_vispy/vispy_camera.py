@@ -39,7 +39,7 @@ class VispyCamera:
         self._camera.events.center.connect(self._on_center_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
-        self._camera.events.fov.connect(self._on_fov_change)
+        self._camera.events.perspective.connect(self._on_perspective_change)
 
         self._on_ndisplay_change(None)
 
@@ -122,15 +122,15 @@ class VispyCamera:
             self._view.camera.rect = tuple(corner) + (scale, scale)
 
     @property
-    def fov(self):
+    def perspective(self):
         """Field of view of camera (only visible in 3D mode)."""
         return self._3D_camera.fov
 
-    @fov.setter
-    def fov(self, fov):
-        if self.fov == fov:
+    @perspective.setter
+    def perspective(self, perspective):
+        if self.perspective == perspective:
             return
-        self._3D_camera.fov = fov
+        self._3D_camera.fov = perspective
         self._view.camera.view_changed()
 
     def _on_ndisplay_change(self, event):
@@ -148,8 +148,8 @@ class VispyCamera:
     def _on_zoom_change(self, event):
         self.zoom = self._camera.zoom
 
-    def _on_fov_change(self, event):
-        self.fov = self._camera.fov
+    def _on_perspective_change(self, event):
+        self.perspective = self._camera.perspective
 
     def _on_angles_change(self, event):
         self.angles = self._camera.angles
