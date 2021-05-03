@@ -223,6 +223,7 @@ KEY_SYMBOLS = {
     'Enter': '↵',
 }
 
+
 joinchar = '-'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
