@@ -3,7 +3,7 @@
 # An Introduction to the Event Loop in napari
 
 
-## tldr;
+## Brief summary
 
 It is not necessary to have a deep understanding of Qt or event loops to use
 napari. napari attempts to use "sane defaults" for most scenarios. Here are the
