@@ -1,20 +1,11 @@
 import inspect
 from contextvars import ContextVar
 from typing import Iterable, Optional
+from weakref import ref
 
 from tqdm import tqdm
 
-IS_NESTED = ContextVar('IS_NESTED', default=False)
-
-
-def get_calling_function_name(max_depth: int):
-    """Inspect stack up to max_depth and return first function name outside of progress.py"""
-    for finfo in inspect.stack()[2:max_depth]:
-        if not finfo.filename.endswith("progress.py"):
-            return finfo.function
-
-    return None
-
+CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
 
 _tqdm_kwargs = {
     p.name
@@ -77,13 +68,13 @@ class progress(tqdm):
     ) -> None:
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self.nested_token = None
+        self._group_token = None
 
         # get progress bar added to viewer
         try:
             from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(IS_NESTED.get(), **pbar_kwargs)
+            pbar = get_pbar(CURRENT_GROUP.get(), **pbar_kwargs)
         except ImportError:
             pbar = None
 
@@ -106,23 +97,22 @@ class progress(tqdm):
         if desc:
             self.set_description(desc)
         else:
-            desc = get_calling_function_name(max_depth=5)
             if desc:
                 self.set_description(desc)
             else:
-                # TODO: pick a better default
-                self.set_description("Progress Bar")
+                self.set_description("progress")
 
         self.show()
 
     def __enter__(self):
-        self.nested_token = IS_NESTED.set(True)  # noqa
+        if self.has_viewer:
+            group_ref = ref(self._pbar.parentWidget())
+            self._group_token = CURRENT_GROUP.set(group_ref)
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if IS_NESTED.get():
-            IS_NESTED.reset(self.nested_token)
         if self.has_viewer:
+            CURRENT_GROUP.reset(self._group_token)
             self._pbar.parentWidget().close()
         return super().__exit__(exc_type, exc_value, traceback)
 
@@ -171,7 +161,7 @@ class progress(tqdm):
             return
         if self.has_viewer:
             # still need to close groups of pbars outside context
-            if not IS_NESTED.get():
+            if not CURRENT_GROUP.get():
                 self._pbar.parentWidget().close()
             # otherwise we just close the current progress bar
             self._pbar.close()
