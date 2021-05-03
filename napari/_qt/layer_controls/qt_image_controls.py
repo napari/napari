@@ -254,12 +254,10 @@ class QtImageControls(QtBaseImageControls):
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
-        interp_names_2d = (
-            i.name.lower() for i in Interpolation if i.in_view_subset
-        )
-        interp_names_3d = Interpolation3D.keys()
         interp_names = (
-            interp_names_3d if self.layer._ndisplay == 3 else interp_names_2d
+            Interpolation3D.keys()
+            if self.layer._ndisplay == 3
+            else [i.value for i in Interpolation.view_subset()]
         )
         self.interpComboBox.addItems(interp_names)
         index = self.interpComboBox.findText(
