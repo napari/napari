@@ -1,12 +1,16 @@
 """LoaderPoolGroup class.
 """
+from __future__ import annotations
+
 import bisect
 from functools import lru_cache
-from typing import Callable, Dict, List
+from typing import TYPE_CHECKING, Callable, Dict, List
 
 from ....utils.translations import trans
-from ._pool import DoneCallback, LoaderPool
-from ._request import ChunkRequest
+
+if TYPE_CHECKING:
+    from ._pool import DoneCallback, LoaderPool
+    from ._request import ChunkRequest
 
 
 class LoaderPoolGroup:
@@ -41,6 +45,8 @@ class LoaderPoolGroup:
         Dict[int, LoaderPool]
             The loader to use for each priority
         """
+        from ._pool import LoaderPool
+
         configs = _get_loader_configs(octree_config)
 
         # Create a LoaderPool for each priority.
