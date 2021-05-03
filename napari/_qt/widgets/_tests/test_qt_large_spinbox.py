@@ -56,8 +56,6 @@ def test_in_viewer(make_napari_viewer):
     label_spinbox = layer_controls.widgets[viewer.layers[0]].selectionSpinBox
     label_spinbox.setValue(5)
 
-    # if we go much higher, we get ValueError: Maximum allowed size exceeded
-    # in ~line 757, in labels.py::_raw_to_displayed
-    label_spinbox.setMaximum(2 ** 24 + 1)
-    label_spinbox.setValue(2 ** 24)
-    assert label_spinbox.value() == 2 ** 24
+    label_spinbox.setMaximum(2 ** 64)
+    label_spinbox.setValue(2 ** 64 - 1)
+    assert label_spinbox.value() == 2 ** 64 - 1
