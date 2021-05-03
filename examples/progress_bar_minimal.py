@@ -6,27 +6,21 @@ import napari
 from time import sleep
 from napari.utils.progress import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
-import numpy as np
 
 def iterable():
     """progress can be used as a wrapper around an iterable object
     """
-    my_stacked_volume = np.random.random((5, 4, 500, 500))    
+    my_animals = ["cat", "dog", "wolf", "turtle"]
+    
     # progress provides a context manager we can use for automatic
     # teardown of our widget once iteration is complete
-    with progress(my_stacked_volume) as pbr:
-        for i, im_slice in enumerate(pbr):
+    with progress(my_animals) as pbr:
+        for animal in pbr:
             # using a context manager also allows us to manipulate
             # the progress object e.g. by setting a description
-            pbr.set_description(f"Slice {i}")
-            sleep(0.4)            
+            pbr.set_description(f"{animal}")
+            sleep(0.4)
 
-            # finally, only when using progress with a context manager
-            # can we make use of nested progress bars and ensure they
-            # are grouped together nicely in the viewer
-            for _ in progress(im_slice, desc="Channels"):
-                sleep(0.1)
-                
 def indeterminate():
     """By passing a total of 0, we can have an indeterminate progress bar
     """
