@@ -1,5 +1,6 @@
 from typing import TypeVar
 
+from ...translations import trans
 from ._evented_list import EventedList
 from ._nested_list import NestableEventedList
 from ._selection import Selectable
@@ -50,7 +51,11 @@ class SelectableEventedList(Selectable[_T], EventedList[_T]):
         """Called before adding an item to the selection."""
         if value not in self:
             raise ValueError(
-                f"Cannot select item that is not in list: {value!r}"
+                trans._(
+                    "Cannot select item that is not in list: {value!r}",
+                    deferred=True,
+                    value=value,
+                )
             )
         return value
 

@@ -5,25 +5,25 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...utils import config
 from ...utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
-from ..image.image import _get_image_base_class
+from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
-_image_base_class = _get_image_base_class()
 
-
-class Labels(_image_base_class):
+class Labels(_ImageBase):
     """Labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
@@ -142,8 +142,8 @@ class Labels(_image_base_class):
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
     _selected_color : 4-tuple or None
@@ -228,7 +228,14 @@ class Labels(_image_base_class):
             mode=Event,
             preserve_labels=Event,
             properties=Event,
-            n_dimensional=Event,
+            n_dimensional=WarningEmitter(
+                trans._(
+                    "'Labels.events.n_dimensional' is deprecated and will be removed in napari v0.4.9. Use 'Labels.event.n_edit_dimensions' instead.",
+                    deferred=True,
+                ),
+                type='n_dimensional',
+            ),
+            n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
@@ -237,7 +244,7 @@ class Labels(_image_base_class):
             contour=Event,
         )
 
-        self._n_dimensional = False
+        self._n_edit_dimensions = 2
         self._contiguous = True
         self._brush_size = 10
 
@@ -271,12 +278,40 @@ class Labels(_image_base_class):
     @property
     def n_dimensional(self):
         """bool: paint and fill edits labels across all dimensions."""
-        return self._n_dimensional
+        warnings.warn(
+            trans._(
+                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._n_edit_dimensions == self.ndim and self.ndim > 2
 
     @n_dimensional.setter
     def n_dimensional(self, n_dimensional):
-        self._n_dimensional = n_dimensional
+        warnings.warn(
+            trans._(
+                'Labels.n_dimensional is deprecated. Use Labels.n_edit_dimensions instead.',
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        if n_dimensional:
+            self.n_edit_dimensions = self.ndim
+        else:
+            self.n_edit_dimensions = 2
         self.events.n_dimensional()
+
+    @property
+    def n_edit_dimensions(self):
+        return self._n_edit_dimensions
+
+    @n_edit_dimensions.setter
+    def n_edit_dimensions(self, n_edit_dimensions):
+        self._n_edit_dimensions = n_edit_dimensions
+        self.events.n_edit_dimensions()
 
     @property
     def contour(self):
@@ -424,7 +459,10 @@ class Labels(_image_base_class):
 
         if not all([v == lens[0] for v in lens]):
             raise ValueError(
-                "the number of items must be equal for all properties"
+                trans._(
+                    "the number of items must be equal for all properties",
+                    deferred=True,
+                )
             )
         return properties
 
@@ -527,9 +565,8 @@ class Labels(_image_base_class):
         warnings.warn(
             (
                 trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. "
-                    "Afterward, only the circle brush shape will be available, "
-                    "and the layer.brush_shape attribute will be removed."
+                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
+                    deferred=True,
                 )
             ),
             category=FutureWarning,
@@ -545,9 +582,8 @@ class Labels(_image_base_class):
         warnings.warn(
             (
                 trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. "
-                    "Afterward, only the circle brush shape will be available, "
-                    "and the layer.brush_shape attribute will be removed."
+                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
+                    deferred=True,
                 )
             ),
             category=FutureWarning,
@@ -620,11 +656,7 @@ class Labels(_image_base_class):
             self.cursor_size = self.brush_size * data2world_scale
             self.interactive = False
             self.help = trans._(
-                'hold <space> to pan/zoom, '
-                'hold <shift> to toggle preserve_labels, '
-                'hold <control> to fill, '
-                'hold <alt> to erase, '
-                'drag to paint a label'
+                'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
             )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.FILL:
@@ -773,7 +805,12 @@ class Labels(_image_base_class):
             image[boundaries] = raw[boundaries]
             image = self._all_vals[image]
         elif self.contour > 0 and raw.ndim > 2:
-            warnings.warn("Contours are not displayed during 3D rendering")
+            warnings.warn(
+                trans._(
+                    "Contours are not displayed during 3D rendering",
+                    deferred=True,
+                )
+            )
 
         return image
 
@@ -900,14 +937,13 @@ class Labels(_image_base_class):
         ):
             return
 
-        if self.n_dimensional or self.ndim == 2:
-            # work with entire image
-            labels = self.data
-            slice_coord = tuple(int_coord)
-        else:
-            # work with just the sliced image
-            labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self._dims_displayed)
+        dims_to_fill = self._dims_order[-self.n_edit_dimensions :]
+        data_slice_list = list(int_coord)
+        for dim in dims_to_fill:
+            data_slice_list[dim] = slice(None)
+        data_slice = tuple(data_slice_list)
+        labels = self.data[data_slice]
+        slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
         matches = labels == old_label
         if self.contiguous:
@@ -920,16 +956,16 @@ class Labels(_image_base_class):
                 )
 
         match_indices_local = np.nonzero(matches)
-        if not (self.n_dimensional or self.ndim == 2):
+        if self.ndim not in {2, self.n_edit_dimensions}:
             n_idx = len(match_indices_local[0])
             match_indices = []
             j = 0
-            for d in range(self.ndim):
-                if d in self._dims_not_displayed:
-                    match_indices.append(np.full(n_idx, int_coord[d]))
-                else:
+            for d in data_slice:
+                if isinstance(d, slice):
                     match_indices.append(match_indices_local[j])
                     j += 1
+                else:
+                    match_indices.append(np.full(n_idx, d, dtype=np.intp))
             match_indices = tuple(match_indices)
         else:
             match_indices = match_indices_local
@@ -960,11 +996,14 @@ class Labels(_image_base_class):
             calls.
         """
         shape = self.data.shape
+        dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
+        dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
         if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
-            if not self.n_dimensional and self.ndim > 2:
-                for i in self._dims_not_displayed:
-                    brush_size_dims[i] = 1
+            if self.n_edit_dimensions < self.ndim:
+                for i in range(self.ndim):
+                    if i not in dims_to_paint:
+                        brush_size_dims[i] = 1
 
             slice_coord = tuple(
                 slice(
@@ -984,17 +1023,21 @@ class Labels(_image_base_class):
             slice_coord = indices_in_shape(slice_coord, shape)
         elif str(self._brush_shape) == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
-            if not self.n_dimensional and self.ndim > 2:
-                coord = [coord[i] for i in self._dims_displayed]
-                shape = [shape[i] for i in self._dims_displayed]
+            if self.n_edit_dimensions < self.ndim:
+                coord_paint = [coord[i] for i in dims_to_paint]
+                shape = [shape[i] for i in dims_to_paint]
+            else:
+                coord_paint = coord
 
-            sphere_dims = len(coord)
+            sphere_dims = len(coord_paint)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
             radius = np.floor(self.brush_size / 2) + 0.5
             mask_indices = sphere_indices(radius, sphere_dims)
 
-            mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
+            mask_indices = mask_indices + np.round(
+                np.array(coord_paint)
+            ).astype(int)
 
             # discard candidate coordinates that are out of bounds
             mask_indices = indices_in_shape(mask_indices, shape)
@@ -1002,10 +1045,10 @@ class Labels(_image_base_class):
             # Transfer valid coordinates to slice_coord,
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
-            if not self.n_dimensional and self.ndim > 2:
-                for j, i in enumerate(self._dims_displayed):
+            if self.n_edit_dimensions < self.ndim:
+                for j, i in enumerate(dims_to_paint):
                     slice_coord[i] = slice_coord_temp[j]
-                for i in self._dims_not_displayed:
+                for i in dims_not_painted:
                     slice_coord[i] = slice_coord[i] * np.ones(
                         mask_indices.shape[0], dtype=int
                     )
@@ -1077,5 +1120,12 @@ class Labels(_image_base_class):
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'
                 else:
-                    msg += ' [No Properties]'
+                    msg += ' ' + trans._('[No Properties]')
         return msg
+
+
+if config.async_octree:
+    from ..image.experimental.octree_image import _OctreeImageBase
+
+    class Labels(Labels, _OctreeImageBase):
+        pass

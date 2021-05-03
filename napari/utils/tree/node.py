@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Generator, List, Optional, Tuple
 
+from ...utils.translations import trans
+
 if TYPE_CHECKING:
     from .group import Group
 
@@ -87,4 +89,10 @@ class Node:
         if self.parent is not None:
             self.parent.remove(self)
             return self
-        raise IndexError("Cannot unparent orphaned Node: {self!r}")
+        raise IndexError(
+            trans._(
+                "Cannot unparent orphaned Node: {node!r}",
+                deferred=True,
+                node=self,
+            ),
+        )

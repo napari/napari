@@ -416,15 +416,17 @@ def test_contiguous():
     assert layer.contiguous is False
 
 
-def test_n_dimensional():
-    """Test changing n_dimensional."""
+def test_n_edit_dimensions():
+    """Test changing the number of editable dimensions."""
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional is False
-
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+    layer.n_edit_dimensions = 2
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is False
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
@@ -596,7 +598,9 @@ def test_paint():
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
@@ -621,7 +625,8 @@ def test_paint_with_preserve_labels():
     data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
@@ -642,7 +647,8 @@ def test_paint_2d(brush_shape, expected_sum):
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
@@ -676,7 +682,8 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
@@ -692,18 +699,19 @@ def test_paint_3d(brush_shape, expected_sum):
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
 
     # Paint in 2D
     layer.paint((10, 10, 10), 3)
 
     # Paint in 3D
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.paint((10, 25, 10), 4)
 
     # Paint in 3D, preserve labels
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
@@ -788,12 +796,13 @@ def test_undo_redo(
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
-    layer.n_dimensional = n_dimensional
+    layer.n_edit_dimensions = 3 if n_dimensional else 2
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
@@ -808,3 +817,54 @@ def test_undo_redo(
     np.testing.assert_array_equal(layer.data, data_history[0])
     layer.redo()
     np.testing.assert_array_equal(layer.data, data_history[1])
+
+
+def test_ndim_fill():
+    test_array = np.zeros((5, 5, 5, 5), dtype=int)
+
+    test_array[:, 1:3, 1:3, 1:3] = 1
+
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+
+    layer.fill((0, 1, 1, 1), 2)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1, 1:3, 1:3, 1:3], 1)
+
+    layer.n_edit_dimensions = 4
+
+    layer.fill((1, 1, 1, 1), 3)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1:, 1:3, 1:3, 1:3], 3)
+
+
+def test_ndim_paint():
+    test_array = np.zeros((5, 6, 7, 8), dtype=int)
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'circle'
+    layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
+    layer.paint((1, 1, 1, 1), 1)
+
+    assert np.sum(layer.data) == 19  # 18 + center
+    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+
+    layer.n_edit_dimensions = 2  # 3x3 square
+    layer._dims_order = [1, 2, 0, 3]
+    layer.paint((4, 5, 6, 7), 8)
+    assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
+    np.testing.assert_array_equal(
+        test_array[:, 5, 6, :],
+        np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+            ]
+        ),
+    )

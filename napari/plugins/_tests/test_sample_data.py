@@ -6,6 +6,7 @@ from napari_plugin_engine import napari_hook_implementation
 
 import napari
 from napari import plugins
+from napari.layers._source import Source
 from napari.viewer import ViewerModel
 
 
@@ -25,6 +26,8 @@ def test_sample_hook(test_plugin_manager, monkeypatch):
 
     with pytest.raises(KeyError) as e:
         viewer.open_sample('test_plugin', 'random data')
+
+        print([str(e)])
     assert (
         "Plugin 'test_plugin' does not provide sample data named 'random data'"
         in str(e)
@@ -60,12 +63,26 @@ def test_sample_hook(test_plugin_manager, monkeypatch):
 
     assert len(viewer.layers) == 0
     viewer.open_sample('test_plugin', 'random data')
+    assert viewer.layers[-1].source == Source(
+        path=None, reader_plugin=None, sample=('test_plugin', 'random data')
+    )
     assert len(viewer.layers) == 1
     viewer.open_sample('test_plugin', 'napari logo')
+    assert viewer.layers[-1].source == Source(
+        path=str(LOGO),
+        reader_plugin='builtins',
+        sample=('test_plugin', 'napari logo'),
+    )
     assert len(viewer.layers) == 2
     viewer.open_sample('test_plugin', 'samp_key')
+    assert viewer.layers[-1].source == Source(
+        sample=('test_plugin', 'samp_key')
+    )
     assert len(viewer.layers) == 3
 
     # test calling with kwargs
     viewer.open_sample('test_plugin', 'samp_key', shape=(256, 256))
     assert len(viewer.layers) == 4
+    assert viewer.layers[-1].source == Source(
+        sample=('test_plugin', 'samp_key')
+    )

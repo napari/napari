@@ -9,6 +9,7 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ._track_utils import TrackManager
 
@@ -381,8 +382,11 @@ class Tracks(Layer):
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by!r} not present in"
-                    " new properties. Falling back to track_id"
+                    trans._(
+                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
+                        deferred=True,
+                        key=self._color_by,
+                    )
                 ),
                 UserWarning,
             )
@@ -462,7 +466,13 @@ class Tracks(Layer):
     def color_by(self, color_by: str):
         """ set the property to color vertices by """
         if color_by not in self.properties_to_color_by:
-            raise ValueError(f'{color_by} is not a valid property key')
+            raise ValueError(
+                trans._(
+                    '{color_by} is not a valid property key',
+                    deferred=True,
+                    color_by=color_by,
+                )
+            )
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -475,7 +485,13 @@ class Tracks(Layer):
     def colormap(self, colormap: str):
         """ set the default colormap """
         if colormap not in AVAILABLE_COLORMAPS:
-            raise ValueError(f'Colormap {colormap} not available')
+            raise ValueError(
+                trans._(
+                    'Colormap {colormap} not available',
+                    deferred=True,
+                    colormap=colormap,
+                )
+            )
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()

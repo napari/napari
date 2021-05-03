@@ -3,13 +3,12 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
-import os
 import sys
 import time
 from itertools import chain, repeat
-from typing import Dict
+from typing import Any, ClassVar, Dict, List, Tuple
 
-from qtpy.QtCore import QPoint, QProcess, QSize, Qt
+from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -26,6 +25,7 @@ from qtpy.QtWidgets import (
 
 from .. import plugins
 from ..utils import config, perf
+from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
@@ -49,8 +49,15 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, parent=None) -> None:
+    # To track window instances and facilitate getting the "active" viewer...
+    # We use this instead of QApplication.activeWindow for compatibility with
+    # IPython usage. When you activate IPython, it will appear that there are
+    # *no* active windows, so we want to track the most recently active windows
+    _instances: ClassVar[List['_QtMainWindow']] = []
+
+    def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
+        self.qt_viewer = qt_viewer
 
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
@@ -58,8 +65,11 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().addWidget(qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
+
+        self.setWindowTitle(qt_viewer.viewer.title)
 
         self._maximized_flag = False
         self._preferences_dialog = None
@@ -72,6 +82,28 @@ class _QtMainWindow(QMainWindow):
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
             plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+
+        _QtMainWindow._instances.append(self)
+
+    @classmethod
+    def current(cls):
+        return cls._instances[-1] if cls._instances else None
+
+    def event(self, e):
+        if e.type() == QEvent.Close:
+            # when we close the MainWindow, remove it from the instances list
+            try:
+                _QtMainWindow._instances.remove(self)
+            except ValueError:
+                pass
+        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+            # upon activation or raise_, put window at the end of _instances
+            try:
+                inst = _QtMainWindow._instances
+                inst.append(inst.pop(inst.index(self)))
+            except ValueError:
+                pass
+        return super().event(e)
 
     def _load_window_settings(self):
         """
@@ -180,13 +212,18 @@ class _QtMainWindow(QMainWindow):
             preferences_dialog_size,
         ) = self._get_window_settings()
 
-        SETTINGS.application.window_size = window_size
-        SETTINGS.application.window_maximized = window_maximized
-        SETTINGS.application.window_fullscreen = window_fullscreen
-        SETTINGS.application.window_position = window_position
-        SETTINGS.application.window_state = window_state
-        SETTINGS.application.preferences_size = preferences_dialog_size
-        SETTINGS.application.window_statusbar = not self._status_bar.isHidden()
+        if SETTINGS.application.save_window_geometry:
+            SETTINGS.application.window_maximized = window_maximized
+            SETTINGS.application.window_fullscreen = window_fullscreen
+            SETTINGS.application.window_position = window_position
+            SETTINGS.application.window_size = window_size
+            SETTINGS.application.window_statusbar = (
+                not self._status_bar.isHidden()
+            )
+            SETTINGS.application.preferences_size = preferences_dialog_size
+
+        if SETTINGS.application.save_window_state:
+            SETTINGS.application.window_state = window_state
 
     def _update_preferences_dialog_size(self, size):
         """Save preferences dialog size."""
@@ -221,8 +258,7 @@ class _QtMainWindow(QMainWindow):
             if dock.isFloating():
                 dock.setFloating(False)
 
-        if SETTINGS.application.save_window_geometry:
-            self._save_current_window_settings()
+        self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
@@ -278,11 +314,11 @@ class Window:
         # create QApplication if it doesn't already exist
         get_app()
 
+        self._unnamed_dockwidget_count = 1
+
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow()
-        self.qt_viewer = QtViewer(viewer)
-        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
-        self._qt_window.setWindowTitle(viewer.title)
+        self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self._qt_window = _QtMainWindow(self.qt_viewer)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -333,25 +369,6 @@ class Window:
 
         if show:
             self.show()
-
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            warnings.warn(
-                (
-                    trans._(
-                        "The 'raw_stylesheet' attribute is deprecated and will be "
-                        "removed in version 0.4.7.  Please use "
-                        "`napari.qt.get_stylesheet` instead"
-                    )
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -571,6 +588,7 @@ class Window:
             self.view_menu.addAction(toggle_outline)
 
         # Add axes menu
+        axes = self.qt_viewer.viewer.axes
         axes_menu = QMenu(trans._('Axes'), parent=self._qt_window)
         axes_visible_action = QAction(
             trans._('Visible'),
@@ -579,6 +597,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.visible,
         )
         axes_visible_action.triggered.connect(self._toggle_axes_visible)
+        self._event_to_action(axes_visible_action, axes.events.visible)
         axes_colored_action = QAction(
             trans._('Colored'),
             parent=self._qt_window,
@@ -586,6 +605,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        self._event_to_action(axes_colored_action, axes.events.colored)
         axes_labels_action = QAction(
             trans._('Labels'),
             parent=self._qt_window,
@@ -593,6 +613,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.labels,
         )
         axes_labels_action.triggered.connect(self._toggle_axes_labels)
+        self._event_to_action(axes_labels_action, axes.events.labels)
         axes_dashed_action = QAction(
             trans._('Dashed'),
             parent=self._qt_window,
@@ -600,6 +621,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.dashed,
         )
         axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
+        self._event_to_action(axes_dashed_action, axes.events.dashed)
         axes_arrows_action = QAction(
             trans._('Arrows'),
             parent=self._qt_window,
@@ -607,6 +629,8 @@ class Window:
             checked=self.qt_viewer.viewer.axes.arrows,
         )
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
+        self._event_to_action(axes_arrows_action, axes.events.arrows)
+
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
         axes_menu.addAction(axes_labels_action)
@@ -615,6 +639,7 @@ class Window:
         self.view_menu.addMenu(axes_menu)
 
         # Add scale bar menu
+        scale_bar = self.qt_viewer.viewer.scale_bar
         scale_bar_menu = QMenu(trans._('Scale Bar'), parent=self._qt_window)
         scale_bar_visible_action = QAction(
             trans._('Visible'),
@@ -625,6 +650,9 @@ class Window:
         scale_bar_visible_action.triggered.connect(
             self._toggle_scale_bar_visible
         )
+        self._event_to_action(
+            scale_bar_visible_action, scale_bar.events.visible
+        )
         scale_bar_colored_action = QAction(
             trans._('Colored'),
             parent=self._qt_window,
@@ -634,6 +662,9 @@ class Window:
         scale_bar_colored_action.triggered.connect(
             self._toggle_scale_bar_colored
         )
+        self._event_to_action(
+            scale_bar_colored_action, scale_bar.events.colored
+        )
         scale_bar_ticks_action = QAction(
             trans._('Ticks'),
             parent=self._qt_window,
@@ -641,12 +672,19 @@ class Window:
             checked=self.qt_viewer.viewer.scale_bar.ticks,
         )
         scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
+        self._event_to_action(scale_bar_ticks_action, scale_bar.events.ticks)
+
         scale_bar_menu.addAction(scale_bar_visible_action)
         scale_bar_menu.addAction(scale_bar_colored_action)
         scale_bar_menu.addAction(scale_bar_ticks_action)
         self.view_menu.addMenu(scale_bar_menu)
 
         self.view_menu.addSeparator()
+
+    def _event_to_action(self, action, event):
+        """Connect triggered event in model to respective action in menu."""
+        # TODO: use action manager to keep in sync
+        event.connect(lambda e: action.setChecked(e.value))
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
@@ -792,7 +830,7 @@ class Window:
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None
-    ):
+    ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -803,6 +841,12 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+
+        Returns
+        -------
+        tuple
+            A 2-tuple containing (the DockWidget instance, the plugin widget
+            instance).
         """
         from ..viewer import Viewer
 
@@ -816,8 +860,12 @@ class Window:
 
         full_name = plugins.menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
-            return
+            dock_widget = self._dock_widgets[full_name]
+            dock_widget.show()
+            wdg = dock_widget.widget()
+            if hasattr(wdg, '_magic_widget'):
+                wdg = wdg._magic_widget
+            return dock_widget, wdg
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
@@ -835,12 +883,14 @@ class Window:
         wdg = Widget(**kwargs)
 
         # Add dock widget
-        self.add_dock_widget(
+        dock_widget = self.add_dock_widget(
             wdg,
             name=full_name,
             area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
+
+        return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
         """Add plugin function widget if not already added.
@@ -874,8 +924,12 @@ class Window:
         area: str = 'bottom',
         allowed_areas=None,
         shortcut=None,
+        add_vertical_stretch=True,
     ):
-        """Convenience method to add a QDockWidget to the main window
+        """Convenience method to add a QDockWidget to the main window.
+
+        If name is not provided a generic name will be addded to avoid
+        `saveState` warnings on close.
 
         Parameters
         ----------
@@ -892,12 +946,26 @@ class Window:
             By default, all areas are allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
+        add_vertical_stretch : bool, optional
+            Whether to add stretch to the bottom of vertical widgets (pushing
+            widgets up towards the top of the allotted area, instead of letting
+            them distribute across the vertical space).  By default, True.
 
         Returns
         -------
         dock_widget : QtViewerDockWidget
             `dock_widget` that can pass viewer events.
         """
+        if not name:
+            try:
+                name = widget.objectName()
+            except AttributeError:
+                name = trans._(
+                    "Dock widget {number}",
+                    number=self._unnamed_dockwidget_count,
+                )
+
+            self._unnamed_dockwidget_count += 1
 
         dock_widget = QtViewerDockWidget(
             self.qt_viewer,
@@ -906,6 +974,7 @@ class Window:
             area=area,
             allowed_areas=allowed_areas,
             shortcut=shortcut,
+            add_vertical_stretch=add_vertical_stretch,
         )
         self._add_viewer_dock_widget(dock_widget)
 
@@ -938,20 +1007,26 @@ class Window:
             Flag to tabify dockwidget or not.
         """
         # Find if any othe dock widgets are currently in area
-        current_dws_in_area = []
-        for dw in self._qt_window.findChildren(QDockWidget):
-            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area:
-                current_dws_in_area.append(dw)
-
+        current_dws_in_area = [
+            dw
+            for dw in self._qt_window.findChildren(QDockWidget)
+            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area
+        ]
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
 
         # If another dock widget present in area then tabify
-        if len(current_dws_in_area) > 0 and tabify:
-            self._qt_window.tabifyDockWidget(
-                current_dws_in_area[-1], dock_widget
-            )
-            dock_widget.show()
-            dock_widget.raise_()
+        if current_dws_in_area:
+            if tabify:
+                self._qt_window.tabifyDockWidget(
+                    current_dws_in_area[-1], dock_widget
+                )
+                dock_widget.show()
+                dock_widget.raise_()
+            elif dock_widget.area in ('right', 'left'):
+                _wdg = current_dws_in_area + [dock_widget]
+                # add sizes to push lower widgets up
+                sizes = list(range(1, len(_wdg) * 4, 4))
+                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
@@ -1098,8 +1173,8 @@ class Window:
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
-                    "This viewer has already been closed and deleted. "
-                    "Please create a new one."
+                    "This viewer has already been closed and deleted. Please create a new one.",
+                    deferred=True,
                 )
             )
 
@@ -1110,8 +1185,8 @@ class Window:
             except (AttributeError, RuntimeError):
                 raise RuntimeError(
                     trans._(
-                        "This viewer has already been closed and deleted. "
-                        "Please create a new one."
+                        "This viewer has already been closed and deleted. Please create a new one.",
+                        deferred=True,
                     )
                 )
         else:
@@ -1125,8 +1200,7 @@ class Window:
 
                 warnings.warn(
                     trans._(
-                        "The window geometry settings could not be "
-                        "loaded due to the following error: {err}",
+                        "The window geometry settings could not be loaded due to the following error: {err}",
                         deferred=True,
                         err=err,
                     ),
@@ -1202,11 +1276,11 @@ class Window:
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
-        dial = ScreenshotDialog(
-            self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir
-        )
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self.qt_viewer, hist[0], hist)
+
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            update_save_history(dial.selectedFiles()[0])
 
     def _restart(self):
         """Restart the napari application."""

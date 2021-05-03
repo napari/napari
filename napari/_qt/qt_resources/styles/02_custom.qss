@@ -245,6 +245,10 @@ QLabel#Vectors {
   image: url(":/themes/{{ folder }}/new_vectors.svg");
 }
 
+QLabel#logo_silhouette {
+  image: url(":/themes/{{ folder }}/logo_silhouette.svg");
+}
+
 
 /* ------------------------------------------------------ */
 
@@ -585,7 +589,26 @@ QtFontSizePreview {
 }
 
 QListWidget#Preferences {
- background: {{ background }}; 
+ background: {{ background }};
+}
+
+
+QtWelcomeWidget, QtWelcomeWidget[drag=false] {
+  background: {{ canvas }};
+}
+
+QtWelcomeWidget[drag=true] {
+  background: {{ highlight }};
+}
+
+QtWelcomeLabel {
+ color: {{ foreground }};
+ font-size: 20px;
+}
+
+QtShortcutLabel {
+ color: {{ foreground }};
+ font-size: 16px;
 }
 
 

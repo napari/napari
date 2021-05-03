@@ -5,6 +5,7 @@ import numpy as np
 
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EmitterGroup, Event
+from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
 from ._text_utils import format_text_properties, get_text_anchors
@@ -213,7 +214,10 @@ class TextManager:
         if blending_mode == Blending.OPAQUE:
             blending_mode = Blending.TRANSLUCENT
             warnings.warn(
-                'opaque blending mode is not allowed for text. setting to translucent.',
+                trans._(
+                    'opaque blending mode is not allowed for text. setting to translucent.',
+                    deferred=True,
+                ),
                 category=RuntimeWarning,
             )
 

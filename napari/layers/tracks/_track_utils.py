@@ -4,6 +4,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
+from ...utils.translations import trans
 from ..utils.layer_utils import dataframe_to_properties
 
 
@@ -200,23 +201,40 @@ class TrackManager:
         """ validate the coordinate data """
 
         if data.ndim != 2:
-            raise ValueError('track vertices should be a NxD array')
+            raise ValueError(
+                trans._('track vertices should be a NxD array', deferred=True)
+            )
 
         if data.shape[1] < 4 or data.shape[1] > 5:
-            raise ValueError('track vertices should be 4 or 5-dimensional')
+            raise ValueError(
+                trans._(
+                    'track vertices should be 4 or 5-dimensional',
+                    deferred=True,
+                )
+            )
 
         # check that all IDs are integers
         ids = data[:, 0]
         if not np.all(np.floor(ids) == ids):
-            raise ValueError('track id must be an integer')
+            raise ValueError(
+                trans._('track id must be an integer', deferred=True)
+            )
 
         if not all([t >= 0 for t in data[:, 1]]):
-            raise ValueError('track timestamps must be greater than zero')
+            raise ValueError(
+                trans._(
+                    'track timestamps must be greater than zero', deferred=True
+                )
+            )
 
         # check that data are sorted by ID then time
         indices = np.lexsort((data[:, 1], data[:, 0]))
         if not np.array_equal(indices, np.arange(data[:, 0].size)):
-            raise ValueError('tracks should be ordered by ID and time')
+            raise ValueError(
+                trans._(
+                    'tracks should be ordered by ID and time', deferred=True
+                )
+            )
 
         return data
 
@@ -228,7 +246,10 @@ class TrackManager:
         for k, v in properties.items():
             if len(v) != len(self.data):
                 raise ValueError(
-                    'the number of properties must equal the number of vertices'
+                    trans._(
+                        'the number of properties must equal the number of vertices',
+                        deferred=True,
+                    )
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -252,7 +273,13 @@ class TrackManager:
             nodes = [node_idx] + parents_idx
             for node in nodes:
                 if node not in self.unique_track_ids:
-                    raise ValueError(f'graph node {node_idx} not found')
+                    raise ValueError(
+                        trans._(
+                            'graph node {node_idx} not found',
+                            deferred=True,
+                            node_idx=node_idx,
+                        )
+                    )
 
         return graph
 
@@ -314,7 +341,13 @@ class TrackManager:
         """ return the properties of tracks by vertex """
 
         if color_by not in self.properties:
-            raise ValueError(f'Property {color_by} not found')
+            raise ValueError(
+                trans._(
+                    'Property {color_by} not found',
+                    deferred=True,
+                    color_by=color_by,
+                )
+            )
 
         return self.properties[color_by]
 

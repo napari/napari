@@ -11,6 +11,7 @@ import numpy as np
 from vispy.color import Color, ColorArray
 
 from ...utils.colormaps.standardize_color import transform_color
+from ...utils.translations import trans
 
 # All parsable input datatypes that a user can provide
 ColorType = Union[List, Tuple, np.ndarray, AnyStr, Color, ColorArray]
@@ -41,15 +42,25 @@ def transform_color_with_defaults(
         transformed = transform_color(colors)
     except (AttributeError, ValueError, KeyError):
         warnings.warn(
-            f"The provided {elem_name} parameter contained illegal values, "
-            f"resetting all {elem_name} values to {default}."
+            trans._(
+                "The provided {elem_name} parameter contained illegal values, resetting all {elem_name} values to {default}.",
+                deferred=True,
+                elem_name=elem_name,
+                default=default,
+            )
         )
         transformed = transform_color(default)
     else:
         if (len(transformed) != 1) and (len(transformed) != num_entries):
             warnings.warn(
-                f"The provided {elem_name} parameter has {len(colors)} entries, "
-                f"while the data contains {num_entries} entries. Setting {elem_name} to {default}."
+                trans._(
+                    "The provided {elem_name} parameter has {length} entries, while the data contains {num_entries} entries. Setting {elem_name} to {default}.",
+                    deferred=True,
+                    elem_name=elem_name,
+                    length=len(colors),
+                    num_entries=num_entries,
+                    default=default,
+                )
             )
             transformed = transform_color(default)
     return transformed
@@ -119,9 +130,12 @@ def normalize_and_broadcast_colors(
     # color for all inputs
     if len(colors) != 1:
         warnings.warn(
-            f"The number of supplied colors mismatch the number of given"
-            f" data points. Length of data is {num_entries}, while the number of colors"
-            f" is {len(colors)}. Color for all points is reset to white."
+            trans._(
+                "The number of supplied colors mismatch the number of given data points. Length of data is {num_entries}, while the number of colors is {length}. Color for all points is reset to white.",
+                deferred=True,
+                num_entries=num_entries,
+                length=len(colors),
+            )
         )
         tiled = np.ones((num_entries, 4), dtype=np.float32)
         return tiled

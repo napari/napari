@@ -1,12 +1,15 @@
 """Settings management.
 """
+from __future__ import annotations
 
+import os
 from enum import Enum
-from typing import Tuple
+from pathlib import Path
+from typing import Dict, List, Tuple
 
 from pydantic import BaseSettings, Field
+from typing_extensions import TypedDict
 
-from ...plugins import CallOrderDict
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
@@ -141,7 +144,7 @@ class Language(str):
     @classmethod
     def validate(cls, v):
         if not isinstance(v, str):
-            raise ValueError(trans._('must be a string'))
+            raise ValueError(trans._('must be a string', deferred=True))
 
         language_packs = list(get_language_packs(_load_language()).keys())
         if v not in language_packs:
@@ -155,6 +158,14 @@ class Language(str):
             )
 
         return v
+
+
+class HighlightThickness(int):
+    """Highlight thickness to use when hovering over shapes/points."""
+
+    highlight_thickness = 1
+    minimum = 1
+    maximum = 10
 
 
 class QtBindingChoice(str, Enum):
@@ -190,6 +201,14 @@ class AppearanceSettings(BaseNapariSettings):
         description=trans._("Theme selection."),
     )
 
+    highlight_thickness: HighlightThickness = Field(
+        1,
+        description=trans._(
+            "Customize the highlight weight indicating "
+            + "selected shapes and points."
+        ),
+    )
+
     class Config:
         # Pydantic specific configuration
         title = trans._("Appearance")
@@ -216,9 +235,8 @@ class ApplicationSettings(BaseNapariSettings):
     ipy_interactive: bool = Field(
         default=True,
         title=trans._('IPython interactive'),
-        description=(
-            r'Use interactive %gui qt event loop when creating '
-            'napari Viewers in IPython'
+        description=trans._(
+            r'Use interactive %gui qt event loop when creating napari Viewers in IPython'
         ),
     )
 
@@ -234,6 +252,11 @@ class ApplicationSettings(BaseNapariSettings):
         title=trans._("Save Window Geometry"),
         description=trans._("Save window size and position."),
     )
+    save_window_state: bool = Field(
+        True,
+        title=trans._("Save Window State"),
+        description=trans._("Save window state of dock widgets."),
+    )
     window_position: Tuple[int, int] = None
     window_size: Tuple[int, int] = None
     window_maximized: bool = None
@@ -246,6 +269,9 @@ class ApplicationSettings(BaseNapariSettings):
     console_notification_level: NotificationSeverity = (
         NotificationSeverity.NONE
     )
+
+    open_history: List = [os.path.dirname(Path.home())]
+    save_history: List = [os.path.dirname(Path.home())]
 
     class Config:
         # Pydantic specific configuration
@@ -265,7 +291,20 @@ class ApplicationSettings(BaseNapariSettings):
             "window_statusbar",
             "gui_notification_level",
             "console_notification_level",
+            "open_history",
+            "save_history",
+            "ipy_interactive",
         ]
+
+
+class PluginHookOption(TypedDict):
+    """Custom type specifying plugin and enabled state."""
+
+    plugin: str
+    enabled: bool
+
+
+CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class PluginsSettings(BaseNapariSettings):

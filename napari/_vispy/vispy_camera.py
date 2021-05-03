@@ -44,7 +44,10 @@ class VispyCamera:
 
     @property
     def angles(self):
-        """3-tuple: Euler angles of camera in 3D viewing, in degrees."""
+        """3-tuple: Euler angles of camera in 3D viewing, in degrees.
+        Note that angles might be different than the ones that might have generated the quaternion.
+        """
+
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
             angles = quaternion2euler(
