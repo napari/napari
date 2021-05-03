@@ -37,7 +37,6 @@ class VispyScaleBarVisual:
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
         )
-
         self.node.order = order
         self.node.transform = STTransform()
 
