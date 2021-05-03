@@ -38,6 +38,7 @@ class Interpolation(StringEnum):
             cls.SPLINE36,
         )
 
+
 class Interpolation3D(StringEnum):
     """INTERPOLATION: Vispy interpolation mode for volume rendering."""
 
