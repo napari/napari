@@ -17,7 +17,7 @@ def _impl(path):
     pass
 
 
-testimpl = HookImplementation(_impl, plugin_name='testimpl')
+_testimpl = HookImplementation(_impl, plugin_name='testimpl')
 
 
 @pytest.mark.parametrize("layer_datum", layer_data)
@@ -25,7 +25,7 @@ def test_add_layers_with_plugins(layer_datum):
     """Test that add_layers_with_plugins adds the expected layer types."""
     with patch(
         "napari.plugins.io.read_data_with_plugins",
-        MagicMock(return_value=([layer_datum], testimpl)),
+        MagicMock(return_value=([layer_datum], _testimpl)),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins('mock_path')
@@ -38,7 +38,7 @@ def test_add_layers_with_plugins(layer_datum):
 
 @patch(
     "napari.plugins.io.read_data_with_plugins",
-    MagicMock(return_value=([], testimpl)),
+    MagicMock(return_value=([], _testimpl)),
 )
 def test_plugin_returns_nothing():
     """Test that a plugin returning nothing adds nothing to the Viewer."""
@@ -49,7 +49,7 @@ def test_plugin_returns_nothing():
 
 @patch(
     "napari.plugins.io.read_data_with_plugins",
-    MagicMock(return_value=([(img,)], testimpl)),
+    MagicMock(return_value=([(img,)], _testimpl)),
 )
 def test_viewer_open():
     """Test that a plugin to returning an image adds stuff to the viewer."""
@@ -83,7 +83,7 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     """
     with patch(
         "napari.plugins.io.read_data_with_plugins",
-        MagicMock(return_value=(layer_data, testimpl)),
+        MagicMock(return_value=(layer_data, _testimpl)),
     ):
 
         v = ViewerModel()

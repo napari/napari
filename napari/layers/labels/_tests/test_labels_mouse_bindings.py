@@ -36,7 +36,9 @@ def test_paint(Event, brush_shape, expected_sum):
     layer = Labels(data)
     layer.brush_size = 10
     assert layer.cursor_size == 10
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
+
     layer.mode = 'paint'
     layer.selected_label = 3
 
@@ -75,7 +77,9 @@ def test_paint_scale(Event, brush_shape, expected_sum):
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data, scale=(2, 2))
     layer.brush_size = 10
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
+
     layer.mode = 'paint'
     layer.selected_label = 3
 
@@ -113,9 +117,15 @@ def test_erase(Event, brush_shape, expected_sum):
     """Test erasing labels with different brush shapes."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
+
     layer.brush_size = 10
     layer.mode = 'erase'
-    layer.brush_shape = brush_shape
+
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
+
     layer.selected_label = 3
 
     # Simulate click
@@ -265,7 +275,7 @@ def test_fill_nD_all(Event):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.mode = 'fill'
     layer.selected_label = 4
 
