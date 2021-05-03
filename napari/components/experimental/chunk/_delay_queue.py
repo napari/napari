@@ -171,7 +171,6 @@ class DelayQueue(threading.Thread):
         Submit all due entires, then sleep or wait on self._wakeup
         for new entries.
         """
-        raise ValueError
         while self._shutdown is False:
             now = time.time()
 
