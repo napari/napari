@@ -2,7 +2,6 @@
 import pytest
 
 from napari.components.experimental.chunk._pool_group import (
-    LoaderPoolGroup,
     _get_loader_configs,
 )
 
@@ -61,7 +60,12 @@ def test_get_loader_config_override():
     assert configs[3]['force_synchronous'] is False
 
 
+@pytest.mark.async_only
 def test_loader_pool_group():
+    from napari.components.experimental.chunk._pool_group import (
+        LoaderPoolGroup,
+    )
+
     group = LoaderPoolGroup(TEST_CONFIG)
 
     # Test _get_loader_priority() returns the priority of the pool we
