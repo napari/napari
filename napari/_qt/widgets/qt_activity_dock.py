@@ -1,8 +1,6 @@
 """Provides an Activity Dock that allows the user to view running progress bars
 """
-from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
-
-from ...utils.translations import trans
+from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 
 class QtActivityDock(QWidget):
@@ -10,10 +8,6 @@ class QtActivityDock(QWidget):
         self,
     ) -> None:
         super().__init__()
-        title = QLabel(trans._('Activity Dock'))
-        title.setObjectName("h3")
 
-        layout = QVBoxLayout(self)
-        layout.addWidget(title)
-
-        self.layout = layout
+        layout = QVBoxLayout()
+        self.setLayout(layout)
