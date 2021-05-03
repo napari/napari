@@ -452,14 +452,29 @@ class QtViewer(QSplitter):
             raise OSError(trans._("Nothing to save"))
 
         # prepare list of extensions for drop down menu.
-        ext = imsave_extensions()
-        ext_list = []
+        if selected and len(self.viewer.layers.selection) == 1:
+            selected_layer = list(self.viewer.layers.selection)[0]
+            # single selected layer.
+            if selected_layer._type_string == 'image':
 
-        for val in ext:
-            ext_list.append("*" + val)
+                ext = imsave_extensions()
+                ext_list = []
 
-        ext_str = ';;'.join(ext_list)
-        ext_str = "All Files (*);;" + ext_str
+                for val in ext:
+                    ext_list.append("*" + val)
+
+                ext_str = ';;'.join(ext_list)
+                ext_str = "All Files (*);; Image file types:;;" + ext_str
+
+            elif selected_layer._type_string == 'points':
+                ext_str = "All Files (*);; *.csv;;"
+            else:
+                # layer other than image or points
+                ext_str = "All Files(*);;"
+
+        else:
+            # multiple layers.
+            ext_str = "All Files(*);;"
 
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
