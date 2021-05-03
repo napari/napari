@@ -155,7 +155,7 @@ class ActionManager:
         Register an action for future usage
 
         An action is generally a callback associated with
-         - a name (unique),
+         - a name (unique), usually `packagename:name`
          - a description
          - A keymap provider (easier for focus and backward compatibility).
 
@@ -175,6 +175,23 @@ class ActionManager:
         description : str
             Long string to describe what the command does, will be used in
             tooltips.
+        keymapprovider : KeymapProvider
+            KeymapProvider class or instance to use to bind the shortcut(s) when
+            registered. This make sure the shortcut is active only when an
+            instance of this is in focus.
+
+        Notes
+        -----
+        Registering an action, binding buttons and shortcuts can happen in any
+        order and should have the same effect. In particular registering an
+        action can happen later (plugin loading), while user preference
+        (keyboard shortcut), has already been happen. When this is the case, the
+        button and shortcut binding is delayed until an action with the
+        corresponding name is registered.
+
+        See Also
+        --------
+        bind_button, bind_shortcut
 
         """
         self._validate_action_name(name)
@@ -182,13 +199,13 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def _update_buttons(self, buttons, tooltip, callback):
+    def _update_buttons(self, buttons, tooltip: str, callback):
         for button in buttons:
             # test if only tooltip makes crash
             button.setToolTip(tooltip)
             button.clicked_maybe_connect(callback)
 
-    def _update_gui_elements(self, name):
+    def _update_gui_elements(self, name: str):
         """
         Update the description and shortcuts of all the (known) gui elements.
         """
@@ -207,7 +224,7 @@ class ActionManager:
         callable_ = self._actions[name].callable(self.context)
         self._update_buttons(buttons, desc + shortcut_str, callable_)
 
-    def _update_shortcut_bindings(self, name):
+    def _update_shortcut_bindings(self, name: str):
         """
         Update the key mappable for given action name
         to trigger the action within the given context and
@@ -222,9 +239,25 @@ class ActionManager:
         if hasattr(keymapprovider, 'bind_key'):
             keymapprovider.bind_key(shortcut, overwrite=True)(action.command)
 
-    def bind_button(self, name, button):
+    def bind_button(self, name: str, button) -> None:
         """
         Bind `button` to trigger Action `name` on click.
+
+        Parameters
+        ----------
+        name : str
+            name of the corresponding action in the form ``packagename:name``
+        button : QtStateButton | QPushButton
+            A abject presenting a qt-button like interface that when clicked
+            should trigger the action. The tooltip will be set the action
+            description and the corresponding shortcut if available.
+
+        Notes
+        -----
+        calling `bind_button` can be done before an action with the
+        corresponding name is registered, in which case the effect will be
+        delayed until the corresponding action is registered.
+
         """
         self._validate_action_name(name)
         if hasattr(button, 'change'):
@@ -236,18 +269,37 @@ class ActionManager:
         self._buttons[name].add(button)
         self._update_gui_elements(name)
 
-    def bind_shortcut(self, name, shortcut):
+    def bind_shortcut(self, name: str, shortcut: str) -> None:
         """
         bind shortcut `shortcut` to trigger action `name`
+
+        Parameters
+        ----------
+        name : str
+            name of the corresponding action in the form ``packagename:name``
+        shortcut : str
+            Shortcut to assign to this action use dash as separator. See
+            `Shortcut` for known modifiers.
+
+        Notes
+        -----
+        calling `bind_button` can be done before an action with the
+        corresponding name is registered, in which case the effect will be
+        delayed until the corresponding action is registered.
         """
         self._validate_action_name(name)
         self._shortcuts[name] = shortcut
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def unbind_shortcut(self, name):
+    def unbind_shortcut(self, name: str):
         """
         unbind shortcut for action name
+
+        Parameters
+        ----------
+        name : str
+            name of the action in the form `packagename:name` to unbind.
         """
         action = self._actions[name]
         shortcut = self._shortcuts.get(name)
