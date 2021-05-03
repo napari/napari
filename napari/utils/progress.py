@@ -2,47 +2,9 @@ import inspect
 from contextvars import ContextVar
 from typing import Iterable, Optional
 
-from qtpy import QtCore
-from qtpy.QtWidgets import (
-    QApplication,
-    QGridLayout,
-    QLabel,
-    QProgressBar,
-    QVBoxLayout,
-    QWidget,
-)
 from tqdm import tqdm
 
-from .._qt.utils import get_viewer_instance
-
 IS_NESTED = ContextVar('IS_NESTED', default=False)
-
-
-def get_pbar(viewer_instance, **kwargs):
-    """Adds ProgressBar to viewer Activity Dialog and returns it.
-
-    Parameters
-    ----------
-    viewer_instance : qtViewer
-        current napari qtViewer instance
-
-    Returns
-    -------
-    ProgressBar
-        progress bar to associate with current iterable
-    """
-    pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.window()._activity_dialog.baseWidget.layout()
-    if IS_NESTED.get():
-        last_added_idx = pbr_layout.count() - 1
-        unnested_widg_layout = (
-            pbr_layout.itemAt(last_added_idx).widget().layout()
-        )
-        unnested_widg_layout.addWidget(pbar)
-    else:
-        pbr_group = ProgressBarGroup(pbar)
-        pbr_layout.addWidget(pbr_group)
-    return pbar
 
 
 def get_calling_function_name(max_depth: int):
@@ -113,28 +75,33 @@ class progress(tqdm):
         *args,
         **kwargs,
     ) -> None:
-
-        # check if there's a napari viewer instance
-        viewer = get_viewer_instance()
-        self.has_viewer = viewer is not None
-        if self.has_viewer:
-            kwargs['gui'] = True
-
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-
         self.nested_token = None
+
+        # get progress bar added to viewer
+        try:
+            from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
+
+            pbar = get_pbar(IS_NESTED.get(), **pbar_kwargs)
+        except ImportError:
+            pbar = None
+
+        self.has_viewer = pbar is not None
+        if self.has_viewer:
+            kwargs['gui'] = True
 
         super().__init__(iterable, desc, total, *args, **kwargs)
         if not self.has_viewer:
             return
 
-        self._pbar = get_pbar(viewer, **pbar_kwargs)
+        self._pbar = pbar
         if self.total is not None:
             self._pbar.setRange(self.n, self.total)
             self._pbar._set_value(self.n)
         else:
             self._pbar.setRange(0, 0)
+            self.total = 0
 
         if desc:
             self.set_description(desc)
@@ -147,7 +114,6 @@ class progress(tqdm):
                 self.set_description("Progress Bar")
 
         self.show()
-        QApplication.processEvents()
 
     def __enter__(self):
         self.nested_token = IS_NESTED.set(True)  # noqa
@@ -169,7 +135,6 @@ class progress(tqdm):
             etas = str(self).split('|')[-1]
             self._pbar._set_value(self.n)
             self._pbar._set_eta(etas)
-        QApplication.processEvents()
 
     def increment(self):
         """Update current value by 1."""
@@ -215,49 +180,3 @@ class progress(tqdm):
 
 def progrange(*args, **kwargs):
     return progress(range(*args), **kwargs)
-
-
-class ProgressBar(QWidget):
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.pbar = QProgressBar()
-        self.description_label = QLabel()
-        self.eta_label = QLabel()
-
-        # addWidget(widget, row, column, [row_span, column_span])
-        layout = QGridLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-        layout.setColumnMinimumWidth(0, 86)
-        layout.setColumnStretch(1, 1)
-
-        layout.addWidget(self.description_label, 0, 0, 1, 2)
-        layout.addWidget(self.pbar, 0, 1, 1, 1)
-        layout.addWidget(self.eta_label, 0, 2, 1, 2)
-        self.setLayout(layout)
-
-    def setRange(self, min, max):
-        self.pbar.setRange(min, max)
-
-    def _set_value(self, value):
-        self.pbar.setValue(value)
-
-    def _get_value(self):
-        return self.pbar.value()
-
-    def _set_description(self, desc):
-        self.description_label.setText(desc)
-
-    def _set_eta(self, eta):
-        self.eta_label.setText(eta)
-
-
-class ProgressBarGroup(QWidget):
-    def __init__(self, pbar, parent=None) -> None:
-        super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-
-        pbr_group_layout = QVBoxLayout()
-        pbr_group_layout.addWidget(pbar)
-        self.setLayout(pbr_group_layout)

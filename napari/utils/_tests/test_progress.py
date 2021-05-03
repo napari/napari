@@ -6,7 +6,8 @@ import pytest
 
 pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 
-from napari.utils.progress import ProgressBarGroup, progrange, progress  # noqa
+from napari._qt.widgets.qt_progress_bar import ProgressBarGroup  # noqa
+from napari.utils.progress import progrange, progress  # noqa
 
 
 def get_progress_groups(qt_viewer):
@@ -76,6 +77,17 @@ def test_progress_with_context(make_napari_viewer):
             assert pbr._pbar.pbar.maximum() == pbr.total == 100
 
 
+def test_progress_no_viewer():
+    assert list(progress(range(10))) == list(range(10))
+
+    with progress(total=5) as pbr:
+        pbr.set_description('Test')
+        assert pbr.desc == "Test: "
+
+        pbr.update(3)
+        assert pbr.n == 3
+
+
 def test_progress_nested_viewer(make_napari_viewer):
     viewer = make_napari_viewer()
 
@@ -96,17 +108,6 @@ def test_progress_nested_context():
     pbr2 = progress(range(2))
     assert pbr2.nested_token is None
     pbr2.close()
-
-
-def test_progress_no_viewer():
-    assert list(progress(range(10))) == list(range(10))
-
-    with progress(total=5) as pbr:
-        pbr.set_description('Test')
-        assert pbr.desc == "Test: "
-
-        pbr.update(3)
-        assert pbr.n == 3
 
 
 def test_progress_update(make_napari_viewer):

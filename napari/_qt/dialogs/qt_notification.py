@@ -25,7 +25,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.utils import get_viewer_instance, move_to_bottom_right
+from napari._qt.utils import move_to_bottom_right
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
@@ -78,24 +78,18 @@ class NapariQtNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        """[summary]"""
-        super().__init__(None)
+        super().__init__()
 
-        # we need a way to detect the viewer in which the error occured.
-        viewer_instance = get_viewer_instance()
-        try:
-            # TODO: making the canvas the parent makes it easier to
-            # move/resize, but also means that the notification can get
-            # clipped on the left if the canvas is too small.
-            self.setParent(viewer_instance._canvas_overlay)
+        from ..qt_main_window import _QtMainWindow
+
+        current_window = _QtMainWindow.current()
+        if current_window is not None:
+            canvas = current_window.qt_viewer._canvas_overlay
+            self.setParent(canvas)
             self.move_self_to_bottom_right = partial(
                 move_to_bottom_right, self
             )
-            viewer_instance._canvas_overlay.resized.connect(
-                self.move_self_to_bottom_right
-            )
-        except Exception:
-            pass
+            canvas.resized.connect(self.move_self_to_bottom_right)
 
         self.setupUi()
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -159,11 +153,8 @@ class NapariQtNotification(QDialog):
         self.opacity_anim.start()
         self.opacity_anim.finished.connect(super().close)
 
-        viewer_instance = get_viewer_instance()
         try:
-            viewer_instance._canvas_overlay.resized.disconnect(
-                self.move_self_to_bottom_right
-            )
+            self.parent().resized.disconnect(self.move_self_to_bottom_right)
         except Exception:
             pass
 

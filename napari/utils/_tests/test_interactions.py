@@ -36,7 +36,7 @@ def test_ReadOnlyWrapper_setattr():
 )
 def test_shortcut_invalid(shortcut, reason):
 
-    with pytest.raises(AssertionError):
+    with pytest.warns(UserWarning):
         Shortcut(shortcut)  # Should be Control-A
 
 
