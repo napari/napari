@@ -30,7 +30,7 @@ class QtLargeIntSpinBox(QDoubleSpinBox):
 
     def __init__(self, dtype=np.int64, parent=None):
         super().__init__(parent)
-        self._dtype = normalize_dtype(dtype)
+        self._dtype = np.dtype(normalize_dtype(dtype))
         if not np.issubdtype(self._dtype, np.integer):
             raise ValueError(f"Spinbox dtype must be integral, got {dtype}")
         iinfo = np.iinfo(self._dtype)
