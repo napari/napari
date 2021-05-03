@@ -1,36 +1,9 @@
 import inspect
 from typing import Iterable, Optional
 
-from qtpy import QtCore
-from qtpy.QtWidgets import (
-    QApplication,
-    QHBoxLayout,
-    QLabel,
-    QProgressBar,
-    QWidget,
-)
 from tqdm import tqdm
 
-from .._qt.utils import get_viewer_instance
-
-
-def get_pbar(viewer_instance, **kwargs):
-    """Adds ProgressBar to viewer Activity Dock and returns it.
-
-    Parameters
-    ----------
-    viewer_instance : qtViewer
-        current napari qtViewer instance
-
-    Returns
-    -------
-    ProgressBar
-        progress bar to associate with current iterable
-    """
-    pbar = ProgressBar(**kwargs)
-    viewer_instance.activityDock.widget().layout.addWidget(pbar)
-
-    return pbar
+from .._qt.widgets.qt_progress_bar import get_pbar
 
 
 def get_calling_function_name(max_depth: int):
@@ -101,21 +74,20 @@ class progress(tqdm):
         *args,
         **kwargs,
     ) -> None:
-
-        # check if there's a napari viewer instance
-        viewer = get_viewer_instance()
-        self.has_viewer = viewer is not None
-        if self.has_viewer:
-            kwargs['gui'] = True
-
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
+
+        # get progress bar added to viewer
+        pbar = get_pbar(**pbar_kwargs)
+        self.has_viewer = pbar is not None
+        if self.has_viewer:
+            kwargs['gui'] = True
 
         super().__init__(iterable, desc, total, *args, **kwargs)
         if not self.has_viewer:
             return
 
-        self._pbar = get_pbar(viewer, **pbar_kwargs)
+        self._pbar = pbar
         if self.total is not None:
             self._pbar.setRange(self.n, self.total)
             self._pbar._set_value(self.n)
@@ -134,7 +106,6 @@ class progress(tqdm):
                 self.set_description("Progress Bar")
 
         self.show()
-        QApplication.processEvents()
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
@@ -145,7 +116,6 @@ class progress(tqdm):
             etas = str(self).split('|')[-1]
             self._pbar._set_value(self.n)
             self._pbar._set_eta(etas)
-        QApplication.processEvents()
 
     def set_description(self, desc):
         """Update progress bar description"""
@@ -174,33 +144,3 @@ class progress(tqdm):
 
 def progrange(*args, **kwargs):
     return progress(range(*args), **kwargs)
-
-
-class ProgressBar(QWidget):
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.pbar = QProgressBar()
-        self.description_label = QLabel()
-        self.eta_label = QLabel()
-
-        layout = QHBoxLayout()
-        layout.addWidget(self.description_label)
-        layout.addWidget(self.pbar)
-        layout.addWidget(self.eta_label)
-        self.setLayout(layout)
-
-    def setRange(self, min, max):
-        self.pbar.setRange(min, max)
-
-    def _set_value(self, value):
-        self.pbar.setValue(value)
-
-    def _get_value(self):
-        return self.pbar.value()
-
-    def _set_description(self, desc):
-        self.description_label.setText(desc)
-
-    def _set_eta(self, eta):
-        self.eta_label.setText(eta)
