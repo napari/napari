@@ -214,18 +214,12 @@ class QtImageControls(QtBaseImageControls):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-
-        def get_index():
-            return self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString
-            )
+        interp_string = event.value.value
 
         with self.layer.events.interpolation.blocker():
-            index = get_index()
-            if index == -1:
-                self.interpComboBox.addItem(self.layer.interpolation)
-                index = get_index()
-            self.interpComboBox.setCurrentIndex(index)
+            if self.interpComboBox.findText(interp_string) == -1:
+                self.interpComboBox.addItem(interp_string)
+            self.interpComboBox.setCurrentText(interp_string)
 
     def _on_rendering_change(self, event):
         """Receive layer model rendering change event and update dropdown menu.
