@@ -1,3 +1,4 @@
+import contextvars
 from contextlib import contextmanager
 
 import numpy as np
@@ -5,12 +6,16 @@ import pytest
 
 pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 
-from napari._qt.widgets.qt_progress_bar import ProgressBar  # noqa
+from napari._qt.widgets.qt_progress_bar import ProgressBarGroup  # noqa
 from napari.utils.progress import progrange, progress  # noqa
 
 
+def get_progress_groups(qt_viewer):
+    return qt_viewer.activityDock.findChildren(ProgressBarGroup)
+
+
 def qt_viewer_has_pbar(qt_viewer):
-    return bool(qt_viewer.activityDock.widget().findChild(ProgressBar))
+    return bool(get_progress_groups(qt_viewer))
 
 
 @contextmanager
@@ -81,6 +86,28 @@ def test_progress_no_viewer():
 
         pbr.update(3)
         assert pbr.n == 3
+
+
+def test_progress_nested_viewer(make_napari_viewer):
+    viewer = make_napari_viewer()
+
+    with assert_pbar_added_to(viewer):
+        with progress(range(10)):
+            pbr2 = progress(range(2))
+            prog_groups = get_progress_groups(viewer.window.qt_viewer)
+            assert len(prog_groups) == 1
+            assert prog_groups[0].layout().count() == 2
+            pbr2.close()
+
+
+def test_progress_nested_context():
+    with progress(range(2)) as pbr:
+        assert isinstance(pbr.nested_token, contextvars.Token)
+        assert pbr.nested_token.var.get()
+
+    pbr2 = progress(range(2))
+    assert pbr2.nested_token is None
+    pbr2.close()
 
 
 def test_progress_update(make_napari_viewer):

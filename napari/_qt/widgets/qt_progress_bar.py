@@ -4,11 +4,12 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QProgressBar,
+    QVBoxLayout,
     QWidget,
 )
 
 
-def get_pbar(**kwargs):
+def get_pbar(is_nested, **kwargs):
     """Adds ProgressBar to viewer Activity Dock and returns it.
 
     Parameters
@@ -28,7 +29,17 @@ def get_pbar(**kwargs):
         return
     viewer_instance = current_window.qt_viewer
     pbar = ProgressBar(**kwargs)
-    viewer_instance.activityDock.widget().layout().addWidget(pbar)
+    pbr_layout = viewer_instance.activityDock.widget().layout()
+
+    if is_nested:
+        last_added_idx = pbr_layout.count() - 1
+        unnested_widg_layout = (
+            pbr_layout.itemAt(last_added_idx).widget().layout()
+        )
+        unnested_widg_layout.addWidget(pbar)
+    else:
+        pbr_group = ProgressBarGroup(pbar)
+        pbr_layout.addWidget(pbr_group)
 
     return pbar
 
@@ -63,3 +74,13 @@ class ProgressBar(QWidget):
 
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
+
+
+class ProgressBarGroup(QWidget):
+    def __init__(self, pbar, parent=None) -> None:
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+
+        pbr_group_layout = QVBoxLayout()
+        pbr_group_layout.addWidget(pbar)
+        self.setLayout(pbr_group_layout)
