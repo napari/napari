@@ -121,6 +121,7 @@ class progress(tqdm):
             self._pbar._set_value(self.n)
         else:
             self._pbar.setRange(0, 0)
+            self.total = 0
 
         if desc:
             self.set_description(desc)

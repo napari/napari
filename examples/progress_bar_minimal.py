@@ -39,6 +39,8 @@ def iterable_w_context():
 def indeterminate():
     """By passing a total of 0, we can have an indeterminate progress bar
     """
+
+    # note progress(total=0) is equivalent to progress()
     with progress(total=0) as pbr:
         x = 0
         while x != 42:
