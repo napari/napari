@@ -13,7 +13,7 @@ most important details:
 napari will detect if you are running an IPython or Jupyter shell, and will
 automatically use the [IPython GUI event
 loop](https://ipython.readthedocs.io/en/stable/config/eventloops.html#integrating-with-gui-event-loops).
-As of [version 0.4.7](https://github.com/napari/napari/releases/tag/v0.4.7) is
+As of [version 0.4.7](https://github.com/napari/napari/releases/tag/v0.4.7), it is
 no longer necessary to call `%gui qt` manually.  Just create a viewer:
 
 ```python
