@@ -62,7 +62,7 @@ napari.run()
 
 Like most applications with a graphical user interface (GUI), napari operates
 within an **event loop** that waits for – and responds to – events triggered by
-the user interacting with the program.  These events might be something like a
+the user's interactions with the interface.  These events might be something like a
 mouse click, or a keypress, and usually correspond to some specific action taken
 by the user (e.g. "user moved the gamma slider").
 
