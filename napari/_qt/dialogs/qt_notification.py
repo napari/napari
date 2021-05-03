@@ -25,8 +25,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.utils import get_viewer_instance
-
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
 from ..widgets.qt_eliding_label import MultilineElidedLabel
@@ -78,21 +76,16 @@ class NapariQtNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        """[summary]"""
-        super().__init__(None)
 
-        # we need a way to detect the viewer in which the error occured.
-        viewer_instance = get_viewer_instance()
-        try:
-            # TODO: making the canvas the parent makes it easier to
-            # move/resize, but also means that the notification can get
-            # clipped on the left if the canvas is too small.
-            self.setParent(viewer_instance._canvas_overlay)
-            viewer_instance._canvas_overlay.resized.connect(
-                self.move_to_bottom_right
-            )
-        except Exception:
-            pass
+        super().__init__()
+
+        from ..qt_main_window import _QtMainWindow
+
+        current_window = _QtMainWindow.current()
+        if current_window is not None:
+            canvas = current_window.qt_viewer._canvas_overlay
+            self.setParent(canvas)
+            canvas.resized.connect(self.move_to_bottom_right)
 
         self.setupUi()
         self.setAttribute(Qt.WA_DeleteOnClose)

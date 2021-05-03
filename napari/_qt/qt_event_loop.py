@@ -150,6 +150,7 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
+    if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
         )

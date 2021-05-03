@@ -11,8 +11,6 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
-    QMainWindow,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -239,17 +237,9 @@ def combine_widgets(
         return widgets
     elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
         container = QWidget()
-        container.layout = QVBoxLayout() if vertical else QHBoxLayout()
-        container.setLayout(container.layout)
+        container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
         for widget in widgets:
-            container.layout.addWidget(widget)
-        # if this is a vertical layout, and none of the widgets declare a size
-        # policy of "expanding", add our own stretch.
-        if vertical and not any(
-            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
-            for w in widgets
-        ):
-            container.layout.addStretch()
+            container.layout().addWidget(widget)
         return container
     else:
         raise TypeError(
@@ -275,18 +265,3 @@ def delete_qapp(app):
     # calling a second time is necessary on PySide2...
     # see: https://bugreports.qt.io/browse/PYSIDE-1470
     QApplication.instance()
-
-
-def get_viewer_instance():
-    """Inspect QApplication widgets and return instance of QtViewer
-
-    Returns
-    -------
-    QtViewer
-        napari QtViewer instance
-    """
-    # FIXME: this does not work with multiple viewers.
-    for wdg in QApplication.topLevelWidgets():
-        if isinstance(wdg, QMainWindow):
-            return wdg.centralWidget().children()[1]
-    return None  # TODO: raise error here?

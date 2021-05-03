@@ -2,6 +2,7 @@ from functools import partial
 from typing import Dict, List, Optional, Tuple
 
 from qtpy import QtCore, QtGui, QtWidgets
+from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
@@ -75,12 +76,18 @@ class TextSchemaWidget(SchemaWidgetMixin, QtWidgets.QLineEdit):
     def state(self, state: str):
         self.setText(state)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class PasswordWidget(TextSchemaWidget):
     def configure(self):
         super().configure()
 
         self.setEchoMode(self.Password)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class TextAreaSchemaWidget(SchemaWidgetMixin, QtWidgets.QTextEdit):
@@ -95,6 +102,9 @@ class TextAreaSchemaWidget(SchemaWidgetMixin, QtWidgets.QTextEdit):
     def configure(self):
         self.textChanged.connect(lambda: self.on_changed.emit(self.state))
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
     @state_property
@@ -107,6 +117,9 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
 
     def configure(self):
         self.stateChanged.connect(lambda _: self.on_changed.emit(self.state))
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
@@ -121,6 +134,10 @@ class SpinDoubleSchemaWidget(SchemaWidgetMixin, QtWidgets.QDoubleSpinBox):
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
 
+    def setDescription(self, description: str):
+        self.description = description
+
+
 class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     @state_property
     def state(self) -> int:
@@ -134,6 +151,9 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
     def configure(self):
         self.hook_list.order_changed.connect(self.on_changed.emit)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
     @state_property
@@ -146,6 +166,9 @@ class SpinSchemaWidget(SchemaWidgetMixin, QtWidgets.QSpinBox):
 
     def configure(self):
         self.valueChanged.connect(self.on_changed.emit)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
@@ -189,6 +212,9 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
 
         self.setRange(minimum, maximum)
 
+        def setDescription(self, description: str):
+            self.description = description
+
 
 class QColorButton(QtWidgets.QPushButton):
     """Color picker widget QPushButton subclass.
@@ -231,6 +257,9 @@ class QColorButton(QtWidgets.QPushButton):
 
         return super().mousePressEvent(event)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ColorSchemaWidget(SchemaWidgetMixin, QColorButton):
     """Widget representation of a string with the 'color' format keyword."""
@@ -245,6 +274,9 @@ class ColorSchemaWidget(SchemaWidgetMixin, QColorButton):
     @state.setter
     def state(self, data: str):
         self.setColor(data)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
@@ -278,6 +310,9 @@ class FilepathSchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
     @state.setter
     def state(self, state: str):
         self.path_widget.setText(state)
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class ArrayControlsWidget(QtWidgets.QWidget):
@@ -314,6 +349,9 @@ class ArrayControlsWidget(QtWidgets.QWidget):
         group_layout.setSpacing(0)
         group_layout.addStretch(0)
 
+    def setDescription(self, description: str):
+        self.description = description
+
 
 class ArrayRowWidget(QtWidgets.QWidget):
     def __init__(
@@ -328,6 +366,9 @@ class ArrayRowWidget(QtWidgets.QWidget):
 
         self.widget = widget
         self.controls = controls
+
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
@@ -473,6 +514,22 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
+class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget):
+    @state_property
+    def state(self) -> int:
+        return self.value()
+
+    def setDescription(self, description: str):
+        self._description.setText(description)
+
+    @state.setter
+    def state(self, state: int):
+        self.setValue(state)
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+
+
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
         self,
@@ -503,6 +560,9 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         self.state[name] = value
         self.on_changed.emit(self.state)
 
+    def setDescription(self, description: ""):
+        self.description = description
+
     def populate_from_schema(
         self,
         schema: dict,
@@ -524,9 +584,14 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
         widgets = {}
         layout.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy(1))
         for name, sub_schema in schema['properties'].items():
+            if 'description' in sub_schema:
+                description = sub_schema['description']
+            else:
+                description = ""
+
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema
+                sub_schema, sub_ui_schema, description = description
             )  # TODO onchanged
             widget.on_changed.connect(partial(self.widget_on_changed, name))
             label = sub_schema.get("title", name)
@@ -560,6 +625,10 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
 
     def _index_changed(self, index: int):
         self.on_changed.emit(self.state)
+
+    def setDescription(self, description: str):
+        self.description = description
+
 
 
 class FormWidget(QtWidgets.QWidget):
@@ -597,13 +666,3 @@ class FormWidget(QtWidgets.QWidget):
 
     def clear_errors(self):
         self.error_widget.hide()
-
-
-class MyMainWindow(QtWidgets.QDialog):
-    def __init__(self, widget: SchemaWidgetMixin, parent=None):
-
-        super().__init__(parent)
-        self.form_widget = FormWidget(widget)
-        self.setWindowTitle("Preferences")
-        self.widget = self.form_widget
-        self.setCentralWidget(self.widget)

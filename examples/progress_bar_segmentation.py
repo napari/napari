@@ -31,15 +31,15 @@ all_thresholds = [
 viewer = napari.Viewer()
 
 # load cells data and take just nuclei
-cells_im = cells3d()
-cell_nuclei = cells_im[:, 1, :, :]
-viewer.add_image(
-    cell_nuclei, name="Nuclei", blending='additive', colormap="green"
-)
+membrane, cell_nuclei = viewer.open_sample('scikit-image', 'cells3d')
+cell_nuclei = cell_nuclei.data
 
 
 def try_thresholds():
     """Tries each threshold, and adds result to viewer."""
+    if 'Binarised' in viewer.layers:
+        del viewer.layers['Binarised']
+
     thresholded_nuclei = []
 
     # we wrap our iterable with `progress`
@@ -75,8 +75,12 @@ def segment_binarised_ims():
     Uses `progress` within a context manager allowing us to manipulate
     the progress bar within the loop
     """
-    segmented_nuclei = []
+    if 'Binarised' not in viewer.layers:
+        raise TypeError("Cannot segment before thresholding")
+    if 'Segmented' in viewer.layers:
+        del viewer.layers['Segmented']
     binarised_data = viewer.layers['Binarised'].data
+    segmented_nuclei = []
 
     # using the `with` keyword we can use `progress` inside a context manager
     # `progress` inherits from tqdm and therefore provides the same API
@@ -112,26 +116,26 @@ def process_ims():
 
     Manually updates a `progress` object.
     """
+    if 'Binarised' in viewer.layers:
+        del viewer.layers['Binarised']
+    if 'Segmented' in viewer.layers:
+        del viewer.layers['Segmented']
+
     # we instantiate a manually controlled `progress` object
     # by just passing a total with no iterable
-    pbar = progress(total=2)
-    pbar.set_description("Thresholding")
-    try_thresholds()
-    # once one processing step is complete, we increment
-    # the value of our progress bar
-    pbar.update(1)
+    with progress(total=2) as pbar:
+        pbar.set_description("Thresholding")
+        try_thresholds()
+        # once one processing step is complete, we increment
+        # the value of our progress bar
+        pbar.update(1)
 
-    pbar.set_description("Segmenting")
-    segment_binarised_ims()
-    pbar.update(1)
+        pbar.set_description("Segmenting")
+        segment_binarised_ims()
+        pbar.update(1)
 
-    # uncomment this line to see the 100% progress bar
-    sleep(0.5)
-
-    # if manually updating the progress bar, we must also
-    # manually close it
-    pbar.close()
-
+        # uncomment this line to see the 100% progress bar
+        sleep(0.5)
 
 button_layout = QVBoxLayout()
 process_btn = QPushButton("Full Process")
@@ -149,5 +153,7 @@ button_layout.addWidget(segment_btn)
 action_widget = QWidget()
 action_widget.setLayout(button_layout)
 viewer.window.add_dock_widget(action_widget)
+# showing the activity dock so we can see the progress bars
+viewer.window.qt_viewer.activityDock.show()
 
 napari.run()
