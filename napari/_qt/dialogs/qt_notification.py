@@ -76,7 +76,6 @@ class NapariQtNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-
         super().__init__()
 
         from ..qt_main_window import _QtMainWindow
