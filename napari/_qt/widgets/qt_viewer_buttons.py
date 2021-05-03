@@ -1,5 +1,3 @@
-from functools import partial
-
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
 
@@ -160,7 +158,7 @@ class QtViewerButtons(QFrame):
         )
         self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ndisplayButton.customContextMenuRequested.connect(
-            partial(open_perspective_popup, self)
+            self.open_perspective_popup
         )
         self.ndisplayButton.setToolTip(
             trans._(
@@ -179,6 +177,29 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
+
+    def open_perspective_popup(self):
+        """Show a slider to control the viewer `camera.perspective`."""
+        if self.viewer.dims.ndisplay != 3:
+            return
+
+        # make slider connected to perspective parameter
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setRange(0, max(90, self.viewer.camera.perspective))
+        sld.setValue(self.viewer.camera.perspective)
+        sld.valueChanged.connect(
+            lambda v: setattr(self.viewer.camera, 'perspective', v)
+        )
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(trans._('Perspective'), self))
+        layout.addWidget(sld)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
 
 
 class QtDeleteButton(QPushButton):
@@ -343,31 +364,3 @@ class QtStateButton(QtViewerPushButton):
                 getattr(self._target, self._attribute) == self._onstate
             ):
                 self.toggle()
-
-
-def open_perspective_popup(btns: QtViewerButtons):
-    """Show a slider above `btn` to control the viewer `camera.fov`.
-
-    Parameters
-    ----------
-    btn : QtViewerButtons
-        an instance of QtViewerButtons.
-    """
-    if btns.viewer.dims.ndisplay != 3:
-        return
-
-    # make slider connected to FOV parameter
-    sld = QSlider(Qt.Horizontal, btns)
-    sld.setRange(0, max(90, btns.viewer.camera.fov))
-    sld.setValue(btns.viewer.camera.fov)
-    sld.valueChanged.connect(lambda v: setattr(btns.viewer.camera, 'fov', v))
-
-    # make layout
-    layout = QHBoxLayout()
-    layout.addWidget(QLabel(trans._('Perspective'), btns))
-    layout.addWidget(sld)
-
-    # popup and show
-    pop = QtPopup(btns)
-    pop.frame.setLayout(layout)
-    pop.show_above_mouse()
