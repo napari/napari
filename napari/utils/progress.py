@@ -1,10 +1,11 @@
 import inspect
 from contextvars import ContextVar
 from typing import Iterable, Optional
+from weakref import ref
 
 from tqdm import tqdm
 
-CURRENT_PBAR = ContextVar('CURRENT_PBAR', default=0)
+CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
 
 _tqdm_kwargs = {
     p.name
@@ -67,13 +68,13 @@ class progress(tqdm):
     ) -> None:
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self._current_token = None
+        self._group_token = None
 
         # get progress bar added to viewer
         try:
             from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(CURRENT_PBAR.get(), **pbar_kwargs)
+            pbar = get_pbar(CURRENT_GROUP.get(), **pbar_kwargs)
         except ImportError:
             pbar = None
 
@@ -105,12 +106,13 @@ class progress(tqdm):
 
     def __enter__(self):
         if self.has_viewer:
-            self._current_token = CURRENT_PBAR.set(id(self))  # noqa
+            group_ref = ref(self._pbar.parentWidget())
+            self._group_token = CURRENT_GROUP.set(group_ref)
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.has_viewer:
-            CURRENT_PBAR.reset(self._current_token)
+            CURRENT_GROUP.reset(self._group_token)
             self._pbar.parentWidget().close()
         return super().__exit__(exc_type, exc_value, traceback)
 
@@ -146,7 +148,7 @@ class progress(tqdm):
             return
         if self.has_viewer:
             # still need to close groups of pbars outside context
-            if not CURRENT_PBAR.get():
+            if not CURRENT_GROUP.get():
                 self._pbar.parentWidget().close()
             # otherwise we just close the current progress bar
             self._pbar.close()

@@ -9,7 +9,7 @@ from qtpy.QtWidgets import (
 )
 
 
-def get_pbar(current_pbar_id, **kwargs):
+def get_pbar(current_group_ref, **kwargs):
     """Adds ProgressBar to viewer Activity Dock and returns it.
 
     Parameters
@@ -31,12 +31,10 @@ def get_pbar(current_pbar_id, **kwargs):
     pbar = ProgressBar(**kwargs)
     pbr_layout = viewer_instance.activityDock.widget().layout()
 
-    if current_pbar_id:
-        last_added_idx = pbr_layout.count() - 1
-        unnested_widg_layout = (
-            pbr_layout.itemAt(last_added_idx).widget().layout()
-        )
-        unnested_widg_layout.addWidget(pbar)
+    if current_group_ref:
+        group_widg = current_group_ref()
+        group_layout = group_widg.layout()
+        group_layout.addWidget(pbar)
     else:
         pbr_group = ProgressBarGroup(pbar)
         pbr_layout.addWidget(pbr_group)

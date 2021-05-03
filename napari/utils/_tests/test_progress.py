@@ -103,11 +103,11 @@ def test_progress_nested_viewer(make_napari_viewer):
 def test_progress_nested_context(make_napari_viewer):
     make_napari_viewer()
     with progress(range(2)) as pbr:
-        assert isinstance(pbr._current_token, contextvars.Token)
-        assert pbr._current_token.var.get()
+        assert isinstance(pbr._group_token, contextvars.Token)
+        assert pbr._group_token.var.get()
 
     pbr2 = progress(range(2))
-    assert pbr2._current_token is None
+    assert pbr2._group_token is None
     pbr2.close()
 
 
