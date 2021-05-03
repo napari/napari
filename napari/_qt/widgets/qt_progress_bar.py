@@ -27,7 +27,7 @@ def get_pbar(**kwargs):
     if viewer_instance is None:
         return
     pbar = ProgressBar(**kwargs)
-    viewer_instance.activityDock.widget().layout.addWidget(pbar)
+    viewer_instance.activityDock.widget().layout().addWidget(pbar)
 
     return pbar
 
