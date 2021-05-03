@@ -27,9 +27,10 @@ def get_pbar(is_nested, **kwargs):
     current_window = _QtMainWindow.current()
     if current_window is None:
         return
-    viewer_instance = current_window.qt_viewer
     pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.activityDock.widget().layout()
+    pbr_layout = (
+        current_window.qt_viewer.window()._activity_dialog.activity_layout
+    )
 
     if is_nested:
         last_added_idx = pbr_layout.count() - 1

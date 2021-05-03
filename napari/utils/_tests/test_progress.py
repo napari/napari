@@ -10,19 +10,20 @@ from napari._qt.widgets.qt_progress_bar import ProgressBarGroup  # noqa
 from napari.utils.progress import progrange, progress  # noqa
 
 
-def get_progress_groups(qt_viewer):
-    return qt_viewer.activityDock.findChildren(ProgressBarGroup)
+def get_progress_groups(viewer):
+    viewer_window = viewer.window.qt_viewer.window()
+    return viewer_window._activity_dialog.findChildren(ProgressBarGroup)
 
 
-def qt_viewer_has_pbar(qt_viewer):
-    return bool(get_progress_groups(qt_viewer))
+def qt_viewer_has_pbar(viewer):
+    return bool(get_progress_groups(viewer))
 
 
 @contextmanager
 def assert_pbar_added_to(viewer):
-    assert not qt_viewer_has_pbar(viewer.window.qt_viewer)
+    assert not qt_viewer_has_pbar(viewer)
     yield
-    assert qt_viewer_has_pbar(viewer.window.qt_viewer)
+    assert qt_viewer_has_pbar(viewer)
 
 
 def test_progress_with_iterable(make_napari_viewer):
@@ -94,7 +95,7 @@ def test_progress_nested_viewer(make_napari_viewer):
     with assert_pbar_added_to(viewer):
         with progress(range(10)):
             pbr2 = progress(range(2))
-            prog_groups = get_progress_groups(viewer.window.qt_viewer)
+            prog_groups = get_progress_groups(viewer)
             assert len(prog_groups) == 1
             assert prog_groups[0].layout().count() == 2
             pbr2.close()

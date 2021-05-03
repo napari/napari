@@ -98,5 +98,6 @@ pbar_widget.setLayout(button_layout)
 
 viewer.window.add_dock_widget(pbar_widget)
 # showing the activity dock so we can see the progress bars
-viewer.window.qt_viewer.activityDock.show()
+viewer.window.qt_viewer.window()._activity_dialog.show()
+
 napari.run()
