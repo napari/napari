@@ -7,8 +7,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils import get_viewer_instance
-
 
 def get_pbar(**kwargs):
     """Adds ProgressBar to viewer Activity Dock and returns it.
@@ -23,9 +21,12 @@ def get_pbar(**kwargs):
     ProgressBar
         progress bar to associate with current iterable
     """
-    viewer_instance = get_viewer_instance()
-    if viewer_instance is None:
+    from ..qt_main_window import _QtMainWindow
+
+    current_window = _QtMainWindow.current()
+    if current_window is None:
         return
+    viewer_instance = current_window.qt_viewer
     pbar = ProgressBar(**kwargs)
     viewer_instance.activityDock.widget().layout().addWidget(pbar)
 

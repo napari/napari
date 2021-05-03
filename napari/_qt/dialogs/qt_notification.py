@@ -25,8 +25,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from napari._qt.utils import get_viewer_instance
-
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
 from ..widgets.qt_eliding_label import MultilineElidedLabel
