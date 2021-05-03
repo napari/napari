@@ -25,7 +25,7 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
     """
 
     textChanged = Signal(str)
-    valueChanged = Signal(int)
+    valueChanged = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
