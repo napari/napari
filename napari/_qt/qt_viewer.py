@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -269,7 +270,10 @@ class QtViewer(QSplitter):
         theme.connect(on_theme_change)
 
         def disconnect():
-            theme.disconnect(on_theme_change)
+            # strange EventEmitter has no attribute _callbacks errors sometimes
+            # maybe some sort of cleanup race condition?
+            with suppress(AttributeError):
+                theme.disconnect(on_theme_change)
 
         self.canvas.destroyed.connect(disconnect)
 
