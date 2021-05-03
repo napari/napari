@@ -50,6 +50,8 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from ..utils.io import imsave_extensions
+
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -449,14 +451,26 @@ class QtViewer(QSplitter):
         if msg:
             raise OSError(trans._("Nothing to save"))
 
+        # prepare list of extensions for drop down menu.
+        ext = imsave_extensions()
+        ext_list = []
+
+        for val in ext:
+            ext_list.append("*" + val)
+
+        ext_str = ';;'.join(ext_list)
+        ext_str = "All Files (*);;" + ext_str
+
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
+
         filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
         )
 
         if filename:
