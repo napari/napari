@@ -165,6 +165,10 @@ class VispyCamera:
             self._camera.center = self.center
         with self._camera.events.zoom.blocker(self._on_zoom_change):
             self._camera.zoom = self.zoom
+        with self._camera.events.perspective.blocker(
+            self._on_perspective_change
+        ):
+            self._camera.perspective = self.perspective
 
 
 def viewbox_key_event(event):
