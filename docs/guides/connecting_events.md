@@ -15,7 +15,7 @@ and
 [`.connect(`](https://github.com/napari/napari/search?q=%22.connect%28%22&type=code)
 to find examples of creating and handling internal events, respectively.
 
-If you would like to setup a custom event listener then you need to hook into
+If you would like to set up a custom event listener then you need to hook into
 the napari event loop. We offer a couple of convenience decorators to easily
 connect functions to key and mouse events.
 
