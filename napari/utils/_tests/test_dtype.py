@@ -1,7 +1,11 @@
+import itertools
+
 import numpy as np
 import pytest
 import tensorstore as ts
 import torch
+import zarr
+from dask import array as da
 
 from napari.utils._dtype import normalize_dtype
 
@@ -32,12 +36,15 @@ def test_normalize_dtype_tensorstore(dtype_str):
     assert normalize_dtype(ts_arr.dtype) is np_arr.dtype.type
 
 
-@pytest.mark.parametrize('dtype_str', uints + ints + floats + complex + bools)
-def test_normalize_dtype_np_noop(dtype_str):
-    """Check that normalize dtype works as expected for plain NumPy."""
-    np_arr = np.zeros(5, dtype=dtype_str)
-    np_arr2 = np.zeros(5, dtype=normalize_dtype(np_arr.dtype))
-    assert normalize_dtype(np_arr) is normalize_dtype(np_arr2)
+@pytest.mark.parametrize(
+    'module, dtype_str',
+    itertools.product((np, da, zarr), uints + ints + floats + complex + bools),
+)
+def test_normalize_dtype_np_noop(module, dtype_str):
+    """Check that normalize dtype works as expected for plain NumPy dtypes."""
+    module_arr = module.zeros(5, dtype=dtype_str)
+    np_arr = np.zeros(5, dtype=normalize_dtype(module_arr.dtype))
+    assert normalize_dtype(module_arr.dtype) is normalize_dtype(np_arr.dtype)
 
 
 # note: we don't write specific tests for zarr and dask because they use numpy
