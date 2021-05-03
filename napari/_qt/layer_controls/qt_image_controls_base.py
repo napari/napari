@@ -4,7 +4,7 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton, QSlider
-from qtrangeslider import QRangeSlider
+from qtrangeslider import QDoubleRangeSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
@@ -63,7 +63,8 @@ class QtBaseImageControls(QtLayerControls):
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
-        self.contrastLimitsSlider = QRangeSlider(Qt.Horizontal, self)
+        self.contrastLimitsSlider = QDoubleRangeSlider(Qt.Horizontal, self)
+        self.contrastLimitsSlider.setSingleStep(0.01)
         self.contrastLimitsSlider.setRange(*self.layer.contrast_limits_range)
         self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
         self.clim_popup = None
@@ -117,7 +118,9 @@ class QtBaseImageControls(QtLayerControls):
         if event.button() == Qt.RightButton:
             self.show_clim_popupup()
         else:
-            QRangeSlider.mousePressEvent(self.contrastLimitsSlider, event)
+            QDoubleRangeSlider.mousePressEvent(
+                self.contrastLimitsSlider, event
+            )
 
     def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
@@ -194,7 +197,18 @@ class QtBaseImageControls(QtLayerControls):
         event.accept()
 
     def show_clim_popupup(self):
-        clim_popup = QRangeSliderPopup(self)
+        if np.issubdtype(self.layer.dtype, np.integer):
+            decimals = 0
+        else:
+            # scale precision with the log of the data range order of magnitude
+            # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
+            #       0 - 10  (1 order of mag)  -> 2 decimals
+            #       0 - 100 (2 orders of mag) -> 1 decimal
+            #       ≥ 3 orders of mag -> no decimals
+            d_range = np.subtract(*self.layer.contrast_limits_range[::-1])
+            decimals = int(max(3 - np.log10(max(d_range, 0.01)), 0))
+
+        clim_popup = QRangeSliderPopup(self, decimals)
         clim_popup.slider.setRange(*self.layer.contrast_limits_range)
         clim_popup.slider.setValue(self.layer.contrast_limits)
         clim_popup.slider.setRange(*self.layer.contrast_limits_range)

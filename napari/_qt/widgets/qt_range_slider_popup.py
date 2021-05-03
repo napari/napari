@@ -1,13 +1,13 @@
 from PyQt5.QtWidgets import QApplication
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout
-from qtrangeslider import QLabeledRangeSlider
+from qtrangeslider import QLabeledDoubleRangeSlider
 
 from ..dialogs.qt_modal import QtPopup
 
 
 class QRangeSliderPopup(QtPopup):
-    def __init__(self, parent=None, precision=0):
+    def __init__(self, parent=None, decimals=0):
         """A popup window that contains a range slider and linked LineEdits.
 
         Parameters
@@ -15,21 +15,20 @@ class QRangeSliderPopup(QtPopup):
         parent : QWidget, optional
             Will like be an instance of QtLayerControls.  Note, providing
             parent can be useful to inherit stylesheets.
-        precision : int, optional
+        decimals : int, optional
             Number of decimal values in the labels, by default 0
 
         Attributes
         ----------
-        precision : int
-            Number of decimal values in numeric labels.
         slider : QLabeledRangeSlider
             Slider widget.
         """
         super().__init__(parent)
-        self.precision = precision
 
         # create slider
-        self.slider = QLabeledRangeSlider(Qt.Horizontal, parent)
+        self.slider = QLabeledDoubleRangeSlider(Qt.Horizontal, parent)
+        self.slider.setDecimals(decimals)
+        self.slider.setSingleStep(10 ** -decimals)
         self.slider.label_shift_x = 2
         self.slider.label_shift_y = 2
         self.slider.setFocus()
