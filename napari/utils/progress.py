@@ -4,7 +4,7 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
-IS_NESTED = ContextVar('IS_NESTED', default=False)
+CURRENT_PBAR = ContextVar('CURRENT_PBAR', default=0)
 
 _tqdm_kwargs = {
     p.name
@@ -67,13 +67,13 @@ class progress(tqdm):
     ) -> None:
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self.nested_token = None
+        self._current_token = None
 
         # get progress bar added to viewer
         try:
             from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(IS_NESTED.get(), **pbar_kwargs)
+            pbar = get_pbar(CURRENT_PBAR.get(), **pbar_kwargs)
         except ImportError:
             pbar = None
 
@@ -104,13 +104,13 @@ class progress(tqdm):
         self.show()
 
     def __enter__(self):
-        self.nested_token = IS_NESTED.set(True)  # noqa
+        if self.has_viewer:
+            self._current_token = CURRENT_PBAR.set(id(self))  # noqa
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if IS_NESTED.get():
-            IS_NESTED.reset(self.nested_token)
         if self.has_viewer:
+            CURRENT_PBAR.reset(self._current_token)
             self._pbar.parentWidget().close()
         return super().__exit__(exc_type, exc_value, traceback)
 
@@ -146,7 +146,7 @@ class progress(tqdm):
             return
         if self.has_viewer:
             # still need to close groups of pbars outside context
-            if not IS_NESTED.get():
+            if not CURRENT_PBAR.get():
                 self._pbar.parentWidget().close()
             # otherwise we just close the current progress bar
             self._pbar.close()
