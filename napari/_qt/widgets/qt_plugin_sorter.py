@@ -262,7 +262,7 @@ class QtPluginSorter(QWidget):
     ----------
     plugin_manager : PluginManager, optional
         An instance of a PluginManager. by default, the main
-        :class:`~napari.plugins.plugin_manager` instance
+        ``napari.plugins.plugin_manager`` instance
     parent : QWidget, optional
         Optional parent widget, by default None
     initial_hook : str, optional
