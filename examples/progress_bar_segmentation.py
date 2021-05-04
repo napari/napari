@@ -6,7 +6,7 @@ import numpy as np
 import napari
 
 from time import sleep
-from napari.qt.progress import progress
+from napari.qt import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from skimage.filters import (
