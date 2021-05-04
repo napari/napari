@@ -67,18 +67,15 @@ def test_dock_widget_registration(
 @pytest.fixture
 def test_plugin_widgets(monkeypatch, test_napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
+    tnpm = test_napari_plugin_manager
     dock_widgets = {
         "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
         "TestP2": {"Widg3": (Widg3, {})},
     }
-    monkeypatch.setattr(
-        test_napari_plugin_manager, "_dock_widgets", dock_widgets
-    )
+    monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
 
     function_widgets = {'TestP3': {'magic': magicfunc}}
-    monkeypatch.setattr(
-        test_napari_plugin_manager, "_function_widgets", function_widgets
-    )
+    monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
     yield
 
 

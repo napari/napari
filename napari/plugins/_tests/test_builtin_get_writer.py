@@ -11,7 +11,6 @@ def test_get_writer_succeeds(
     test_napari_plugin_manager, tmpdir, layer_data_and_types
 ):
     """Test writing layers data."""
-    # test_napari_plugin_manager.register(_builtins)
 
     _, layer_data, layer_types, filenames = layer_data_and_types
     path = os.path.join(tmpdir, 'layers_folder')
