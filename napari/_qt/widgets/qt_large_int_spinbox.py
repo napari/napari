@@ -1,6 +1,14 @@
-from qtpy.QtCore import QSize, Signal
+from enum import Enum
+
+from qtpy.QtCore import QSize, Qt, Signal
 from qtpy.QtGui import QFontMetrics, QValidator
 from qtpy.QtWidgets import QAbstractSpinBox, QStyle, QStyleOptionSpinBox
+
+
+class EmitPolicy(Enum):
+    EmitIfChanged = 0
+    AlwaysEmit = 1
+    NeverEmit = 2
 
 
 class AnyIntValidator(QValidator):
@@ -8,10 +16,11 @@ class AnyIntValidator(QValidator):
         super().__init__(parent)
 
     def validate(self, input: str, pos: int):
-        if input.isnumeric():
+        if not input.lstrip("-"):
+            return QValidator.Intermediate, input, len(input)
+        if input.lstrip("-").isnumeric():
             return QValidator.Acceptable, input, len(input)
-        else:
-            return QValidator.Invalid, input, len(input)
+        return QValidator.Invalid, input, len(input)
 
 
 class QtLargeIntSpinBox(QAbstractSpinBox):
@@ -33,6 +42,7 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
         self._minimum: int = 0
         self._maximum: int = 2 ** 64 - 1
         self._single_step: int = 1
+        self._pending_emit = False
         validator = AnyIntValidator(self)
         self.lineEdit().setValidator(validator)
         self.lineEdit().textChanged.connect(self._editor_text_changed)
@@ -42,10 +52,18 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
         return self._value
 
     def setValue(self, value):
+        self._setValue(value, EmitPolicy.EmitIfChanged)
+
+    def _setValue(self, value, policy):
         self._value, old = self._bound(int(value)), self._value
+        self._pending_emit = False
         self._updateEdit()
         self.update()
-        if self._value != old:
+
+        if policy is EmitPolicy.AlwaysEmit or (
+            policy is EmitPolicy.EmitIfChanged and self._value != old
+        ):
+            self._pending_emit = False
             self.textChanged.emit(self.lineEdit().displayText())
             self.valueChanged.emit(self._value)
 
@@ -77,15 +95,47 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
         self.setMinimum(minimum)
         self.setMaximum(maximum)
 
+    def _interpret(self, policy):
+        text = self.lineEdit().displayText() or str(self._value)
+        v = int(text)
+        self._setValue(v, policy)
+
+    def focusOutEvent(self, e) -> None:
+        if self._pending_emit:
+            self._interpret(EmitPolicy.EmitIfChanged)
+        return super().focusOutEvent(e)
+
+    def closeEvent(self, e) -> None:
+        if self._pending_emit:
+            self._interpret(EmitPolicy.EmitIfChanged)
+        return super().closeEvent(e)
+
+    def keyPressEvent(self, e) -> None:
+        if e.key() in (Qt.Key_Enter, Qt.Key_Return):
+            self._interpret(
+                EmitPolicy.AlwaysEmit
+                if self.keyboardTracking()
+                else EmitPolicy.EmitIfChanged
+            )
+        return super().keyPressEvent(e)
+
     def stepBy(self, steps: int) -> None:
         step = self._single_step
-        self.setValue(self._bound(self._value + (step * steps)))
+        old = self._value
+        e = EmitPolicy.EmitIfChanged
+        if self._pending_emit:
+            self._interpret(EmitPolicy.NeverEmit)
+            if self._value != old:
+                e = EmitPolicy.AlwaysEmit
+        self._setValue(self._bound(self._value + (step * steps)), e)
 
     def _editor_text_changed(self, t):
-        state, *_ = self.validate(t, self.lineEdit().cursorPosition())
-        if state == QValidator.Acceptable:
-            self.setValue(int(t))
+        if self.keyboardTracking():
+            self._setValue(int(t), EmitPolicy.EmitIfChanged)
             self.lineEdit().setFocus()
+            self._pending_emit = False
+        else:
+            self._pending_emit = True
 
     def _bound(self, value):
         return max(self._minimum, min(self._maximum, value))

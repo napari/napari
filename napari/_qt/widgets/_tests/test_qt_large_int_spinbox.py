@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from qtpy.QtCore import Qt
 
 from napari._qt.widgets.qt_large_int_spinbox import QtLargeIntSpinBox
 
@@ -62,6 +63,29 @@ def test_large_spinbox_signals(qtbot):
     with qtbot.waitSignal(sb.textChanged) as sgnl:
         sb.setValue(240)
     assert sgnl.args == ['240']
+
+
+def test_keyboard_tracking(qtbot):
+    sb = QtLargeIntSpinBox()
+    qtbot.addWidget(sb)
+    assert sb.value() == 0
+    sb.setKeyboardTracking(False)
+    with qtbot.assertNotEmitted(sb.valueChanged):
+        sb.lineEdit().setText('20')
+    assert sb.lineEdit().text() == '20'
+    assert sb.value() == 0
+    assert sb._pending_emit is True
+
+    with qtbot.waitSignal(sb.valueChanged) as sgnl:
+        qtbot.keyPress(sb, Qt.Key_Enter)
+    assert sgnl.args == [20]
+    assert sb._pending_emit is False
+
+    sb.setKeyboardTracking(True)
+    with qtbot.waitSignal(sb.valueChanged) as sgnl:
+        sb.lineEdit().setText('25')
+    assert sb._pending_emit is False
+    assert sgnl.args == [25]
 
 
 def test_in_viewer(make_napari_viewer):
