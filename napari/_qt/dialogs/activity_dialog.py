@@ -3,6 +3,7 @@ from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QScrollArea,
@@ -29,6 +30,10 @@ class ActivityDialog(QDialog):
         self.setSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
+
+        opacity_effect = QGraphicsOpacityEffect(self)
+        opacity_effect.setOpacity(0.8)
+        self.setGraphicsEffect(opacity_effect)
 
         self.baseWidget = QWidget()
 
