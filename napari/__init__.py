@@ -17,9 +17,6 @@ def __getattr__(name):
     from .utils.notifications import notification_manager
     from .viewer import Viewer
 
-    if name == 'Viewer':
-        return Viewer
-
     # This must come before .plugins
     _magicgui.register_types_with_magicgui()
 
