@@ -3,16 +3,6 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
-
-def get_calling_function_name(max_depth: int):
-    """Inspect stack up to max_depth and return first function name outside of progress.py"""
-    for finfo in inspect.stack()[2:max_depth]:
-        if not finfo.filename.endswith("progress.py"):
-            return finfo.function
-
-    return None
-
-
 _tqdm_kwargs = {
     p.name
     for p in inspect.signature(tqdm.__init__).parameters.values()
@@ -77,9 +67,10 @@ class progress(tqdm):
 
         # get progress bar added to viewer
         try:
-            from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
+            from .widgets.qt_progress_bar import get_pbar  # noqa
 
             pbar = get_pbar(**pbar_kwargs)
+        # if no qt we revert to standard tqdm
         except ImportError:
             pbar = None
 
@@ -102,12 +93,7 @@ class progress(tqdm):
         if desc:
             self.set_description(desc)
         else:
-            desc = get_calling_function_name(max_depth=5)
-            if desc:
-                self.set_description(desc)
-            else:
-                # TODO: pick a better default
-                self.set_description("Progress Bar")
+            self.set_description("progress")
 
         self.show()
 
@@ -160,4 +146,14 @@ class progress(tqdm):
 
 
 def progrange(*args, **kwargs):
+    """Shorthand for `progress(range(*args), **kwargs)`.
+
+    Adds tqdm based progress bar to napari viewer, if it
+    exists, and returns the wrapped range object.
+
+    Returns
+    -------
+    progress
+        wrapped range object
+    """
     return progress(range(*args), **kwargs)
