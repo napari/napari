@@ -467,7 +467,7 @@ class QtViewer(QSplitter):
                 ext_str = trans._("All Files (*);; Image file types:;;{ext_str}", ext_str=ext_str) 
 
             elif selected_layer._type_string == 'points':
-                ext_str = "All Files (*);; *.csv;;"
+                ext_str = trans._("All Files (*);; *.csv;;")
             else:
                 # layer other than image or points
                 ext_str = "All Files(*);;"
