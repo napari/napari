@@ -49,6 +49,7 @@ from .utils import (
     str_to_qbytearray,
 )
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_welcome import QtWidgetOverlay
 
 
 class _QtMainWindow(QMainWindow):
@@ -360,10 +361,10 @@ class Window:
         self._activity_btn.clicked.connect(self._toggle_activity_dock)
 
         self._qt_window._activity_dialog.setParent(
-            self.qt_viewer._canvas_overlay
+            self.qt_viewer.findChildren(QtWidgetOverlay)[0].parent()
         )
         move_activity_dialog_to_bottom_right = partial(
-            move_to_bottom_right, self._qt_window._activity_dialog
+            move_to_bottom_right, self._qt_window._activity_dialog, (16, 18)
         )
         self.qt_viewer._canvas_overlay.resized.connect(
             move_activity_dialog_to_bottom_right
