@@ -458,16 +458,22 @@ class QtViewer(QSplitter):
             if selected_layer._type_string == 'image':
 
                 ext = imsave_extensions()
-                ext_list = []
 
+                ext_list = []
                 for val in ext:
                     ext_list.append("*" + val)
 
                 ext_str = ';;'.join(ext_list)
-                ext_str = trans._("All Files (*);; Image file types:;;{ext_str}", ext_str=ext_str) 
+
+                ext_str = trans._(
+                    "All Files (*);; Image file types:;;{ext_str}",
+                    ext_str=ext_str,
+                )
 
             elif selected_layer._type_string == 'points':
+
                 ext_str = trans._("All Files (*);; *.csv;;")
+
             else:
                 # layer other than image or points
                 ext_str = trans._("All Files (*);;")
