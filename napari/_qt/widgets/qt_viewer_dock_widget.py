@@ -1,3 +1,4 @@
+import warnings
 from functools import reduce
 from itertools import count
 from operator import ior
@@ -19,6 +20,14 @@ from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
 
 counter = count()
+_sentinel = object()
+
+_SHORTCUT_DEPRECATION_STRING = trans._(
+    'The shortcut parameter is deprecated since version 0.4.8, please use the '
+    'action and shortcut manager APIs. The new action manager and shortcut API '
+    'allow user configuration and localisation. (got {shortcut})',
+    shortcut="{shortcut}",
+)
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -41,11 +50,15 @@ class QtViewerDockWidget(QDockWidget):
         By default, all areas are allowed.
     shortcut : str, optional
         Keyboard shortcut to appear in dropdown menu.
+        .. deprecated:: 0.4.8
+
+            The shortcut parameter is deprecated since version 0.4.8, please use
+            the action and shortcut manager APIs. The new action manager and
+            shortcut API allow user configuration and localisation.
     add_vertical_stretch : bool, optional
         Whether to add stretch to the bottom of vertical widgets (pushing
         widgets up towards the top of the allotted area, instead of letting
         them distribute across the vertical space).  By default, True.
-
     """
 
     def __init__(
@@ -56,7 +69,7 @@ class QtViewerDockWidget(QDockWidget):
         name: str = '',
         area: str = 'bottom',
         allowed_areas: Optional[List[str]] = None,
-        shortcut=None,
+        shortcut=_sentinel,
         object_name: str = '',
         add_vertical_stretch=True,
     ):
@@ -80,7 +93,15 @@ class QtViewerDockWidget(QDockWidget):
             )
         self.area = area
         self.qt_area = areas[area]
-        self.shortcut = shortcut
+        if shortcut is not _sentinel:
+            warnings.warn(
+                _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            shortcut = None
+        self._shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
@@ -131,6 +152,15 @@ class QtViewerDockWidget(QDockWidget):
         self.title = QtCustomTitleBar(self, title=self.name)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+    @property
+    def shortcut(self):
+        warnings.warn(
+            _SHORTCUT_DEPRECATION_STRING,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._shortcut
 
     def setFeatures(self, features):
         super().setFeatures(features)
