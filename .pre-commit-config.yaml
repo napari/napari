@@ -23,3 +23,7 @@ repos:
     - id: pyupgrade
       args: ["--py37-plus"]
       exclude: _vendor|vendored|examples
+-   repo: https://github.com/seddonym/import-linter
+    rev: v1.2.1
+    hooks:
+    - id: import-linter
