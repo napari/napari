@@ -5,7 +5,7 @@ import json
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Dict, List, Optional, Any
 
 from appdirs import user_config_dir
 from yaml import safe_dump, safe_load
@@ -66,7 +66,9 @@ class SettingsManager:
     experimental: ExperimentalSettings
 
     def __init__(
-        self, config_path: Optional[str] = None, save_to_disk: bool = True
+        self,
+        config_path: Optional[Path] = None,
+        save_to_disk: bool = True,
     ):
         self._config_path = (
             Path(user_config_dir(self._APPNAME, self._APPAUTHOR))
@@ -74,10 +76,10 @@ class SettingsManager:
             else Path(config_path)
         )
         self._save_to_disk = save_to_disk
-        self._settings: dict[str, BaseNapariSettings] = {}
-        self._defaults: dict[str, BaseNapariSettings] = {}
-        self._plugins: list = []
-        self._env_settings: dict[str, Any] = {}
+        self._settings: Dict[str, BaseNapariSettings] = {}
+        self._defaults: Dict[str, BaseNapariSettings] = {}
+        self._plugins: List[str] = []
+        self._env_settings: Dict[str, Any] = {}
 
         if not self._config_path.is_dir():
             os.makedirs(self._config_path)
@@ -233,4 +235,43 @@ class SettingsManager:
         self._plugins.append(plugin)
 
 
-SETTINGS = SettingsManager()
+_SETTINGS: Optional[SettingsManager] = None
+
+
+def get_settings(path: Optional[Path] = None) -> SettingsManager:
+    """
+    Get settings for a given path.
+
+    Parameters
+    ----------
+    path: Path, optional
+        The path to read/write the settings from.
+
+    Returns
+    -------
+    SettingsManager
+        The settings manager.
+
+    Notes
+    -----
+    The path can only be set once per session.
+    """
+    global _SETTINGS
+
+    if _SETTINGS is None:
+        config_path = path.resolve() if path else None
+        _SETTINGS = SettingsManager(config_path=config_path)
+    elif path is not None:
+        import inspect
+
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        raise Exception(
+            trans._(
+                "The path can only be set once per session. Settings called from {calframe[1][3]}",
+                deferred=True,
+                calframe=calframe,
+            )
+        )
+
+    return _SETTINGS

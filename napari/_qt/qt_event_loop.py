@@ -17,7 +17,7 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.qt_notification import (
     NapariQtNotification,
@@ -165,7 +165,7 @@ def get_app(
         app.setWindowIcon(QIcon(kwargs.get('icon')))
 
     if ipy_interactive is None:
-        ipy_interactive = SETTINGS.application.ipy_interactive
+        ipy_interactive = get_settings().application.ipy_interactive
     _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
