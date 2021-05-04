@@ -9,6 +9,7 @@ import warnings
 from itertools import chain, repeat
 from typing import Any, ClassVar, Dict, List, Tuple
 
+from PyQt5.QtWidgets import QToolTip
 from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
@@ -109,6 +110,10 @@ class _QtMainWindow(QMainWindow):
                 inst.append(inst.pop(inst.index(self)))
             except ValueError:
                 pass
+        if e.type() == QEvent.ToolTip and self.qt_viewer.viewer.tooltip_text:
+            QToolTip.showText(
+                e.globalPos(), self.qt_viewer.viewer.tooltip_text
+            )
         return super().event(e)
 
     def _load_window_settings(self):
