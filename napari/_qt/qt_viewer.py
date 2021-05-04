@@ -470,7 +470,7 @@ class QtViewer(QSplitter):
                 ext_str = trans._("All Files (*);; *.csv;;")
             else:
                 # layer other than image or points
-                ext_str = "All Files(*);;"
+                ext_str = trans._("All Files (*);;")
 
         else:
             # multiple layers.
