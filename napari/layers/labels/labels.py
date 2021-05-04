@@ -192,15 +192,17 @@ class Labels(_ImageBase):
         if properties is None:
             self._properties = {}
             label_index = {}
+        elif isinstance(properties, dict):
+            self._properties = properties
+            label_index = None
         else:
             properties = self._validate_properties(properties)
             self._properties, label_index = dataframe_to_properties(properties)
         if label_index is None:
             props = self._properties
-            if len(props) > 0:
-                self._label_index = self._map_index(properties)
-            else:
-                self._label_index = {}
+            self._label_index = (
+                self._map_index(properties) if len(props) > 0 else {}
+            )
         else:
             self._label_index = label_index
 
@@ -388,7 +390,11 @@ class Labels(_ImageBase):
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
+        if isinstance(properties, dict):
+            self._label_index = properties.get(
+                "index", self._map_index(properties)
+            )
+        else:
             properties, label_index = dataframe_to_properties(properties)
             if label_index is None:
                 label_index = self._map_index(properties)
@@ -457,7 +463,7 @@ class Labels(_ImageBase):
             if not isinstance(v, np.ndarray):
                 properties[k] = np.asarray(v)
 
-        if not all([v == lens[0] for v in lens]):
+        if any(v != lens[0] for v in lens):
             raise ValueError(
                 trans._(
                     "the number of items must be equal for all properties",
@@ -468,9 +474,8 @@ class Labels(_ImageBase):
 
     def _map_index(self, properties: Dict[str, np.ndarray]) -> Dict[int, int]:
         """Map rows in given properties to label indices"""
-        arbitrary_key = list(properties.keys())[0]
-        label_index = {i: i for i in range(len(properties[arbitrary_key]))}
-        return label_index
+        max_len = max(len(x) for x in properties.values())
+        return {i: i for i in range(max_len)}
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1109,16 +1114,16 @@ class Labels(_ImageBase):
         if self._label_index and self._properties:
             value = self.get_value(position, world=world)
             # if the cursor is not outside the image or on the background
-            if value is not None:
-                if self.multiscale:
-                    label_value = value[1]
-                else:
-                    label_value = value
+            if value is not None and value != 0:
+                label_value = value[1] if self.multiscale else value
                 if label_value in self._label_index:
                     idx = self._label_index[label_value]
                     for k, v in self._properties.items():
                         if k != 'index':
-                            msg += f', {k}: {v[idx]}'
+                            try:
+                                msg += f', {k}: {v[idx]}'
+                            except IndexError:
+                                pass
                 else:
                     msg += ' ' + trans._('[No Properties]')
         return msg
