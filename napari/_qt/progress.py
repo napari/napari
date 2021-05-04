@@ -67,9 +67,10 @@ class progress(tqdm):
 
         # get progress bar added to viewer
         try:
-            from .._qt.widgets.qt_progress_bar import get_pbar  # noqa
+            from .widgets.qt_progress_bar import get_pbar  # noqa
 
             pbar = get_pbar(**pbar_kwargs)
+        # if no qt we revert to standard tqdm
         except ImportError:
             pbar = None
 
