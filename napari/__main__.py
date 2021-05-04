@@ -22,9 +22,9 @@ class InfoAction(argparse.Action):
 
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
-        from napari.plugins import discover_dock_widgets, plugin_manager
+        from .plugins import plugin_manager
 
-        discover_dock_widgets()
+        plugin_manager.discover_widgets()
         errors = plugin_manager.get_errors()
         if errors:
             names = {e.plugin_name for e in errors}
@@ -38,9 +38,9 @@ class PluginInfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
         logging.basicConfig(level=logging.WARNING)
-        from napari.plugins import discover_dock_widgets, plugin_manager
+        from .plugins import plugin_manager
 
-        discover_dock_widgets()
+        plugin_manager.discover_widgets()
         print(plugin_manager)
 
         errors = plugin_manager.get_errors()
@@ -274,17 +274,17 @@ def _run():
 
     else:
         if args.with_:
-            from napari import plugins
+            from .plugins import plugin_manager
 
             # if a plugin widget has been requested, this will fail immediately
             # if the requested plugin/widget is not available.
-            plugins.discover_dock_widgets()
+            plugin_manager.discover_widgets()
             pname, *wnames = args.with_
             if wnames:
                 for wname in wnames:
-                    plugins.get_plugin_widget(pname, wname)
+                    plugin_manager.get_widget(pname, wname)
             else:
-                plugins.get_plugin_widget(pname)
+                plugin_manager.get_widget(pname)
 
         from napari._qt.widgets.qt_splash_screen import NapariSplashScreen
 
