@@ -4,12 +4,10 @@ napari command line viewer.
 import argparse
 import logging
 import os
-import platform
 import runpy
 import sys
 import warnings
 from ast import literal_eval
-from distutils.version import StrictVersion
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
@@ -379,6 +377,9 @@ def main():
     # See https://github.com/napari/napari/pull/1554 and
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
+    import platform
+    from distutils.version import StrictVersion
+
     _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
     ) > StrictVersion('19.0.0')
