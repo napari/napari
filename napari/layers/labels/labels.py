@@ -193,8 +193,11 @@ class Labels(_ImageBase):
             self._properties = {}
             label_index = {}
         elif isinstance(properties, dict):
+            properties = self._validate_properties(properties)
+            label_index = properties.get("index", None)
+            if label_index is not None:
+                label_index = {v: i for i, v in enumerate(label_index)}
             self._properties = properties
-            label_index = None
         else:
             properties = self._validate_properties(properties)
             self._properties, label_index = dataframe_to_properties(properties)
@@ -474,6 +477,8 @@ class Labels(_ImageBase):
 
     def _map_index(self, properties: Dict[str, np.ndarray]) -> Dict[int, int]:
         """Map rows in given properties to label indices"""
+        if not properties:
+            return {}
         max_len = max(len(x) for x in properties.values())
         return {i: i for i in range(max_len)}
 
