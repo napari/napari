@@ -464,7 +464,7 @@ class QtViewer(QSplitter):
                     ext_list.append("*" + val)
 
                 ext_str = ';;'.join(ext_list)
-                ext_str = "All Files (*);; Image file types:;;" + ext_str
+                ext_str = trans._("All Files (*);; Image file types:;;{ext_str}", ext_str=ext_str) 
 
             elif selected_layer._type_string == 'points':
                 ext_str = "All Files (*);; *.csv;;"
