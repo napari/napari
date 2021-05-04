@@ -1,5 +1,6 @@
 from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
 
+from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 
@@ -97,42 +98,34 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
+        action_manager.context['viewer'] = viewer
+
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
             trans._(
-                "Open IPython terminal ({shortcut})",
-                shortcut=Shortcut('Control-Shift-C').platform,
+                "Open IPython terminal",
             ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._(
-                "Roll dimensions order for display ({shortcut})",
-                shortcut=Shortcut('Control-E').platform,
-            ),
-            lambda: self.viewer.dims._roll(),
         )
+
+        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
+
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._(
-                "Transpose displayed dimensions ({shortcut})",
-                shortcut=Shortcut('Control-T').platform,
-            ),
-            lambda: self.viewer.dims._transpose(),
         )
-        self.resetViewButton = QtViewerPushButton(
-            self.viewer,
-            'home',
-            trans._(
-                "Reset view ({shortcut})",
-                shortcut=Shortcut('Control-R').platform,
-            ),
-            lambda: self.viewer.reset_view(),
+
+        action_manager.bind_button(
+            'napari:transpose_axes', self.transposeDimsButton
         )
+
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+        action_manager.bind_button('napari:reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -140,11 +133,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        self.gridViewButton.setToolTip(
-            trans._(
-                "Toggle grid view ({shortcut})", shortcut=Shortcut("Control-R")
-            )
-        )
+        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -154,11 +143,9 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setToolTip(
-            trans._(
-                "Toggle number of displayed dimensions ({shortcut})",
-                shortcut=Shortcut("Control-Y"),
-            )
+
+        action_manager.bind_button(
+            'napari:toggle_ndisplay', self.ndisplayButton
         )
 
         layout = QHBoxLayout()
