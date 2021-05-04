@@ -92,10 +92,7 @@ class progress(tqdm):
         if desc:
             self.set_description(desc)
         else:
-            if desc:
-                self.set_description(desc)
-            else:
-                self.set_description("progress")
+            self.set_description("progress")
 
         self.show()
 
@@ -135,4 +132,14 @@ class progress(tqdm):
 
 
 def progrange(*args, **kwargs):
+    """Shorthand for `progress(range(*args), **kwargs)`.
+
+    Adds tqdm based progress bar to napari viewer, if it
+    exists, and returns the wrapped range object.
+
+    Returns
+    -------
+    progress
+        wrapped range object
+    """
     return progress(range(*args), **kwargs)
