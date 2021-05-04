@@ -301,12 +301,15 @@ class Points(Layer):
             self._properties = properties
             self._property_choices = properties
         elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
+            if not isinstance(properties, dict):
+                properties, _ = dataframe_to_properties(properties)
             self._properties = self._validate_properties(properties)
             self._property_choices = {
                 k: np.unique(v) for k, v in properties.items()
             }
         elif len(data) == 0:
+            if not isinstance(properties, dict):
+                properties, _ = dataframe_to_properties(properties)
             self._property_choices = {
                 k: np.asarray(v) for k, v in properties.items()
             }
