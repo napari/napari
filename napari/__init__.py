@@ -3,6 +3,28 @@ try:
 except ImportError:
     __version__ = "not-installed"
 
+__all__ = [
+    '__version__',
+    'gui_qt',
+    'notification_manager',
+    'run',
+    'save_layers',
+    'sys_info',
+    'view_image',
+    'view_labels',
+    'view_path',
+    'view_points',
+    'view_shapes',
+    'view_surface',
+    'view_tracks',
+    'view_vectors',
+    'Viewer',
+]
+
+
+def __dir__():
+    return __all__
+
 
 def __getattr__(name):
     # this unused import is here to fix a very strange bug.
@@ -43,26 +65,3 @@ def __getattr__(name):
         return locals()[name]
     except KeyError:
         raise AttributeError(f"module 'napari' has no attribute {name!r}")
-
-
-__all__ = [
-    '__version__',
-    'gui_qt',
-    'notification_manager',
-    'run',
-    'save_layers',
-    'sys_info',
-    'view_image',
-    'view_labels',
-    'view_path',
-    'view_points',
-    'view_shapes',
-    'view_surface',
-    'view_tracks',
-    'view_vectors',
-    'Viewer',
-]
-
-
-def __dir__():
-    return __all__
