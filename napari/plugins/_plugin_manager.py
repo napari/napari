@@ -292,8 +292,9 @@ class NapariPluginManager(PluginManager):
         for func in args if isinstance(args, list) else [args]:
             if not isinstance(func, FunctionType):
                 warn_message = trans._(
-                    'Plugin {plugin_name!r} provided a non-callable type to {hook_name}: {type(func)!r}. Function widget ignored.',
+                    'Plugin {plugin_name!r} provided a non-callable type to {hook_name}: {functype!r}. Function widget ignored.',
                     deferred=True,
+                    functype=type(func),
                     plugin_name=plugin_name,
                     hook_name=hook_name,
                 )
