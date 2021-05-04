@@ -17,6 +17,9 @@ def __getattr__(name):
     from .utils.notifications import notification_manager
     from .viewer import Viewer
 
+    if name == 'Viewer':
+        return Viewer
+
     # This must come before .plugins
     _magicgui.register_types_with_magicgui()
 
@@ -39,7 +42,10 @@ def __getattr__(name):
 
     os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
 
-    return locals()[name]
+    try:
+        return locals()[name]
+    except KeyError:
+        raise AttributeError(f"module 'napari' has no attribute {name!r}")
 
 
 __all__ = [
