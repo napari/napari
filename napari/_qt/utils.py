@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 
 from ..utils.misc import is_sequence
 from ..utils.translations import trans
+from .widgets.qt_dims import QtDims
 
 QBYTE_FLAG = "!QBYTE_"
 
@@ -267,9 +268,12 @@ def delete_qapp(app):
     QApplication.instance()
 
 
-def move_to_bottom_right(widg, offset=(8, 8)):
+def move_to_canvas_offset(widg, offset=(8, 8)):
     """Position widget at the bottom right edge of the parent."""
-    if not widg.parent():
-        return
-    sz = widg.parent().size() - widg.size() - QSize(*offset)
+    canvas_widg = widg.parent()
+    dims_widg = canvas_widg.findChildren(QtDims)
+    if dims_widg:
+        offset = (offset[0], offset[1] + dims_widg[0].height())
+
+    sz = canvas_widg.size() - widg.size() - QSize(*offset)
     widg.move(QPoint(sz.width(), sz.height()))
