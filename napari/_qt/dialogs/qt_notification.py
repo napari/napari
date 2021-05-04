@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import os
-from functools import partial
 from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
+    QPoint,
     QPropertyAnimation,
     QRect,
     QSize,
@@ -24,8 +24,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
-from napari._qt.utils import move_to_bottom_right
 
 from ...utils.notifications import Notification, NotificationSeverity
 from ...utils.translations import trans
@@ -86,10 +84,7 @@ class NapariQtNotification(QDialog):
         if current_window is not None:
             canvas = current_window.qt_viewer._canvas_overlay
             self.setParent(canvas)
-            self.move_self_to_bottom_right = partial(
-                move_to_bottom_right, self
-            )
-            canvas.resized.connect(self.move_self_to_bottom_right)
+            canvas.resized.connect(self.move_to_bottom_right)
 
         self.setupUi()
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -111,7 +106,14 @@ class NapariQtNotification(QDialog):
         self.setGraphicsEffect(self.opacity)
         self.opacity_anim = QPropertyAnimation(self.opacity, b"opacity", self)
         self.geom_anim = QPropertyAnimation(self, b"geometry", self)
-        move_to_bottom_right(self)
+        self.move_to_bottom_right()
+
+    def move_to_bottom_right(self, offset=(8, 8)):
+        """Position widget at the bottom right edge of the parent."""
+        if not self.parent():
+            return
+        sz = self.parent().size() - self.size() - QSize(*offset)
+        self.move(QPoint(sz.width(), sz.height()))
 
     def slide_in(self):
         """Run animation that fades in the dialog with a slight slide up."""
@@ -152,11 +154,6 @@ class NapariQtNotification(QDialog):
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
         self.opacity_anim.finished.connect(super().close)
-
-        try:
-            self.parent().resized.disconnect(self.move_self_to_bottom_right)
-        except Exception:
-            pass
 
     def toggle_expansion(self):
         """Toggle the expanded state of the notification frame."""
