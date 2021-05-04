@@ -43,7 +43,10 @@ def __getattr__(name):
 
 
 __all__ = [
-    'Viewer',
+    '__version__',
+    'gui_qt',
+    'notification_manager',
+    'run',
     'save_layers',
     'sys_info',
     'view_image',
@@ -54,6 +57,9 @@ __all__ = [
     'view_surface',
     'view_tracks',
     'view_vectors',
-    'gui_qt',
-    'run',
+    'Viewer',
 ]
+
+
+def __dir__():
+    return __all__
