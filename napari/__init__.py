@@ -34,9 +34,7 @@ def __getattr__(name):
     )
 
     del _magicgui
-
     del stats
-
     import os
 
     os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')

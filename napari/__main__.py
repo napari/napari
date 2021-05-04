@@ -227,7 +227,6 @@ def _run():
     from napari import run, view_path
     from napari.utils.settings import SETTINGS
 
-    print("in _run")
     """Main program."""
     args, kwargs = parse_sys_argv()
 
@@ -374,7 +373,6 @@ def _run_pythonw(python_path):
 
 
 def main():
-    print("in main()")
     # Ensure we're always using a "framework build" on the latest
     # macOS to ensure menubar works without needing to refocus napari.
     # We try this for macOS later than the Catelina release
@@ -401,7 +399,6 @@ def main():
         if python_path.exists():
             # Running again with pythonw will exit this script
             # and use the framework build of python.
-            print("rerun")
             _run_pythonw(python_path)
         else:
             msg = (
@@ -417,5 +414,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print("name is main")
     sys.exit(main())
