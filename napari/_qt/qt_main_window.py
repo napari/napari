@@ -9,7 +9,6 @@ import warnings
 from itertools import chain, repeat
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from PyQt5.QtWidgets import QToolTip
 from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
@@ -22,6 +21,7 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QShortcut,
+    QToolTip,
     QWidget,
 )
 
