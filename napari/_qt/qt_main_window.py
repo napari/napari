@@ -24,7 +24,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .. import plugins
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
@@ -81,6 +80,8 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
+
+        from .. import plugins
 
         # set SETTINGS plugin defaults.
         plugins.load_settings_plugin_defaults(SETTINGS)
@@ -488,6 +489,7 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close_window)
 
+        from .. import plugins
         from ..plugins import _sample_data
 
         open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
@@ -729,6 +731,8 @@ class Window:
             trans._('Add Dock Widget'), self._qt_window
         )
 
+        from .. import plugins
+
         if not plugins.dock_widgets:
             plugins.discover_dock_widgets()
 
@@ -854,6 +858,7 @@ class Window:
             A 2-tuple containing (the DockWidget instance, the plugin widget
             instance).
         """
+        from .. import plugins
         from ..viewer import Viewer
 
         Widget, dock_kwargs = plugins.get_plugin_widget(
@@ -910,6 +915,8 @@ class Window:
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
         """
+        from .. import plugins
+
         full_name = plugins.menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()

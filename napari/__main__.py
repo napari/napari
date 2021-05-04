@@ -14,15 +14,12 @@ from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
-from napari import Viewer, __version__, layers, run, view_path
-from napari.components.viewer_model import valid_add_kwargs
-from napari.utils import citation_text, sys_info
-from napari.utils.settings import SETTINGS
-
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
+        from napari.utils import sys_info
+
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
         from napari.plugins import discover_dock_widgets, plugin_manager
@@ -71,6 +68,8 @@ class PluginInfoAction(argparse.Action):
 class CitationAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --citation"
+        from napari.utils import citation_text
+
         logging.basicConfig(level=logging.WARNING)
         print(citation_text)
         sys.exit()
@@ -93,6 +92,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
         {key: val} dict suitable for the viewer.add_* methods where ``val``
         is a ``literal_eval`` result, or string.
     """
+
+    from napari.components.viewer_model import valid_add_kwargs
 
     out: Dict[str, Any] = dict()
     valid = set.union(*valid_add_kwargs().values())
@@ -127,6 +128,10 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
 def parse_sys_argv():
     """Parse command line arguments."""
+
+    from napari import __version__, layers
+    from napari.components.viewer_model import valid_add_kwargs
+
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
@@ -219,6 +224,10 @@ def parse_sys_argv():
 
 
 def _run():
+    from napari import run, view_path
+    from napari.utils.settings import SETTINGS
+
+    print("in _run")
     """Main program."""
     args, kwargs = parse_sys_argv()
 
@@ -310,6 +319,7 @@ def _run():
 
 def _run_plugin_module(mod, plugin_name):
     """Register `mod` as a plugin, find/create viewer, and run napari."""
+    from napari import Viewer, run
     from napari.plugins import plugin_manager
 
     plugin_manager.register(mod, name=plugin_name)
@@ -364,6 +374,7 @@ def _run_pythonw(python_path):
 
 
 def main():
+    print("in main()")
     # Ensure we're always using a "framework build" on the latest
     # macOS to ensure menubar works without needing to refocus napari.
     # We try this for macOS later than the Catelina release
@@ -390,6 +401,7 @@ def main():
         if python_path.exists():
             # Running again with pythonw will exit this script
             # and use the framework build of python.
+            print("rerun")
             _run_pythonw(python_path)
         else:
             msg = (
@@ -405,4 +417,5 @@ def main():
 
 
 if __name__ == '__main__':
+    print("name is main")
     sys.exit(main())
