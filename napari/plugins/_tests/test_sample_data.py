@@ -5,24 +5,14 @@ import pytest
 from napari_plugin_engine import napari_hook_implementation
 
 import napari
-from napari import plugins
 from napari.layers._source import Source
 from napari.viewer import ViewerModel
 
 
-def test_sample_hook(test_plugin_manager, monkeypatch):
+def test_sample_hook(test_napari_plugin_manager):
 
     viewer = ViewerModel()
-
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(plugins.hook_specifications)
-    hook = test_plugin_manager.hook.napari_provide_sample_data
-    hook.call_historic(
-        result_callback=plugins.register_sample_data, with_impl=True
-    )
-
-    registered = {}
-    monkeypatch.setattr(plugins, "_sample_data", registered)
+    test_napari_plugin_manager.discover_sample_data()
 
     with pytest.raises(KeyError) as e:
         viewer.open_sample('test_plugin', 'random data')
@@ -51,9 +41,9 @@ def test_sample_hook(test_plugin_manager, monkeypatch):
                 },
             }
 
-    test_plugin_manager.register(test_plugin)
+    test_napari_plugin_manager.register(test_plugin)
 
-    reg = registered['test_plugin']
+    reg = test_napari_plugin_manager._sample_data['test_plugin']
     assert reg['random data']['data'] == _generate_random_data
     assert reg['random data']['display_name'] == 'random data'
     assert reg['napari logo']['data'] == LOGO

@@ -275,7 +275,6 @@ def write_layer_data_with_plugins(
     layer_data: List[FullLayerData],
     *,
     plugin_name: Optional[str] = 'builtins',
-    plugin_manager=None,
 ) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
@@ -305,9 +304,6 @@ def write_layer_data_with_plugins(
         corresponding to appropriate hook specification will be looped
         through to find the first one that can save the data. By default,
         only builtin napari implementations are used.
-    plugin_manager : plugins.PluginManager, optional
-        Instance of a napari PluginManager.  by default the main napari
-        plugin_manager will be used.
 
     Returns
     -------
@@ -316,10 +312,7 @@ def write_layer_data_with_plugins(
     """
     from tempfile import TemporaryDirectory
 
-    if not plugin_manager:
-        from . import plugin_manager as napari_plugin_manager
-
-        plugin_manager = napari_plugin_manager
+    from . import plugin_manager
 
     # remember whether it was there to begin with
     already_existed = os.path.exists(path)

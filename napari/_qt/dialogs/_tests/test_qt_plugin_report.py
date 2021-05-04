@@ -11,7 +11,7 @@ from napari._qt.dialogs import qt_plugin_report
 # qtbot fixture comes from pytest-qt
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 # monkeypatch fixture is from pytest
-def test_error_reporter(qtbot, test_plugin_manager, monkeypatch):
+def test_error_reporter(qtbot, monkeypatch):
     """test that QtPluginErrReporter shows any instantiated PluginErrors."""
 
     monkeypatch.setattr(
@@ -22,9 +22,7 @@ def test_error_reporter(qtbot, test_plugin_manager, monkeypatch):
 
     error_message = 'my special error'
     _ = PluginError(error_message, plugin_name='test_plugin', plugin="mock")
-    report_widget = qt_plugin_report.QtPluginErrReporter(
-        plugin_manager=test_plugin_manager
-    )
+    report_widget = qt_plugin_report.QtPluginErrReporter()
     qtbot.addWidget(report_widget)
 
     # the null option plus the one we created
