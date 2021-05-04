@@ -112,3 +112,9 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
         return self.style().sizeFromContents(
             QStyle.CT_SpinBox, opt, hint, self
         )
+
+    def set_dtype(self, dtype):
+        import numpy as np
+
+        iinfo = np.iinfo(dtype)
+        self.setRange(iinfo.min, iinfo.max)

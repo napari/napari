@@ -20,7 +20,7 @@ from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity
-from ..widgets.qt_large_spinbox import QtLargeIntSpinBox
+from ..widgets.qt_large_int_spinbox import QtLargeIntSpinBox
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 
@@ -92,8 +92,8 @@ class QtLabelsControls(QtLayerControls):
 
         # selection spinbox
         self.selectionSpinBox = QtLargeIntSpinBox()
+        self.selectionSpinBox.set_dtype(self.layer.data.dtype)
         self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
@@ -123,13 +123,11 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setAlignment(Qt.AlignCenter)
         self._on_n_edit_dimensions_change()
 
-        contour_sb = QtLargeIntSpinBox()
-        contour_sb.setToolTip(trans._('display contours of labels'))
-        contour_sb.valueChanged.connect(self.change_contour)
-        self.contourSpinBox = contour_sb
+        self.contourSpinBox = QtLargeIntSpinBox()
+        self.contourSpinBox.set_dtype(self.layer.data.dtype)
+        self.contourSpinBox.setToolTip(trans._('display contours of labels'))
+        self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
-        self.contourSpinBox.setSingleStep(1)
-        self.contourSpinBox.setMinimum(0)
         self.contourSpinBox.setAlignment(Qt.AlignCenter)
         self._on_contour_change()
 

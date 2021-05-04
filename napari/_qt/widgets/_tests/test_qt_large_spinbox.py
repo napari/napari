@@ -1,4 +1,7 @@
-from napari._qt.widgets.qt_large_spinbox import QtLargeIntSpinBox
+import numpy as np
+import pytest
+
+from napari._qt.widgets.qt_large_int_spinbox import QtLargeIntSpinBox
 
 
 def test_large_spinbox(qtbot):
@@ -18,6 +21,19 @@ def test_large_spinbox(qtbot):
             sb.setValue(-(10 ** e))
         assert sgnl.args == [-(10 ** e)]
         assert sb.value() == -(10 ** e)
+
+
+@pytest.mark.parametrize(
+    "dtype",
+    [int, 'uint8', np.uint8, 'int8', 'uint16', 'int16', 'uint32', 'int32'],
+)
+def test_clamp_dtype(qtbot, dtype):
+    sb = QtLargeIntSpinBox()
+    qtbot.addWidget(sb)
+    sb.set_dtype(dtype)
+    iinfo = np.iinfo(dtype)
+    assert sb.minimum() == iinfo.min
+    assert sb.maximum() == iinfo.max
 
 
 def test_large_spinbox_type(qtbot):
