@@ -23,6 +23,7 @@ from typing_extensions import TypedDict
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
+from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
 
@@ -134,21 +135,27 @@ class NapariPluginManager(PluginManager):
         plugin_name = hookimpl.plugin_name
         hook_name = 'napari_provide_sample_data'
         if not isinstance(data, dict):
-            warn(
-                f'Plugin {plugin_name!r} provided a non-dict object to '
-                f'{hook_name!r}: data ignored.'
+            warn_message = trans._(
+                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
+                deferred=True,
+                plugin_name=plugin_name,
+                hook_name=hook_name,
             )
+            warn(message=warn_message)
             return
 
         _data = {}
         for name, datum in list(data.items()):
             if isinstance(datum, dict):
                 if 'data' not in datum or 'display_name' not in datum:
-                    warn(
-                        f'In {hook_name!r}, plugin {plugin_name!r} provided an '
-                        f'invalid dict object for key {name!r} that does not have '
-                        'required keys: "data" and "display_name".  Ignoring'
+                    warn_message = trans._(
+                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that does not have required keys: "data" and "display_name". Ignoring',
+                        deferred=True,
+                        hook_name=hook_name,
+                        plugin_name=plugin_name,
+                        name=name,
                     )
+                    warn(message=warn_message)
                     continue
             else:
                 datum = {'data': datum, 'display_name': name}
@@ -157,11 +164,15 @@ class NapariPluginManager(PluginManager):
                 callable(datum['data'])
                 or isinstance(datum['data'], (str, Path))
             ):
-                warn(
-                    f'Plugin {plugin_name!r} provided invalid data for key '
-                    f'{name!r} in the dict returned by {hook_name!r}. '
-                    f'(Must be str, callable, or dict), got ({type(datum["data"])}).'
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} provided invalid data for key {name!r} in the dict returned by {hook_name!r}. (Must be str, callable, or dict), got ({dtype}).',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    name=name,
+                    hook_name=hook_name,
+                    dtype=type(datum["data"]),
                 )
+                warn(message=warn_message)
                 continue
             _data[name] = datum
 
@@ -216,10 +227,13 @@ class NapariPluginManager(PluginManager):
         for arg in args if isinstance(args, list) else [args]:
             if isinstance(arg, tuple):
                 if not arg:
-                    warn(
-                        f'Plugin {plugin_name!r} provided an invalid tuple to '
-                        f'{hook_name}.  Skipping'
+                    warn_message = trans._(
+                        'Plugin {plugin_name!r} provided an invalid tuple to {hook_name}.  Skipping',
+                        deferred=True,
+                        plugin_name=plugin_name,
+                        hook_name=hook_name,
                     )
+                    warn(message=warn_message)
                     continue
                 _cls = arg[0]
                 kwargs = arg[1] if len(arg) > 1 else {}
@@ -227,17 +241,26 @@ class NapariPluginManager(PluginManager):
                 _cls, kwargs = (arg, {})
 
             if not callable(_cls):
-                warn(
-                    f'Plugin {plugin_name!r} provided a non-callable object '
-                    f'(widget) to {hook_name}: {_cls!r}. Widget ignored.'
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} provided a non-callable object (widget) to {hook_name}: {_cls!r}. Widget ignored.',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    hook_name=hook_name,
+                    _cls=_cls,
                 )
+                warn(message=warn_message)
+
                 continue
 
             if not isinstance(kwargs, dict):
-                warn(
-                    f'Plugin {plugin_name!r} provided invalid kwargs '
-                    f'to {hook_name} for class {_cls.__name__}. Widget ignored.'
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} provided invalid kwargs to {hook_name} for class {clsname}. Widget ignored.',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    hook_name=hook_name,
+                    clsname=_cls.__name__,
                 )
+                warn(message=warn_message)
                 continue
 
             # Get widget name
@@ -249,10 +272,13 @@ class NapariPluginManager(PluginManager):
                 # tried defaultdict(dict) but got odd KeyErrors...
                 self._dock_widgets[plugin_name] = {}
             elif name in self._dock_widgets[plugin_name]:
-                warn(
-                    "Plugin '{}' has already registered a dock widget '{}' "
-                    'which has now been overwritten'.format(plugin_name, name)
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} has already registered a dock widget {name!r} which has now been overwritten',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    name=name,
                 )
+                warn(message=warn_message)
 
             self._dock_widgets[plugin_name][name] = (_cls, kwargs)
 
@@ -265,16 +291,19 @@ class NapariPluginManager(PluginManager):
         hook_name = '`napari_experimental_provide_function`'
         for func in args if isinstance(args, list) else [args]:
             if not isinstance(func, FunctionType):
-                msg = (
-                    f'Plugin {plugin_name!r} provided a non-callable type to '
-                    f'{hook_name}: {type(func)!r}. Function widget ignored.'
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} provided a non-callable type to {hook_name}: {type(func)!r}. Function widget ignored.',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    hook_name=hook_name,
                 )
+
                 if isinstance(func, tuple):
-                    msg += (
-                        " To provide multiple function widgets please use "
-                        "a LIST of callables"
+                    warn_message += trans._(
+                        " To provide multiple function widgets please use a LIST of callables",
+                        deferred=True,
                     )
-                warn(msg)
+                warn(message=warn_message)
                 continue
 
             # Get function name
@@ -284,10 +313,13 @@ class NapariPluginManager(PluginManager):
                 # tried defaultdict(dict) but got odd KeyErrors...
                 self._function_widgets[plugin_name] = {}
             elif name in self._function_widgets[plugin_name]:
-                warn(
-                    "Plugin '{}' has already registered a function widget '{}' "
-                    'which has now been overwritten'.format(plugin_name, name)
+                warn_message = trans._(
+                    'Plugin {plugin_name!r} has already registered a function widget {name!r} which has now been overwritten',
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    name=name,
                 )
+                warn(message=warn_message)
 
             self._function_widgets[plugin_name][name] = func
 
@@ -349,21 +381,32 @@ class NapariPluginManager(PluginManager):
         """
         plg_wdgs = self._dock_widgets.get(plugin_name)
         if not plg_wdgs:
-            raise KeyError(
-                f'Plugin {plugin_name!r} does not provide any dock widgets'
+            msg = trans._(
+                'Plugin {plugin_name!r} does not provide any dock widgets',
+                plugin_name=plugin_name,
+                deferred=True,
             )
+            raise KeyError(msg)
 
         if not widget_name:
             if len(plg_wdgs) > 1:
-                raise ValueError(
-                    f'Plugin {plugin_name!r} provides more than 1 dock_widget. '
-                    f'Must also provide "widget_name" from {set(plg_wdgs)}'
+                msg = trans._(
+                    'Plugin {plugin_name!r} provides more than 1 dock_widget. Must also provide "widget_name" from {avail}',
+                    avail=set(plg_wdgs),
+                    plugin_name=plugin_name,
+                    deferred=True,
                 )
+                raise ValueError(msg)
+
             widget_name = list(plg_wdgs)[0]
         else:
             if widget_name not in plg_wdgs:
-                raise KeyError(
-                    f'Plugin {plugin_name!r} does not provide '
-                    f'a widget named {widget_name!r}'
+                msg = trans._(
+                    'Plugin {plugin_name!r} does not provide a widget named {widget_name!r}',
+                    plugin_name=plugin_name,
+                    widget_name=widget_name,
+                    deferred=True,
                 )
+                raise KeyError(msg)
+
         return plg_wdgs[widget_name]

@@ -729,7 +729,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         except KeyError:
             samples = plugin_manager.available_samples()
             msg = trans._(
-                f"Plugin {plugin!r} does not provide sample data named {sample!r}. ",
+                "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
+                plugin=plugin,
+                sample=sample,
                 deferred=True,
             )
             if samples:
