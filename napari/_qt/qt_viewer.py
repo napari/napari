@@ -474,7 +474,7 @@ class QtViewer(QSplitter):
 
         else:
             # multiple layers.
-            ext_str = "All Files(*);;"
+            ext_str = trans._("All Files (*);;")
 
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
