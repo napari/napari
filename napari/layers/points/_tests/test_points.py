@@ -45,7 +45,7 @@ def test_empty_points_with_properties():
         'label': np.array(['label1', 'label2']),
         'cont_prop': np.array([0], dtype=float),
     }
-    pts = Points(properties=properties)
+    pts = Points(property_choices=properties)
     current_props = {k: v[0] for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
@@ -69,7 +69,7 @@ def test_empty_points_with_properties_list():
     See: https://github.com/napari/napari/pull/1069
     """
     properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
-    pts = Points(properties=properties)
+    pts = Points(property_choices=properties)
     current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
@@ -89,7 +89,7 @@ def test_empty_layer_with_face_colormap():
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         face_color='point_type',
         face_colormap='gray',
     )
@@ -107,7 +107,7 @@ def test_empty_layer_with_edge_colormap():
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='point_type',
         edge_colormap='gray',
     )
@@ -124,7 +124,7 @@ def test_empty_layer_with_text_properties():
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     text_kwargs = {'text': 'point_type', 'color': 'red'}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         text=text_kwargs,
     )
     np.testing.assert_equal(layer.text.values, np.empty(0))
@@ -140,7 +140,7 @@ def test_empty_layer_with_text_formatted():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         text='point_type: {point_type:.2f}',
     )
     np.testing.assert_equal(layer.text.values, np.empty(0))
@@ -1008,7 +1008,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     default_properties = {'point_type': np.array(['A'])}
     color_cycle = ['red', 'blue']
     points_kwargs = {
-        'properties': default_properties,
+        'property_choices': default_properties,
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
