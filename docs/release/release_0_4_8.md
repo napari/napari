@@ -25,6 +25,8 @@ https://github.com/napari/napari
 - Add button to drop into debugger in the traceback viewer. (#2534)
 - PR: Add initial welcome screen on canvas (#2542)
 - Text overlay visual (#2595)
+- Add global progress wrapper and ProgressBar widget (#2580)
+- Add FOV to camera model and slider popup (#2636)
 
 ## Improvements
 
@@ -38,9 +40,11 @@ https://github.com/napari/napari
 - Move plugin sorter (#2501)
 - Add ColorManager to Vectors (#2512)
 - PR: Enhance translation methods (#2517)
+- Cleanup plugins.__init__, better test isolation (#2535)
 - PR: Add typing to schema_version (#2536)
 - PR: Add initial restart implementation (#2540)
 - Add data setter for `surface` layers (#2544)
+- Fewer interpolation options (#2552)
 - Extract shortcut into their own object. (#2554)
 - example of using magicgui with thread_worker (#2577)
 - Add example tying slider change to point properties change (#2582)
@@ -50,6 +54,11 @@ https://github.com/napari/napari
 - PR: Add option to save state separate from geometry (#2606)
 - QtLargeIntSpinbox for label controls (#2608)
 - Support varying number of dimensions during labels painting (#2609)
+- Return widgets created by `add_plugin_dock_widget` (#2635)
+- add _QtMainWindow.current (#2638)
+- Relax dask test (#2641)
+- Add table header style (#2645)
+- QLargeIntSpinbox with QAbstractSpinbox and python model (#2648)
 
 ## Bug Fixes
 
@@ -76,6 +85,8 @@ https://github.com/napari/napari
 - PR: Update model and actions on menu (#2602)
 - Fix z-index of notifications (hidden by welcome window) (#2611)
 - add missing QSpinBox import in Labels layer controls (#2619)
+- Use dtype.type when passing to downstream NumPy functions (#2632)
+- Fix notifications when something other than napari or ipython creates QApp (#2633)
 
 ## API Changes
 
@@ -102,23 +113,29 @@ https://github.com/napari/napari
 - fix typo in docs CI (#2588)
 - only copy the autosummary templates (#2600)
 - DOC: typos. (#2614)
+- Update event loop documentation for gui_qt deprecation (#2639)
 
 ## Build Tools and Support
 
 - Add a simple property-based test using Hypothesis (#2469)
 - PR: Add check for strings missing translations (#2521)
+- check if opengl file exists (#2630)
+- Remove test warnings again, minimize output, hide more async stuff (#2642)
+- Remove `raw_stylesheet` (#2643)
+- Add link to top level project roadmap page (#2652)
 
 ## Other Pull Requests
 
 - Update PULL_REQUEST_TEMPLATE.md (#2497)
 
 
-## 18 authors added to this release (alphabetical)
+## 19 authors added to this release (alphabetical)
 
 - [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Chris Barnes](https://github.com/napari/napari/commits?author=clbarnes) - @clbarnes
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Fifourche](https://github.com/napari/napari/commits?author=Fifourche) - @Fifourche
+- [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
@@ -135,12 +152,14 @@ https://github.com/napari/napari
 - [Zac Hatfield-Dodds](https://github.com/napari/napari/commits?author=Zac-HD) - @Zac-HD
 
 
-## 18 reviewers added to this release (alphabetical)
+## 20 reviewers added to this release (alphabetical)
 
+- [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Chris Barnes](https://github.com/napari/napari/commits?author=clbarnes) - @clbarnes
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Emil Melnikov](https://github.com/napari/napari/commits?author=emilmelnikov) - @emilmelnikov
 - [Fifourche](https://github.com/napari/napari/commits?author=Fifourche) - @Fifourche
+- [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Gonzalo Peña-Castellanos](https://github.com/napari/napari/commits?author=goanpeca) - @goanpeca
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Jeremy Asuncion](https://github.com/napari/napari/commits?author=codemonkey800) - @codemonkey800
@@ -155,3 +174,4 @@ https://github.com/napari/napari
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
+
