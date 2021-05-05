@@ -5,8 +5,8 @@ wrap.
 import inspect
 import sys
 import time
+import warnings
 from functools import partial
-from itertools import chain, repeat
 from typing import Any, ClassVar, Dict, List, Tuple
 
 from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
@@ -25,7 +25,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .. import plugins
+from ..plugins import menu_item_template as plugin_menu_item_template
+from ..plugins import plugin_manager
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
@@ -48,8 +49,13 @@ from .utils import (
     qbytearray_to_str,
     str_to_qbytearray,
 )
-from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_viewer_dock_widget import (
+    _SHORTCUT_DEPRECATION_STRING,
+    QtViewerDockWidget,
+)
 from .widgets.qt_welcome import QtWidgetOverlay
+
+_sentinel = object()
 
 
 class _QtMainWindow(QMainWindow):
@@ -88,11 +94,11 @@ class _QtMainWindow(QMainWindow):
         self._status_bar = self.statusBar()
 
         # set SETTINGS plugin defaults.
-        plugins.load_settings_plugin_defaults(SETTINGS)
+        SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
 
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
-            plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+            plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
 
@@ -513,10 +519,9 @@ class Window:
         closeAction.setShortcut('Ctrl+W')
         closeAction.triggered.connect(self._qt_window.close_window)
 
-        from ..plugins import _sample_data
-
+        plugin_manager.discover_sample_data()
         open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
-        for plugin_name, samples in _sample_data.items():
+        for plugin_name, samples in plugin_manager._sample_data.items():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -529,7 +534,7 @@ class Window:
                 if multiprovider:
                     action = QAction(display_name, parent=self._qt_window)
                 else:
-                    full_name = plugins.menu_item_template.format(
+                    full_name = plugin_menu_item_template.format(
                         plugin_name, display_name
                     )
                     action = QAction(full_name, parent=self._qt_window)
@@ -754,13 +759,10 @@ class Window:
             trans._('Add Dock Widget'), self._qt_window
         )
 
-        if not plugins.dock_widgets:
-            plugins.discover_dock_widgets()
+        plugin_manager.discover_widgets()
 
         # Add a menu item (QAction) for each available plugin widget
-        docks = zip(repeat("dock"), plugins.dock_widgets.items())
-        funcs = zip(repeat("func"), plugins.function_widgets.items())
-        for hook_type, (plugin_name, widgets) in chain(docks, funcs):
+        for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -773,7 +775,7 @@ class Window:
                 if multiprovider:
                     action = QAction(wdg_name, parent=self._qt_window)
                 else:
-                    full_name = plugins.menu_item_template.format(*key)
+                    full_name = plugin_menu_item_template.format(*key)
                     action = QAction(full_name, parent=self._qt_window)
 
                 def _add_widget(*args, key=key, hook_type=hook_type):
@@ -889,15 +891,15 @@ class Window:
         """
         from ..viewer import Viewer
 
-        Widget, dock_kwargs = plugins.get_plugin_widget(
+        Widget, dock_kwargs = plugin_manager.get_widget(
             plugin_name, widget_name
         )
         if not widget_name:
-            # if widget_name wasn't provided, `get_plugin_widget` will have
+            # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = list(plugins.dock_widgets[plugin_name])[0]
+            widget_name = list(plugin_manager._dock_widgets[plugin_name])[0]
 
-        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             dock_widget = self._dock_widgets[full_name]
             dock_widget.show()
@@ -943,12 +945,12 @@ class Window:
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
         """
-        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()
             return
 
-        func = plugins.function_widgets[plugin_name][widget_name]
+        func = plugin_manager._function_widgets[plugin_name][widget_name]
 
         # Add function widget
         self.add_function_widget(
@@ -962,7 +964,7 @@ class Window:
         name: str = '',
         area: str = 'bottom',
         allowed_areas=None,
-        shortcut=None,
+        shortcut=_sentinel,
         add_vertical_stretch=True,
     ):
         """Convenience method to add a QDockWidget to the main window.
@@ -990,6 +992,12 @@ class Window:
             widgets up towards the top of the allotted area, instead of letting
             them distribute across the vertical space).  By default, True.
 
+            .. deprecated:: 0.4.8
+
+                The shortcut parameter is deprecated since version 0.4.8, please use
+                the action and shortcut manager APIs. The new action manager and
+                shortcut API allow user configuration and localisation.
+
         Returns
         -------
         dock_widget : QtViewerDockWidget
@@ -1005,16 +1013,31 @@ class Window:
                 )
 
             self._unnamed_dockwidget_count += 1
+        if shortcut is not _sentinel:
+            warnings.warn(
+                _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            dock_widget = QtViewerDockWidget(
+                self.qt_viewer,
+                widget,
+                name=name,
+                area=area,
+                allowed_areas=allowed_areas,
+                shortcut=shortcut,
+                add_vertical_stretch=add_vertical_stretch,
+            )
+        else:
+            dock_widget = QtViewerDockWidget(
+                self.qt_viewer,
+                widget,
+                name=name,
+                area=area,
+                allowed_areas=allowed_areas,
+                add_vertical_stretch=add_vertical_stretch,
+            )
 
-        dock_widget = QtViewerDockWidget(
-            self.qt_viewer,
-            widget,
-            name=name,
-            area=area,
-            allowed_areas=allowed_areas,
-            shortcut=shortcut,
-            add_vertical_stretch=add_vertical_stretch,
-        )
         self._add_viewer_dock_widget(dock_widget)
 
         if hasattr(widget, 'reset_choices'):
@@ -1070,8 +1093,14 @@ class Window:
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
-        if dock_widget.shortcut is not None:
-            action.setShortcut(dock_widget.shortcut)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            # deprecating with 0.4.8, but let's try to keep compatibility.
+            shortcut = dock_widget.shortcut
+        if shortcut is not None:
+            action.setShortcut(shortcut)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget: QWidget):
@@ -1129,7 +1158,7 @@ class Window:
         name: str = '',
         area=None,
         allowed_areas=None,
-        shortcut=None,
+        shortcut=_sentinel,
     ):
         """Turn a function into a dock widget via magicgui.
 
@@ -1178,14 +1207,21 @@ class Window:
 
         if allowed_areas is None:
             allowed_areas = [area]
-
-        return self.add_dock_widget(
-            widget,
-            name=name or function.__name__.replace('_', ' '),
-            area=area,
-            allowed_areas=allowed_areas,
-            shortcut=shortcut,
-        )
+        if shortcut is not _sentinel:
+            return self.add_dock_widget(
+                widget,
+                name=name or function.__name__.replace('_', ' '),
+                area=area,
+                allowed_areas=allowed_areas,
+                shortcut=shortcut,
+            )
+        else:
+            return self.add_dock_widget(
+                widget,
+                name=name or function.__name__.replace('_', ' '),
+                area=area,
+                allowed_areas=allowed_areas,
+            )
 
     def resize(self, width, height):
         """Resize the window.

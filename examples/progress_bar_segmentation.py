@@ -6,7 +6,7 @@ import numpy as np
 import napari
 
 from time import sleep
-from napari._qt.progress import progress
+from napari.qt import progress
 from qtpy.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from skimage.filters import (
@@ -16,7 +16,6 @@ from skimage.filters import (
     threshold_triangle,
     threshold_yen,
 )
-from skimage.data import cells3d
 from skimage.measure import label
 
 # we will try each of these thresholds on our image

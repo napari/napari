@@ -1,9 +1,6 @@
 import pytest
 from napari_plugin_engine import napari_hook_implementation
 
-from napari import plugins
-from napari.plugins import hook_specifications
-
 
 def func(x, y):
     pass
@@ -29,39 +26,29 @@ fwidget_args = {
 }
 
 
-# test_plugin_manager and add_implementation fixtures are
-#     provided by napari_plugin_engine._testsupport
-# monkeypatch, request, recwarn fixtures are from pytest
+# test_napari_plugin_manager fixture from napari.conftest
+# request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', fwidget_args.values(), ids=fwidget_args.keys())
 def test_function_widget_registration(
-    arg, test_plugin_manager, monkeypatch, request, recwarn
+    arg, test_napari_plugin_manager, request, recwarn
 ):
     """Test that function widgets get validated and registerd correctly."""
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(hook_specifications)
-    hook = test_plugin_manager.hook.napari_experimental_provide_function
 
-    with monkeypatch.context() as m:
-        registered = {}
-        m.setattr(plugins, "function_widgets", registered)
+    class Plugin:
+        @napari_hook_implementation
+        def napari_experimental_provide_function():
+            return arg
 
-        class Plugin:
-            @napari_hook_implementation
-            def napari_experimental_provide_function():
-                return arg
+    test_napari_plugin_manager.discover_widgets()
+    test_napari_plugin_manager.register(Plugin)
 
-        test_plugin_manager.register(Plugin)
-        hook.call_historic(
-            result_callback=plugins.register_function_widget, with_impl=True
-        )
-        if 'bad_' in request.node.name:
-            assert not registered
-            assert len(recwarn) == 1
-        else:
-            assert registered['Plugin']['func'] == func
-            assert len(recwarn) == 0
-            if 'list_func' in request.node.name:
-                assert registered['Plugin']['func2'] == func2
+    f_widgets = test_napari_plugin_manager._function_widgets
 
-
-# test_dock_widget_registration is done in `_qt._tests.test_plugin_widgets`
+    if 'bad_' in request.node.name:
+        assert not f_widgets
+        assert len(recwarn) == 1
+    else:
+        assert f_widgets['Plugin']['func'] == func
+        assert len(recwarn) == 0
+        if 'list_func' in request.node.name:
+            assert f_widgets['Plugin']['func2'] == func2
