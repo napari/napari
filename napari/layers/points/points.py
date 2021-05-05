@@ -60,7 +60,7 @@ class Points(Layer):
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str, array-like
+    edge_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
@@ -72,7 +72,7 @@ class Points(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    face_color : str, array-like
+    face_color : str, array-like, dict
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
@@ -226,6 +226,8 @@ class Points(Layer):
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
     """
+
+    # TODO  write better documentation for edge_color and face_color
 
     # The max number of points that will ever be used to render the thumbnail
     # If more points are present then they are randomly subsampled
@@ -498,50 +500,49 @@ class Points(Layer):
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
+    @staticmethod
+    def _update_color_manager(
+        color_manager, properties, current_properties, name
+    ):
+        if color_manager.color_properties is not None:
+            if color_manager.color_properties.name not in properties:
+                color_manager.color_mode = ColorMode.DIRECT
+                color_manager.color_properties = None
+                warnings.warn(
+                    trans._(
+                        'property used for {name} dropped',
+                        deferred=True,
+                        name=name,
+                    ),
+                    RuntimeWarning,
+                )
+            else:
+                color_name = color_manager.color_properties.name
+                color_manager.color_properties = {
+                    'name': color_name,
+                    'values': properties[color_name],
+                    'current_value': current_properties[color_name],
+                }
+
     @properties.setter
     def properties(
         self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
     ):
         self._properties, self._property_choices = self._prepare_properties(
-            properties
+            properties, self._property_choices
         )
-        if self._face.color_properties is not None:
-            if self._face.color_properties.name not in self._properties:
-                self._face.color_mode = ColorMode.DIRECT
-                self._face.color_properties = None
-                warnings.warn(
-                    trans._(
-                        'property used for face_color dropped',
-                        deferred=True,
-                    ),
-                    RuntimeWarning,
-                )
-            else:
-                face_color_name = self._face.color_properties.name
-                self._face.color_properties = {
-                    'name': face_color_name,
-                    'values': self._properties[face_color_name],
-                    'current_value': self.current_properties[face_color_name],
-                }
-
-        if self._edge.color_properties is not None:
-            if self._edge.color_properties.name not in self._properties:
-                self._edge.color_mode = ColorMode.DIRECT
-                self._edge.color_properties = None
-                warnings.warn(
-                    trans._(
-                        'property used for edge_color dropped',
-                        deferred=True,
-                    ),
-                    RuntimeWarning,
-                )
-            else:
-                edge_color_name = self._edge.color_properties.name
-                self._edge.color_properties = {
-                    'name': edge_color_name,
-                    'values': self._properties[edge_color_name],
-                    'current_value': self.current_properties[edge_color_name],
-                }
+        self._update_color_manager(
+            self._face,
+            self._properties,
+            self._current_properties,
+            "face_color",
+        )
+        self._update_color_manager(
+            self._edge,
+            self._properties,
+            self._current_properties,
+            "edge_color",
+        )
 
         if self.text.values is not None:
             self.refresh_text()
