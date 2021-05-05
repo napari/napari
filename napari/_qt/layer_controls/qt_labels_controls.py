@@ -91,9 +91,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
-        self.selectionSpinBox = QtLargeIntSpinBox(self.layer.data.dtype)
+        self.selectionSpinBox = QtLargeIntSpinBox()
+        self.selectionSpinBox.set_dtype(self.layer.data.dtype)
         self.selectionSpinBox.setKeyboardTracking(False)
-        self.selectionSpinBox.setMinimum(0)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
@@ -123,13 +123,11 @@ class QtLabelsControls(QtLayerControls):
         ndim_sb.setAlignment(Qt.AlignCenter)
         self._on_n_edit_dimensions_change()
 
-        contour_sb = QtLargeIntSpinBox(self.layer.data.dtype)
-        contour_sb.setToolTip(trans._('display contours of labels'))
-        contour_sb.valueChanged.connect(self.change_contour)
-        self.contourSpinBox = contour_sb
+        self.contourSpinBox = QtLargeIntSpinBox()
+        self.contourSpinBox.set_dtype(self.layer.data.dtype)
+        self.contourSpinBox.setToolTip(trans._('display contours of labels'))
+        self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)
-        self.contourSpinBox.setSingleStep(1)
-        self.contourSpinBox.setMinimum(0)
         self.contourSpinBox.setAlignment(Qt.AlignCenter)
         self._on_contour_change()
 
