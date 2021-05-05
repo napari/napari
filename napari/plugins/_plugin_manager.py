@@ -22,6 +22,7 @@ from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
+from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
@@ -42,6 +43,15 @@ class NapariPluginManager(PluginManager):
 
     def __init__(self):
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
+
+        self.events = EmitterGroup(
+            source=self,
+            registered=None,  # emits event.value
+            disabled=None,  # emits event.added & event.removed
+        )
+        self._blocked: EventedSet[str] = EventedSet()
+        self._blocked.events.changed.connect(self.events.disabled)
+
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
@@ -63,6 +73,11 @@ class NapariPluginManager(PluginManager):
                 from . import _skimage_data
 
                 self.register(_skimage_data, name='scikit-image')
+
+    def register(self, namespace: Any, name: Optional[str]) -> Optional[str]:
+        name = super().register(namespace, name=name)
+        self.events.registered(value=name)
+        return name
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
