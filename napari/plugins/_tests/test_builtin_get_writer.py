@@ -3,38 +3,25 @@ import os
 import pytest
 from napari_plugin_engine import PluginCallError
 
-from napari.plugins import hook_specifications
-from napari.plugins._builtins import (
-    napari_get_writer,
-    napari_write_image,
-    napari_write_points,
-    write_layer_data_with_plugins,
-)
+from napari.plugins import _builtins
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_succeeds(
-    test_plugin_manager, tmpdir, layer_data_and_types, add_implementation
+    test_napari_plugin_manager, tmpdir, layer_data_and_types
 ):
     """Test writing layers data."""
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(hook_specifications)
 
     _, layer_data, layer_types, filenames = layer_data_and_types
     path = os.path.join(tmpdir, 'layers_folder')
 
-    add_implementation(napari_write_image)
-    add_implementation(napari_write_points)
-    add_implementation(napari_get_writer)
-    writer = test_plugin_manager.hook.napari_get_writer(
+    writer = test_napari_plugin_manager.hook.napari_get_writer(
         path=path, layer_types=layer_types
     )
 
     # Write data
-    assert writer == write_layer_data_with_plugins
-    assert writer(
-        path, layer_data, plugin_name=None, plugin_manager=test_plugin_manager
-    )
+    assert writer == _builtins.write_layer_data_with_plugins
+    assert writer(path, layer_data, plugin_name=None)
 
     # Check folder and files exist
     assert os.path.isdir(path)
@@ -48,29 +35,25 @@ def test_get_writer_succeeds(
 # the layer_data_and_types fixture is defined in napari/conftest.py
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_bad_plugin(
-    test_plugin_manager, temporary_hookimpl, tmpdir, layer_data_and_types
+    test_napari_plugin_manager, tmpdir, layer_data_and_types
 ):
     """Test cleanup when get_writer has an exception."""
+    from napari_plugin_engine import napari_hook_implementation
 
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(hook_specifications)
-
-    def bad_write_points(path, data, meta):
-        raise ValueError("shoot!")
+    class bad_plugin:
+        @napari_hook_implementation
+        def napari_write_points(path, data, meta):
+            raise ValueError("shoot!")
 
     _, layer_data, layer_types, filenames = layer_data_and_types
 
+    test_napari_plugin_manager.register(bad_plugin)
     # this time we try writing directly to the tmpdir (which already exists)
-    writer = napari_get_writer(tmpdir, layer_types)
+    writer = _builtins.napari_get_writer(tmpdir, layer_types)
+
     # call writer with a bad hook implementation inserted
-    with temporary_hookimpl(bad_write_points, 'napari_write_points'):
-        with pytest.raises(PluginCallError):
-            writer(
-                tmpdir,
-                layer_data,
-                plugin_name=None,
-                plugin_manager=test_plugin_manager,
-            )
+    with pytest.raises(PluginCallError):
+        writer(tmpdir, layer_data, plugin_name=None)
 
     # should have deleted all new files, but not the tmpdir
     assert os.path.isdir(tmpdir)
@@ -79,16 +62,11 @@ def test_get_writer_bad_plugin(
 
     # now try writing to a nested folder inside of tmpdir
     path = os.path.join(tmpdir, 'layers_folder')
-    writer = napari_get_writer(path, layer_types)
+    writer = _builtins.napari_get_writer(path, layer_types)
+
     # call writer with a bad hook implementation inserted
-    with temporary_hookimpl(bad_write_points, 'napari_write_points'):
-        with pytest.raises(PluginCallError):
-            writer(
-                tmpdir,
-                layer_data,
-                plugin_name=None,
-                plugin_manager=test_plugin_manager,
-            )
+    with pytest.raises(PluginCallError):
+        writer(tmpdir, layer_data, plugin_name=None)
 
     # should have deleted the new nested folder, but not the tmpdir
     assert os.path.isdir(tmpdir)

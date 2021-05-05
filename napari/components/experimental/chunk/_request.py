@@ -1,17 +1,21 @@
 """LayerRef, ChunkLocation and ChunkRequest classes.
 """
+from __future__ import annotations
+
 import contextlib
 import logging
 import time
 import weakref
-from typing import NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ....types import ArrayLike
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
