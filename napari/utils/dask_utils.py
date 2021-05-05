@@ -9,6 +9,7 @@ import dask
 import dask.array as da
 from dask.cache import Cache
 
+from .. import utils
 from ..utils.translations import trans
 
 
@@ -35,8 +36,6 @@ def create_dask_cache(
         An instance of a Dask Cache
     """
     import psutil
-
-    from .. import utils
 
     if nbytes is None:
         nbytes = psutil.virtual_memory().total * mem_fraction
@@ -89,8 +88,6 @@ def resize_dask_cache(
     """
 
     import psutil
-
-    from .. import utils
 
     if nbytes is None and mem_fraction is not None:
         nbytes = psutil.virtual_memory().total * mem_fraction
