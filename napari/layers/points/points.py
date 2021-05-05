@@ -343,11 +343,7 @@ class Points(Layer):
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
         # value is used when adding new points
-        if np.isscalar(size):
-            self._current_size = np.asarray(size)
-        else:
-            self._current_size = 10
-
+        self._current_size = np.asarray(size) if np.isscalar(size) else 10
         # Indices of selected points
         self._selected_data = set()
         self._selected_data_stored = set()
@@ -1071,7 +1067,7 @@ class Points(Layer):
         )
 
         # Update properties based on selected points
-        if len(self._selected_data) == 0:
+        if not self._selected_data:
             self._set_highlight()
             return
         index = list(self._selected_data)
@@ -1102,7 +1098,7 @@ class Points(Layer):
                 self.current_properties = properties
         self._set_highlight()
 
-    def interaction_box(self, index) -> np.ndarray:
+    def interaction_box(self, index) -> Optional[np.ndarray]:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1117,14 +1113,12 @@ class Points(Layer):
             starting in the upper-left corner.
         """
         if len(index) == 0:
-            box = None
-        else:
-            data = self._view_data[index]
-            size = self._view_size[index]
-            data = points_to_squares(data, size)
-            box = create_box(data)
+            return None
 
-        return box
+        data = self._view_data[index]
+        size = self._view_size[index]
+        data = points_to_squares(data, size)
+        return create_box(data)
 
     @property
     def mode(self) -> str:
@@ -1185,7 +1179,7 @@ class Points(Layer):
                 )
             )
 
-        if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
+        if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
 
         self._mode = mode
@@ -1203,9 +1197,7 @@ class Points(Layer):
             Array of coordinates for the N points in view
         """
         if len(self._indices_view) > 0:
-
             data = self.data[np.ix_(self._indices_view, self._dims_displayed)]
-
         else:
             # if no points in this slice send dummy data
             data = np.zeros((0, self._ndisplay))
@@ -1224,7 +1216,7 @@ class Points(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> np.ndarray:
+    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -1232,6 +1224,7 @@ class Points(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
+        # TODO check if it is used, as it has wrong signature and this not cause errors.
         return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property
@@ -1284,11 +1277,7 @@ class Points(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
-
+            self.editable = self._ndisplay < 3
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -1333,7 +1322,7 @@ class Points(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
         else:
-            return [], []
+            return [], np.empty(0)
 
     def _get_value(self, position) -> Union[None, int]:
         """Value of the data at a position in data coordinates.
@@ -1370,7 +1359,7 @@ class Points(Layer):
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
-        self._indices_view = indices
+        self._indices_view = np.array(indices)
         # get the selected points that are in view
         self._selected_view = list(
             np.intersect1d(
@@ -1413,9 +1402,7 @@ class Points(Layer):
                     and not self._is_selecting
                 ):
                     hover_point = list(self._indices_view).index(self._value)
-                    if hover_point in index:
-                        pass
-                    else:
+                    if hover_point not in index:
                         index.append(hover_point)
                 index.sort()
             else:
@@ -1491,7 +1478,7 @@ class Points(Layer):
         """Removes selected points if any."""
         index = list(self.selected_data)
         index.sort()
-        if len(index) > 0:
+        if index:
             self._size = np.delete(self._size, index, axis=0)
             with self._edge.events.blocker_all():
                 self._edge._remove(indices_to_remove=index)
