@@ -412,6 +412,5 @@ class QtPluginSorter(QWidget):
         call_order : CallOrderDict
 
         """
-        from ... import plugins
 
-        return plugins.plugin_manager.call_order()
+        return napari_plugin_manager.call_order()
