@@ -435,7 +435,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             )
         else:
             self._interpolation[self._ndisplay] = Interpolation(interpolation)
-        self.events.interpolation()
+        self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
     def rendering(self):
