@@ -97,7 +97,8 @@ def test_progress_nested_viewer(make_napari_viewer):
             pbr2 = progress(range(2))
             prog_groups = get_progress_groups(viewer)
             assert len(prog_groups) == 1
-            assert prog_groups[0].layout().count() == 2
+            # two pbars + separator
+            assert prog_groups[0].layout().count() == 3
             pbr2.close()
 
 
