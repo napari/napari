@@ -7,9 +7,8 @@ from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
 
-from napari._qt.progress import progress
-
 from ..utils.translations import trans
+from .qprogress import progress
 
 
 def as_generator_function(func: Callable) -> Callable:

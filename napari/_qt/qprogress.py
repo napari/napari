@@ -107,6 +107,19 @@ class progress(tqdm):
             self._pbar._set_value(self.n)
             self._pbar._set_eta(etas)
 
+    def increment(self):
+        """Update current value by 1."""
+        self.update(1)
+
+    def increment_with_overflow(self):
+        """Update if not exceeding total, else set indeterminate range."""
+        if self.n == self.total:
+            self.total = 0
+            if self.has_viewer:
+                self._pbar.setRange(0, 0)
+        else:
+            self.update(1)
+
     def set_description(self, desc):
         """Update progress bar description"""
         super().set_description(desc, refresh=True)
