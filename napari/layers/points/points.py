@@ -490,6 +490,10 @@ class Points(Layer):
             self.events.highlight()
 
     @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
+
+    @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties
@@ -1041,6 +1045,7 @@ class Points(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
+                'property_choices': self._property_choices,
                 'text': self.text._get_state(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
