@@ -128,15 +128,13 @@ class NapariPluginManager(PluginManager):
             sooner.
         """
         for spec_name, hook_caller in self.hooks.items():
-            order = []
-            for p in new_order.get(spec_name, []):
-                try:
-                    hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
+            if spec_name in new_order:
+                order = []
+                for p in new_order.get(spec_name, []):
                     order.append(p['plugin'])
-                except KeyError:
-                    pass
-            if order:
-                hook_caller.bring_to_front(order)
+                    hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
+                if order:
+                    hook_caller.bring_to_front(order)
 
     # SAMPLE DATA ---------------------------
 

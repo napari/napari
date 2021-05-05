@@ -1,11 +1,20 @@
+import copy
 import os
 import sys
 from pathlib import Path
-from typing import Sequence
+from typing import Sequence, Union
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
-from qtpy.QtCore import QEvent, QProcess, QProcessEnvironment, QSize, Qt, Slot
+from qtpy.QtCore import (
+    QEvent,
+    QProcess,
+    QProcessEnvironment,
+    QSize,
+    Qt,
+    Signal,
+    Slot,
+)
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -26,6 +35,7 @@ from qtpy.QtWidgets import (
 
 import napari.resources
 
+from ...plugins import plugin_manager
 from ...plugins.pypi import (
     ProjectInfo,
     iter_napari_plugin_info,
@@ -33,6 +43,7 @@ from ...plugins.pypi import (
 )
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
+from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
@@ -100,6 +111,9 @@ class Installer:
 
 
 class PluginListItem(QFrame):
+
+    on_changed = Signal(dict)
+
     def __init__(
         self,
         package_name: str,
@@ -114,7 +128,7 @@ class PluginListItem(QFrame):
         enabled: bool = True,
     ):
         super().__init__(parent)
-        self.setup_ui()
+        self.setup_ui(enabled)
         if plugin_name:
             self.plugin_name.setText(plugin_name)
             self.package_name.setText(f"{package_name} {version}")
@@ -155,15 +169,15 @@ class PluginListItem(QFrame):
             p = p.parent()
         return p
 
-    def setup_ui(self):
+    def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
         self.v_lay.setContentsMargins(-1, 8, -1, 8)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
         self.row1.setSpacing(8)
         self.enabled_checkbox = QCheckBox(self)
-        self.enabled_checkbox.setChecked(True)
-        self.enabled_checkbox.setDisabled(True)
+        self.enabled_checkbox.setChecked(enabled)
+        self.enabled_checkbox.stateChanged.connect(self._emit_state)
         self.enabled_checkbox.setToolTip(trans._("enable/disable"))
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -233,8 +247,23 @@ class PluginListItem(QFrame):
         self.row2.addWidget(self.package_author)
         self.v_lay.addLayout(self.row2)
 
+    def _emit_state(self, state: Union[bool, int]):
+        """Emit plugin name and state when checkbox is clicked.
+        Parameters
+        ----------
+        state: bool, int
+            Value from the checkbox indicating whether its checked or not.
+        """
+
+        plugin = self.plugin_name.text()
+        edict = {'plugin': plugin, 'state': bool(state)}
+        self.on_changed.emit(edict)
+
 
 class QPluginList(QListWidget):
+
+    on_changed = Signal(dict)
+
     def __init__(self, parent: QWidget, installer: Installer):
         super().__init__(parent)
         self.installer = installer
@@ -259,6 +288,9 @@ class QPluginList(QListWidget):
             plugin_name=plugin_name,
             enabled=enabled,
         )
+
+        widg.on_changed.connect(self.on_changed.emit)
+
         method = getattr(
             self.installer, 'uninstall' if plugin_name else 'install'
         )
@@ -290,9 +322,10 @@ class QPluginList(QListWidget):
 
 
 class QtPluginDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, disabled_list=None):
         super().__init__(parent)
         self.installer = Installer()
+        self.disabled_list = disabled_list
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.process.started.connect(self._on_installer_start)
@@ -333,6 +366,9 @@ class QtPluginDialog(QDialog):
                 meta = standard_metadata(distname)
             else:
                 meta = {}
+
+            enabled = plugin_name not in self.disabled_list
+
             self.installed_list.addItem(
                 ProjectInfo(
                     normalized_name(distname or ''),
@@ -343,7 +379,7 @@ class QtPluginDialog(QDialog):
                     meta.get('license', ''),
                 ),
                 plugin_name=plugin_name,
-                enabled=plugin_name in plugin_manager.plugins,
+                enabled=enabled,
             )
         # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
@@ -360,6 +396,52 @@ class QtPluginDialog(QDialog):
         self.worker.finished.connect(self.working_indicator.hide)
         self.worker.finished.connect(self._update_count_in_label)
         self.worker.start()
+
+    def update_state(self, plugin_state):
+        """Emit plugin state whecn checkbox is triggered.
+        Parameters
+        ----------
+        new_state: dict
+            new_state = {
+                'plugin': str
+                'state': bool
+            }
+        """
+        disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
+        if plugin_state['plugin'] in disabled_plugins:
+            # already here, need to remove it, because now it is enabled again.
+            if plugin_state['state'] is True:
+                disabled_plugins.remove(plugin_state['plugin'])
+
+                plugin_manager.set_blocked(plugin_state['plugin'], False)
+                plugin_manager.discover()
+
+        else:
+            # this plugin is not in the disabled plugins, and is now disabled, needs to be added.
+            if plugin_state['state'] is False:
+                disabled_plugins.add(plugin_state['plugin'])
+
+                plugin_manager.set_blocked(plugin_state['plugin'], True)
+
+                # remove plugin from various lists in plugins
+                if plugin_state['plugin'] in plugin_manager._dock_widgets:
+
+                    del plugin_manager._dock_widgets[plugin_state['plugin']]
+
+                if plugin_state['plugin'] in plugin_manager._function_widgets:
+                    del plugin_manager._function_widgets[
+                        plugin_state['plugin']
+                    ]
+
+                if plugin_state['plugin'] in plugin_manager._sample_data:
+                    del plugin_manager._sample_data[plugin_state['plugin']]
+
+        SETTINGS.plugins.disabled_plugins = disabled_plugins
+
+        # need to reset call order
+        plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+
+        self.plugin_sorter.refresh()
 
     def setup_ui(self):
         self.resize(1080, 640)
@@ -379,6 +461,7 @@ class QtPluginDialog(QDialog):
         lay.setContentsMargins(0, 2, 0, 2)
         lay.addWidget(QLabel(trans._("Installed Plugins")))
         self.installed_list = QPluginList(installed, self.installer)
+        self.installed_list.on_changed.connect(self.update_state)
         lay.addWidget(self.installed_list)
 
         uninstalled = QWidget(self.v_splitter)
@@ -420,7 +503,7 @@ class QtPluginDialog(QDialog):
         self.show_status_btn.setFixedWidth(100)
         self.show_sorter_btn = QPushButton(trans._("<< Show Sorter"), self)
         self.close_btn = QPushButton(trans._("Close"), self)
-        self.close_btn.clicked.connect(self.reject)
+        self.close_btn.clicked.connect(self.accept)
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)

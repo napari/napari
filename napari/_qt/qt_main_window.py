@@ -2,6 +2,7 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import copy
 import inspect
 import sys
 import time
@@ -90,6 +91,12 @@ class _QtMainWindow(QMainWindow):
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
             plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+
+        else:
+            # need to set the call_order for plugin_dialog to work
+            SETTINGS.plugins.call_order = copy.deepcopy(
+                SETTINGS._defaults['plugins'].call_order
+            )
 
         _QtMainWindow._instances.append(self)
 
@@ -563,10 +570,21 @@ class Window:
                 win.resize(self._qt_window._preferences_dialog_size)
 
             self._qt_window._preferences_dialog = win
+            win.valueChanged.connect(self._reset_plugin_state)
             win.closed.connect(self._on_preferences_closed)
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
+
+    def _reset_plugin_state(self):
+        # resetting plugin states in plugin manager
+        plugin_manager._blocked.clear()
+
+        plugin_manager.discover()
+
+        # need to reset call order to defaults
+
+        plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
     def _on_preferences_closed(self):
         """Reset preferences dialog variable."""
@@ -778,7 +796,9 @@ class Window:
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
 
-        self.plugin_dialog = QtPluginDialog(self._qt_window)
+        self.plugin_dialog = QtPluginDialog(
+            self._qt_window, copy.deepcopy(SETTINGS.plugins.disabled_plugins)
+        )
         self.plugin_dialog.exec_()
 
     def _show_plugin_err_reporter(self):

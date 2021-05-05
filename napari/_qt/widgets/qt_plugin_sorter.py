@@ -394,17 +394,6 @@ class QtPluginSorter(QWidget):
     def refresh(self):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
-    def set_setting_default_value(self):
-        """On start up, this function is used to set the defaults in settings.
-        Note: use before loading in the saved settings.
-        """
-        if SETTINGS._defaults["plugins"].call_order is None:
-            setattr(
-                SETTINGS._defaults['plugins'],
-                'call_order',
-                self.plugin_manager.call_order(),
-            )
-
     def value(self):
         """Returns the call order from the plugin manager.
 
