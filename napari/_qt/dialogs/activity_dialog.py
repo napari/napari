@@ -1,4 +1,3 @@
-from PyQt5.QtWidgets import QWidget
 from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
@@ -9,6 +8,7 @@ from qtpy.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
+    QWidget,
 )
 
 MIN_WIDTH = 250
