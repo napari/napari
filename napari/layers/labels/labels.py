@@ -385,8 +385,8 @@ class Labels(_ImageBase):
     @classmethod
     def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
         """
-        Args:
-        properties dict or DataFrame:
+        Parameters:
+        properties : dict or DataFrame
             properties to be transformed
 
         Returns
