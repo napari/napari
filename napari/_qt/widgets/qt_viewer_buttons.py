@@ -1,7 +1,10 @@
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
 
+from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
+from ..dialogs.qt_modal import QtPopup
 
 
 class QtLayerButtons(QFrame):
@@ -97,42 +100,34 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
+        action_manager.context['viewer'] = viewer
+
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
             trans._(
-                "Open IPython terminal ({shortcut})",
-                shortcut=Shortcut('Control-Shift-C').platform,
+                "Open IPython terminal",
             ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            trans._(
-                "Roll dimensions order for display ({shortcut})",
-                shortcut=Shortcut('Control-E').platform,
-            ),
-            lambda: self.viewer.dims._roll(),
         )
+
+        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
+
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            trans._(
-                "Transpose displayed dimensions ({shortcut})",
-                shortcut=Shortcut('Control-T').platform,
-            ),
-            lambda: self.viewer.dims._transpose(),
         )
-        self.resetViewButton = QtViewerPushButton(
-            self.viewer,
-            'home',
-            trans._(
-                "Reset view ({shortcut})",
-                shortcut=Shortcut('Control-R').platform,
-            ),
-            lambda: self.viewer.reset_view(),
+
+        action_manager.bind_button(
+            'napari:transpose_axes', self.transposeDimsButton
         )
+
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+        action_manager.bind_button('napari:reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -140,11 +135,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        self.gridViewButton.setToolTip(
-            trans._(
-                "Toggle grid view ({shortcut})", shortcut=Shortcut("Control-R")
-            )
-        )
+        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -154,11 +145,12 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setToolTip(
-            trans._(
-                "Toggle number of displayed dimensions ({shortcut})",
-                shortcut=Shortcut("Control-Y"),
-            )
+        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ndisplayButton.customContextMenuRequested.connect(
+            self.open_perspective_popup
+        )
+        action_manager.bind_button(
+            'napari:toggle_ndisplay', self.ndisplayButton
         )
 
         layout = QHBoxLayout()
@@ -171,6 +163,29 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
+
+    def open_perspective_popup(self):
+        """Show a slider to control the viewer `camera.perspective`."""
+        if self.viewer.dims.ndisplay != 3:
+            return
+
+        # make slider connected to perspective parameter
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setRange(0, max(90, self.viewer.camera.perspective))
+        sld.setValue(self.viewer.camera.perspective)
+        sld.valueChanged.connect(
+            lambda v: setattr(self.viewer.camera, 'perspective', v)
+        )
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(trans._('Perspective'), self))
+        layout.addWidget(sld)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
 
 
 class QtDeleteButton(QPushButton):

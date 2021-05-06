@@ -1,7 +1,6 @@
 import numpy as np
 
 from napari.layers.image import Image
-from napari.layers.image.experimental._image_location import ImageLocation
 
 
 def _create_layer() -> Image:
@@ -15,6 +14,7 @@ def test_image_location():
 
     An ImageLocation is just BaseLocation plus indices.
     """
+    from napari.layers.image.experimental._image_location import ImageLocation
 
     layer1 = _create_layer()
     layer2 = _create_layer()

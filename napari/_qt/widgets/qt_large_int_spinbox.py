@@ -1,86 +1,172 @@
-import logging
+from enum import Enum
 
-import numpy as np
-from qtpy.QtCore import Signal
-from qtpy.QtWidgets import QDoubleSpinBox
+from qtpy.QtCore import QSize, Qt, Signal
+from qtpy.QtGui import QFontMetrics, QValidator
+from qtpy.QtWidgets import QAbstractSpinBox, QStyle, QStyleOptionSpinBox
 
 from ...utils._dtype import normalize_dtype
 
-logger = logging.getLogger(__name__)
+
+class EmitPolicy(Enum):
+    EmitIfChanged = 0
+    AlwaysEmit = 1
+    NeverEmit = 2
 
 
-class QtLargeIntSpinBox(QDoubleSpinBox):
-    """
-    A class for integer spinboxes backed by a double (i.e. float64).
+class AnyIntValidator(QValidator):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+
+    def validate(self, input: str, pos: int):
+        if not input.lstrip("-"):
+            return QValidator.Intermediate, input, len(input)
+        if input.lstrip("-").isnumeric():
+            return QValidator.Acceptable, input, len(input)
+        return QValidator.Invalid, input, len(input)
+
+
+class QtLargeIntSpinBox(QAbstractSpinBox):
+    """An integer spinboxes backed by unbound python integer
 
     Qt's built-in ``QSpinBox`` is backed by a signed 32-bit integer.
     This could become limiting, particularly in large dense segmentations.
-    This class behaves like a ``QSpinBox`` backed by a signed 54-bit integer.
+    This class behaves like a ``QSpinBox`` backed by an unbound python int.
 
-    Instances are associated with a ``numpy.dtype``
-    which can further constrain their maximum range,
-    and ensures that values are clamped and cast correctly
-    when using setter and getter methods.
+    Does not yet support "prefix", "suffix" or "specialValue" like QSpinBox.
     """
 
-    MAX_FLOAT64_INT = 2 ** 53
-    MIN_FLOAT64_INT = -MAX_FLOAT64_INT
+    textChanged = Signal(str)
+    valueChanged = Signal(object)
 
-    valueChanged = Signal(int)
-
-    def __init__(self, dtype=np.int64, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self._dtype = np.dtype(normalize_dtype(dtype))
-        if not np.issubdtype(self._dtype, np.integer):
-            raise ValueError(f"Spinbox dtype must be integral, got {dtype}")
-        iinfo = np.iinfo(self._dtype)
-
-        self.setSingleStep(1)
-        super().setDecimals(0)
-
-        self._min = self._dtype.type(max(iinfo.min, self.MIN_FLOAT64_INT))
-        self._max = self._dtype.type(min(iinfo.max, self.MAX_FLOAT64_INT))
-        self.setRange(self._min, self._max)
-
-    def _cast(self, value):
-        actual_val = max(self._min, min(self._max, self._dtype.type(value)))
-        if actual_val != value:
-            logger.warning(
-                "Value %s is not representable by %s(%s); using %s",
-                value,
-                type(self).__qualname__,
-                self._dtype,
-                actual_val,
-            )
-        return actual_val
-
-    def setSingleStep(self, val):
-        return super().setSingleStep(int(val))
-
-    def singleStep(self):
-        return int(super().singleStep())
-
-    def setDecimals(self):
-        raise NotImplementedError
-
-    def setValue(self, value):
-        super().setValue(self._cast(value))
+        self._value: int = 0
+        self._minimum: int = 0
+        self._maximum: int = 2 ** 64 - 1
+        self._single_step: int = 1
+        self._pending_emit = False
+        validator = AnyIntValidator(self)
+        self.lineEdit().setValidator(validator)
+        self.lineEdit().textChanged.connect(self._editor_text_changed)
+        self.setValue(0)
 
     def value(self):
-        return self._cast(super().value())
+        return self._value
 
-    def setMinimum(self, value):
-        super().setMinimum(self._cast(value))
+    def setValue(self, value):
+        self._setValue(value, EmitPolicy.EmitIfChanged)
+
+    def _setValue(self, value, policy):
+        self._value, old = self._bound(int(value)), self._value
+        self._pending_emit = False
+        self._updateEdit()
+        self.update()
+
+        if policy is EmitPolicy.AlwaysEmit or (
+            policy is EmitPolicy.EmitIfChanged and self._value != old
+        ):
+            self._pending_emit = False
+            self.textChanged.emit(self.lineEdit().displayText())
+            self.valueChanged.emit(self._value)
+
+    def _updateEdit(self):
+        new_text = str(self._value)
+        if self.lineEdit().text() == new_text:
+            return
+        self.lineEdit().setText(new_text)
+
+    def singleStep(self):
+        return self._single_step
+
+    def setSingleStep(self, step):
+        self._single_step = int(step)
 
     def minimum(self):
-        return self._cast(super().minimum())
+        return self._minimum
 
-    def setMaximum(self, value):
-        super().setMaximum(self._cast(value))
+    def setMinimum(self, min):
+        self._minimum = int(min)
 
     def maximum(self):
-        return self._cast(super().maximum())
+        return self._maximum
 
-    def setRange(self, min_, max_):
-        self.setMinimum(min_)
-        self.setMaximum(max_)
+    def setMaximum(self, max):
+        self._maximum = int(max)
+
+    def setRange(self, minimum, maximum):
+        self.setMinimum(minimum)
+        self.setMaximum(maximum)
+
+    def _interpret(self, policy):
+        text = self.lineEdit().displayText() or str(self._value)
+        v = int(text)
+        self._setValue(v, policy)
+
+    def focusOutEvent(self, e) -> None:
+        if self._pending_emit:
+            self._interpret(EmitPolicy.EmitIfChanged)
+        return super().focusOutEvent(e)
+
+    def closeEvent(self, e) -> None:
+        if self._pending_emit:
+            self._interpret(EmitPolicy.EmitIfChanged)
+        return super().closeEvent(e)
+
+    def keyPressEvent(self, e) -> None:
+        if e.key() in (Qt.Key_Enter, Qt.Key_Return):
+            self._interpret(
+                EmitPolicy.AlwaysEmit
+                if self.keyboardTracking()
+                else EmitPolicy.EmitIfChanged
+            )
+        return super().keyPressEvent(e)
+
+    def stepBy(self, steps: int) -> None:
+        step = self._single_step
+        old = self._value
+        e = EmitPolicy.EmitIfChanged
+        if self._pending_emit:
+            self._interpret(EmitPolicy.NeverEmit)
+            if self._value != old:
+                e = EmitPolicy.AlwaysEmit
+        self._setValue(self._bound(self._value + (step * steps)), e)
+
+    def _editor_text_changed(self, t):
+        if self.keyboardTracking():
+            self._setValue(int(t), EmitPolicy.EmitIfChanged)
+            self.lineEdit().setFocus()
+            self._pending_emit = False
+        else:
+            self._pending_emit = True
+
+    def _bound(self, value):
+        return max(self._minimum, min(self._maximum, value))
+
+    def stepEnabled(self):
+        flags = QAbstractSpinBox.StepNone
+        if self.isReadOnly():
+            return flags
+        if self._value < self._maximum:
+            flags |= QAbstractSpinBox.StepUpEnabled
+        if self._value > self._minimum:
+            flags |= QAbstractSpinBox.StepDownEnabled
+        return flags
+
+    def sizeHint(self):
+        self.ensurePolished()
+        fm = QFontMetrics(self.font())
+        h = self.lineEdit().sizeHint().height()
+        w = fm.horizontalAdvance(str(self._value)) + 3
+        w = max(36, w)
+        opt = QStyleOptionSpinBox()
+        self.initStyleOption(opt)
+        hint = QSize(w, h)
+        return self.style().sizeFromContents(
+            QStyle.CT_SpinBox, opt, hint, self
+        )
+
+    def set_dtype(self, dtype):
+        import numpy as np
+
+        iinfo = np.iinfo(normalize_dtype(dtype))
+        self.setRange(iinfo.min, iinfo.max)

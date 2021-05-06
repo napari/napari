@@ -117,7 +117,7 @@ def test_settings_model(settings):
 
 def test_custom_theme_settings(settings):
     # See: https://github.com/napari/napari/issues/2340
-    custom_theme_name = "blue"
+    custom_theme_name = "_test_blue_"
 
     # No theme registered yet, this should fail
     with pytest.raises(pydantic.error_wrappers.ValidationError):

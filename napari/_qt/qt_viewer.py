@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -11,6 +12,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
+from ..utils.action_manager import action_manager
 from ..utils.history import (
     get_open_history,
     get_save_history,
@@ -33,6 +35,7 @@ from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_activity_dock import QtActivityDock
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -126,6 +129,10 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
+
+        activityDock = QtActivityDock()
+        activityDock.setObjectName('activityDock')
+
         self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
@@ -142,13 +149,20 @@ class QtViewer(QSplitter):
             allowed_areas=['left', 'right'],
             object_name='layer controls',
         )
+        self.activityDock = QtViewerDockWidget(
+            self,
+            activityDock,
+            name=trans._('activity dock'),
+            area='right',
+            allowed_areas=['right', 'bottom'],
+            object_name='activity dock',
+        )
         self.dockConsole = QtViewerDockWidget(
             self,
             QWidget(),
             name=trans._('console'),
             area='bottom',
             allowed_areas=['top', 'bottom'],
-            shortcut='Ctrl+Shift+C',
             object_name='console',
         )
         self.dockConsole.setVisible(False)
@@ -161,13 +175,25 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        self.activityDock.setVisible(False)
+
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        self.viewerButtons.consoleButton.clicked.connect(
-            self.toggle_console_visibility
+        action_manager.register_action(
+            "napari:toggle_console_visibility",
+            self.toggle_console_visibility,
+            "Show/Hide IPython console",
+            self.viewer,
+        )
+        action_manager.bind_button(
+            'napari:toggle_console_visibility',
+            self.viewerButtons.consoleButton,
+        )
+        action_manager.bind_shortcut(
+            'napari:toggle_console_visibility', 'Control-Shift-C'
         )
 
         self._create_canvas()
@@ -244,25 +270,6 @@ class QtViewer(QSplitter):
         else:
             self.chunk_receiver = None
 
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            from .qt_resources import get_stylesheet
-
-            warnings.warn(
-                trans._(
-                    "The 'raw_stylesheet' attribute is deprecated and will be"
-                    "removed in version 0.4.7.  Please use "
-                    "`napari.qt.get_stylesheet` instead"
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
-
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -282,7 +289,18 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
         self.canvas.bgcolor = get_theme(self.viewer.theme)['canvas']
-        self.viewer.events.theme.connect(self.canvas._on_theme_change)
+        theme = self.viewer.events.theme
+
+        on_theme_change = self.canvas._on_theme_change
+        theme.connect(on_theme_change)
+
+        def disconnect():
+            # strange EventEmitter has no attribute _callbacks errors sometimes
+            # maybe some sort of cleanup race condition?
+            with suppress(AttributeError):
+                theme.disconnect(on_theme_change)
+
+        self.canvas.destroyed.connect(disconnect)
 
     def _add_visuals(self) -> None:
         """Add visuals for axes, scale bar, and welcome text."""
@@ -626,7 +644,7 @@ class QtViewer(QSplitter):
         _ = self.console
 
         viz = not self.dockConsole.isVisible()
-        # modulate visibility at the dock widget level as console is docakable
+        # modulate visibility at the dock widget level as console is dockable
         self.dockConsole.setVisible(viz)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
