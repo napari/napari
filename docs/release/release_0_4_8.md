@@ -20,7 +20,7 @@ napari.run()
 ```
 
 For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
+https://napari.org
 
 ## Highlights
 
