@@ -38,6 +38,10 @@ plugin](https://napari.org/plugins/stable/for_plugin_developers.html) and the
 [sample data
 specification](https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_provide_sample_data).
 
+The scale bar now has rudimentary support for physical units 📏 (#2617). To use
+it, set your scale numerically as before, then use `viewer.scale_bar.unit =
+'um'`, for example.
+
 We have also added a text overlay, which you can use to display arbitrary text
 over the viewer (#2595). You can use this to display time series time stamps,
 for example. Access it at `viewer.text_overlay`.
@@ -47,6 +51,13 @@ of dimensions during painting/filling with labels (#2609). Previously, if you
 wanted to edit segmentations in a time series, you had to choose between
 painting 2D planes, or painting in 4D. Now you can edit individual volumes
 without affecting the others.
+
+If you launch a long running process from napari, you can now display a progress
+bar on the viewer (#2580). You can find usage examples in the repo
+[here](https://github.com/napari/napari/blob/fa342dc399b636330afdb1b4cb58f919832651fd/examples/progress_bar_minimal.py)
+and
+[here](https://github.com/napari/napari/blob/fa342dc399b636330afdb1b4cb58f919832651fd/examples/progress_bar_segmentation.py).
+
 
 ## New Features
 
@@ -59,7 +70,8 @@ without affecting the others.
 - Add initial welcome screen on canvas (#2542)
 - Text overlay visual (#2595)
 - Add global progress wrapper and ProgressBar widget (#2580)
-- Add FOV to camera model and slider popup (#2636)
+- Add FOV to camera model and slider popup (#2636). Right click on the 2D/3D
+  display toggle button to get a perspective projection view in 3D.
 
 ## Improvements
 
@@ -71,18 +83,17 @@ without affecting the others.
 - Add Qt`ListModel` and `ListView` for `EventedList` (#2486)
 - New new qt layerlist (#2493)
 - Move plugin sorter (#2501)
+- Add support for passing `shape_type` through `data` attribute for `Shapes` layers (#2507)
 - Add ColorManager to Vectors (#2512)
 - Enhance translation methods (#2517)
 - Cleanup plugins.__init__, better test isolation (#2535)
 - Add typing to schema_version (#2536)
 - Add initial restart implementation (#2540)
 - Add data setter for `surface` layers (#2544)
-- Fewer interpolation options (#2552)
 - Extract shortcut into their own object. (#2554)
 - Add example tying slider change to point properties change (#2582)
 - Range of label spinbox is more dtype-aware (#2597)
 - Add generic name to unnamed dockwidgets (#2604)
-- Hide ipy interactive option (#2605)
 - Add option to save state separate from geometry (#2606)
 - QtLargeIntSpinbox for label controls (#2608)
 - Support varying number of dimensions during labels painting (#2609)
@@ -124,15 +135,30 @@ without affecting the others.
 
 ## API Changes
 
-- Remove toggle theme from drop down menu.  (#2462)
-- Add support for passing `shape_type` through `data` attribute for `Shapes` layers (#2507)
-- Deprecate gui qt (#2533)
-- Don't create a dask cache if it doesn't exist (#2590)
-- Non-dynamic base layer classes (#2624)
+- By default, napari used to create a dask cache. This has caused unforeseen
+  bugs, though, so it will no longer be done automatically. (#2590) If you
+  notice a drop in performance for your dask+napari use case, you can restore
+  the previous behaviour with
+  `napari.utils.resize_dask_cache(memory_fraction=0.1)`. You can of course also
+  experiment with other values!
 
 ## Deprecations
 
-- As noted in the  (#2533).
+- As noted at the top of these notes, `napari.gui_qt()` is deprecated (#2533).
+  Call `napari.run()` instead when you want to display the napari UI.
+
+## UI changes
+
+- Toggle theme has been removed from the menubar. (#2462) Instead, change the
+  theme in the preferences panel.
+- The number of 2D interpolation options available from the drop down menu has
+  been reduced. (#2552)
+- The ipy interactive setting has been removed from the preferences panel.
+  (#2605) You can still turn it off from the API with
+  `napari.utils.settings.SETTINGS.ipy_interactive = False`, but this is not
+  recommended.
+- The `n-dimensional` tick box in the Labels layer controls has been removed.
+  (#2609) Use "n edit dims" instead.
 
 ## Documentation
 
@@ -162,6 +188,7 @@ without affecting the others.
 ## Other Pull Requests
 
 - Update PULL_REQUEST_TEMPLATE.md (#2497)
+- Non-dynamic base layer classes (#2624)
 
 
 ## 19 authors added to this release (alphabetical)
