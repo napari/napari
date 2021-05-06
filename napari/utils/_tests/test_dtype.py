@@ -15,6 +15,7 @@ ints = ['int' + b for b in bit_depths]
 floats = ['float32', 'float64']
 complex = ['complex64', 'complex128']
 bools = ['bool']
+pure_py = ['int', 'float']
 
 
 @pytest.mark.parametrize(
@@ -45,6 +46,13 @@ def test_normalize_dtype_np_noop(module, dtype_str):
     module_arr = module.zeros(5, dtype=dtype_str)
     np_arr = np.zeros(5, dtype=normalize_dtype(module_arr.dtype))
     assert normalize_dtype(module_arr.dtype) is normalize_dtype(np_arr.dtype)
+
+
+@pytest.mark.parametrize('dtype_str', ['int', 'float'])
+def test_pure_python_types(dtype_str):
+    pure_arr = np.zeros(5, dtype=dtype_str)
+    norm_arr = np.zeros(5, dtype=normalize_dtype(dtype_str))
+    assert pure_arr.dtype is norm_arr.dtype
 
 
 # note: we don't write specific tests for zarr and dask because they use numpy
