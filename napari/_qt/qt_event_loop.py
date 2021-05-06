@@ -297,7 +297,12 @@ def _try_enable_ipython_gui(gui='qt'):
 
 
 def run(
-    *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
+    *,
+    force=False,
+    gui_exceptions=False,
+    block=False,
+    max_loop_level=1,
+    _func_name='run',
 ):
     """Start the Qt Event Loop
 
@@ -326,7 +331,7 @@ def run(
         (To avoid confusion) if no widgets would be shown upon starting the
         event loop.
     """
-    if _ipython_has_eventloop():
+    if _ipython_has_eventloop() and not block:
         # If %gui qt is active, we don't need to block again.
         return
 
