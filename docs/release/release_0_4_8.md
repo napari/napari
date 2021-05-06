@@ -103,6 +103,7 @@ and
 - Relax dask test (#2641)
 - Add table header style (#2645)
 - QLargeIntSpinbox with QAbstractSpinbox and python model (#2648)
+- Display file format options when saving layers (#2650)
 
 ## Bug Fixes
 
@@ -132,6 +133,7 @@ and
 - Add missing QSpinBox import in Labels layer controls (#2619)
 - Use dtype.type when passing to downstream NumPy functions (#2632)
 - Fix notifications when something other than napari or ipython creates QApp (#2633)
+- Update missing translations for 0.4.8 (#2664)
 
 ## API Changes
 
@@ -175,6 +177,7 @@ and
 - Only copy the autosummary templates (#2600)
 - Documentation typos (#2614)
 - Update event loop documentation for gui_qt deprecation (#2639)
+- Example using matplotlib figure (#2668)
 
 ## Build Tools and Support
 
