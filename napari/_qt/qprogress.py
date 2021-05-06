@@ -3,6 +3,8 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
+from ..utils.translations import trans
+
 _tqdm_kwargs = {
     p.name
     for p in inspect.signature(tqdm.__init__).parameters.values()
@@ -93,7 +95,7 @@ class progress(tqdm):
         if desc:
             self.set_description(desc)
         else:
-            self.set_description("progress")
+            self.set_description(trans._("progress"))
 
         self.show()
 

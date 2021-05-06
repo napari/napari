@@ -185,7 +185,7 @@ class QtViewer(QSplitter):
         action_manager.register_action(
             "napari:toggle_console_visibility",
             self.toggle_console_visibility,
-            "Show/Hide IPython console",
+            trans._("Show/Hide IPython console"),
             self.viewer,
         )
         action_manager.bind_button(
