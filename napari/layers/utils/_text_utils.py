@@ -3,6 +3,7 @@ from typing import Tuple, Union
 
 import numpy as np
 
+from ...utils.translations import trans
 from ._text_constants import Anchor, TextMode
 
 
@@ -40,7 +41,10 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
         )
     else:
         raise TypeError(
-            'view_data should be a numpy array or list when using Anchor.CENTER'
+            trans._(
+                'view_data should be a numpy array or list when using Anchor.CENTER',
+                deferred=True,
+            )
         )
     return bbox_centers
 
@@ -133,7 +137,12 @@ def _calculate_bbox_extents(view_data: Union[np.ndarray, list]) -> np.ndarray:
         bbox_min = np.array([np.min(coords, axis=0) for coords in view_data])
         bbox_max = np.array([np.max(coords, axis=0) for coords in view_data])
     else:
-        raise TypeError('view_data should be a numpy array or list')
+        raise TypeError(
+            trans._(
+                'view_data should be a numpy array or list',
+                deferred=True,
+            )
+        )
     return bbox_min, bbox_max
 
 
@@ -174,7 +183,12 @@ def format_text_direct(text, n_text: int):
     else:
         if len(text) != n_text:
             raise ValueError(
-                f'Number of text elements ({len(text)}) should equal the length of the data ({n_text})'
+                trans._(
+                    'Number of text elements ({length}) should equal the length of the data ({n_text})',
+                    deferred=True,
+                    length=len(text),
+                    n_text=n_text,
+                )
             )
 
         formatted_text = np.asarray(text)

@@ -3,6 +3,8 @@ import itertools
 import numpy as np
 import pytest
 import xarray as xr
+from numpy.core.numerictypes import issubdtype
+from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
@@ -55,25 +57,36 @@ def test_3D_labels():
 
 def test_float_labels():
     """Test instantiating labels layer with floats"""
-    shape = (10, 10)
     np.random.seed(0)
-    data = np.random.uniform(0, 20, size=shape)
-    with pytest.warns(UserWarning):
-        layer = Labels(data)
-        assert np.issubdtype(layer.data.dtype, np.integer)
+    data = np.random.uniform(0, 20, size=(10, 10))
+    with pytest.raises(TypeError):
+        Labels(data)
 
     data0 = np.random.uniform(20, size=(20, 20))
     data1 = data0[::2, ::2].astype(np.int32)
     data = [data0, data1]
-    with pytest.warns(UserWarning):
-        layer = Labels(data)
-        assert all(np.issubdtype(d.dtype, np.integer) for d in layer.data)
+    with pytest.raises(TypeError):
+        Labels(data)
+
+
+def test_bool_labels():
+    """Test instantiating labels layer with bools"""
+    data = np.zeros((10, 10), dtype=bool)
+    layer = Labels(data)
+    assert issubdtype(layer.data.dtype, np.integer)
+
+    data0 = np.zeros((20, 20), dtype=bool)
+    data1 = data0[::2, ::2].astype(np.int32)
+    data = [data0, data1]
+    layer = Labels(data)
+    assert all(issubdtype(d.dtype, np.integer) for d in layer.data)
 
 
 def test_changing_labels():
     """Test changing Labels data."""
     shape_a = (10, 15)
     shape_b = (20, 12)
+    shape_c = (10, 10)
     np.random.seed(0)
     data_a = np.random.randint(20, size=shape_a)
     data_b = np.random.randint(20, size=shape_b)
@@ -83,6 +96,14 @@ def test_changing_labels():
     assert layer.ndim == len(shape_b)
     np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
+
+    data_c = np.zeros(shape_c, dtype=bool)
+    layer.data = data_c
+    assert np.issubdtype(layer.data.dtype, np.integer)
+
+    data_c = data_c.astype(np.float32)
+    with pytest.raises(TypeError):
+        layer.data = data_c
 
 
 def test_changing_labels_dims():
@@ -210,6 +231,15 @@ def test_seed():
     layer = Labels(data, seed=0.7)
     assert layer.seed == 0.7
 
+    # ensure setting seed triggers
+    # recalculation of _all_vals
+    _all_vals_07 = layer._all_vals.copy()
+    layer.seed = 0.4
+    _all_vals_04 = layer._all_vals.copy()
+    assert_raises(
+        AssertionError, assert_array_almost_equal, _all_vals_04, _all_vals_07
+    )
+
 
 def test_num_colors():
     """Test setting number of colors in colormap."""
@@ -256,6 +286,18 @@ def test_properties():
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
+
+
+def test_default_properties_assignment():
+    """Test that the default properties value can be assigned to properties
+    see https://github.com/napari/napari/issues/2477
+    """
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    layer.properties = {}
+    assert layer.properties == {}
 
 
 def test_multiscale_properties():
@@ -374,15 +416,17 @@ def test_contiguous():
     assert layer.contiguous is False
 
 
-def test_n_dimensional():
-    """Test changing n_dimensional."""
+def test_n_edit_dimensions():
+    """Test changing the number of editable dimensions."""
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional is False
-
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+    layer.n_edit_dimensions = 2
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is False
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
@@ -554,7 +598,9 @@ def test_paint():
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
@@ -579,7 +625,8 @@ def test_paint_with_preserve_labels():
     data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
@@ -600,7 +647,8 @@ def test_paint_2d(brush_shape, expected_sum):
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
@@ -634,7 +682,8 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
@@ -650,18 +699,19 @@ def test_paint_3d(brush_shape, expected_sum):
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
 
     # Paint in 2D
     layer.paint((10, 10, 10), 3)
 
     # Paint in 3D
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.paint((10, 25, 10), 4)
 
     # Paint in 3D, preserve labels
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
@@ -746,12 +796,13 @@ def test_undo_redo(
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
-    layer.n_dimensional = n_dimensional
+    layer.n_edit_dimensions = 3 if n_dimensional else 2
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
@@ -766,3 +817,54 @@ def test_undo_redo(
     np.testing.assert_array_equal(layer.data, data_history[0])
     layer.redo()
     np.testing.assert_array_equal(layer.data, data_history[1])
+
+
+def test_ndim_fill():
+    test_array = np.zeros((5, 5, 5, 5), dtype=int)
+
+    test_array[:, 1:3, 1:3, 1:3] = 1
+
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+
+    layer.fill((0, 1, 1, 1), 2)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1, 1:3, 1:3, 1:3], 1)
+
+    layer.n_edit_dimensions = 4
+
+    layer.fill((1, 1, 1, 1), 3)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1:, 1:3, 1:3, 1:3], 3)
+
+
+def test_ndim_paint():
+    test_array = np.zeros((5, 6, 7, 8), dtype=int)
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'circle'
+    layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
+    layer.paint((1, 1, 1, 1), 1)
+
+    assert np.sum(layer.data) == 19  # 18 + center
+    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+
+    layer.n_edit_dimensions = 2  # 3x3 square
+    layer._dims_order = [1, 2, 0, 3]
+    layer.paint((4, 5, 6, 7), 8)
+    assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
+    np.testing.assert_array_equal(
+        test_array[:, 5, 6, :],
+        np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+            ]
+        ),
+    )

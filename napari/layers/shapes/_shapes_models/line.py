@@ -1,5 +1,6 @@
 import numpy as np
 
+from ....utils.translations import trans
 from .._shapes_utils import create_box
 from .shape import Shape
 
@@ -54,9 +55,11 @@ class Line(Shape):
 
         if len(data) != 2:
             raise ValueError(
-                f"""Data shape does not match a line. A
-                             line expects two end vertices,
-                             {len(data)} provided."""
+                trans._(
+                    "Data shape does not match a line. A line expects two end vertices, {number} provided.",
+                    deferred=True,
+                    number=len(data),
+                )
             )
 
         self._data = data

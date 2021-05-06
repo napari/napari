@@ -18,9 +18,9 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
-    QMainWindow,
     QPushButton,
     QSizePolicy,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -76,23 +76,16 @@ class NapariQtNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        """[summary]"""
-        super().__init__(None)
+        super().__init__()
 
-        # FIXME: this does not work with multiple viewers.
-        # we need a way to detect the viewer in which the error occured.
-        for wdg in QApplication.topLevelWidgets():
-            if isinstance(wdg, QMainWindow):
-                try:
-                    # TODO: making the canvas the parent makes it easier to
-                    # move/resize, but also means that the notification can get
-                    # clipped on the left if the canvas is too small.
-                    canvas = wdg.centralWidget().children()[1].canvas.native
-                    self.setParent(canvas)
-                    canvas.resized.connect(self.move_to_bottom_right)
-                    break
-                except Exception:
-                    pass
+        from ..qt_main_window import _QtMainWindow
+
+        current_window = _QtMainWindow.current()
+        if current_window is not None:
+            canvas = current_window.qt_viewer._canvas_overlay
+            self.setParent(canvas)
+            canvas.resized.connect(self.move_to_bottom_right)
+
         self.setupUi()
         self.setAttribute(Qt.WA_DeleteOnClose)
         self.setup_buttons(actions)
@@ -102,7 +95,7 @@ class NapariQtNotification(QDialog):
         self.message.setText(message)
         if source:
             self.source_label.setText(
-                trans._('Source: {source}'.format(source=source))
+                trans._('Source: {source}', source=source)
             )
 
         self.close_button.clicked.connect(self.close)
@@ -279,7 +272,7 @@ class NapariQtNotification(QDialog):
 
             def call_back_with_self(callback, self):
                 """
-                we need a higher order function this to capture the reference to self.
+                We need a higher order function this to capture the reference to self.
                 """
 
                 def _inner():
@@ -307,11 +300,51 @@ class NapariQtNotification(QDialog):
     def from_notification(
         cls, notification: Notification
     ) -> NapariQtNotification:
+
+        from ...utils.notifications import ErrorNotification
+
+        actions = notification.actions
+
+        if isinstance(notification, ErrorNotification):
+
+            def show_tb(parent):
+                tbdialog = QDialog(parent=parent.parent())
+                tbdialog.setModal(True)
+                # this is about the minimum width to not get rewrap
+                # and the minimum height to not have scrollbar
+                tbdialog.resize(650, 270)
+                tbdialog.setLayout(QVBoxLayout())
+
+                text = QTextEdit()
+                text.setHtml(notification.as_html())
+                text.setReadOnly(True)
+                btn = QPushButton(trans._('Enter Debugger'))
+
+                def _enter_debug_mode():
+                    btn.setText(
+                        trans._(
+                            'Now Debugging. Please quit debugger in console to continue'
+                        )
+                    )
+                    _debug_tb(notification.exception.__traceback__)
+                    btn.setText(trans._('Enter Debugger'))
+
+                btn.clicked.connect(_enter_debug_mode)
+                tbdialog.layout().addWidget(text)
+                tbdialog.layout().addWidget(btn, 0, Qt.AlignRight)
+                tbdialog.show()
+
+            actions = tuple(notification.actions) + (
+                (trans._('View Traceback'), show_tb),
+            )
+        else:
+            actions = notification.actions
+
         return cls(
             message=notification.message,
             severity=notification.severity,
             source=notification.source,
-            actions=notification.actions,
+            actions=actions,
         )
 
     @classmethod
@@ -326,3 +359,16 @@ class NapariQtNotification(QDialog):
             >= SETTINGS.application.gui_notification_level
         ):
             cls.from_notification(notification).show()
+
+
+def _debug_tb(tb):
+    import pdb
+
+    from ..utils import event_hook_removed
+
+    QApplication.processEvents()
+    QApplication.processEvents()
+    with event_hook_removed():
+        print("Entering debugger. Type 'q' to return to napari.\n")
+        pdb.post_mortem(tb)
+        print("\nDebugging finished.  Napari active again.")

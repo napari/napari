@@ -9,6 +9,7 @@ from vispy.gloo import Texture2D
 
 from ...layers.image.experimental import OctreeChunk
 from ...types import ArrayLike
+from ...utils.translations import trans
 from ..utils_gl import fix_data_dtype
 
 # Two triangles which cover a [0..1, 0..1] quad.
@@ -305,8 +306,12 @@ class TextureAtlas2D(Texture2D):
             # It will be not compatible of number of dimensions or depth
             # are wrong. Or if the data is too big to fit in one tile.
             raise ValueError(
-                f"Data with shape {octree_chunk.data.shape} is not compatible "
-                f"with this TextureAtlas2D which has tile shape {self.spec.shape}"
+                trans._(
+                    "Data with shape {shape} is not compatible with this TextureAtlas2D which has tile shape {spec_shape}",
+                    deferred=True,
+                    shape=octree_chunk.data.shape,
+                    spec_shape=self.spec.shape,
+                )
             )
 
         try:

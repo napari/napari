@@ -1,6 +1,8 @@
 import numpy as np
 import scipy.linalg
 
+from ...utils.translations import trans
+
 
 def compose_linear_matrix(rotate, scale, shear) -> np.array:
     """Compose linear transform matrix from rotate, shear, scale.
@@ -76,10 +78,10 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
         raise ValueError(
-            'Scalars are not valid values for shear.'
-            ' Shear must be an upper triangular vector'
-            ' or square matrix with ones along the main'
-            ' diagonal.'
+            trans._(
+                'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.',
+                deferred=True,
+            )
         )
     if np.array(shear).ndim == 1:
         shear_mat = expand_upper_triangular(shear)
@@ -116,7 +118,14 @@ def expand_upper_triangular(vector):
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
     if N != np.floor(N):
-        raise ValueError('%d is a strange number of shear elements' % n)
+        raise ValueError(
+            trans._(
+                '{number} is a strange number of shear elements',
+                deferred=True,
+                number=n,
+            )
+        )
+
     N = int(N)
     inds = np.triu(np.ones((N, N)), 1).astype(bool)
     upper_tri = np.eye(N)
@@ -140,7 +149,13 @@ def embed_in_identity_matrix(matrix, ndim):
         Larger matrix.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
-        raise ValueError(f'Improper transform matrix {matrix}')
+        raise ValueError(
+            trans._(
+                'Improper transform matrix {matrix}',
+                deferred=True,
+                matrix=matrix,
+            )
+        )
 
     if matrix.shape[0] == ndim:
         return matrix

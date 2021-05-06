@@ -39,12 +39,16 @@ class VispyCamera:
         self._camera.events.center.connect(self._on_center_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
         self._camera.events.angles.connect(self._on_angles_change)
+        self._camera.events.perspective.connect(self._on_perspective_change)
 
         self._on_ndisplay_change(None)
 
     @property
     def angles(self):
-        """3-tuple: Euler angles of camera in 3D viewing, in degrees."""
+        """3-tuple: Euler angles of camera in 3D viewing, in degrees.
+        Note that angles might be different than the ones that might have generated the quaternion.
+        """
+
         if self._view.camera == self._3D_camera:
             # Do conversion from quaternion representation to euler angles
             angles = quaternion2euler(
@@ -117,6 +121,18 @@ class VispyCamera:
             corner = np.subtract(self._view.camera.center[:2], scale / 2)
             self._view.camera.rect = tuple(corner) + (scale, scale)
 
+    @property
+    def perspective(self):
+        """Field of view of camera (only visible in 3D mode)."""
+        return self._3D_camera.fov
+
+    @perspective.setter
+    def perspective(self, perspective):
+        if self.perspective == perspective:
+            return
+        self._3D_camera.fov = perspective
+        self._view.camera.view_changed()
+
     def _on_ndisplay_change(self, event):
         if self._dims.ndisplay == 3:
             self._view.camera = self._3D_camera
@@ -132,6 +148,9 @@ class VispyCamera:
     def _on_zoom_change(self, event):
         self.zoom = self._camera.zoom
 
+    def _on_perspective_change(self, event):
+        self.perspective = self._camera.perspective
+
     def _on_angles_change(self, event):
         self.angles = self._camera.angles
 
@@ -146,6 +165,10 @@ class VispyCamera:
             self._camera.center = self.center
         with self._camera.events.zoom.blocker(self._on_zoom_change):
             self._camera.zoom = self.zoom
+        with self._camera.events.perspective.blocker(
+            self._on_perspective_change
+        ):
+            self._camera.perspective = self.perspective
 
 
 def viewbox_key_event(event):

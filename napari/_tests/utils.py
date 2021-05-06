@@ -97,7 +97,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == ndim
     assert view.dims.nsliders == viewer.dims.ndim

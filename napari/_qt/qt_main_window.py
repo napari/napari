@@ -3,16 +3,17 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import inspect
-import os
+import sys
 import time
-from itertools import chain, repeat
-from typing import Dict
+import warnings
+from typing import Any, ClassVar, Dict, List, Tuple
 
-from qtpy.QtCore import QPoint, QSize, Qt
+from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
     QApplication,
+    QDialog,
     QDockWidget,
     QHBoxLayout,
     QLabel,
@@ -22,10 +23,12 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .. import plugins
+from ..plugins import menu_item_template as plugin_menu_item_template
+from ..plugins import plugin_manager
 from ..utils import config, perf
+from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
-from ..utils.misc import in_jupyter
+from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -38,8 +41,12 @@ from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
 from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
-from .widgets.qt_plugin_sorter import QtPluginSorter
-from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_viewer_dock_widget import (
+    _SHORTCUT_DEPRECATION_STRING,
+    QtViewerDockWidget,
+)
+
+_sentinel = object()
 
 
 class _QtMainWindow(QMainWindow):
@@ -48,8 +55,15 @@ class _QtMainWindow(QMainWindow):
     # to their desired window icon
     _window_icon = NAPARI_ICON_PATH
 
-    def __init__(self, parent=None) -> None:
+    # To track window instances and facilitate getting the "active" viewer...
+    # We use this instead of QApplication.activeWindow for compatibility with
+    # IPython usage. When you activate IPython, it will appear that there are
+    # *no* active windows, so we want to track the most recently active windows
+    _instances: ClassVar[List['_QtMainWindow']] = []
+
+    def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
+        self.qt_viewer = qt_viewer
 
         self._quit_app = False
         self.setWindowIcon(QIcon(self._window_icon))
@@ -57,12 +71,45 @@ class _QtMainWindow(QMainWindow):
         self.setUnifiedTitleAndToolBarOnMac(True)
         center = QWidget(self)
         center.setLayout(QHBoxLayout())
+        center.layout().addWidget(qt_viewer)
         center.layout().setContentsMargins(4, 0, 4, 0)
         self.setCentralWidget(center)
 
+        self.setWindowTitle(qt_viewer.viewer.title)
+
         self._maximized_flag = False
+        self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
+
+        # set SETTINGS plugin defaults.
+        SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
+
+        # set the values in plugins to match the ones saved in SETTINGS
+        if SETTINGS.plugins.call_order is not None:
+            plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+
+        _QtMainWindow._instances.append(self)
+
+    @classmethod
+    def current(cls):
+        return cls._instances[-1] if cls._instances else None
+
+    def event(self, e):
+        if e.type() == QEvent.Close:
+            # when we close the MainWindow, remove it from the instances list
+            try:
+                _QtMainWindow._instances.remove(self)
+            except ValueError:
+                pass
+        if e.type() in {QEvent.WindowActivate, QEvent.ZOrderChange}:
+            # upon activation or raise_, put window at the end of _instances
+            try:
+                inst = _QtMainWindow._instances
+                inst.append(inst.pop(inst.index(self)))
+            except ValueError:
+                pass
+        return super().event(e)
 
     def _load_window_settings(self):
         """
@@ -171,13 +218,18 @@ class _QtMainWindow(QMainWindow):
             preferences_dialog_size,
         ) = self._get_window_settings()
 
-        SETTINGS.application.window_size = window_size
-        SETTINGS.application.window_maximized = window_maximized
-        SETTINGS.application.window_fullscreen = window_fullscreen
-        SETTINGS.application.window_position = window_position
-        SETTINGS.application.window_state = window_state
-        SETTINGS.application.preferences_size = preferences_dialog_size
-        SETTINGS.application.window_statusbar = not self._status_bar.isHidden()
+        if SETTINGS.application.save_window_geometry:
+            SETTINGS.application.window_maximized = window_maximized
+            SETTINGS.application.window_fullscreen = window_fullscreen
+            SETTINGS.application.window_position = window_position
+            SETTINGS.application.window_size = window_size
+            SETTINGS.application.window_statusbar = (
+                not self._status_bar.isHidden()
+            )
+            SETTINGS.application.preferences_size = preferences_dialog_size
+
+        if SETTINGS.application.save_window_state:
+            SETTINGS.application.window_state = window_state
 
     def _update_preferences_dialog_size(self, size):
         """Save preferences dialog size."""
@@ -187,6 +239,20 @@ class _QtMainWindow(QMainWindow):
         """Override to handle closing app or just the window."""
         self._quit_app = quit_app
         return super().close()
+
+    def close_window(self):
+        """Close active dialog or active window."""
+        parent = QApplication.focusWidget()
+        while parent is not None:
+            if isinstance(parent, QMainWindow):
+                self.close()
+                break
+
+            if isinstance(parent, QDialog):
+                parent.close()
+                break
+
+            parent = parent.parent()
 
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
@@ -198,8 +264,7 @@ class _QtMainWindow(QMainWindow):
             if dock.isFloating():
                 dock.setFloating(False)
 
-        if SETTINGS.application.save_window_geometry:
-            self._save_current_window_settings()
+        self._save_current_window_settings()
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
@@ -214,6 +279,17 @@ class _QtMainWindow(QMainWindow):
             quit_app()
 
         event.accept()
+
+    def restart(self):
+        """Restart the napari application in a detached process."""
+        process = QProcess()
+        process.setProgram(sys.executable)
+
+        if not running_as_bundled_app():
+            process.setArguments(sys.argv)
+
+        process.startDetached()
+        self.close(quit_app=True)
 
 
 class Window:
@@ -244,11 +320,11 @@ class Window:
         # create QApplication if it doesn't already exist
         get_app()
 
+        self._unnamed_dockwidget_count = 1
+
         # Connect the Viewer and create the Main Window
-        self._qt_window = _QtMainWindow()
-        self.qt_viewer = QtViewer(viewer)
-        self._qt_window.centralWidget().layout().addWidget(self.qt_viewer)
-        self._qt_window.setWindowTitle(viewer.title)
+        self.qt_viewer = QtViewer(viewer, show_welcome_screen=True)
+        self._qt_window = _QtMainWindow(self.qt_viewer)
         self._status_bar = self._qt_window.statusBar()
 
         # Dictionary holding dock widgets
@@ -271,7 +347,7 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self.qt_viewer.viewer.theme = SETTINGS.application.theme
+        self.qt_viewer.viewer.theme = SETTINGS.appearance.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -281,9 +357,10 @@ class Window:
         self._add_viewer_dock_widget(
             self.qt_viewer.dockLayerList, tabify=False
         )
+        self._add_viewer_dock_widget(self.qt_viewer.activityDock, tabify=False)
         self.window_menu.addSeparator()
 
-        SETTINGS.application.events.theme.connect(self._update_theme)
+        SETTINGS.appearance.events.theme.connect(self._update_theme)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -299,25 +376,6 @@ class Window:
 
         if show:
             self.show()
-
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            warnings.warn(
-                (
-                    trans._(
-                        "The 'raw_stylesheet' attribute is deprecated and will be "
-                        "removed in version 0.4.7.  Please use "
-                        "`napari.qt.get_stylesheet` instead"
-                    )
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -375,6 +433,7 @@ class Window:
         preferences = QAction(trans._('Preferences'), self._qt_window)
         preferences.setShortcut('Ctrl+Shift+P')
         preferences.setStatusTip(trans._('Open preferences dialog'))
+        preferences.setMenuRole(QAction.PreferencesRole)
         preferences.triggered.connect(self._open_preferences)
 
         save_selected_layers = QAction(
@@ -422,14 +481,45 @@ class Window:
             lambda: self._qt_window.close(quit_app=True)
         )
 
+        if running_as_bundled_app():
+            restartAction = QAction(trans._('Restart'), self._qt_window)
+            restartAction.triggered.connect(self._qt_window.restart)
+
         closeAction = QAction(trans._('Close Window'), self._qt_window)
         closeAction.setShortcut('Ctrl+W')
-        closeAction.triggered.connect(self._qt_window.close)
+        closeAction.triggered.connect(self._qt_window.close_window)
+
+        plugin_manager.discover_sample_data()
+        open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+        for plugin_name, samples in plugin_manager._sample_data.items():
+            multiprovider = len(samples) > 1
+            if multiprovider:
+                menu = QMenu(plugin_name, self._qt_window)
+                open_sample_menu.addMenu(menu)
+            else:
+                menu = open_sample_menu
+
+            for samp_name, samp_dict in samples.items():
+                display_name = samp_dict['display_name']
+                if multiprovider:
+                    action = QAction(display_name, parent=self._qt_window)
+                else:
+                    full_name = plugin_menu_item_template.format(
+                        plugin_name, display_name
+                    )
+                    action = QAction(full_name, parent=self._qt_window)
+
+                def _add_sample(*args, plg=plugin_name, smp=samp_name):
+                    self.qt_viewer.viewer.open_sample(plg, smp)
+
+                menu.addAction(action)
+                action.triggered.connect(_add_sample)
 
         self.file_menu = self.main_menu.addMenu(trans._('&File'))
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addMenu(open_sample_menu)
         self.file_menu.addSeparator()
         self.file_menu.addAction(preferences)
         self.file_menu.addSeparator()
@@ -439,17 +529,32 @@ class Window:
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
+
+        if running_as_bundled_app():
+            self.file_menu.addAction(restartAction)
+
         self.file_menu.addAction(quitAction)
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
-        win = PreferencesDialog(parent=self._qt_window)
-        win.resized.connect(self._qt_window._update_preferences_dialog_size)
+        if self._qt_window._preferences_dialog is None:
+            win = PreferencesDialog(parent=self._qt_window)
+            win.resized.connect(
+                self._qt_window._update_preferences_dialog_size
+            )
 
-        if self._qt_window._preferences_dialog_size:
-            win.resize(self._qt_window._preferences_dialog_size)
+            if self._qt_window._preferences_dialog_size:
+                win.resize(self._qt_window._preferences_dialog_size)
 
-        win.show()
+            self._qt_window._preferences_dialog = win
+            win.closed.connect(self._on_preferences_closed)
+            win.show()
+        else:
+            self._qt_window._preferences_dialog.raise_()
+
+    def _on_preferences_closed(self):
+        """Reset preferences dialog variable."""
+        self._qt_window._preferences_dialog = None
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
@@ -459,10 +564,6 @@ class Window:
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip(trans._('Hide Menubar'))
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
-        toggle_theme = QAction(trans._('Toggle Theme'), self._qt_window)
-        toggle_theme.setShortcut('Ctrl+Shift+T')
-        toggle_theme.setStatusTip(trans._('Toggle theme'))
-        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         toggle_fullscreen = QAction(
             trans._('Toggle Full Screen'), self._qt_window
         )
@@ -477,7 +578,6 @@ class Window:
         self.view_menu = self.main_menu.addMenu(trans._('&View'))
         self.view_menu.addAction(toggle_fullscreen)
         self.view_menu.addAction(toggle_visible)
-        self.view_menu.addAction(toggle_theme)
         self.view_menu.addAction(toggle_play)
         self.view_menu.addSeparator()
 
@@ -494,6 +594,7 @@ class Window:
             self.view_menu.addAction(toggle_outline)
 
         # Add axes menu
+        axes = self.qt_viewer.viewer.axes
         axes_menu = QMenu(trans._('Axes'), parent=self._qt_window)
         axes_visible_action = QAction(
             trans._('Visible'),
@@ -502,6 +603,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.visible,
         )
         axes_visible_action.triggered.connect(self._toggle_axes_visible)
+        self._event_to_action(axes_visible_action, axes.events.visible)
         axes_colored_action = QAction(
             trans._('Colored'),
             parent=self._qt_window,
@@ -509,6 +611,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        self._event_to_action(axes_colored_action, axes.events.colored)
         axes_labels_action = QAction(
             trans._('Labels'),
             parent=self._qt_window,
@@ -516,6 +619,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.labels,
         )
         axes_labels_action.triggered.connect(self._toggle_axes_labels)
+        self._event_to_action(axes_labels_action, axes.events.labels)
         axes_dashed_action = QAction(
             trans._('Dashed'),
             parent=self._qt_window,
@@ -523,6 +627,7 @@ class Window:
             checked=self.qt_viewer.viewer.axes.dashed,
         )
         axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
+        self._event_to_action(axes_dashed_action, axes.events.dashed)
         axes_arrows_action = QAction(
             trans._('Arrows'),
             parent=self._qt_window,
@@ -530,6 +635,8 @@ class Window:
             checked=self.qt_viewer.viewer.axes.arrows,
         )
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
+        self._event_to_action(axes_arrows_action, axes.events.arrows)
+
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
         axes_menu.addAction(axes_labels_action)
@@ -538,6 +645,7 @@ class Window:
         self.view_menu.addMenu(axes_menu)
 
         # Add scale bar menu
+        scale_bar = self.qt_viewer.viewer.scale_bar
         scale_bar_menu = QMenu(trans._('Scale Bar'), parent=self._qt_window)
         scale_bar_visible_action = QAction(
             trans._('Visible'),
@@ -548,6 +656,9 @@ class Window:
         scale_bar_visible_action.triggered.connect(
             self._toggle_scale_bar_visible
         )
+        self._event_to_action(
+            scale_bar_visible_action, scale_bar.events.visible
+        )
         scale_bar_colored_action = QAction(
             trans._('Colored'),
             parent=self._qt_window,
@@ -557,6 +668,9 @@ class Window:
         scale_bar_colored_action.triggered.connect(
             self._toggle_scale_bar_colored
         )
+        self._event_to_action(
+            scale_bar_colored_action, scale_bar.events.colored
+        )
         scale_bar_ticks_action = QAction(
             trans._('Ticks'),
             parent=self._qt_window,
@@ -564,12 +678,19 @@ class Window:
             checked=self.qt_viewer.viewer.scale_bar.ticks,
         )
         scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
+        self._event_to_action(scale_bar_ticks_action, scale_bar.events.ticks)
+
         scale_bar_menu.addAction(scale_bar_visible_action)
         scale_bar_menu.addAction(scale_bar_colored_action)
         scale_bar_menu.addAction(scale_bar_ticks_action)
         self.view_menu.addMenu(scale_bar_menu)
 
         self.view_menu.addSeparator()
+
+    def _event_to_action(self, action, event):
+        """Connect triggered event in model to respective action in menu."""
+        # TODO: use action manager to keep in sync
+        event.connect(lambda e: action.setChecked(e.value))
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
@@ -593,15 +714,6 @@ class Window:
         pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
 
-        order_plugin_action = QAction(
-            trans._("Plugin Call Order..."), self._qt_window
-        )
-        order_plugin_action.setStatusTip(
-            trans._('Change call order for plugins')
-        )
-        order_plugin_action.triggered.connect(self._show_plugin_sorter)
-        self.plugins_menu.addAction(order_plugin_action)
-
         report_plugin_action = QAction(
             trans._("Plugin Errors..."), self._qt_window
         )
@@ -617,13 +729,10 @@ class Window:
             trans._('Add Dock Widget'), self._qt_window
         )
 
-        if not plugins.dock_widgets:
-            plugins.discover_dock_widgets()
+        plugin_manager.discover_widgets()
 
         # Add a menu item (QAction) for each available plugin widget
-        docks = zip(repeat("dock"), plugins.dock_widgets.items())
-        funcs = zip(repeat("func"), plugins.function_widgets.items())
-        for hook_type, (plugin_name, widgets) in chain(docks, funcs):
+        for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -636,7 +745,7 @@ class Window:
                 if multiprovider:
                     action = QAction(wdg_name, parent=self._qt_window)
                 else:
-                    full_name = plugins.menu_item_template.format(*key)
+                    full_name = plugin_menu_item_template.format(*key)
                     action = QAction(full_name, parent=self._qt_window)
 
                 def _add_widget(*args, key=key, hook_type=hook_type):
@@ -649,16 +758,6 @@ class Window:
                 action.triggered.connect(_add_widget)
 
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
-
-    def _show_plugin_sorter(self):
-        """Show dialog that allows users to sort the call order of plugins."""
-        plugin_sorter = QtPluginSorter(parent=self._qt_window)
-        if hasattr(self, 'plugin_sorter_widget'):
-            self.plugin_sorter_widget.show()
-        else:
-            self.plugin_sorter_widget = self.add_dock_widget(
-                plugin_sorter, name=trans._('Plugin Sorter'), area="right"
-            )
 
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -734,7 +833,7 @@ class Window:
 
     def add_plugin_dock_widget(
         self, plugin_name: str, widget_name: str = None
-    ):
+    ) -> Tuple[QtViewerDockWidget, Any]:
         """Add plugin dock widget if not already added.
 
         Parameters
@@ -745,21 +844,31 @@ class Window:
             Name of a widget provided by `plugin_name`. If `None`, and the
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
+
+        Returns
+        -------
+        tuple
+            A 2-tuple containing (the DockWidget instance, the plugin widget
+            instance).
         """
         from ..viewer import Viewer
 
-        Widget, dock_kwargs = plugins.get_plugin_widget(
+        Widget, dock_kwargs = plugin_manager.get_widget(
             plugin_name, widget_name
         )
         if not widget_name:
-            # if widget_name wasn't provided, `get_plugin_widget` will have
+            # if widget_name wasn't provided, `get_widget` will have
             # ensured that there is a single widget available.
-            widget_name = list(plugins.dock_widgets[plugin_name])[0]
+            widget_name = list(plugin_manager._dock_widgets[plugin_name])[0]
 
-        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
-            self._dock_widgets[full_name].show()
-            return
+            dock_widget = self._dock_widgets[full_name]
+            dock_widget.show()
+            wdg = dock_widget.widget()
+            if hasattr(wdg, '_magic_widget'):
+                wdg = wdg._magic_widget
+            return dock_widget, wdg
 
         # if the signature is looking a for a napari viewer, pass it.
         kwargs = {}
@@ -777,12 +886,14 @@ class Window:
         wdg = Widget(**kwargs)
 
         # Add dock widget
-        self.add_dock_widget(
+        dock_widget = self.add_dock_widget(
             wdg,
             name=full_name,
             area=dock_kwargs.get('area', 'right'),
             allowed_areas=dock_kwargs.get('allowed_areas', None),
         )
+
+        return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
         """Add plugin function widget if not already added.
@@ -796,12 +907,12 @@ class Window:
             specified plugin provides only a single widget, that widget will be
             returned, otherwise a ValueError will be raised, by default None
         """
-        full_name = plugins.menu_item_template.format(plugin_name, widget_name)
+        full_name = plugin_menu_item_template.format(plugin_name, widget_name)
         if full_name in self._dock_widgets:
             self._dock_widgets[full_name].show()
             return
 
-        func = plugins.function_widgets[plugin_name][widget_name]
+        func = plugin_manager._function_widgets[plugin_name][widget_name]
 
         # Add function widget
         self.add_function_widget(
@@ -815,9 +926,13 @@ class Window:
         name: str = '',
         area: str = 'bottom',
         allowed_areas=None,
-        shortcut=None,
+        shortcut=_sentinel,
+        add_vertical_stretch=True,
     ):
-        """Convenience method to add a QDockWidget to the main window
+        """Convenience method to add a QDockWidget to the main window.
+
+        If name is not provided a generic name will be addded to avoid
+        `saveState` warnings on close.
 
         Parameters
         ----------
@@ -834,21 +949,57 @@ class Window:
             By default, all areas are allowed.
         shortcut : str, optional
             Keyboard shortcut to appear in dropdown menu.
+        add_vertical_stretch : bool, optional
+            Whether to add stretch to the bottom of vertical widgets (pushing
+            widgets up towards the top of the allotted area, instead of letting
+            them distribute across the vertical space).  By default, True.
+
+            .. deprecated:: 0.4.8
+
+                The shortcut parameter is deprecated since version 0.4.8, please use
+                the action and shortcut manager APIs. The new action manager and
+                shortcut API allow user configuration and localisation.
 
         Returns
         -------
         dock_widget : QtViewerDockWidget
             `dock_widget` that can pass viewer events.
         """
+        if not name:
+            try:
+                name = widget.objectName()
+            except AttributeError:
+                name = trans._(
+                    "Dock widget {number}",
+                    number=self._unnamed_dockwidget_count,
+                )
 
-        dock_widget = QtViewerDockWidget(
-            self.qt_viewer,
-            widget,
-            name=name,
-            area=area,
-            allowed_areas=allowed_areas,
-            shortcut=shortcut,
-        )
+            self._unnamed_dockwidget_count += 1
+        if shortcut is not _sentinel:
+            warnings.warn(
+                _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            dock_widget = QtViewerDockWidget(
+                self.qt_viewer,
+                widget,
+                name=name,
+                area=area,
+                allowed_areas=allowed_areas,
+                shortcut=shortcut,
+                add_vertical_stretch=add_vertical_stretch,
+            )
+        else:
+            dock_widget = QtViewerDockWidget(
+                self.qt_viewer,
+                widget,
+                name=name,
+                area=area,
+                allowed_areas=allowed_areas,
+                add_vertical_stretch=add_vertical_stretch,
+            )
+
         self._add_viewer_dock_widget(dock_widget)
 
         if hasattr(widget, 'reset_choices'):
@@ -880,26 +1031,38 @@ class Window:
             Flag to tabify dockwidget or not.
         """
         # Find if any othe dock widgets are currently in area
-        current_dws_in_area = []
-        for dw in self._qt_window.findChildren(QDockWidget):
-            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area:
-                current_dws_in_area.append(dw)
-
+        current_dws_in_area = [
+            dw
+            for dw in self._qt_window.findChildren(QDockWidget)
+            if self._qt_window.dockWidgetArea(dw) == dock_widget.qt_area
+        ]
         self._qt_window.addDockWidget(dock_widget.qt_area, dock_widget)
 
         # If another dock widget present in area then tabify
-        if len(current_dws_in_area) > 0 and tabify:
-            self._qt_window.tabifyDockWidget(
-                current_dws_in_area[-1], dock_widget
-            )
-            dock_widget.show()
-            dock_widget.raise_()
+        if current_dws_in_area:
+            if tabify:
+                self._qt_window.tabifyDockWidget(
+                    current_dws_in_area[-1], dock_widget
+                )
+                dock_widget.show()
+                dock_widget.raise_()
+            elif dock_widget.area in ('right', 'left'):
+                _wdg = current_dws_in_area + [dock_widget]
+                # add sizes to push lower widgets up
+                sizes = list(range(1, len(_wdg) * 4, 4))
+                self._qt_window.resizeDocks(_wdg, sizes, Qt.Vertical)
 
         action = dock_widget.toggleViewAction()
         action.setStatusTip(dock_widget.name)
         action.setText(dock_widget.name)
-        if dock_widget.shortcut is not None:
-            action.setShortcut(dock_widget.shortcut)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            # deprecating with 0.4.8, but let's try to keep compatibility.
+            shortcut = dock_widget.shortcut
+        if shortcut is not None:
+            action.setShortcut(shortcut)
         self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget: QWidget):
@@ -927,9 +1090,9 @@ class Window:
             else:
                 raise LookupError(
                     trans._(
-                        "Could not find a dock widget containing: {widget}".format(
-                            widget=widget
-                        )
+                        "Could not find a dock widget containing: {widget}",
+                        deferred=True,
+                        widget=widget,
                     )
                 )
         else:
@@ -957,7 +1120,7 @@ class Window:
         name: str = '',
         area=None,
         allowed_areas=None,
-        shortcut=None,
+        shortcut=_sentinel,
     ):
         """Turn a function into a dock widget via magicgui.
 
@@ -1006,14 +1169,21 @@ class Window:
 
         if allowed_areas is None:
             allowed_areas = [area]
-
-        return self.add_dock_widget(
-            widget,
-            name=name or function.__name__.replace('_', ' '),
-            area=area,
-            allowed_areas=allowed_areas,
-            shortcut=shortcut,
-        )
+        if shortcut is not _sentinel:
+            return self.add_dock_widget(
+                widget,
+                name=name or function.__name__.replace('_', ' '),
+                area=area,
+                allowed_areas=allowed_areas,
+                shortcut=shortcut,
+            )
+        else:
+            return self.add_dock_widget(
+                widget,
+                name=name or function.__name__.replace('_', ' '),
+                area=area,
+                allowed_areas=allowed_areas,
+            )
 
     def resize(self, width, height):
         """Resize the window.
@@ -1030,11 +1200,6 @@ class Window:
     def show(self):
         """Resize, show, and bring forward the window.
 
-        Parameters
-        ----------
-        run : bool, optional
-            If true, will start an event loop if necessary, by default False
-
         Raises
         ------
         RuntimeError
@@ -1045,8 +1210,8 @@ class Window:
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
-                    "This viewer has already been closed and deleted. "
-                    "Please create a new one."
+                    "This viewer has already been closed and deleted. Please create a new one.",
+                    deferred=True,
                 )
             )
 
@@ -1057,8 +1222,8 @@ class Window:
             except (AttributeError, RuntimeError):
                 raise RuntimeError(
                     trans._(
-                        "This viewer has already been closed and deleted. "
-                        "Please create a new one."
+                        "This viewer has already been closed and deleted. Please create a new one.",
+                        deferred=True,
                     )
                 )
         else:
@@ -1072,10 +1237,9 @@ class Window:
 
                 warnings.warn(
                     trans._(
-                        "The window geometry settings could not be "
-                        "loaded due to the following error: {err}".format(
-                            err=err
-                        )
+                        "The window geometry settings could not be loaded due to the following error: {err}",
+                        deferred=True,
+                        err=err,
                     ),
                     category=RuntimeWarning,
                     stacklevel=2,
@@ -1107,7 +1271,7 @@ class Window:
         """Update widget color theme."""
         if event:
             value = event.value
-            SETTINGS.application.theme = value
+            SETTINGS.appearance.theme = value
             self.qt_viewer.viewer.theme = value
         else:
             value = self.qt_viewer.viewer.theme
@@ -1149,11 +1313,15 @@ class Window:
 
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
-        dial = ScreenshotDialog(
-            self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir
-        )
+        hist = get_save_history()
+        dial = ScreenshotDialog(self.screenshot, self.qt_viewer, hist[0], hist)
+
         if dial.exec_():
-            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
+            update_save_history(dial.selectedFiles()[0])
+
+    def _restart(self):
+        """Restart the napari application."""
+        self._qt_window.restart()
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.

@@ -39,9 +39,7 @@ class TextLog(QTextEdit):
         self.moveCursor(QTextCursor.End)
         self.setTextColor(Qt.red)
         self.insertPlainText(
-            trans._(
-                "{time_ms:5.0f}ms {name}\n".format(time_ms=time_ms, name=name)
-            )
+            trans._("{time_ms:5.0f}ms {name}\n", time_ms=time_ms, name=name)
         )
 
 
@@ -178,7 +176,7 @@ class QtPerformance(QWidget):
         # Update our timer label.
         elapsed = time.time() - self.start_time
         self.timer_label.setText(
-            trans._("Uptime: {elapsed:.2f}".format(elapsed=elapsed))
+            trans._("Uptime: {elapsed:.2f}", elapsed=elapsed)
         )
 
         average, long_events = self._get_timer_info()

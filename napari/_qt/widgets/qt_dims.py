@@ -293,9 +293,9 @@ class QtDims(QWidget):
             if loop_mode not in _modes:
                 raise ValueError(
                     trans._(
-                        'loop_mode must be one of {_modes}.  Got: {loop_mode}'.format(
-                            _modes=_modes, loop_mode=loop_mode
-                        )
+                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
+                        _modes=_modes,
+                        loop_mode=loop_mode,
                     )
                 )
             loop_mode = LoopMode(loop_mode)
@@ -321,7 +321,12 @@ class QtDims(QWidget):
             else:
                 self._animation_worker, self._animation_thread = None, None
         else:
-            warnings.warn(trans._('Refusing to play a hidden axis'))
+            warnings.warn(
+                trans._(
+                    'Refusing to play a hidden axis',
+                    deferred=True,
+                )
+            )
 
     def stop(self):
         """Stop axis animation"""

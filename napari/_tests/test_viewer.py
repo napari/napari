@@ -20,7 +20,7 @@ def _get_all_keybinding_methods(type_):
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 18
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
 
 
 def test_len_methods_viewer():
@@ -61,7 +61,7 @@ def test_viewer(make_napari_viewer):
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
-    assert view.layers.vbox_layout.count() == 2
+    assert view.layers.model().rowCount() == 0
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -166,16 +166,19 @@ def test_screenshot(make_napari_viewer):
 
 def test_changing_theme(make_napari_viewer):
     """Test changing the theme updates the full window."""
-    viewer = make_napari_viewer()
+    viewer = make_napari_viewer(show=False)
+    viewer.window.qt_viewer.set_welcome_visible(False)
     viewer.add_points(data=None)
-    assert viewer.theme == 'dark'
+    size = viewer.window.qt_viewer.size()
+    viewer.window.qt_viewer.setFixedSize(size)
 
+    assert viewer.theme == 'dark'
     screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.theme == 'light'
-
     screenshot_light = viewer.screenshot(canvas_only=False)
+
     equal = (screenshot_dark == screenshot_light).min(-1)
 
     # more than 99.5% of the pixels have changed

@@ -26,20 +26,11 @@ import typing
 from numpydoc.docscrape import NumpyDocString
 
 from . import layers
+from .utils.translations import trans
 from .viewer import Viewer
 
 VIEW_DOC = NumpyDocString(Viewer.__doc__)
 VIEW_PARAMS = "    " + "\n".join(VIEW_DOC._str_param_list('Parameters')[2:])
-
-DOC = """Create a viewer and add a{n} {name} layer.
-
-{params}
-
-Returns
--------
-viewer : :class:`napari.Viewer`
-    The newly-created viewer.
-"""
 
 
 def merge_docs(add_method, layer_string):
@@ -54,7 +45,15 @@ def merge_docs(add_method, layer_string):
     lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
     params = "\n".join(lines)
     n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
-    return DOC.format(n=n, name=layer_string, params=params)
+    return f"""Create a viewer and add a{n} {layer_string} layer.
+
+{params}
+
+Returns
+-------
+viewer : :class:`napari.Viewer`
+    The newly-created viewer.
+"""
 
 
 def _generate_view_function(layer_string: str, method_name: str = None):
@@ -103,7 +102,13 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     try:
         add_method = getattr(Viewer, add_string)
     except AttributeError:
-        raise AttributeError(f"No Viewer method named '{add_string}'")
+        raise AttributeError(
+            trans._(
+                "No Viewer method named '{add_string}'",
+                deferred=True,
+                add_string=add_string,
+            )
+        )
 
     # get signatures of the add_* method and Viewer.__init__
     add_sig = inspect.signature(add_method)

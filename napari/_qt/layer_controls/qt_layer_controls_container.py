@@ -50,9 +50,9 @@ def create_qt_layer_controls(layer):
 
     raise TypeError(
         trans._(
-            'Could not find QtControls for layer of type {type_}'.format(
-                type_=type(layer)
-            )
+            'Could not find QtControls for layer of type {type_}',
+            deferred=True,
+            type_=type(layer),
         )
     )
 
@@ -89,7 +89,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        self.viewer.events.active_layer.connect(self._display)
+        viewer.layers.selection.events.active.connect(self._display)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

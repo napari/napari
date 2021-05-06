@@ -147,8 +147,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
@@ -435,7 +435,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             )
         else:
             self._interpolation[self._ndisplay] = Interpolation(interpolation)
-        self.events.interpolation()
+        self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
     def rendering(self):
@@ -764,20 +764,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self._on_data_loaded(data, sync=False)
 
 
-def _get_image_base_class() -> _ImageBase:
-    """Return Image or OctreeImage based config settings."""
-    if config.async_octree:
-        from ..image.experimental.octree_image import _OctreeImageBase
-
-        return _OctreeImageBase
-
-    return _ImageBase
-
-
-_image_base_class = _get_image_base_class()
-
-
-class Image(_image_base_class):
+class Image(_ImageBase):
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -802,3 +789,10 @@ class Image(_image_base_class):
             }
         )
         return state
+
+
+if config.async_octree:
+    from ..image.experimental.octree_image import _OctreeImageBase
+
+    class Image(Image, _OctreeImageBase):
+        pass

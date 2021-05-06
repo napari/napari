@@ -12,6 +12,7 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
 )
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
@@ -197,8 +198,8 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
         If properties is not provided, it will be {} (empty dictionary).
@@ -324,7 +325,12 @@ class Points(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError('text should be a string, array, or dict')
+            raise TypeError(
+                trans._(
+                    'text should be a string, array, or dict',
+                    deferred=True,
+                )
+            )
 
         # Save the point style params
         self.symbol = symbol
@@ -473,22 +479,13 @@ class Points(Layer):
         self.events.data(value=self.data)
         self._set_editable()
 
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        return self._selected
-
-    @selected.setter
-    def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
+    def _on_selection(self, selected):
         if selected:
-            self.events.select()
+            self._set_highlight()
         else:
-            self.events.deselect()
-        self._set_highlight()
+            self._highlight_box = None
+            self._highlight_index = []
+            self.events.highlight()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -505,7 +502,11 @@ class Points(Layer):
                 self._face.color_mode = ColorMode.DIRECT
                 self._face.color_properties = None
                 warnings.warn(
-                    'property used for face_color dropped', RuntimeWarning
+                    trans._(
+                        'property used for face_color dropped',
+                        deferred=True,
+                    ),
+                    RuntimeWarning,
                 )
             else:
                 face_color_name = self._face.color_properties.name
@@ -520,7 +521,11 @@ class Points(Layer):
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
-                    'property used for edge_color dropped', RuntimeWarning
+                    trans._(
+                        'property used for edge_color dropped',
+                        deferred=True,
+                    ),
+                    RuntimeWarning,
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
@@ -564,7 +569,10 @@ class Points(Layer):
         for k, v in properties.items():
             if len(v) != len(self.data):
                 raise ValueError(
-                    'the number of properties must equal the number of points'
+                    trans._(
+                        'the number of properties must equal the number of points',
+                        deferred=True,
+                    )
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -654,7 +662,12 @@ class Points(Layer):
                     size, self.data.shape[::-1]
                 ).T.copy()
             except Exception:
-                raise ValueError("Size is not compatible for broadcasting")
+                raise ValueError(
+                    trans._(
+                        "Size is not compatible for broadcasting",
+                        deferred=True,
+                    )
+                )
         self.refresh()
 
     @property
@@ -903,13 +916,20 @@ class Points(Layer):
                         ),
                     }
                     warnings.warn(
-                        f'_{attribute}_color_property was not set, '
-                        f'setting to: {new_color_property}'
+                        trans._(
+                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            deferred=True,
+                            attribute=attribute,
+                            new_color_property=new_color_property,
+                        )
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use '
-                        f'{color_mode}'
+                        trans._(
+                            'There must be a valid Points.properties to use {color_mode}',
+                            deferred=True,
+                            color_mode=color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -918,7 +938,10 @@ class Points(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
             color_manager.color_mode = color_mode
 
@@ -1077,14 +1100,14 @@ class Points(Layer):
         if mode == Mode.ADD:
             self.cursor = 'pointing'
             self.interactive = True
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             self.selected_data = set()
             self._set_highlight()
             self.mouse_drag_callbacks.append(add)
         elif mode == Mode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             # add mouse drag and move callbacks
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
@@ -1093,7 +1116,12 @@ class Points(Layer):
             self.interactive = True
             self.help = ''
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(
+                trans._(
+                    "Mode not recognized",
+                    deferred=True,
+                )
+            )
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
             self._selected_data_stored = set()
@@ -1306,65 +1334,56 @@ class Points(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any point ids have changed since last call
-        if self.selected:
-            if (
-                self.selected_data == self._selected_data_stored
-                and self._value == self._value_stored
-                and np.all(self._drag_box == self._drag_box_stored)
-            ) and not force:
-                return
-            self._selected_data_stored = copy(self.selected_data)
-            self._value_stored = copy(self._value)
-            self._drag_box_stored = copy(self._drag_box)
+        if (
+            self.selected_data == self._selected_data_stored
+            and self._value == self._value_stored
+            and np.all(self._drag_box == self._drag_box_stored)
+        ) and not force:
+            return
+        self._selected_data_stored = copy(self.selected_data)
+        self._value_stored = copy(self._value)
+        self._drag_box_stored = copy(self._drag_box)
 
-            if self._value is not None or len(self._selected_view) > 0:
-                if len(self._selected_view) > 0:
-                    index = copy(self._selected_view)
-                    # highlight the hovered point if not in adding mode
-                    if (
-                        self._value in self._indices_view
-                        and self._mode == Mode.SELECT
-                        and not self._is_selecting
-                    ):
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        if hover_point in index:
-                            pass
-                        else:
-                            index.append(hover_point)
-                    index.sort()
-                else:
-                    # only highlight hovered points in select mode
-                    if (
-                        self._value in self._indices_view
-                        and self._mode == Mode.SELECT
-                        and not self._is_selecting
-                    ):
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        index = [hover_point]
+        if self._value is not None or len(self._selected_view) > 0:
+            if len(self._selected_view) > 0:
+                index = copy(self._selected_view)
+                # highlight the hovered point if not in adding mode
+                if (
+                    self._value in self._indices_view
+                    and self._mode == Mode.SELECT
+                    and not self._is_selecting
+                ):
+                    hover_point = list(self._indices_view).index(self._value)
+                    if hover_point in index:
+                        pass
                     else:
-                        index = []
-
-                self._highlight_index = index
+                        index.append(hover_point)
+                index.sort()
             else:
-                self._highlight_index = []
+                # only highlight hovered points in select mode
+                if (
+                    self._value in self._indices_view
+                    and self._mode == Mode.SELECT
+                    and not self._is_selecting
+                ):
+                    hover_point = list(self._indices_view).index(self._value)
+                    index = [hover_point]
+                else:
+                    index = []
 
-            # only display dragging selection box in 2D
-            if self._ndisplay == 2 and self._is_selecting:
-                pos = create_box(self._drag_box)
-                pos = pos[list(range(4)) + [0]]
-            else:
-                pos = None
-
-            self._highlight_box = pos
-            self.events.highlight()
+            self._highlight_index = index
         else:
-            self._highlight_box = None
             self._highlight_index = []
-            self.events.highlight()
+
+        # only display dragging selection box in 2D
+        if self._ndisplay == 2 and self._is_selecting:
+            pos = create_box(self._drag_box)
+            pos = pos[list(range(4)) + [0]]
+        else:
+            pos = None
+
+        self._highlight_box = pos
+        self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""

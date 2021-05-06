@@ -1,8 +1,9 @@
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QModelIndex, Qt
 
-from napari._qt.tree import QtNodeTreeModel, QtNodeTreeView
-from napari.utils.events._tests.test_evented_list import POS_INDICES
+from napari._qt.containers import QtNodeTreeModel, QtNodeTreeView
+from napari._qt.containers._base_item_view import index_of
+from napari.utils.events._tests.test_evented_list import NESTED_POS_INDICES
 from napari.utils.tree import Group, Node
 
 
@@ -58,7 +59,7 @@ def test_move_single_tree_item(tree_model):
     _assert_models_synced(root, tree_model)
 
 
-@pytest.mark.parametrize('sources, dest, expectation', POS_INDICES)
+@pytest.mark.parametrize('sources, dest, expectation', NESTED_POS_INDICES)
 def test_nested_move_multiple(sources, dest, expectation):
     """Test that models stay in sync with complicated moves.
 
@@ -111,11 +112,39 @@ def test_find_nodes():
     _assert_models_synced(root, qt_tree)
     node = Node(name='212')
     root[2, 1].append(node)
-    assert qt_tree.findIndex(node).row() == 2
-    assert not qt_tree.findIndex(Node(name='new node')).isValid()
+    assert index_of(qt_tree, node).row() == 2
+    assert not index_of(qt_tree, Node(name='new node')).isValid()
 
 
-def test_view_smoketest(qtbot):
+def test_node_tree_view(qtbot):
     root = _recursive_make_group([0, 1, [20, [210, 211], 22], 3, 4])
+    root.selection.clear()
+    assert not root.selection
     view = QtNodeTreeView(root)
+    qmodel = view.model()
+    qsel = view.selectionModel()
     qtbot.addWidget(view)
+
+    # update selection in python
+    root.selection.update([root[0], root[2, 0]])
+    assert root[2, 0] in root.selection
+
+    # check selection in Qt
+    idx = {qmodel.getItem(i).index_from_root() for i in qsel.selectedIndexes()}
+    assert idx == {(0,), (2, 0)}
+
+    # clear selection in Qt
+    qsel.clearSelection()
+    # check selection in python
+    assert not root.selection
+
+    # update current in python
+    root.selection._current = root[2, 1, 0]
+    # check current in Qt
+    assert root.selection._current == root[2, 1, 0]
+    assert qmodel.getItem(qsel.currentIndex()).index_from_root() == (2, 1, 0)
+
+    # clear current in Qt
+    qsel.setCurrentIndex(QModelIndex(), qsel.Current)
+    # check current in python
+    assert root.selection._current is None

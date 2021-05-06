@@ -81,7 +81,11 @@ class QtDictTable(QTableWidget):
         if not isinstance(data, list) or any(
             not isinstance(i, dict) for i in data
         ):
-            raise ValueError("'data' argument must be a list of dicts")
+            raise ValueError(
+                trans._(
+                    "'data' argument must be a list of dicts", deferred=True
+                )
+            )
         nrows = len(data)
         _headers = sorted(set().union(*data))
         if headers:
@@ -89,9 +93,9 @@ class QtDictTable(QTableWidget):
                 if h not in _headers:
                     raise ValueError(
                         trans._(
-                            "Argument 'headers' got item '{h}', which was not found in any of the items in 'data'".format(
-                                h=h
-                            )
+                            "Argument 'headers' got item '{header}', which was not found in any of the items in 'data'",
+                            deferred=True,
+                            header=h,
                         )
                     )
             _headers = headers

@@ -1,4 +1,6 @@
+import warnings
 from functools import reduce
+from itertools import count
 from operator import ior
 from typing import List, Optional
 
@@ -9,12 +11,23 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 from ...utils.translations import trans
 from ..utils import combine_widgets, qt_signals_blocked
+
+counter = count()
+_sentinel = object()
+
+_SHORTCUT_DEPRECATION_STRING = trans._(
+    'The shortcut parameter is deprecated since version 0.4.8, please use the '
+    'action and shortcut manager APIs. The new action manager and shortcut API '
+    'allow user configuration and localisation. (got {shortcut})',
+    shortcut="{shortcut}",
+)
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -37,6 +50,15 @@ class QtViewerDockWidget(QDockWidget):
         By default, all areas are allowed.
     shortcut : str, optional
         Keyboard shortcut to appear in dropdown menu.
+        .. deprecated:: 0.4.8
+
+            The shortcut parameter is deprecated since version 0.4.8, please use
+            the action and shortcut manager APIs. The new action manager and
+            shortcut API allow user configuration and localisation.
+    add_vertical_stretch : bool, optional
+        Whether to add stretch to the bottom of vertical widgets (pushing
+        widgets up towards the top of the allotted area, instead of letting
+        them distribute across the vertical space).  By default, True.
     """
 
     def __init__(
@@ -47,8 +69,9 @@ class QtViewerDockWidget(QDockWidget):
         name: str = '',
         area: str = 'bottom',
         allowed_areas: Optional[List[str]] = None,
-        shortcut=None,
+        shortcut=_sentinel,
         object_name: str = '',
+        add_vertical_stretch=True,
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
@@ -61,17 +84,41 @@ class QtViewerDockWidget(QDockWidget):
             'bottom': Qt.BottomDockWidgetArea,
         }
         if area not in areas:
-            raise ValueError(f'area argument must be in {list(areas.keys())}')
+            raise ValueError(
+                trans._(
+                    'area argument must be in {areas}',
+                    deferred=True,
+                    areas=list(areas.keys()),
+                )
+            )
         self.area = area
         self.qt_area = areas[area]
-        self.shortcut = shortcut
+        if shortcut is not _sentinel:
+            warnings.warn(
+                _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            shortcut = None
+        self._shortcut = shortcut
 
         if allowed_areas:
             if not isinstance(allowed_areas, (list, tuple)):
-                raise TypeError('`allowed_areas` must be a list or tuple')
-            if not all(area in areas for area in allowed_areas):
+                raise TypeError(
+                    trans._(
+                        '`allowed_areas` must be a list or tuple',
+                        deferred=True,
+                    )
+                )
+
+            if any(area not in areas for area in allowed_areas):
                 raise ValueError(
-                    f'all allowed_areas argument must be in {list(areas.keys())}'
+                    trans._(
+                        'all allowed_areas argument must be in {areas}',
+                        deferred=True,
+                        areas=list(areas.keys()),
+                    )
                 )
             allowed_areas = reduce(ior, [areas[a] for a in allowed_areas])
         else:
@@ -82,16 +129,38 @@ class QtViewerDockWidget(QDockWidget):
         # FIXME:
         self.setObjectName(object_name or name)
 
-        widget = combine_widgets(widget, vertical=area in {'left', 'right'})
+        is_vertical = area in {'left', 'right'}
+        widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
+        if is_vertical and add_vertical_stretch:
+            # add vertical stretch to the bottom of a vertical layout only
+            # if there is not already a widget that wants vertical space
+            # (like a textedit or something)
+            wlayout = widget.layout()
+            exp = QSizePolicy.Expanding
+            if hasattr(wlayout, 'addStretch') and all(
+                wlayout.itemAt(i).widget().sizePolicy().verticalPolicy() < exp
+                for i in range(wlayout.count())
+                if wlayout.itemAt(i).widget()
+            ):
+                wlayout.addStretch(next(counter))
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
 
         # custom title bar
-        self.title = QtCustomTitleBar(self)
+        self.title = QtCustomTitleBar(self, title=self.name)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+    @property
+    def shortcut(self):
+        warnings.warn(
+            _SHORTCUT_DEPRECATION_STRING,
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._shortcut
 
     def setFeatures(self, features):
         super().setFeatures(features)
@@ -130,7 +199,7 @@ class QtViewerDockWidget(QDockWidget):
             self.setTitleBarWidget(None)
             if not self.isFloating():
                 self.title = QtCustomTitleBar(
-                    self, vertical=not self.is_vertical
+                    self, title=self.name, vertical=not self.is_vertical
                 )
                 self.setTitleBarWidget(self.title)
 
@@ -145,11 +214,13 @@ class QtCustomTitleBar(QLabel):
     ----------
     parent : QDockWidget
         The QtViewerDockWidget to which this titlebar belongs
+    title : str
+        A string to put in the titlebar.
     vertical : bool
         Whether this titlebar is oriented vertically or not.
     """
 
-    def __init__(self, parent, vertical=False):
+    def __init__(self, parent, title: str = '', vertical=False):
         super().__init__(parent)
         self.setObjectName("QtCustomTitleBar")
         self.setProperty('vertical', str(vertical))
@@ -173,6 +244,10 @@ class QtCustomTitleBar(QLabel):
         self.float_button.clicked.connect(
             lambda: self.parent().setFloating(not self.parent().isFloating())
         )
+        self.title = QLabel(title, self)
+        self.title.setSizePolicy(
+            QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        )
 
         if vertical:
             layout = QVBoxLayout()
@@ -182,6 +257,7 @@ class QtCustomTitleBar(QLabel):
             layout.addWidget(self.close_button, 0, Qt.AlignHCenter)
             layout.addWidget(self.float_button, 0, Qt.AlignHCenter)
             layout.addWidget(line, 0, Qt.AlignHCenter)
+            self.title.hide()
 
         else:
             layout = QHBoxLayout()
@@ -191,6 +267,7 @@ class QtCustomTitleBar(QLabel):
             layout.addWidget(self.close_button)
             layout.addWidget(self.float_button)
             layout.addWidget(line)
+            layout.addWidget(self.title)
 
         self.setLayout(layout)
         self.setCursor(Qt.OpenHandCursor)
