@@ -52,6 +52,8 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from ..utils.io import imsave_extensions
+
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -171,7 +173,7 @@ class QtViewer(QSplitter):
         action_manager.register_action(
             "napari:toggle_console_visibility",
             self.toggle_console_visibility,
-            "Show/Hide IPython console",
+            trans._("Show/Hide IPython console"),
             self.viewer,
         )
         action_manager.bind_button(
@@ -464,14 +466,47 @@ class QtViewer(QSplitter):
         if msg:
             raise OSError(trans._("Nothing to save"))
 
+        # prepare list of extensions for drop down menu.
+        if selected and len(self.viewer.layers.selection) == 1:
+            selected_layer = list(self.viewer.layers.selection)[0]
+            # single selected layer.
+            if selected_layer._type_string == 'image':
+
+                ext = imsave_extensions()
+
+                ext_list = []
+                for val in ext:
+                    ext_list.append("*" + val)
+
+                ext_str = ';;'.join(ext_list)
+
+                ext_str = trans._(
+                    "All Files (*);; Image file types:;;{ext_str}",
+                    ext_str=ext_str,
+                )
+
+            elif selected_layer._type_string == 'points':
+
+                ext_str = trans._("All Files (*);; *.csv;;")
+
+            else:
+                # layer other than image or points
+                ext_str = trans._("All Files (*);;")
+
+        else:
+            # multiple layers.
+            ext_str = trans._("All Files (*);;")
+
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
+
         filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
         )
 
         if filename:
