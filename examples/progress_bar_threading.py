@@ -15,8 +15,9 @@ def handle_yields(yielded_val):
 @thread_worker(
     # passing a progress dictionary with the total number of expected yields
     # will place a progress bar in the activity dock and increment its value
-    # with each yield
-    progress={'total': 5},
+    # with each yield. We can optionally pass a description for the bar
+    # using the 'desc' key.
+    progress={'total': 5, 'desc':'thread-progress'},
     # this does not preclude us from connecting other functions to any of the
     # worker signals (including `yielded`)
     connect={'yielded': handle_yields} 
