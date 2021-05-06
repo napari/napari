@@ -65,3 +65,16 @@ def test_worker_may_exceed_total(qtbot):
             assert worker.pbar.n == test_val[0]
         else:
             assert worker.pbar.total == 0
+
+
+def test_worker_with_description():
+    def func():
+        yield 1
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress={'total': 1, 'desc': 'custom'},
+        start_thread=False,
+    )
+    worker = thread_func()
+    assert worker.pbar.desc == 'custom'
