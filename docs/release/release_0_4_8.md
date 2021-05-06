@@ -6,6 +6,18 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
+This release comes with a *big* change with how you use napari: you should no
+longer wrap viewer calls in the `with napari.gui_qt():` context. Instead, when
+you want to block and call the viewer, use `napari.run()`. A minimal example:
+
+```python
+import napari
+from skimage import data
+
+camera = data.camera()
+viewer = napari.view_image(camera)
+napari.run()
+```
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
