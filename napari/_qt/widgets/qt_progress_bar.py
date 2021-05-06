@@ -37,7 +37,7 @@ def get_pbar(current_group_ref, **kwargs):
         group_widg = current_group_ref()
         group_layout = group_widg.layout()
         # insert before group separator
-        group_layout.insertWidget(group_layout.count() - 2, pbar)
+        group_layout.insertWidget(group_layout.count() - 1, pbar)
     else:
         pbr_group = ProgressBarGroup(pbar)
         pbr_layout.addWidget(pbr_group)
