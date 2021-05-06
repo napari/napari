@@ -78,3 +78,16 @@ def test_worker_with_description():
     )
     worker = thread_func()
     assert worker.pbar.desc == 'custom'
+
+
+def test_worker_with_no_total():
+    def func():
+        yield 1
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress={},
+        start_thread=False,
+    )
+    worker = thread_func()
+    assert worker.pbar.total == 0

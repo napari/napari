@@ -497,7 +497,8 @@ def create_worker(
         callback functions to connect to the various signals offered by the
         worker class. by default None
     _progress : Dict[str, Union[int, bool, str]], optional
-        Requires mapping of 'total' to number of expected yields. Will connect
+        Requires mapping of 'total' to number of expected yields. If total is
+        not provided, progress bar will be indeterminate. Will connect
         progress bar update to yields and display this progress in the viewer.
         Can also take a mapping of 'desc' to the progress bar description.
         If 'may_exceed_total' is True, will turn progress bar into an
@@ -593,7 +594,8 @@ def create_worker(
             )
 
         desc = _progress.get('desc', None)
-        pbar = progress(total=_progress['total'], desc=desc)
+        total = _progress.get('total', 0)
+        pbar = progress(total=total, desc=desc)
         indeterminate = _progress.get('may_exceed_total', False)
         if indeterminate:
             worker.yielded.connect(pbar.increment_with_overflow)
@@ -672,7 +674,8 @@ def thread_worker(
         callback functions to connect to the various signals offered by the
         worker class. by default None
     progress : Dict[str, Union[int, bool, str]], optional
-        Requires mapping of 'total' to number of expected yields. Will connect
+        Requires mapping of 'total' to number of expected yields. If total is
+        not provided, progress bar will be indeterminate. Will connect
         progress bar update to yields and display this progress in the viewer.
         Can also take a mapping of 'desc' to the progress bar description.
         If 'may_exceed_total' is True, will turn progress bar into an
