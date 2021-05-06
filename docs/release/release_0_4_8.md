@@ -6,7 +6,7 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
-This release comes with a *big* change with how you use napari: you should no
+This release comes with a **big** change with how you use napari: you should no
 longer wrap viewer calls in the `with napari.gui_qt():` context. Instead, when
 you want to block and call the viewer, use `napari.run()`. A minimal example:
 
@@ -19,14 +19,34 @@ viewer = napari.view_image(camera)
 napari.run()
 ```
 
+In interactive workspaces such as IPython and Jupyter Notebook, you should no
+longer need to use `%gui qt`, either: napari will enable it for you.
+
 For more information, examples, and documentation, please visit our website:
 https://napari.org
 
 ## Highlights
 
-- Add Hookspec for providing sample data (#2483)
-- Text overlay visual (#2595)
-- Support varying number of dimensions during labels painting (#2609)
+This release adds a new plugin type (i.e. a hook specification) for plugins to
+provide sample data (#2483). No more demos with `np.random`! 🎉 We've added a
+built-in sample data plugin for this using the scikit-image data module.
+Use it with `viewer.open_sample(plugin_name, sample_name)`, for example,
+`viewer.open_sample('scikit-image', 'camera')`. Or you can use the File
+menu at File -> Open Sample. For more on how to provide your own sample
+datasets to napari, see [how to write a
+plugin](https://napari.org/plugins/stable/for_plugin_developers.html) and the
+[sample data
+specification](https://napari.org/plugins/stable/hook_specifications.html#napari.plugins.hook_specifications.napari_provide_sample_data).
+
+We have also added a text overlay, which you can use to display arbitrary text
+over the viewer (#2595). You can use this to display time series time stamps,
+for example. Access it at `viewer.text_overlay`.
+
+Editing segmentations with napari is easier than ever now with varying number
+of dimensions during painting/filling with labels (#2609). Previously, if you
+wanted to edit segmentations in a time series, you had to choose between
+painting 2D planes, or painting in 4D. Now you can edit individual volumes
+without affecting the others.
 
 ## New Features
 
@@ -66,6 +86,7 @@ https://napari.org
 - Add option to save state separate from geometry (#2606)
 - QtLargeIntSpinbox for label controls (#2608)
 - Support varying number of dimensions during labels painting (#2609)
+- Add units to the ScaleBar visual (#2617)
 - Return widgets created by `add_plugin_dock_widget` (#2635)
 - Add _QtMainWindow.current (#2638)
 - Relax dask test (#2641)
@@ -95,6 +116,8 @@ https://napari.org
 - Don't create a dask cache if it doesn't exist (#2590)
 - Update model and actions on menu (#2602)
 - Fix z-index of notifications (hidden by welcome window) (#2611)
+- Make sure Delete is a special key mapping (#2613)
+- Disconnect some events on Canvas destruction (#2615)
 - Add missing QSpinBox import in Labels layer controls (#2619)
 - Use dtype.type when passing to downstream NumPy functions (#2632)
 - Fix notifications when something other than napari or ipython creates QApp (#2633)
@@ -109,8 +132,8 @@ https://napari.org
 
 ## Deprecations
 
-- Deprecate gui qt (#2533)
-  
+- As noted in the  (#2533).
+
 ## Documentation
 
 - Extend release notes: Add breaking API changes in 0.4.7 (#2494)
@@ -156,7 +179,7 @@ https://napari.org
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Lukasz Migas](https://github.com/napari/napari/commits?author=lukasz-migas) - @lukasz-migas
 - [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
-- [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
+- [Pam Wadhwa](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Volker Hilsenstein](https://github.com/napari/napari/commits?author=VolkerH) - @VolkerH
