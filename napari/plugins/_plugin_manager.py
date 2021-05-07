@@ -81,7 +81,9 @@ class NapariPluginManager(PluginManager):
 
                 self.register(_skimage_data, name='scikit-image')
 
-    def register(self, namespace: Any, name: Optional[str]) -> Optional[str]:
+    def register(
+        self, namespace: Any, name: Optional[str] = None
+    ) -> Optional[str]:
         name = super().register(namespace, name=name)
         if name:
             self.events.registered(value=name)
