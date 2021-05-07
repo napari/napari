@@ -45,12 +45,19 @@ class NapariPluginManager(PluginManager):
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
-            source=self,
-            registered=None,  # emits event.value
-            disabled=None,  # emits event.added & event.removed
+            source=self, registered=None, enabled=None, disabled=None
         )
         self._blocked: EventedSet[str] = EventedSet()
-        self._blocked.events.changed.connect(self.events.disabled)
+
+        def _on_blocked_change(event):
+            # things that are "added to the blocked list" become disabled
+            for item in event.added:
+                self.events.disabled(value=item)
+            # things that are "removed from the blocked list" become enabled
+            for item in event.removed:
+                self.events.enabled(value=item)
+
+        self._blocked.events.changed.connect(_on_blocked_change)
 
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
@@ -76,7 +83,8 @@ class NapariPluginManager(PluginManager):
 
     def register(self, namespace: Any, name: Optional[str]) -> Optional[str]:
         name = super().register(namespace, name=name)
-        self.events.registered(value=name)
+        if name:
+            self.events.registered(value=name)
         return name
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
