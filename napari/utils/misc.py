@@ -7,7 +7,6 @@ import itertools
 import os
 import re
 import sys
-import textwrap
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from pathlib import Path
@@ -15,10 +14,8 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Iterable,
     Optional,
     Sequence,
-    Set,
     Type,
     TypeVar,
     Union,
@@ -365,13 +362,6 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-def get_subclass_methods(cls: Type[Any]) -> Set[str]:
-    """Return the set of method names defined (only) on a subclass."""
-    all_methods = set(dir(cls))
-    base_methods = (dir(base()) for base in cls.__bases__)
-    return all_methods.difference(*base_methods)
-
-
 def ensure_n_tuple(val, n, fill=0):
     """Ensure input is a length n tuple.
 
@@ -489,83 +479,16 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
     return _hash.hexdigest()
 
 
-def _format_module_str(text: str, is_pyi=False) -> str:
-    """Apply black and isort formatting to text."""
-    try:
-        import isort.api
+def combine_signatures(
+    *objects: Callable, return_annotation=inspect.Signature.empty, exclude=()
+) -> inspect.Signature:
+    from itertools import chain
 
-        text = isort.api.sort_code_string(
-            text, profile="black", float_to_top=True
-        )
-    except ImportError:
-        pass
-
-    try:
-        import black
-
-        text = black.format_str(
-            text, mode=black.FileMode(line_length=79, is_pyi=is_pyi)
-        )
-    except ImportError:
-        pass
-
-    return text
-
-
-def _generate_object_stubs(
-    objects: Iterable[Any], output_file=None, imports: Sequence[str] = ()
-) -> str:
-    """Generat type stubs for a sequence of `objects`."""
-
-    pyi = '# flake8: noqa\n'
-    pyi += "\n".join(imports) + "\n"
-    for obj in objects:
-        pyi += f'def {obj.__name__}{inspect.signature(obj)}:\n'
-        pyi += (
-            textwrap.indent(f'"""{obj.__doc__}"""', '    ') + "\n"
-            if obj.__doc__
-            else '    ...\n'
-        )
-
-    pyi = _format_module_str(pyi.replace("NoneType", "None"), is_pyi=True)
-
-    if output_file:
-        with open(output_file, 'w') as f:
-            f.write(pyi)
-
-    return pyi
-
-
-def _generate_cls_stubs(
-    cls, output_file=None, imports: Sequence[str] = ()
-) -> str:
-    """Generate pyi-format type stubs for a class."""
-
-    bases = ", ".join(f'{b.__module__}.{b.__name__}' for b in cls.__bases__)
-
-    pyi = '# flake8: noqa\n'
-    pyi += "\n".join(imports) + "\n"
-    pyi += f'class {cls.__name__}({bases}):\n'
-
-    methods = []
-    for methname in sorted(get_subclass_methods(cls)):
-        meth = getattr(cls, methname)
-        if callable(meth):
-            mstr = f"def {methname}{inspect.signature(meth)}:"
-            if meth.__doc__:
-                mstr += textwrap.indent(f'"""{meth.__doc__}"""', '    ') + "\n"
-            else:
-                mstr += '    ...\n'
-
-            methods.append(mstr)
-
-    pyi += textwrap.indent("\n".join(methods), '    ')
-    pyi = pyi.replace("NoneType", "None")
-
-    pyi = _format_module_str(pyi.replace("NoneType", "None"), is_pyi=True)
-
-    if output_file:
-        with open(output_file, 'w') as f:
-            f.write(pyi)
-
-    return pyi
+    params = chain(
+        *(inspect.signature(o).parameters.values() for o in objects)
+    )
+    new_params = sorted(
+        (p for p in params if p.name not in exclude),
+        key=lambda p: p.kind,
+    )
+    return inspect.Signature(new_params, return_annotation=return_annotation)
