@@ -380,6 +380,9 @@ class PreferencesDialog(QDialog):
                 except:  # noqa: E722
                     continue
 
+    def set_current_index(self, index):
+        self._list.setCurrentRow(index)
+
 
 class ConfirmDialog(QDialog):
     """Dialog to confirms a user's choice to restore default settings."""
