@@ -135,6 +135,7 @@ and
 - Use dtype.type when passing to downstream NumPy functions (#2632)
 - Fix notifications when something other than napari or ipython creates QApp (#2633)
 - Update missing translations for 0.4.8 (#2664)
+- Catch dockwidget layout modification error (#2671)
 
 ## API Changes
 
