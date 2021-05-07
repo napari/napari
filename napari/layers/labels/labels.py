@@ -6,6 +6,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils import config
+from ...utils._dtype import normalize_dtype
 from ...utils.colormaps import (
     color_dict_to_colormap,
     label_colormap,
@@ -431,7 +432,9 @@ class Labels(_ImageBase):
             data = [data]
         int_data = []
         for data_level in data:
-            if np.issubdtype(data_level.dtype, np.floating):
+            # normalize_dtype turns e.g. tensorstore or torch dtypes into
+            # numpy dtypes
+            if np.issubdtype(normalize_dtype(data_level.dtype), np.floating):
                 raise TypeError(
                     trans._(
                         "Only integer types are supported for Labels layers, but data contains {data_level_type}.",
