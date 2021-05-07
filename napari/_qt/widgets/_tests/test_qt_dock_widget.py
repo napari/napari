@@ -102,5 +102,8 @@ def test_remove_dock_widget_by_widget_reference(make_napari_viewer):
 def test_adding_modified_widget(make_napari_viewer):
     viewer = make_napari_viewer()
     widg = QWidget()
+    # not uncommon to see people shadow the builtin layout()
+    # which breaks our ability to add vertical stretch... but shouldn't crash
     widg.layout = None
-    viewer.window.add_dock_widget(widg, name='test')
+    dw = viewer.window.add_dock_widget(widg, name='test', area='right')
+    assert dw.widget() is widg
