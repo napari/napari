@@ -104,6 +104,7 @@ and
 - Add table header style (#2645)
 - QLargeIntSpinbox with QAbstractSpinbox and python model (#2648)
 - Display file format options when saving layers (#2650)
+- Add events to plugin manager (#2663)
 
 ## Bug Fixes
 
