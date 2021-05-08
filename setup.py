@@ -10,12 +10,11 @@ from setuptools import setup
 
 
 class build_py(_build_py):
-    def run(self):
-        # generate stubs for these modules
+    def run(self) -> None:
         modules = ['napari.view_layers']
         cmd = [sys.executable, '-m', 'napari.utils.stubgen']
         subprocess.run(cmd + modules)
-        super().run()
+        return super().run()
 
 
 setup(
