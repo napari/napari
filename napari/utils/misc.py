@@ -482,9 +482,26 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
 def combine_signatures(
     *objects: Callable, return_annotation=inspect.Signature.empty, exclude=()
 ) -> inspect.Signature:
-    from itertools import chain
+    """Create combined Signature from objects, excluding names in `exclude`.
 
-    params = chain(
+    Parameters
+    ----------
+    *objects : Callable
+        callables whose signatures should be combined
+    return_annotation : [type], optional
+        The return annotation to use for combined signature, by default
+        inspect.Signature.empty (as it's ambiguous)
+    exclude : tuple, optional
+        Parameter names to exclude from the combined signature (such as
+        'self'), by default ()
+
+    Returns
+    -------
+    inspect.Signature
+        Signature object with the combined signature. Reminder, str(signature)
+        provides a very nice repr for code generation.
+    """
+    params = itertools.chain(
         *(inspect.signature(o).parameters.values() for o in objects)
     )
     new_params = sorted(
