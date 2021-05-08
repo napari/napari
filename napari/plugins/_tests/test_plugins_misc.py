@@ -39,9 +39,9 @@ def test_plugin_events(test_napari_plugin_manager):
     enable_events = []
     disable_events = []
 
-    tnpm.events.registered.connect(register_events.append)
-    tnpm.events.enabled.connect(enable_events.append)
-    tnpm.events.disabled.connect(disable_events.append)
+    tnpm.events.registered.connect(lambda e: register_events.append(e))
+    tnpm.events.enabled.connect(lambda e: enable_events.append(e))
+    tnpm.events.disabled.connect(lambda e: disable_events.append(e))
 
     class Plugin:
         pass
