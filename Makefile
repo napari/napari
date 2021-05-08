@@ -7,5 +7,4 @@ docs:
 	jb build docs
 
 typestubs:
-	python -m napari.view_layers
-	python -m napari.components.viewer_model
+	python -m napari.utils.stubgen napari.view_layers napari.components.viewer_model
