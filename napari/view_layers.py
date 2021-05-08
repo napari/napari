@@ -1,10 +1,10 @@
-"""Methods to create a new viewer instance and add a particular layer type.
+"""Methods to create a new viewer instance then add a particular layer type.
 
-All functions follow this pattern ,(where <layer_type> is replaced with one
-of the layer types):
+All functions follow this pattern, (where <layer_type> is replaced with one
+of the layer types, like "image", "points", etc...):
 
     def view_<layer_type>(*args, **kwargs):
-        # pop all of the viewer kwargs out of kwargs into viewer_kwargs
+        # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
         viewer = Viewer(**viewer_kwargs)
         add_method = getattr(viewer, f"add_{<layer_type>}")
         add_method(*args, **kwargs)
@@ -59,6 +59,23 @@ def _merge_docstrings(add_method, layer_string):
 
 
 def _merge_layer_viewer_sigs_docs(func):
+    """Make combined signature, docstrings, and annotations for `func`.
+
+    This is a decorator that combines information from `Viewer.__init__`,
+    and one of the `viewer.add_*` methods.  It updates the docstring,
+    signature, and type annotations of the decorated function with the merged
+    versions.
+
+    Parameters
+    ----------
+    func : callable
+        `view_<layer_type>` function to modify
+
+    Returns
+    -------
+    func : callable
+        The same function, with merged metadata.
+    """
     from .utils.misc import combine_signatures
 
     # get the `Viewer.add_*` method
@@ -76,15 +93,16 @@ def _merge_layer_viewer_sigs_docs(func):
         add_method, Viewer, return_annotation=Viewer, exclude=('self',)
     )
 
-    # merge the __annotations__ and update function's __globals__
-    # (this is important for evaluating ForwardRef type hints later)
+    # merge the __annotations__
     func.__annotations__ = {
         **add_method.__annotations__,
         **Viewer.__init__.__annotations__,
         'return': Viewer,
     }
-    # warning!
+
+    # update function's __globals__ ... Careful!
     # this actually updates the globals for the entire view_layers module
+    # (but this is important for evaluating ForwardRef type hints later)
     func.__globals__.update(
         {**add_method.__globals__, **Viewer.__init__.__globals__, **globals()}
     )
@@ -103,6 +121,15 @@ def _make_viewer_add_layer(add_method: str, args, kwargs) -> Viewer:
     method = getattr(viewer, add_method)
     method(*args, **kwargs)
     return viewer
+
+
+# Each of the following functions will have this pattern:
+#
+# def view_image(*args, **kwargs):
+#     # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
+#     viewer = Viewer(**viewer_kwargs)
+#     viewer.add_image(*args, **kwargs)
+#     return viewer
 
 
 @_merge_layer_viewer_sigs_docs
