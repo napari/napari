@@ -22,7 +22,7 @@ _magicgui.register_types_with_magicgui()
 
 from ._event_loop import gui_qt, run
 from .plugins.io import save_layers
-from .view_layers import (  # type: ignore
+from .view_layers import (
     view_image,
     view_labels,
     view_path,

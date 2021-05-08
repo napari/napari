@@ -61,20 +61,33 @@ def _merge_docstrings(add_method, layer_string):
 def _merge_layer_viewer_sigs_docs(func):
     from .utils.misc import combine_signatures
 
+    # get the `Viewer.add_*` method
     layer_string = func.__name__.replace("view_", "")
     if layer_string == 'path':
         add_method = Viewer.open
     else:
         add_method = getattr(Viewer, f'add_{layer_string}')
+
+    # merge the docstrings of Viewer and viewer.add_*
     func.__doc__ = _merge_docstrings(add_method, layer_string)
+
+    # merge the signatures of Viewer and viewer.add_*
     func.__signature__ = combine_signatures(
         add_method, Viewer, return_annotation=Viewer, exclude=('self',)
     )
+
+    # merge the __annotations__ and update function's __globals__
+    # (this is important for evaluating ForwardRef type hints later)
     func.__annotations__ = {
         **add_method.__annotations__,
         **Viewer.__init__.__annotations__,
         'return': Viewer,
     }
+    # warning!
+    # this actually updates the globals for the entire view_layers module
+    func.__globals__.update(
+        {**add_method.__globals__, **Viewer.__init__.__globals__, **globals()}
+    )
     return func
 
 
