@@ -40,7 +40,7 @@ def test_function_widget_registration(
             return arg
 
     test_napari_plugin_manager.discover_widgets()
-    test_napari_plugin_manager.register(Plugin)
+    test_napari_plugin_manager.register(Plugin, name='Plugin')
 
     f_widgets = test_napari_plugin_manager._function_widgets
 
