@@ -62,6 +62,9 @@ if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
 
 
+__all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -1184,17 +1187,3 @@ for _layer in (
 ):
     func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)
-
-
-if __name__ == '__main__':
-    # make type stubs
-    from ..utils.misc import _generate_cls_stubs
-
-    imports = [
-        'from typing import Any, Dict, List, Sequence, Union',
-        'import napari.layers',
-        'import napari.utils.events',
-        'import napari.utils.key_bindings',
-        'import napari.utils.mouse_bindings',
-    ]
-    _generate_cls_stubs(ViewerModel, __file__.replace(".py", ".pyi"), imports)
