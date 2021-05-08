@@ -8,7 +8,7 @@ import time
 import warnings
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
+from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -63,6 +63,7 @@ class _QtMainWindow(QMainWindow):
 
     def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
+        self._ev = None
         self.qt_viewer = qt_viewer
 
         self._quit_app = False
@@ -254,11 +255,19 @@ class _QtMainWindow(QMainWindow):
 
             parent = parent.parent()
 
+    def show(self, block=False):
+        super().show()
+        if block:
+            self._ev = QEventLoop()
+            self._ev.exec()
+
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if self._ev and self._ev.isRunning():
+            self._ev.quit()
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
             if dock.isFloating():
@@ -1197,7 +1206,7 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
-    def show(self):
+    def show(self, *, block=False):
         """Resize, show, and bring forward the window.
 
         Raises
@@ -1206,7 +1215,7 @@ class Window:
             If the viewer.window has already been closed and deleted.
         """
         try:
-            self._qt_window.show()
+            self._qt_window.show(block=block)
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
