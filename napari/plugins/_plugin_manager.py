@@ -24,6 +24,7 @@ from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
+from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -59,6 +60,9 @@ class NapariPluginManager(PluginManager):
 
         self._blocked.events.changed.connect(_on_blocked_change)
 
+        self.events.disabled.connect(self._update_settings_disable)
+        self.events.enabled.connect(self._update_settings_enable)
+
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
@@ -88,6 +92,28 @@ class NapariPluginManager(PluginManager):
         if name:
             self.events.registered(value=name)
         return name
+
+    def _update_settings_enable(self, event):
+        """Removes plugin name from disabled plugins set"""
+
+        if event.value in SETTINGS.plugins.disabled_plugins:
+            SETTINGS.plugins.disabled_plugins.remove(event.value)
+
+        self.discover()
+
+    def _update_settings_disable(self, event):
+        """Adds plugin name to disabled plugins set """
+
+        SETTINGS.plugins.disabled_plugins.add(event.value)
+
+        if event.value in self._dock_widgets:
+            del self._dock_widgets[event.value]
+
+        if event.value in self._function_widgets:
+            del self._function_widgets[event.value]
+
+        if event.value in self._sample_data:
+            del self._sample_data[event.value]
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
@@ -131,8 +157,14 @@ class NapariPluginManager(PluginManager):
             if spec_name in new_order:
                 order = []
                 for p in new_order.get(spec_name, []):
-                    order.append(p['plugin'])
-                    hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
+                    try:
+                        # the plugin may not be there if its been disabled.
+                        hook_caller._set_plugin_enabled(
+                            p['plugin'], p['enabled']
+                        )
+                        order.append(p['plugin'])
+                    except KeyError:
+                        continue
                 if order:
                     hook_caller.bring_to_front(order)
 

@@ -1,4 +1,3 @@
-import copy
 import os
 import sys
 from pathlib import Path
@@ -398,7 +397,7 @@ class QtPluginDialog(QDialog):
         self.worker.start()
 
     def update_state(self, plugin_state):
-        """Emit plugin state whecn checkbox is triggered.
+        """Emit plugin state when checkbox is triggered.
         Parameters
         ----------
         new_state: dict
@@ -407,40 +406,14 @@ class QtPluginDialog(QDialog):
                 'state': bool
             }
         """
-        disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
-        if plugin_state['plugin'] in disabled_plugins:
-            # already here, need to remove it, because now it is enabled again.
-            if plugin_state['state'] is True:
-                disabled_plugins.remove(plugin_state['plugin'])
 
-                plugin_manager.set_blocked(plugin_state['plugin'], False)
-                plugin_manager.discover()
-
+        if plugin_state['state'] is False:
+            plugin_manager.set_blocked(plugin_state['plugin'], True)
         else:
-            # this plugin is not in the disabled plugins, and is now disabled, needs to be added.
-            if plugin_state['state'] is False:
-                disabled_plugins.add(plugin_state['plugin'])
-
-                plugin_manager.set_blocked(plugin_state['plugin'], True)
-
-                # remove plugin from various lists in plugins
-                if plugin_state['plugin'] in plugin_manager._dock_widgets:
-
-                    del plugin_manager._dock_widgets[plugin_state['plugin']]
-
-                if plugin_state['plugin'] in plugin_manager._function_widgets:
-                    del plugin_manager._function_widgets[
-                        plugin_state['plugin']
-                    ]
-
-                if plugin_state['plugin'] in plugin_manager._sample_data:
-                    del plugin_manager._sample_data[plugin_state['plugin']]
-
-        SETTINGS.plugins.disabled_plugins = disabled_plugins
+            plugin_manager.set_blocked(plugin_state['plugin'], False)
 
         # need to reset call order
         plugin_manager.set_call_order(SETTINGS.plugins.call_order)
-
         self.plugin_sorter.refresh()
 
     def setup_ui(self):
