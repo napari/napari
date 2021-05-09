@@ -225,7 +225,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Determine if data is a multiscale
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
-        elif multiscale:
+        elif multiscale and not isinstance(data, MultiScaleData):
             data = MultiScaleData(data)
 
         # Determine if rgb
