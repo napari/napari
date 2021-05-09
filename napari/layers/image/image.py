@@ -14,6 +14,7 @@ from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.translations import trans
+from .._data_protocols import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -222,8 +223,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
         elif multiscale:
-            from .._data_protocols import MultiScaleData
-
             data = MultiScaleData(data)
 
         # Determine if rgb
