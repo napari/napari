@@ -53,6 +53,9 @@ def guess_multiscale(data) -> Tuple[bool, LayerDataProtocol]:
     # If data is a zarr array, this check ensure that subsets of it are not
     # instantiated. (`for d in data` instantiates `d` as a NumPy array if
     # `data` is a zarr array.)
+    if isinstance(data, MultiScaleData):
+        return True, data
+
     if hasattr(data, 'ndim') and data.ndim > 1:
         return False, data
 
