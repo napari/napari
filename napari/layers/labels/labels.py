@@ -240,6 +240,9 @@ class Labels(_ImageBase):
         self._show_selected_label = False
         self._contour = 0
 
+        # saving a pointer only for the sake of magic_name guessing in
+        # Layer.__init__ ... which otherwise doesn't use `data`
+        _data_in = data
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
 
@@ -248,7 +251,7 @@ class Labels(_ImageBase):
         )
 
         super().__init__(
-            data,
+            _data_in,
             rgb=False,
             colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
