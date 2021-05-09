@@ -80,3 +80,12 @@ class MultiScaleData(Sequence[LayerDataProtocol], MultiScaleDataProtocol):
 
     def __eq__(self, other) -> bool:
         return self._data == other
+
+    def _add__(self, other) -> bool:
+        return self._data + other
+
+    def __mul__(self, other) -> bool:
+        return self._data * other
+
+    def __rmul__(self, other) -> bool:
+        return other * self._data
