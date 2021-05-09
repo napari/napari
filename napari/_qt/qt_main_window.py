@@ -8,7 +8,7 @@ import time
 import warnings
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
+from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt, QTimer
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -1206,7 +1206,10 @@ class Window:
             If the viewer.window has already been closed and deleted.
         """
         try:
-            self._qt_window.show()
+            if sys.platform.startswith("linux"):
+                QTimer.singleShot(0, self._qt_window.show)
+            else:
+                self._qt_window.show()
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
