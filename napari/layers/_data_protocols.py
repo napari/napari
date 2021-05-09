@@ -3,7 +3,7 @@ from __future__ import annotations
 from types import GeneratorType
 from typing import Any, List, Sequence, Tuple, TypeVar, Union
 
-import numpy
+import numpy as np
 from typing_extensions import Protocol, runtime_checkable
 
 OBJ_NAMES = set(dir(Protocol))
@@ -33,7 +33,7 @@ Shape = Tuple[int, ...]
 @runtime_checkable
 class LayerDataProtocol(Protocol):
     shape: Shape
-    dtype: numpy.dtype
+    dtype: np.dtype
 
 
 @runtime_checkable
@@ -43,16 +43,16 @@ class MultiScaleDataProtocol(LayerDataProtocol, Protocol):
 
 
 _T = TypeVar('_T')
-ListOrTuple = Union[List[_T], Tuple[_T, ...]]
+ListOrTuple = Union[List[_T], Tuple[_T, ...], np.ndarray]
 
 
 class MultiScaleData(Sequence[LayerDataProtocol], MultiScaleDataProtocol):
     def __init__(self, data) -> None:
         if isinstance(data, GeneratorType):
             data = list(data)
-        if not (isinstance(data, (list, tuple)) and data):
+        if not (isinstance(data, (list, tuple, np.ndarray)) and len(data)):
             raise ValueError(
-                "Multiscale data must be a (non-empty) list or tuple."
+                "Multiscale data must be a (non-empty) list, tuple, or array"
             )
         for d in data:
             assert_protocol(d, LayerDataProtocol)
