@@ -184,6 +184,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         visible=True,
         multiscale=None,
     ):
+        # saving a pointer only for the sake of magic_name guessing in
+        # Layer.__init__ ... which otherwise doesn't use `data`
+        _data_in = data
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
@@ -203,7 +206,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             ndim -= 1
 
         super().__init__(
-            data,
+            _data_in,
             ndim,
             name=name,
             metadata=metadata,
