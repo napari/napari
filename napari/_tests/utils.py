@@ -47,6 +47,7 @@ layer_test_data = [
         2,
     ),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
+    (Labels, np.zeros((10, 10), dtype=bool), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
     (
         Labels,
