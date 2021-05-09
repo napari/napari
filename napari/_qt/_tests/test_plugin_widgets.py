@@ -50,7 +50,7 @@ def test_dock_widget_registration(
         def napari_experimental_provide_dock_widget():
             return arg
 
-    test_napari_plugin_manager.register(Plugin)
+    test_napari_plugin_manager.register(Plugin, name='Plugin')
     test_napari_plugin_manager.discover_widgets()
     widgets = test_napari_plugin_manager._dock_widgets
 

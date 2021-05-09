@@ -23,9 +23,7 @@ counter = count()
 _sentinel = object()
 
 _SHORTCUT_DEPRECATION_STRING = trans._(
-    'The shortcut parameter is deprecated since version 0.4.8, please use the '
-    'action and shortcut manager APIs. The new action manager and shortcut API '
-    'allow user configuration and localisation. (got {shortcut})',
+    'The shortcut parameter is deprecated since version 0.4.8, please use the action and shortcut manager APIs. The new action manager and shortcut API allow user configuration and localisation. (got {shortcut})',
     shortcut="{shortcut}",
 )
 
@@ -136,14 +134,21 @@ class QtViewerDockWidget(QDockWidget):
             # add vertical stretch to the bottom of a vertical layout only
             # if there is not already a widget that wants vertical space
             # (like a textedit or something)
-            wlayout = widget.layout()
-            exp = QSizePolicy.Expanding
-            if hasattr(wlayout, 'addStretch') and all(
-                wlayout.itemAt(i).widget().sizePolicy().verticalPolicy() < exp
-                for i in range(wlayout.count())
-                if wlayout.itemAt(i).widget()
-            ):
-                wlayout.addStretch(next(counter))
+            try:
+                # not uncommon to see people shadow the builtin layout() method
+                # which breaks our ability to add vertical stretch...
+                # but shouldn't crash
+                wlayout = widget.layout()
+                exp = QSizePolicy.Expanding
+                if hasattr(wlayout, 'addStretch') and all(
+                    wlayout.itemAt(i).widget().sizePolicy().verticalPolicy()
+                    < exp
+                    for i in range(wlayout.count())
+                    if wlayout.itemAt(i).widget()
+                ):
+                    wlayout.addStretch(next(counter))
+            except TypeError:
+                pass
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)

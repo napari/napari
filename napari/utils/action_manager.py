@@ -144,7 +144,7 @@ class ActionManager:
                 trans._(
                     'Action names need to be in the form `package:name`, got {name}',
                     name=name,
-                    delayed=True,
+                    deferred=True,
                 )
             )
 

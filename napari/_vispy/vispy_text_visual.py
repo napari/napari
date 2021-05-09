@@ -5,6 +5,7 @@ from vispy.visuals.transforms import STTransform
 
 # Local imports
 from ..components._viewer_constants import TextOverlayPosition
+from ..utils.translations import trans
 
 
 class VispyTextVisual:
@@ -80,7 +81,11 @@ class VispyTextVisual:
             transform = [canvas_size[0] // 2, canvas_size[1] - y_offset, 0, 0]
             anchors = ("center", "top")
         else:
-            raise ValueError(f"Position {position} is not recognized.")
+            raise ValueError(
+                trans._(
+                    "Position {position} is not recognized.", position=position
+                )
+            )
 
         self.node.transform.translate = transform
         if self.node.anchors != anchors:

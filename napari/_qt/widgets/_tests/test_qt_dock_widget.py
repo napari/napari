@@ -1,5 +1,11 @@
 import pytest
-from qtpy.QtWidgets import QDockWidget, QHBoxLayout, QPushButton, QVBoxLayout
+from qtpy.QtWidgets import (
+    QDockWidget,
+    QHBoxLayout,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 def test_add_dock_widget(make_napari_viewer):
@@ -91,3 +97,13 @@ def test_remove_dock_widget_by_widget_reference(make_napari_viewer):
         # it's gone this time:
         viewer.window.remove_dock_widget(widg)
     assert not widg.parent()
+
+
+def test_adding_modified_widget(make_napari_viewer):
+    viewer = make_napari_viewer()
+    widg = QWidget()
+    # not uncommon to see people shadow the builtin layout()
+    # which breaks our ability to add vertical stretch... but shouldn't crash
+    widg.layout = None
+    dw = viewer.window.add_dock_widget(widg, name='test', area='right')
+    assert dw.widget() is widg
