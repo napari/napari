@@ -51,9 +51,8 @@ def activate_label_erase_mode(layer):
 
 
 @register_label_action(
-    trans._(
-        "Set the currently selected label to the largest used label plus one."
-    ),
+    trans.
+    _("Set the currently selected label to the largest used label plus one."),
 )
 def new_label(layer):
     """Set the currently selected label to the largest used label plus one."""
@@ -61,15 +60,13 @@ def new_label(layer):
 
 
 @register_label_action(
-    trans._("Decrease the currently selected label by one."),
-)
+    trans._("Decrease the currently selected label by one."), )
 def decrease_label_id(layer):
     layer.selected_label -= 1
 
 
 @register_label_action(
-    trans._("Increase the currently selected label by one."),
-)
+    trans._("Increase the currently selected label by one."), )
 def increase_label_id(layer):
     layer.selected_label += 1
 
