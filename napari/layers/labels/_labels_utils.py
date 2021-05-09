@@ -121,9 +121,10 @@ def get_dtype(layer):
     layer_data = layer.data
     if not isinstance(layer_data, list):
         layer_data = [layer_data]
-    if hasattr(layer_data, 'dtype'):
-        layer_dtype = layer_data[0].dtype
+    layer_data_level = layer_data[0]
+    if hasattr(layer_data_level, 'dtype'):
+        layer_dtype = layer_data_level[0].dtype
     else:
-        layer_dtype = type(layer_data[0])
+        layer_dtype = type(layer_data_level)
 
     return layer_dtype
