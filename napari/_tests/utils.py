@@ -48,6 +48,11 @@ layer_test_data = [
     ),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
+    (
+        Labels,
+        [np.random.randint(20, size=s) for s in [(40, 20), (20, 10), (10, 5)]],
+        2,
+    ),
     (Points, 20 * np.random.random((10, 2)), 2),
     (Points, 20 * np.random.random((10, 3)), 3),
     (Vectors, 20 * np.random.random((10, 2, 2)), 2),
