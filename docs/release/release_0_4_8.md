@@ -103,6 +103,7 @@ and
 - Relax dask test (#2641)
 - Add table header style (#2645)
 - QLargeIntSpinbox with QAbstractSpinbox and python model (#2648)
+- Add Labels layer `get_dtype` utility to account for multiscale layers (#2679)
 - Display file format options when saving layers (#2650)
 - Add events to plugin manager (#2663)
 
