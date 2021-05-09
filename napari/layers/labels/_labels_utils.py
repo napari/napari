@@ -103,3 +103,12 @@ def indices_in_shape(idxs, shape):
     if np_index:  # convert back to original format
         filtered = tuple(filtered.T)
     return filtered
+
+
+def get_dtype(layer):
+    layer_data = layer.data
+    if not isinstance(layer_data, list):
+        layer_data = [layer_data]
+    layer_dtype = layer_data[0].dtype
+
+    return layer_dtype
