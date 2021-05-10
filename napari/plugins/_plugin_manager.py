@@ -1,3 +1,4 @@
+import copy
 import importlib
 import sys
 from functools import partial
@@ -95,25 +96,28 @@ class NapariPluginManager(PluginManager):
 
     def _update_settings_enable(self, event):
         """Removes plugin name from disabled plugins set"""
+        disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
+        if event.value in disabled_plugins:
+            disabled_plugins.remove(event.value)
 
-        if event.value in SETTINGS.plugins.disabled_plugins:
-            SETTINGS.plugins.disabled_plugins.remove(event.value)
-
+        SETTINGS.plugins.disabled_plugins = disabled_plugins
         self.discover()
 
     def _update_settings_disable(self, event):
         """Adds plugin name to disabled plugins set """
 
-        SETTINGS.plugins.disabled_plugins.add(event.value)
+        disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
 
-        if event.value in self._dock_widgets:
-            del self._dock_widgets[event.value]
+        disabled_plugins.add(event.value)
 
-        if event.value in self._function_widgets:
-            del self._function_widgets[event.value]
+        SETTINGS.plugins.disabled_plugins = disabled_plugins
 
-        if event.value in self._sample_data:
-            del self._sample_data[event.value]
+        self._dock_widgets = {}
+        self._function_widgets = {}
+        self._sample_data = {}
+
+        # do I need discover widgets here?   Having it here doesn't update the qt_main_window widgets properly.
+        # self.discover_widgets()
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.

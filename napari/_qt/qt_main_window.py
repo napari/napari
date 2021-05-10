@@ -513,14 +513,39 @@ class Window:
         closeAction.triggered.connect(self._qt_window.close_window)
 
         plugin_manager.discover_sample_data()
-        open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+        self.open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+
+        self._fill_sample_menu()
+
+        self.file_menu = self.main_menu.addMenu(trans._('&File'))
+        self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_stack)
+        self.file_menu.addAction(open_folder)
+        self.file_menu.addMenu(self.open_sample_menu)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(preferences)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(save_selected_layers)
+        self.file_menu.addAction(save_all_layers)
+        self.file_menu.addAction(screenshot)
+        self.file_menu.addAction(screenshot_wv)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(closeAction)
+
+        if running_as_bundled_app():
+            self.file_menu.addAction(restartAction)
+
+        self.file_menu.addAction(quitAction)
+
+    def _fill_sample_menu(self):
+
         for plugin_name, samples in plugin_manager._sample_data.items():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
-                open_sample_menu.addMenu(menu)
+                self.open_sample_menu.addMenu(menu)
             else:
-                menu = open_sample_menu
+                menu = self.open_sample_menu
 
             for samp_name, samp_dict in samples.items():
                 display_name = samp_dict['display_name']
@@ -537,26 +562,6 @@ class Window:
 
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
-
-        self.file_menu = self.main_menu.addMenu(trans._('&File'))
-        self.file_menu.addAction(open_images)
-        self.file_menu.addAction(open_stack)
-        self.file_menu.addAction(open_folder)
-        self.file_menu.addMenu(open_sample_menu)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(preferences)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(save_selected_layers)
-        self.file_menu.addAction(save_all_layers)
-        self.file_menu.addAction(screenshot)
-        self.file_menu.addAction(screenshot_wv)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(closeAction)
-
-        if running_as_bundled_app():
-            self.file_menu.addAction(restartAction)
-
-        self.file_menu.addAction(quitAction)
 
     def _open_preferences(self):
         """Edit preferences from the menubar."""
@@ -764,6 +769,11 @@ class Window:
         )
 
         plugin_manager.discover_widgets()
+        self._fill_dock_widget_menu()
+
+        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
+
+    def _fill_dock_widget_menu(self):
 
         # Add a menu item (QAction) for each available plugin widget
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
@@ -791,15 +801,24 @@ class Window:
                 menu.addAction(action)
                 action.triggered.connect(_add_widget)
 
-        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
-
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
 
         self.plugin_dialog = QtPluginDialog(
             self._qt_window, copy.deepcopy(SETTINGS.plugins.disabled_plugins)
         )
+        self.plugin_dialog.on_changed.connect(self._update_menus)
         self.plugin_dialog.exec_()
+
+    def _update_menus(self):
+
+        plugin_manager.discover_widgets()
+        self._plugin_dock_widget_menu.clear()
+        self._fill_dock_widget_menu()
+
+        # to do -- finish sample menu update
+        self.open_sample_menu.clear()
+        self._fill_sample_menu()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""

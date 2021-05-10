@@ -321,6 +321,9 @@ class QPluginList(QListWidget):
 
 
 class QtPluginDialog(QDialog):
+
+    on_changed = Signal()
+
     def __init__(self, parent=None, disabled_list=None):
         super().__init__(parent)
         self.installer = Installer()
@@ -415,6 +418,8 @@ class QtPluginDialog(QDialog):
         # need to reset call order
         plugin_manager.set_call_order(SETTINGS.plugins.call_order)
         self.plugin_sorter.refresh()
+
+        self.on_changed.emit()
 
     def setup_ui(self):
         self.resize(1080, 640)
