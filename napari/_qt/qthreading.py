@@ -27,6 +27,7 @@ class WorkerBaseSignals(QObject):
     finished = Signal()  # emitted when the work is finished
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
+    warned = Signal(tuple)  # emitted with showwarning args on warning
 
 
 class WorkerBase(QRunnable):
@@ -56,6 +57,19 @@ class WorkerBase(QRunnable):
         self._abort_requested = False
         self._running = False
         self.signals = SignalsClass()
+
+        self.signals.errored.connect(self._relay_error)
+        self.signals.warned.connect(self._relay_warning)
+
+    def _relay_error(self, exc):
+        from napari.utils.notifications import notification_manager
+
+        notification_manager.receive_error(type(exc), exc, exc.__traceback__)
+
+    def _relay_warning(self, show_warn_args):
+        from napari.utils.notifications import notification_manager
+
+        notification_manager.receive_warning(*show_warn_args)
 
     def __getattr__(self, name):
         """Pass through attr requests to signals to simplify connection API.
@@ -124,7 +138,9 @@ class WorkerBase(QRunnable):
         self.started.emit()
         self._running = True
         try:
-            result = self.work()
+            with warnings.catch_warnings():
+                warnings.showwarning = lambda *w: self.warned.emit(w)
+                result = self.work()
             if isinstance(result, Exception):
                 if isinstance(result, RuntimeError):
                     # The Worker object has likely been deleted.
