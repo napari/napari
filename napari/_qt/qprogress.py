@@ -5,8 +5,9 @@ from weakref import ref
 
 from tqdm import tqdm
 
-CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
 from ..utils.translations import trans
+
+CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
 
 _tqdm_kwargs = {
     p.name
