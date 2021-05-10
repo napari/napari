@@ -147,6 +147,7 @@ class WorkerBase(QRunnable):
         self._running = True
         try:
             with warnings.catch_warnings():
+                warnings.filterwarnings("always")
                 warnings.showwarning = lambda *w: self.warned.emit(w)
                 result = self.work()
             if isinstance(result, Exception):
