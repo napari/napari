@@ -590,7 +590,10 @@ def create_worker(
     if _progress is not None:
         if not isinstance(worker, GeneratorWorker):
             raise TypeError(
-                "_progress argument was passed but worker is not GeneratorWorker"
+                trans._(
+                    "_progress argument was passed but worker is not GeneratorWorker",
+                    deferred=True,
+                )
             )
 
         desc = _progress.get('desc', None)
