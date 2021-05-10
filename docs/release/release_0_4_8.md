@@ -106,6 +106,7 @@ and
 - Add Labels layer `get_dtype` utility to account for multiscale layers (#2679)
 - Display file format options when saving layers (#2650)
 - Add events to plugin manager (#2663)
+- Add napari module to console namespace (#2687)
 
 ## Bug Fixes
 
