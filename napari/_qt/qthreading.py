@@ -1,11 +1,19 @@
 import inspect
 import time
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 
 import toolz as tz
-from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
+from qtpy.QtCore import (
+    QObject,
+    QRunnable,
+    QThread,
+    QThreadPool,
+    QTimer,
+    Signal,
+    Slot,
+)
 
 from ..utils.translations import trans
 
@@ -224,7 +232,8 @@ class WorkerBase(QRunnable):
 
         WorkerBase._worker_set.add(self)
         self.finished.connect(lambda: WorkerBase._worker_set.discard(self))
-        QThreadPool.globalInstance().start(self)
+        start_ = partial(QThreadPool.globalInstance().start, self)
+        QTimer.singleShot(10, start_)
 
 
 class FunctionWorker(WorkerBase):
