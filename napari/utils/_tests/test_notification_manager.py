@@ -30,6 +30,7 @@ def test_notification_manager_no_gui():
 
     previous_exhook = sys.excepthook
     with notification_manager:
+        notification_manager.records.clear()
         # save all of the events that get emitted
         store: List[Notification] = []
         _append = lambda e: store.append(e)  # lambda needed on py3.7  # noqa
