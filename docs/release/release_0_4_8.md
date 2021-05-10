@@ -192,6 +192,7 @@ and
 - Remove `raw_stylesheet` (#2643)
 - Add link to top level project roadmap page (#2652)
 - Replace pypa/pep517 with pypa/build (#2684)
+- Add provide sample data hook to docs (#2689)
 
 ## Other Pull Requests
 
