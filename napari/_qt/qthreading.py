@@ -62,12 +62,12 @@ class WorkerBase(QRunnable):
         self.signals.warned.connect(self._relay_warning)
 
     def _relay_error(self, exc):
-        from napari.utils.notifications import notification_manager
+        from ..utils.notifications import notification_manager
 
         notification_manager.receive_error(type(exc), exc, exc.__traceback__)
 
     def _relay_warning(self, show_warn_args):
-        from napari.utils.notifications import notification_manager
+        from ..utils.notifications import notification_manager
 
         notification_manager.receive_warning(*show_warn_args)
 
