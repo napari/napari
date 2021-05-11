@@ -576,7 +576,7 @@ class Shapes(Layer):
             n_shapes_difference = n_new_shapes - self.nshapes
             shape_type = (
                 shape_type
-                + get_default_shape_type(shape_type) * n_shapes_difference
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
             )
             edge_widths = edge_widths + [1] * n_shapes_difference
             z_indices = z_indices + [0] * n_shapes_difference
