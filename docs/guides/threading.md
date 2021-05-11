@@ -313,6 +313,17 @@ force quit your program.
 
 So whenever possible, sprinkle your long-running functions with `yield`.
 
+If you want your thread to quit when the napari viewer closes, you can connect
+the `destroyed` signal to `worker.quit`. This is recommended to prevent the 
+loop to contiue after napari being closed:
+
+```
+# Start the loop
+worker = loop_run()
+viewer.window._qt_window.destroyed.connect(worker.quit)
+worker.start()
+```
+
 ## Full Two-way Communication
 
 So far we've mostly been *receiving* results from the threaded function, but we
