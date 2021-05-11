@@ -1030,7 +1030,7 @@ def get_default_shape_type(current_type):
     first_type = current_type[0]
     if all(shape_type == first_type for shape_type in current_type):
         return first_type
-    return "polygon"
+    return "rectangle"
 
 
 def get_shape_ndim(data):
