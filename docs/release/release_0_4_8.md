@@ -139,6 +139,7 @@ and
 - Update missing translations for 0.4.8 (#2664)
 - Catch dockwidget layout modification error (#2671)
 - Fix warnings in thread_worker, relay messages to gui (#2688)
+- Add missing setters for shape attributes (#2696)
 
 ## API Changes
 
