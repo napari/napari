@@ -786,20 +786,21 @@ class Window:
 
             for wdg_name in widgets:
                 key = (plugin_name, wdg_name)
-                if multiprovider:
-                    action = QAction(wdg_name, parent=self._qt_window)
-                else:
-                    full_name = plugin_menu_item_template.format(*key)
-                    action = QAction(full_name, parent=self._qt_window)
-
-                def _add_widget(*args, key=key, hook_type=hook_type):
-                    if hook_type == 'dock':
-                        self.add_plugin_dock_widget(*key)
+                if plugin_name not in SETTINGS.plugins.disabled_plugins:
+                    if multiprovider:
+                        action = QAction(wdg_name, parent=self._qt_window)
                     else:
-                        self._add_plugin_function_widget(*key)
+                        full_name = plugin_menu_item_template.format(*key)
+                        action = QAction(full_name, parent=self._qt_window)
 
-                menu.addAction(action)
-                action.triggered.connect(_add_widget)
+                    def _add_widget(*args, key=key, hook_type=hook_type):
+                        if hook_type == 'dock':
+                            self.add_plugin_dock_widget(*key)
+                        else:
+                            self._add_plugin_function_widget(*key)
+
+                    menu.addAction(action)
+                    action.triggered.connect(_add_widget)
 
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -811,12 +812,11 @@ class Window:
         self.plugin_dialog.exec_()
 
     def _update_menus(self):
+        """"Update dock widget and sample menus when plugins are enabled/disabled."""
 
-        plugin_manager.discover_widgets()
         self._plugin_dock_widget_menu.clear()
         self._fill_dock_widget_menu()
 
-        # to do -- finish sample menu update
         self.open_sample_menu.clear()
         self._fill_sample_menu()
 

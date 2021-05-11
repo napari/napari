@@ -95,16 +95,19 @@ class NapariPluginManager(PluginManager):
         return name
 
     def _update_settings_enable(self, event):
-        """Removes plugin name from disabled plugins set"""
+        """Removes plugin name from disabled plugins set."""
+
         disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
+
         if event.value in disabled_plugins:
             disabled_plugins.remove(event.value)
 
         SETTINGS.plugins.disabled_plugins = disabled_plugins
+
         self.discover()
 
     def _update_settings_disable(self, event):
-        """Adds plugin name to disabled plugins set """
+        """Adds plugin name to disabled plugins set."""
 
         disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
 
@@ -112,12 +115,14 @@ class NapariPluginManager(PluginManager):
 
         SETTINGS.plugins.disabled_plugins = disabled_plugins
 
-        self._dock_widgets = {}
-        self._function_widgets = {}
-        self._sample_data = {}
+        if event.value in self._dock_widgets:
+            del self._dock_widgets[event.value]
 
-        # do I need discover widgets here?   Having it here doesn't update the qt_main_window widgets properly.
-        # self.discover_widgets()
+        if event.value in self._sample_data:
+            del self._sample_data[event.value]
+
+        if event.value in self._function_widgets:
+            del self._function_widgets[event.value]
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
@@ -400,6 +405,7 @@ class NapariPluginManager(PluginManager):
         (historic here means that even plugins that are discovered after this
         is called will be added.)
         """
+
         if self._dock_widgets:
             return
         self.hook.napari_experimental_provide_dock_widget.call_historic(
