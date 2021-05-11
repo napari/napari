@@ -24,11 +24,11 @@ def test_many_shapes():
 
 def test_get_default_shape_type():
     """Test getting default shape type"""
-    shape_type = ['rectangle', 'rectangle']
-    assert get_default_shape_type(shape_type) == 'rectangle'
+    shape_type = ['polygon', 'polygon']
+    assert get_default_shape_type(shape_type) == 'polygon'
 
     shape_type = ['ellipse', 'rectangle']
-    assert get_default_shape_type(shape_type) == 'polygon'
+    assert get_default_shape_type(shape_type) == 'rectangle'
 
     shape_type = ['polygon']
     assert get_default_shape_type(shape_type) == 'polygon'
