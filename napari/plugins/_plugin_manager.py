@@ -18,6 +18,7 @@ from warnings import warn
 
 from napari_plugin_engine import HookImplementation
 from napari_plugin_engine import PluginManager as PluginManager
+from napari_plugin_engine.hooks import HookCaller
 from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
@@ -61,6 +62,9 @@ class NapariPluginManager(PluginManager):
 
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
+
+        self._extension2reader: Dict[str, str] = dict()
+        self._extension2writer: Dict[str, str] = dict()
 
         self._sample_data: Dict[str, Dict[str, SampleDict]] = dict()
         self._dock_widgets: Dict[
@@ -436,3 +440,46 @@ class NapariPluginManager(PluginManager):
                 raise KeyError(msg)
 
         return plg_wdgs[widget_name]
+
+    def get_reader_for_extension(self, extension) -> str:
+        return self._get_plugin_for_extension(extension, type='reader')
+
+    def assign_reader_to_extensions(self, reader, *extensions) -> None:
+        self._assign_plugin_to_extensions(reader, *extensions, type='reader')
+
+    def get_writer_for_extension(self, extension) -> str:
+        return self._get_plugin_for_extension(extension, type='writer')
+
+    def assign_writer_to_extensions(self, writer, *extensions) -> None:
+        self._assign_plugin_to_extensions(writer, *extensions, type='writer')
+
+    def _get_plugin_for_extension(self, extension: str, type: str) -> str:
+        ext_map = getattr(self, f'_extension2{type}', None)
+        if ext_map is None:
+            raise ValueError(f"invalid plugin type: {type!r}")
+        plugin = ext_map.get(extension)
+        # make sure it's still an active plugin
+        if plugin and (plugin not in self.plugins):
+            del self.ext_map[plugin]
+            return None
+        return plugin
+
+    def _assign_plugin_to_extensions(
+        self, plugin: str, *extensions, type=None
+    ) -> None:
+        caller: HookCaller = getattr(self.hook, f'napari_get_{type}', None)
+        if caller is None:
+            raise ValueError(f"invalid plugin type: {type!r}")
+
+        plugins = caller.get_hookimpls()
+        if plugin not in {p.plugin_name for p in plugins}:
+            msg = trans._(
+                "{plugin!r} is not a valid plugin plugin name",
+                plugin=plugin,
+                deferred=True,
+            )
+            raise ValueError(msg)
+
+        ext_map = getattr(self, f'_extension2{type}', {})
+        for ext in extensions:
+            ext_map[ext] = plugin

@@ -1,3 +1,5 @@
+import os
+import pathlib
 import warnings
 from logging import getLogger
 from typing import Any, List, Optional, Sequence, Tuple, Union
@@ -52,6 +54,10 @@ def read_data_with_plugins(
         If ``plugin`` is specified but raises an Exception while reading.
     """
     hook_caller = plugin_manager.hook.napari_get_reader
+    path = abspath_or_url(path)
+    if not plugin and isinstance(path, (str, pathlib.Path)):
+        extension = os.path.splitext(path)[-1]
+        plugin = plugin_manager.get_reader_for_extension(extension)
 
     hookimpl: Optional[HookImplementation] = None
     if plugin:
@@ -86,7 +92,6 @@ def read_data_with_plugins(
         return layer_data or None, hookimpl
 
     errors: List[PluginCallError] = []
-    path = abspath_or_url(path)
     skip_impls: List[HookImplementation] = []
     layer_data = None
     while True:
