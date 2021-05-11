@@ -140,6 +140,7 @@ and
 - Catch dockwidget layout modification error (#2671)
 - Fix warnings in thread_worker, relay messages to gui (#2688)
 - Add missing setters for shape attributes (#2696)
+- Add get_default_shape_type utility introspecting current shape type (#2701)
 
 ## API Changes
 
