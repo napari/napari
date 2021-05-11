@@ -441,19 +441,29 @@ class NapariPluginManager(PluginManager):
 
         return plg_wdgs[widget_name]
 
-    def get_reader_for_extension(self, extension) -> str:
+    def get_reader_for_extension(self, extension: str) -> Optional[str]:
+        """Get reader plugin assigned to `extension`."""
         return self._get_plugin_for_extension(extension, type='reader')
 
-    def assign_reader_to_extensions(self, reader, *extensions) -> None:
+    def assign_reader_to_extensions(
+        self, reader: str, *extensions: str
+    ) -> None:
+        """Assign a specific reader plugin to `extension`."""
         self._assign_plugin_to_extensions(reader, *extensions, type='reader')
 
-    def get_writer_for_extension(self, extension) -> str:
+    def get_writer_for_extension(self, extension: str) -> Optional[str]:
+        """Get writer plugin assigned to `extension`."""
         return self._get_plugin_for_extension(extension, type='writer')
 
-    def assign_writer_to_extensions(self, writer, *extensions) -> None:
+    def assign_writer_to_extensions(
+        self, writer: str, *extensions: str
+    ) -> None:
+        """Assign a specific writer plugin to `extension`."""
         self._assign_plugin_to_extensions(writer, *extensions, type='writer')
 
-    def _get_plugin_for_extension(self, extension: str, type: str) -> str:
+    def _get_plugin_for_extension(
+        self, extension: str, type: str
+    ) -> Optional[str]:
         ext_map = getattr(self, f'_extension2{type}', None)
         if ext_map is None:
             raise ValueError(f"invalid plugin type: {type!r}")
@@ -465,7 +475,7 @@ class NapariPluginManager(PluginManager):
         return plugin
 
     def _assign_plugin_to_extensions(
-        self, plugin: str, *extensions, type=None
+        self, plugin: str, *extensions, type: str = None
     ) -> None:
         caller: HookCaller = getattr(self.hook, f'napari_get_{type}', None)
         if caller is None:
