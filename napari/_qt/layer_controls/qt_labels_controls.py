@@ -16,6 +16,7 @@ from ...layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
     Mode,
 )
+from ...layers.labels._labels_utils import get_dtype
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
@@ -92,7 +93,8 @@ class QtLabelsControls(QtLayerControls):
 
         # selection spinbox
         self.selectionSpinBox = QtLargeIntSpinBox()
-        self.selectionSpinBox.set_dtype(self.layer.data.dtype)
+        layer_dtype = get_dtype(layer)
+        self.selectionSpinBox.set_dtype(layer_dtype)
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
@@ -124,7 +126,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_edit_dimensions_change()
 
         self.contourSpinBox = QtLargeIntSpinBox()
-        self.contourSpinBox.set_dtype(self.layer.data.dtype)
+        self.contourSpinBox.set_dtype(layer_dtype)
         self.contourSpinBox.setToolTip(trans._('display contours of labels'))
         self.contourSpinBox.valueChanged.connect(self.change_contour)
         self.contourSpinBox.setKeyboardTracking(False)

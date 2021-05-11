@@ -103,8 +103,10 @@ and
 - Relax dask test (#2641)
 - Add table header style (#2645)
 - QLargeIntSpinbox with QAbstractSpinbox and python model (#2648)
+- Add Labels layer `get_dtype` utility to account for multiscale layers (#2679)
 - Display file format options when saving layers (#2650)
 - Add events to plugin manager (#2663)
+- Add napari module to console namespace (#2687)
 
 ## Bug Fixes
 
@@ -136,6 +138,8 @@ and
 - Fix notifications when something other than napari or ipython creates QApp (#2633)
 - Update missing translations for 0.4.8 (#2664)
 - Catch dockwidget layout modification error (#2671)
+- Fix warnings in thread_worker, relay messages to gui (#2688)
+- Add missing setters for shape attributes (#2696)
 
 ## API Changes
 
@@ -189,6 +193,8 @@ and
 - Remove test warnings again, minimize output, hide more async stuff (#2642)
 - Remove `raw_stylesheet` (#2643)
 - Add link to top level project roadmap page (#2652)
+- Replace pypa/pep517 with pypa/build (#2684)
+- Add provide sample data hook to docs (#2689)
 
 ## Other Pull Requests
 

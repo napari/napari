@@ -987,10 +987,58 @@ class Shapes(Layer):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
 
+    @edge_width.setter
+    def edge_width(self, width):
+        """Set edge width of shapes using float or list of float.
+
+        If list of float, must be of equal length to n shapes
+
+        Parameters
+        ----------
+        width : float or list of float
+            width of all shapes, or each shape if list
+        """
+        if isinstance(width, list):
+            if not len(width) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                widths = width
+        else:
+            widths = [width for _ in range(self.nshapes)]
+
+        for i, width in enumerate(widths):
+            self._data_view.update_edge_width(i, width)
+
     @property
     def z_index(self):
         """list of int: z_index for each shape."""
         return self._data_view.z_indices
+
+    @z_index.setter
+    def z_index(self, z_index):
+        """Set z_index of shape using either int or list of int.
+
+        When list of int is provided, must be of equal length to n shapes.
+
+        Parameters
+        ----------
+        z_index : int or list of int
+            z-index of shapes
+        """
+        if isinstance(z_index, list):
+            if not len(z_index) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                z_indices = z_index
+        else:
+            z_indices = [z_index for _ in range(self.nshapes)]
+
+        for i, z_idx in enumerate(z_indices):
+            self._data_view.update_z_index(i, z_idx)
 
     @property
     def selected_data(self):
