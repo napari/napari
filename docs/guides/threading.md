@@ -315,7 +315,7 @@ So whenever possible, sprinkle your long-running functions with `yield`.
 
 If you want your thread to quit when the napari viewer closes, you can connect
 the `destroyed` signal to `worker.quit`. This is recommended to prevent the 
-loop to contiue after napari being closed:
+loop to continue after napari being closed:
 
 ```
 # Start the loop
