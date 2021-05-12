@@ -6,7 +6,7 @@ import inspect
 import sys
 import time
 import warnings
-from typing import Any, ClassVar, Dict, List, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -920,7 +920,7 @@ class Window:
         *,
         name: str = '',
         area: str = 'right',
-        allowed_areas=None,
+        allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
     ):
