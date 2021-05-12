@@ -6,7 +6,7 @@ import inspect
 import sys
 import time
 import warnings
-from typing import Any, ClassVar, Dict, List, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
@@ -902,13 +902,8 @@ class Window:
         wdg = Widget(**kwargs)
 
         # Add dock widget
-        dock_widget = self.add_dock_widget(
-            wdg,
-            name=full_name,
-            area=dock_kwargs.get('area', 'right'),
-            allowed_areas=dock_kwargs.get('allowed_areas', None),
-        )
-
+        dock_kwargs.pop('name', None)
+        dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
         return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
@@ -940,8 +935,8 @@ class Window:
         widget: QWidget,
         *,
         name: str = '',
-        area: str = 'bottom',
-        allowed_areas=None,
+        area: str = 'right',
+        allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
     ):
