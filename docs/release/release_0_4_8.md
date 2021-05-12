@@ -151,7 +151,7 @@ and
   the previous behaviour with
   `napari.utils.resize_dask_cache(memory_fraction=0.1)`. You can of course also
   experiment with other values!
-- The default `area` for `add_dock_widget` is not `right`.
+- The default `area` for `add_dock_widget` is now `right`, and no longer `bottom`.
 - To avoid oddly spaced sparse widgets, #2154 adds vertical stretch to the
   bottom of all dock widgets added (via plugins or manually) with an `area`
   of `left` or `right`, *unless:*
@@ -261,4 +261,3 @@ and
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
-
