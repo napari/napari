@@ -159,6 +159,8 @@ class QtViewerDockWidget(QDockWidget):
         # which breaks our ability to add vertical stretch...
         try:
             wlayout = widget.layout()
+            if wlayout is None:
+                return
         except TypeError:
             return
 
