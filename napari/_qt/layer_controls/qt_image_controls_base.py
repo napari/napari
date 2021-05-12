@@ -4,13 +4,14 @@ from functools import partial
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QLabel, QPushButton, QSlider
+from qtpy.QtWidgets import QLabel, QPushButton
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
+from ..widgets.qt_sliders_with_labels import QtLabeledSlider1
 from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
 
@@ -76,8 +77,10 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
 
         # gamma slider
-        sld = QSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
+
+        sld = QtLabeledSlider1(parent=self)
+        # sld = QSlider(Qt.Horizontal, parent=self)
+        # sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(2)
         sld.setMaximum(200)
         sld.setSingleStep(2)
