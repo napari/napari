@@ -488,6 +488,10 @@ class NapariPluginManager(PluginManager):
                     type_=type_,
                 )
             )
+
+        if not extension.startswith("."):
+            extension = f".{extension}"
+
         plugin = ext_map.get(extension)
         # make sure it's still an active plugin
         if plugin and (plugin not in self.plugins):
@@ -522,7 +526,7 @@ class NapariPluginManager(PluginManager):
             )
             raise ValueError(msg)
 
-        ext_map = getattr(self, f'_extension2{type}', {})
+        ext_map = getattr(self, f'_extension2{type_}')
         if isinstance(extensions, str):
             extensions = [extensions]
         for ext in extensions:

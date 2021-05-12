@@ -2,6 +2,9 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING
 
+import pytest
+from napari_plugin_engine import napari_hook_implementation
+
 if TYPE_CHECKING:
     from napari.plugins._plugin_manager import NapariPluginManager
 
@@ -73,3 +76,32 @@ def test_plugin_events(test_napari_plugin_manager):
     # but we can now re-register it
     tnpm.register(Plugin, name='Plugin')
     assert len(register_events) == 2
+
+
+def test_plugin_extension_assignment(test_napari_plugin_manager):
+    class Plugin:
+        @napari_hook_implementation
+        def napari_get_reader(path):
+            if path.endswith('.png'):
+                return lambda x: None
+
+        @napari_hook_implementation
+        def napari_get_writer(path, *args):
+            if path.endswith('.png'):
+                return lambda x: None
+
+    tnpm: NapariPluginManager = test_napari_plugin_manager
+    tnpm.register(Plugin, name='test_plugin')
+
+    assert tnpm.get_reader_for_extension('.png') is None
+    tnpm.assign_reader_to_extensions('test_plugin', '.png')
+    assert '.png' in tnpm._extension2reader
+    assert tnpm.get_reader_for_extension('.png') == 'test_plugin'
+
+    with pytest.warns(UserWarning):
+        # reader may not recognize extension
+        tnpm.assign_reader_to_extensions('test_plugin', '.pndfdg')
+
+    with pytest.raises(ValueError):
+        # invalid plugin name
+        tnpm.assign_reader_to_extensions('test_pldfdfugin', '.png')
