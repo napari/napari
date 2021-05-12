@@ -13,7 +13,7 @@ def test_add_dock_widget(make_napari_viewer):
     """Test basic add_dock_widget functionality"""
     viewer = make_napari_viewer()
     widg = QPushButton('button')
-    dwidg = viewer.window.add_dock_widget(widg, name='test')
+    dwidg = viewer.window.add_dock_widget(widg, name='test', area='bottom')
     assert not dwidg.is_vertical
     assert viewer.window._qt_window.findChild(QDockWidget, 'test')
     assert dwidg.widget() == widg
