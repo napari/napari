@@ -6,14 +6,13 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy.QtCore import QMetaObject, Qt, QThread
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
 from ..utils import config, perf
 from ..utils.notifications import (
-    Notification,
     notification_manager,
     show_console_notification,
 )
@@ -21,10 +20,8 @@ from ..utils.perf import perf_config
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.qt_notification import NapariQtNotification
-from .qt_application import NapariQApplication
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
-from .utils import delete_qapp
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -65,7 +62,7 @@ def get_app(
     org_domain: str = None,
     app_id: str = None,
     ipy_interactive: bool = None,
-) -> NapariQApplication:
+) -> QApplication:
     """Get or create the Qt QApplication.
 
     There is only one global QApplication instance, which can be retrieved by
@@ -128,14 +125,11 @@ def get_app(
                     args=set_values,
                 )
             )
-
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import convert_app_for_tracing
 
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
-        else:
-            app = _convert_app(app)
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
@@ -146,7 +140,7 @@ def get_app(
 
             app = QApplicationWithTracing(sys.argv)
         else:
-            app = NapariQApplication(sys.argv)
+            app = QApplication(sys.argv)
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
@@ -157,7 +151,12 @@ def get_app(
         set_app_id(kwargs.get('app_id'))
 
     if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(_show_notifications)
+        notification_manager.notification_ready.connect(
+            NapariQtNotification.show_notification
+        )
+        notification_manager.notification_ready.connect(
+            show_console_notification
+        )
 
     if app.windowIcon().isNull():
         app.setWindowIcon(QIcon(kwargs.get('icon')))
@@ -297,62 +296,10 @@ def _try_enable_ipython_gui(gui='qt'):
         shell.enable_gui(gui)
 
 
-def _show_notifications(notification: Notification):
-    application_instance = QApplication.instance()
-
-    # Handle Qt Notifications
-    if application_instance:
-        # Check if this is running from a thread
-        if application_instance.thread() != QThread.currentThread():
-            try:
-                # See: `napari._qt.qt_application`
-                application_instance._notification = notification
-                QMetaObject.invokeMethod(
-                    application_instance,
-                    "show_notification",
-                    Qt.QueuedConnection,
-                )
-            except Exception:
-                warn(
-                    trans._(
-                        "The following notification could not be processed by the `QtNotificationManager`:\n{notification}",
-                        deferred=True,
-                        notification=notification,
-                    )
-                )
-        else:
-            NapariQtNotification.show_notification(notification)
-
-    # Handle console notifications
-    show_console_notification(notification)
-
-
-def _convert_app(app: QApplication) -> NapariQApplication:
-    """If necessary replace existing app with our one.
-
-    Parameters
-    ----------
-    app : QApplication
-        The existing application if any.
-    """
-    if isinstance(app, NapariQApplication):
-        # We're already using NapariQApplication so there is nothing to do.
-        return app
-
-    if app is not None:
-        # We can't monkey patch QApplication.notify, since it's a SIP
-        # wrapped C++ method. So we delete the current app and create a new
-        # one. This must be done very early before any Qt objects are
-        # created or we will crash!
-        delete_qapp(app)
-
-    return NapariQApplication(sys.argv)
-
-
 def run(
     *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
 ):
-    """Start the Qt Event Loop.
+    """Start the Qt Event Loop
 
     Parameters
     ----------

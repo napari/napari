@@ -8,7 +8,7 @@ import time
 import warnings
 from typing import Any, ClassVar, Dict, List, Tuple
 
-from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
+from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -29,10 +29,12 @@ from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
+from ..utils.notifications import Notification
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
+from .dialogs.qt_notification import NapariQtNotification
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
@@ -90,6 +92,12 @@ class _QtMainWindow(QMainWindow):
             plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
+
+        # Connect the notification dispacther to correctly propagate
+        # notifications from threads
+        NapariQtNotification.dispatcher.sig_notified.connect(
+            self.show_notification
+        )
 
     @classmethod
     def current(cls):
@@ -290,6 +298,12 @@ class _QtMainWindow(QMainWindow):
 
         process.startDetached()
         self.close(quit_app=True)
+
+    @staticmethod
+    @Slot(Notification)
+    def show_notification(notification: Notification):
+        """Show notification coming from a thread."""
+        NapariQtNotification.show_notification(notification)
 
 
 class Window:
