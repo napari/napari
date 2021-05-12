@@ -300,6 +300,10 @@ class QtPluginSorter(QWidget):
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
 
+        # Included this, because I believe we want the plugin sorter to update from listening.
+        self.plugin_manager.events.disabled.connect(self._update)
+        self.plugin_manager.events.enabled.connect(self._update)
+
         # populate comboBox with all of the hooks known by the plugin manager
 
         for name, hook_caller in plugin_manager.hooks.items():
@@ -404,3 +408,8 @@ class QtPluginSorter(QWidget):
         """
 
         return plugins.plugin_manager.call_order()
+
+    def _update(self, event):
+        # this refresh doesn't update right away.
+        print(event.value)
+        # self.refresh()

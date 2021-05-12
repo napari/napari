@@ -111,7 +111,7 @@ class Installer:
 
 class PluginListItem(QFrame):
 
-    on_changed = Signal(dict)
+    on_changed = Signal()
 
     def __init__(
         self,
@@ -254,14 +254,20 @@ class PluginListItem(QFrame):
             Value from the checkbox indicating whether its checked or not.
         """
 
-        plugin = self.plugin_name.text()
-        edict = {'plugin': plugin, 'state': bool(state)}
-        self.on_changed.emit(edict)
+        plugin_name = self.plugin_name.text()
+        plugin_state = bool(state)
+
+        if plugin_state is False:
+            plugin_manager.set_blocked(plugin_name, True)
+        else:
+            plugin_manager.set_blocked(plugin_name, False)
+
+        self.on_changed.emit()
 
 
 class QPluginList(QListWidget):
 
-    on_changed = Signal(dict)
+    on_changed = Signal()
 
     def __init__(self, parent: QWidget, installer: Installer):
         super().__init__(parent)
@@ -399,21 +405,10 @@ class QtPluginDialog(QDialog):
         self.worker.finished.connect(self._update_count_in_label)
         self.worker.start()
 
-    def update_state(self, plugin_state):
-        """Emit plugin state when checkbox is triggered.
-        Parameters
-        ----------
-        new_state: dict
-            new_state = {
-                'plugin': str
-                'state': bool
-            }
-        """
+    def update_state(self):
+        """Emit plugin state when checkbox is triggered."""
 
-        if plugin_state['state'] is False:
-            plugin_manager.set_blocked(plugin_state['plugin'], True)
-        else:
-            plugin_manager.set_blocked(plugin_state['plugin'], False)
+        # NOTE: the plugin sorter refresh works from here...
 
         # need to reset call order
         plugin_manager.set_call_order(SETTINGS.plugins.call_order)

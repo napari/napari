@@ -385,6 +385,9 @@ class Window:
 
         SETTINGS.appearance.events.theme.connect(self._update_theme)
 
+        plugin_manager.events.disabled.connect(self._update_menus)
+        plugin_manager.events.enabled.connect(self._update_menus)
+
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
@@ -777,6 +780,7 @@ class Window:
 
         # Add a menu item (QAction) for each available plugin widget
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
+            print(plugin_name)
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -807,12 +811,15 @@ class Window:
         self.plugin_dialog = QtPluginDialog(
             self._qt_window, copy.deepcopy(SETTINGS.plugins.disabled_plugins)
         )
-        self.plugin_dialog.on_changed.connect(self._update_menus)
+        # self.plugin_dialog.on_changed.connect(self._update_menus)
         self.plugin_dialog.exec_()
 
-    def _update_menus(self):
+    def _update_menus(self, event):
         """"Update dock widget and sample menus when plugins are enabled/disabled."""
 
+        print(
+            'does not update menus properly.  not sure how to get the same plugin manager values'
+        )
         self._plugin_dock_widget_menu.clear()
         self._fill_dock_widget_menu()
 
