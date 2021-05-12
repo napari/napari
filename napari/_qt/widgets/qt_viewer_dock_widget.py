@@ -1,5 +1,4 @@
 import warnings
-from contextlib import suppress
 from functools import reduce
 from itertools import count
 from operator import ior
@@ -132,27 +131,7 @@ class QtViewerDockWidget(QDockWidget):
         widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
         if is_vertical and add_vertical_stretch:
-            with suppress(TypeError, AttributeError):
-                # not uncommon to see people shadow the builtin layout() method
-                # which breaks our ability to add vertical stretch...
-                # so we suppress TypeError above
-                wlayout = widget.layout()
-
-                # add vertical stretch to the bottom of a vertical layout only
-                # if there is not already a widget that wants vertical space
-                # (like a textedit or listwidget or something)
-                for i in range(wlayout.count()):
-                    wdg = wlayout.itemAt(i).widget()
-                    if (
-                        wdg is not None
-                        and wdg.sizePolicy().verticalPolicy()
-                        >= QSizePolicy.Expanding
-                    ):
-                        break
-                else:
-                    # not all widgets have addStretch...
-                    # so we suppress(AttributeError) above
-                    wlayout.addStretch(next(counter))
+            self._maybe_add_vertical_stretch(widget)
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
@@ -161,6 +140,39 @@ class QtViewerDockWidget(QDockWidget):
         self.title = QtCustomTitleBar(self, title=self.name)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+    def _maybe_add_vertical_stretch(self, widget):
+        """Add vertical stretch to the bottom of a vertical layout only
+
+        ...if there is not already a widget that wants vertical space
+        (like a textedit or listwidget or something).
+        """
+        exempt_policies = {
+            QSizePolicy.Expanding,
+            QSizePolicy.MinimumExpanding,
+            QSizePolicy.Ignored,
+        }
+        if widget.sizePolicy().verticalPolicy() in exempt_policies:
+            return
+
+        # not uncommon to see people shadow the builtin layout() method
+        # which breaks our ability to add vertical stretch...
+        try:
+            wlayout = widget.layout()
+        except TypeError:
+            return
+
+        for i in range(wlayout.count()):
+            wdg = wlayout.itemAt(i).widget()
+            if (
+                wdg is not None
+                and wdg.sizePolicy().verticalPolicy() in exempt_policies
+            ):
+                return
+
+        # not all widgets have addStretch...
+        if hasattr(wlayout, 'addStretch'):
+            wlayout.addStretch(next(counter))
 
     @property
     def shortcut(self):
