@@ -817,9 +817,8 @@ class Window:
     def _update_menus(self, event):
         """"Update dock widget and sample menus when plugins are enabled/disabled."""
 
-        print(
-            'does not update menus properly.  not sure how to get the same plugin manager values'
-        )
+        # does not update menus properly.  not sure how to get the same plugin manager
+        print('supposed to update menu')
         self._plugin_dock_widget_menu.clear()
         self._fill_dock_widget_menu()
 
