@@ -35,7 +35,7 @@ from ..widgets.qt_eliding_label import MultilineElidedLabel
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
-class _NotificationDispatcher(QObject):
+class NotificationDispatcher(QObject):
     """
     This is a helper class to allow the propagation of notifications
     generated from exceptions or warnings inside threads.
@@ -80,7 +80,6 @@ class NapariQtNotification(QDialog):
     message: MultilineElidedLabel
     source_label: QLabel
     severity_icon: QLabel
-    dispatcher = _NotificationDispatcher()
 
     def __init__(
         self,
@@ -375,7 +374,12 @@ class NapariQtNotification(QDialog):
             if application_instance:
                 # Check if this is running from a thread
                 if application_instance.thread() != QThread.currentThread():
-                    cls.dispatcher.sig_notified.emit(notification)
+                    dispatcher = getattr(
+                        application_instance, "_dispatcher", None
+                    )
+                    if dispatcher:
+                        dispatcher.sig_notified.emit(notification)
+
                     return
 
             cls.from_notification(notification).show()

@@ -94,10 +94,12 @@ class _QtMainWindow(QMainWindow):
         _QtMainWindow._instances.append(self)
 
         # Connect the notification dispacther to correctly propagate
-        # notifications from threads
-        NapariQtNotification.dispatcher.sig_notified.connect(
-            self.show_notification
-        )
+        # notifications from threads. See: `napari._qt.qt_event_loop::get_app`
+        application_instance = QApplication.instance()
+        if application_instance:
+            application_instance._dispatcher.sig_notified.connect(
+                self.show_notification
+            )
 
     @classmethod
     def current(cls):
