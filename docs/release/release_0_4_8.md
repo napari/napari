@@ -141,6 +141,7 @@ and
 - Fix warnings in thread_worker, relay messages to gui (#2688)
 - Add missing setters for shape attributes (#2696)
 - Add get_default_shape_type utility introspecting current shape type (#2701)
+- Fix vertical_stretch injection and kwargs passing on DockWidget (#2705)
 
 ## API Changes
 
@@ -150,6 +151,18 @@ and
   the previous behaviour with
   `napari.utils.resize_dask_cache(memory_fraction=0.1)`. You can of course also
   experiment with other values!
+- The default `area` for `add_dock_widget` is not `right`.
+- To avoid oddly spaced sparse widgets, #2154 adds vertical stretch to the
+  bottom of all dock widgets added (via plugins or manually) with an `area`
+  of `left` or `right`, *unless:*
+
+    1) the widget, or any widget in its primary layout, has a vertical 
+       [`QSizePolicy`](https://doc.qt.io/qt-5/qsizepolicy.html#Policy-enum)
+       of `Expanding`, `MinimumExpanding`, or `Ignored`
+  
+    1) `add_vertical_stretch=False` is provided to `add_dock_widget`,
+       or in the widget options provided with plugin dock widgets.
+
 
 ## Deprecations
 
