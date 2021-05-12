@@ -6,20 +6,21 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from warnings import warn
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QMetaObject, Qt, QThread
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
 from ..utils import config, perf
 from ..utils.notifications import (
+    Notification,
     notification_manager,
     show_console_notification,
 )
 from ..utils.perf import perf_config
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
-from .dialogs.qt_notification import NapariQtNotification
+from .qt_application import NapariQApplication
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
@@ -62,7 +63,7 @@ def get_app(
     org_domain: str = None,
     app_id: str = None,
     ipy_interactive: bool = None,
-) -> QApplication:
+) -> NapariQApplication:
     """Get or create the Qt QApplication.
 
     There is only one global QApplication instance, which can be retrieved by
@@ -140,7 +141,7 @@ def get_app(
 
             app = QApplicationWithTracing(sys.argv)
         else:
-            app = QApplication(sys.argv)
+            app = NapariQApplication(sys.argv)
 
         # if this is the first time the Qt app is being instantiated, we set
         # the name and metadata
@@ -151,12 +152,7 @@ def get_app(
         set_app_id(kwargs.get('app_id'))
 
     if not _ipython_has_eventloop():
-        notification_manager.notification_ready.connect(
-            NapariQtNotification.show_notification
-        )
-        notification_manager.notification_ready.connect(
-            show_console_notification
-        )
+        notification_manager.notification_ready.connect(_show_notifications)
 
     if app.windowIcon().isNull():
         app.setWindowIcon(QIcon(kwargs.get('icon')))
@@ -294,6 +290,30 @@ def _try_enable_ipython_gui(gui='qt'):
         return
     if shell.active_eventloop != gui:
         shell.enable_gui(gui)
+
+
+def _show_notifications(notification: Notification):
+    application_instance = QApplication.instance()
+
+    # Handle Qt Notifications
+    if application_instance:
+        try:
+            # Check if this is running from a thread
+            main_qthread = application_instance.thread()
+            current_qthread = QThread.currentThread()
+
+            if main_qthread != current_qthread:
+                application_instance._notification = notification
+                QMetaObject.invokeMethod(
+                    QApplication.instance(),
+                    "show_notification",
+                    Qt.QueuedConnection,
+                )
+        except Exception:
+            pass
+
+    # Handle console notifications
+    show_console_notification(notification)
 
 
 def run(

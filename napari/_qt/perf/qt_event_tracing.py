@@ -13,6 +13,7 @@ from qtpy.QtWidgets import QApplication, QWidget
 
 from ...utils import perf
 from ...utils.translations import trans
+from ..qt_application import NapariQApplication
 from ..utils import delete_qapp
 
 
@@ -41,7 +42,7 @@ def convert_app_for_tracing(app: QApplication) -> QApplication:
     return QApplicationWithTracing(sys.argv)
 
 
-class QApplicationWithTracing(QApplication):
+class QApplicationWithTracing(NapariQApplication):
     """Extend QApplication to trace Qt Events.
 
     This QApplication wraps a perf_timer around the normal notify().
@@ -63,7 +64,7 @@ class QApplicationWithTracing(QApplication):
 
         # Time the event while we handle it.
         with perf.perf_timer(timer_name, "qt_event"):
-            return QApplication.notify(self, receiver, event)
+            return NapariQApplication.notify(self, receiver, event)
 
 
 class EventTypes:
