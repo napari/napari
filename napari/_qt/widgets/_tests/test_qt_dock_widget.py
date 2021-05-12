@@ -1,9 +1,9 @@
 import pytest
-from PyQt5.QtWidgets import QTextEdit
 from qtpy.QtWidgets import (
     QDockWidget,
     QHBoxLayout,
     QPushButton,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
