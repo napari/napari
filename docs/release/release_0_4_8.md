@@ -141,6 +141,7 @@ and
 - Fix warnings in thread_worker, relay messages to gui (#2688)
 - Add missing setters for shape attributes (#2696)
 - Add get_default_shape_type utility introspecting current shape type (#2701)
+- Fix handling of exceptions and notifications of threading threads (#2703)
 
 ## API Changes
 
