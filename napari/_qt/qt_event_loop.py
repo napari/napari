@@ -20,6 +20,7 @@ from ..utils.notifications import (
 from ..utils.perf import perf_config
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
+from .dialogs.qt_notification import NapariQtNotification
 from .qt_application import NapariQApplication
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
@@ -297,20 +298,25 @@ def _show_notifications(notification: Notification):
 
     # Handle Qt Notifications
     if application_instance:
-        try:
-            # Check if this is running from a thread
-            main_qthread = application_instance.thread()
-            current_qthread = QThread.currentThread()
-
-            if main_qthread != current_qthread:
+        # Check if this is running from a thread
+        if application_instance.thread() != QThread.currentThread():
+            try:
                 application_instance._notification = notification
                 QMetaObject.invokeMethod(
-                    QApplication.instance(),
+                    application_instance,
                     "show_notification",
                     Qt.QueuedConnection,
                 )
-        except Exception:
-            pass
+            except Exception:
+                warn(
+                    trans._(
+                        "The following notification could not be processed by the `QtNotificationManager`:\n{notification}",
+                        deferred=True,
+                        notification=notification,
+                    )
+                )
+        else:
+            NapariQtNotification.show_notification(notification)
 
     # Handle console notifications
     show_console_notification(notification)
@@ -319,7 +325,7 @@ def _show_notifications(notification: Notification):
 def run(
     *, force=False, gui_exceptions=False, max_loop_level=1, _func_name='run'
 ):
-    """Start the Qt Event Loop
+    """Start the Qt Event Loop.
 
     Parameters
     ----------

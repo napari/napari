@@ -196,6 +196,7 @@ class NotificationManager:
         storing the previous hooks to be restored if necessary.
         """
         if getattr(threading, 'excepthook', None):
+            # TODO: we might want to display the additional threadcinformation
             self._originals_thread_except_hooks.append(threading.excepthook)
             threading.excepthook = self.receive_thread_error
         else:
@@ -284,7 +285,6 @@ def _setup_thread_excepthook():
     Workaround for `sys.excepthook` thread bug from:
     http://bugs.python.org/issue1230540
     """
-
     _init = threading.Thread.__init__
 
     def init(self, *args, **kwargs):
