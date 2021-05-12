@@ -515,8 +515,9 @@ class NapariPluginManager(PluginManager):
         plugins = caller.get_hookimpls()
         if plugin not in {p.plugin_name for p in plugins}:
             msg = trans._(
-                "{plugin!r} is not a valid plugin plugin name",
+                "{plugin!r} is not a valid {type_} plugin name",
                 plugin=plugin,
+                type_=type_,
                 deferred=True,
             )
             raise ValueError(msg)
