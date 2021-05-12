@@ -197,6 +197,7 @@ class NotificationManager:
         """
         if getattr(threading, 'excepthook', None):
             self._originals_thread_except_hooks.append(threading.excepthook)
+            threading.excepthook = self.receive_thread_error
         else:
             # Patch for Python < 3.8
             _setup_thread_excepthook()
@@ -205,14 +206,13 @@ class NotificationManager:
         self._original_showwarnings_hooks.append(warnings.showwarning)
 
         sys.excepthook = self.receive_error
-        threading.excepthook = self.receive_thread_error
         warnings.showwarning = self.receive_warning
 
     def restore_hooks(self):
         """
         Remove hooks installed by `install_hooks` and restore previous hooks.
         """
-        if not getattr(threading, 'excepthook', None):
+        if getattr(threading, 'excepthook', None):
             # `threading.excepthook` available only for Python >= 3.8
             threading.excepthook = self._originals_thread_except_hooks.pop()
 
