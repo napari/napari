@@ -196,7 +196,7 @@ class NotificationManager:
         storing the previous hooks to be restored if necessary.
         """
         if getattr(threading, 'excepthook', None):
-            # TODO: we might want to display the additional threadcinformation
+            # TODO: we might want to display the additional thread information
             self._originals_thread_except_hooks.append(threading.excepthook)
             threading.excepthook = self.receive_thread_error
         else:

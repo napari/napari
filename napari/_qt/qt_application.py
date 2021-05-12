@@ -13,7 +13,7 @@ class NapariQApplication(QApplication):
         super().__init__(*args, **kwargs)
 
         # Use to handle notifications raised by non managed threads
-        # See: napari._qt.qt_eventloop._show_notifications
+        # See: `napari._qt.qt_eventloop._show_notifications`
         self._notification = None
 
     @Slot()

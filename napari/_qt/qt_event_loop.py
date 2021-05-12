@@ -24,6 +24,7 @@ from .dialogs.qt_notification import NapariQtNotification
 from .qt_application import NapariQApplication
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
+from .utils import delete_qapp
 
 if TYPE_CHECKING:
     from IPython import InteractiveShell
@@ -127,11 +128,14 @@ def get_app(
                     args=set_values,
                 )
             )
+
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import convert_app_for_tracing
 
             # no-op if app is already a QApplicationWithTracing
             app = convert_app_for_tracing(app)
+        else:
+            app = _convert_app(app)
     else:
         # automatically determine monitor DPI.
         # Note: this MUST be set before the QApplication is instantiated
@@ -301,6 +305,7 @@ def _show_notifications(notification: Notification):
         # Check if this is running from a thread
         if application_instance.thread() != QThread.currentThread():
             try:
+                # See: `napari._qt.qt_application`
                 application_instance._notification = notification
                 QMetaObject.invokeMethod(
                     application_instance,
@@ -320,6 +325,28 @@ def _show_notifications(notification: Notification):
 
     # Handle console notifications
     show_console_notification(notification)
+
+
+def _convert_app(app: QApplication) -> NapariQApplication:
+    """If necessary replace existing app with our one.
+
+    Parameters
+    ----------
+    app : QApplication
+        The existing application if any.
+    """
+    if isinstance(app, NapariQApplication):
+        # We're already using NapariQApplication so there is nothing to do.
+        return app
+
+    if app is not None:
+        # We can't monkey patch QApplication.notify, since it's a SIP
+        # wrapped C++ method. So we delete the current app and create a new
+        # one. This must be done very early before any Qt objects are
+        # created or we will crash!
+        delete_qapp(app)
+
+    return NapariQApplication(sys.argv)
 
 
 def run(
