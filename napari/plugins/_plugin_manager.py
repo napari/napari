@@ -63,16 +63,14 @@ class NapariPluginManager(PluginManager):
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
-        self._extension2reader: Dict[str, str] = dict()
-        self._extension2writer: Dict[str, str] = dict()
+        self._extension2reader: Dict[str, str] = {}
+        self._extension2writer: Dict[str, str] = {}
 
-        self._sample_data: Dict[str, Dict[str, SampleDict]] = dict()
+        self._sample_data: Dict[str, Dict[str, SampleDict]] = {}
         self._dock_widgets: Dict[
             str, Dict[str, Tuple[WidgetCallable, Dict[str, Any]]]
-        ] = dict()
-        self._function_widgets: Dict[
-            str, Dict[str, Callable[..., Any]]
-        ] = dict()
+        ] = {}
+        self._function_widgets: Dict[str, Dict[str, Callable[..., Any]]] = {}
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
@@ -442,31 +440,54 @@ class NapariPluginManager(PluginManager):
         return plg_wdgs[widget_name]
 
     def get_reader_for_extension(self, extension: str) -> Optional[str]:
-        """Get reader plugin assigned to `extension`."""
-        return self._get_plugin_for_extension(extension, type='reader')
+        """Return reader plugin assigned to `extension`, or None."""
+        return self._get_plugin_for_extension(extension, type_='reader')
 
     def assign_reader_to_extensions(
-        self, reader: str, *extensions: str
+        self, reader: str, extensions: Union[str, Iterable[str]]
     ) -> None:
-        """Assign a specific reader plugin to `extension`."""
-        self._assign_plugin_to_extensions(reader, *extensions, type='reader')
+        """Assign a specific reader plugin to `extensions`.
+
+        Parameters
+        ----------
+        reader : str
+            Name of a plugin offering a reader hook.
+        extensions : Union[str, Iterable[str]]
+            Name(s) of extensions to always write with `reader`
+        """
+        self._assign_plugin_to_extensions(reader, extensions, type_='reader')
 
     def get_writer_for_extension(self, extension: str) -> Optional[str]:
-        """Get writer plugin assigned to `extension`."""
-        return self._get_plugin_for_extension(extension, type='writer')
+        """Return writer plugin assigned to `extension`, or None."""
+        return self._get_plugin_for_extension(extension, type_='writer')
 
     def assign_writer_to_extensions(
-        self, writer: str, *extensions: str
+        self, writer: str, extensions: Union[str, Iterable[str]]
     ) -> None:
-        """Assign a specific writer plugin to `extension`."""
-        self._assign_plugin_to_extensions(writer, *extensions, type='writer')
+        """Assign a specific writer plugin to `extensions`.
+
+        Parameters
+        ----------
+        writer : str
+            Name of a plugin offering a writer hook.
+        extensions : Union[str, Iterable[str]]
+            Name(s) of extensions to always write with `writer`
+        """
+        self._assign_plugin_to_extensions(writer, extensions, type_='writer')
 
     def _get_plugin_for_extension(
-        self, extension: str, type: str
+        self, extension: str, type_: str
     ) -> Optional[str]:
-        ext_map = getattr(self, f'_extension2{type}', None)
+        """helper method for public get_<type_>_for_extension functions."""
+        ext_map = getattr(self, f'_extension2{type_}', None)
         if ext_map is None:
-            raise ValueError(f"invalid plugin type: {type!r}")
+            raise ValueError(
+                trans._(
+                    "invalid plugin type: {type_!r}",
+                    deferred=True,
+                    type_=type_,
+                )
+            )
         plugin = ext_map.get(extension)
         # make sure it's still an active plugin
         if plugin and (plugin not in self.plugins):
@@ -475,11 +496,21 @@ class NapariPluginManager(PluginManager):
         return plugin
 
     def _assign_plugin_to_extensions(
-        self, plugin: str, *extensions, type: str = None
+        self,
+        plugin: str,
+        extensions: Union[str, Iterable[str]],
+        type_: str = None,
     ) -> None:
-        caller: HookCaller = getattr(self.hook, f'napari_get_{type}', None)
+        """helper method for public assign_<type_>_to_extensions functions."""
+        caller: HookCaller = getattr(self.hook, f'napari_get_{type_}', None)
         if caller is None:
-            raise ValueError(f"invalid plugin type: {type!r}")
+            raise ValueError(
+                trans._(
+                    "invalid plugin type: {type_!r}",
+                    deferred=True,
+                    type_=type_,
+                )
+            )
 
         plugins = caller.get_hookimpls()
         if plugin not in {p.plugin_name for p in plugins}:
@@ -491,5 +522,26 @@ class NapariPluginManager(PluginManager):
             raise ValueError(msg)
 
         ext_map = getattr(self, f'_extension2{type}', {})
+        if isinstance(extensions, str):
+            extensions = [extensions]
         for ext in extensions:
+            if not ext.startswith("."):
+                ext = f".{ext}"
             ext_map[ext] = plugin
+
+            # give warning that plugin *may* not be able to read that extension
+            try:
+                func = caller._call_plugin(plugin, path=f'_testing_{ext}')
+            except Exception:
+                pass
+            if func is None:
+                msg = trans._(
+                    'plugin {plugin!r} did not return a {type_} function when '
+                    'provided test path ending in {ext!r}.  This *may* '
+                    'indicate a typo?',
+                    deferred=True,
+                    plugin=plugin,
+                    type_=type_,
+                    ext=ext,
+                )
+                warn(msg)
