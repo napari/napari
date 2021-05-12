@@ -1,4 +1,3 @@
-import copy
 import importlib
 import sys
 from functools import partial
@@ -50,19 +49,7 @@ class NapariPluginManager(PluginManager):
             source=self, registered=None, enabled=None, disabled=None
         )
         self._blocked: EventedSet[str] = EventedSet()
-
-        def _on_blocked_change(event):
-            # things that are "added to the blocked list" become disabled
-            for item in event.added:
-                self.events.disabled(value=item)
-            # things that are "removed from the blocked list" become enabled
-            for item in event.removed:
-                self.events.enabled(value=item)
-
-        self._blocked.events.changed.connect(_on_blocked_change)
-
-        self.events.disabled.connect(self._update_settings_disable)
-        self.events.enabled.connect(self._update_settings_enable)
+        self._blocked.events.changed.connect(self._on_blocked_change)
 
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
@@ -94,35 +81,27 @@ class NapariPluginManager(PluginManager):
             self.events.registered(value=name)
         return name
 
-    def _update_settings_enable(self, event):
-        """Removes plugin name from disabled plugins set."""
+    def _on_blocked_change(self, event):
+        # things that are "added to the blocked list" become disabled
+        for item in event.added:
+            for _dict in (
+                self._dock_widgets,
+                self._sample_data,
+                self._function_widgets,
+            ):
+                _dict.pop(item, None)
+            self.events.disabled(value=item)
 
-        disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
+        # things that are "removed from the blocked list" become enabled
+        for item in event.removed:
+            self.events.enabled(value=item)
 
-        if event.value in disabled_plugins:
-            disabled_plugins.remove(event.value)
+        if event.removed:
+            # if an event was removed from the "disabled" list...
+            # let's reregister.  # TODO: might be able to be more direct here.
+            self.discover()
 
-        SETTINGS.plugins.disabled_plugins = disabled_plugins
-
-        self.discover()
-
-    def _update_settings_disable(self, event):
-        """Adds plugin name to disabled plugins set."""
-
-        disabled_plugins = copy.deepcopy(SETTINGS.plugins.disabled_plugins)
-
-        disabled_plugins.add(event.value)
-
-        SETTINGS.plugins.disabled_plugins = disabled_plugins
-
-        if event.value in self._dock_widgets:
-            del self._dock_widgets[event.value]
-
-        if event.value in self._sample_data:
-            del self._sample_data[event.value]
-
-        if event.value in self._function_widgets:
-            del self._function_widgets[event.value]
+        SETTINGS.plugins.disabled_plugins = set(self._blocked)
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
