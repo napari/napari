@@ -538,7 +538,7 @@ class NapariPluginManager(PluginManager):
             if func is None:
                 msg = trans._(
                     'plugin {plugin!r} did not return a {type_} function when '
-                    'provided test path ending in {ext!r}.  This *may* '
+                    'provided a path ending in {ext!r}.  This *may* '
                     'indicate a typo?',
                     deferred=True,
                     plugin=plugin,
