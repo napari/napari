@@ -885,11 +885,8 @@ class Window:
         # instantiate the widget
         wdg = Widget(**kwargs)
 
-        dock_kwargs.setdefault('area', 'right')
-        dock_kwargs.setdefault('allowed_areas', None)
-        dock_kwargs.pop('name', None)
-
         # Add dock widget
+        dock_kwargs.pop('name', None)
         dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
         return dock_widget, wdg
 
@@ -922,7 +919,7 @@ class Window:
         widget: QWidget,
         *,
         name: str = '',
-        area: str = 'bottom',
+        area: str = 'right',
         allowed_areas=None,
         shortcut=_sentinel,
         add_vertical_stretch=True,

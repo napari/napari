@@ -66,7 +66,7 @@ class QtViewerDockWidget(QDockWidget):
         widget: QWidget,
         *,
         name: str = '',
-        area: str = 'bottom',
+        area: str = 'right',
         allowed_areas: Optional[List[str]] = None,
         shortcut=_sentinel,
         object_name: str = '',
