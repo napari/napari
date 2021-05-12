@@ -885,14 +885,12 @@ class Window:
         # instantiate the widget
         wdg = Widget(**kwargs)
 
-        # Add dock widget
-        dock_widget = self.add_dock_widget(
-            wdg,
-            name=full_name,
-            area=dock_kwargs.get('area', 'right'),
-            allowed_areas=dock_kwargs.get('allowed_areas', None),
-        )
+        dock_kwargs.setdefault('area', 'right')
+        dock_kwargs.setdefault('allowed_areas', None)
+        dock_kwargs.pop('name', None)
 
+        # Add dock widget
+        dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
         return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):

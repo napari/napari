@@ -1,4 +1,5 @@
 import warnings
+from contextlib import suppress
 from functools import reduce
 from itertools import count
 from operator import ior
@@ -131,24 +132,27 @@ class QtViewerDockWidget(QDockWidget):
         widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
         if is_vertical and add_vertical_stretch:
-            # add vertical stretch to the bottom of a vertical layout only
-            # if there is not already a widget that wants vertical space
-            # (like a textedit or something)
-            try:
+            with suppress(TypeError, AttributeError):
                 # not uncommon to see people shadow the builtin layout() method
                 # which breaks our ability to add vertical stretch...
-                # but shouldn't crash
+                # so we suppress TypeError above
                 wlayout = widget.layout()
-                exp = QSizePolicy.Expanding
-                if hasattr(wlayout, 'addStretch') and all(
-                    wlayout.itemAt(i).widget().sizePolicy().verticalPolicy()
-                    < exp
-                    for i in range(wlayout.count())
-                    if wlayout.itemAt(i).widget()
-                ):
+
+                # add vertical stretch to the bottom of a vertical layout only
+                # if there is not already a widget that wants vertical space
+                # (like a textedit or listwidget or something)
+                for i in range(wlayout.count()):
+                    wdg = wlayout.itemAt(i).widget()
+                    if (
+                        wdg is not None
+                        and wdg.sizePolicy().verticalPolicy()
+                        >= QSizePolicy.Expanding
+                    ):
+                        break
+                else:
+                    # not all widgets have addStretch...
+                    # so we suppress(AttributeError) above
                     wlayout.addStretch(next(counter))
-            except TypeError:
-                pass
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
