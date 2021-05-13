@@ -94,7 +94,7 @@ class QtViewerDockWidget(QDockWidget):
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
         else:
@@ -180,7 +180,7 @@ class QtViewerDockWidget(QDockWidget):
     def shortcut(self):
         warnings.warn(
             _SHORTCUT_DEPRECATION_STRING,
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self._shortcut

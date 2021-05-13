@@ -989,7 +989,7 @@ class Window:
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
             dock_widget = QtViewerDockWidget(
@@ -1069,7 +1069,7 @@ class Window:
         import warnings
 
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+            warnings.simplefilter("ignore", FutureWarning)
             # deprecating with 0.4.8, but let's try to keep compatibility.
             shortcut = dock_widget.shortcut
         if shortcut is not None:
