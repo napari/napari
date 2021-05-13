@@ -107,6 +107,7 @@ and
 - Display file format options when saving layers (#2650)
 - Add events to plugin manager (#2663)
 - Add napari module to console namespace (#2687)
+- Change deprecation warnings to future warnings (#2707)
 
 ## Bug Fixes
 
