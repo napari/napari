@@ -264,7 +264,6 @@ class QPluginList(QListWidget):
             plugin_name=plugin_name,
             enabled=enabled,
         )
-
         method = getattr(
             self.installer, 'uninstall' if plugin_name else 'install'
         )
@@ -339,7 +338,6 @@ class QtPluginDialog(QDialog):
                 meta = standard_metadata(distname)
             else:
                 meta = {}
-
             self.installed_list.addItem(
                 ProjectInfo(
                     normalized_name(distname or ''),
