@@ -237,9 +237,6 @@ class PluginListItem(QFrame):
     def _on_enabled_checkbox(self, state: int):
         """Called with `state` when checkbox is clicked."""
         plugin_manager.set_blocked(self.plugin_name.text(), not state)
-        if state:
-            print('discover!')
-            plugin_manager.discover()
 
 
 class QPluginList(QListWidget):
