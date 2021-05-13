@@ -6,7 +6,6 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QSlider,
 )
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
@@ -16,6 +15,7 @@ from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
+from ..widgets.qt_sliders_with_labels import QtLabeledSlider1
 from .qt_layer_controls_base import QtLayerControls
 
 
@@ -87,7 +87,7 @@ class QtPointsControls(QtLayerControls):
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QtLabeledSlider1()
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(100)

@@ -2,13 +2,7 @@ from collections.abc import Iterable
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QGridLayout,
-    QLabel,
-    QSlider,
-)
+from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.events import disconnect_events
@@ -17,6 +11,7 @@ from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
+from ..widgets.qt_sliders_with_labels import QtLabeledSlider1
 from .qt_layer_controls_base import QtLayerControls
 
 
@@ -95,7 +90,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.events.editable.connect(self._on_editable_change)
         self.layer.text.events.visible.connect(self._on_text_visibility_change)
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QtLabeledSlider1()
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(40)

@@ -79,8 +79,7 @@ class QtBaseImageControls(QtLayerControls):
         # gamma slider
 
         sld = QtLabeledSlider1(parent=self)
-        # sld = QSlider(Qt.Horizontal, parent=self)
-        # sld.setFocusPolicy(Qt.NoFocus)
+        sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(2)
         sld.setMaximum(200)
         sld.setSingleStep(2)

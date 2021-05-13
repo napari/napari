@@ -7,7 +7,6 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QSlider,
     QSpinBox,
     QWidget,
 )
@@ -23,6 +22,7 @@ from ...utils.translations import trans
 from ..utils import disable_with_opacity
 from ..widgets.qt_large_int_spinbox import QtLargeIntSpinBox
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
+from ..widgets.qt_sliders_with_labels import QtLabeledSlider1
 from .qt_layer_controls_base import QtLayerControls
 
 INT32_MAX = 2 ** 31 - 1
@@ -100,7 +100,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selected_label_change()
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QtLabeledSlider1()
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(1)
         sld.setMaximum(40)

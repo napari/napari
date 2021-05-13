@@ -1,8 +1,9 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
+from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events
+from ..widgets.qt_sliders_with_labels import QtLabeledSlider1
 
 
 class QtLayerControls(QFrame):
@@ -46,7 +47,7 @@ class QtLayerControls(QFrame):
         self.grid_layout.setColumnStretch(1, 1)
         self.setLayout(self.grid_layout)
 
-        sld = QSlider(Qt.Horizontal, parent=self)
+        sld = QtLabeledSlider1(parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
