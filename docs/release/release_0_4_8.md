@@ -143,6 +143,7 @@ and
 - Add get_default_shape_type utility introspecting current shape type (#2701)
 - Fix handling of exceptions and notifications of threading threads (#2703)
 - Fix vertical_stretch injection and kwargs passing on DockWidget (#2705)
+- Fix tracks icons, and visibility icons (#2708)
 
 ## API Changes
 
