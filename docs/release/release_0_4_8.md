@@ -145,6 +145,7 @@ and
 - Fix handling of exceptions and notifications of threading threads (#2703)
 - Fix vertical_stretch injection and kwargs passing on DockWidget (#2705)
 - Fix tracks icons, and visibility icons (#2708)
+- Patch horizontalAdvance for older Qt versions (#2711)
 
 ## API Changes
 
