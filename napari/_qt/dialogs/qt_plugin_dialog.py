@@ -1,19 +1,11 @@
 import os
 import sys
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Sequence
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
-from qtpy.QtCore import (
-    QEvent,
-    QProcess,
-    QProcessEnvironment,
-    QSize,
-    Qt,
-    Signal,
-    Slot,
-)
+from qtpy.QtCore import QEvent, QProcess, QProcessEnvironment, QSize, Qt, Slot
 from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -42,7 +34,6 @@ from ...plugins.pypi import (
 )
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import parse_version, running_as_bundled_app
-from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..qthreading import create_worker
 from ..widgets.qt_eliding_label import ElidingLabel
@@ -110,9 +101,6 @@ class Installer:
 
 
 class PluginListItem(QFrame):
-
-    on_changed = Signal()
-
     def __init__(
         self,
         package_name: str,
@@ -176,7 +164,7 @@ class PluginListItem(QFrame):
         self.row1.setSpacing(8)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(enabled)
-        self.enabled_checkbox.stateChanged.connect(self._emit_state)
+        self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
         self.enabled_checkbox.setToolTip(trans._("enable/disable"))
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -246,29 +234,15 @@ class PluginListItem(QFrame):
         self.row2.addWidget(self.package_author)
         self.v_lay.addLayout(self.row2)
 
-    def _emit_state(self, state: Union[bool, int]):
-        """Emit plugin name and state when checkbox is clicked.
-        Parameters
-        ----------
-        state: bool, int
-            Value from the checkbox indicating whether its checked or not.
-        """
-
-        plugin_name = self.plugin_name.text()
-        plugin_state = bool(state)
-
-        if plugin_state is False:
-            plugin_manager.set_blocked(plugin_name, True)
-        else:
-            plugin_manager.set_blocked(plugin_name, False)
-
-        self.on_changed.emit()
+    def _on_enabled_checkbox(self, state: int):
+        """Called with `state` when checkbox is clicked."""
+        plugin_manager.set_blocked(self.plugin_name.text(), not state)
+        if state:
+            print('discover!')
+            plugin_manager.discover()
 
 
 class QPluginList(QListWidget):
-
-    on_changed = Signal()
-
     def __init__(self, parent: QWidget, installer: Installer):
         super().__init__(parent)
         self.installer = installer
@@ -293,8 +267,6 @@ class QPluginList(QListWidget):
             plugin_name=plugin_name,
             enabled=enabled,
         )
-
-        widg.on_changed.connect(self.on_changed.emit)
 
         method = getattr(
             self.installer, 'uninstall' if plugin_name else 'install'
@@ -327,13 +299,9 @@ class QPluginList(QListWidget):
 
 
 class QtPluginDialog(QDialog):
-
-    on_changed = Signal()
-
-    def __init__(self, parent=None, disabled_list=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.installer = Installer()
-        self.disabled_list = disabled_list
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
         self.installer.process.started.connect(self._on_installer_start)
@@ -375,8 +343,6 @@ class QtPluginDialog(QDialog):
             else:
                 meta = {}
 
-            enabled = plugin_name not in self.disabled_list
-
             self.installed_list.addItem(
                 ProjectInfo(
                     normalized_name(distname or ''),
@@ -387,7 +353,7 @@ class QtPluginDialog(QDialog):
                     meta.get('license', ''),
                 ),
                 plugin_name=plugin_name,
-                enabled=enabled,
+                enabled=plugin_name in plugin_manager.plugins,
             )
         # self.v_splitter.setSizes([70 * self.installed_list.count(), 10, 10])
 
@@ -404,17 +370,6 @@ class QtPluginDialog(QDialog):
         self.worker.finished.connect(self.working_indicator.hide)
         self.worker.finished.connect(self._update_count_in_label)
         self.worker.start()
-
-    def update_state(self):
-        """Emit plugin state when checkbox is triggered."""
-
-        # NOTE: the plugin sorter refresh works from here...
-
-        # need to reset call order
-        plugin_manager.set_call_order(SETTINGS.plugins.call_order)
-        self.plugin_sorter.refresh()
-
-        self.on_changed.emit()
 
     def setup_ui(self):
         self.resize(1080, 640)
@@ -434,7 +389,6 @@ class QtPluginDialog(QDialog):
         lay.setContentsMargins(0, 2, 0, 2)
         lay.addWidget(QLabel(trans._("Installed Plugins")))
         self.installed_list = QPluginList(installed, self.installer)
-        self.installed_list.on_changed.connect(self.update_state)
         lay.addWidget(self.installed_list)
 
         uninstalled = QWidget(self.v_splitter)

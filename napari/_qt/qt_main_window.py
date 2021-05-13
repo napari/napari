@@ -385,8 +385,12 @@ class Window:
 
         SETTINGS.appearance.events.theme.connect(self._update_theme)
 
-        plugin_manager.events.disabled.connect(self._update_menus)
-        plugin_manager.events.enabled.connect(self._update_menus)
+        plugin_manager.events.disabled.connect(self._rebuild_dock_widget_menu)
+        plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
+        plugin_manager.events.registered.connect(
+            self._rebuild_dock_widget_menu
+        )
+        plugin_manager.events.registered.connect(self._rebuild_samples_menu)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -518,7 +522,7 @@ class Window:
         plugin_manager.discover_sample_data()
         self.open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
 
-        self._fill_sample_menu()
+        self._rebuild_samples_menu()
 
         self.file_menu = self.main_menu.addMenu(trans._('&File'))
         self.file_menu.addAction(open_images)
@@ -540,7 +544,8 @@ class Window:
 
         self.file_menu.addAction(quitAction)
 
-    def _fill_sample_menu(self):
+    def _rebuild_samples_menu(self, event=None):
+        self.open_sample_menu.clear()
 
         for plugin_name, samples in plugin_manager._sample_data.items():
             multiprovider = len(samples) > 1
@@ -772,15 +777,16 @@ class Window:
         )
 
         plugin_manager.discover_widgets()
-        self._fill_dock_widget_menu()
+        self._rebuild_dock_widget_menu()
 
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
-    def _fill_dock_widget_menu(self):
+    def _rebuild_dock_widget_menu(self, event=None):
+
+        self._plugin_dock_widget_menu.clear()
 
         # Add a menu item (QAction) for each available plugin widget
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
-            print(plugin_name)
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
@@ -808,22 +814,8 @@ class Window:
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
 
-        self.plugin_dialog = QtPluginDialog(
-            self._qt_window, copy.deepcopy(SETTINGS.plugins.disabled_plugins)
-        )
-        # self.plugin_dialog.on_changed.connect(self._update_menus)
+        self.plugin_dialog = QtPluginDialog(self._qt_window)
         self.plugin_dialog.exec_()
-
-    def _update_menus(self, event):
-        """"Update dock widget and sample menus when plugins are enabled/disabled."""
-
-        # does not update menus properly.  not sure how to get the same plugin manager
-        print('supposed to update menu')
-        self._plugin_dock_widget_menu.clear()
-        self._fill_dock_widget_menu()
-
-        self.open_sample_menu.clear()
-        self._fill_sample_menu()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""
