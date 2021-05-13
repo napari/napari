@@ -1,4 +1,5 @@
 from qtpy.QtCore import Qt, Signal
+from qtpy.QtGui import QFont
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QSlider, QWidget
 
 from ...utils.translations import translator
@@ -44,7 +45,7 @@ class QtLabeledSlider1(QWidget):
     ):
         super().__init__(parent)
 
-        # self.setGeometry(300, 300, 125, 110)
+        # self.setGeometry(0, 0, 30, 100)
         self._value = value
         self._min_value = min_value
         self._max_value = max_value
@@ -52,7 +53,6 @@ class QtLabeledSlider1(QWidget):
 
         # Widget
         self._lineedit = QLineEdit()
-        self._unit = QLabel(self)
         self._slider = QSlider(Qt.Horizontal, parent=parent)
         self._slider_min_label = QLabel(self)
         self._slider_max_label = QLabel(self)
@@ -61,17 +61,45 @@ class QtLabeledSlider1(QWidget):
         # Widgets setup
         # self._lineedit.setValidator(self._validator)
         self._lineedit.setAlignment(Qt.AlignRight)
-        self._lineedit.setAlignment(Qt.AlignBottom)
+        self._lineedit.setAlignment(Qt.AlignHCenter)
+        self._lineedit.setFixedWidth(25)
         self._slider_min_label.setText(str(min_value))
-        self._slider_min_label.setAlignment(Qt.AlignBottom)
         self._slider_max_label.setText(str(max_value))
-        self._slider_max_label.setAlignment(Qt.AlignBottom)
         self._slider.setMinimum(min_value)
         self._slider.setMaximum(max_value)
+
+        font10 = QFont()
+        font10.setPointSize(10)
+        self._slider_min_label.setFont(font10)
+        self._slider_max_label.setFont(font10)
+        self._lineedit.setFont(font10)
+        # self._slider.setFixedWidth(60)
 
         # Signals
         self._slider.valueChanged.connect(self._update_value)
         self._lineedit.textChanged.connect(self._update_value)
+
+        # layout1 = QHBoxLayout()
+        # layout1.addWidget(self._slider_min_label)
+        # layout1.setContentsMargins(5,0,0,0)
+        # layout1.setSpacing(0)
+        # layout2 = QHBoxLayout()
+        # layout2.addWidget(self._slider_max_label)
+        # layout2.setContentsMargins(50,0, 0,0)
+        # layout2.setSpacing(0)
+
+        # layout3 = QHBoxLayout()
+        # layout3.addLayout(layout1)
+        # layout3.addLayout(layout2)
+
+        # layout4 = QHBoxLayout()
+        # layout4.addWidget(self._slider)
+        # layout4.setContentsMargins(0,0,0,0)
+        # layout4.setSpacing(0)
+
+        # layout = QVBoxLayout()
+        # layout.addLayout(layout4, 5)
+        # layout.addLayout(layout3)
 
         # layout
         layout = QHBoxLayout()
@@ -79,7 +107,10 @@ class QtLabeledSlider1(QWidget):
         layout.addWidget(self._slider_min_label)
         layout.addWidget(self._slider)
         layout.addWidget(self._slider_max_label)
-        layout.setAlignment(Qt.AlignBottom)
+        # layout.setAlignment(Qt.AlignBottom)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignHCenter)
 
         self.setLayout(layout)
 
