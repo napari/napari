@@ -22,11 +22,11 @@ def assert_pbar_added_to(viewer):
 
 def test_progress_with_iterable(make_napari_viewer):
     viewer = make_napari_viewer()
+    viewer.show()
 
     with assert_pbar_added_to(viewer):
         r = range(100)
         pbr = progress(r)
-
     assert pbr.iterable is r
     assert pbr.n == 0
     assert pbr._pbar.pbar.maximum() == pbr.total == 100
@@ -36,12 +36,13 @@ def test_progress_with_iterable(make_napari_viewer):
 
 def test_progress_with_ndarray(make_napari_viewer):
     viewer = make_napari_viewer()
+    viewer.show()
 
     with assert_pbar_added_to(viewer):
-        iter = np.random.random((100, 100))
-        pbr = progress(iter)
+        iter_ = np.random.random((100, 100))
+        pbr = progress(iter_)
 
-    assert pbr.iterable is iter
+    assert pbr.iterable is iter_
     assert pbr.n == 0
     assert pbr._pbar.pbar.maximum() == pbr.total
 
@@ -50,6 +51,7 @@ def test_progress_with_ndarray(make_napari_viewer):
 
 def test_progress_with_total(make_napari_viewer):
     viewer = make_napari_viewer()
+    viewer.show()
 
     with assert_pbar_added_to(viewer):
         pbr = progress(total=5)
@@ -65,6 +67,7 @@ def test_progress_with_total(make_napari_viewer):
 
 def test_progress_with_context(make_napari_viewer):
     viewer = make_napari_viewer()
+    viewer.show()
 
     with assert_pbar_added_to(viewer):
         with progress(range(100)) as pbr:
@@ -84,7 +87,8 @@ def test_progress_no_viewer():
 
 
 def test_progress_update(make_napari_viewer):
-    make_napari_viewer()
+    viewer = make_napari_viewer()
+    viewer.show()
 
     pbr = progress(total=10)
 
@@ -107,7 +111,8 @@ def test_progress_update(make_napari_viewer):
 
 
 def test_progress_set_description(make_napari_viewer):
-    make_napari_viewer()
+    viewer = make_napari_viewer()
+    viewer.show()
 
     pbr = progress(total=5)
     pbr.set_description("Test")
@@ -119,4 +124,7 @@ def test_progress_set_description(make_napari_viewer):
 
 
 def test_progrange():
-    assert progress(range(10)).iterable == progrange(10).iterable
+    assert (
+        progress(range(10), disable=True).iterable
+        == progrange(10, disable=True).iterable
+    )

@@ -123,14 +123,21 @@ class progress(tqdm):
     def show(self):
         """Show the progress bar"""
         if self.has_viewer:
-            self._pbar.show()
+            try:
+                if self._pbar.window().isVisible():
+                    # Check if main window is already showed.
+                    self._pbar.show()
+            except AttributeError:
+                pass
 
     def close(self):
         """Closes and deletes the progress bar widget"""
         if self.disable:
             return
         if self.has_viewer:
+            self._pbar.hide()
             self._pbar.close()
+            self._pbar.deleteLater()
         super().close()
 
 
