@@ -1,3 +1,4 @@
+import os
 import sys
 import warnings
 from contextlib import suppress
@@ -21,6 +22,14 @@ def pytest_addoption(parser):
 
 @pytest.fixture
 def napari_plugin_manager(monkeypatch):
+    """A napari plugin manager that blocks discovery by default.
+
+    Note you can still use `napari_plugin_manager.register()` to directly
+    register a plugin module, class or dict for testing.
+
+    Or, to re-enable global discovery, use:
+    `napari_plugin_manager.discovery_blocker.stop()`
+    """
     from unittest.mock import patch
 
     import napari
@@ -39,11 +48,11 @@ def napari_plugin_manager(monkeypatch):
 
     # prevent discovery of plugins in the environment
     # you can still use `pm.register` to explicitly register something.
-    pm._discover_patcher = patch.object(pm, 'discover')
-    pm._discover_patcher.start()
+    pm.discovery_blocker = patch.object(pm, 'discover')
+    pm.discovery_blocker.start()
     pm._initialize()  # register our builtins
     yield pm
-    pm._discover_patcher.stop()
+    pm.discovery_blocker.stop()
 
 
 @pytest.fixture
@@ -52,8 +61,29 @@ def make_napari_viewer(
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
-    This uses a strict qtbot variant that asserts that no widgets are left over
-    after the viewer is closed.
+    Use this fixture as a function in your tests:
+
+        viewer = make_napari_viewer()
+
+    It accepts all the same arguments as napari.Viewer, plus the following
+    test-related paramaters:
+
+    ViewerClass : Type[napari.Viewer], optional
+        Override the viewer class being used.  By default, will
+        use napari.viewer.Viewer
+    strict_qt : bool or str, optional
+        If True, a check will be performed after test cleanup to make sure that
+        no top level widgets were created and *not* cleaned up during the
+        test.  If the string "raise" is provided, an AssertionError will be
+        raised.  Otherwise a warning is emitted.
+        By default, this is False unless the test is being performed within
+        the napari package.
+        This can be made globally true by setting the 'NAPARI_STRICT_QT'
+        environment variable.
+    block_plugin_discovery : bool, optional
+        Block discovery of non-builtin plugins.  Note: plugins can still be
+        manually registered by using the 'napari_plugin_manager' fixture and
+        the `napari_plugin_manager.register()` method. By default, True.
 
     Examples
     --------
@@ -61,6 +91,12 @@ def make_napari_viewer(
     ...     viewer = make_napari_viewer()
     ...     viewer.add_shapes()
     ...     assert len(viewer.layers) == 1
+
+    >>> def test_something_with_plugins(make_napari_viewer):
+    ...     viewer = make_napari_viewer(block_plugin_discovery=False)
+
+    >>> def test_something_with_strict_qt_tests(make_napari_viewer):
+    ...     viewer = make_napari_viewer(strict_qt=True)
     """
     from qtpy.QtWidgets import QApplication
 
@@ -80,15 +116,15 @@ def make_napari_viewer(
     def actual_factory(
         *model_args,
         ViewerClass=Viewer,
-        strict=is_internal_test,
+        strict_qt=is_internal_test or os.getenv("NAPARI_STRICT_QT"),
         block_plugin_discovery=True,
         **model_kwargs,
     ):
         nonlocal _strict
-        _strict = strict
+        _strict = strict_qt
 
         if not block_plugin_discovery:
-            napari_plugin_manager._discover_patcher.stop()
+            napari_plugin_manager.discovery_blocker.stop()
 
         should_show = request.config.getoption("--show-napari-viewer")
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
@@ -124,4 +160,7 @@ def make_napari_viewer(
         if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leak]):
             # just a warning... but this can be converted to test errors
             # in pytest with `-W error`
-            warnings.warn(f'Widgets leaked!: {leak}')
+            if _strict == 'raise':
+                raise AssertionError(f'Widgets leaked!: {leak}')
+            else:
+                warnings.warn(f'Widgets leaked!: {leak}')
