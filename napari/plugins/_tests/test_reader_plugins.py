@@ -77,7 +77,7 @@ def test_builtin_reader_plugin_stacks():
 
 
 def test_reader_plugin_can_return_null_layer_sentinel(
-    test_napari_plugin_manager,
+    napari_plugin_manager,
 ):
     from napari_plugin_engine import napari_hook_implementation
 
@@ -93,7 +93,7 @@ def test_reader_plugin_can_return_null_layer_sentinel(
 
             return _reader
 
-    test_napari_plugin_manager.register(sample_plugin)
+    napari_plugin_manager.register(sample_plugin)
     layer_data, _ = read_data_with_plugins('')
     assert layer_data is not None
     assert len(layer_data) == 0

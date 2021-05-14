@@ -20,7 +20,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture
-def test_napari_plugin_manager(monkeypatch):
+def napari_plugin_manager(monkeypatch):
     from unittest.mock import patch
 
     import napari
@@ -48,7 +48,7 @@ def test_napari_plugin_manager(monkeypatch):
 
 @pytest.fixture
 def make_napari_viewer(
-    qtbot, request: 'FixtureRequest', test_napari_plugin_manager
+    qtbot, request: 'FixtureRequest', napari_plugin_manager
 ):
     """A fixture function that creates a napari viewer for use in testing.
 
@@ -88,7 +88,7 @@ def make_napari_viewer(
         _strict = strict
 
         if not block_plugin_discovery:
-            test_napari_plugin_manager._discover_patcher.stop()
+            napari_plugin_manager._discover_patcher.stop()
 
         should_show = request.config.getoption("--show-napari-viewer")
         model_kwargs['show'] = model_kwargs.pop('show', should_show)
