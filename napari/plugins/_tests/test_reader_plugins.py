@@ -82,7 +82,7 @@ def test_reader_plugin_can_return_null_layer_sentinel(
     from napari_plugin_engine import napari_hook_implementation
 
     with pytest.raises(ValueError) as e:
-        read_data_with_plugins('')
+        read_data_with_plugins('/')
     assert 'No plugin found capable of reading' in str(e)
 
     class sample_plugin:
