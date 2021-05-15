@@ -388,7 +388,7 @@ def vispy_or_mpl_colormap(name):
             if name in _MATPLOTLIB_COLORMAP_NAMES:
                 display_name = _MATPLOTLIB_COLORMAP_NAMES[name]
             else:
-                display_name = trans._(name)
+                display_name = name
         except AttributeError:
             raise KeyError(
                 trans._(
