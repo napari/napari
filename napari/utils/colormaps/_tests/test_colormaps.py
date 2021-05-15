@@ -94,6 +94,14 @@ def test_can_accept_named_vispy_colormaps():
     assert cmap.name == 'red'
 
 
+def test_can_accept_named_mpl_colormap():
+    """Test we can accept named mpl colormap"""
+    cmap_name = 'RdYlGn'
+    cmap = ensure_colormap(cmap_name)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == cmap_name
+
+
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_can_accept_vispy_colormaps_in_dict():
     """Test that we can accept vispy colormaps in a dictionary."""
@@ -141,10 +149,3 @@ def test_mpl_colormap_exists():
     """Test that all localized mpl colormap names exist."""
     for name in _MATPLOTLIB_COLORMAP_NAMES:
         assert getattr(cm, name, None) is not None
-
-
-def test_unnamed_colormap():
-    """Test we can grab an unnamed MPL colormap"""
-    cmap_name = 'RdYlGn'
-    cmap = ensure_colormap(cmap_name)
-    assert isinstance(cmap, Colormap)
