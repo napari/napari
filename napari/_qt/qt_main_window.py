@@ -488,6 +488,14 @@ class Window:
         )
         screenshot_wv.triggered.connect(self._screenshot_dialog)
 
+        clipboard = QAction(
+            trans._('Copy Screenshot to Clipboard...'), self._qt_window
+        )
+        clipboard.setStatusTip(
+            trans._('Copy screenshot of current display to the clipboard')
+        )
+        clipboard.triggered.connect(self.qt_viewer.clipboard)
+
         # OS X will rename this to Quit and put it in the app menu.
         # This quits the entire QApplication and all windows that may be open.
         quitAction = QAction(trans._('Exit'), self._qt_window)
@@ -543,6 +551,7 @@ class Window:
         self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
+        self.file_menu.addAction(clipboard)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
 
@@ -1352,6 +1361,14 @@ class Window:
         if path is not None:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
+
+    def clipboard(self):
+        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard."""
+        from qtpy.QtGui import QGuiApplication
+
+        img = self._qt_window.grab().toImage()
+        cb = QGuiApplication.clipboard()
+        cb.setImage(img)
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

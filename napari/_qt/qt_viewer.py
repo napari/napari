@@ -575,6 +575,13 @@ class QtViewer(QSplitter):
             imsave(path, img)  # scikit-image imsave method
         return img
 
+    def clipboard(self):
+        """Take a screenshot of the currently displayed screen and copy the image to the clipboard."""
+        img = self.canvas.native.grabFramebuffer()
+
+        cb = QGuiApplication.clipboard()
+        cb.setImage(img)
+
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
         hist = get_save_history()

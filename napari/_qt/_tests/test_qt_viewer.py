@@ -4,6 +4,7 @@ from unittest import mock
 import numpy as np
 import pytest
 from qtpy.QtWidgets import QMessageBox
+from qtpy.QtGui import QGuiApplication
 
 from napari._tests.utils import (
     add_layer_by_type,
@@ -301,3 +302,21 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     layer = viewer.layers[1]
     indices, scale = layer._slice_data(layer._slice_indices)
     np.testing.assert_equal(indices, [0])
+
+
+def test_qt_viewer_clipboard(make_napari_viewer):
+    viewer = make_napari_viewer()
+    # copy to clipboard
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert clipboard_image.isNull()
+    viewer.window.qt_viewer.clipboard()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert not clipboard_image.isNull()
+
+    # clear clipboard and grab image from application view
+    QGuiApplication.clipboard().clear()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert clipboard_image.isNull()
+    viewer.window.clipboard()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert not clipboard_image.isNull()
