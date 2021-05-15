@@ -121,6 +121,8 @@ class QtViewer(QSplitter):
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
         self._key_bindings_dialog = None
+        # Cache active layer so it can be added/ removed from keybindings list
+        self._active_layer = None
         self._console = None
 
         layerList = QWidget()
@@ -387,12 +389,23 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        # Get current active layer
         active_layer = self.viewer.layers.selection.active
-        if active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(active_layer)
 
+        # Check if active layer has changed
+        if active_layer == self._active_layer:
+            return
+
+        # Remove old active layer from keymap_providers
+        if self._active_layer in self._key_map_handler.keymap_providers:
+            self._key_map_handler.keymap_providers.remove(self._active_layer)
+
+        # Add new active layer to keymap_providers
         if active_layer is not None:
             self._key_map_handler.keymap_providers.insert(0, active_layer)
+
+        # Update active layer cache
+        self._active_layer = active_layer
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
