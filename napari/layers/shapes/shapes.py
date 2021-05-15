@@ -49,6 +49,7 @@ from ._shapes_mouse_bindings import (
 from ._shapes_utils import (
     create_box,
     extract_shape_type,
+    get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
 )
@@ -573,7 +574,10 @@ class Shapes(Layer):
         # more shapes, add attributes
         elif self.nshapes < n_new_shapes:
             n_shapes_difference = n_new_shapes - self.nshapes
-            shape_type = shape_type + ["rectangle"] * n_shapes_difference
+            shape_type = (
+                shape_type
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
+            )
             edge_widths = edge_widths + [1] * n_shapes_difference
             z_indices = z_indices + [0] * n_shapes_difference
             edge_color = np.concatenate(

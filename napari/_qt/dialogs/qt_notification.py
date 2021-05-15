@@ -5,12 +5,15 @@ from typing import Callable, Optional, Sequence, Tuple, Union
 
 from qtpy.QtCore import (
     QEasingCurve,
+    QObject,
     QPoint,
     QPropertyAnimation,
     QRect,
     QSize,
     Qt,
+    QThread,
     QTimer,
+    Signal,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -30,6 +33,15 @@ from ...utils.translations import trans
 from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
+
+
+class NotificationDispatcher(QObject):
+    """
+    This is a helper class to allow the propagation of notifications
+    generated from exceptions or warnings inside threads.
+    """
+
+    sig_notified = Signal(Notification)
 
 
 class NapariQtNotification(QDialog):
@@ -358,6 +370,18 @@ class NapariQtNotification(QDialog):
             and notification.severity
             >= SETTINGS.application.gui_notification_level
         ):
+            application_instance = QApplication.instance()
+            if application_instance:
+                # Check if this is running from a thread
+                if application_instance.thread() != QThread.currentThread():
+                    dispatcher = getattr(
+                        application_instance, "_dispatcher", None
+                    )
+                    if dispatcher:
+                        dispatcher.sig_notified.emit(notification)
+
+                    return
+
             cls.from_notification(notification).show()
 
 
