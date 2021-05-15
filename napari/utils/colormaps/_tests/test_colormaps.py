@@ -141,3 +141,10 @@ def test_mpl_colormap_exists():
     """Test that all localized mpl colormap names exist."""
     for name in _MATPLOTLIB_COLORMAP_NAMES:
         assert getattr(cm, name, None) is not None
+
+
+def test_unnamed_colormap():
+    """Test we can grab an unnamed MPL colormap"""
+    cmap_name = 'RdYlGn'
+    cmap = ensure_colormap(cmap_name)
+    assert isinstance(cmap, Colormap)
