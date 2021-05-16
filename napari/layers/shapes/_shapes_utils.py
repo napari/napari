@@ -1014,6 +1014,25 @@ def extract_shape_type(data, shape_type=None):
     return data, shape_type
 
 
+def get_default_shape_type(current_type):
+    """Returns current shape type if current_type is one shape, else "polygon".
+
+    Parameters
+    ----------
+    current_type : list of str
+        list of current shape types
+
+    Returns
+    ----------
+    default_type : str
+        default shape type
+    """
+    first_type = current_type[0]
+    if all(shape_type == first_type for shape_type in current_type):
+        return first_type
+    return "rectangle"
+
+
 def get_shape_ndim(data):
     """Checks whether data is a list of the same type of shape, one shape, or
     a list of different shapes and returns the dimensionality of the shape/s.

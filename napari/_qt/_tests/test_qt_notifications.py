@@ -1,6 +1,10 @@
+import sys
+import threading
+import time
 import warnings
 from unittest.mock import patch
 
+import dask.array as da
 import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
@@ -13,20 +17,43 @@ from napari.utils.notifications import (
     notification_manager,
 )
 
+PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
-def test_notification_manager_via_gui(qtbot):
-    """Test that the notification_manager intercepts Qt excepthook."""
 
-    def raise_():
-        raise ValueError("error!")
+def _threading_warn():
+    thr = threading.Thread(target=_warn)
+    thr.start()
 
-    def warn_():
-        warnings.warn("warning!")
+
+def _warn():
+    time.sleep(0.01)
+    warnings.warn('warning!')
+
+
+def _threading_raise():
+    thr = threading.Thread(target=_raise)
+    thr.start()
+
+
+def _raise():
+    time.sleep(0.01)
+    raise ValueError("error!")
+
+
+@pytest.mark.parametrize(
+    "raise_func,warn_func",
+    [(_raise, _warn), (_threading_raise, _threading_warn)],
+)
+def test_notification_manager_via_gui(qtbot, raise_func, warn_func):
+    """
+    Test that the notification_manager intercepts `sys.excepthook`` and
+    `threading.excepthook`.
+    """
 
     errButton = QPushButton()
     warnButton = QPushButton()
-    errButton.clicked.connect(raise_)
-    warnButton.clicked.connect(warn_)
+    errButton.clicked.connect(raise_func)
+    warnButton.clicked.connect(warn_func)
 
     with notification_manager:
         for btt, expected_message in [
@@ -35,7 +62,7 @@ def test_notification_manager_via_gui(qtbot):
         ]:
             assert len(notification_manager.records) == 0
             qtbot.mouseClick(btt, Qt.LeftButton)
-            qtbot.wait(50)
+            qtbot.wait(300)
             assert len(notification_manager.records) == 1
             assert notification_manager.records[0].message == expected_message
             notification_manager.records = []
@@ -93,3 +120,16 @@ def test_notification_error(mock_show, monkeypatch):
     mock_show.assert_not_called()
     bttn.click()
     mock_show.assert_called_once()
+
+
+@pytest.mark.skipif(PY37_OR_LOWER, reason="Fails on py37")
+def test_notifications_error_with_threading(make_napari_viewer):
+    """Test notifications of `threading` threads, using a dask example."""
+    random_image = da.random.random(size=(50, 50))
+    with notification_manager:
+        viewer = make_napari_viewer()
+        viewer.add_image(random_image)
+        result = da.divide(random_image, da.zeros(50, 50))
+        viewer.add_image(result)
+        assert len(notification_manager.records) >= 1
+        notification_manager.records = []

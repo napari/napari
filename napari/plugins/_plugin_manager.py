@@ -22,6 +22,7 @@ from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils._appdirs import user_site_packages
+from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
@@ -42,6 +43,22 @@ class NapariPluginManager(PluginManager):
 
     def __init__(self):
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
+
+        self.events = EmitterGroup(
+            source=self, registered=None, enabled=None, disabled=None
+        )
+        self._blocked: EventedSet[str] = EventedSet()
+
+        def _on_blocked_change(event):
+            # things that are "added to the blocked list" become disabled
+            for item in event.added:
+                self.events.disabled(value=item)
+            # things that are "removed from the blocked list" become enabled
+            for item in event.removed:
+                self.events.enabled(value=item)
+
+        self._blocked.events.changed.connect(_on_blocked_change)
+
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
@@ -63,6 +80,14 @@ class NapariPluginManager(PluginManager):
                 from . import _skimage_data
 
                 self.register(_skimage_data, name='scikit-image')
+
+    def register(
+        self, namespace: Any, name: Optional[str] = None
+    ) -> Optional[str]:
+        name = super().register(namespace, name=name)
+        if name:
+            self.events.registered(value=name)
+        return name
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
@@ -105,8 +130,11 @@ class NapariPluginManager(PluginManager):
         for spec_name, hook_caller in self.hooks.items():
             order = []
             for p in new_order.get(spec_name, []):
-                order.append(p['plugin'])
-                hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
+                try:
+                    hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
+                    order.append(p['plugin'])
+                except KeyError:
+                    pass
             if order:
                 hook_caller.bring_to_front(order)
 

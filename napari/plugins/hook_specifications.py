@@ -94,7 +94,7 @@ def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
         def napari_provide_sample_data():
             return {
                 'random data': _generate_random_data,
-                'random image': 'https://picsum.photos/1024'
+                'random image': 'https://picsum.photos/1024',
                 'sample_key': {
                     'display_name': 'Some Random Data (512 x 512)'
                     'data': _generate_random_data,

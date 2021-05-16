@@ -5,6 +5,8 @@ from weakref import ref
 
 from tqdm import tqdm
 
+from ..utils.translations import trans
+
 CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
 
 _tqdm_kwargs = {
@@ -97,7 +99,7 @@ class progress(tqdm):
         if desc:
             self.set_description(desc)
         else:
-            self.set_description("progress")
+            self.set_description(trans._("progress"))
 
         self.show()
 
