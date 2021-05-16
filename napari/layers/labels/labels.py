@@ -380,6 +380,9 @@ class Labels(_ImageBase):
     @data.setter
     def data(self, data):
         data = self._ensure_int_labels(data)
+        self._color_lookup_func = self._get_color_lookup_func(
+            data[0] if isinstance(data, list) else data
+        )
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)

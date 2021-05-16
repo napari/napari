@@ -868,3 +868,13 @@ def test_ndim_paint():
             ]
         ),
     )
+
+
+def test_switching_display_func():
+    label_data = np.random.randint(int(1e10), int(1e10 + 5), size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+
+    label_data = np.random.randint(0, 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_index
