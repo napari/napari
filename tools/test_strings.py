@@ -432,10 +432,29 @@ def test_missing_translations(checks):
     )
     for fpath, values in issues.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
+        unique_values = set()
         for line, value in values:
+            unique_values.add(value)
             print(f"{line}:\t{repr(value)}")
 
-        print("")
+        print("\n")
+
+        if fpath in SKIP_WORDS:
+            print(
+                "List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
+            )
+            for value in sorted(unique_values):
+                print(f"        {repr(value)},")
+        else:
+            print(
+                "List below can be copied directly to `tools/strings_list.py` file:\n"
+            )
+            print(f"    {repr(fpath)}: [")
+            for value in sorted(unique_values):
+                print(f"        {repr(value)},")
+            print("    ],")
+
+        print("\n")
 
     no_issues = not issues
     assert no_issues

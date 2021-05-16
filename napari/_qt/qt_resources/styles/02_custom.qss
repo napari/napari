@@ -684,7 +684,8 @@ QtLayerList::indicator {
 }
 
 QtLayerList::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/2D.svg");
+  image: url(":/themes/{{ folder }}/visibility_off_50.svg");
+  
 }
 
 QtLayerList::indicator:checked {
