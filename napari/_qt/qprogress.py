@@ -56,6 +56,8 @@ class progress(tqdm):
 
     """
 
+    monitor_interval = 0
+
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
