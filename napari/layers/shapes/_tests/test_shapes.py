@@ -1618,6 +1618,20 @@ def test_edge_width():
     assert len(layer.edge_width) == shape[0] - 1
     assert layer.edge_width == [width_list[1]] + width_list[3:] + [4]
 
+    # Test setting edge width with number
+    layer.edge_width = 4
+    assert all([width == 4 for width in layer.edge_width])
+
+    # Test setting edge width with list
+    new_widths = [2] * 5 + [3] * 4
+    layer.edge_width = new_widths
+    assert layer.edge_width == new_widths
+
+    # Test setting with incorrect size list throws error
+    new_widths = [2, 3]
+    with pytest.raises(ValueError):
+        layer.edge_width = new_widths
+
 
 def test_z_index():
     """Test setting z-index during instantiation."""
@@ -1648,6 +1662,20 @@ def test_z_index():
     assert len(layer.data) == shape[0] - 1
     assert len(layer.z_index) == shape[0] - 1
     assert layer.z_index == [z_index_list[1]] + z_index_list[3:] + [4]
+
+    # Test setting index with number
+    layer.z_index = 4
+    assert all([idx == 4 for idx in layer.z_index])
+
+    # Test setting index with list
+    new_z_indices = [2] * 5 + [3] * 4
+    layer.z_index = new_z_indices
+    assert layer.z_index == new_z_indices
+
+    # Test setting with incorrect size list throws error
+    new_z_indices = [2, 3]
+    with pytest.raises(ValueError):
+        layer.z_index = new_z_indices
 
 
 def test_move_to_front():

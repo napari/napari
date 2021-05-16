@@ -346,7 +346,10 @@ class QtViewer(QSplitter):
             try:
                 from napari_console import QtConsole
 
+                import napari
+
                 self.console = QtConsole(self.viewer)
+                self.console.push({'napari': napari})
             except ImportError:
                 warnings.warn(
                     trans._(

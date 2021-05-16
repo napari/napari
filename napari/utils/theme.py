@@ -22,7 +22,7 @@ def __getattr__(attr):
                 "palette is deprecated and will be removed after version 0.4.6. Please use get_theme and register_theme instead",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         return _themes
