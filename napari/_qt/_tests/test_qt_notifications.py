@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import dask.array as da
 import pytest
-from qtpy.QtCore import QCoreApplication, Qt
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
@@ -49,14 +49,7 @@ def clean_current(monkeypatch):
 
     # monkeypatch.setattr(qt_notification.QPropertyAnimation, "start", none_return)
     monkeypatch.setattr(_QtMainWindow, "current", none_return)
-    monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
-    monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
-    yield
-    for el in NapariQtNotification._instances:
-        # el.close()
-        el.deleteLater()
-    NapariQtNotification._instances = []
-    QCoreApplication.processEvents()
+    monkeypatch.setattr(NapariQtNotification, "show", none_return)
 
 
 @pytest.mark.parametrize(
@@ -90,7 +83,7 @@ def test_notification_manager_via_gui(
 
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_display(mock_show, severity, monkeypatch, clean_current):
+def test_notification_display(mock_show, severity, monkeypatch):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test

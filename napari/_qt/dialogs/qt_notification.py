@@ -80,7 +80,6 @@ class NapariQtNotification(QDialog):
     message: MultilineElidedLabel
     source_label: QLabel
     severity_icon: QLabel
-    _instances = []
 
     def __init__(
         self,
@@ -90,7 +89,6 @@ class NapariQtNotification(QDialog):
         actions: ActionSequence = (),
     ):
         super().__init__()
-        self._instances.append(self)
 
         from ..qt_main_window import _QtMainWindow
 
@@ -167,10 +165,7 @@ class NapariQtNotification(QDialog):
         self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
-        try:
-            self._instances.remove(self)
-        except ValueError:
-            pass
+
         self.opacity_anim.finished.connect(super().close)
 
     def toggle_expansion(self):
