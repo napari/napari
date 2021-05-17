@@ -2,7 +2,6 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
-import copy
 import inspect
 import sys
 import time
@@ -91,12 +90,6 @@ class _QtMainWindow(QMainWindow):
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
             plugin_manager.set_call_order(SETTINGS.plugins.call_order)
-
-        else:
-            # need to set the call_order for plugin_dialog to work
-            SETTINGS.plugins.call_order = copy.deepcopy(
-                SETTINGS._defaults['plugins'].call_order
-            )
 
         _QtMainWindow._instances.append(self)
 
