@@ -180,7 +180,7 @@ def get_cmap(name=None, lut=None):
             % (name, ', '.join(sorted(cmap_d))))
 
 
-class ScalarMappable:
+class ScalarMappable(object):
     """
     This is a mixin class to support scalar data to RGBA mapping.
     The ScalarMappable makes use of data normalization before returning

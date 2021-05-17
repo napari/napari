@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) Vispy Development Team. All Rights Reserved.
 # Distributed under the (new) BSD License. See LICENSE.txt for more info.
 
+from __future__ import division
 
 import numpy as np
 
@@ -263,7 +265,7 @@ class ImageVisual(Visual):
         self._null_tr = NullTransform()
 
         self._init_view(self)
-        super().__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
+        super(ImageVisual, self).__init__(vcode=VERT_SHADER, fcode=FRAG_SHADER)
         self.set_gl_state('translucent', cull_face=False)
         self._draw_mode = 'triangles'
 
