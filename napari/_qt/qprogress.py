@@ -56,7 +56,7 @@ class progress(tqdm):
 
     """
 
-    monitor_interval = 0
+    monitor_interval = 0  # set to 0 to disable the thread
 
     def __init__(
         self,
