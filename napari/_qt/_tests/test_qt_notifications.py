@@ -40,16 +40,31 @@ def _raise():
     raise ValueError("error!")
 
 
+@pytest.fixture
+def clean_current(monkeypatch):
+    from ..qt_main_window import _QtMainWindow
+
+    def none_return():
+        return None
+
+    monkeypatch.setattr(_QtMainWindow, "current", none_return)
+    yield
+    for el in NapariQtNotification._instances:
+        el.deleteLater()
+    NapariQtNotification._instances = []
+
+
 @pytest.mark.parametrize(
     "raise_func,warn_func",
     [(_raise, _warn), (_threading_raise, _threading_warn)],
 )
-def test_notification_manager_via_gui(qtbot, raise_func, warn_func):
+def test_notification_manager_via_gui(
+    qtbot, raise_func, warn_func, clean_current
+):
     """
     Test that the notification_manager intercepts `sys.excepthook`` and
     `threading.excepthook`.
     """
-
     errButton = QPushButton()
     warnButton = QPushButton()
     errButton.clicked.connect(raise_func)
@@ -70,7 +85,7 @@ def test_notification_manager_via_gui(qtbot, raise_func, warn_func):
 
 @pytest.mark.parametrize('severity', NotificationSeverity.__members__)
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_display(mock_show, severity, monkeypatch):
+def test_notification_display(mock_show, severity, monkeypatch, clean_current):
     """Test that NapariQtNotification can present a Notification event.
 
     NOTE: in napari.utils._tests.test_notification_manager, we already test
@@ -104,7 +119,7 @@ def test_notification_display(mock_show, severity, monkeypatch):
 
 
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_error(mock_show, monkeypatch):
+def test_notification_error(mock_show, monkeypatch, clean_current):
     from napari.utils.settings import SETTINGS
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)

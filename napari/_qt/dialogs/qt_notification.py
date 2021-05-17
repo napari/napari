@@ -80,6 +80,7 @@ class NapariQtNotification(QDialog):
     message: MultilineElidedLabel
     source_label: QLabel
     severity_icon: QLabel
+    _instances = []
 
     def __init__(
         self,
@@ -89,6 +90,7 @@ class NapariQtNotification(QDialog):
         actions: ActionSequence = (),
     ):
         super().__init__()
+        self._instances.append(self)
 
         from ..qt_main_window import _QtMainWindow
 
@@ -307,6 +309,12 @@ class NapariQtNotification(QDialog):
             super().sizeHint().width(),
             self.row2_widget.height() + self.message.sizeHint().height(),
         )
+
+    def __del__(self):
+        try:
+            self._instances.remove(self)
+        except ValueError:
+            pass
 
     @classmethod
     def from_notification(
