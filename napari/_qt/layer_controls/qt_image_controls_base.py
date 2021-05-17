@@ -4,7 +4,8 @@ from functools import partial
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QLabel, QPushButton, QSlider
+from qtpy.QtWidgets import QLabel, QPushButton
+from qtrangeslider import QLabeledSlider as QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
