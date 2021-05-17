@@ -118,7 +118,6 @@ def test_progress_set_description(make_napari_viewer):
 
 
 def test_progrange():
-    assert (
-        progress(range(10), disable=True).iterable
-        == progrange(10, disable=True).iterable
-    )
+    with progrange(10) as pbr:
+        with progress(range(10)) as pbr2:
+            assert pbr.iterable == pbr2.iterable
