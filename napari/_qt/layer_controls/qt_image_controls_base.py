@@ -5,7 +5,7 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton
-from qtrangeslider import QLabeledSlider as QSlider
+from qtrangeslider import QLabeledDoubleSlider as QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
@@ -78,14 +78,12 @@ class QtBaseImageControls(QtLayerControls):
 
         # gamma slider
         sld = QSlider(Qt.Horizontal, parent=self)
-        sld.setFocusPolicy(Qt.NoFocus)
-        sld.setMinimum(2)
-        sld.setMaximum(200)
-        sld.setSingleStep(2)
-        sld.setValue(100)
-        sld.valueChanged.connect(self.gamma_slider_changed)
+        sld.setMinimum(0.2)
+        sld.setMaximum(2)
+        sld.setSingleStep(0.02)
+        sld.setValue(self.layer.gamma)
+        sld.valueChanged.connect(lambda v: setattr(self.layer, 'gamma', v))
         self.gammaSlider = sld
-        self._on_gamma_change()
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
@@ -183,17 +181,6 @@ class QtBaseImageControls(QtLayerControls):
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
-    def gamma_slider_changed(self, value):
-        """Change gamma value on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Gamma adjustment value.
-            https://en.wikipedia.org/wiki/Gamma_correction
-        """
-        self.layer.gamma = value / 100
-
     def _on_gamma_change(self, event=None):
         """Receive the layer model gamma change event and update the slider.
 
@@ -203,7 +190,7 @@ class QtBaseImageControls(QtLayerControls):
             The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.gammaSlider):
-            self.gammaSlider.setValue(int(self.layer.gamma * 100))
+            self.gammaSlider.setValue(self.layer.gamma)
 
     def closeEvent(self, event):
         self.deleteLater()
