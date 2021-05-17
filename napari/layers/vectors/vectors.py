@@ -573,7 +573,7 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """ " (Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
         if self._ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
