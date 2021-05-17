@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import dask.array as da
 import pytest
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QCoreApplication, Qt
 from qtpy.QtWidgets import QPushButton
 
 from napari._qt.dialogs.qt_notification import NapariQtNotification
@@ -42,16 +42,21 @@ def _raise():
 
 @pytest.fixture
 def clean_current(monkeypatch):
-    from ..qt_main_window import _QtMainWindow
+    from napari._qt.qt_main_window import _QtMainWindow
 
-    def none_return():
+    def none_return(*_, **__):
         return None
 
+    # monkeypatch.setattr(qt_notification.QPropertyAnimation, "start", none_return)
     monkeypatch.setattr(_QtMainWindow, "current", none_return)
+    monkeypatch.setattr(NapariQtNotification, "FADE_OUT_RATE", 0)
+    monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
     yield
     for el in NapariQtNotification._instances:
+        # el.close()
         el.deleteLater()
     NapariQtNotification._instances = []
+    QCoreApplication.processEvents()
 
 
 @pytest.mark.parametrize(

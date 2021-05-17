@@ -167,6 +167,10 @@ class NapariQtNotification(QDialog):
         self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
+        try:
+            self._instances.remove(self)
+        except ValueError:
+            pass
         self.opacity_anim.finished.connect(super().close)
 
     def toggle_expansion(self):
@@ -309,12 +313,6 @@ class NapariQtNotification(QDialog):
             super().sizeHint().width(),
             self.row2_widget.height() + self.message.sizeHint().height(),
         )
-
-    def __del__(self):
-        try:
-            self._instances.remove(self)
-        except ValueError:
-            pass
 
     @classmethod
     def from_notification(
