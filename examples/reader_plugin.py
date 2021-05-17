@@ -3,7 +3,7 @@ from napari_plugin_engine import napari_hook_implementation
 from imageio import formats, imread
 
 
-readable_extensions = tuple(set(x for f in formats for x in f.extensions))
+readable_extensions = tuple({x for f in formats for x in f.extensions})
 
 
 @napari_hook_implementation

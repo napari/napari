@@ -203,14 +203,14 @@ def _to_rgba_no_colorcycle(c, alpha=None):
             return (float(c),) * 3 + (alpha if alpha is not None else 1.,)
         except ValueError:
             pass
-        raise ValueError("Invalid RGBA argument: {!r}".format(orig_c))
+        raise ValueError(f"Invalid RGBA argument: {orig_c!r}")
     # tuple color.
     c = np.array(c)
     if not np.can_cast(c.dtype, float, "same_kind") or c.ndim != 1:
         # Test the dtype explicitly as `map(float, ...)`, `np.array(...,
         # float)` and `np.array(...).astype(float)` all convert "0.5" to 0.5.
         # Test dimensionality to reject single floats.
-        raise ValueError("Invalid RGBA argument: {!r}".format(orig_c))
+        raise ValueError(f"Invalid RGBA argument: {orig_c!r}")
     # Return a tuple to prevent the cached value from being modified.
     c = tuple(c.astype(float))
     if len(c) not in [3, 4]:
@@ -338,7 +338,7 @@ def makeMappingArray(N, data, gamma=1.0):
     return np.clip(lut, 0.0, 1.0)
 
 
-class Colormap(object):
+class Colormap:
     """
     Baseclass for all scalar to RGBA mappings.
 
@@ -779,7 +779,7 @@ class ListedColormap(Colormap):
         return ListedColormap(colors_r, name=name, N=self.N)
 
 
-class Normalize(object):
+class Normalize:
     """
     A class which, when called, can normalize data into
     the ``[0.0, 1.0]`` interval.
@@ -1364,7 +1364,7 @@ def _vector_magnitude(arr):
     return np.sqrt(sum_sq)
 
 
-class LightSource(object):
+class LightSource:
     """
     Create a light source coming from the specified azimuth and elevation.
     Angles are in degrees, with the azimuth measured
@@ -1830,13 +1830,13 @@ def from_levels_and_colors(levels, colors, extend='neither'):
     elif extend == 'neither':
         extra_colors = 0
     else:
-        raise ValueError('Unexpected value for extend: {0!r}'.format(extend))
+        raise ValueError(f'Unexpected value for extend: {extend!r}')
 
     n_data_colors = len(levels) - 1
     n_expected_colors = n_data_colors + extra_colors
     if len(colors) != n_expected_colors:
-        raise ValueError('With extend == {0!r} and n_levels == {1!r} expected'
-                         ' n_colors == {2!r}. Got {3!r}.'
+        raise ValueError('With extend == {!r} and n_levels == {!r} expected'
+                         ' n_colors == {!r}. Got {!r}.'
                          ''.format(extend, len(levels), n_expected_colors,
                                    len(colors)))
 

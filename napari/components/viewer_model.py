@@ -993,7 +993,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return layer if isinstance(layer, list) else [layer]
 
 
-def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
+def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1046,11 +1046,11 @@ def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
 
 
 def _unify_data_and_user_kwargs(
-    data: 'LayerData',
+    data: LayerData,
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:

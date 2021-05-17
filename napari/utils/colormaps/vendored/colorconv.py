@@ -107,7 +107,7 @@ def _prepare_rgba_array(arr):
 
     if arr.shape[-1] != 4:
         msg = ("the input array must have a shape == ([ ..,] 4)), "
-               "got {0}".format(arr.shape))
+               "got {}".format(arr.shape))
         raise ValueError(msg)
 
     return arr.astype(float)
@@ -148,7 +148,7 @@ def rgba2rgb(rgba, background=(1, 1, 1)):
     arr = _prepare_rgba_array(rgba)
     if isinstance(background, tuple) and len(background) != 3:
         raise ValueError('the background must be a tuple with 3 items - the '
-                         'RGB color of the background. Got {0} items.'
+                         'RGB color of the background. Got {} items.'
                          .format(len(background)))
 
     alpha = arr[..., -1]
@@ -406,7 +406,7 @@ def get_xyz_coords(illuminant, observer):
         return illuminants[illuminant][observer]
     except KeyError:
         raise ValueError("Unknown illuminant/observer combination\
-        (\'{0}\', \'{1}\')".format(illuminant, observer))
+        (\'{}\', \'{}\')".format(illuminant, observer))
 
 # -------------------------------------------------------------
 # The conversion functions that make use of the matrices above
