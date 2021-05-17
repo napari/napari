@@ -165,7 +165,6 @@ class NapariQtNotification(QDialog):
         self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
-
         self.opacity_anim.finished.connect(super().close)
 
     def toggle_expansion(self):
