@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import dask.array as da
 import pytest
+import qtpy
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QPushButton
 
@@ -42,6 +43,8 @@ def _raise():
 
 @pytest.fixture
 def clean_current(monkeypatch):
+    if not qtpy.PYSIDE2:
+        return
     from napari._qt.qt_main_window import _QtMainWindow
 
     def none_return(*_, **__):
