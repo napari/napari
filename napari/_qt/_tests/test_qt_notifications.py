@@ -47,8 +47,11 @@ def clean_current(monkeypatch, qtbot):
     def none_return(*_, **__):
         return None
 
-    def store_widget(self, *_, **__):
+    base_show = NapariQtNotification.show
+
+    def store_widget(self, *args, **kwargs):
         qtbot.addWidget(self)
+        base_show(self, *args, **kwargs)
 
     # monkeypatch.setattr(qt_notification.QPropertyAnimation, "start", none_return)
     monkeypatch.setattr(_QtMainWindow, "current", none_return)
