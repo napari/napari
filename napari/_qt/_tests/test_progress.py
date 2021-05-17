@@ -10,7 +10,7 @@ pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 from napari._qt.widgets.qt_progress_bar import ProgressBar  # noqa
 from napari.qt import progrange, progress  # noqa
 
-SHOW = bool(show=sys.platform == 'linux' or os.getenv("CI"))
+SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
 
 
 def qt_viewer_has_pbar(qt_viewer):
