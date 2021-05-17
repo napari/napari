@@ -150,6 +150,7 @@ and
 - Fix napari_provide_sample_data documentation typo (#2718)
 - Fix mpl colormaps (#2719)
 - Fix active layer keybindings (#2722)
+- Fix segfaults in test (#2716)
 
 ## API Changes
 
@@ -164,10 +165,10 @@ and
   bottom of all dock widgets added (via plugins or manually) with an `area`
   of `left` or `right`, *unless:*
 
-    1) the widget, or any widget in its primary layout, has a vertical 
+    1) the widget, or any widget in its primary layout, has a vertical
        [`QSizePolicy`](https://doc.qt.io/qt-5/qsizepolicy.html#Policy-enum)
        of `Expanding`, `MinimumExpanding`, or `Ignored`
-  
+
     1) `add_vertical_stretch=False` is provided to `add_dock_widget`,
        or in the widget options provided with plugin dock widgets.
 
