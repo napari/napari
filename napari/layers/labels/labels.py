@@ -189,9 +189,7 @@ class Labels(_ImageBase):
         self._contour = 0
 
         data = self._ensure_int_labels(data)
-        self._color_lookup_func = self._get_color_lookup_func(
-            data[0] if isinstance(data, list) else data
-        )
+        self._color_lookup_func = None
 
         if properties is None:
             self._properties = {}
@@ -380,9 +378,6 @@ class Labels(_ImageBase):
     @data.setter
     def data(self, data):
         data = self._ensure_int_labels(data)
-        self._color_lookup_func = self._get_color_lookup_func(
-            data[0] if isinstance(data, list) else data
-        )
         self._data = data
         self._update_dims()
         self.events.data(value=self.data)
@@ -769,17 +764,28 @@ class Labels(_ImageBase):
                 image = self._all_vals[im]
             except IndexError:
                 max_val = np.max(im)
-                self._all_vals = low_discrepancy_image(
-                    np.arange(max_val + 1), self._seed
+                self._color_lookup_func = self._get_color_lookup_func(
+                    im, max_val
                 )
-                self._all_vals[0] = 0
-                image = self._all_vals[im]
+                if (
+                    self._color_lookup_func
+                    is self._lookup_with_low_discrepancy_image
+                ):
+                    # revert to "classic" mode converting all pixels since we
+                    # encountered a large value in the raw labels image
+                    image = self._color_lookup_func(im, selected_label)
+                else:
+                    self._all_vals = low_discrepancy_image(
+                        np.arange(max_val + 1), self._seed
+                    )
+                    self._all_vals[0] = 0
+                    image = self._all_vals[im]
         return image
 
-    def _get_color_lookup_func(self, data):
+    def _get_color_lookup_func(self, data, max_label_val):
         """Returns function used for mapping label values to colors
 
-        If array of [0..max(data)] would be larger than data*2,
+        If array of [0..max(data)] would be larger than data,
         returns lookup_with_low_discrepancy_image, otherwise returns
         lookup_with_index
 
@@ -787,6 +793,8 @@ class Labels(_ImageBase):
         ----------
         data : array
             labels data
+        max_label_val : int
+            maximum label value in data
 
         Returns
         ----------
@@ -794,11 +802,14 @@ class Labels(_ImageBase):
             function to use for mapping label values to colors
         """
 
-        max_label_val = np.max(data)
-        # numpy arange defaults to int64 so we need 8 bytes per element
-        # using index lookup provides a ~2x speed up so we switch if we'd need
-        # more than twice data size to store array of length max_label_value
-        if max_label_val * 8 > data.nbytes * 2:
+        # low_discrepancy_image is slow for large images, but large labels can
+        # blow up memory usage of an index array of colors. If the index array
+        # would be larger than the image, we go back to computing the low
+        # discrepancy image on the whole input image. (Up to a minimum value of
+        # 1kB.)
+        nbytes_low_discrepancy = low_discrepancy_image(np.array([0])).nbytes
+        max_nbytes = max(data.nbytes, 1024)
+        if max_label_val * nbytes_low_discrepancy > max_nbytes:
             return self._lookup_with_low_discrepancy_image
         else:
             return self._lookup_with_index
@@ -819,6 +830,9 @@ class Labels(_ImageBase):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
+        if self._color_lookup_func is None:
+            max_val = np.max(raw)
+            self._color_lookup_func = self._get_color_lookup_func(raw, max_val)
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
