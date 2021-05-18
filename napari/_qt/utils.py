@@ -245,7 +245,7 @@ def combine_widgets(
             container = QWidget()
             container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
             for widget in widgets:
-                container.layout.addWidget(widget)
+                container.layout().addWidget(widget)
             return container
     raise TypeError(
         trans._('"widget" must be a QWidget or a sequence of QWidgets')
