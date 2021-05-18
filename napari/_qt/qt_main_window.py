@@ -1291,6 +1291,9 @@ class Window:
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except AttributeError:
             pass
+        except RuntimeError:
+            # wrapped C/C++ object may have been deleted
+            pass
 
     def _status_changed(self, event):
         """Update status bar.
