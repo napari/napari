@@ -349,4 +349,3 @@ def test_active_keybindings(make_napari_viewer):
     assert viewer.layers.selection.active == layer_image
     assert len(view._key_map_handler.keymap_providers) == 2
     assert view._key_map_handler.keymap_providers[0] == layer_image
-
