@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -235,16 +236,29 @@ def combine_widgets(
         return widgets.native  # type: ignore
     elif isinstance(widgets, QWidget):
         return widgets
-    elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
-        container = QWidget()
-        container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
-        for widget in widgets:
-            container.layout().addWidget(widget)
-        return container
-    else:
-        raise TypeError(
-            trans._('"widget" must be a QWidget or a sequence of QWidgets')
-        )
+    elif is_sequence(widgets):
+        # the same as above, compatibility with magicgui v0.2.0
+        widgets = [
+            i.native if isinstance(getattr(i, 'native', None), QWidget) else i
+            for i in widgets
+        ]
+        if all(isinstance(i, QWidget) for i in widgets):
+            container = QWidget()
+            container.layout = QVBoxLayout() if vertical else QHBoxLayout()
+            container.setLayout(container.layout)
+            for widget in widgets:
+                container.layout.addWidget(widget)
+            # if this is a vertical layout, and none of the widgets declare a size
+            # policy of "expanding", add our own stretch.
+            if vertical and not any(
+                w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
+                for w in widgets
+            ):
+                container.layout.addStretch()
+            return container
+    raise TypeError(
+        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+    )
 
 
 def delete_qapp(app):
