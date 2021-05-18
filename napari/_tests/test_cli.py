@@ -24,7 +24,7 @@ def test_cli_works(monkeypatch, capsys):
     assert 'napari command line viewer.' in str(capsys.readouterr())
 
 
-def test_cli_shows_plugins(test_napari_plugin_manager, monkeypatch, capsys):
+def test_cli_shows_plugins(napari_plugin_manager, monkeypatch, capsys):
     """Test the cli --info runs and shows plugins"""
     monkeypatch.setattr(sys, 'argv', ['napari', '--info'])
     with pytest.raises(SystemExit):
