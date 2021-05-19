@@ -12,6 +12,7 @@ skip = [
     'surface_timeseries.py',  # needs nilearn
     '3d_kymograph.py',  # needs tqdm
     'live_tiffs.py',  # requires files
+    'tiled-rendering-2d.py',  # too slow
     'live_tiffs_generator.py',
     'embed_ipython.py',  # fails without monkeypatch
 ]

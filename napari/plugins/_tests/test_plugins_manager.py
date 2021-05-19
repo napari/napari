@@ -34,9 +34,9 @@ def test_plugin_discovery_is_delayed():
     assert not proc.returncode, 'napari-svg unavailable, this test is broken!'
 
 
-def test_plugin_events(test_napari_plugin_manager):
+def test_plugin_events(napari_plugin_manager):
     """Test event emission by plugin manager."""
-    tnpm: NapariPluginManager = test_napari_plugin_manager
+    tnpm: NapariPluginManager = napari_plugin_manager
 
     register_events = []
     enable_events = []

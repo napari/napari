@@ -6,9 +6,9 @@ import inspect
 import sys
 import time
 import warnings
-from typing import Any, ClassVar, Dict, List, Tuple
+from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
-from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt
+from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -29,10 +29,12 @@ from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
+from ..utils.notifications import Notification
 from ..utils.settings import SETTINGS
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
+from .dialogs.qt_notification import NapariQtNotification
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
@@ -90,6 +92,14 @@ class _QtMainWindow(QMainWindow):
             plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
+
+        # Connect the notification dispacther to correctly propagate
+        # notifications from threads. See: `napari._qt.qt_event_loop::get_app`
+        application_instance = QApplication.instance()
+        if application_instance:
+            application_instance._dispatcher.sig_notified.connect(
+                self.show_notification
+            )
 
     @classmethod
     def current(cls):
@@ -290,6 +300,12 @@ class _QtMainWindow(QMainWindow):
 
         process.startDetached()
         self.close(quit_app=True)
+
+    @staticmethod
+    @Slot(Notification)
+    def show_notification(notification: Notification):
+        """Show notification coming from a thread."""
+        NapariQtNotification.show_notification(notification)
 
 
 class Window:
@@ -886,13 +902,8 @@ class Window:
         wdg = Widget(**kwargs)
 
         # Add dock widget
-        dock_widget = self.add_dock_widget(
-            wdg,
-            name=full_name,
-            area=dock_kwargs.get('area', 'right'),
-            allowed_areas=dock_kwargs.get('allowed_areas', None),
-        )
-
+        dock_kwargs.pop('name', None)
+        dock_widget = self.add_dock_widget(wdg, name=full_name, **dock_kwargs)
         return dock_widget, wdg
 
     def _add_plugin_function_widget(self, plugin_name: str, widget_name: str):
@@ -924,8 +935,8 @@ class Window:
         widget: QWidget,
         *,
         name: str = '',
-        area: str = 'bottom',
-        allowed_areas=None,
+        area: str = 'right',
+        allowed_areas: Optional[Sequence[str]] = None,
         shortcut=_sentinel,
         add_vertical_stretch=True,
     ):
@@ -978,7 +989,7 @@ class Window:
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
             dock_widget = QtViewerDockWidget(
@@ -1058,7 +1069,7 @@ class Window:
         import warnings
 
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+            warnings.simplefilter("ignore", FutureWarning)
             # deprecating with 0.4.8, but let's try to keep compatibility.
             shortcut = dock_widget.shortcut
         if shortcut is not None:

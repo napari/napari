@@ -17,7 +17,7 @@ def get_icon_path(name: str) -> str:
                 "unrecognized icon name: {name!r}. Known names: {icons}",
                 deferred=True,
                 name=name,
-                icons=ICONS,
+                icons=set(ICONS),
             )
         )
     return ICONS[name]
