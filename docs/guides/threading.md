@@ -389,19 +389,21 @@ Let's break it down:
    <napari.qt.threading.thread_worker>` and instantiate it to create a
    `worker`.
 
-2. The most interesting line is where we both `yield` the current ``total``
-   to the main thread (`yield total`), *and* receive a new value from the main
-   thread (with `new = yield`).
+2. The most interesting line in this example is where we both
+   `yield` the current ``total`` to the main thread (`yield total`), *and*
+   receive a new value from the main thread (with `new = yield`).
 
-3. In the main thread, we have connected that `worker.yielded` event to a
-   callback that pauses the worker and updates the `result_label` widget.
+3. In the main thread, we have connected that `worker.yielded` event
+   to a callback that pauses the worker and updates the `result_label`
+   widget.
 
-4. The thread will then wait indefinitely for the `resume()` command, which we
-   have connected to the `line_edit.returnPressed` signal.
+4. The thread will then wait indefinitely for the `resume()` command,
+   which we have connected to the `line_edit.returnPressed` signal.
 
-5. However, before that `resume()` command gets sent, we use `worker.send()`
-   to send the current value of the `line_edit` widget into the thread which
-   the thread will multiple by the existing total.
+5. However, before that `resume()` command gets sent, we use
+   `worker.send()` to send the current value of the `line_edit` widget
+   into the thread which the thread will multiple by the existing
+   total.
 
 6. Lastly, if the thread total ever goes to "0", we stop the thread by
    returning the string ``"Game Over"``.  In the main thread, the
