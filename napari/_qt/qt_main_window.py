@@ -87,6 +87,7 @@ class _QtMainWindow(QMainWindow):
         # set SETTINGS plugin defaults.
         SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
 
+        # TODO: move this where it would work with headless as well
         # set the values in plugins to match the ones saved in SETTINGS
         if SETTINGS.plugins.call_order is not None:
             plugin_manager.set_call_order(SETTINGS.plugins.call_order)
