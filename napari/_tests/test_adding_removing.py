@@ -1,9 +1,19 @@
+import os
+
 import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
 from napari.layers import Image
 from napari.utils.events.event import WarningEmitter
+
+
+@pytest.mark.skipif(bool(not os.getenv("CI")), reason='shows viewer')
+@pytest.mark.parametrize('Layer, data, _', layer_test_data)
+def test_add_all_layers(make_napari_viewer, Layer, data, _):
+    """Make sure that all layers can show in the viewer."""
+    viewer = make_napari_viewer(show=True)
+    viewer.layers.append(Layer(data))
 
 
 def test_layers_removed_on_close(make_napari_viewer):

@@ -164,21 +164,21 @@ class NestableEventedList(EventedList[_T]):
     # def remove(self, value: T): ...
 
     @overload  # type: ignore
-    def __getitem__(self, key: int) -> Union[_T, 'NestableEventedList[_T]']:
+    def __getitem__(self, key: int) -> Union[_T, NestableEventedList[_T]]:
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: ParentIndex) -> 'NestableEventedList[_T]':
+    def __getitem__(self, key: ParentIndex) -> NestableEventedList[_T]:
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'NestableEventedList[_T]':  # noqa
+    def __getitem__(self, key: slice) -> NestableEventedList[_T]:  # noqa
         ...  # pragma: no cover
 
     @overload
     def __getitem__(
         self, key: NestedIndex
-    ) -> Union[_T, 'NestableEventedList[_T]']:
+    ) -> Union[_T, NestableEventedList[_T]]:
         ...  # pragma: no cover
 
     def __getitem__(self, key: MaybeNestedIndex):

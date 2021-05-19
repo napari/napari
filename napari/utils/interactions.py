@@ -1,4 +1,5 @@
 import inspect
+import re
 import sys
 import warnings
 
@@ -221,6 +222,7 @@ KEY_SYMBOLS = {
     'Escape': 'Esc',
     'Return': '⏎',
     'Enter': '↵',
+    'Space': '␣',
 }
 
 
@@ -254,7 +256,7 @@ class Shortcut:
             shortcut to format in the form of dash separated keys to press
 
         """
-        self._values = shortcut.split('-')
+        self._values = re.split('-(?=.+)', shortcut)
         for shortcut_key in self._values:
             if (
                 len(shortcut_key) > 1

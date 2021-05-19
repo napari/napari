@@ -301,3 +301,32 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     layer = viewer.layers[1]
     indices, scale = layer._slice_data(layer._slice_indices)
     np.testing.assert_equal(indices, [0])
+
+
+def test_active_keybindings(make_napari_viewer):
+    """Test instantiating viewer."""
+    viewer = make_napari_viewer()
+    view = viewer.window.qt_viewer
+
+    # Check only keybinding is Viewer
+    assert len(view._key_map_handler.keymap_providers) == 1
+    assert view._key_map_handler.keymap_providers[0] == viewer
+
+    # Add a layer and check it is keybindings are active
+    data = np.random.random((10, 15))
+    layer_image = viewer.add_image(data)
+    assert viewer.layers.selection.active == layer_image
+    assert len(view._key_map_handler.keymap_providers) == 2
+    assert view._key_map_handler.keymap_providers[0] == layer_image
+
+    # Add a layer and check it is keybindings become active
+    layer_image_2 = viewer.add_image(data)
+    assert viewer.layers.selection.active == layer_image_2
+    assert len(view._key_map_handler.keymap_providers) == 2
+    assert view._key_map_handler.keymap_providers[0] == layer_image_2
+
+    # Change active layer and check it is keybindings become active
+    viewer.layers.selection.active = layer_image
+    assert viewer.layers.selection.active == layer_image
+    assert len(view._key_map_handler.keymap_providers) == 2
+    assert view._key_map_handler.keymap_providers[0] == layer_image

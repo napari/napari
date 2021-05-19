@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from contextlib import suppress
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -11,6 +12,7 @@ from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
+from ..utils.action_manager import action_manager
 from ..utils.history import (
     get_open_history,
     get_save_history,
@@ -35,6 +37,7 @@ from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .tree import QtLayerTreeView
 from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_activity_dock import QtActivityDock
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -51,6 +54,8 @@ from .._vispy import (  # isort:skip
 
 if TYPE_CHECKING:
     from ..viewer import Viewer
+
+from ..utils.io import imsave_extensions
 
 
 class QtViewer(QSplitter):
@@ -129,6 +134,10 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
+
+        activityDock = QtActivityDock()
+        activityDock.setObjectName('activityDock')
+
         self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
@@ -145,13 +154,20 @@ class QtViewer(QSplitter):
             allowed_areas=['left', 'right'],
             object_name='layer controls',
         )
+        self.activityDock = QtViewerDockWidget(
+            self,
+            activityDock,
+            name=trans._('activity dock'),
+            area='right',
+            allowed_areas=['right', 'bottom'],
+            object_name='activity dock',
+        )
         self.dockConsole = QtViewerDockWidget(
             self,
             QWidget(),
             name=trans._('console'),
             area='bottom',
             allowed_areas=['top', 'bottom'],
-            shortcut='Ctrl+Shift+C',
             object_name='console',
         )
         self.dockConsole.setVisible(False)
@@ -164,13 +180,25 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        self.activityDock.setVisible(False)
+
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        self.viewerButtons.consoleButton.clicked.connect(
-            self.toggle_console_visibility
+        action_manager.register_action(
+            "napari:toggle_console_visibility",
+            self.toggle_console_visibility,
+            trans._("Show/Hide IPython console"),
+            self.viewer,
+        )
+        action_manager.bind_button(
+            'napari:toggle_console_visibility',
+            self.viewerButtons.consoleButton,
+        )
+        action_manager.bind_shortcut(
+            'napari:toggle_console_visibility', 'Control-Shift-C'
         )
 
         self._create_canvas()
@@ -247,25 +275,6 @@ class QtViewer(QSplitter):
         else:
             self.chunk_receiver = None
 
-    def __getattr__(self, name):
-        if name == 'raw_stylesheet':
-            import warnings
-
-            from .qt_resources import get_stylesheet
-
-            warnings.warn(
-                trans._(
-                    "The 'raw_stylesheet' attribute is deprecated and will be"
-                    "removed in version 0.4.7.  Please use "
-                    "`napari.qt.get_stylesheet` instead"
-                ),
-                category=DeprecationWarning,
-                stacklevel=2,
-            )
-            return get_stylesheet()
-
-        return object.__getattribute__(self, name)
-
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
         self.canvas = VispyCanvas(
@@ -291,7 +300,10 @@ class QtViewer(QSplitter):
         theme.connect(on_theme_change)
 
         def disconnect():
-            theme.disconnect(on_theme_change)
+            # strange EventEmitter has no attribute _callbacks errors sometimes
+            # maybe some sort of cleanup race condition?
+            with suppress(AttributeError):
+                theme.disconnect(on_theme_change)
 
         self.canvas.destroyed.connect(disconnect)
 
@@ -337,7 +349,10 @@ class QtViewer(QSplitter):
             try:
                 from napari_console import QtConsole
 
+                import napari
+
                 self.console = QtConsole(self.viewer)
+                self.console.push({'napari': napari})
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -375,12 +390,11 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.layers.selection.active
-        if active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(active_layer)
-
-        if active_layer is not None:
-            self._key_map_handler.keymap_providers.insert(0, active_layer)
+        self._key_map_handler.keymap_providers = (
+            [self.viewer]
+            if self.viewer.layers.selection.active is None
+            else [self.viewer.layers.selection.active, self.viewer]
+        )
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -472,14 +486,47 @@ class QtViewer(QSplitter):
         if msg:
             raise OSError(trans._("Nothing to save"))
 
+        # prepare list of extensions for drop down menu.
+        if selected and len(self.viewer.layers.selection) == 1:
+            selected_layer = list(self.viewer.layers.selection)[0]
+            # single selected layer.
+            if selected_layer._type_string == 'image':
+
+                ext = imsave_extensions()
+
+                ext_list = []
+                for val in ext:
+                    ext_list.append("*" + val)
+
+                ext_str = ';;'.join(ext_list)
+
+                ext_str = trans._(
+                    "All Files (*);; Image file types:;;{ext_str}",
+                    ext_str=ext_str,
+                )
+
+            elif selected_layer._type_string == 'points':
+
+                ext_str = trans._("All Files (*);; *.csv;;")
+
+            else:
+                # layer other than image or points
+                ext_str = trans._("All Files (*);;")
+
+        else:
+            # multiple layers.
+            ext_str = trans._("All Files (*);;")
+
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
+
         filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
         )
 
         if filename:
@@ -638,7 +685,7 @@ class QtViewer(QSplitter):
         _ = self.console
 
         viz = not self.dockConsole.isVisible()
-        # modulate visibility at the dock widget level as console is docakable
+        # modulate visibility at the dock widget level as console is dockable
         self.dockConsole.setVisible(viz)
         if self.dockConsole.isFloating():
             self.dockConsole.setFloating(True)
@@ -885,7 +932,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -922,7 +969,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
 
 def _create_remote_manager(
     layers: LayerList, qt_poll
-) -> 'Optional[RemoteManager]':
+) -> Optional[RemoteManager]:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters
