@@ -6,13 +6,16 @@ from typing import Any, List, Sequence, Tuple, TypeVar, Union
 import numpy as np
 from typing_extensions import Protocol, runtime_checkable
 
-OBJ_NAMES = set(dir(Protocol))
-OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
+_T = TypeVar('_T')
+Shape = Tuple[int, ...]
+ListOrTuple = Union[List[_T], Tuple[_T, ...], np.ndarray]
+_OBJ_NAMES = set(dir(Protocol))
+_OBJ_NAMES.update({'__annotations__', '__dict__', '__weakref__'})
 
 
 def _raise_protocol_error(obj: Any, protocol: type):
     """Raise a more helpful error when required protocol members are missing."""
-    needed = set(dir(protocol)).union(protocol.__annotations__) - OBJ_NAMES
+    needed = set(dir(protocol)).union(protocol.__annotations__) - _OBJ_NAMES
     missing = needed - set(dir(obj))
     message = (
         f"Object of type {type(obj).__name__!r} does not implement "
@@ -23,30 +26,26 @@ def _raise_protocol_error(obj: Any, protocol: type):
 
 
 def assert_protocol(obj: Any, protocol: type):
+    """Assert `obj` is an instance of `protocol` or raise helpful error."""
     if not isinstance(obj, protocol):
         _raise_protocol_error(obj, protocol)
 
 
-Shape = Tuple[int, ...]
-
-
 @runtime_checkable
 class LayerDataProtocol(Protocol):
+    """A Protocol that all layer.data needs to support.
+
+    WIP: Shapes.data may be an execption.
+    """
+
     shape: Shape
     dtype: np.dtype
 
-
-@runtime_checkable
-class MultiScaleDataProtocol(LayerDataProtocol, Protocol):
     def __getitem__(self, item) -> LayerDataProtocol:
         ...
 
 
-_T = TypeVar('_T')
-ListOrTuple = Union[List[_T], Tuple[_T, ...], np.ndarray]
-
-
-class MultiScaleData(Sequence[LayerDataProtocol], MultiScaleDataProtocol):
+class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
     def __init__(self, data) -> None:
         if isinstance(data, GeneratorType):
             data = list(data)
@@ -72,7 +71,6 @@ class MultiScaleData(Sequence[LayerDataProtocol], MultiScaleDataProtocol):
         return tuple(im.shape for im in self._data)
 
     def __getitem__(self, index):
-        # TODO: handle slice indices
         return self._data[index]
 
     def __len__(self) -> int:

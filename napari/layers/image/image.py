@@ -13,7 +13,11 @@ from ...utils import config
 from ...utils._dtype import get_dtype_limits, normalize_dtype
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+<<<<<<< HEAD
 from ...utils.translations import trans
+=======
+from ...utils.naming import magic_name
+>>>>>>> 3c28e07dc (move magic name)
 from .._data_protocols import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
@@ -212,6 +216,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         experimental_slicing_plane=None,
         experimental_clipping_planes=None,
     ):
+        if name is None and data is not None:
+            name = magic_name(data)
+
         if isinstance(data, types.GeneratorType):
             data = list(data)
 

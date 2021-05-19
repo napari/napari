@@ -20,7 +20,6 @@ from ...utils.geometry import (
     intersect_line_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
@@ -222,7 +221,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         super().__init__()
 
         if name is None and data is not None:
-            name = magic_name(data, path_prefix=ROOT_DIR)
+            name = magic_name(data)
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data, cache)
