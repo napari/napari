@@ -908,12 +908,11 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 data, kwargs, layer_type, fallback_name=basename
             )
 
-            if layer_type is None and getattr(_data[0], 'ndim', None) == 1:
-                LOGGER.warning(
-                    'Skipping 1D data with unspecified layer_type: {}'.format(
-                        filename
-                    )
-                )
+            if getattr(_data[0], 'ndim', None) == 1 and _data[2] in (
+                'image',
+                'labels',
+            ):
+                LOGGER.warning(f'Skipping 1D image: {filename}')
                 continue
 
             # actually add the layer

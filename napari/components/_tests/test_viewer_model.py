@@ -719,6 +719,21 @@ def test_not_mutable_fields(field):
 
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
+def test_open_zarr_multiscale_image():
+    # For more details: https://github.com/napari/napari/issues/1471
+    viewer = ViewerModel()
+    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
+        z = zarr.open(zarr_dir, 'w')
+        z['hires'] = np.ones((6, 8))
+        z['lores'] = np.ones((3, 4))
+
+        viewer.open(zarr_dir)
+
+        assert len(viewer.layers) == 1
+        assert viewer.layers[0].multiscale
+
+
+@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_open_zarr_1d_array_is_ignored():
     # For more details: https://github.com/napari/napari/issues/1471
     viewer = ViewerModel()
