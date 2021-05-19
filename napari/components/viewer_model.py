@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import itertools
+import logging
 import os
 import warnings
 from functools import lru_cache
@@ -60,6 +61,8 @@ EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
+
+LOGGER = logging.getLogger("napari.components.viewer_model")
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -904,6 +907,15 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             _data = _unify_data_and_user_kwargs(
                 data, kwargs, layer_type, fallback_name=basename
             )
+
+            if layer_type is None and getattr(_data[0], 'ndim', None) == 1:
+                LOGGER.warning(
+                    'Skipping 1D data with unspecified layer_type: {}'.format(
+                        filename
+                    )
+                )
+                continue
+
             # actually add the layer
             with layer_source(path=filename, reader_plugin=plugin):
                 added.extend(self._add_layer_from_data(*_data))
