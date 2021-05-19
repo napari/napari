@@ -317,6 +317,20 @@ class PluginsSettings(BaseNapariSettings):
             "Sort plugins for each action in the order to be called.",
         ),
     )
+    extension2reader: Dict[str, str] = Field(
+        default_factory=dict,
+        title=trans._('Reader plugin extension association.'),
+        description=trans._(
+            'Assign file extensions to specific reader plugins'
+        ),
+    )
+    extension2writer: Dict[str, str] = Field(
+        default_factory=dict,
+        title=trans._('Writer plugin extension association.'),
+        description=trans._(
+            'Assign file extensions to specific writer plugins'
+        ),
+    )
 
     class Config:
         # Pydantic specific configuration
@@ -324,7 +338,11 @@ class PluginsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = [
+            'schema_version',
+            'extension2reader',
+            'extension2writer',
+        ]
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

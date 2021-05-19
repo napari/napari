@@ -63,6 +63,7 @@ class NapariPluginManager(PluginManager):
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
 
+        # dicts to store maps from extension -> plugin_name
         self._extension2reader: Dict[str, str] = {}
         self._extension2writer: Dict[str, str] = {}
 
@@ -76,12 +77,22 @@ class NapariPluginManager(PluginManager):
             sys.path.append(user_site_packages())
 
     def _initialize(self):
+        from ..utils.settings import SETTINGS
+
         with self.discovery_blocked():
             self.register(_builtins, name='builtins')
             if importlib.util.find_spec("skimage") is not None:
                 from . import _skimage_data
 
                 self.register(_skimage_data, name='scikit-image')
+
+        # set the values in plugins to match the ones saved in SETTINGS
+        if SETTINGS.plugins.call_order is not None:
+            self.set_call_order(SETTINGS.plugins.call_order)
+
+        # dicts to store maps from extension -> plugin_name
+        self._extension2reader.update(SETTINGS.plugins.extension2reader)
+        self._extension2writer.update(SETTINGS.plugins.extension2writer)
 
     def register(
         self, namespace: Any, name: Optional[str] = None
@@ -458,7 +469,10 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `reader`
         """
+        from ..utils.settings import SETTINGS
+
         self._assign_plugin_to_extensions(reader, extensions, type_='reader')
+        SETTINGS.plugins.extension2reader = self._extension2reader
 
     def get_writer_for_extension(self, extension: str) -> Optional[str]:
         """Return writer plugin assigned to `extension`, or None."""
@@ -476,7 +490,10 @@ class NapariPluginManager(PluginManager):
         extensions : Union[str, Iterable[str]]
             Name(s) of extensions to always write with `writer`
         """
+        from ..utils.settings import SETTINGS
+
         self._assign_plugin_to_extensions(writer, extensions, type_='writer')
+        SETTINGS.plugins.extension2writer = self._extension2writer
 
     def _get_plugin_for_extension(
         self, extension: str, type_: str
