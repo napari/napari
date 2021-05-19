@@ -78,7 +78,7 @@ def test_plugin_events(napari_plugin_manager):
     assert len(register_events) == 2
 
 
-def test_plugin_extension_assignment(test_napari_plugin_manager):
+def test_plugin_extension_assignment(napari_plugin_manager):
     class Plugin:
         @napari_hook_implementation
         def napari_get_reader(path):
@@ -90,7 +90,7 @@ def test_plugin_extension_assignment(test_napari_plugin_manager):
             if path.endswith('.png'):
                 return lambda x: None
 
-    tnpm: NapariPluginManager = test_napari_plugin_manager
+    tnpm: NapariPluginManager = napari_plugin_manager
     tnpm.register(Plugin, name='test_plugin')
 
     assert tnpm.get_reader_for_extension('.png') is None
