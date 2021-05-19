@@ -49,6 +49,7 @@ from ._shapes_mouse_bindings import (
 from ._shapes_utils import (
     create_box,
     extract_shape_type,
+    get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
 )
@@ -573,7 +574,10 @@ class Shapes(Layer):
         # more shapes, add attributes
         elif self.nshapes < n_new_shapes:
             n_shapes_difference = n_new_shapes - self.nshapes
-            shape_type = shape_type + ["rectangle"] * n_shapes_difference
+            shape_type = (
+                shape_type
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
+            )
             edge_widths = edge_widths + [1] * n_shapes_difference
             z_indices = z_indices + [0] * n_shapes_difference
             edge_color = np.concatenate(
@@ -987,10 +991,58 @@ class Shapes(Layer):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
 
+    @edge_width.setter
+    def edge_width(self, width):
+        """Set edge width of shapes using float or list of float.
+
+        If list of float, must be of equal length to n shapes
+
+        Parameters
+        ----------
+        width : float or list of float
+            width of all shapes, or each shape if list
+        """
+        if isinstance(width, list):
+            if not len(width) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                widths = width
+        else:
+            widths = [width for _ in range(self.nshapes)]
+
+        for i, width in enumerate(widths):
+            self._data_view.update_edge_width(i, width)
+
     @property
     def z_index(self):
         """list of int: z_index for each shape."""
         return self._data_view.z_indices
+
+    @z_index.setter
+    def z_index(self, z_index):
+        """Set z_index of shape using either int or list of int.
+
+        When list of int is provided, must be of equal length to n shapes.
+
+        Parameters
+        ----------
+        z_index : int or list of int
+            z-index of shapes
+        """
+        if isinstance(z_index, list):
+            if not len(z_index) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                z_indices = z_index
+        else:
+            z_indices = [z_index for _ in range(self.nshapes)]
+
+        for i, z_idx in enumerate(z_indices):
+            self._data_view.update_z_index(i, z_idx)
 
     @property
     def selected_data(self):
@@ -2277,7 +2329,7 @@ class Shapes(Layer):
                 "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
 
