@@ -9,6 +9,7 @@ from scipy import ndimage as ndi
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.naming import magic_name
 from .._data_protocols import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
@@ -184,6 +185,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         visible=True,
         multiscale=None,
     ):
+        if name is None and data is not None:
+            name = magic_name(data)
+
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
