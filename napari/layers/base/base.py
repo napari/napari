@@ -494,7 +494,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         return self._position
@@ -506,7 +506,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 "layer.position is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position.",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         _position = position[-self.ndim :]
@@ -982,7 +982,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 "layer.coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should no longer know where the cursor position is. You can get the cursor position in world coordinates from viewer.cursor.position. You can then transform that into data coordinates using the layer.world_to_data method.",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         # Note we ignore the first transform which is tile2data
@@ -1070,7 +1070,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 "displayed_coordinates is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should use [layer.coordinates[d] for d in viewer.dims.displayed]",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
         coordinates = self.world_to_data(self._position)

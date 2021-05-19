@@ -103,8 +103,12 @@ and
 - Relax dask test (#2641)
 - Add table header style (#2645)
 - QLargeIntSpinbox with QAbstractSpinbox and python model (#2648)
+- Add Labels layer `get_dtype` utility to account for multiscale layers (#2679)
 - Display file format options when saving layers (#2650)
 - Add events to plugin manager (#2663)
+- Add napari module to console namespace (#2687)
+- Change deprecation warnings to future warnings (#2707)
+- Add strict_qt and block_plugin_discovery parameters to make_napari_viewer (#2715)
 
 ## Bug Fixes
 
@@ -136,6 +140,19 @@ and
 - Fix notifications when something other than napari or ipython creates QApp (#2633)
 - Update missing translations for 0.4.8 (#2664)
 - Catch dockwidget layout modification error (#2671)
+- Fix warnings in thread_worker, relay messages to gui (#2688)
+- Add missing setters for shape attributes (#2696)
+- Add get_default_shape_type utility introspecting current shape type (#2701)
+- Fix handling of exceptions and notifications of threading threads (#2703)
+- Fix vertical_stretch injection and kwargs passing on DockWidget (#2705)
+- Fix tracks icons, and visibility icons (#2708)
+- Patch horizontalAdvance for older Qt versions (#2711)
+- Fix segfaults in test (#2716) 
+- Fix napari_provide_sample_data documentation typo (#2718)
+- Fix mpl colormaps (#2719)
+- Fix active layer keybindings (#2722)
+- Fix labels with large maximum value (#2723)
+- Fix progressbar and notifications segfaults in test (#2726)
 
 ## API Changes
 
@@ -145,6 +162,18 @@ and
   the previous behaviour with
   `napari.utils.resize_dask_cache(memory_fraction=0.1)`. You can of course also
   experiment with other values!
+- The default `area` for `add_dock_widget` is now `right`, and no longer `bottom`.
+- To avoid oddly spaced sparse widgets, #2154 adds vertical stretch to the
+  bottom of all dock widgets added (via plugins or manually) with an `area`
+  of `left` or `right`, *unless:*
+
+    1) the widget, or any widget in its primary layout, has a vertical
+       [`QSizePolicy`](https://doc.qt.io/qt-5/qsizepolicy.html#Policy-enum)
+       of `Expanding`, `MinimumExpanding`, or `Ignored`
+
+    1) `add_vertical_stretch=False` is provided to `add_dock_widget`,
+       or in the widget options provided with plugin dock widgets.
+
 
 ## Deprecations
 
@@ -189,6 +218,8 @@ and
 - Remove test warnings again, minimize output, hide more async stuff (#2642)
 - Remove `raw_stylesheet` (#2643)
 - Add link to top level project roadmap page (#2652)
+- Replace pypa/pep517 with pypa/build (#2684)
+- Add provide sample data hook to docs (#2689)
 
 ## Other Pull Requests
 
@@ -241,4 +272,3 @@ and
 - [Pam](https://github.com/napari/napari/commits?author=ppwadhwa) - @ppwadhwa
 - [Robert Haase](https://github.com/napari/napari/commits?author=haesleinhuepf) - @haesleinhuepf
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
-
