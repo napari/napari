@@ -1,3 +1,5 @@
+"""This module holds Protocols that layer.data objects are expected to provide.
+"""
 from __future__ import annotations
 
 from types import GeneratorType
@@ -46,6 +48,8 @@ class LayerDataProtocol(Protocol):
 
 
 class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
+    """Wrapper for multiscale data, to provide consistent API."""
+
     def __init__(self, data) -> None:
         if isinstance(data, GeneratorType):
             data = list(data)
@@ -60,14 +64,17 @@ class MultiScaleData(Sequence[LayerDataProtocol], LayerDataProtocol):
 
     @property
     def dtype(self):
+        """Return dtype of the first scale.."""
         return self._data[0].dtype
 
     @property
     def shape(self):
+        """Shape of multiscale is just the biggest shape."""
         return self._data[0].shape
 
     @property
     def shapes(self) -> Tuple[Shape, ...]:
+        """Tuple shapes for all scales."""
         return tuple(im.shape for im in self._data)
 
     def __getitem__(self, index):
