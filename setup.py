@@ -4,9 +4,9 @@ so this file is currently here to support "pip install -e ."
 """
 import subprocess
 import sys
-from distutils.command.build_py import build_py as _build_py
 
 from setuptools import setup
+from setuptools.command.build_py import build_py as _build_py
 
 
 class build_py(_build_py):
