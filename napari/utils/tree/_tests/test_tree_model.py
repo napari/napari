@@ -181,3 +181,11 @@ def test_nested_deletion(tree):
     assert node4 not in tree  # node4 is gone
     assert g2 == []
     assert g2 in tree  # the group itself remains in the tree
+
+
+def test_deep_index(tree: Group):
+    """...because there was a bug"""
+
+    node = tree[(1, 0)]
+    tree.selection.active = node
+    assert tree.index(node) == (1, 0)
