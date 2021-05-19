@@ -24,6 +24,7 @@ class LayerGroup(Group[Layer], Layer):
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
         self.events.connect(self._handle_child_events)
+        self._update_thumbnail()
 
     def add_group(self, index=-1):
         lg = LayerGroup()
@@ -79,6 +80,12 @@ class LayerGroup(Group[Layer], Layer):
         new_layer = self._type_check(value)
         new_layer.name = self._coerce_name(new_layer.name)
         super().insert(index, new_layer)
+        self._update_thumbnail()
+
+    def __delitem__(self, key):
+        """Remove item at `key`."""
+        super().__delitem__(key)
+        self._update_thumbnail()
 
     def _extent_data(self):
         """Extent of layer in data coordinates.
@@ -228,12 +235,13 @@ class LayerGroup(Group[Layer], Layer):
             child._set_highlight(force=force)
 
     def _update_thumbnail(self, *args, **kwargs):
-        import numpy as np
-
-        self.thumbnail = np.sum(
-            lay.thumbnail for lay in self.traverse(leaves_only=True)
-        )
-        pass
+        leaves = list(self.traverse(leaves_only=True))
+        if leaves:
+            self.thumbnail = np.sum(leaf.thumbnail for leaf in leaves)
+        else:
+            thumb = np.zeros(self._thumbnail_shape)
+            thumb[..., 3] = 1
+            self.thumbnail = thumb
 
     def refresh(self, event=None):
         """Refresh all layer data if visible."""
