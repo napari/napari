@@ -259,10 +259,11 @@ button that aborts the worker when clicked:
 ```{code-block} python
 ---
 linenos: true
-emphasize-lines: 19,29
+emphasize-lines: 20,30
 ---
 import time
 import napari
+from napari.qt.threading import thread_worker
 from qtpy.QtWidgets import QPushButton
 
 viewer = napari.Viewer()
