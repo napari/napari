@@ -87,6 +87,10 @@ class _QtMainWindow(QMainWindow):
         # set SETTINGS plugin defaults.
         SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
 
+        # set the values in plugins to match the ones saved in SETTINGS
+        if SETTINGS.plugins.call_order is not None:
+            plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+
         _QtMainWindow._instances.append(self)
 
         # Connect the notification dispacther to correctly propagate
