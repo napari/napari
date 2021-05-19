@@ -112,7 +112,7 @@ def _merge_layer_viewer_sigs_docs(func):
 _viewer_params = inspect.signature(Viewer).parameters
 
 
-def _make_viewer_add_layer(add_method: str, args, kwargs) -> Viewer:
+def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
     """Utility function that creates a viewer, adds a layer, returns viewer."""
     vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
     viewer = Viewer(**vkwargs)
@@ -134,39 +134,39 @@ def _make_viewer_add_layer(add_method: str, args, kwargs) -> Viewer:
 
 @_merge_layer_viewer_sigs_docs
 def view_image(*args, **kwargs):
-    return _make_viewer_add_layer('add_image', args, kwargs)
+    return _make_viewer_then('add_image', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_labels(*args, **kwargs):
-    return _make_viewer_add_layer('add_labels', args, kwargs)
+    return _make_viewer_then('add_labels', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_points(*args, **kwargs):
-    return _make_viewer_add_layer('add_points', args, kwargs)
+    return _make_viewer_then('add_points', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_shapes(*args, **kwargs):
-    return _make_viewer_add_layer('add_shapes', args, kwargs)
+    return _make_viewer_then('add_shapes', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_surface(*args, **kwargs):
-    return _make_viewer_add_layer('add_surface', args, kwargs)
+    return _make_viewer_then('add_surface', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_tracks(*args, **kwargs):
-    return _make_viewer_add_layer('add_tracks', args, kwargs)
+    return _make_viewer_then('add_tracks', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_vectors(*args, **kwargs):
-    return _make_viewer_add_layer('add_vectors', args, kwargs)
+    return _make_viewer_then('add_vectors', args, kwargs)
 
 
 @_merge_layer_viewer_sigs_docs
 def view_path(*args, **kwargs):
-    return _make_viewer_add_layer('open', args, kwargs)
+    return _make_viewer_then('open', args, kwargs)
