@@ -900,25 +900,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: List[Layer] = []  # for layers that get added
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
-            basename = os.path.basename(filename)
-            fallback_name, _ext = os.path.splitext(basename)
+            basename, _ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=fallback_name
+                data, kwargs, layer_type, fallback_name=basename
             )
-
-            if getattr(_data[0], 'ndim', None) == 1 and _data[2] in (
-                'image',
-                'labels',
-            ):
-                warnings.warn(
-                    trans._(
-                        "Skipped 1D image: {basename}",
-                        deferred=True,
-                        basename=basename,
-                    )
-                )
-                continue
-
             # actually add the layer
             with layer_source(path=filename, reader_plugin=plugin):
                 added.extend(self._add_layer_from_data(*_data))

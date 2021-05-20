@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+import warnings
 from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -206,6 +207,15 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     for filename in filenames_expanded:
         if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
+            if len(zarr_shape) == 1:
+                warnings.warn(
+                    trans._(
+                        'Skipped 1D zarr dataset: {basename}',
+                        deferred=True,
+                        basename=os.path.basename(filename),
+                    )
+                )
+                continue
             if shape is None:
                 shape = zarr_shape
         else:
@@ -220,6 +230,8 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
             elif len(images) > 0:  # not read by shape clause
                 image = imread(filename)
         images.append(image)
+    if len(images) == 0:
+        return None
     if len(images) == 1:
         image = images[0]
     else:
