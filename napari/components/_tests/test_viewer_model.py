@@ -3,13 +3,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 import pytest
-
-try:
-    import zarr
-
-    zarr_available = True
-except ImportError:
-    zarr_available = False
+import zarr
 
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
@@ -718,7 +712,6 @@ def test_not_mutable_fields(field):
     )
 
 
-@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_open_zarr_multiscale_image():
     # For more details: https://github.com/napari/napari/issues/1471
     viewer = ViewerModel()
@@ -733,7 +726,6 @@ def test_open_zarr_multiscale_image():
         assert viewer.layers[0].multiscale
 
 
-@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_open_zarr_1d_array_is_ignored():
     # For more details: https://github.com/napari/napari/issues/1471
     viewer = ViewerModel()
@@ -741,12 +733,12 @@ def test_open_zarr_1d_array_is_ignored():
         z = zarr.open(zarr_dir, 'w')
         z['1d'] = np.zeros(3)
 
-        viewer.open(os.path.join(zarr_dir, '1d'))
+        with pytest.warns(UserWarning):
+            viewer.open(os.path.join(zarr_dir, '1d'))
 
         assert len(viewer.layers) == 0
 
 
-@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_open_many_zarr_files_1d_array_is_ignored():
     # For more details: https://github.com/napari/napari/issues/1471
     viewer = ViewerModel()
@@ -756,6 +748,9 @@ def test_open_many_zarr_files_1d_array_is_ignored():
         z['2d'] = np.zeros((3, 4))
         z['3d'] = np.zeros((3, 4, 5))
 
-        viewer.open([os.path.join(zarr_dir, name) for name in z.array_keys()])
+        with pytest.warns(UserWarning):
+            viewer.open(
+                [os.path.join(zarr_dir, name) for name in z.array_keys()]
+            )
 
         assert [layer.name for layer in viewer.layers] == ['2d', '3d']

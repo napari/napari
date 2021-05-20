@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import inspect
 import itertools
-import logging
 import os
 import warnings
 from functools import lru_cache
@@ -61,8 +60,6 @@ EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
-
-LOGGER = logging.getLogger("napari.components.viewer_model")
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -903,16 +900,23 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         added: List[Layer] = []  # for layers that get added
         plugin = hookimpl.plugin_name if hookimpl else None
         for data, filename in zip(layer_data, filenames):
-            basename, _ext = os.path.splitext(os.path.basename(filename))
+            basename = os.path.basename(filename)
+            fallback_name, _ext = os.path.splitext(basename)
             _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=basename
+                data, kwargs, layer_type, fallback_name=fallback_name
             )
 
             if getattr(_data[0], 'ndim', None) == 1 and _data[2] in (
                 'image',
                 'labels',
             ):
-                LOGGER.warning(f'Skipping 1D image: {filename}')
+                warnings.warn(
+                    trans._(
+                        "Skipped 1D image: {basename}",
+                        deferred=True,
+                        basename=basename,
+                    )
+                )
                 continue
 
             # actually add the layer
