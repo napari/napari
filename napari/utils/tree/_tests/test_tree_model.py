@@ -216,3 +216,19 @@ def test_remove_selected(tree: Group):
     node = tree[(1, 0)]
     tree.selection.active = node
     tree.remove_selected()
+
+
+def test_nested_custom_lookup(tree: Group):
+    tree._lookup = {str: lambda x: x.name}
+
+    # first level
+    g1 = tree[1]
+    assert g1.name == 'g1'  # index with integer as usual
+    assert tree.index("g1") == 1
+    assert tree['c1'] == g1  # index with string also works
+
+    # second level
+    g1_2 = g1[2]
+    assert tree[1, 2].name == '5'
+    assert tree.index('5') == (1, 2)
+    assert tree['5'] == g1_2

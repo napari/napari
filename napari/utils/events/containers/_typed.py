@@ -227,7 +227,6 @@ class TypedMutableSequence(MutableSequence[_T]):
 
         for i in self._iter_indices(start, stop):
             v = convert(self[i])
-            print("index", i, 'val', v)
             if v is value or v == value:
                 return i
 

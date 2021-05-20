@@ -212,7 +212,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         row = parentItem.index_in_parent() or 0
         return self.createIndex(row, 0, parentItem)
 
-    def rowCount(self, parent: QModelIndex = None) -> int:
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """Returns the number of rows under the given parent.
 
         When the parent is valid it means that rowCount is returning the number of

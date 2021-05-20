@@ -133,29 +133,3 @@ def test_nested_type_enforcement():
 
     with pytest.raises(TypeError):
         _ = NestableEventedList([1, 2, [3, ['string']]], basetype=int)
-
-
-def test_nested_custom_lookup():
-    class Custom:
-        def __init__(self, name=''):
-            self.name = name
-
-    c = Custom()
-    c1 = Custom(name='c1')
-    c2 = Custom(name='c2')
-    c3 = Custom(name='c3')
-
-    a = NestableEventedList(
-        [c, c1, [c2, [c3]]],
-        basetype=Custom,
-        lookup={str: lambda x: x.name},
-    )
-    # first level
-    assert a[1].name == 'c1'  # index with integer as usual
-    assert a.index("c1") == 1
-    assert a['c1'] == c1  # index with string also works
-
-    # second level
-    assert a[2, 0].name == 'c2'
-    assert a.index("c2") == (2, 0)
-    assert a['c2'] == c2

@@ -24,7 +24,6 @@ class LayerGroup(Group[Layer], Layer):
         Layer.__init__(self, None, 2, name=name)
         self.refresh(None)  # TODO: why...
         self.events.connect(self._handle_child_events)
-        self._update_thumbnail()
 
     def add_group(self, index=-1):
         lg = LayerGroup()
@@ -169,15 +168,13 @@ class LayerGroup(Group[Layer], Layer):
     def _get_step_size(self, layer_extent_list):
         if len(self) == 0:
             return np.ones(self.ndim)
-        else:
-            scales = [extent.step[::-1] for extent in layer_extent_list]
-            full_scales = list(
-                np.array(
-                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
-                ).T
-            )
-            min_scales = np.nanmin(full_scales, axis=0)
-            return min_scales[::-1]
+
+        scales = [extent.step[::-1] for extent in layer_extent_list]
+        full_scales = list(
+            np.array(list(itertools.zip_longest(*scales, fillvalue=np.nan))).T
+        )
+        min_scales = np.nanmin(full_scales, axis=0)
+        return min_scales[::-1]
 
     @property
     def extent(self) -> Extent:
@@ -191,7 +188,7 @@ class LayerGroup(Group[Layer], Layer):
 
     def _get_ndim(self):
         try:
-            self._ndim = max([c._get_ndim() for c in self])
+            self._ndim = max(c._get_ndim() for c in self)
         except ValueError:
             self._ndim = 2
         return self._ndim
@@ -204,8 +201,7 @@ class LayerGroup(Group[Layer], Layer):
         state : list
             List of layer state dictionaries.
         """
-        state = []
-        state.append(self._get_base_state())
+        state = [self._get_base_state()]
         if self is not None:
             for layer in self:
                 state.append(layer._get_state())
@@ -237,10 +233,11 @@ class LayerGroup(Group[Layer], Layer):
     def _update_thumbnail(self, *args, **kwargs):
         leaves = list(self.traverse(leaves_only=True))
         if leaves:
-            self.thumbnail = np.sum(leaf.thumbnail for leaf in leaves)
+            thumb = np.clip(np.sum(leaf.thumbnail for leaf in leaves), 0, 255)
         else:
-            self.thumbnail = np.zeros(self._thumbnail_shape)
-            self.thumbnail[..., 3] = 1
+            thumb = np.zeros(self._thumbnail_shape)
+            thumb[..., 3] = 255
+        self.thumbnail = thumb
 
     def refresh(self, event=None):
         """Refresh all layer data if visible."""
@@ -251,14 +248,6 @@ class LayerGroup(Group[Layer], Layer):
     @property
     def data(self):
         return None
-
-    @property
-    def blending(self):
-        return None
-
-    @blending.setter
-    def blending(self, val):
-        raise NotImplementedError()
 
     def save(self):
         raise NotImplementedError()

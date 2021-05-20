@@ -121,6 +121,9 @@ class QtLayerTreeModel(QtNodeTreeModel[Layer]):
         # for a given index, so that views can update themselves.
         # Here we convert native events to the dataChanged signal.
         if not hasattr(event, 'index'):
+            self.dataChanged.emit(
+                self.index(0), self.index(self.rowCount()), []
+            )
             return
         role = {
             'thumbnail': self.ThumbnailRole,
