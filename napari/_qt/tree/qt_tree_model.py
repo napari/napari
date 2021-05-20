@@ -319,7 +319,7 @@ class QtNodeTreeModel(QAbstractItemModel, Generic[NodeType]):
         )
         if hits:
             return hits[0]
-        raise IndexError(f"Could not find node {obj!r} in the model")
+        return QModelIndex()
 
     def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
         """Return a QModelIndex for a given ``nested_index``."""

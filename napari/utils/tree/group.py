@@ -1,4 +1,6 @@
-from typing import Generator, Iterable, List, TypeVar
+from __future__ import annotations
+
+from typing import Generator, Iterable, List, TypeVar, Union
 
 from ..events.containers._nested_list import MaybeNestedIndex
 from ..events.containers._selectable_list import SelectableNestableEventedList
@@ -40,6 +42,9 @@ class Group(Node, SelectableNestableEventedList[NodeType]):
         SelectableNestableEventedList.__init__(
             self, data=children, basetype=basetype
         )
+
+    def __getitem__(self, key) -> Union[NodeType, Group[NodeType]]:
+        return super().__getitem__(key)
 
     def __delitem__(self, key: MaybeNestedIndex):
         """Remove item at ``key``, and unparent."""

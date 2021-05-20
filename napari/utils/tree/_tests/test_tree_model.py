@@ -7,7 +7,7 @@ from napari.utils.tree import Group, Node
 
 @pytest.fixture
 def tree():
-    root = Group(
+    return Group(
         [
             Node(name="1"),
             Group(
@@ -25,7 +25,6 @@ def tree():
         ],
         name="root",
     )
-    return root
 
 
 def test_tree_str(tree):
@@ -47,9 +46,33 @@ def test_tree_str(tree):
     assert str(tree) == expected
 
 
-def test_node_indexing(tree):
+def test_node_indexing(tree: Group):
+    expected_indices = [
+        0,
+        1,
+        (1, 0),
+        (1, 1),
+        (1, 1, 0),
+        (1, 1, 1),
+        (1, 2),
+        (1, 3),
+        (1, 4),
+        2,
+        3,
+    ]
+    assert list(tree._iter_indices()) == expected_indices
+
+    for index in tree._iter_indices():
+        assert tree.index(tree[index]) == index
+
+        item = tree[index]
+        if item.parent:
+            assert item.parent.index(item) is not None
+
+
+def test_relative_node_indexing(tree):
     """Test that nodes know their index relative to parent and root."""
-    root: Group = tree
+    root: Group[Node] = tree
     assert root.is_group()
     assert not root[0].is_group()
 
@@ -125,11 +148,9 @@ def test_contains(tree):
     assert g1_0 in g1
     assert g1_0 in tree
 
-    # If you need to know if an item is an immediate child, you can use index
-    assert tree.index(g1) == 1
-    with pytest.raises(ValueError) as e:
-        tree.index(g1_0)
-    assert "is not in list" in str(e)
+    # If you need to know if an item is an immediate child, you can use parent
+    assert g1.parent is tree
+    assert g1_0.parent is g1
 
     g2 = g1[1]
     assert g2.name == 'g2'
@@ -184,8 +205,14 @@ def test_nested_deletion(tree):
 
 
 def test_deep_index(tree: Group):
-    """...because there was a bug"""
+    """Test deep indexing"""
 
     node = tree[(1, 0)]
-    tree.selection.active = node
     assert tree.index(node) == (1, 0)
+
+
+def test_remove_selected(tree: Group):
+    """Test remove_selected works, with nested"""
+    node = tree[(1, 0)]
+    tree.selection.active = node
+    tree.remove_selected()

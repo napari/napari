@@ -239,9 +239,8 @@ class LayerGroup(Group[Layer], Layer):
         if leaves:
             self.thumbnail = np.sum(leaf.thumbnail for leaf in leaves)
         else:
-            thumb = np.zeros(self._thumbnail_shape)
-            thumb[..., 3] = 1
-            self.thumbnail = thumb
+            self.thumbnail = np.zeros(self._thumbnail_shape)
+            self.thumbnail[..., 3] = 1
 
     def refresh(self, event=None):
         """Refresh all layer data if visible."""
