@@ -6,7 +6,7 @@
 <span style="font-size:0.8em;">
 <!-- VIEWER EVENTS TABLE -->
                                                                                                                                                             
-|  Class          |  Event Name      |  From viewer                             |  Emitted when ___ changes        |  Event Attribute(s)                   |
+|  Class          |  Event Name      |  Access At                               |  Emitted when __ changes         |  Event Attribute(s)                   |
 |-----------------|------------------|------------------------------------------|----------------------------------|---------------------------------------|
 |  `Axes`         |  `visible`       |  `viewer.axes.events.visible`            |                                  |  value: `bool`                        |
 |  `Axes`         |  `labels`        |  `viewer.axes.events.labels`             |                                  |  value: `bool`                        |
@@ -53,10 +53,108 @@
 |  `Viewer`       |  `title`         |  `viewer.events.title`                   |                                  |  value: `str`                         |
                                                                                                                                                             
 <!-- STOP VIEWER EVENTS TABLE -->
+</span>
 
 ## Layer Events
 
+Access all `Layer` events, at `layer.events.<event_name>`
+
 <span style="font-size:0.8em;">
 <!-- LAYER EVENTS TABLE -->
-
+                                                                                           
+|  Class      |  Event Name            |  Emitted when __ changes  |  Event Attribute(s)  |
+|-------------|------------------------|---------------------------|----------------------|
+|  `Layer`    |  `source`              |                           |                      |
+|  `Layer`    |  `auto_connect`        |                           |                      |
+|  `Layer`    |  `refresh`             |                           |                      |
+|  `Layer`    |  `set_data`            |                           |                      |
+|  `Layer`    |  `blending`            |                           |                      |
+|  `Layer`    |  `opacity`             |                           |                      |
+|  `Layer`    |  `visible`             |                           |                      |
+|  `Layer`    |  `scale`               |                           |                      |
+|  `Layer`    |  `translate`           |                           |                      |
+|  `Layer`    |  `rotate`              |                           |                      |
+|  `Layer`    |  `shear`               |                           |                      |
+|  `Layer`    |  `affine`              |                           |                      |
+|  `Layer`    |  `data`                |                           |                      |
+|  `Layer`    |  `name`                |                           |                      |
+|  `Layer`    |  `thumbnail`           |                           |                      |
+|  `Layer`    |  `status`              |                           |                      |
+|  `Layer`    |  `help`                |                           |                      |
+|  `Layer`    |  `interactive`         |                           |                      |
+|  `Layer`    |  `cursor`              |                           |                      |
+|  `Layer`    |  `cursor_size`         |                           |                      |
+|  `Layer`    |  `editable`            |                           |                      |
+|  `Layer`    |  `loaded`              |                           |                      |
+|  `Layer`    |  `_ndisplay`           |                           |                      |
+|  `Layer`    |  `select`              |                           |                      |
+|  `Layer`    |  `deselect`            |                           |                      |
+|  `Image`    |  `contrast_limits`     |                           |                      |
+|  `Image`    |  `gamma`               |                           |                      |
+|  `Image`    |  `colormap`            |                           |                      |
+|  `Image`    |  `interpolation`       |                           |                      |
+|  `Image`    |  `rendering`           |                           |                      |
+|  `Image`    |  `iso_threshold`       |                           |                      |
+|  `Image`    |  `attenuation`         |                           |                      |
+|  `Labels`   |  `contrast_limits`     |                           |                      |
+|  `Labels`   |  `gamma`               |                           |                      |
+|  `Labels`   |  `colormap`            |                           |                      |
+|  `Labels`   |  `interpolation`       |                           |                      |
+|  `Labels`   |  `rendering`           |                           |                      |
+|  `Labels`   |  `iso_threshold`       |                           |                      |
+|  `Labels`   |  `attenuation`         |                           |                      |
+|  `Labels`   |  `mode`                |                           |                      |
+|  `Labels`   |  `preserve_labels`     |                           |                      |
+|  `Labels`   |  `properties`          |                           |                      |
+|  `Labels`   |  `n_dimensional`       |                           |                      |
+|  `Labels`   |  `n_edit_dimensions`   |                           |                      |
+|  `Labels`   |  `contiguous`          |                           |                      |
+|  `Labels`   |  `brush_size`          |                           |                      |
+|  `Labels`   |  `selected_label`      |                           |                      |
+|  `Labels`   |  `color_mode`          |                           |                      |
+|  `Labels`   |  `brush_shape`         |                           |                      |
+|  `Labels`   |  `contour`             |                           |                      |
+|  `Points`   |  `mode`                |                           |                      |
+|  `Points`   |  `size`                |                           |                      |
+|  `Points`   |  `edge_width`          |                           |                      |
+|  `Points`   |  `face_color`          |                           |                      |
+|  `Points`   |  `current_face_color`  |                           |                      |
+|  `Points`   |  `edge_color`          |                           |                      |
+|  `Points`   |  `current_edge_color`  |                           |                      |
+|  `Points`   |  `properties`          |                           |                      |
+|  `Points`   |  `current_properties`  |                           |                      |
+|  `Points`   |  `symbol`              |                           |                      |
+|  `Points`   |  `n_dimensional`       |                           |                      |
+|  `Points`   |  `highlight`           |                           |                      |
+|  `Vectors`  |  `length`              |                           |                      |
+|  `Vectors`  |  `edge_width`          |                           |                      |
+|  `Vectors`  |  `edge_color`          |                           |                      |
+|  `Vectors`  |  `edge_color_mode`     |                           |                      |
+|  `Vectors`  |  `properties`          |                           |                      |
+|  `Shapes`   |  `mode`                |                           |                      |
+|  `Shapes`   |  `edge_width`          |                           |                      |
+|  `Shapes`   |  `edge_color`          |                           |                      |
+|  `Shapes`   |  `face_color`          |                           |                      |
+|  `Shapes`   |  `properties`          |                           |                      |
+|  `Shapes`   |  `current_edge_color`  |                           |                      |
+|  `Shapes`   |  `current_face_color`  |                           |                      |
+|  `Shapes`   |  `current_properties`  |                           |                      |
+|  `Shapes`   |  `highlight`           |                           |                      |
+|  `Surface`  |  `contrast_limits`     |                           |                      |
+|  `Surface`  |  `gamma`               |                           |                      |
+|  `Surface`  |  `colormap`            |                           |                      |
+|  `Surface`  |  `interpolation`       |                           |                      |
+|  `Surface`  |  `rendering`           |                           |                      |
+|  `Tracks`   |  `tail_width`          |                           |                      |
+|  `Tracks`   |  `tail_length`         |                           |                      |
+|  `Tracks`   |  `display_id`          |                           |                      |
+|  `Tracks`   |  `display_tail`        |                           |                      |
+|  `Tracks`   |  `display_graph`       |                           |                      |
+|  `Tracks`   |  `color_by`            |                           |                      |
+|  `Tracks`   |  `colormap`            |                           |                      |
+|  `Tracks`   |  `properties`          |                           |                      |
+|  `Tracks`   |  `rebuild_tracks`      |                           |                      |
+|  `Tracks`   |  `rebuild_graph`       |                           |                      |
+                                                                                           
 <!-- STOP LAYER EVENTS TABLE -->
+</span>

@@ -3,6 +3,8 @@ import inspect
 from dataclasses import dataclass
 from typing import List, Optional, Type
 
+import numpy as np
+
 import napari
 from napari import layers
 from napari.components.viewer_model import ViewerModel
@@ -58,13 +60,13 @@ class Ev:
         return name.replace("typing.", "")
 
 
-HEADER = (
+HEADER = [
     'Class',
     'Event Name',
     'Access At',
     'Emitted when __ changes',
     'Event Attribute(s)',
-)
+]
 ROW = '| {:13.13} | {:16.16} | {:37.37} | {:40.40} | {:37.37} |'
 
 
@@ -82,45 +84,51 @@ def iter_evented_model_events(module=napari):
                     yield Ev(name, kls, descr, field_.type_)
 
 
-# class FindEmitterVisitor(ast.NodeVisitor):
-#     def __init__(self, model) -> None:
-#         self._model = model
-#         super().__init__()
-#         self._emitters: List[Ev] = []
+class BaseEmitterVisitor(ast.NodeVisitor):
+    def __init__(self) -> None:
+        super().__init__()
+        self._emitters: List[str] = []
 
-#     def visit_Call(self, node: ast.Call):
-#         if (
-#             getattr(node.func, 'attr', None) == 'add'
-#             and getattr(node.func.value, 'attr', None) == 'events'
-#         ):
-#             for name in node.keywords:
-#                 self._emitters.append(Ev(name.arg, self._model))
+    def visit_Call(self, node: ast.Call):
+        if getattr(node.func, 'id', None) == 'EmitterGroup':
+            self._emitters.extend([name.arg for name in node.keywords])
 
 
-# def iter_layer_events():
+def base_event_names():
+    root = ast.parse(Path('napari/layers/base/base.py').read_text())
+    visitor = BaseEmitterVisitor()
+    visitor.visit(root)
+    return visitor._emitters
 
-#     for name in ['Layer'] + sorted(layers.NAMES):
-#         n = 'base' if name == 'Layer' else name.lower()
-#         file = f'napari/layers/{n}/{n}.py'
-#         root = ast.parse(Path(file).read_text())
-#         for node in ast.walk(root):
-#             for child in ast.iter_child_nodes(node):
-#                 child.parent = node
 
-#         visitor = FindEmitterVisitor(getattr(layers, name.title()))
-#         visitor.visit(root)
-#         yield from visitor._emitters
+ex_layers = [
+    layers.Image(np.random.random((2, 2))),
+    layers.Labels(np.random.randint(20, size=(10, 15))),
+    layers.Points(10 * np.random.random((10, 2))),
+    layers.Vectors(20 * np.random.random((10, 2, 2))),
+    layers.Shapes(20 * np.random.random((10, 4, 2))),
+    layers.Surface(
+        (
+            20 * np.random.random((10, 3)),
+            np.random.randint(10, size=(6, 3)),
+            np.random.random(10),
+        )
+    ),
+    layers.Tracks(
+        np.column_stack(
+            (np.ones(20), np.arange(20), 20 * np.random.random((20, 2)))
+        )
+    ),
+]
 
 
 def iter_layer_events():
-    import numpy as np
-
-    for name in sorted(layers.NAMES):
-        cls = getattr(layers, name.title())
-        try:
-            lay = cls(np.zeros((2, 2), dtype='uint8'))
-        except:
-            lay = cls([np.zeros((3, 4), dtype='uint8')] * 3)
+    basenames = base_event_names()
+    for name in basenames:
+        yield Ev(name, layers.Layer)
+    for lay in ex_layers:
+        for name in [i for i in lay.events.emitters if i not in basenames]:
+            yield Ev(name, lay.__class__)
 
 
 if __name__ == '__main__':
@@ -132,43 +140,41 @@ if __name__ == '__main__':
 
     # Do viewer events
 
-    # rows = [
-    #     [
-    #         f'`{ev.model.__name__}`',
-    #         f'`{ev.name}`',
-    #         f'`{ev.access_at()}`',
-    #         ev.description or '',
-    #         f'value: `{ev.type_name()}`',
-    #     ]
-    #     for ev in iter_evented_model_events()
-    #     if ev.access_at()
-    # ]
+    rows = [
+        [
+            f'`{ev.model.__name__}`',
+            f'`{ev.name}`',
+            f'`{ev.access_at()}`',
+            ev.description or '',
+            f'value: `{ev.type_name()}`',
+        ]
+        for ev in iter_evented_model_events()
+        if ev.access_at()
+    ]
 
-    # text = file.read_text()
-    # table = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
-    # text = re.sub(
-    #     '(VIEWER EVENTS TABLE -->)([^<!]*)(<!--)', f'\\1\n{table}\n\\3', text
-    # )
-    # file.write_text(text)
+    text = file.read_text()
+    table = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
+    text = re.sub(
+        '(VIEWER EVENTS TABLE -->)([^<!]*)(<!--)', f'\\1\n{table}\n\\3', text
+    )
+    file.write_text(text)
 
     # Do layer events
-
-    iter_layer_events()
-    # rows = [
-    #     [
-    #         f'`{ev.model.__name__}`',
-    #         f'`{ev.name}`',
-    #         ev.access_at(),
-    #         ev.description or '',
-    #         f'',
-    #     ]
-    #     for ev in iter_layer_events()
-    # ]
-    # print(rows)
-    # text = file.read_text()
-    # table = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
-    # text = re.sub(
-    #     '(LAYER EVENTS TABLE -->)([^<!]*)(<!--)', f'\\1\n{table}\n\\3', text
-    # )
-    # print(table)
-    # # file.write_text(text)
+    HEADER.remove('Access At')
+    rows = [
+        [
+            f'`{ev.model.__name__}`',
+            f'`{ev.name}`',
+            ev.description or '',
+            '',
+        ]
+        for ev in iter_layer_events()
+    ]
+    print(rows)
+    text = file.read_text()
+    table = table_repr(rows, padding=2, header=HEADER, divide_rows=False)
+    text = re.sub(
+        '(LAYER EVENTS TABLE -->)([^<!]*)(<!--)', f'\\1\n{table}\n\\3', text
+    )
+    print(table)
+    file.write_text(text)
