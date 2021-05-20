@@ -63,7 +63,6 @@ above:
 
 ```{code-block} python
 ---
-linenos: true
 emphasize-lines: 4,7,13-15
 ---
 import napari
@@ -84,16 +83,15 @@ napari.run()
 ```
 
 The {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator
-(**7**), converts your function into one that returns a
-{class}`~napari.qt.threading.WorkerBase` instance (**13**). The `worker`
+converts your function into one that returns a
+{class}`~napari.qt.threading.WorkerBase` instance. The `worker`
 manages the work being done by your function in another thread.  It also
 exposes a few "signals" that let you respond to events happening in the other
 thread.  Here, we connect the `worker.returned` signal to the
 {meth}`viewer.add_image<napari.components.viewer_model.ViewerModel.add_image>`
-function
-(**14**), which has the effect of adding the result to the viewer when it is
+function, which has the effect of adding the result to the viewer when it is
 ready. Lastly, we start the worker with
-{meth}`~napari.qt.threading.WorkerBase.start` (**15**) because workers do not
+{meth}`~napari.qt.threading.WorkerBase.start` because workers do not
 start themselves by default.
 
 The {func}`@thread_worker <napari.qt.threading.thread_worker>` decorator also
@@ -201,7 +199,6 @@ stack) we can watch the mean projection as it builds:
 
 ```{code-block} python
 ---
-linenos: true
 emphasize-lines: 19,25
 ---
 import napari
@@ -234,10 +231,10 @@ napari.run()
 ```
 
 Note how we periodically (every 16 iterations) `yield` the image result in
-the `large_random_images` function (**25**).  We also connected the
+the `large_random_images` function.  We also connected the
 `yielded` event in the {func}`@thread_worker
 <napari.qt.threading.thread_worker>` decorator to the previously-defined
-`update_layer` function (**19**).  The result is that the image in the viewer
+`update_layer` function.  The result is that the image in the viewer
 is updated every time a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
@@ -258,7 +255,6 @@ button that aborts the worker when clicked:
 
 ```{code-block} python
 ---
-linenos: true
 emphasize-lines: 19,29
 ---
 import time
@@ -327,7 +323,6 @@ hits "0":
 
 ```{code-block} python
 ---
-linenos: true
 emphasize-lines: 9,14-16,35,39,49,50,52,53
 ---
 import napari
@@ -391,30 +386,29 @@ napari.run()
 Let's break it down:
 
 1. As usual, we decorate our generator function with {func}`@thread_worker
-   <napari.qt.threading.thread_worker>` (**9**) and instantiate it to create
-   a `worker` (**35**).
+   <napari.qt.threading.thread_worker>` and instantiate it to create a
+   `worker`.
 
-2. The most interesting line in this example is line **14**, where we both
+2. The most interesting line in this example is where we both
    `yield` the current ``total`` to the main thread (`yield total`), *and*
    receive a new value from the main thread (with `new = yield`).
 
-3. In the main thread, we have connected that `worker.yielded` event (**52**)
+3. In the main thread, we have connected that `worker.yielded` event
    to a callback that pauses the worker and updates the `result_label`
-   widget (**38**).
+   widget.
 
-4. The thread will then wait indefinitely for the `resume()` command
-   (**50**), which we have connected to the `line_edit.returnPressed` signal
-   (**54**).
+4. The thread will then wait indefinitely for the `resume()` command,
+   which we have connected to the `line_edit.returnPressed` signal.
 
 5. However, before that `resume()` command gets sent, we use
    `worker.send()` to send the current value of the `line_edit` widget
-   into the thread (**49**) which the thread will multiple by the existing
-   total (**15**).
+   into the thread which the thread will multiple by the existing
+   total.
 
 6. Lastly, if the thread total ever goes to "0", we stop the thread by
-   returning the string ``"Game Over"`` (**16**).  In the main thread, the
+   returning the string ``"Game Over"``.  In the main thread, the
    `worker.returned` event is connected to a callback that disables the
-   `line_edit` widget and shows the string returned from the thread (**53**).
+   `line_edit` widget and shows the string returned from the thread.
 
 This example is a bit contrived, since there's little need to put such a basic
 computation in another thread.  But it demonstrates some of the power and
