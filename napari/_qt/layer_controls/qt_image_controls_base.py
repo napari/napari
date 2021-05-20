@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
@@ -12,6 +15,9 @@ from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
 from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    from napari.layers import Image
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -42,7 +48,7 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer: Image):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -197,7 +203,17 @@ class QtBaseImageControls(QtLayerControls):
         event.accept()
 
     def show_clim_popupup(self):
-        if np.issubdtype(self.layer.dtype, np.integer):
+        self.clim_popup = QContrastLimitsPopup(self.layer, self)
+        self.clim_popup.setParent(self)
+        self.clim_popup.move_to('top', min_length=650)
+        self.clim_popup.show()
+
+
+class QContrastLimitsPopup(QRangeSliderPopup):
+    def __init__(self, layer: Image, parent=None):
+        super().__init__(parent)
+
+        if np.issubdtype(layer.dtype, np.integer):
             decimals = 0
         else:
             # scale precision with the log of the data range order of magnitude
@@ -205,74 +221,44 @@ class QtBaseImageControls(QtLayerControls):
             #       0 - 10  (1 order of mag)  -> 2 decimals
             #       0 - 100 (2 orders of mag) -> 1 decimal
             #       ≥ 3 orders of mag -> no decimals
-            d_range = np.subtract(*self.layer.contrast_limits_range[::-1])
-            decimals = int(max(3 - np.log10(max(d_range, 0.01)), 0))
+            d_range = np.subtract(*layer.contrast_limits_range[::-1])
+            decimals = int(3 - np.log10(d_range))
 
-        clim_popup = QRangeSliderPopup(self, decimals)
-        clim_popup.slider.setRange(*self.layer.contrast_limits_range)
-        clim_popup.slider.setValue(self.layer.contrast_limits)
-        clim_popup.slider.setRange(*self.layer.contrast_limits_range)
-        clim_popup.slider.setValue(self.layer.contrast_limits)
+        if decimals < 6:
+            self.slider.setDecimals(decimals)
+            self.slider.setRange(*layer.contrast_limits_range)
+        else:
+            self.slider.setRange(*layer.contrast_limits_range)
+            self.slider.setDecimals(decimals)
+        self.slider.setSingleStep(10 ** -decimals)
+        self.slider.setValue(layer.contrast_limits)
 
-        set_values = partial(setattr, self.layer, 'contrast_limits')
-        clim_popup.slider.valueChanged.connect(set_values)
+        set_values = partial(setattr, layer, 'contrast_limits')
+        self.slider.valueChanged.connect(set_values)
+        self.slider.rangeChanged.connect(
+            lambda *a: setattr(layer, 'contrast_limits_range', a)
+        )
 
-        def set_range(min_, max_):
-            self.layer.contrast_limits_range = (min_, max_)
+        def reset():
+            layer.reset_contrast_limits()
+            layer.contrast_limits_range = layer.contrast_limits
 
-        clim_popup.slider.rangeChanged.connect(set_range)
+        reset_btn = QPushButton("reset")
+        reset_btn.setObjectName("reset_clims_button")
+        reset_btn.setToolTip(trans._("autoscale contrast to data range"))
+        reset_btn.setFixedWidth(40)
+        reset_btn.clicked.connect(reset)
+        self._layout.addWidget(reset_btn, alignment=Qt.AlignBottom)
 
-        reset, fullrange = create_clim_reset_buttons(self.layer)
-        clim_popup._layout.addWidget(reset, alignment=Qt.AlignBottom)
-
-        if fullrange is not None:
-            clim_popup._layout.addWidget(fullrange, alignment=Qt.AlignBottom)
-        clim_popup.move_to('top', min_length=650)
-        clim_popup.show()
-        self.clim_popup = clim_popup
-
-
-def create_clim_reset_buttons(layer):
-    """Create contrast limits reset and full range buttons.
-
-    Important: consumers of this function should check whether range_btn is
-    not None before adding the widget to a layout.  Adding None to a layout
-    can cause a segmentation fault.
-
-    Parameters
-    ----------
-    layer : napari.layers.Layer
-        Image or Surface Layer
-
-    Returns
-    -------
-    2-tuple
-        If layer data type is integer type, returns (reset_btn, range_btn).
-        Else, returns (reset_btn, None)
-    """
-
-    def reset():
-        layer.reset_contrast_limits()
-        layer.contrast_limits_range = layer.contrast_limits
-
-    def reset_range():
-        layer.reset_contrast_limits_range()
-
-    reset_btn = QPushButton("reset")
-    reset_btn.setObjectName("reset_clims_button")
-    reset_btn.setToolTip(trans._("autoscale contrast to data range"))
-    reset_btn.setFixedWidth(40)
-    reset_btn.clicked.connect(reset)
-
-    range_btn = None
-    # the "full range" button doesn't do anything if it's not an
-    # unsigned integer type (it's unclear what range should be set)
-    # so we don't show create it at all.
-    if np.issubdtype(layer.dtype, np.integer):
-        range_btn = QPushButton("full range")
-        range_btn.setObjectName("full_clim_range_button")
-        range_btn.setToolTip(trans._("set contrast range to full bit-depth"))
-        range_btn.setFixedWidth(65)
-        range_btn.clicked.connect(reset_range)
-
-    return reset_btn, range_btn
+        # the "full range" button doesn't do anything if it's not an
+        # unsigned integer type (it's unclear what range should be set)
+        # so we don't show create it at all.
+        if np.issubdtype(layer.dtype, np.integer):
+            range_btn = QPushButton("full range")
+            range_btn.setObjectName("full_clim_range_button")
+            range_btn.setToolTip(
+                trans._("set contrast range to full bit-depth")
+            )
+            range_btn.setFixedWidth(65)
+            range_btn.clicked.connect(layer.reset_contrast_limits_range)
+            self._layout.addWidget(range_btn, alignment=Qt.AlignBottom)

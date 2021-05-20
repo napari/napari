@@ -7,8 +7,8 @@ from ..dialogs.qt_modal import QtPopup
 
 
 class QRangeSliderPopup(QtPopup):
-    def __init__(self, parent=None, decimals=0):
-        """A popup window that contains a range slider and linked LineEdits.
+    def __init__(self, parent=None):
+        """A popup window that contains a labeld range slider and buttons.
 
         Parameters
         ----------
@@ -27,8 +27,6 @@ class QRangeSliderPopup(QtPopup):
 
         # create slider
         self.slider = QLabeledDoubleRangeSlider(Qt.Horizontal, parent)
-        self.slider.setDecimals(decimals)
-        self.slider.setSingleStep(10 ** -decimals)
         self.slider.label_shift_x = 2
         self.slider.label_shift_y = 2
         self.slider.setFocus()
