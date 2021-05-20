@@ -371,7 +371,7 @@ def test_custom_color_dict():
 
 def test_add_colors():
     """Test adding new colors"""
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
     assert len(layer._all_vals) == layer.num_colors
 
@@ -379,8 +379,8 @@ def test_add_colors():
     assert len(layer._all_vals) == 52
 
     layer.show_selected_label = True
-    layer.selected_label = 60
-    assert len(layer._all_vals) == 61
+    layer.selected_label = 53
+    assert len(layer._all_vals) == 54
 
 
 def test_metadata():
@@ -598,7 +598,9 @@ def test_paint():
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
@@ -623,7 +625,8 @@ def test_paint_with_preserve_labels():
     data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
@@ -644,7 +647,8 @@ def test_paint_2d(brush_shape, expected_sum):
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
@@ -678,7 +682,8 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
@@ -694,7 +699,8 @@ def test_paint_3d(brush_shape, expected_sum):
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
 
     # Paint in 2D
@@ -790,7 +796,8 @@ def test_undo_redo(
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
@@ -837,7 +844,8 @@ def test_ndim_paint():
     test_array = np.zeros((5, 6, 7, 8), dtype=int)
     layer = Labels(test_array)
     layer.n_edit_dimensions = 3
-    layer.brush_shape = 'circle'
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'circle'
     layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
     layer.paint((1, 1, 1, 1), 1)
 
@@ -860,3 +868,13 @@ def test_ndim_paint():
             ]
         ),
     )
+
+
+def test_switching_display_func():
+    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+
+    label_data = np.random.randint(0, 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_index

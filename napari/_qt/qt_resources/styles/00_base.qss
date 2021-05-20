@@ -635,3 +635,9 @@ QLCDNumber {
 QStatusBar::item{
   border: None;
 }
+
+/* ----------------- QHeaderView ----------------- */
+QHeaderView::section {
+  background-color: {{ background }};
+  padding: 2px;
+}

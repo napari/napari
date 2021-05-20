@@ -2,13 +2,16 @@
 
 A grid drawn around/between the tiles for debugging and demos.
 """
-from typing import List
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 
-from ...layers.image.experimental import OctreeChunk
+if TYPE_CHECKING:
+    from ...layers.image.experimental import OctreeChunk
 
 # Grid lines drawn with this width and color.
 GRID_WIDTH = 3

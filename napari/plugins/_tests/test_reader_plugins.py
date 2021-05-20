@@ -5,9 +5,9 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 import pytest
 
+from napari import utils
 from napari.components import ViewerModel
 from napari.plugins.io import read_data_with_plugins
-from napari.utils import io
 
 
 def test_builtin_reader_plugin():
@@ -15,7 +15,7 @@ def test_builtin_reader_plugin():
 
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
         data = np.random.rand(20, 20)
-        io.imsave(tmp.name, data)
+        utils.io.imsave(tmp.name, data)
         tmp.seek(0)
         layer_data, _ = read_data_with_plugins(tmp.name)
 
@@ -38,7 +38,7 @@ def test_builtin_reader_plugin_csv(tmpdir):
     table = np.random.random((5, 3))
     data = table[:, 1:]
     # Write csv file
-    io.write_csv(tmp, table, column_names=column_names)
+    utils.io.write_csv(tmp, table, column_names=column_names)
     layer_data, _ = read_data_with_plugins(tmp)
 
     assert layer_data is not None
@@ -60,7 +60,7 @@ def test_builtin_reader_plugin_stacks():
     tmps = []
     for plane in data:
         tmp = NamedTemporaryFile(suffix='.tif', delete=False)
-        io.imsave(tmp.name, plane)
+        utils.io.imsave(tmp.name, plane)
         tmp.seek(0)
         tmps.append(tmp)
 
@@ -77,29 +77,23 @@ def test_builtin_reader_plugin_stacks():
 
 
 def test_reader_plugin_can_return_null_layer_sentinel(
-    test_plugin_manager, add_implementation
+    napari_plugin_manager,
 ):
     from napari_plugin_engine import napari_hook_implementation
 
-    from napari.plugins import hook_specifications
-
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(hook_specifications)
-
     with pytest.raises(ValueError) as e:
-        read_data_with_plugins('')
+        read_data_with_plugins('/')
     assert 'No plugin found capable of reading' in str(e)
 
-    @napari_hook_implementation(tryfirst=True)
-    def napari_get_reader(path):
-        def _reader(path):
-            return [(None,)]
+    class sample_plugin:
+        @napari_hook_implementation(tryfirst=True)
+        def napari_get_reader(path):
+            def _reader(path):
+                return [(None,)]
 
-        return _reader
+            return _reader
 
-    add_implementation(napari_get_reader)
-    layer_data, _ = read_data_with_plugins(
-        '', plugin_manager=test_plugin_manager
-    )
+    napari_plugin_manager.register(sample_plugin)
+    layer_data, _ = read_data_with_plugins('')
     assert layer_data is not None
     assert len(layer_data) == 0

@@ -722,12 +722,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import _sample_data, available_samples
+        from ..plugins import plugin_manager
 
         try:
-            data = _sample_data[plugin][sample]['data']
+            data = plugin_manager._sample_data[plugin][sample]['data']
         except KeyError:
-            samples = available_samples()
+            samples = plugin_manager.available_samples()
+            msg = trans._(
+                "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
+                plugin=plugin,
+                sample=sample,
+                deferred=True,
+            )
             if samples:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
@@ -987,7 +993,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return layer if isinstance(layer, list) else [layer]
 
 
-def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
+def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1040,11 +1046,11 @@ def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
 
 
 def _unify_data_and_user_kwargs(
-    data: 'LayerData',
+    data: LayerData,
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:

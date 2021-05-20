@@ -6,6 +6,7 @@ from .._qt.qt_resources import compile_qt_svgs, get_stylesheet
 from .._qt.qt_viewer import QtViewer
 from .._qt.widgets.qt_viewer_buttons import QtStateButton, QtViewerButtons
 from ..utils.translations import trans
+from .progress import progrange, progress
 from .threading import create_worker, thread_worker
 
 
@@ -30,6 +31,8 @@ class QtNDisplayButton(QtStateButton):
 __all__ = (
     'compile_qt_svgs',
     'create_worker',
+    'progress',
+    'progrange',
     'QtStateButton',
     'QtNDisplayButton',
     'QtViewer',
