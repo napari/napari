@@ -202,7 +202,7 @@ class AppearanceSettings(BaseNapariSettings):
     )
 
     highlight_thickness: HighlightThickness = Field(
-        2,
+        HighlightThickness.highlight_thickness,
         description=trans._(
             "Customize the highlight weight indicating selected shapes and points."
         ),
