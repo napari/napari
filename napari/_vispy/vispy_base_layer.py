@@ -109,10 +109,14 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.effective_visible
+        self.node.visible = self.layer.visible and all(
+            p._visible for p in self.layer.iter_parents()
+        )
 
     def _on_opacity_change(self, event=None):
-        self.node.opacity = self.layer.effective_opacity
+        parents = self.layer.iter_parents()
+        parent_opacity = np.product([p._opacity for p in parents])
+        self.node.opacity = self.layer.opacity * parent_opacity
 
     def _on_blending_change(self, event=None):
         self.node.set_gl_state(self.layer.blending)

@@ -332,11 +332,6 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
         self.events.name()
 
     @property
-    def effective_opacity(self):
-        parent_opacity = np.product([p._opacity for p in self.iter_parents()])
-        return self.opacity * parent_opacity
-
-    @property
     def opacity(self):
         """float: Opacity value between 0.0 and 1.0."""
         return self._opacity
@@ -379,10 +374,6 @@ class Layer(KeymapProvider, MousemapProvider, Node, ABC):
     def blending(self, blending):
         self._blending = Blending(blending)
         self.events.blending()
-
-    @property
-    def effective_visible(self):
-        return self.visible and all(p._visible for p in self.iter_parents())
 
     @property
     def visible(self):
