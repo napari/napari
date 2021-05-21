@@ -1,5 +1,4 @@
 import csv
-import logging
 import os
 import re
 from glob import glob
@@ -13,8 +12,6 @@ from dask import delayed
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
-
-LOGGER = logging.getLogger(__name__)
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -209,8 +206,8 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     for filename in filenames_expanded:
         if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
+            # 1D images are currently unsupported, so skip them.
             if len(zarr_shape) == 1:
-                LOGGER.warning(f'Skipped 1D zarr image: {filename}')
                 continue
             if shape is None:
                 shape = zarr_shape
