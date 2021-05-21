@@ -169,3 +169,11 @@ def test_settings_env_variables_fails(tmp_path, monkeypatch):
     monkeypatch.setenv('NAPARI_THEME', value)
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         SettingsManager(tmp_path, save_to_disk=True)
+
+
+def test_core_settings_are_class_variables_in_settings_manager():
+    for setting in CORE_SETTINGS:
+        schema = setting.schema()
+        section = schema["section"]
+        assert section in SettingsManager.__annotations__
+        assert setting == SettingsManager.__annotations__[section]

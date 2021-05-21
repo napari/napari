@@ -143,7 +143,7 @@ class SettingsManager:
             for option, option_data in setting.schema()["properties"].items():
                 _section_defaults[option] = option_data.get("default", None)
 
-            self._defaults[section] = _section_defaults
+            self._defaults[section] = setting(**_section_defaults)
             model = setting()
             model.events.connect(lambda x: self._save())
             self._settings[section] = model
@@ -157,7 +157,7 @@ class SettingsManager:
     def reset(self):
         """Reset settings to default values."""
         for section in self._settings:
-            for key, default_value in self._defaults[section].items():
+            for key, default_value in self._defaults[section].dict().items():
                 setattr(self._settings[section], key, default_value)
 
         self._save()

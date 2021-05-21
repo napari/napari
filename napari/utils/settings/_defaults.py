@@ -180,7 +180,7 @@ def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     yaml_settings = {}
     model_class = settings.__class__
 
-    # This is set the SettingsManager
+    # This is set by the SettingsManager
     loaded_data = getattr(settings, "_LOADED_DATA", {})
 
     validate = getattr(settings, "_IGNORE_YAML_SOURCE", False)
@@ -208,8 +208,6 @@ def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
                     model_data_replace[item] = default_properties[item][
                         "default"
                     ]
-                except AttributeError:
-                    yaml_settings.pop(item)
                 except KeyError:
                     yaml_settings.pop(item)
 
