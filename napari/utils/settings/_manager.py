@@ -119,6 +119,7 @@ class SettingsManager:
                 warnings.warn(
                     trans._(
                         "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
+                        deferred=True,
                         err=err,
                     )
                 )
@@ -130,12 +131,13 @@ class SettingsManager:
         for setting in CORE_SETTINGS:
             section = setting.schema().get("section", None)
             if section is None:
-                warnings.warn(
+                raise ValueError(
                     trans._(
-                        f"Settings model {setting!r} must provide a `section` in the `schemas_extra`",
+                        "Settings model {setting!r} must provide a `section` in the `schemas_extra`",
+                        deferred=True,
+                        setting=setting,
                     )
                 )
-                continue
 
             _section_defaults = {}
             for option, option_data in setting.schema()["properties"].items():
