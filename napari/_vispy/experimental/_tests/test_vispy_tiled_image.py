@@ -1,20 +1,9 @@
-import os
-import sys
-
 import numpy as np
 import pytest
 
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari._vispy.experimental.vispy_tiled_image_layer import (
     VispyTiledImageLayer,
-)
-
-skip_on_win_ci = pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
-    reason='Screenshot tests are not supported on windows CI.',
-)
-skip_local_popups = pytest.mark.skipif(
-    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
 )
 
 # Add a loading delay in ms.
