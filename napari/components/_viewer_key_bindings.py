@@ -22,10 +22,10 @@ def register_viewer_action(description, shortcuts):
             description=description,
             keymapprovider=ViewerModel,
         )
-        if isinstance(shortcuts, str):
-            shortcuts = [shortcuts]
-        for shortcut in shortcuts:
-            action_manager.bind_shortcut(name, shortcut)
+        # if isinstance(shortcuts, str):
+        #     shortcuts = [shortcuts]
+        # for shortcut in shortcuts:
+        #     action_manager.bind_shortcut(name, shortcut)
         return func
 
     return _inner

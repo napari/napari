@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Set, Tuple
 from pydantic import BaseSettings, Field, ValidationError
 from typing_extensions import TypedDict
 
+from ...utils.shortcuts import default_shortcuts
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
@@ -369,6 +370,27 @@ class PluginHookOption(TypedDict):
 CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
+class ShortcutsSettings(BaseNapariSettings):
+    """Shortcuts Settings."""
+
+    schema_version: SchemaVersion = (0, 1, 1)
+    shortcuts: dict = Field(
+        default_shortcuts,
+        title=trans._("shortcuts"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called.",
+        ),
+    )
+
+    class Config:
+        # Pydantic specific configuration
+        title = trans._("Shortcuts")
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version', 'shortcuts']
+
+
 class PluginsSettings(BaseNapariSettings):
     schema_version: SchemaVersion = (0, 1, 1)
     call_order: CallOrderDict = Field(
@@ -394,4 +416,9 @@ class PluginsSettings(BaseNapariSettings):
         preferences_exclude = ['schema_version', 'disabled_plugins']
 
 
-CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]
+CORE_SETTINGS = [
+    AppearanceSettings,
+    ApplicationSettings,
+    PluginsSettings,
+    ShortcutsSettings,
+]

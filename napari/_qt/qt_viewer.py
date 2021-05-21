@@ -9,6 +9,8 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+# I know this probably not preferred, left it as is temporarily.
+from ..components._viewer_key_bindings import *  # noqa: F403, F401
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -54,6 +56,7 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 from ..utils.io import imsave_extensions
+from ..utils.settings import SETTINGS
 
 
 class QtViewer(QSplitter):
@@ -194,9 +197,10 @@ class QtViewer(QSplitter):
             'napari:toggle_console_visibility',
             self.viewerButtons.consoleButton,
         )
-        action_manager.bind_shortcut(
-            'napari:toggle_console_visibility', 'Control-Shift-C'
-        )
+
+        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
         self._create_canvas()
 
