@@ -1,9 +1,5 @@
-import os
-from tempfile import TemporaryDirectory
-
 import numpy as np
 import pytest
-import zarr
 
 from napari._tests.utils import good_layer_data, layer_test_data
 from napari.components import ViewerModel
@@ -710,47 +706,3 @@ def test_not_mutable_fields(field):
     assert 'has allow_mutation set to False and cannot be assigned' in str(
         err.value
     )
-
-
-def test_open_zarr_multiscale_image():
-    # For more details: https://github.com/napari/napari/issues/1471
-    viewer = ViewerModel()
-    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
-        z = zarr.open(zarr_dir, 'w')
-        z['hires'] = np.ones((6, 8))
-        z['lores'] = np.ones((3, 4))
-
-        viewer.open(zarr_dir)
-
-        assert len(viewer.layers) == 1
-        assert viewer.layers[0].multiscale
-
-
-def test_open_zarr_1d_array_is_ignored():
-    # For more details: https://github.com/napari/napari/issues/1471
-    viewer = ViewerModel()
-    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
-        z = zarr.open(zarr_dir, 'w')
-        z['1d'] = np.zeros(3)
-
-        with pytest.warns(UserWarning):
-            viewer.open(os.path.join(zarr_dir, '1d'))
-
-        assert len(viewer.layers) == 0
-
-
-def test_open_many_zarr_files_1d_array_is_ignored():
-    # For more details: https://github.com/napari/napari/issues/1471
-    viewer = ViewerModel()
-    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
-        z = zarr.open(zarr_dir, 'w')
-        z['1d'] = np.zeros(3)
-        z['2d'] = np.zeros((3, 4))
-        z['3d'] = np.zeros((3, 4, 5))
-
-        with pytest.warns(UserWarning):
-            viewer.open(
-                [os.path.join(zarr_dir, name) for name in z.array_keys()]
-            )
-
-        assert [layer.name for layer in viewer.layers] == ['2d', '3d']

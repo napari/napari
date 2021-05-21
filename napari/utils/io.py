@@ -1,7 +1,7 @@
 import csv
+import logging
 import os
 import re
-import warnings
 from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -13,6 +13,8 @@ from dask import delayed
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 from ..utils.translations import trans
+
+LOGGER = logging.getLogger(__name__)
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -208,13 +210,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
         if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
             if len(zarr_shape) == 1:
-                warnings.warn(
-                    trans._(
-                        'Skipped 1D zarr dataset: {basename}',
-                        deferred=True,
-                        basename=os.path.basename(filename),
-                    )
-                )
+                LOGGER.warning(f'Skipped 1D zarr image: {filename}')
                 continue
             if shape is None:
                 shape = zarr_shape
@@ -230,8 +226,10 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
             elif len(images) > 0:  # not read by shape clause
                 image = imread(filename)
         images.append(image)
+
     if len(images) == 0:
         return None
+
     if len(images) == 1:
         image = images[0]
     else:
