@@ -300,9 +300,6 @@ class QtPluginSorter(QWidget):
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
 
-        self.plugin_manager.events.disabled.connect(self._on_disabled)
-        self.plugin_manager.events.registered.connect(self.refresh)
-
         # populate comboBox with all of the hooks known by the plugin manager
 
         for name, hook_caller in plugin_manager.hooks.items():
@@ -319,6 +316,9 @@ class QtPluginSorter(QWidget):
             self.hook_combo_box.addItem(
                 name.replace("napari_", ""), hook_caller
             )
+
+        self.plugin_manager.events.disabled.connect(self._on_disabled)
+        self.plugin_manager.events.registered.connect(self.refresh)
 
         self.hook_combo_box.setToolTip(
             trans._("select the hook specification to reorder")
