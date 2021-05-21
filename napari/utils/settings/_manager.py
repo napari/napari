@@ -3,10 +3,10 @@
 
 import json
 import os
+import warnings
 from pathlib import Path
 
 from appdirs import user_config_dir
-from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
 from ...utils.translations import trans
@@ -15,6 +15,7 @@ from ._defaults import (
     CORE_SETTINGS,
     AppearanceSettings,
     ApplicationSettings,
+    BaseNapariSettings,
     PluginsSettings,
 )
 
@@ -68,7 +69,6 @@ class SettingsManager:
         self._save_to_disk = save_to_disk
         self._settings = {}
         self._defaults = {}
-        self._models = {}
         self._plugins = []
 
         if not self._config_path.is_dir():
@@ -86,13 +86,6 @@ class SettingsManager:
 
     def __str__(self):
         return safe_dump(self._to_dict(safe=True))
-
-    @staticmethod
-    def _get_section_name(setting) -> str:
-        """
-        Return the normalized name of a section based on its config title.
-        """
-        return setting.__name__.replace("Settings", "").lower()
 
     def _to_dict(self, safe: bool = False) -> dict:
         """Convert the settings to a dictionary."""
@@ -117,20 +110,12 @@ class SettingsManager:
     def _load(self):
         """Read configuration from disk."""
         path = self.path / self._FILENAME
-        for setting in CORE_SETTINGS:
-            section = self._get_section_name(setting)
-            self._defaults[section] = setting()
-            self._settings[section] = setting()
-            self._models[section] = setting
-            self._settings[section] = setting()
 
         if path.is_file():
             try:
                 with open(path) as fh:
                     data = safe_load(fh.read()) or {}
             except Exception as err:
-                import warnings
-
                 warnings.warn(
                     trans._(
                         "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
@@ -139,31 +124,27 @@ class SettingsManager:
                 )
                 data = {}
 
-            # Check with models
-            for section, model_data in data.items():
-                try:
-                    model = self._models[section](**model_data)
-                    model.events.connect(lambda x: self._save())
-                    self._settings[section] = model
-                except KeyError:
-                    pass
-                except ValidationError as e:
-                    # Handle extra fields
-                    model_data_replace = {}
-                    for error in e.errors():
-                        # Grab the first error entry
-                        item = error["loc"][0]
-                        try:
-                            model_data_replace[item] = getattr(
-                                self._defaults[section], item
-                            )
-                        except AttributeError:
-                            model_data.pop(item)
+            # Load data once and save it in the base class
+            BaseNapariSettings._LOADED_DATA = data
 
-                    model_data.update(model_data_replace)
-                    model = self._models[section](**model_data)
-                    model.events.connect(lambda x: self._save())
-                    self._settings[section] = model
+        for setting in CORE_SETTINGS:
+            section = setting.schema().get("section", None)
+            if section is None:
+                warnings.warn(
+                    trans._(
+                        f"Settings model {setting!r} must provide a `section` in the `schemas_extra`",
+                    )
+                )
+                continue
+
+            _section_defaults = {}
+            for option, option_data in setting.schema()["properties"].items():
+                _section_defaults[option] = option_data.get("default", None)
+
+            self._defaults[section] = _section_defaults
+            model = setting()
+            model.events.connect(lambda x: self._save())
+            self._settings[section] = model
 
         self._save()
 
@@ -174,7 +155,7 @@ class SettingsManager:
     def reset(self):
         """Reset settings to default values."""
         for section in self._settings:
-            for key, default_value in self._defaults[section].dict().items():
+            for key, default_value in self._defaults[section].items():
                 setattr(self._settings[section], key, default_value)
 
         self._save()
