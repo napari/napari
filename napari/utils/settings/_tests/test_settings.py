@@ -162,3 +162,10 @@ def test_settings_env_variables(tmp_path, monkeypatch):
     settings = SettingsManager(tmp_path, save_to_disk=True)
     assert CORE_SETTINGS[0]().theme == value
     assert settings.appearance.theme == value
+
+
+def test_settings_env_variables_fails(tmp_path, monkeypatch):
+    value = 'FOOBAR'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        SettingsManager(tmp_path, save_to_disk=True)
