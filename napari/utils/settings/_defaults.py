@@ -263,12 +263,20 @@ class ApplicationSettings(BaseNapariSettings):
     window_state: str = None
     window_statusbar: bool = True
     preferences_size: Tuple[int, int] = None
-    # TODO: Might be breaking preferences?
-    gui_notification_level: NotificationSeverity = NotificationSeverity.INFO
-    console_notification_level: NotificationSeverity = (
-        NotificationSeverity.NONE
+    gui_notification_level: NotificationSeverity = Field(
+        NotificationSeverity.INFO,
+        title=trans._("GUI notification level"),
+        description=trans._(
+            "Set the notification level for the notification manager."
+        ),
     )
-
+    console_notification_level: NotificationSeverity = Field(
+        NotificationSeverity.NONE,
+        title=trans._("Console notification level"),
+        description=trans._(
+            "Set the notification level for the console notifications."
+        ),
+    )
     open_history: List = [os.path.dirname(Path.home())]
     save_history: List = [os.path.dirname(Path.home())]
 
@@ -288,8 +296,6 @@ class ApplicationSettings(BaseNapariSettings):
             "window_fullscreen",
             "window_state",
             "window_statusbar",
-            "gui_notification_level",
-            "console_notification_level",
             "open_history",
             "save_history",
             "ipy_interactive",
