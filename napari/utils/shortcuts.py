@@ -1,5 +1,6 @@
 default_shortcuts = {
     'napari:toggle_console_visibility': ['Control-Shift-C'],
+    'napari:reset_scroll_progress': ['Control'],
     'napari:toggle_ndisplay': ['Control-Y'],
     'napari:toggle_theme': ['Control-Shift-T'],
     'napari:reset_view': ['Control-R'],
@@ -11,7 +12,10 @@ default_shortcuts = {
     'napari:transpose_axes': ['Control-T'],
     'napari:remove_selected': ['Control-Backspace', 'Control-Delete'],
     'napari:select_all': ['Control-A'],
-    'napari:remove_all_layers': ['Control-Shift-Delete'],
+    'napari:remove_all_layers': [
+        'Control-Shift-Backspace',
+        'Control-Shift-Delete',
+    ],
     'napari:select_layer_above': ['Up'],
     'napari:select_layer_below': ['Down'],
     'napari:also_select_layer_above': ['Shift-Up'],

@@ -9,8 +9,6 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
-# I know this probably not preferred, left it as is temporarily.
-from ..components._viewer_key_bindings import *  # noqa: F403, F401
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -198,10 +196,6 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton,
         )
 
-        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
-            for shortcut in shortcuts:
-                action_manager.bind_shortcut(action, shortcut)
-
         self._create_canvas()
 
         # Stacked widget to provide a welcome page
@@ -272,6 +266,18 @@ class QtViewer(QSplitter):
             self.chunk_receiver = QtChunkReceiver(self.layers)
         else:
             self.chunk_receiver = None
+
+        # bind shortcuts stored in SETTINGS last.
+        self._bind_shortcuts()
+
+    def _bind_shortcuts(self):
+        """Bind shortcuts stored in SETTINGS to actions."""
+
+        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+            if action in action_manager._shortcuts:
+                action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
