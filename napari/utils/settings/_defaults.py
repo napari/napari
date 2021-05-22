@@ -425,9 +425,24 @@ class PluginsSettings(BaseNapariSettings):
         preferences_exclude = ['schema_version', 'disabled_plugins']
 
 
+class DeveloperSettings(BaseNapariSettings):
+    """Developer/Experimental Settings."""
+
+    schema_version: SchemaVersion = (0, 1, 1)
+
+    class Config:
+        # Pydantic specific configuration
+        title = trans._("developer")
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version']
+
+
 CORE_SETTINGS = [
     AppearanceSettings,
     ApplicationSettings,
     PluginsSettings,
     ShortcutsSettings,
+    DeveloperSettings,
 ]
