@@ -374,7 +374,7 @@ class ShortcutsSettings(BaseNapariSettings):
     """Shortcuts Settings."""
 
     schema_version: SchemaVersion = (0, 1, 1)
-    shortcuts: dict = Field(
+    shortcuts: Dict[str, List[str]] = Field(
         default_shortcuts,
         title=trans._("shortcuts"),
         description=trans._(
