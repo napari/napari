@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
+from vispy.scene.visuals import LinePlot as LinePlotNode
 
 from ..utils.translations import trans
 from .image import Image as ImageNode
@@ -14,6 +15,8 @@ from .volume import Volume as VolumeNode
 class ImageLayerNode:
     def __init__(self, custom_node: Node = None):
         self._custom_node = custom_node
+        self._line_plot_node = LinePlotNode(color='white')
+        self._line_plot_node.unfreeze()
         self._image_node = ImageNode(None, method='auto')
         self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
 
@@ -23,10 +26,13 @@ class ImageLayerNode:
         if self._custom_node is not None:
             return self._custom_node
 
-        # Return Image or Volume node based on 2D or 3D.
-        if ndisplay == 2:
+        # Return LinePlot, Image or Volume node based on 2D or 3D.
+        if ndisplay == 1:
+            return self._line_plot_node
+        elif ndisplay == 2:
             return self._image_node
-        return self._volume_node
+        else:
+            return self._volume_node
 
 
 class VispyImageLayer(VispyBaseLayer):
@@ -101,8 +107,13 @@ class VispyImageLayer(VispyBaseLayer):
 
         # Check if ndisplay has changed current node type needs updating
         if (
-            self.layer._ndisplay == 3 and not isinstance(node, VolumeNode)
-        ) or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode)):
+            (self.layer._ndisplay == 3 and not isinstance(node, VolumeNode))
+            or (self.layer._ndisplay == 2 and not isinstance(node, ImageNode))
+            or (
+                self.layer._ndisplay == 1
+                and not isinstance(node, LinePlotNode)
+            )
+        ):
             self._on_display_change(data)
         else:
             node.set_data(data)
@@ -132,6 +143,9 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.clim = self.layer.contrast_limits
 
     def _on_gamma_change(self, event=None):
+        if self.layer._ndisplay == 1:
+            return
+
         if len(self.node.shared_program.frag._set_items) > 0:
             self.node.gamma = self.layer.gamma
 

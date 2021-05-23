@@ -66,7 +66,7 @@ class Dims(EventedModel):
 
     # fields
     ndim: int = 2
-    ndisplay: Literal[2, 3] = 2
+    ndisplay: Literal[1, 2, 3] = 2
     last_used: int = 0
     range: Tuple[Tuple[float, float, float], ...] = ()
     current_step: Tuple[int, ...] = ()

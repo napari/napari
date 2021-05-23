@@ -430,7 +430,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self._ndisplay])
+        if self._ndisplay > 1:
+            return str(self._interpolation[self._ndisplay])
+        else:
+            return 'nearest'
 
     @interpolation.setter
     def interpolation(self, interpolation):
@@ -658,8 +661,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         image = self._slice.thumbnail.view
 
-        if self._ndisplay == 3 and self.ndim > 2:
+        if self._ndisplay == 3 and image.ndim > 2:
             image = np.max(image, axis=0)
+        elif self._ndisplay == 1 and image.ndim == 1:
+            image = np.expand_dims(image, axis=0)
 
         # float16 not supported by ndi.zoom
         dtype = np.dtype(image.dtype)

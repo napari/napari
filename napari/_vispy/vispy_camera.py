@@ -143,7 +143,8 @@ class VispyCamera:
         self._on_angles_change(None)
 
     def _on_center_change(self, event):
-        self.center = self._camera.center[-self._dims.ndisplay :]
+        ncords = max(self._dims.ndisplay, 2)
+        self.center = self._camera.center[-ncords:]
 
     def _on_zoom_change(self, event):
         self.zoom = self._camera.zoom
