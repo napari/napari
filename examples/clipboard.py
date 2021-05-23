@@ -6,7 +6,7 @@ from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 
 
 # create the viewer with an image
-viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.view_image(data.cells3d())
 
 layer_buttons = viewer.window.qt_viewer.layerButtons
 

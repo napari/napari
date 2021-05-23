@@ -582,9 +582,10 @@ class QtViewer(QSplitter):
         cb = QGuiApplication.clipboard()
         cb.setImage(img)
 
-        # here we are actually applying the effect to the `QSplitter` and not
-        # the `native` widget because for some reason it does not work.
-        add_flash_animation(self)
+        # Here we are actually applying the effect to the `_canvas_overlay` and not
+        # the `native` widget because it does not work on the `native` widget. It's
+        # probably because the widget is in a stack with the `QtWelcomeWidget`.
+        add_flash_animation(self._canvas_overlay)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
