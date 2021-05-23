@@ -236,9 +236,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
 
-        # stop any animations whenever the layers change
-        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
-
         self.setAcceptDrops(True)
 
         for layer in self.viewer.layers:
@@ -935,7 +932,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -972,7 +969,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
 
 def _create_remote_manager(
     layers: LayerList, qt_poll
-) -> 'Optional[RemoteManager]':
+) -> Optional[RemoteManager]:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

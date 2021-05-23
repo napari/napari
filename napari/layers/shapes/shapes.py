@@ -1364,7 +1364,7 @@ class Shapes(Layer):
         return new_colors
 
     def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
+        """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
                 return True
