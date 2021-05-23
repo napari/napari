@@ -1,12 +1,19 @@
 import pytest
-from qtpy.QtWidgets import QDockWidget, QHBoxLayout, QPushButton, QVBoxLayout
+from qtpy.QtWidgets import (
+    QDockWidget,
+    QHBoxLayout,
+    QPushButton,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 def test_add_dock_widget(make_napari_viewer):
     """Test basic add_dock_widget functionality"""
     viewer = make_napari_viewer()
     widg = QPushButton('button')
-    dwidg = viewer.window.add_dock_widget(widg, name='test')
+    dwidg = viewer.window.add_dock_widget(widg, name='test', area='bottom')
     assert not dwidg.is_vertical
     assert viewer.window._qt_window.findChild(QDockWidget, 'test')
     assert dwidg.widget() == widg
@@ -91,3 +98,45 @@ def test_remove_dock_widget_by_widget_reference(make_napari_viewer):
         # it's gone this time:
         viewer.window.remove_dock_widget(widg)
     assert not widg.parent()
+
+
+def test_adding_modified_widget(make_napari_viewer):
+    viewer = make_napari_viewer()
+    widg = QWidget()
+    # not uncommon to see people shadow the builtin layout()
+    # which breaks our ability to add vertical stretch... but shouldn't crash
+    widg.layout = None
+    dw = viewer.window.add_dock_widget(widg, name='test', area='right')
+    assert dw.widget() is widg
+
+
+def test_adding_stretch(make_napari_viewer):
+    """Make sure that vertical stretch only gets added when appropriate."""
+    viewer = make_napari_viewer()
+
+    # adding a widget to the left/right will usually addStretch to the layout
+    widg = QWidget()
+    widg.setLayout(QVBoxLayout())
+    widg.layout().addWidget(QPushButton())
+    assert widg.layout().count() == 1
+    dw = viewer.window.add_dock_widget(widg, area='right')
+    assert widg.layout().count() == 2
+    dw.close()
+
+    # ... unless the widget has a widget with a large vertical sizePolicy
+    widg = QWidget()
+    widg.setLayout(QVBoxLayout())
+    widg.layout().addWidget(QTextEdit())
+    assert widg.layout().count() == 1
+    dw = viewer.window.add_dock_widget(widg, area='right')
+    assert widg.layout().count() == 1
+    dw.close()
+
+    # ... widgets on the bottom do not get stretch
+    widg = QWidget()
+    widg.setLayout(QHBoxLayout())
+    widg.layout().addWidget(QPushButton())
+    assert widg.layout().count() == 1
+    dw = viewer.window.add_dock_widget(widg, area='bottom')
+    assert widg.layout().count() == 1
+    dw.close()

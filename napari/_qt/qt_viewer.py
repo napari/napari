@@ -53,6 +53,8 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from ..utils.io import imsave_extensions
+
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -185,7 +187,7 @@ class QtViewer(QSplitter):
         action_manager.register_action(
             "napari:toggle_console_visibility",
             self.toggle_console_visibility,
-            "Show/Hide IPython console",
+            trans._("Show/Hide IPython console"),
             self.viewer,
         )
         action_manager.bind_button(
@@ -233,9 +235,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-
-        # stop any animations whenever the layers change
-        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 
@@ -344,7 +343,10 @@ class QtViewer(QSplitter):
             try:
                 from napari_console import QtConsole
 
+                import napari
+
                 self.console = QtConsole(self.viewer)
+                self.console.push({'napari': napari})
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -382,12 +384,11 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.layers.selection.active
-        if active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(active_layer)
-
-        if active_layer is not None:
-            self._key_map_handler.keymap_providers.insert(0, active_layer)
+        self._key_map_handler.keymap_providers = (
+            [self.viewer]
+            if self.viewer.layers.selection.active is None
+            else [self.viewer.layers.selection.active, self.viewer]
+        )
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -478,14 +479,47 @@ class QtViewer(QSplitter):
         if msg:
             raise OSError(trans._("Nothing to save"))
 
+        # prepare list of extensions for drop down menu.
+        if selected and len(self.viewer.layers.selection) == 1:
+            selected_layer = list(self.viewer.layers.selection)[0]
+            # single selected layer.
+            if selected_layer._type_string == 'image':
+
+                ext = imsave_extensions()
+
+                ext_list = []
+                for val in ext:
+                    ext_list.append("*" + val)
+
+                ext_str = ';;'.join(ext_list)
+
+                ext_str = trans._(
+                    "All Files (*);; Image file types:;;{ext_str}",
+                    ext_str=ext_str,
+                )
+
+            elif selected_layer._type_string == 'points':
+
+                ext_str = trans._("All Files (*);; *.csv;;")
+
+            else:
+                # layer other than image or points
+                ext_str = trans._("All Files (*);;")
+
+        else:
+            # multiple layers.
+            ext_str = trans._("All Files (*);;")
+
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
+
         filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
         )
 
         if filename:
@@ -891,7 +925,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -928,7 +962,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
 
 def _create_remote_manager(
     layers: LayerList, qt_poll
-) -> 'Optional[RemoteManager]':
+) -> Optional[RemoteManager]:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

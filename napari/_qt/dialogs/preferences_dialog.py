@@ -20,6 +20,8 @@ from ...utils.translations import trans
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
+    valueChanged = Signal()
+
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
@@ -157,6 +159,7 @@ class PreferencesDialog(QDialog):
     def _reset_widgets(self):
         """Deletes the widgets and rebuilds with defaults."""
         self.close()
+        self.valueChanged.emit()
         self._list.clear()
 
         for n in range(self._stack.count()):
@@ -279,7 +282,7 @@ class PreferencesDialog(QDialog):
 class ConfirmDialog(QDialog):
     """Dialog to confirms a user's choice to restore default settings."""
 
-    valueChanged = Signal(bool)
+    valueChanged = Signal()
 
     def __init__(
         self,
@@ -318,5 +321,5 @@ class ConfirmDialog(QDialog):
     def on_click_restore(self):
         """Restore defaults and close window."""
         SETTINGS.reset()
-        self.valueChanged.emit(True)
+        self.valueChanged.emit()
         self.close()

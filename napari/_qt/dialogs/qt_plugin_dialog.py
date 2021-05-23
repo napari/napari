@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
 
 import napari.resources
 
+from ...plugins import plugin_manager
 from ...plugins.pypi import (
     ProjectInfo,
     iter_napari_plugin_info,
@@ -114,7 +115,7 @@ class PluginListItem(QFrame):
         enabled: bool = True,
     ):
         super().__init__(parent)
-        self.setup_ui()
+        self.setup_ui(enabled)
         if plugin_name:
             self.plugin_name.setText(plugin_name)
             self.package_name.setText(f"{package_name} {version}")
@@ -155,15 +156,15 @@ class PluginListItem(QFrame):
             p = p.parent()
         return p
 
-    def setup_ui(self):
+    def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
         self.v_lay.setContentsMargins(-1, 8, -1, 8)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
         self.row1.setSpacing(8)
         self.enabled_checkbox = QCheckBox(self)
-        self.enabled_checkbox.setChecked(True)
-        self.enabled_checkbox.setDisabled(True)
+        self.enabled_checkbox.setChecked(enabled)
+        self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
         self.enabled_checkbox.setToolTip(trans._("enable/disable"))
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -232,6 +233,10 @@ class PluginListItem(QFrame):
         self.package_author.setObjectName("small_text")
         self.row2.addWidget(self.package_author)
         self.v_lay.addLayout(self.row2)
+
+    def _on_enabled_checkbox(self, state: int):
+        """Called with `state` when checkbox is clicked."""
+        plugin_manager.set_blocked(self.plugin_name.text(), not state)
 
 
 class QPluginList(QListWidget):
@@ -420,7 +425,7 @@ class QtPluginDialog(QDialog):
         self.show_status_btn.setFixedWidth(100)
         self.show_sorter_btn = QPushButton(trans._("<< Show Sorter"), self)
         self.close_btn = QPushButton(trans._("Close"), self)
-        self.close_btn.clicked.connect(self.reject)
+        self.close_btn.clicked.connect(self.accept)
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 from pydantic import BaseSettings, Field
 from typing_extensions import TypedDict
@@ -163,7 +163,7 @@ class Language(str):
 class HighlightThickness(int):
     """Highlight thickness to use when hovering over shapes/points."""
 
-    highlight_thickness = 1
+    highlight_thickness = 2
     minimum = 1
     maximum = 10
 
@@ -202,10 +202,9 @@ class AppearanceSettings(BaseNapariSettings):
     )
 
     highlight_thickness: HighlightThickness = Field(
-        1,
+        HighlightThickness.highlight_thickness,
         description=trans._(
-            "Customize the highlight weight indicating "
-            + "selected shapes and points."
+            "Customize the highlight weight indicating selected shapes and points."
         ),
     )
 
@@ -319,13 +318,15 @@ class PluginsSettings(BaseNapariSettings):
         ),
     )
 
+    disabled_plugins: Set[str] = set()
+
     class Config:
         # Pydantic specific configuration
         title = trans._("Plugins")
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ['schema_version', 'disabled_plugins']
 
 
 CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]

@@ -9,10 +9,10 @@ from napari.layers._source import Source
 from napari.viewer import ViewerModel
 
 
-def test_sample_hook(test_napari_plugin_manager):
+def test_sample_hook(napari_plugin_manager):
 
     viewer = ViewerModel()
-    test_napari_plugin_manager.discover_sample_data()
+    napari_plugin_manager.discover_sample_data()
 
     with pytest.raises(KeyError) as e:
         viewer.open_sample('test_plugin', 'random data')
@@ -41,9 +41,9 @@ def test_sample_hook(test_napari_plugin_manager):
                 },
             }
 
-    test_napari_plugin_manager.register(test_plugin)
+    napari_plugin_manager.register(test_plugin)
 
-    reg = test_napari_plugin_manager._sample_data['test_plugin']
+    reg = napari_plugin_manager._sample_data['test_plugin']
     assert reg['random data']['data'] == _generate_random_data
     assert reg['random data']['display_name'] == 'random data'
     assert reg['napari logo']['data'] == LOGO
