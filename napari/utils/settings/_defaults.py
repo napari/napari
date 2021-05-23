@@ -163,7 +163,7 @@ class Language(str):
 class HighlightThickness(int):
     """Highlight thickness to use when hovering over shapes/points."""
 
-    highlight_thickness = 1
+    highlight_thickness = 2
     minimum = 1
     maximum = 10
 
@@ -202,7 +202,7 @@ class AppearanceSettings(BaseNapariSettings):
     )
 
     highlight_thickness: HighlightThickness = Field(
-        1,
+        HighlightThickness.highlight_thickness,
         description=trans._(
             "Customize the highlight weight indicating selected shapes and points."
         ),
