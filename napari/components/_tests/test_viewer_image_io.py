@@ -1,18 +1,11 @@
+import os
 from tempfile import TemporaryDirectory
 
 import numpy as np
-import pytest
+import zarr
 from dask import array as da
 
 from napari.components import ViewerModel
-
-try:
-    import zarr
-
-    zarr_available = True
-except ImportError:
-    zarr_available = False
-
 
 # the following fixtures are defined in napari/conftest.py
 # single_png, two_pngs, irregular_images, single_tiff, rgb_png
@@ -74,7 +67,6 @@ def test_add_single_filename(single_tiff):
     assert viewer.layers[0].data.dtype == np.uint8
 
 
-@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_add_zarr():
     viewer = ViewerModel()
     image = np.random.random((10, 20, 20))
@@ -88,7 +80,6 @@ def test_add_zarr():
         np.testing.assert_array_equal(image, viewer.layers[0].data)
 
 
-@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr_multiscale():
     viewer = ViewerModel()
     multiscale = [
@@ -109,6 +100,34 @@ def test_zarr_multiscale():
         # the context manager. Alternatively, we could convert to NumPy here.
         for images, images_in in zip(multiscale, viewer.layers[0].data):
             np.testing.assert_array_equal(images, images_in)
+
+
+def test_add_zarr_1d_array_is_ignored():
+    # For more details: https://github.com/napari/napari/issues/1471
+    viewer = ViewerModel()
+    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
+        z = zarr.open(zarr_dir, 'w')
+        z['1d'] = np.zeros(3)
+
+        image_path = os.path.join(zarr_dir, '1d')
+        viewer.open(image_path, plugin='builtins')
+
+        assert len(viewer.layers) == 0
+
+
+def test_add_many_zarr_1d_array_is_ignored():
+    # For more details: https://github.com/napari/napari/issues/1471
+    viewer = ViewerModel()
+    with TemporaryDirectory(suffix='.zarr') as zarr_dir:
+        z = zarr.open(zarr_dir, 'w')
+        z['1d'] = np.zeros(3)
+        z['2d'] = np.zeros((3, 4))
+        z['3d'] = np.zeros((3, 4, 5))
+
+        image_paths = [os.path.join(zarr_dir, name) for name in z.array_keys()]
+        viewer.open(image_paths, plugin='builtins')
+
+        assert [layer.name for layer in viewer.layers] == ['2d', '3d']
 
 
 def test_add_multichannel_rgb(rgb_png):

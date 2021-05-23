@@ -507,7 +507,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Parameters
         ----------
         data : array or list of array
-            Image data. Can be N dimensional. If the last dimension has length
+            Image data. Can be N >= 2 dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
             a multiscale image.
