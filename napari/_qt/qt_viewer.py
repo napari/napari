@@ -572,11 +572,19 @@ class QtViewer(QSplitter):
         return img
 
     def clipboard(self):
-        """Take a screenshot of the currently displayed screen and copy the image to the clipboard."""
+        """Take a screenshot of the currently displayed screen and copy the
+        image to the clipboard.
+        """
+        from .utils import add_flash_animation
+
         img = self.canvas.native.grabFramebuffer()
 
         cb = QGuiApplication.clipboard()
         cb.setImage(img)
+
+        # here we are actually applying the effect to the `QSplitter` and not
+        # the `native` widget because for some reason it does not work.
+        add_flash_animation(self)
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""

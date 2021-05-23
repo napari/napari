@@ -496,12 +496,23 @@ class Window:
         screenshot_wv.triggered.connect(self._screenshot_dialog)
 
         clipboard = QAction(
-            trans._('Copy Screenshot to Clipboard...'), self._qt_window
+            trans._('Copy Screenshot to Clipboard'), self._qt_window
         )
         clipboard.setStatusTip(
             trans._('Copy screenshot of current display to the clipboard')
         )
         clipboard.triggered.connect(self.qt_viewer.clipboard)
+
+        clipboard_wv = QAction(
+            trans._('Copy Screenshot with Viewer to Clipboard'),
+            self._qt_window,
+        )
+        clipboard_wv.setStatusTip(
+            trans._(
+                'Copy screenshot of current display with the viewer to the clipboard'
+            )
+        )
+        clipboard_wv.triggered.connect(self.clipboard)
 
         # OS X will rename this to Quit and put it in the app menu.
         # This quits the entire QApplication and all windows that may be open.
@@ -529,7 +540,7 @@ class Window:
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
-        self.file_menu.addMenu(open_sample_menu)
+        self.file_menu.addMenu(self.open_sample_menu)
         self.file_menu.addSeparator()
         self.file_menu.addAction(preferences)
         self.file_menu.addSeparator()
@@ -538,6 +549,7 @@ class Window:
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
         self.file_menu.addAction(clipboard)
+        self.file_menu.addAction(clipboard_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
 
@@ -1398,9 +1410,12 @@ class Window:
         """Take a screenshot of the currently displayed viewer and copy the image to the clipboard."""
         from qtpy.QtGui import QGuiApplication
 
+        from .utils import add_flash_animation
+
         img = self._qt_window.grab().toImage()
         cb = QGuiApplication.clipboard()
         cb.setImage(img)
+        add_flash_animation(self._qt_window)
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
