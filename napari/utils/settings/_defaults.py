@@ -196,8 +196,6 @@ def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
 
         try:
             model_class(**yaml_settings)
-        except KeyError:
-            pass
         except ValidationError as e:
             # Handle extra fields
             model_data_replace = {}
