@@ -9,6 +9,7 @@ from napari._tests.utils import (
     check_view_transform_consistency,
     check_viewer_functioning,
     layer_test_data,
+    skip_local_popups,
 )
 from napari.utils._tests.test_naming import eval_with_filename
 
@@ -280,3 +281,15 @@ def test_deleting_points(make_napari_viewer):
     pts_layer.remove_selected()
 
     assert len(pts_layer.data) == 3
+
+
+@skip_local_popups
+def test_custom_layer(make_napari_viewer):
+    """Make sure that custom layers subclasses can be added to the viewer."""
+
+    class NewLabels(layers.Labels):
+        """'Empty' extension of napari Labels layer."""
+
+    # Make a viewer and add the custom layer
+    viewer = make_napari_viewer(show=True)
+    viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
