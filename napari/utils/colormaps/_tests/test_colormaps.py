@@ -152,7 +152,7 @@ def test_mpl_colormap_exists():
         assert getattr(cm, name, None) is not None
 
 
-def test_colorpma_error_suggestion():
+def test_colormap_error_suggestion():
     """
     Test that vispy/mpl errors, when using `display_name`, suggest `name`.
     """
