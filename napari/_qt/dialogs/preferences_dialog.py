@@ -95,7 +95,6 @@ class PreferencesDialog(QDialog):
         # Because there are multiple pages, need to keep a dictionary of values dicts.
         # One set of keywords are for each page, then in each entry for a page, there are dicts
         # of setting and its value.
-
         self._values_orig_dict = {}
         self._values_dict = {}
         self._setting_changed_dict = {}
@@ -130,8 +129,20 @@ class PreferencesDialog(QDialog):
             Dictionary of properties within the json schema.
 
         """
-
         schema = json.loads(setting['json_schema'])
+
+        # Resolve allOf references
+        definitions = schema.get("definitions", {})
+        if definitions:
+            for key, data in schema["properties"].items():
+                if "allOf" in data:
+                    allof = data["allOf"]
+                    allof = [d["$ref"].rsplit("/")[-1] for d in allof]
+                    for definition in allof:
+                        local_def = definitions[definition]
+                        schema["properties"][key]["enum"] = local_def["enum"]
+                        schema["properties"][key]["type"] = "string"
+
         # Need to remove certain properties that will not be displayed on the GUI
         properties = schema.pop('properties')
         model = setting['model']
