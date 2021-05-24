@@ -55,6 +55,11 @@ def register_types_with_magicgui():
             Viewer. And expects the user to return a list of layer data tuples.
 
     """
+    # only run this function once
+    if getattr(register_types_with_magicgui, '_called', False):
+        return
+    register_types_with_magicgui._called = True
+
     from magicgui.widgets import FunctionGui
 
     # the widget field in `_source.py` was defined with a forward reference
@@ -63,6 +68,7 @@ def register_types_with_magicgui():
     # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
     Source.update_forward_refs(FunctionGui=FunctionGui)
 
+    print("register_types_with_magicgui")
     register_type(
         layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
     )
@@ -345,6 +351,7 @@ def add_layer_to_viewer(
     ... def make_layer() -> napari.layers.Image:
     ...     return napari.layers.Image(np.random.rand(64, 64))
     """
+    print("add_layer_to_viewer", result)
     if result is None:
         return
 
