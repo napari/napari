@@ -128,3 +128,28 @@ def get_dtype(layer):
         layer_dtype = type(layer_data_level)
 
     return layer_dtype
+
+
+def label_masks(masks: np.array, mask_axis: int):
+    if mask_axis < 0:
+        shape = masks.shape[:mask_axis]
+    else:
+        shape = masks.shape[mask_axis + 1:]
+
+    labeled = np.zeros(shape, np.uint)
+
+    if mask_axis < 0:
+        masks = np.reshape(masks, (-1, *shape))
+
+    # Unfortunately, because of collisions, reshaping between `(objects, y, x)` and `(y, x)` is _generally_
+    # undefined and has become a _major_ issue in computer vision research (e.g. consider the number of
+    # non-maximum suppression papers recently published). The following is, for the moment, an acceptable
+    # average case but we should consider adding a `label` parameter (`np.array → np.array`) to `Labels` to permit
+    # plug-in authors to use the most appropriate labeling method for their plug-in. — Allen (May 24, 2021)
+    for mask in masks:
+        # The following assumes each member of each object has two unique values: `0` or `index`. I’ve also
+        # assumed the `index` value _may_ correspond to a semantically meaningful category so its value is
+        # preserved during relabeling. — Allen (May 24, 2021)
+        labeled[mask != 0] = np.unique(mask)[-1]
+
+    return labeled

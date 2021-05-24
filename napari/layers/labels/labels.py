@@ -3,6 +3,8 @@ from collections import deque
 from typing import Dict, Union
 
 import numpy as np
+import skimage.color
+import skimage.exposure
 from scipy import ndimage as ndi
 
 from ...utils import config
@@ -21,7 +23,7 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
-from ._labels_utils import indices_in_shape, sphere_indices
+from ._labels_utils import indices_in_shape, sphere_indices, label_masks
 
 
 class Labels(_ImageBase):
@@ -82,6 +84,8 @@ class Labels(_ImageBase):
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
         should be the largest.
+    mask_axis : Optional[int]
+        Index for the mask axis, if data is a stack of masks.
 
     Attributes
     ----------
@@ -173,8 +177,8 @@ class Labels(_ImageBase):
         blending='translucent',
         visible=True,
         multiscale=None,
+        mask_axis=None
     ):
-
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
@@ -205,6 +209,11 @@ class Labels(_ImageBase):
                 self._label_index = {}
         else:
             self._label_index = label_index
+
+        self.mask_axis = mask_axis
+
+        if self.mask_axis is not None:
+            data = label_masks(data, self.mask_axis)
 
         super().__init__(
             data,
@@ -833,6 +842,7 @@ class Labels(_ImageBase):
         if self._color_lookup_func is None:
             max_val = np.max(raw)
             self._color_lookup_func = self._get_color_lookup_func(raw, max_val)
+
         if (
             not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
@@ -895,6 +905,14 @@ class Labels(_ImageBase):
                     deferred=True,
                 )
             )
+
+        if self.mask_axis is not None:
+            image = np.zeros(self.data.shape[1:], np.uint8)
+
+            for mask in self.data:
+                image[mask != 0] = np.unique(mask)[-1]
+
+            image = skimage.color.label2rgb(image, bg_label=0)
 
         return image
 
@@ -1007,6 +1025,9 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        if self.mask_axis:
+            raise NotImplementedError
+
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
@@ -1079,6 +1100,9 @@ class Labels(_ImageBase):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        if self.mask_axis:
+            raise NotImplementedError
+
         shape = self.data.shape
         dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
         dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
