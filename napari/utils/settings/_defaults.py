@@ -384,7 +384,11 @@ class ShortcutsSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = trans._("Shortcuts")
+        schema_extra = {
+            "title": trans._("Shortcuts"),
+            "description": trans._("Shortcut settings."),
+            "section": "shortcuts",
+        }
 
     class NapariConfig:
         # Napari specific configuration
