@@ -254,7 +254,6 @@ class _QtMainWindow(QMainWindow):
         """Close active dialog or active window."""
         parent = QApplication.focusWidget()
         while parent is not None:
-            print(parent)
             if isinstance(parent, QMainWindow):
                 self.close()
                 break
