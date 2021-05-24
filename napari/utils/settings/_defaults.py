@@ -5,9 +5,9 @@ from __future__ import annotations
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, ValidationError
 from typing_extensions import TypedDict
 
 from .._base import _DEFAULT_LOCALE
@@ -175,6 +175,48 @@ class QtBindingChoice(str, Enum):
     pyqt5 = 'pyqt5'
 
 
+def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+    """Load and validate settings coming from configuration file."""
+    yaml_settings = {}
+    model_class = settings.__class__
+
+    # This is set by the SettingsManager
+    loaded_data = getattr(settings, "_LOADED_DATA", {})
+
+    validate = getattr(settings, "_IGNORE_YAML_SOURCE", False)
+    if not validate and loaded_data:
+        # This variable prevents recursion when using the model for validation
+        model_class._IGNORE_YAML_SOURCE = True
+
+        # Get defaults from the schema
+        model_schema = model_class.schema()
+        section = model_schema["section"]
+        default_properties = model_schema.get("properties", {})
+        yaml_settings = loaded_data.get(section, {}).copy()
+
+        try:
+            model_class(**yaml_settings)
+        except ValidationError as e:
+            # Handle extra fields
+            model_data_replace = {}
+            for error in e.errors():
+                # Grab the first error entry
+                item = error["loc"][0]
+                try:
+                    model_data_replace[item] = default_properties[item][
+                        "default"
+                    ]
+                except KeyError:
+                    yaml_settings.pop(item)
+
+            yaml_settings.update(model_data_replace)
+
+        # This variable restores the normal sources loading behavior
+        model_class._IGNORE_YAML_SOURCE = False
+
+    return yaml_settings
+
+
 class BaseNapariSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
@@ -182,10 +224,19 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         use_enum_values = True
         validate_all = True
 
+        @classmethod
+        def customise_sources(
+            cls, init_settings, env_settings, file_secret_settings
+        ):
+            return (
+                init_settings,
+                env_settings,
+                yaml_config_settings_source,
+                file_secret_settings,
+            )
+
 
 class AppearanceSettings(BaseNapariSettings):
-    """Appearance Settings."""
-
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
     # 2. If you want to *remove* options that are no longer needed in the codebase,
@@ -210,7 +261,11 @@ class AppearanceSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = trans._("Appearance")
+        schema_extra = {
+            "title": trans._("Appearance"),
+            "description": trans._("Appearance settings."),
+            "section": "appearance",
+        }
 
     class NapariConfig:
         # Napari specific configuration
@@ -218,8 +273,6 @@ class AppearanceSettings(BaseNapariSettings):
 
 
 class ApplicationSettings(BaseNapariSettings):
-    """Main application settings."""
-
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
     # 2. If you want to *remove* options that are no longer needed in the codebase,
@@ -274,7 +327,11 @@ class ApplicationSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = trans._("Application")
+        schema_extra = {
+            "title": trans._("Application"),
+            "description": trans._("Main application settings."),
+            "section": "application",
+        }
 
     class NapariConfig:
         # Napari specific configuration
@@ -307,8 +364,6 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class PluginsSettings(BaseNapariSettings):
-    """Plugins Settings."""
-
     schema_version: SchemaVersion = (0, 1, 1)
     call_order: CallOrderDict = Field(
         None,
@@ -322,7 +377,11 @@ class PluginsSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = trans._("Plugins")
+        schema_extra = {
+            "title": trans._("Plugins"),
+            "description": trans._("Plugins settings."),
+            "section": "plugins",
+        }
 
     class NapariConfig:
         # Napari specific configuration
