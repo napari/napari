@@ -425,14 +425,30 @@ class PluginsSettings(BaseNapariSettings):
         preferences_exclude = ['schema_version', 'disabled_plugins']
 
 
-class DeveloperSettings(BaseNapariSettings):
+class ExperimentalSettings(BaseNapariSettings):
     """Developer/Experimental Settings."""
 
     schema_version: SchemaVersion = (0, 1, 1)
 
+    NAPARI_OCTREE: bool = Field(
+        True,
+        title=trans._("NAPARI_OCTREE"),
+        description=trans._("Use OctreeImage instead of Image."),
+    )
+
+    NAPARI_ASYNC: bool = Field(
+        True,
+        title=trans._("NAPARI_ASYNC"),
+        description=trans._("Asynchronous rendering with Image class."),
+    )
+
     class Config:
         # Pydantic specific configuration
-        title = trans._("developer")
+        schema_extra = {
+            "title": trans._("Experimental"),
+            "description": trans._("Experimental settings."),
+            "section": "experimental",
+        }
 
     class NapariConfig:
         # Napari specific configuration
@@ -444,5 +460,5 @@ CORE_SETTINGS = [
     ApplicationSettings,
     PluginsSettings,
     ShortcutsSettings,
-    DeveloperSettings,
+    ExperimentalSettings,
 ]
