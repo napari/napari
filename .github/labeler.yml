@@ -1,3 +1,4 @@
+# See: .github/workflows/labeler.yml and https://github.com/marketplace/actions/labeler
 design:
   - 'napari/_qt/qt_resources/**/*'
 
