@@ -304,22 +304,76 @@ def test_points_layer_display_correct_slice_on_scale(make_napari_viewer):
     np.testing.assert_equal(indices, [0])
 
 
-def test_qt_viewer_clipboard(make_napari_viewer):
+def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     viewer = make_napari_viewer()
-    # copy to clipboard
+    # make sure clipboard is empty
+    QGuiApplication.clipboard().clear()
     clipboard_image = QGuiApplication.clipboard().image()
     assert clipboard_image.isNull()
-    viewer.window.qt_viewer.clipboard()
+
+    # capture screenshot
+    viewer.window.qt_viewer.clipboard(flash=True)
     clipboard_image = QGuiApplication.clipboard().image()
     assert not clipboard_image.isNull()
+
+    # ensure the flash effect is applied
+    assert viewer.window.qt_viewer._canvas_overlay.graphicsEffect() is not None
+    assert hasattr(viewer.window.qt_viewer._canvas_overlay, "_flash_animation")
+    qtbot.wait(350)  # wait for the animation to finish
+    assert viewer.window.qt_viewer._canvas_overlay.graphicsEffect() is None
+    assert not hasattr(
+        viewer.window.qt_viewer._canvas_overlay, "_flash_animation"
+    )
 
     # clear clipboard and grab image from application view
     QGuiApplication.clipboard().clear()
     clipboard_image = QGuiApplication.clipboard().image()
     assert clipboard_image.isNull()
-    viewer.window.clipboard()
+
+    # capture screenshot of the entire window
+    viewer.window.clipboard(flash=True)
     clipboard_image = QGuiApplication.clipboard().image()
     assert not clipboard_image.isNull()
+
+    # ensure the flash effect is applied
+    assert viewer.window._qt_window.graphicsEffect() is not None
+    assert hasattr(viewer.window._qt_window, "_flash_animation")
+    qtbot.wait(350)  # wait for the animation to finish
+    assert viewer.window._qt_window.graphicsEffect() is None
+    assert not hasattr(viewer.window._qt_window, "_flash_animation")
+
+
+def test_qt_viewer_clipboard_without_flash(make_napari_viewer):
+    viewer = make_napari_viewer()
+    # make sure clipboard is empty
+    QGuiApplication.clipboard().clear()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert clipboard_image.isNull()
+
+    # capture screenshot
+    viewer.window.qt_viewer.clipboard(flash=False)
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert not clipboard_image.isNull()
+
+    # ensure the flash effect is not applied
+    assert viewer.window.qt_viewer._canvas_overlay.graphicsEffect() is None
+    assert not hasattr(
+        viewer.window.qt_viewer._canvas_overlay, "_flash_animation"
+    )
+
+    # clear clipboard and grab image from application view
+    QGuiApplication.clipboard().clear()
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert clipboard_image.isNull()
+
+    # capture screenshot of the entire window
+    viewer.window.clipboard(flash=False)
+    clipboard_image = QGuiApplication.clipboard().image()
+    assert not clipboard_image.isNull()
+
+    # ensure the flash effect is not applied
+    assert viewer.window._qt_window.graphicsEffect() is None
+    assert not hasattr(viewer.window._qt_window, "_flash_animation")
 
 
 def test_active_keybindings(make_napari_viewer):

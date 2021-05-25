@@ -16,6 +16,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events.custom_types import Array
 from ..utils.misc import is_sequence
 from ..utils.translations import trans
 
@@ -253,14 +255,23 @@ def combine_widgets(
     )
 
 
-def add_flash_animation(widget: QWidget):
+def add_flash_animation(
+    widget: QWidget, duration: int = 300, color: Array = (0.5, 0.5, 0.5, 0.5)
+):
     """Add flash animation to widget to highlight certain action (e.g. taking a screenshot).
 
     Parameters
     ----------
     widget : QWidget
         Any Qt widget.
+    duration : int
+        Duration of the flash animation.
+    color : Array
+        Color of the flash animation. By default, we use light gray.
     """
+    color = transform_color(color)[0]
+    color = (255 * color).astype("int")
+
     effect = QGraphicsColorizeEffect(widget)
     widget.setGraphicsEffect(effect)
 
@@ -278,8 +289,8 @@ def add_flash_animation(widget: QWidget):
     widget._flash_animation.start()
 
     # now  set an actual time for the flashing and an intermediate color
-    widget._flash_animation.setDuration(250)
-    widget._flash_animation.setKeyValueAt(0.5, QColor(255, 255, 255, 255))
+    widget._flash_animation.setDuration(duration)
+    widget._flash_animation.setKeyValueAt(0.5, QColor(*color))
 
 
 def remove_flash_animation(widget: QWidget):

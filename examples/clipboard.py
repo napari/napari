@@ -1,24 +1,40 @@
-"""Copy canvas or whole viewer to clipboard."""
+"""Copy screenshot of the canvas or the whole viewer to clipboard."""
 from skimage import data
 
+from qtpy.QtWidgets import QVBoxLayout, QPushButton, QWidget
+
 import napari
-from napari._qt.widgets.qt_viewer_buttons import QtViewerPushButton
 
 
 # create the viewer with an image
-viewer = napari.view_image(data.cells3d())
+viewer = napari.view_image(data.moon())
 
-layer_buttons = viewer.window.qt_viewer.layerButtons
 
-# Add button to copy image of the canvas to clipboard.
-copy_canvas_button = QtViewerPushButton(None, 'warning')
-copy_canvas_button.setToolTip("Copy screenshot of the canvas to clipboard.")
-copy_canvas_button.clicked.connect(viewer.window.qt_viewer.clipboard)
-layer_buttons.layout().insertWidget(3, copy_canvas_button)
+class Grabber(QWidget):
+    def __init__(self):
+        super().__init__()
 
-copy_canvas_button = QtViewerPushButton(None, 'warning')
-copy_canvas_button.setToolTip("Copy screenshot of the entire viewer to clipboard.")
-copy_canvas_button.clicked.connect(viewer.window.clipboard)
-layer_buttons.layout().insertWidget(3, copy_canvas_button)
+        self.copy_canvas_btn = QPushButton("Copy Canvas to Clipboard", self)
+        self.copy_canvas_btn.setToolTip("Copy screenshot of the canvas to clipboard.")
+        self.copy_viewer_btn = QPushButton("Copy Viewer to Clipboard", self)
+        self.copy_viewer_btn.setToolTip("Copy screenshot of the entire viewer to clipboard.")
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.copy_canvas_btn)
+        layout.addWidget(self.copy_viewer_btn)
+
+
+def create_grabber_widget():
+    """Create widget"""
+    widget = Grabber()
+
+    # connect buttons
+    widget.copy_canvas_btn.clicked.connect(lambda: viewer.window.qt_viewer.clipboard())
+    widget.copy_viewer_btn.clicked.connect(lambda: viewer.window.clipboard())
+    return widget
+
+
+widget = create_grabber_widget()
+viewer.window.add_dock_widget(widget)
 
 napari.run()

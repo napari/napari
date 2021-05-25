@@ -92,6 +92,6 @@ def test_add_flash_animation(qtbot):
     add_flash_animation(widget)
     assert widget.graphicsEffect() is not None
     assert hasattr(widget, "_flash_animation")
-    qtbot.wait(300)
+    qtbot.wait(350)
     assert widget.graphicsEffect() is None
     assert not hasattr(widget, "_flash_animation")
