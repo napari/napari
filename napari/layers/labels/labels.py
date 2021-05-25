@@ -907,11 +907,6 @@ class Labels(_ImageBase):
             )
 
         if self.mask_axis is not None:
-            image = np.zeros(self.data.shape[1:], np.uint8)
-
-            for mask in self.data:
-                image[mask != 0] = np.unique(mask)[-1]
-
             image = skimage.color.label2rgb(image, bg_label=0)
 
         return image
