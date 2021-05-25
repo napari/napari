@@ -906,21 +906,6 @@ def masks_3d(masks_2d: np.array) -> (np.array, np.array):
     )
 
 
-def test_mask_axis(masks_2d, masks_3d):
-    masks_2d_front_axis, masks_2d_back_axis = masks_2d
-    masks_3d_front_axis, masks_3d_back_axis = masks_3d
-
-    assert Labels(masks_2d_front_axis, mask_axis=0).mask_axis == 0
-    assert Labels(masks_3d_front_axis, mask_axis=0).mask_axis == 0
-
-    assert Labels(masks_2d_back_axis, mask_axis=2).mask_axis == 2
-
-    assert Labels(masks_3d_back_axis, mask_axis=3).mask_axis == 3
-
-    assert Labels(masks_2d_back_axis, mask_axis=-1).mask_axis == -1
-    assert Labels(masks_3d_back_axis, mask_axis=-1).mask_axis == -1
-
-
 def test_mask_raw_to_displayed(masks_2d, masks_3d):
     masks_2d_front_axis, masks_2d_back_axis = masks_2d
     masks_3d_front_axis, masks_3d_back_axis = masks_3d
