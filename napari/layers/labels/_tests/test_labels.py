@@ -1,6 +1,5 @@
 import itertools
 
-import numpy
 import numpy as np
 import pytest
 import xarray as xr
@@ -13,7 +12,6 @@ from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
 from napari.utils import Colormap
 from napari.utils.colormaps import low_discrepancy_image
-import napari.layers.labels
 
 
 def test_random_labels():
@@ -436,68 +434,68 @@ def test_n_edit_dimensions():
     "input_data, expected_data_view",
     [
         (
-                np.array(
-                    [
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
-                        [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
-                        [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
-                        [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
-                        [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    ],
-                    dtype=np.int_,
-                ),
-                np.array(
-                    [
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
-                        [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
-                        [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
-                        [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
-                        [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                    ],
-                    dtype=np.int_,
-                ),
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 0, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 1, 1, 1, 5, 0, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 5, 5, 5, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
         ),
         (
-                np.array(
-                    [
-                        [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
-                        [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                        [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
-                        [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
-                        [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
-                    ],
-                    dtype=np.int_,
-                ),
-                np.array(
-                    [
-                        [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
-                        [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
-                        [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
-                        [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
-                        [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
-                    ],
-                    dtype=np.int_,
-                ),
+            np.array(
+                [
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 4, 4, 4],
+                ],
+                dtype=np.int_,
+            ),
+            np.array(
+                [
+                    [0, 1, 0, 0, 0, 0, 0, 2, 0, 0],
+                    [1, 1, 0, 0, 0, 0, 0, 2, 2, 2],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 4, 4, 4, 4],
+                    [3, 3, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                    [0, 0, 3, 0, 0, 0, 4, 0, 0, 0],
+                ],
+                dtype=np.int_,
+            ),
         ),
         (
-                5 * np.ones((9, 10), dtype=np.uint32),
-                np.zeros((9, 10), dtype=np.uint32),
+            5 * np.ones((9, 10), dtype=np.uint32),
+            np.zeros((9, 10), dtype=np.uint32),
         ),
     ],
 )
@@ -789,12 +787,12 @@ def test_world_data_extent():
     ),
 )
 def test_undo_redo(
-        brush_shape,
-        brush_size,
-        mode,
-        selected_label,
-        preserve_labels,
-        n_dimensional,
+    brush_shape,
+    brush_size,
+    mode,
+    selected_label,
+    preserve_labels,
+    n_dimensional,
 ):
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
@@ -912,15 +910,15 @@ def test_mask_axis(masks_2d, masks_3d):
     masks_2d_front_axis, masks_2d_back_axis = masks_2d
     masks_3d_front_axis, masks_3d_back_axis = masks_3d
 
-    assert napari.layers.labels.Labels(masks_2d_front_axis, mask_axis=0).mask_axis == 0
-    assert napari.layers.labels.Labels(masks_3d_front_axis, mask_axis=0).mask_axis == 0
+    assert Labels(masks_2d_front_axis, mask_axis=0).mask_axis == 0
+    assert Labels(masks_3d_front_axis, mask_axis=0).mask_axis == 0
 
-    assert napari.layers.labels.Labels(masks_2d_back_axis, mask_axis=2).mask_axis == 2
+    assert Labels(masks_2d_back_axis, mask_axis=2).mask_axis == 2
 
-    assert napari.layers.labels.Labels(masks_3d_back_axis, mask_axis=3).mask_axis == 3
+    assert Labels(masks_3d_back_axis, mask_axis=3).mask_axis == 3
 
-    assert napari.layers.labels.Labels(masks_2d_back_axis, mask_axis=-1).mask_axis == -1
-    assert napari.layers.labels.Labels(masks_3d_back_axis, mask_axis=-1).mask_axis == -1
+    assert Labels(masks_2d_back_axis, mask_axis=-1).mask_axis == -1
+    assert Labels(masks_3d_back_axis, mask_axis=-1).mask_axis == -1
 
 
 def test_mask_raw_to_displayed(masks_2d, masks_3d):
