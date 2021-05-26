@@ -43,7 +43,7 @@ def _get_async_config() -> Optional[dict]:
         The async config to use or None if async not specified.
     """
 
-    async_var = str(int(SETTINGS.experimental.NAPARI_ASYNC))
+    async_var = str(int(SETTINGS.experimental.async_))
 
     print('async_var', async_var)
 
@@ -70,7 +70,7 @@ def get_octree_config() -> dict:
         The config data we should use.
     """
 
-    octree_var = str(int(SETTINGS.experimental.NAPARI_OCTREE))
+    octree_var = str(int(SETTINGS.experimental.octree))
 
     print('octree_var', octree_var)
 

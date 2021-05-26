@@ -426,20 +426,20 @@ class PluginsSettings(BaseNapariSettings):
 
 
 class ExperimentalSettings(BaseNapariSettings):
-    """Developer/Experimental Settings."""
 
     schema_version: SchemaVersion = (0, 1, 1)
 
-    NAPARI_OCTREE: bool = Field(
+    octree: bool = Field(
         True,
         title=trans._("NAPARI_OCTREE"),
         description=trans._("Use OctreeImage instead of Image."),
     )
 
-    NAPARI_ASYNC: bool = Field(
+    async_: bool = Field(
         True,
         title=trans._("NAPARI_ASYNC"),
         description=trans._("Asynchronous rendering with Image class."),
+        env="napari_async",
     )
 
     class Config:
