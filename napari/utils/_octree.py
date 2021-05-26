@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from ..utils.settings import SETTINGS
+
 LOGGER = logging.getLogger("napari.loader")
 
 DEFAULT_OCTREE_CONFIG = {
@@ -40,7 +42,10 @@ def _get_async_config() -> Optional[dict]:
     Optional[dict]
         The async config to use or None if async not specified.
     """
-    async_var = os.getenv("NAPARI_ASYNC")
+
+    async_var = str(int(SETTINGS.experimental.NAPARI_ASYNC))
+
+    print('async_var', async_var)
 
     # NAPARI_ASYNC can now only be "0" or "1".
     if async_var not in [None, "0", "1"]:
@@ -64,7 +69,13 @@ def get_octree_config() -> dict:
     dict
         The config data we should use.
     """
-    octree_var = os.getenv("NAPARI_OCTREE")
+
+    octree_var = str(int(SETTINGS.experimental.NAPARI_OCTREE))
+
+    print('octree_var', octree_var)
+
+    octree_env = os.getenv("NAPARI_OCTREE")
+    print('octree_env', octree_env)
 
     # If NAPARI_OCTREE is not enabled, defer to NAPARI_ASYNC
     if octree_var in [None, "0"]:

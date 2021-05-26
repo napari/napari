@@ -16,6 +16,7 @@ from ._defaults import (
     AppearanceSettings,
     ApplicationSettings,
     BaseNapariSettings,
+    ExperimentalSettings,
     PluginsSettings,
     ShortcutsSettings,
 )
@@ -61,6 +62,7 @@ class SettingsManager:
     application: ApplicationSettings
     plugins: PluginsSettings
     shortcuts: ShortcutsSettings
+    experimental: ExperimentalSettings
 
     def __init__(self, config_path: str = None, save_to_disk: bool = True):
         self._config_path = (
