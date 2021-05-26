@@ -45,6 +45,7 @@ from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
+from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -107,7 +108,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     help: str = ''
     status: str = 'Ready'
-    tooltip_text: str = ""
+    tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = DEFAULT_THEME
     title: str = 'napari'
 
@@ -367,9 +368,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             self.status = active.get_status(self.cursor.position, world=True)
             self.help = active.help
             if isinstance(active, (Labels, Points)):
-                self.tooltip_text = self.status.replace(", ", "\n")
+                self.tooltip.text = self.status.replace(", ", "\n")
             else:
-                self.tooltip_text = ""
+                self.tooltip.text = ""
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""

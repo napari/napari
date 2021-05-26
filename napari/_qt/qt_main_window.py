@@ -90,10 +90,13 @@ class _QtMainWindow(QMainWindow):
             plugins.plugin_manager.set_call_order(SETTINGS.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
-        self.qt_viewer.viewer.events.tooltip_text.connect(self.update_tooltip)
+        self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
 
     def update_tooltip(self, event):
-        self.qt_viewer.setToolTip(event.value)
+        if self.qt_viewer.viewer.tooltip.visible:
+            self.qt_viewer.setToolTip(event.value)
+        else:
+            self.qt_viewer.setToolTip("")
 
     @classmethod
     def current(cls):
