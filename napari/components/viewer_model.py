@@ -22,7 +22,7 @@ import numpy as np
 from pydantic import Extra, Field, validator
 
 from .. import layers
-from ..layers import Image, Labels, Layer, Points
+from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
@@ -367,10 +367,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active is not None:
             self.status = active.get_status(self.cursor.position, world=True)
             self.help = active.help
-            if isinstance(active, (Labels, Points)):
-                self.tooltip.text = self.status.replace(", ", "\n")
-            else:
-                self.tooltip.text = ""
+            self.tooltip.text = active.get_tooltip_text(
+                self.cursor.position, world=True
+            )
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
