@@ -1147,7 +1147,9 @@ class Labels(_ImageBase):
         return [
             f'{k}: {v[idx]}'
             for k, v in self._properties.items()
-            if k != 'index' and v[idx] is not None and not np.isnan(v[idx])
+            if k != 'index'
+            and v[idx] is not None
+            and not (isinstance(v[idx], float) and np.isnan(v[idx]))
         ]
 
 
