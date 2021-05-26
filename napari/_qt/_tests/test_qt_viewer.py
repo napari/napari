@@ -219,7 +219,7 @@ def test_screenshot(make_napari_viewer):
     viewer.add_shapes(data)
 
     # Take screenshot
-    screenshot = viewer.window.qt_viewer.screenshot()
+    screenshot = viewer.window.qt_viewer.screenshot(flash=False)
     assert screenshot.ndim == 3
 
 
@@ -262,7 +262,7 @@ def test_screenshot_dialog(make_napari_viewer, tmpdir):
     expected_filepath = input_filepath + '.png'  # add default file extension
     assert os.path.exists(expected_filepath)
     output_data = imread(expected_filepath)
-    expected_data = viewer.window.qt_viewer.screenshot()
+    expected_data = viewer.window.qt_viewer.screenshot(flash=False)
     assert np.allclose(output_data, expected_data)
 
 
@@ -319,7 +319,7 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     # ensure the flash effect is applied
     assert viewer.window.qt_viewer._canvas_overlay.graphicsEffect() is not None
     assert hasattr(viewer.window.qt_viewer._canvas_overlay, "_flash_animation")
-    qtbot.wait(350)  # wait for the animation to finish
+    qtbot.wait(500)  # wait for the animation to finish
     assert viewer.window.qt_viewer._canvas_overlay.graphicsEffect() is None
     assert not hasattr(
         viewer.window.qt_viewer._canvas_overlay, "_flash_animation"
@@ -338,7 +338,7 @@ def test_qt_viewer_clipboard_with_flash(make_napari_viewer, qtbot):
     # ensure the flash effect is applied
     assert viewer.window._qt_window.graphicsEffect() is not None
     assert hasattr(viewer.window._qt_window, "_flash_animation")
-    qtbot.wait(350)  # wait for the animation to finish
+    qtbot.wait(500)  # wait for the animation to finish
     assert viewer.window._qt_window.graphicsEffect() is None
     assert not hasattr(viewer.window._qt_window, "_flash_animation")
 
