@@ -27,6 +27,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
         self.reset()
         self._on_data_change()
+        self._on_shading_change()
 
     def _on_data_change(self, event=None):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
