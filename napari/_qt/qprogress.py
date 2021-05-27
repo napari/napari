@@ -105,14 +105,15 @@ class progress(tqdm):
 
     def __enter__(self):
         if self.has_viewer:
-            group_ref = ref(self._pbar.parentWidget())
-            self._group_token = CURRENT_GROUP.set(group_ref)
+            group_ref = ref(self._pbar)
+            count = 1
+            self._group_token = CURRENT_GROUP.set((group_ref, count))
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.has_viewer:
             CURRENT_GROUP.reset(self._group_token)
-            self._pbar.parentWidget().close()
+            # self._pbar.parentWidget().close()
         return super().__exit__(exc_type, exc_value, traceback)
 
     def display(self, msg: str = None, pos: int = None) -> None:
