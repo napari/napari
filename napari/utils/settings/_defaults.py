@@ -426,7 +426,6 @@ class PluginsSettings(BaseNapariSettings):
 
 
 class ExperimentalSettings(BaseNapariSettings):
-
     schema_version: SchemaVersion = (0, 1, 1)
 
     octree: bool = Field(
