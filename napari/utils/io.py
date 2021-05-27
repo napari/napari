@@ -206,6 +206,9 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     for filename in filenames_expanded:
         if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
+            # 1D images are currently unsupported, so skip them.
+            if len(zarr_shape) == 1:
+                continue
             if shape is None:
                 shape = zarr_shape
         else:
@@ -220,6 +223,10 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
             elif len(images) > 0:  # not read by shape clause
                 image = imread(filename)
         images.append(image)
+
+    if len(images) == 0:
+        return None
+
     if len(images) == 1:
         image = images[0]
     else:

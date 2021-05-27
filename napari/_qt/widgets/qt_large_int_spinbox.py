@@ -156,7 +156,11 @@ class QtLargeIntSpinBox(QAbstractSpinBox):
         self.ensurePolished()
         fm = QFontMetrics(self.font())
         h = self.lineEdit().sizeHint().height()
-        w = fm.horizontalAdvance(str(self._value)) + 3
+        if hasattr(fm, 'horizontalAdvance'):
+            # Qt >= 5.11
+            w = fm.horizontalAdvance(str(self._value)) + 3
+        else:
+            w = fm.width(str(self._value)) + 3
         w = max(36, w)
         opt = QStyleOptionSpinBox()
         self.initStyleOption(opt)

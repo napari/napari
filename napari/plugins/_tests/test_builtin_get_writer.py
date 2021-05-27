@@ -8,14 +8,14 @@ from napari.plugins import _builtins
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_succeeds(
-    test_napari_plugin_manager, tmpdir, layer_data_and_types
+    napari_plugin_manager, tmpdir, layer_data_and_types
 ):
     """Test writing layers data."""
 
     _, layer_data, layer_types, filenames = layer_data_and_types
     path = os.path.join(tmpdir, 'layers_folder')
 
-    writer = test_napari_plugin_manager.hook.napari_get_writer(
+    writer = napari_plugin_manager.hook.napari_get_writer(
         path=path, layer_types=layer_types
     )
 
@@ -35,7 +35,7 @@ def test_get_writer_succeeds(
 # the layer_data_and_types fixture is defined in napari/conftest.py
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_bad_plugin(
-    test_napari_plugin_manager, tmpdir, layer_data_and_types
+    napari_plugin_manager, tmpdir, layer_data_and_types
 ):
     """Test cleanup when get_writer has an exception."""
     from napari_plugin_engine import napari_hook_implementation
@@ -47,7 +47,7 @@ def test_get_writer_bad_plugin(
 
     _, layer_data, layer_types, filenames = layer_data_and_types
 
-    test_napari_plugin_manager.register(bad_plugin)
+    napari_plugin_manager.register(bad_plugin)
     # this time we try writing directly to the tmpdir (which already exists)
     writer = _builtins.napari_get_writer(tmpdir, layer_types)
 
