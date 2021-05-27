@@ -45,8 +45,6 @@ def _get_async_config() -> Optional[dict]:
 
     async_var = str(int(SETTINGS.experimental.async_))
 
-    print('async_var', async_var)
-
     # NAPARI_ASYNC can now only be "0" or "1".
     if async_var not in [None, "0", "1"]:
         raise ValueError('NAPARI_ASYNC can only be "0" or "1"')
@@ -72,10 +70,8 @@ def get_octree_config() -> dict:
 
     octree_var = str(int(SETTINGS.experimental.octree))
 
-    print('octree_var', octree_var)
 
     octree_env = os.getenv("NAPARI_OCTREE")
-    print('octree_env', octree_env)
 
     # If NAPARI_OCTREE is not enabled, defer to NAPARI_ASYNC
     if octree_var in [None, "0"]:
