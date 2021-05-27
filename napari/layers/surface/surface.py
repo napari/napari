@@ -8,6 +8,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
+from ._surface_constants import Shading
 
 
 # Mixin must come before Layer
@@ -126,6 +127,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         affine=None,
         opacity=1,
         blending='translucent',
+        shading='flat',
         visible=True,
     ):
 
@@ -146,7 +148,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
         )
 
-        self.events.add(interpolation=Event, rendering=Event)
+        self.events.add(interpolation=Event, rendering=Event, shading=Event)
 
         # assign mesh data and establish default behavior
         if len(data) not in (2, 3):
@@ -181,6 +183,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+        # Shading mode
+        self._shading = shading
 
     def _calc_data_range(self):
         return calc_data_range(self.vertex_values)
@@ -282,6 +287,15 @@ class Surface(IntensityVisualizationMixin, Layer):
                 maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
             extrema = np.vstack([mins, maxs])
         return extrema
+
+    @property
+    def shading(self):
+        return str(self._shading)
+
+    @shading.setter
+    def shading(self, shading):
+        self._shading = Shading(shading)
+        self.events.shading(value=self._shading)
 
     def _get_state(self):
         """Get dictionary of layer state.
