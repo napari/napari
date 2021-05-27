@@ -103,8 +103,6 @@ class progress(tqdm):
         else:
             self.set_description(trans._("progress"))
 
-        self.show()
-
     def __enter__(self):
         if self.has_viewer:
             group_ref = ref(self._pbar.parentWidget())
