@@ -5,7 +5,6 @@ until napari has a system-wide one.
 """
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -69,9 +68,6 @@ def get_octree_config() -> dict:
     """
 
     octree_var = str(int(SETTINGS.experimental.octree))
-
-
-    octree_env = os.getenv("NAPARI_OCTREE")
 
     # If NAPARI_OCTREE is not enabled, defer to NAPARI_ASYNC
     if octree_var in [None, "0"]:
