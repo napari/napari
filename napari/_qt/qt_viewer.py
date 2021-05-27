@@ -236,9 +236,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
 
-        # stop any animations whenever the layers change
-        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
-
         self.setAcceptDrops(True)
 
         for layer in self.viewer.layers:
@@ -365,6 +362,7 @@ class QtViewer(QSplitter):
         self._console = console
         if console is not None:
             self.dockConsole.setWidget(console)
+            console.setParent(self.dockConsole)
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -387,12 +385,11 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.layers.selection.active
-        if active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(active_layer)
-
-        if active_layer is not None:
-            self._key_map_handler.keymap_providers.insert(0, active_layer)
+        self._key_map_handler.keymap_providers = (
+            [self.viewer]
+            if self.viewer.layers.selection.active is None
+            else [self.viewer.layers.selection.active, self.viewer]
+        )
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -929,7 +926,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -966,7 +963,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
 
 def _create_remote_manager(
     layers: LayerList, qt_poll
-) -> 'Optional[RemoteManager]':
+) -> Optional[RemoteManager]:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

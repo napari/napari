@@ -212,8 +212,8 @@ class IntegerRangeSchemaWidget(SchemaWidgetMixin, QtWidgets.QSlider):
 
         self.setRange(minimum, maximum)
 
-        def setDescription(self, description: str):
-            self.description = description
+    def setDescription(self, description: str):
+        self.description = description
 
 
 class QColorButton(QtWidgets.QPushButton):

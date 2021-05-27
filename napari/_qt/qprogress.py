@@ -60,6 +60,8 @@ class progress(tqdm):
 
     """
 
+    monitor_interval = 0  # set to 0 to disable the thread
+
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
@@ -131,16 +133,6 @@ class progress(tqdm):
         if self.has_viewer:
             self._pbar._set_description(self.desc)
 
-    def hide(self):
-        """Hide the progress bar"""
-        if self.has_viewer:
-            self._pbar.hide()
-
-    def show(self):
-        """Show the progress bar"""
-        if self.has_viewer:
-            self._pbar.show()
-
     def close(self):
         """Closes and deletes the progress bar widget"""
         if self.disable:
@@ -151,6 +143,7 @@ class progress(tqdm):
                 self._pbar.parentWidget().close()
             # otherwise we just close the current progress bar
             self._pbar.close()
+            self._pbar.deleteLater()
         super().close()
 
 

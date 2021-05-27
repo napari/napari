@@ -26,7 +26,7 @@ def _threading_warn():
 
 
 def _warn():
-    time.sleep(0.01)
+    time.sleep(0.1)
     warnings.warn('warning!')
 
 
@@ -36,20 +36,40 @@ def _threading_raise():
 
 
 def _raise():
-    time.sleep(0.01)
+    time.sleep(0.1)
     raise ValueError("error!")
+
+
+@pytest.fixture
+def clean_current(monkeypatch, qtbot):
+    from napari._qt.qt_main_window import _QtMainWindow
+
+    def none_return(*_, **__):
+        return None
+
+    base_show = NapariQtNotification.show
+
+    def store_widget(self, *args, **kwargs):
+        qtbot.addWidget(self)
+        base_show(self, *args, **kwargs)
+
+    # monkeypatch.setattr(qt_notification.QPropertyAnimation, "start", none_return)
+    monkeypatch.setattr(_QtMainWindow, "current", none_return)
+    monkeypatch.setattr(NapariQtNotification, "show", store_widget)
 
 
 @pytest.mark.parametrize(
     "raise_func,warn_func",
     [(_raise, _warn), (_threading_raise, _threading_warn)],
 )
-def test_notification_manager_via_gui(qtbot, raise_func, warn_func):
+@pytest.mark.order(11)
+def test_notification_manager_via_gui(
+    qtbot, raise_func, warn_func, clean_current
+):
     """
     Test that the notification_manager intercepts `sys.excepthook`` and
     `threading.excepthook`.
     """
-
     errButton = QPushButton()
     warnButton = QPushButton()
     errButton.clicked.connect(raise_func)
@@ -60,9 +80,9 @@ def test_notification_manager_via_gui(qtbot, raise_func, warn_func):
             (errButton, 'error!'),
             (warnButton, 'warning!'),
         ]:
-            assert len(notification_manager.records) == 0
+            notification_manager.records = []
             qtbot.mouseClick(btt, Qt.LeftButton)
-            qtbot.wait(300)
+            qtbot.wait(500)
             assert len(notification_manager.records) == 1
             assert notification_manager.records[0].message == expected_message
             notification_manager.records = []
@@ -104,7 +124,7 @@ def test_notification_display(mock_show, severity, monkeypatch):
 
 
 @patch('napari._qt.dialogs.qt_notification.QDialog.show')
-def test_notification_error(mock_show, monkeypatch):
+def test_notification_error(mock_show, monkeypatch, clean_current):
     from napari.utils.settings import SETTINGS
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
