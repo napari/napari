@@ -432,16 +432,20 @@ class ExperimentalSettings(BaseNapariSettings):
     octree: bool = Field(
         True,
         title=trans._("Enable Tiling of Images"),
-        description=trans._("Renders images using tiles. \nYou must restart napari for "+ 
-        "changes of this setting to apply."),
+        description=trans._(
+            "Renders images using tiles. \nYou must restart napari for "
+            + "changes of this setting to apply."
+        ),
     )
 
     async_: bool = Field(
         True,
         title=trans._("Render Images Asynchronously"),
-        description=trans._("Asynchronous loading of image data.  \nThis setting partially "+
-        "loads data while viewing. \nYou must restart napari for changes of this setting "+ 
-        "to apply."),
+        description=trans._(
+            "Asynchronous loading of image data. \nThis setting partially "
+            + "loads data while viewing. \nYou must restart napari for changes of this setting "
+            + "to apply."
+        ),
         env="napari_async",
     )
 
