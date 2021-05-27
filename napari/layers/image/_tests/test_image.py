@@ -1,11 +1,13 @@
 import dask.array as da
 import numpy as np
+import numpy.testing as npt
 import pytest
 import xarray as xr
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
 from napari.utils import Colormap
+from napari.utils.transforms.transforms import Affine, CompositeAffine
 
 
 def test_random_image():
@@ -629,3 +631,84 @@ def test_world_data_extent():
     layer = Image(data)
     extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_scale_only():
+    scale = (1.5, 2)
+
+    image = Image(np.ones((3, 4)), scale=scale)
+
+    npt.assert_array_equal(image.scale, scale)
+    npt.assert_allclose(image.data2world_transform(np.ones(2)), scale)
+
+
+def test_affine_scale():
+    scale = (1.5, 2)
+    affine = Affine(((2, 0, 0), (0, 3, 0), (0, 0, 1)))
+
+    image = Image(np.ones((3, 4)), scale=scale, affine=affine)
+
+    npt.assert_array_equal(image.scale, (1.5, 2))
+    assert image.affine == affine
+    npt.assert_allclose(image.data2world_transform(np.ones(2)), (3, 6))
+
+
+def test_scale_translate():
+    scale = (1.5, 2)
+    translate = (-1, 2)
+
+    image = Image(np.ones((3, 4)), scale=scale, translate=translate)
+
+    npt.assert_array_equal(image.scale, scale)
+    npt.assert_array_equal(image.translate, translate)
+    npt.assert_allclose(image.data2world_transform(np.ones(2)), (0.5, 4))
+
+
+def test_rotate_scale_translate():
+    scale = (1.5, 2)
+    rotate = 45
+    translate = (-1, 2)
+
+    image = Image(
+        np.ones((3, 4)), rotate=rotate, scale=scale, translate=translate
+    )
+
+    # TODO: reconsider comparison of rotation values.
+    npt.assert_allclose(
+        CompositeAffine(2, rotate=image.rotate),
+        CompositeAffine(2, rotate=rotate),
+    )
+    npt.assert_array_equal(image.scale, scale)
+    npt.assert_array_equal(image.translate, translate)
+    expected = (np.array([1.5 - 2, 1.5 + 2]) / np.sqrt(2)) + np.array(
+        translate
+    )
+    npt.assert_allclose(image.data2world_transform(np.ones(2)), expected)
+
+
+def test_shear_rotate_scale_translate():
+    scale = (1.5, 2)
+    rotate = 45
+    translate = (-1, 2)
+    shear = ((1, 1), (0, 1))
+
+    image = Image(
+        np.ones((3, 4)),
+        rotate=rotate,
+        scale=scale,
+        translate=translate,
+        shear=shear,
+    )
+
+    # TODO: reconsider comparison of rotation and shear values.
+    npt.assert_allclose(
+        CompositeAffine(2, rotate=image.rotate),
+        CompositeAffine(2, rotate=rotate),
+    )
+    npt.assert_allclose(
+        CompositeAffine(2, shear=image.shear), CompositeAffine(2, shear=shear)
+    )
+    npt.assert_array_equal(image.scale, scale)
+    npt.assert_array_equal(image.translate, translate)
+    expected = (np.array([3, 1.5 + 2]) / np.sqrt(2)) + np.array(translate)
+    npt.assert_allclose(image.data2world_transform(np.ones(2)), expected)

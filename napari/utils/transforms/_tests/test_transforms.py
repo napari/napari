@@ -2,23 +2,23 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from napari.utils.transforms import Affine, ScaleTranslate
+from napari.utils.transforms import Affine, CompositeAffine
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate(Transform):
+def test_composite_affine():
     coord = [10, 13]
-    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    transform = CompositeAffine(2, scale=[2, 3], translate=[8, -5], name='st')
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
     assert transform.name == 'st'
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_broadcast_scale(Transform):
+def test_composite_affine_broadcast_translate():
     coord = [1, 10, 13]
-    transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
+    transform = CompositeAffine(
+        3, scale=[4, 2, 3], translate=[8, -5], name='st'
+    )
     new_coord = transform(coord)
     target_coord = [4, 2 * 10 + 8, 3 * 13 - 5]
     assert transform.name == 'st'
@@ -27,10 +27,11 @@ def test_scale_translate_broadcast_scale(Transform):
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_broadcast_translate(Transform):
+def test_composite_affine_broadcast_scale():
     coord = [1, 10, 13]
-    transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
+    transform = CompositeAffine(
+        3, scale=[2, 3], translate=[5, 8, -5], name='st'
+    )
     new_coord = transform(coord)
     target_coord = [6, 2 * 10 + 8, 3 * 13 - 5]
     assert transform.name == 'st'
@@ -39,10 +40,9 @@ def test_scale_translate_broadcast_translate(Transform):
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_inverse(Transform):
+def test_composite_affine_inverse():
     coord = [10, 13]
-    transform = Transform(scale=[2, 3], translate=[8, -5])
+    transform = CompositeAffine(2, scale=[2, 3], translate=[8, -5])
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
     npt.assert_allclose(new_coord, target_coord)
@@ -51,11 +51,10 @@ def test_scale_translate_inverse(Transform):
     npt.assert_allclose(inverted_new_coord, coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_compose(Transform):
+def test_composite_affine_compose():
     coord = [10, 13]
-    transform_a = Transform(scale=[2, 3], translate=[8, -5])
-    transform_b = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = CompositeAffine(2, scale=[2, 3], translate=[8, -5])
+    transform_b = CompositeAffine(2, scale=[0.3, 1.4], translate=[-2.2, 3])
     transform_c = transform_b.compose(transform_a)
 
     new_coord_1 = transform_c(coord)
@@ -63,10 +62,11 @@ def test_scale_translate_compose(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_slice(Transform):
-    transform_a = Transform(scale=[2, 3], translate=[8, -5])
-    transform_b = Transform(scale=[2, 1, 3], translate=[8, 3, -5], name='st')
+def test_composite_affine_slice():
+    transform_a = CompositeAffine(2, scale=[2, 3], translate=[8, -5])
+    transform_b = CompositeAffine(
+        3, scale=[2, 1, 3], translate=[8, 3, -5], name='st'
+    )
     npt.assert_allclose(transform_b.set_slice([0, 2]).scale, transform_a.scale)
     npt.assert_allclose(
         transform_b.set_slice([0, 2]).translate, transform_a.translate
@@ -74,10 +74,11 @@ def test_scale_translate_slice(Transform):
     assert transform_b.set_slice([0, 2]).name == 'st'
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_expand_dims(Transform):
-    transform_a = Transform(scale=[2, 3], translate=[8, -5], name='st')
-    transform_b = Transform(scale=[2, 1, 3], translate=[8, 0, -5])
+def test_composite_affine_expand_dims():
+    transform_a = CompositeAffine(
+        2, scale=[2, 3], translate=[8, -5], name='st'
+    )
+    transform_b = CompositeAffine(3, scale=[2, 1, 3], translate=[8, 0, -5])
     npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)
     npt.assert_allclose(
         transform_a.expand_dims([1]).translate, transform_b.translate
@@ -85,24 +86,25 @@ def test_scale_translate_expand_dims(Transform):
     assert transform_a.expand_dims([1]).name == 'st'
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_identity_default(Transform):
+def test_composite_affine_identity_default():
     coord = [10, 13]
-    transform = Transform()
+    transform = CompositeAffine(2)
     new_coord = transform(coord)
     npt.assert_allclose(new_coord, coord)
 
 
-def test_affine_properties():
-    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90, shear=[1])
+def test_composite_affine_properties():
+    transform = CompositeAffine(
+        2, scale=[2, 3], translate=[8, -5], rotate=90, shear=[1]
+    )
     npt.assert_allclose(transform.translate, [8, -5])
     npt.assert_allclose(transform.scale, [2, 3])
     npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
-    npt.assert_almost_equal(transform.shear, [1])
+    npt.assert_almost_equal(transform.shear, [[1, 1], [0, 1]])
 
 
-def test_affine_properties_setters():
-    transform = Affine()
+def test_composite_affine_properties_setters():
+    transform = CompositeAffine(2)
     transform.translate = [8, -5]
     npt.assert_allclose(transform.translate, [8, -5])
     transform.scale = [2, 3]
@@ -110,12 +112,12 @@ def test_affine_properties_setters():
     transform.rotate = 90
     npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
     transform.shear = [1]
-    npt.assert_almost_equal(transform.shear, [1])
+    npt.assert_almost_equal(transform.shear, [[1, 1], [0, 1]])
 
 
 def test_rotate():
     coord = [10, 13]
-    transform = Affine(rotate=90)
+    transform = CompositeAffine(2, rotate=90)
     new_coord = transform(coord)
     # As rotate by 90 degrees, can use [-y, x]
     target_coord = [-coord[1], coord[0]]
@@ -124,7 +126,7 @@ def test_rotate():
 
 def test_scale_translate_rotate():
     coord = [10, 13]
-    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90)
+    transform = CompositeAffine(2, scale=[2, 3], translate=[8, -5], rotate=90)
     new_coord = transform(coord)
     post_scale = np.multiply(coord, [2, 3])
     # As rotate by 90 degrees, can use [-y, x]
@@ -135,7 +137,7 @@ def test_scale_translate_rotate():
 
 def test_scale_translate_rotate_inverse():
     coord = [10, 13]
-    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90)
+    transform = CompositeAffine(2, scale=[2, 3], translate=[8, -5], rotate=90)
     new_coord = transform(coord)
     post_scale = np.multiply(coord, [2, 3])
     # As rotate by 90 degrees, can use [-y, x]
@@ -149,8 +151,12 @@ def test_scale_translate_rotate_inverse():
 
 def test_scale_translate_rotate_compose():
     coord = [10, 13]
-    transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25)
-    transform_b = Affine(scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65)
+    transform_a = CompositeAffine(
+        2, scale=[2, 3], translate=[8, -5], rotate=25
+    )
+    transform_b = CompositeAffine(
+        2, scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65
+    )
     transform_c = transform_b.compose(transform_a)
 
     new_coord_1 = transform_c(coord)
@@ -160,8 +166,11 @@ def test_scale_translate_rotate_compose():
 
 def test_scale_translate_rotate_shear_compose():
     coord = [10, 13]
-    transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25, shear=[1])
-    transform_b = Affine(
+    transform_a = CompositeAffine(
+        2, scale=[2, 3], translate=[8, -5], rotate=25, shear=[1]
+    )
+    transform_b = CompositeAffine(
+        2,
         scale=[0.3, 1.4],
         translate=[-2.2, 3],
         rotate=65,
@@ -267,7 +276,7 @@ def test_repeat_shear_setting():
     # decomposition of shear is working
     mat = np.eye(3)
     mat[2, 0] = 0.5
-    transform = Affine(shear=mat.copy())
+    transform = CompositeAffine(3, shear=mat.copy())
     # Check shear decomposed into lower triangular
     np.testing.assert_almost_equal(mat, transform.shear)
 

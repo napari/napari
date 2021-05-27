@@ -14,7 +14,7 @@ from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
-from ...utils.transforms import Affine, TransformChain
+from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -205,44 +205,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
         #   coordinate.
-        # 3. `world2grid`: An additional transform mapping world-coordinates
+        # 3. `world2world`: An extra transform applied in world-coordinates that
+        #   typically aligns this layer with another.
+        # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
-
-        # First create the `data2world` transform from the input parameters
-        if affine is None:
-            if scale is None:
-                scale = [1] * ndim
-            if translate is None:
-                translate = [0] * ndim
-            data2world_transform = Affine(
-                scale,
-                translate,
-                rotate=rotate,
-                shear=shear,
-                name='data2world',
-            )
-        elif isinstance(affine, np.ndarray) or isinstance(affine, list):
-            data2world_transform = Affine(
-                affine_matrix=np.array(affine),
-                name='data2world',
-            )
-        elif isinstance(affine, Affine):
-            affine.name = 'data2world'
-            data2world_transform = affine
-        else:
-            raise TypeError(
-                trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
-                    deferred=True,
-                    dtype=type(affine),
-                )
-            )
-
+        data2world_transform = CompositeAffine(
+            self.ndim,
+            scale=scale,
+            translate=translate,
+            rotate=rotate,
+            shear=shear,
+            name='data2world',
+        )
+        world2world_transform = self._coerce_affine(affine)
         self._transforms = TransformChain(
             [
-                Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
+                CompositeAffine(ndim, name='tile2data'),
                 data2world_transform,
-                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
+                world2world_transform,
+                CompositeAffine(ndim, name='world2grid'),
             ]
         )
 
@@ -408,6 +389,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.editable()
 
     @property
+    def data2world_transform(self):
+        """Transform: the transform that takes data coordinates to world coordinates including any extra world transforms."""
+        return self._transforms[1:3].simplified
+
+    @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2world'].scale
@@ -454,25 +440,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def affine(self):
         """napari.utils.transforms.Affine: Affine transform."""
-        return self._transforms['data2world']
+        return self._transforms['world2world']
 
     @affine.setter
     def affine(self, affine):
-        if isinstance(affine, np.ndarray) or isinstance(affine, list):
-            self._transforms['data2world'].affine_matrix = np.array(affine)
-        elif isinstance(affine, Affine):
-            affine.name = 'data2world'
-            self._transforms['data2world'] = affine
-        else:
+        self._transforms[2] = self._coerce_affine(affine)
+        self._update_dims()
+        self.events.affine()
+
+    def _coerce_affine(self, affine):
+        if affine is None:
+            affine = Affine(affine_matrix=np.eye(self.ndim + 1))
+        elif isinstance(affine, np.ndarray):
+            affine = Affine(affine_matrix=affine)
+        elif isinstance(affine, list):
+            affine = Affine(affine_matrix=np.array(affine))
+        elif not isinstance(affine, Affine):
             raise TypeError(
                 trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
                     deferred=True,
                     dtype=type(affine),
                 )
             )
-        self._update_dims()
-        self.events.affine()
+        affine.name = 'world2world'
+        return affine
 
     @property
     def translate_grid(self):
