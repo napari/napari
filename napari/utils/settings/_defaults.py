@@ -431,9 +431,9 @@ class ExperimentalSettings(BaseNapariSettings):
 
     octree: bool = Field(
         True,
-        title=trans._("Enable Tiling of Images"),
+        title=trans._("Enable Asynchronous Tiling of Images"),
         description=trans._(
-            "Renders images using tiles. \nYou must restart napari for "
+            "Renders images asynchronously using tiles. \nYou must restart napari for "
             + "changes of this setting to apply."
         ),
     )
