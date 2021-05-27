@@ -81,4 +81,5 @@ class ProgressBarGroup(QWidget):
 
         pbr_group_layout = QVBoxLayout()
         pbr_group_layout.addWidget(pbar)
+        pbr_group_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(pbr_group_layout)
