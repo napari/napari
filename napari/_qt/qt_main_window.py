@@ -262,7 +262,10 @@ class _QtMainWindow(QMainWindow):
                 parent.close()
                 break
 
-            parent = parent.parent()
+            try:
+                parent = parent.parent()
+            except Exception:
+                parent = getattr(parent, "_parent", None)
 
     def closeEvent(self, event):
         """This method will be called when the main window is closing.

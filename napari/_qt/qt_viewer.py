@@ -362,6 +362,7 @@ class QtViewer(QSplitter):
         self._console = console
         if console is not None:
             self.dockConsole.setWidget(console)
+            console.setParent(self.dockConsole)
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
