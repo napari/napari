@@ -1,15 +1,15 @@
 from qtpy import QtCore
-from qtpy.QtWidgets import (  # QVBoxLayout,
+from qtpy.QtWidgets import (
     QApplication,
-    QFrame,
     QHBoxLayout,
     QLabel,
     QProgressBar,
+    QVBoxLayout,
     QWidget,
 )
 
 
-def get_pbar(nested_ref, **kwargs):
+def get_pbar(current_group_ref, **kwargs):
     """Adds ProgressBar to viewer Activity Dock and returns it.
 
     Parameters
@@ -31,20 +31,14 @@ def get_pbar(nested_ref, **kwargs):
     pbar = ProgressBar(**kwargs)
     pbr_layout = viewer_instance.activityDock.widget().layout()
 
-    if nested_ref:
-        parent_ref, count = nested_ref
-        parent_pbar_widg = parent_ref()
-        index_of_parent = pbr_layout.indexOf(parent_pbar_widg)
-        new_index = index_of_parent + count
-        pbr_layout.insertWidget(new_index, pbar)
+    if current_group_ref:
+        group_widg = current_group_ref()
+        group_layout = group_widg.layout()
+        group_layout.addWidget(pbar)
     else:
-        pbr_layout.addWidget(pbar)
+        pbr_group = ProgressBarGroup(pbar)
+        pbr_layout.addWidget(pbr_group)
 
-        line = QFrame(parent=pbar)
-        line.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        line.setObjectName("QtCustomTitleBarLine")
-        line.setFixedHeight(1)
-        pbr_layout.addWidget(line)
     return pbar
 
 
@@ -80,12 +74,12 @@ class ProgressBar(QWidget):
         self.eta_label.setText(eta)
 
 
-# class ProgressBarGroup(QWidget):
-#     def __init__(self, pbar, parent=None) -> None:
-#         super().__init__(parent)
-#         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
+class ProgressBarGroup(QWidget):
+    def __init__(self, pbar, parent=None) -> None:
+        super().__init__(parent)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-#         pbr_group_layout = QVBoxLayout()
-#         pbr_group_layout.addWidget(pbar)
-#         pbr_group_layout.setContentsMargins(0, 0, 0, 0)
-#         self.setLayout(pbr_group_layout)
+        pbr_group_layout = QVBoxLayout()
+        pbr_group_layout.addWidget(pbar)
+        pbr_group_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(pbr_group_layout)
