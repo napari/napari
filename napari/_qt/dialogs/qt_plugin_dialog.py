@@ -121,7 +121,7 @@ class PluginListItem(QFrame):
             self.package_name.setText(f"{package_name} {version}")
             self.summary.setText(summary)
             self.package_author.setText(author)
-            self.action_button.setText(trans._("remove"))
+            self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
             self.enabled_checkbox.setChecked(enabled)
             if PluginError.get(plugin_name=plugin_name):

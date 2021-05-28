@@ -339,7 +339,7 @@ class Labels(_ImageBase):
         data2world_scale = np.mean(
             [self.scale[d] for d in self._dims_displayed]
         )
-        self.cursor_size = self.brush_size * data2world_scale
+        self.cursor_size = abs(self.brush_size * data2world_scale)
         self.events.brush_size()
 
     @property
@@ -657,7 +657,7 @@ class Labels(_ImageBase):
             data2world_scale = np.mean(
                 [self.scale[d] for d in self._dims_displayed]
             )
-            self.cursor_size = self.brush_size * data2world_scale
+            self.cursor_size = abs(self.brush_size * data2world_scale)
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
@@ -677,7 +677,7 @@ class Labels(_ImageBase):
             data2world_scale = np.mean(
                 [self.scale[d] for d in self._dims_displayed]
             )
-            self.cursor_size = self.brush_size * data2world_scale
+            self.cursor_size = abs(self.brush_size * data2world_scale)
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, drag to erase a label'
