@@ -8,7 +8,10 @@ import pytest
 
 pytest.importorskip('qtpy', reason='Cannot test progress without qtpy.')
 
-from napari._qt.widgets.qt_progress_bar import ProgressBarGroup  # noqa
+from napari._qt.widgets.qt_progress_bar import (  # noqa
+    ProgressBar,
+    ProgressBarGroup,
+)
 from napari.qt import progrange, progress  # noqa
 
 SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
@@ -19,7 +22,7 @@ def get_progress_groups(qt_viewer):
 
 
 def qt_viewer_has_pbar(qt_viewer):
-    return bool(get_progress_groups(qt_viewer))
+    return bool(qt_viewer.activityDock.findChildren(ProgressBar))
 
 
 @contextmanager
