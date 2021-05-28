@@ -1,7 +1,6 @@
-from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel
 
-from ...layers.surface._surface_constants import Shading
+from ...layers.surface._surface_constants import SHADING_TRANSLATION
 from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
 
@@ -32,10 +31,9 @@ class QtSurfaceControls(QtBaseImageControls):
         colormap_layout.addStretch(1)
 
         shading_comboBox = QComboBox(self)
-        shading_comboBox.addItems(Shading.keys())
-        index = shading_comboBox.findText(
-            self.layer.shading, Qt.MatchFixedString
-        )
+        for shading, display_name in SHADING_TRANSLATION.items():
+            shading_comboBox.addItem(display_name, shading)
+        index = shading_comboBox.findData(self.layer._shading)
         shading_comboBox.setCurrentIndex(index)
         shading_comboBox.activated[str].connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
@@ -66,4 +64,4 @@ class QtSurfaceControls(QtBaseImageControls):
         text : str
             Name of shading mode, eg: 'flat', 'smooth', 'none'.
         """
-        self.layer.shading = text
+        self.layer.shading = self.shadingComboBox.currentData()

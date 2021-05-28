@@ -294,7 +294,10 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @shading.setter
     def shading(self, shading):
-        self._shading = Shading(shading)
+        if isinstance(shading, Shading):
+            self._shading = shading
+        else:
+            self._shading = Shading(shading)
         self.events.shading(value=self._shading)
 
     def _get_state(self):

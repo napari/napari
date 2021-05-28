@@ -1,6 +1,7 @@
 from enum import auto
 
 from ...utils.misc import StringEnum
+from ...utils.translations import trans
 
 
 class Shading(StringEnum):
@@ -23,3 +24,10 @@ class Shading(StringEnum):
     NONE = auto()
     FLAT = auto()
     SMOOTH = auto()
+
+
+SHADING_TRANSLATION = {
+    Shading.NONE: trans._("none"),
+    Shading.FLAT: trans._("flat"),
+    Shading.SMOOTH: trans._("smooth"),
+}
