@@ -105,14 +105,14 @@ class progress(tqdm):
 
     def __enter__(self):
         if self.has_viewer:
-            group_ref = ref(self._pbar.parentWidget())
+            group_ref = ref(self._pbar)
             self._group_token = CURRENT_GROUP.set(group_ref)
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.has_viewer:
             CURRENT_GROUP.reset(self._group_token)
-            self._pbar.parentWidget().close()
+            self.close()
         return super().__exit__(exc_type, exc_value, traceback)
 
     def display(self, msg: str = None, pos: int = None) -> None:
@@ -136,12 +136,15 @@ class progress(tqdm):
         if self.disable:
             return
         if self.has_viewer:
-            # still need to close groups of pbars outside context
-            if not CURRENT_GROUP.get():
-                self._pbar.parentWidget().close()
-            # otherwise we just close the current progress bar
-            self._pbar.close()
-            self._pbar.deleteLater()
+            # closing groups of pbars
+            if CURRENT_GROUP.get():
+                pbr_group = self._pbar.parentWidget()
+                pbr_group.close()
+                pbr_group.deleteLater()
+            else:
+                # otherwise we just close the current progress bar
+                self._pbar.close()
+                self._pbar.deleteLater()
         super().close()
 
 

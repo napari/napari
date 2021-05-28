@@ -32,12 +32,12 @@ def get_pbar(current_group_ref, **kwargs):
     pbr_layout = viewer_instance.activityDock.widget().layout()
 
     if current_group_ref:
-        group_widg = current_group_ref()
-        group_layout = group_widg.layout()
-        group_layout.addWidget(pbar)
+        current_pbar = current_group_ref()
+        new_group = ProgressBarGroup(pbar=current_pbar)
+        new_group.layout().addWidget(pbar)
+        pbr_layout.addWidget(new_group)
     else:
-        pbr_group = ProgressBarGroup(pbar)
-        pbr_layout.addWidget(pbr_group)
+        pbr_layout.addWidget(pbar)
 
     return pbar
 
