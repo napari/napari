@@ -9,18 +9,18 @@ from qtpy.QtWidgets import (
 )
 
 
-def get_pbar(current_group_ref, **kwargs):
+def get_pbar(current_group_ref=None, **kwargs):
     """Adds ProgressBar to viewer Activity Dock and returns it.
 
     Parameters
     ----------
-    viewer_instance : qtViewer
-        current napari qtViewer instance
+    current_group_ref : weakref or None
+        reference to existing progress bar to nest with
 
     Returns
     -------
     ProgressBar
-        progress bar to associate with current iterable
+        progress bar to associate with iterable
     """
     from ..qt_main_window import _QtMainWindow
 
