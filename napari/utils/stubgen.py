@@ -26,6 +26,7 @@ import importlib
 import inspect
 import sys
 import textwrap
+import typing
 import warnings
 from types import ModuleType
 from typing import Any, Iterator, List, Set, Tuple, Type, Union
@@ -82,7 +83,12 @@ def _iter_imports(hint) -> Iterator[str]:
 def generate_function_stub(func) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
-    hints = get_type_hints(func)
+
+    globalns = getattr(func, '__globals__', {})
+    globalns.update(vars(typing))
+    globalns.update(getattr(func, '_forwardrefns_', {}))
+
+    hints = get_type_hints(func, globalns)
     sig = sig.replace(
         parameters=[
             p.replace(annotation=hints.get(p.name, p.empty))

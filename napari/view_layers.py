@@ -100,12 +100,9 @@ def _merge_layer_viewer_sigs_docs(func):
         'return': Viewer,
     }
 
-    # update function's __globals__ ... Careful!
-    # this actually updates the globals for the entire view_layers module
-    # (but this is important for evaluating ForwardRef type hints later)
-    func.__globals__.update(
-        {**add_method.__globals__, **Viewer.__init__.__globals__, **globals()}
-    )
+    # _forwardrefns_ is used by stubgen.py to populate the globalns
+    # when evaluate forward references with get_type_hints
+    func._forwardrefns_ = {**add_method.__globals__}
     return func
 
 
