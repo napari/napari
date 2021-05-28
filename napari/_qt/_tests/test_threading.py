@@ -43,7 +43,6 @@ def test_thread_worker(qtbot):
     checks = [equals_1, lambda: True]
     with qtbot.waitSignals(signals, check_params_cbs=checks, order="strict"):
         wrkr.start()
-    assert wrkr.is_running is False
 
 
 @pytest.mark.order(3)
@@ -65,7 +64,6 @@ def test_thread_generator_worker(qtbot):
         wrkr.start()
 
     qtbot.wait(500)
-    assert wrkr.is_running is False
 
 
 @pytest.mark.order(4)
@@ -120,7 +118,6 @@ def test_thread_warns(qtbot):
     checks = [equals_1, None, equals_3, equals_1]
     with qtbot.waitSignals(signals, check_params_cbs=checks):
         wrkr.start()
-    assert wrkr.is_running is False
 
 
 @pytest.mark.order(6)
