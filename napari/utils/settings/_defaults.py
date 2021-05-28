@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple, Union
 
 from pydantic import BaseSettings, Field, ValidationError
 from typing_extensions import TypedDict
@@ -428,17 +428,18 @@ class PluginsSettings(BaseNapariSettings):
 class ExperimentalSettings(BaseNapariSettings):
     schema_version: SchemaVersion = (0, 1, 1)
 
-    octree: bool = Field(
-        True,
+    octree: Union[bool, str] = Field(
+        False,
         title=trans._("Enable Asynchronous Tiling of Images"),
         description=trans._(
             "Renders images asynchronously using tiles. \nYou must restart napari for "
             + "changes of this setting to apply."
         ),
+        type='boolean',  # need to specify to build checkbox in preferences.
     )
 
     async_: bool = Field(
-        True,
+        False,
         title=trans._("Render Images Asynchronously"),
         description=trans._(
             "Asynchronous loading of image data. \nThis setting partially "
