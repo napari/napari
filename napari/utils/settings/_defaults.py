@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from pydantic import BaseSettings, Field, ValidationError
 from typing_extensions import TypedDict
@@ -48,18 +48,18 @@ class SchemaVersion(str):
         if not isinstance(v, str):
             raise ValueError(
                 trans._(
-                    "A schema version must be a 3 element tuple or string!"
-                ),
-                deferred=True,
+                    "A schema version must be a 3 element tuple or string!",
+                    deferred=True,
+                )
             )
 
         parts = v.split(".")
         if len(parts) != 3:
             raise ValueError(
                 trans._(
-                    "A schema version must be a 3 element tuple or string!"
-                ),
-                deferred=True,
+                    "A schema version must be a 3 element tuple or string!",
+                    deferred=True,
+                )
             )
 
         for part in parts:
@@ -68,9 +68,9 @@ class SchemaVersion(str):
             except Exception:
                 raise ValueError(
                     trans._(
-                        "A schema version subparts must be positive integers or parseable as integers!"
-                    ),
-                    deferred=True,
+                        "A schema version subparts must be positive integers or parseable as integers!",
+                        deferred=True,
+                    )
                 )
 
         return cls(v)
@@ -166,15 +166,16 @@ class QtBindingChoice(str, Enum):
     pyqt5 = 'pyqt5'
 
 
-def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+def yaml_config_settings_source(
+    settings: BaseNapariSettings,
+) -> Dict[str, Any]:
     """Load and validate settings coming from configuration file."""
-    yaml_settings = {}
+    yaml_settings: Dict[str, Any] = {}
     model_class = settings.__class__
 
     # This is set by the SettingsManager
-    loaded_data = getattr(settings, "_LOADED_DATA", {})
-
-    validate = getattr(settings, "_IGNORE_YAML_SOURCE", False)
+    loaded_data = settings._LOADED_DATA
+    validate = settings._IGNORE_YAML_SOURCE
     if not validate and loaded_data:
         # This variable prevents recursion when using the model for validation
         model_class._IGNORE_YAML_SOURCE = True
@@ -209,6 +210,7 @@ def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
 
 
 class ManagerMixin:
+    _IGNORE_YAML_SOURCE: bool = False
     _LOADED_DATA: Dict[str, Any] = {}
 
 
@@ -239,7 +241,7 @@ class AppearanceSettings(BaseNapariSettings):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: SchemaVersion = (0, 1, 0)
+    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
 
     theme: Theme = Field(
         "dark",
@@ -292,7 +294,6 @@ class ApplicationSettings(BaseNapariSettings):
             r'Toggle the use of interactive `%gui qt` event loop when creating napari Viewers in IPython.'
         ),
     )
-
     language: Language = Field(
         _DEFAULT_LOCALE,
         title=trans._("Language"),
@@ -300,7 +301,6 @@ class ApplicationSettings(BaseNapariSettings):
             "Select the display language for the user interface."
         ),
     )
-
     # Window state, geometry and position
     save_window_geometry: bool = Field(
         True,
@@ -433,7 +433,7 @@ class ShortcutsSettings(BaseNapariSettings):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: SchemaVersion = (0, 1, 1)
+    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
     shortcuts: Dict[str, List[str]] = Field(
         default_shortcuts,
         title=trans._("shortcuts"),
@@ -462,7 +462,7 @@ class PluginsSettings(BaseNapariSettings):
     #    or if you want to *rename* options, then you need to do a MAJOR update in
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
-    schema_version: SchemaVersion = (0, 1, 1)
+    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
     call_order: CallOrderDict = Field(
         None,
         title=trans._("Plugin sort order"),

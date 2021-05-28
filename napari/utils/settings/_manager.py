@@ -5,14 +5,15 @@ import json
 import os
 import warnings
 from pathlib import Path
+from typing import Any, Optional
 
 from appdirs import user_config_dir
 from yaml import safe_dump, safe_load
 
 from ...utils.translations import trans
 from .._base import _APPAUTHOR, _APPNAME, _FILENAME
+from ._defaults import CORE_SETTINGS as CORE_SETTINGS
 from ._defaults import (
-    CORE_SETTINGS,
     AppearanceSettings,
     ApplicationSettings,
     BaseNapariSettings,
@@ -64,17 +65,19 @@ class SettingsManager:
     shortcuts: ShortcutsSettings
     experimental: ExperimentalSettings
 
-    def __init__(self, config_path: str = None, save_to_disk: bool = True):
+    def __init__(
+        self, config_path: Optional[str] = None, save_to_disk: bool = True
+    ):
         self._config_path = (
             Path(user_config_dir(self._APPNAME, self._APPAUTHOR))
             if config_path is None
             else Path(config_path)
         )
         self._save_to_disk = save_to_disk
-        self._settings = {}
-        self._defaults = {}
-        self._env_settings = {}
-        self._plugins = []
+        self._settings: dict[str, BaseNapariSettings] = {}
+        self._defaults: dict[str, BaseNapariSettings] = {}
+        self._plugins: list = []
+        self._env_settings: dict[str, Any] = {}
 
         if not self._config_path.is_dir():
             os.makedirs(self._config_path)
@@ -87,7 +90,7 @@ class SettingsManager:
 
     def __dir__(self):
         """Add setting keys to make tab completion works."""
-        return super().__dir__() + list(self._settings)
+        return list(super().__dir__()) + list(self._settings)
 
     def __str__(self):
         return safe_dump(self._to_dict(safe=True))

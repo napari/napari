@@ -146,7 +146,9 @@ def test_settings_load_invalid_content(tmp_path):
 def test_model_fields_are_annotated():
     errors = []
     for model in CORE_SETTINGS:
-        difference = set(model.__fields__) - set(model.__annotations__)
+        difference = set(getattr(model, "__fields__")) - set(
+            model.__annotations__
+        )
         if difference:
             errors.append(
                 f"Model '{model.__name__}' does not provide annotations "
