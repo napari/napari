@@ -1,11 +1,18 @@
 import inspect
 import time
+from functools import partial
+from operator import eq
 
 import pytest
 
 from napari._qt import qthreading
 
+equals_1 = partial(eq, 1)
+equals_3 = partial(eq, 3)
+skip = pytest.mark.skipif(True, reason="testing")
 
+
+@pytest.mark.order(1)
 def test_as_generator_function():
     """Test we can convert a regular function to a generator function."""
 
@@ -21,90 +28,102 @@ def test_as_generator_function():
 
 # qtbot is necessary for qthreading here.
 # note: pytest-cov cannot check coverage of code run in the other thread.
+@pytest.mark.order(2)
 def test_thread_worker(qtbot):
     """Test basic threadworker on a function"""
 
-    func_val = [0]
-    test_val = [0]
-
+    @qthreading.thread_worker
     def func():
-        func_val[0] = 1
         return 1
 
-    def test(v):
-        test_val[0] = 1
-        assert v == 1
+    wrkr = func()
+    assert isinstance(wrkr, qthreading.FunctionWorker)
 
-    thread_func = qthreading.thread_worker(
-        func, connect={'returned': test}, start_thread=False
-    )
-    worker = thread_func()
-    assert isinstance(worker, qthreading.FunctionWorker)
-    assert func_val[0] == 0
-    with qtbot.waitSignal(worker.finished, timeout=20000):
-        worker.start()
-    assert func_val[0] == 1
-    assert test_val[0] == 1
-    assert worker.is_running is False
+    signals = [wrkr.returned, wrkr.finished]
+    checks = [equals_1, lambda: True]
+    with qtbot.waitSignals(signals, check_params_cbs=checks, order="strict"):
+        wrkr.start()
+    assert wrkr.is_running is False
 
 
+@pytest.mark.order(3)
 def test_thread_generator_worker(qtbot):
     """Test basic threadworker on a generator"""
 
-    yeld_val = [0]
-    test_val = [0]
-
+    @qthreading.thread_worker
     def func():
         yield 1
         yield 1
         return 3
 
-    def test_return(v):
-        yeld_val[0] = 1
-        assert v == 3
+    wrkr = func()
+    assert isinstance(wrkr, qthreading.GeneratorWorker)
 
-    def test_yield(v):
-        test_val[0] = 1
-        assert v == 1
+    signals = [wrkr.yielded, wrkr.yielded, wrkr.returned, wrkr.finished]
+    checks = [equals_1, equals_1, equals_3, lambda: True]
+    with qtbot.waitSignals(signals, check_params_cbs=checks, order="strict"):
+        wrkr.start()
 
-    thread_func = qthreading.thread_worker(
-        func,
-        connect={'returned': test_return, 'yielded': test_yield},
-        start_thread=False,
-    )
-    worker = thread_func()
-    assert isinstance(worker, qthreading.GeneratorWorker)
-    with qtbot.waitSignal(worker.finished):
-        worker.start()
-    assert test_val[0] == 1
-    assert yeld_val[0] == 1
+    qtbot.wait(500)
+    assert wrkr.is_running is False
 
 
-def test_thread_raises(qtbot):
-    """Test exceptions get returned to main thread"""
-
+@pytest.mark.order(4)
+def test_thread_raises2(qtbot):
     handle_val = [0]
-
-    def func():
-        yield 1
-        yield 1
-        raise ValueError('whoops')
 
     def handle_raise(e):
         handle_val[0] = 1
         assert isinstance(e, ValueError)
         assert str(e) == 'whoops'
 
-    thread_func = qthreading.thread_worker(
-        func, connect={'errored': handle_raise}, start_thread=False
+    @qthreading.thread_worker(
+        connect={'errored': handle_raise}, start_thread=False
     )
-    worker = thread_func()
-    assert isinstance(worker, qthreading.GeneratorWorker)
-    with qtbot.waitSignal(worker.finished):
-        worker.start()
+    def func():
+        yield 1
+        yield 1
+        raise ValueError('whoops')
+
+    wrkr = func()
+    assert isinstance(wrkr, qthreading.GeneratorWorker)
+
+    signals = [wrkr.yielded, wrkr.yielded, wrkr.errored, wrkr.finished]
+    checks = [equals_1, equals_1, None, None]
+    with qtbot.waitSignals(signals, check_params_cbs=checks):
+        wrkr.start()
     assert handle_val[0] == 1
 
 
+@pytest.mark.order(5)
+def test_thread_warns(qtbot):
+    """Test warnings get returned to main thread"""
+    import warnings
+
+    def check_warning(w):
+        return str(w) == 'hey!'
+
+    @qthreading.thread_worker(
+        connect={'warned': check_warning}, start_thread=False
+    )
+    def func():
+        yield 1
+        warnings.warn('hey!')
+        yield 3
+        warnings.warn('hey!')
+        return 1
+
+    wrkr = func()
+    assert isinstance(wrkr, qthreading.GeneratorWorker)
+
+    signals = [wrkr.yielded, wrkr.warned, wrkr.yielded, wrkr.returned]
+    checks = [equals_1, None, equals_3, equals_1]
+    with qtbot.waitSignals(signals, check_params_cbs=checks):
+        wrkr.start()
+    assert wrkr.is_running is False
+
+
+@pytest.mark.order(6)
 def test_multiple_connections(qtbot):
     """Test the connect dict accepts a list of functions, and type checks"""
 
@@ -144,6 +163,7 @@ def test_multiple_connections(qtbot):
         qthreading.thread_worker(func, connect=test1)()
 
 
+@pytest.mark.order(7)
 def test_create_worker():
     """Test directly calling create_worker."""
 
@@ -159,6 +179,7 @@ def test_create_worker():
 
 # note: pytest-cov cannot check coverage of code run in the other thread.
 # this is just for the sake of coverage
+@pytest.mark.order(8)
 def test_thread_worker_in_main_thread():
     """Test basic threadworker on a function"""
 
@@ -175,6 +196,7 @@ def test_thread_worker_in_main_thread():
 
 # note: pytest-cov cannot check coverage of code run in the other thread.
 # this is just for the sake of coverage
+@pytest.mark.order(9)
 def test_thread_generator_worker_in_main_thread():
     """Test basic threadworker on a generator in the main thread with methods."""
 
@@ -224,6 +246,7 @@ def test_thread_generator_worker_in_main_thread():
     assert worker2.work() == 3
 
 
+@pytest.mark.order(10)
 def test_worker_base_attribute():
     obj = qthreading.WorkerBase()
     assert obj.started is not None

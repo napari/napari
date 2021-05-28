@@ -371,7 +371,7 @@ def test_custom_color_dict():
 
 def test_add_colors():
     """Test adding new colors"""
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
     assert len(layer._all_vals) == layer.num_colors
 
@@ -379,8 +379,8 @@ def test_add_colors():
     assert len(layer._all_vals) == 52
 
     layer.show_selected_label = True
-    layer.selected_label = 60
-    assert len(layer._all_vals) == 61
+    layer.selected_label = 53
+    assert len(layer._all_vals) == 54
 
 
 def test_metadata():
@@ -868,3 +868,19 @@ def test_ndim_paint():
             ]
         ),
     )
+
+
+def test_switching_display_func():
+    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+
+    label_data = np.random.randint(0, 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_index
+
+
+def test_cursor_size_with_negative_scale():
+    layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
+    layer.mode = 'paint'
+    assert layer.cursor_size > 0

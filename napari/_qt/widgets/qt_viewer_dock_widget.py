@@ -65,7 +65,7 @@ class QtViewerDockWidget(QDockWidget):
         widget: QWidget,
         *,
         name: str = '',
-        area: str = 'bottom',
+        area: str = 'right',
         allowed_areas: Optional[List[str]] = None,
         shortcut=_sentinel,
         object_name: str = '',
@@ -73,6 +73,7 @@ class QtViewerDockWidget(QDockWidget):
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
+        self._parent = qt_viewer
         self.name = name
 
         areas = {
@@ -94,7 +95,7 @@ class QtViewerDockWidget(QDockWidget):
         if shortcut is not _sentinel:
             warnings.warn(
                 _SHORTCUT_DEPRECATION_STRING.format(shortcut=shortcut),
-                DeprecationWarning,
+                FutureWarning,
                 stacklevel=2,
             )
         else:
@@ -131,24 +132,7 @@ class QtViewerDockWidget(QDockWidget):
         widget = combine_widgets(widget, vertical=is_vertical)
         self.setWidget(widget)
         if is_vertical and add_vertical_stretch:
-            # add vertical stretch to the bottom of a vertical layout only
-            # if there is not already a widget that wants vertical space
-            # (like a textedit or something)
-            try:
-                # not uncommon to see people shadow the builtin layout() method
-                # which breaks our ability to add vertical stretch...
-                # but shouldn't crash
-                wlayout = widget.layout()
-                exp = QSizePolicy.Expanding
-                if hasattr(wlayout, 'addStretch') and all(
-                    wlayout.itemAt(i).widget().sizePolicy().verticalPolicy()
-                    < exp
-                    for i in range(wlayout.count())
-                    if wlayout.itemAt(i).widget()
-                ):
-                    wlayout.addStretch(next(counter))
-            except TypeError:
-                pass
+            self._maybe_add_vertical_stretch(widget)
 
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
@@ -158,11 +142,46 @@ class QtViewerDockWidget(QDockWidget):
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
 
+    def _maybe_add_vertical_stretch(self, widget):
+        """Add vertical stretch to the bottom of a vertical layout only
+
+        ...if there is not already a widget that wants vertical space
+        (like a textedit or listwidget or something).
+        """
+        exempt_policies = {
+            QSizePolicy.Expanding,
+            QSizePolicy.MinimumExpanding,
+            QSizePolicy.Ignored,
+        }
+        if widget.sizePolicy().verticalPolicy() in exempt_policies:
+            return
+
+        # not uncommon to see people shadow the builtin layout() method
+        # which breaks our ability to add vertical stretch...
+        try:
+            wlayout = widget.layout()
+            if wlayout is None:
+                return
+        except TypeError:
+            return
+
+        for i in range(wlayout.count()):
+            wdg = wlayout.itemAt(i).widget()
+            if (
+                wdg is not None
+                and wdg.sizePolicy().verticalPolicy() in exempt_policies
+            ):
+                return
+
+        # not all widgets have addStretch...
+        if hasattr(wlayout, 'addStretch'):
+            wlayout.addStretch(next(counter))
+
     @property
     def shortcut(self):
         warnings.warn(
             _SHORTCUT_DEPRECATION_STRING,
-            DeprecationWarning,
+            FutureWarning,
             stacklevel=2,
         )
         return self._shortcut
@@ -207,6 +226,10 @@ class QtViewerDockWidget(QDockWidget):
                     self, title=self.name, vertical=not self.is_vertical
                 )
                 self.setTitleBarWidget(self.title)
+
+    def setWidget(self, widget):
+        widget._parent = self
+        super().setWidget(widget)
 
 
 class QtCustomTitleBar(QLabel):

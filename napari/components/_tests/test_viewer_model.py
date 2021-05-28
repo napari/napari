@@ -30,6 +30,14 @@ def test_add_image():
     assert viewer.dims.ndim == 2
 
 
+def test_add_image_multichannel_share_memory():
+    viewer = ViewerModel()
+    image = np.random.random((10, 5, 64, 64))
+    layers = viewer.add_image(image, channel_axis=1)
+    for layer in layers:
+        assert np.may_share_memory(image, layer.data)
+
+
 def test_add_image_colormap_variants():
     """Test adding image with all valid colormap argument types."""
     viewer = ViewerModel()

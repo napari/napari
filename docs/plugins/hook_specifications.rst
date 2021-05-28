@@ -11,6 +11,7 @@ napari hook specification reference
 IO hooks
 --------
 
+.. autofunction:: napari_provide_sample_data
 .. autofunction:: napari_get_reader
 .. autofunction:: napari_get_writer
 

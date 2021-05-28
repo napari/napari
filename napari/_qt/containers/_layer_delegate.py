@@ -93,7 +93,10 @@ class LayerDelegate(QStyledItemDelegate):
         else:
             icon_name = f'new_{layer._type_string}'
 
-        icon = QColoredSVGIcon.from_resources(icon_name)
+        try:
+            icon = QColoredSVGIcon.from_resources(icon_name)
+        except ValueError:
+            return
         # guessing theme rather than passing it through.
         bg = option.palette.color(option.palette.Background).red()
         option.icon = icon.colored(theme='dark' if bg < 128 else 'light')
