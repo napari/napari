@@ -1,5 +1,4 @@
 include LICENSE
-include mypy.ini
 graft napari/_vendor
 recursive-include napari *.pyi
 recursive-include napari _tests/*.py
