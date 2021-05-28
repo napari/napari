@@ -217,7 +217,11 @@ def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     return yaml_settings
 
 
-class BaseNapariSettings(BaseSettings, EventedModel):
+class ManagerMixin:
+    _LOADED_DATA: Dict[str, Any] = {}
+
+
+class BaseNapariSettings(BaseSettings, EventedModel, ManagerMixin):
     class Config:
         # Pydantic specific configuration
         env_prefix = 'napari_'
