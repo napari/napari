@@ -26,11 +26,11 @@ fwidget_args = {
 }
 
 
-# test_napari_plugin_manager fixture from napari.conftest
+# napari_plugin_manager fixture from napari.conftest
 # request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', fwidget_args.values(), ids=fwidget_args.keys())
 def test_function_widget_registration(
-    arg, test_napari_plugin_manager, request, recwarn
+    arg, napari_plugin_manager, request, recwarn
 ):
     """Test that function widgets get validated and registerd correctly."""
 
@@ -39,10 +39,10 @@ def test_function_widget_registration(
         def napari_experimental_provide_function():
             return arg
 
-    test_napari_plugin_manager.discover_widgets()
-    test_napari_plugin_manager.register(Plugin, name='Plugin')
+    napari_plugin_manager.discover_widgets()
+    napari_plugin_manager.register(Plugin, name='Plugin')
 
-    f_widgets = test_napari_plugin_manager._function_widgets
+    f_widgets = napari_plugin_manager._function_widgets
 
     if 'bad_' in request.node.name:
         assert not f_widgets

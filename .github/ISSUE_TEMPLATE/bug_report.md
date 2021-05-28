@@ -1,7 +1,7 @@
 ---
 name: "\U0001F41B Bug Report"
 about: Submit a bug report to help us improve napari
-
+labels: bug
 ---
 
 ## 🐛 Bug

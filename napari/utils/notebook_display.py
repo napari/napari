@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 
 __all__ = ['nbscreenshot']
@@ -68,6 +69,12 @@ class NotebookScreenshot:
             file_obj.seek(0)
             png = file_obj.read()
         return png
+
+    def _repr_html_(self):
+        png = self._repr_png_()
+        url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
+        html = f'<img src="{url}"></img>'
+        return html
 
 
 nbscreenshot = NotebookScreenshot

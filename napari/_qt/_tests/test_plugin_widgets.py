@@ -37,11 +37,11 @@ dwidget_args = {
 }
 
 
-# test_napari_plugin_manager from conftest.py
+# napari_plugin_manager from _testsupport.py
 # monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
 def test_dock_widget_registration(
-    arg, test_napari_plugin_manager, request, recwarn
+    arg, napari_plugin_manager, request, recwarn
 ):
     """Test that dock widgets get validated and registerd correctly."""
 
@@ -50,9 +50,9 @@ def test_dock_widget_registration(
         def napari_experimental_provide_dock_widget():
             return arg
 
-    test_napari_plugin_manager.register(Plugin, name='Plugin')
-    test_napari_plugin_manager.discover_widgets()
-    widgets = test_napari_plugin_manager._dock_widgets
+    napari_plugin_manager.register(Plugin, name='Plugin')
+    napari_plugin_manager.discover_widgets()
+    widgets = napari_plugin_manager._dock_widgets
 
     if '[bad_' in request.node.name:
         assert len(recwarn) == 1
@@ -65,9 +65,9 @@ def test_dock_widget_registration(
 
 
 @pytest.fixture
-def test_plugin_widgets(monkeypatch, test_napari_plugin_manager):
+def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
-    tnpm = test_napari_plugin_manager
+    tnpm = napari_plugin_manager
     dock_widgets = {
         "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
         "TestP2": {"Widg3": (Widg3, {})},
