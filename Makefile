@@ -7,7 +7,7 @@ docs:
 	jb build docs
 
 typestubs:
-	python -m napari.utils.stubgen napari.view_layers napari.components.viewer_model
+	python -m napari.utils.stubgen
 
 # If the first argument is "watch"...
 ifeq (watch,$(firstword $(MAKECMDGOALS)))

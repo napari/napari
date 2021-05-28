@@ -84,7 +84,7 @@ def generate_function_stub(func) -> Tuple[Set[str], str]:
     """Generate a stub and imports for a function."""
     sig = inspect.signature(func)
 
-    globalns = getattr(func, '__globals__', {})
+    globalns = {**getattr(func, '__globals__', {})}
     globalns.update(vars(typing))
     globalns.update(getattr(func, '_forwardrefns_', {}))
 
@@ -181,5 +181,10 @@ def generate_module_stub(module: Union[str, ModuleType], save=True) -> str:
 if __name__ == '__main__':
     import sys
 
-    for module in sys.argv[1:]:
-        generate_module_stub(module)
+    default_modules = ['napari.view_layers', 'napari.components.viewer_model']
+
+    for mod in sys.argv[1:] or default_modules:
+        try:
+            generate_module_stub(mod)
+        except Exception as e:
+            print(f"ERROR: {e}")
