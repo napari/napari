@@ -22,7 +22,7 @@ for z in range(blobs.shape[0]):
 # create the property for setting the face and edge color.
 face_property = np.array(
     [True, True, True, True, False, False, False, False]
-    * int((blobs.shape[0] / 2))
+    * int(blobs.shape[0] / 2)
 )
 edge_property = np.array(['A', 'B', 'C', 'D', 'E'] * int(len(points) / 5))
 

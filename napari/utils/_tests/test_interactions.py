@@ -40,6 +40,15 @@ def test_shortcut_invalid(shortcut, reason):
         Shortcut(shortcut)  # Should be Control-A
 
 
+def test_minus_shortcut():
+    """
+    Misc tests minus is properly handled as it is the delimiter
+    """
+    assert str(Shortcut('-')) == '-'
+    assert str(Shortcut('Control--')).endswith('-')
+    assert str(Shortcut('Shift--')).endswith('-')
+
+
 def test_shortcut_qt():
 
     assert Shortcut('Control-A').qt == 'Control+A'
