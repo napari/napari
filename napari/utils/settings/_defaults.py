@@ -228,6 +228,7 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         def customise_sources(
             cls, init_settings, env_settings, file_secret_settings
         ):
+            cls._env_settings = env_settings
             return (
                 init_settings,
                 env_settings,
