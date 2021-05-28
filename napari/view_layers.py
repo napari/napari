@@ -76,7 +76,7 @@ def _merge_layer_viewer_sigs_docs(func):
     func : callable
         The same function, with merged metadata.
     """
-    from .utils.misc import combine_signatures
+    from .utils.misc import _combine_signatures
 
     # get the `Viewer.add_*` method
     layer_string = func.__name__.replace("view_", "")
@@ -89,7 +89,7 @@ def _merge_layer_viewer_sigs_docs(func):
     func.__doc__ = _merge_docstrings(add_method, layer_string)
 
     # merge the signatures of Viewer and viewer.add_*
-    func.__signature__ = combine_signatures(
+    func.__signature__ = _combine_signatures(
         add_method, Viewer, return_annotation=Viewer, exclude=('self',)
     )
 

@@ -479,7 +479,7 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
     return _hash.hexdigest()
 
 
-def combine_signatures(
+def _combine_signatures(
     *objects: Callable, return_annotation=inspect.Signature.empty, exclude=()
 ) -> inspect.Signature:
     """Create combined Signature from objects, excluding names in `exclude`.
