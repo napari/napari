@@ -3,6 +3,7 @@
 
 import pydantic
 import pytest
+from yaml import safe_load
 
 from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
 from napari.utils.theme import get_theme, register_theme
@@ -162,6 +163,33 @@ def test_settings_env_variables(tmp_path, monkeypatch):
     settings = SettingsManager(tmp_path, save_to_disk=True)
     assert CORE_SETTINGS[0]().theme == value
     assert settings.appearance.theme == value
+
+
+def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
+    data = """
+appearance:
+  theme: dark
+"""
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(data)
+
+    value = 'light'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    settings._save()
+
+    with open(tmp_path / SettingsManager._FILENAME) as fh:
+        saved_data = fh.read()
+
+    model_values = settings._to_dict(safe=True)
+    saved_values = safe_load(saved_data)
+
+    assert model_values["appearance"]["theme"] == value
+    assert saved_values["appearance"]["theme"] == "dark"
+
+    model_values["appearance"].pop("theme")
+    saved_values["appearance"].pop("theme")
+    assert model_values == saved_values
 
 
 def test_settings_env_variables_fails(tmp_path, monkeypatch):
