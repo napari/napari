@@ -267,7 +267,6 @@ class PreferencesDialog(QDialog):
         form_layout = form.widget.layout()
         widget = form_layout.itemAt(idx, form_layout.FieldRole).widget()
         widget.setDisabled(disable)
-        widget.state = state
 
         return form
 
@@ -315,18 +314,11 @@ class PreferencesDialog(QDialog):
                     self._values_dict[page] = new_dict
 
                     if page == 'experimental' and setting_name == 'octree':
-                        # if octree is changed, need to rebuild this page so that
-                        # async_ is set properly and enable/disabled.  If the value of
-                        # the widget is changed the the changed dictionary grows while
-                        # in this function and you get an error.
-                        setting = SETTINGS.schemas()[page]
-                        schema, new_values, properties = self.get_page_dict(
-                            setting
-                        )
-                        widget = self.build_page_dialog(schema, new_dict)
-                        self._stack.addWidget(widget)
-                        self._stack.removeWidget(self._stack.currentWidget())
-                        self._stack.setCurrentWidget(widget)
+
+                        # disable/enable async checkbox
+                        widget = self._stack.currentWidget()
+                        cstate = True if value is True else False
+                        self._disable_async(widget, new_dict, disable=cstate)
 
                 except:  # noqa: E722
                     continue
