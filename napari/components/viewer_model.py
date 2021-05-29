@@ -62,6 +62,9 @@ if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
 
 
+__all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -910,7 +913,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: Optional[str] = None
+        self,
+        data,
+        meta: Dict[str, Any] = None,
+        layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 
