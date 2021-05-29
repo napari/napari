@@ -31,9 +31,11 @@ class QtSurfaceControls(QtBaseImageControls):
         colormap_layout.addStretch(1)
 
         shading_comboBox = QComboBox(self)
-        for shading, display_name in SHADING_TRANSLATION.items():
+        for display_name, shading in SHADING_TRANSLATION.items():
             shading_comboBox.addItem(display_name, shading)
-        index = shading_comboBox.findData(self.layer._shading)
+        index = shading_comboBox.findData(
+            SHADING_TRANSLATION[self.layer._shading]
+        )
         shading_comboBox.setCurrentIndex(index)
         shading_comboBox.activated[str].connect(self.changeShading)
         self.shadingComboBox = shading_comboBox
