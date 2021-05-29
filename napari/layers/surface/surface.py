@@ -104,6 +104,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    shading: str
+        One of a list of preset shading modes that determine the lighting model
+        using when rendering the surface.
+            * 'none'
+            * 'flat'
+            * 'smooth'
     gamma : float
         Gamma correction for determining colormap linearity.
 
