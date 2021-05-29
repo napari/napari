@@ -55,6 +55,11 @@ def register_types_with_magicgui():
             Viewer. And expects the user to return a list of layer data tuples.
 
     """
+    # only run this function once
+    if getattr(register_types_with_magicgui, '_called', False):
+        return
+    register_types_with_magicgui._called = True
+
     from magicgui.widgets import FunctionGui
 
     # the widget field in `_source.py` was defined with a forward reference

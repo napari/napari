@@ -43,7 +43,6 @@ def test_thread_worker(qtbot):
     checks = [equals_1, lambda: True]
     with qtbot.waitSignals(signals, check_params_cbs=checks, order="strict"):
         wrkr.start()
-    assert wrkr.is_running is False
 
 
 @pytest.mark.order(3)
@@ -65,7 +64,6 @@ def test_thread_generator_worker(qtbot):
         wrkr.start()
 
     qtbot.wait(500)
-    assert wrkr.is_running is False
 
 
 @pytest.mark.order(4)
@@ -120,7 +118,6 @@ def test_thread_warns(qtbot):
     checks = [equals_1, None, equals_3, equals_1]
     with qtbot.waitSignals(signals, check_params_cbs=checks):
         wrkr.start()
-    assert wrkr.is_running is False
 
 
 @pytest.mark.order(6)
@@ -255,3 +252,43 @@ def test_worker_base_attribute():
     assert obj.errored is not None
     with pytest.raises(AttributeError):
         obj.aa
+
+
+@pytest.mark.order(11)
+def test_abort_does_not_return(qtbot):
+    loop_counter = 0
+
+    def long_running_func():
+        nonlocal loop_counter
+        import time
+
+        for i in range(5):
+            yield loop_counter
+            time.sleep(0.1)
+            loop_counter += 1
+
+    abort_counter = 0
+
+    def count_abort():
+        nonlocal abort_counter
+        abort_counter += 1
+
+    return_counter = 0
+
+    def returned_handler(value):
+        nonlocal return_counter
+        return_counter += 1
+
+    threaded_function = qthreading.thread_worker(
+        long_running_func,
+        connect={
+            'returned': returned_handler,
+            'aborted': count_abort,
+        },
+    )
+    worker = threaded_function()
+    worker.quit()
+    qtbot.wait(600)
+    assert loop_counter < 4
+    assert abort_counter == 1
+    assert return_counter == 0

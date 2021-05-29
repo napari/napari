@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 from ..utils.io import imsave_extensions
+from ..utils.settings import SETTINGS
 
 
 class QtViewer(QSplitter):
@@ -194,9 +195,6 @@ class QtViewer(QSplitter):
             'napari:toggle_console_visibility',
             self.viewerButtons.consoleButton,
         )
-        action_manager.bind_shortcut(
-            'napari:toggle_console_visibility', 'Control-Shift-C'
-        )
 
         self._create_canvas()
 
@@ -268,6 +266,18 @@ class QtViewer(QSplitter):
             self.chunk_receiver = QtChunkReceiver(self.layers)
         else:
             self.chunk_receiver = None
+
+        # bind shortcuts stored in SETTINGS last.
+        self._bind_shortcuts()
+
+    def _bind_shortcuts(self):
+        """Bind shortcuts stored in SETTINGS to actions."""
+
+        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+            if action in action_manager._shortcuts:
+                action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
@@ -553,13 +563,36 @@ class QtViewer(QSplitter):
         if self._show_welcome_screen:
             self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
-    def screenshot(self, path=None):
+    def _screenshot(self, flash=True):
+        """Capture a screenshot of the Vispy canvas.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        img = self.canvas.native.grabFramebuffer()
+        if flash:
+            from .utils import add_flash_animation
+
+            # Here we are actually applying the effect to the `_canvas_overlay`
+            # and not # the `native` widget because it does not work on the
+            # `native` widget. It's probably because the widget is in a stack
+            # with the `QtWelcomeWidget`.
+            add_flash_animation(self._canvas_overlay)
+        return img
+
+    def screenshot(self, path=None, flash=True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
 
         Returns
         -------
@@ -567,10 +600,23 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = QImg2array(self.canvas.native.grabFramebuffer())
+        img = QImg2array(self._screenshot(flash))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
         return img
+
+    def clipboard(self, flash=True):
+        """Take a screenshot of the currently displayed screen and copy the
+        image to the clipboard.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        cb = QGuiApplication.clipboard()
+        cb.setImage(self._screenshot(flash))
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
