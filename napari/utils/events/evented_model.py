@@ -93,9 +93,6 @@ class EventedMetaclass(main.ModelMetaclass):
                 EventedModel.__config__.json_encoders[f.type_] = encoder
         return cls
 
-    def schema(self):
-        pass
-
 
 class EventedModel(BaseModel, metaclass=EventedMetaclass):
 

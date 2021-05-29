@@ -175,7 +175,7 @@ class SettingsManager:
             model = setting()
             model.events.connect(lambda x: self._save())
             self._settings[section] = model
-            self._env_settings[section] = model.__config__._env_settings(model)
+            self._env_settings[section] = getattr(model.__config__, "_env_settings")(model)
 
         self._save()
 

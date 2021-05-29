@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Type, Union
 
 from pydantic import BaseSettings, Field, ValidationError
+from pydantic.env_settings import SettingsSourceCallable
 from typing_extensions import TypedDict
 
 from ...utils.shortcuts import default_shortcuts
@@ -14,7 +15,6 @@ from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
 from ..theme import available_themes
 from ..translations import _load_language, get_language_packs, trans
-
 
 class SchemaVersion(str):
     """
@@ -220,11 +220,10 @@ class BaseNapariSettings(BaseSettings, EventedModel, ManagerMixin):
         env_prefix = 'napari_'
         use_enum_values = True
         validate_all = True
+        _env_settings: Optional[SettingsSourceCallable] = None
 
         @classmethod
-        def customise_sources(
-            cls, init_settings, env_settings, file_secret_settings
-        ):
+        def customise_sources(cls, init_settings: SettingsSourceCallable, env_settings: SettingsSourceCallable, file_secret_settings: SettingsSourceCallable):
             cls._env_settings = env_settings
             return (
                 init_settings,
@@ -487,8 +486,13 @@ class PluginsSettings(BaseNapariSettings):
 
 
 class ExperimentalSettings(BaseNapariSettings):
-    schema_version: SchemaVersion = (0, 1, 1)
-
+    # 1. If you want to *change* the default value of a current option, you need to
+    #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
+    # 2. If you want to *remove* options that are no longer needed in the codebase,
+    #    or if you want to *rename* options, then you need to do a MAJOR update in
+    #    version, e.g. from 3.0.0 to 4.0.0
+    # 3. You don't need to touch this value if you're just adding a new option
+    schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 0)
     octree: Union[bool, str] = Field(
         False,
         title=trans._("Enable Asynchronous Tiling of Images"),
@@ -523,7 +527,14 @@ class ExperimentalSettings(BaseNapariSettings):
         preferences_exclude = ['schema_version']
 
 
-CORE_SETTINGS = [
+SettingsType = Tuple[
+    Type[AppearanceSettings],
+    Type[ApplicationSettings],
+    Type[PluginsSettings],
+    Type[ShortcutsSettings],
+    Type[ExperimentalSettings],
+]
+CORE_SETTINGS: SettingsType = [
     AppearanceSettings,
     ApplicationSettings,
     PluginsSettings,
