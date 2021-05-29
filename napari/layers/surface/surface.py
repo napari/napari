@@ -67,6 +67,15 @@ class Surface(IntensityVisualizationMixin, Layer):
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
+    shading: str, Shading
+        One of a list of preset shading modes that determine the lighting model
+        using when rendering the surface.
+            * Shading.NONE
+                Corresponds to shading='none'.
+            * Shading.FLAT
+                Corresponds to shading='flat'.
+            * Shading.SMOOTH
+                Corresponds to shading='smooth'.
     visible : bool
         Whether the layer visual is currently being displayed.
 
