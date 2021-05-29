@@ -1,4 +1,4 @@
-.PHONY: docs watch
+.PHONY: docs pre watch
 
 docs:
 	rm -rf docs/_build/
@@ -6,6 +6,8 @@ docs:
 	pip install -qr docs/requirements.txt
 	jb build docs
 
+pre:
+	pre-commit run -a
 
 # If the first argument is "watch"...
 ifeq (watch,$(firstword $(MAKECMDGOALS)))

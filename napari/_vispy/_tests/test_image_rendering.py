@@ -52,7 +52,7 @@ def test_visibility_consistency(qtbot, make_napari_viewer):
     )
     qtbot.wait(10)
     layer.contrast_limits = (0, 2)
-    screen1 = viewer.screenshot().astype('float')
+    screen1 = viewer.screenshot(flash=False).astype('float')
     layer.visible = True
-    screen2 = viewer.screenshot().astype('float')
+    screen2 = viewer.screenshot(flash=False).astype('float')
     assert np.max(np.abs(screen2 - screen1)) < 5
