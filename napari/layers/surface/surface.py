@@ -329,6 +329,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
+                'shading': self.shading,
                 'data': self.data,
             }
         )
