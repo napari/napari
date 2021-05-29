@@ -1,4 +1,4 @@
-.PHONY: docs watch
+.PHONY: docs typestubs pre watch 
 
 docs:
 	rm -rf docs/_build/
@@ -8,6 +8,9 @@ docs:
 
 typestubs:
 	python -m napari.utils.stubgen
+
+pre:
+	pre-commit run -a
 
 # If the first argument is "watch"...
 ifeq (watch,$(firstword $(MAKECMDGOALS)))
