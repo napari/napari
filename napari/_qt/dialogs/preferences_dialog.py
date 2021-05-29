@@ -240,7 +240,7 @@ class PreferencesDialog(QDialog):
             widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
             name = widget._name
             widget.setDisabled(
-                SETTINGS._env_settings.get(section, {}).get(name, False)
+                bool(SETTINGS._env_settings.get(section, {}).get(name, None))
             )
 
         # set state values for widget
