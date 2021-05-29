@@ -261,7 +261,7 @@ class PreferencesDialog(QDialog):
         return form
 
     def _disable_async(self, form, values, disable=True, state=True):
-        """ "Set async checkbox to True if octree is True.  Disable is octree is True."""
+        """Disable async if octree is True."""
 
         idx = list(values.keys()).index('async_')
         form_layout = form.widget.layout()
