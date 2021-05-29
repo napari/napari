@@ -5,7 +5,7 @@ import numpy as np
 
 from vispy.color import Color
 from vispy.gloo import Texture2D, VertexBuffer
-from vispy.visuals.filters import Filter
+from vispy.visuals.filters.base_filter import Filter
 from vispy.visuals.shaders import Function, Varying
 
 
