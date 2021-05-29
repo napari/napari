@@ -24,10 +24,13 @@ viewer_methods = _get_all_keybinding_methods(Viewer)
 EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
 
 
-def test_len_methods_viewer():
+def test_len_methods_viewer(make_napari_viewer):
     """
     Make sure we do find all the methods attached to a viewer via keybindings
     """
+
+    viewer = make_napari_viewer()  # noqa: F841
+    viewer_methods = _get_all_keybinding_methods(Viewer)
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
 
 

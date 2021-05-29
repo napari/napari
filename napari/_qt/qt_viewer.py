@@ -54,6 +54,7 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 from ..utils.io import imsave_extensions
+from ..utils.settings import SETTINGS
 
 
 class QtViewer(QSplitter):
@@ -194,9 +195,6 @@ class QtViewer(QSplitter):
             'napari:toggle_console_visibility',
             self.viewerButtons.consoleButton,
         )
-        action_manager.bind_shortcut(
-            'napari:toggle_console_visibility', 'Control-Shift-C'
-        )
 
         self._create_canvas()
 
@@ -268,6 +266,18 @@ class QtViewer(QSplitter):
             self.chunk_receiver = QtChunkReceiver(self.layers)
         else:
             self.chunk_receiver = None
+
+        # bind shortcuts stored in SETTINGS last.
+        self._bind_shortcuts()
+
+    def _bind_shortcuts(self):
+        """Bind shortcuts stored in SETTINGS to actions."""
+
+        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+            if action in action_manager._shortcuts:
+                action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
