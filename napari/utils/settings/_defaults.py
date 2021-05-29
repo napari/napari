@@ -5,11 +5,12 @@ from __future__ import annotations
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Set, Tuple
 
-from pydantic import BaseSettings, Field
+from pydantic import BaseSettings, Field, ValidationError
 from typing_extensions import TypedDict
 
+from ...utils.shortcuts import default_shortcuts
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
 from ..notifications import NotificationSeverity
@@ -163,7 +164,7 @@ class Language(str):
 class HighlightThickness(int):
     """Highlight thickness to use when hovering over shapes/points."""
 
-    highlight_thickness = 1
+    highlight_thickness = 2
     minimum = 1
     maximum = 10
 
@@ -175,6 +176,48 @@ class QtBindingChoice(str, Enum):
     pyqt5 = 'pyqt5'
 
 
+def yaml_config_settings_source(settings: BaseSettings) -> Dict[str, Any]:
+    """Load and validate settings coming from configuration file."""
+    yaml_settings = {}
+    model_class = settings.__class__
+
+    # This is set by the SettingsManager
+    loaded_data = getattr(settings, "_LOADED_DATA", {})
+
+    validate = getattr(settings, "_IGNORE_YAML_SOURCE", False)
+    if not validate and loaded_data:
+        # This variable prevents recursion when using the model for validation
+        model_class._IGNORE_YAML_SOURCE = True
+
+        # Get defaults from the schema
+        model_schema = model_class.schema()
+        section = model_schema["section"]
+        default_properties = model_schema.get("properties", {})
+        yaml_settings = loaded_data.get(section, {}).copy()
+
+        try:
+            model_class(**yaml_settings)
+        except ValidationError as e:
+            # Handle extra fields
+            model_data_replace = {}
+            for error in e.errors():
+                # Grab the first error entry
+                item = error["loc"][0]
+                try:
+                    model_data_replace[item] = default_properties[item][
+                        "default"
+                    ]
+                except KeyError:
+                    yaml_settings.pop(item)
+
+            yaml_settings.update(model_data_replace)
+
+        # This variable restores the normal sources loading behavior
+        model_class._IGNORE_YAML_SOURCE = False
+
+    return yaml_settings
+
+
 class BaseNapariSettings(BaseSettings, EventedModel):
     class Config:
         # Pydantic specific configuration
@@ -182,10 +225,19 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         use_enum_values = True
         validate_all = True
 
+        @classmethod
+        def customise_sources(
+            cls, init_settings, env_settings, file_secret_settings
+        ):
+            return (
+                init_settings,
+                env_settings,
+                yaml_config_settings_source,
+                file_secret_settings,
+            )
+
 
 class AppearanceSettings(BaseNapariSettings):
-    """Appearance Settings."""
-
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
     # 2. If you want to *remove* options that are no longer needed in the codebase,
@@ -202,7 +254,7 @@ class AppearanceSettings(BaseNapariSettings):
     )
 
     highlight_thickness: HighlightThickness = Field(
-        1,
+        HighlightThickness.highlight_thickness,
         description=trans._(
             "Customize the highlight weight indicating selected shapes and points."
         ),
@@ -210,7 +262,11 @@ class AppearanceSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
-        title = trans._("Appearance")
+        schema_extra = {
+            "title": trans._("Appearance"),
+            "description": trans._("Appearance settings."),
+            "section": "appearance",
+        }
 
     class NapariConfig:
         # Napari specific configuration
@@ -218,8 +274,6 @@ class AppearanceSettings(BaseNapariSettings):
 
 
 class ApplicationSettings(BaseNapariSettings):
-    """Main application settings."""
-
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
     # 2. If you want to *remove* options that are no longer needed in the codebase,
@@ -263,18 +317,30 @@ class ApplicationSettings(BaseNapariSettings):
     window_state: str = None
     window_statusbar: bool = True
     preferences_size: Tuple[int, int] = None
-    # TODO: Might be breaking preferences?
-    gui_notification_level: NotificationSeverity = NotificationSeverity.INFO
-    console_notification_level: NotificationSeverity = (
-        NotificationSeverity.NONE
+    gui_notification_level: NotificationSeverity = Field(
+        NotificationSeverity.INFO,
+        title=trans._("GUI notification level"),
+        description=trans._(
+            "Set the notification level for the notification manager."
+        ),
     )
-
+    console_notification_level: NotificationSeverity = Field(
+        NotificationSeverity.NONE,
+        title=trans._("Console notification level"),
+        description=trans._(
+            "Set the notification level for the console notifications."
+        ),
+    )
     open_history: List = [os.path.dirname(Path.home())]
     save_history: List = [os.path.dirname(Path.home())]
 
     class Config:
         # Pydantic specific configuration
-        title = trans._("Application")
+        schema_extra = {
+            "title": trans._("Application"),
+            "description": trans._("Main application settings."),
+            "section": "application",
+        }
 
     class NapariConfig:
         # Napari specific configuration
@@ -288,8 +354,6 @@ class ApplicationSettings(BaseNapariSettings):
             "window_fullscreen",
             "window_state",
             "window_statusbar",
-            "gui_notification_level",
-            "console_notification_level",
             "open_history",
             "save_history",
             "ipy_interactive",
@@ -306,9 +370,32 @@ class PluginHookOption(TypedDict):
 CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
-class PluginsSettings(BaseNapariSettings):
-    """Plugins Settings."""
+class ShortcutsSettings(BaseNapariSettings):
+    """Shortcuts Settings."""
 
+    schema_version: SchemaVersion = (0, 1, 1)
+    shortcuts: Dict[str, List[str]] = Field(
+        default_shortcuts,
+        title=trans._("shortcuts"),
+        description=trans._(
+            "Sort plugins for each action in the order to be called.",
+        ),
+    )
+
+    class Config:
+        # Pydantic specific configuration
+        schema_extra = {
+            "title": trans._("Shortcuts"),
+            "description": trans._("Shortcut settings."),
+            "section": "shortcuts",
+        }
+
+    class NapariConfig:
+        # Napari specific configuration
+        preferences_exclude = ['schema_version', 'shortcuts']
+
+
+class PluginsSettings(BaseNapariSettings):
     schema_version: SchemaVersion = (0, 1, 1)
     call_order: CallOrderDict = Field(
         None,
@@ -318,13 +405,24 @@ class PluginsSettings(BaseNapariSettings):
         ),
     )
 
+    disabled_plugins: Set[str] = set()
+
     class Config:
         # Pydantic specific configuration
-        title = trans._("Plugins")
+        schema_extra = {
+            "title": trans._("Plugins"),
+            "description": trans._("Plugins settings."),
+            "section": "plugins",
+        }
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version']
+        preferences_exclude = ['schema_version', 'disabled_plugins']
 
 
-CORE_SETTINGS = [AppearanceSettings, ApplicationSettings, PluginsSettings]
+CORE_SETTINGS = [
+    AppearanceSettings,
+    ApplicationSettings,
+    PluginsSettings,
+    ShortcutsSettings,
+]

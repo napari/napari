@@ -18,7 +18,7 @@ _LINKED_LAYERS: dict[LinkKey, Unlinker] = dict()
 
 
 def link_layers(
-    layers: Iterable['Layer'], attributes: Iterable[str] = ()
+    layers: Iterable[Layer], attributes: Iterable[str] = ()
 ) -> list[LinkKey]:
     """Link ``attributes`` between all layers in ``layers``.
 
@@ -117,7 +117,7 @@ def link_layers(
     return links
 
 
-def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+def unlink_layers(layers: Iterable[Layer], attributes: Iterable[str] = ()):
     """Unlink previously linked ``attributes`` between all layers in ``layers``.
 
     Parameters
@@ -150,7 +150,7 @@ def unlink_layers(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
 
 
 @contextmanager
-def layers_linked(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
+def layers_linked(layers: Iterable[Layer], attributes: Iterable[str] = ()):
     """Context manager that temporarily links ``attributes`` on ``layers``."""
     links = link_layers(layers, attributes)
     try:
@@ -160,7 +160,7 @@ def layers_linked(layers: Iterable['Layer'], attributes: Iterable[str] = ()):
 
 
 def _get_common_evented_attributes(
-    layers: Iterable['Layer'],
+    layers: Iterable[Layer],
     exclude: set[str] = {'thumbnail', 'status', 'name', 'data'},
     with_private=False,
 ) -> set[str]:
@@ -212,7 +212,7 @@ def _get_common_evented_attributes(
     return common
 
 
-def _link_key(lay1: 'Layer', lay2: 'Layer', attr: str) -> LinkKey:
+def _link_key(lay1: Layer, lay2: Layer, attr: str) -> LinkKey:
     """Generate a "link key" for these layers and attribute."""
     return (id(lay1), id(lay2), attr)
 

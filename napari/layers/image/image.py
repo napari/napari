@@ -10,6 +10,7 @@ from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.naming import magic_name
+from ...utils.translations import trans
 from .._data_protocols import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
@@ -37,7 +38,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     Parameters
     ----------
     data : array or list of array
-        Image data. Can be N dimensional. If the last dimension has length
+        Image data. Can be N >= 2 dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
         a multiscale image.
@@ -88,7 +89,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -190,6 +191,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         if isinstance(data, types.GeneratorType):
             data = list(data)
+
+        if getattr(data, 'ndim', 2) < 2:
+            raise ValueError(
+                trans._('Image data must have at least 2 dimensions.')
+            )
 
         # Determine if data is a multiscale
         if multiscale is None:

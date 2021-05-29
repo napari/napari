@@ -36,6 +36,6 @@ COMBINED_FORMATTED = f"[1e+06, {MISSING_FORMATTED}, {STRING_FORMATTED}]"
     ],
 )
 def test_status_format(input, expected):
-    """ test various formatting cases embodied in utils.status_messages.status_format """
+    """test various formatting cases embodied in utils.status_messages.status_format"""
 
     assert status_format(input) == expected
