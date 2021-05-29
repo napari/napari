@@ -245,12 +245,29 @@ class PreferencesDialog(QDialog):
 
         # set state values for widget
         form.widget.state = values
+
+        if section == 'experimental':
+            # need to disable async if octree is enabled.
+            if values['octree'] is True:
+                form = self._disable_async(form, values)
+
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
                 d,
                 self._values_dict[schema["title"].lower()],
             )
         )
+
+        return form
+
+    def _disable_async(self, form, values, disable=True, state=True):
+        """ "Set async checkbox to True if octree is True.  Disable is octree is True."""
+
+        idx = list(values.keys()).index('async_')
+        form_layout = form.widget.layout()
+        widget = form_layout.itemAt(idx, form_layout.FieldRole).widget()
+        widget.setDisabled(disable)
+        widget.state = state
 
         return form
 
@@ -296,6 +313,21 @@ class PreferencesDialog(QDialog):
                 try:
                     setattr(SETTINGS._settings[page], setting_name, value)
                     self._values_dict[page] = new_dict
+
+                    if page == 'experimental' and setting_name == 'octree':
+                        # if octree is changed, need to rebuild this page so that
+                        # async_ is set properly and enable/disabled.  If the value of
+                        # the widget is changed the the changed dictionary grows while
+                        # in this function and you get an error.
+                        setting = SETTINGS.schemas()[page]
+                        schema, new_values, properties = self.get_page_dict(
+                            setting
+                        )
+                        widget = self.build_page_dialog(schema, new_dict)
+                        self._stack.addWidget(widget)
+                        self._stack.removeWidget(self._stack.currentWidget())
+                        self._stack.setCurrentWidget(widget)
+
                 except:  # noqa: E722
                     continue
 
