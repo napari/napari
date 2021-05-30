@@ -527,9 +527,8 @@ def create_worker(
         not provided, progress bar will be indeterminate. Will connect
         progress bar update to yields and display this progress in the viewer.
         Can also take a mapping of 'desc' to the progress bar description.
-        If 'may_exceed_total' is True, will turn progress bar into an
-        indeterminate one when number of yields exceeds 'total'.By default
-        None.
+        Progress bar will become indeterminate when number of yields exceeds 'total'.
+        By default None.
     _worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -625,11 +624,8 @@ def create_worker(
         desc = _progress.get('desc', None)
         total = _progress.get('total', 0)
         pbar = progress(total=total, desc=desc)
-        indeterminate = _progress.get('may_exceed_total', False)
-        if indeterminate:
-            worker.yielded.connect(pbar.increment_with_overflow)
-        else:
-            worker.yielded.connect(pbar.increment)
+
+        worker.yielded.connect(pbar.increment_with_overflow)
         worker.finished.connect(pbar.close)
         worker.pbar = pbar
 
@@ -707,9 +703,8 @@ def thread_worker(
         not provided, progress bar will be indeterminate. Will connect
         progress bar update to yields and display this progress in the viewer.
         Can also take a mapping of 'desc' to the progress bar description.
-        If 'may_exceed_total' is True, will turn progress bar into an
-        indeterminate one when number of `yields` exceeds 'total'. By default
-        None. Must be used in conjunction with a generator function.
+        Progress bar will become indeterminate when number of yields exceeds 'total'.
+        By default None. Must be used in conjunction with a generator function.
     worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,

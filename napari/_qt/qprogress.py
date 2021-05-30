@@ -109,10 +109,6 @@ class progress(tqdm):
             self._pbar._set_value(self.n)
             self._pbar._set_eta(etas)
 
-    def increment(self):
-        """Update current value by 1."""
-        self.update(1)
-
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:

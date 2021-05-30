@@ -27,14 +27,13 @@ def my_long_running_thread(_):
         sleep(0.1)
         yield i
 
-# in the previous example, yielding values beyond the total value passed to
-# the progress dictionary simply leaves the progress bar on 100% with 
-# no further indicator.
+
 @thread_worker(
     # If we are unsure of the number of expected yields,
-    # we can instruct the progress bar to become indeterminate once the 
-    # expected number of yields is exceeded using `may_exceed_total`
-    progress={'total': 5, 'may_exceed_total': True},
+    # we can still pass an estimate to total,
+    # and the progress bar will become indeterminate
+    # once this number is exceeded.
+    progress={'total': 5},
     connect={'yielded': handle_yields}
 )
 def my_indeterminate_thread(_):
