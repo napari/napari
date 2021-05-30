@@ -55,7 +55,7 @@ def test_worker_may_exceed_total(qtbot):
     thread_func = qthreading.thread_worker(
         func,
         connect={'yielded': test_yield},
-        progress={'total': 1, 'may_exceed_total': True},
+        progress={'total': 1},
         start_thread=False,
     )
     worker = thread_func()
