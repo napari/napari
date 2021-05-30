@@ -49,7 +49,8 @@ def erase(layer):
 @Labels.bind_key('M')
 def new_label(layer):
     """Set the currently selected label to the largest used label plus one."""
-    layer.selected_label = layer.data.max() + 1
+    max = layer.data[0].max() if layer.multiscale else layer.data.max()
+    layer.selected_label = max + 1
 
 
 @Labels.bind_key('D')
