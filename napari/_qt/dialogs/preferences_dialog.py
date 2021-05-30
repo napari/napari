@@ -230,9 +230,19 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-
         builder = WidgetBuilder()
         form = builder.create_form(schema, self.ui_schema)
+
+        # Disable widgets that loaded settings from environment variables
+        section = schema["section"]
+        form_layout = form.widget.layout()
+        for row in range(form.widget.layout().rowCount()):
+            widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
+            name = widget._name
+            widget.setDisabled(
+                bool(SETTINGS._env_settings.get(section, {}).get(name, None))
+            )
+
         # set state values for widget
         form.widget.state = values
         form.widget.on_changed.connect(
