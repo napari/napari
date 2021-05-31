@@ -754,21 +754,27 @@ class Labels(_ImageBase):
             Value of selected label to color, by default None
         """
         if selected_label:
-            selected_color = low_discrepancy_image(selected_label, self._seed)
-            if selected_label > len(self._all_vals):
-                self._all_vals = low_discrepancy_image(
-                    np.arange(selected_label + 1), self._seed
+            if selected_label > len(self._all_vals) + 1:
+                self._color_lookup_func = self._get_color_lookup_func(
+                    im, np.max(im)
                 )
-            colors = np.zeros(len(self._all_vals))
-            colors[selected_label] = selected_color
-            image = colors[im]
+            if (
+                self._color_lookup_func
+                == self._lookup_with_low_discrepancy_image
+            ):
+                image = self._color_lookup_func(im, selected_label)
+            else:
+                colors = np.zeros_like(self._all_vals)
+                colors[selected_label] = low_discrepancy_image(
+                    selected_label, self._seed
+                )
+                image = colors[im]
         else:
             try:
                 image = self._all_vals[im]
             except IndexError:
-                max_val = np.max(im)
                 self._color_lookup_func = self._get_color_lookup_func(
-                    im, max_val
+                    im, np.max(im)
                 )
                 if (
                     self._color_lookup_func
@@ -778,10 +784,6 @@ class Labels(_ImageBase):
                     # encountered a large value in the raw labels image
                     image = self._color_lookup_func(im, selected_label)
                 else:
-                    self._all_vals = low_discrepancy_image(
-                        np.arange(max_val + 1), self._seed
-                    )
-                    self._all_vals[0] = 0
                     image = self._all_vals[im]
         return image
 
@@ -815,6 +817,11 @@ class Labels(_ImageBase):
         if max_label_val * nbytes_low_discrepancy > max_nbytes:
             return self._lookup_with_low_discrepancy_image
         else:
+            if self._all_vals.size < max_label_val + 1:
+                self._all_vals = low_discrepancy_image(
+                    np.arange(max_label_val + 1), self._seed
+                )
+                self._all_vals[0] = 0
             return self._lookup_with_index
 
     def _raw_to_displayed(self, raw):
