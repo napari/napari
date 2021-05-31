@@ -615,22 +615,26 @@ def create_worker(
 
     # either True or a non-empty dictionary
     if _progress:
-        if not isinstance(worker, GeneratorWorker):
-            raise TypeError(
-                trans._(
-                    "_progress argument was passed but worker is not GeneratorWorker",
-                    deferred=True,
-                )
-            )
         if isinstance(_progress, bool):
             _progress = {}
 
         desc = _progress.get('desc', None)
         total = _progress.get('total', 0)
-        pbar = progress(total=total, desc=desc)
 
-        worker.yielded.connect(pbar.increment_with_overflow)
+        if isinstance(worker, FunctionWorker):
+            if total != 0:
+                raise TypeError(
+                    trans._(
+                        "_progress total != 0 but worker is FunctionWorker and will not yield.",
+                        deferred=True,
+                    )
+                )
+
+        pbar = progress(total=total, desc=desc)
         worker.finished.connect(pbar.close)
+        if total != 0 and isinstance(worker, GeneratorWorker):
+            worker.yielded.connect(pbar.increment_with_overflow)
+
         worker.pbar = pbar
 
     # if the user has not provided a default connection for the "errored"

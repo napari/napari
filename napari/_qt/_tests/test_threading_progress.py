@@ -29,7 +29,7 @@ def test_worker_with_progress(qtbot):
         assert worker.pbar.n == test_val[0]
 
 
-def test_function_worker_raises_error():
+def test_function_worker_nonzero_total_raises_error():
     def not_a_generator():
         return
 
@@ -67,7 +67,7 @@ def test_worker_may_exceed_total(qtbot):
             assert worker.pbar.total == 0
 
 
-def test_worker_with_description():
+def test_generator_worker_with_description():
     def func():
         yield 1
 
@@ -80,13 +80,55 @@ def test_worker_with_description():
     assert worker.pbar.desc == 'custom'
 
 
-def test_worker_with_no_total():
+def test_function_worker_with_description():
+    def func():
+        for _ in range(10):
+            pass
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress={'total': 0, 'desc': 'custom'},
+        start_thread=False,
+    )
+    worker = thread_func()
+    assert worker.pbar.desc == 'custom'
+
+
+def test_generator_worker_with_no_total():
     def func():
         yield 1
 
     thread_func = qthreading.thread_worker(
         func,
         progress=True,
+        start_thread=False,
+    )
+    worker = thread_func()
+    assert worker.pbar.total == 0
+
+
+def test_function_worker_with_no_total():
+    def func():
+        for _ in range(10):
+            pass
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress=True,
+        start_thread=False,
+    )
+    worker = thread_func()
+    assert worker.pbar.total == 0
+
+
+def test_function_worker_0_total():
+    def func():
+        for _ in range(10):
+            pass
+
+    thread_func = qthreading.thread_worker(
+        func,
+        progress={'total': 0},
         start_thread=False,
     )
     worker = thread_func()
