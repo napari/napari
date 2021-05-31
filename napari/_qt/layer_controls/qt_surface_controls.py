@@ -55,7 +55,7 @@ class QtSurfaceControls(QtBaseImageControls):
         self.grid_layout.addWidget(QLabel(trans._('shading:')), 5, 0)
         self.grid_layout.addWidget(self.shadingComboBox, 5, 1)
 
-        self.grid_layout.setRowStretch(5, 1)
+        self.grid_layout.setRowStretch(6, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
