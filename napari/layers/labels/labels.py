@@ -772,7 +772,7 @@ class Labels(_ImageBase):
                 )
                 if (
                     self._color_lookup_func
-                    is self._lookup_with_low_discrepancy_image
+                    == self._lookup_with_low_discrepancy_image
                 ):
                     # revert to "classic" mode converting all pixels since we
                     # encountered a large value in the raw labels image
