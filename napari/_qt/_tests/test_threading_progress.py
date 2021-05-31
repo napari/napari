@@ -86,7 +86,7 @@ def test_worker_with_no_total():
 
     thread_func = qthreading.thread_worker(
         func,
-        progress={},
+        progress=True,
         start_thread=False,
     )
     worker = thread_func()

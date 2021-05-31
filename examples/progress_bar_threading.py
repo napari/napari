@@ -34,12 +34,15 @@ def my_long_running_thread(_):
     # and the progress bar will become indeterminate
     # once this number is exceeded.
     progress={'total': 5},
+    # we can also get a simple indeterminate progress bar
+    # by passing progress=True
     connect={'yielded': handle_yields}
 )
 def my_indeterminate_thread(_):
     for i in range(10):
         sleep(0.1)
         yield i
+
 
 button_layout = QVBoxLayout()
 start_btn = QPushButton("Start")

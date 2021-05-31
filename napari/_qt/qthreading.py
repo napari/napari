@@ -522,9 +522,10 @@ def create_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
-    _progress : Dict[str, Union[int, bool, str]], optional
-        Requires mapping of 'total' to number of expected yields. If total is
-        not provided, progress bar will be indeterminate. Will connect
+    _progress : Union[bool, Dict[str, Union[int, bool, str]]], optional
+        Can be True, to provide indeterminate progress bar, or dictionary.
+        If dict, requires mapping of 'total' to number of expected yields.
+        If total is not provided, progress bar will be indeterminate. Will connect
         progress bar update to yields and display this progress in the viewer.
         Can also take a mapping of 'desc' to the progress bar description.
         Progress bar will become indeterminate when number of yields exceeds 'total'.
@@ -612,7 +613,8 @@ def create_worker(
                     )
                 getattr(worker, key).connect(v)
 
-    if _progress is not None:
+    # either True or a non-empty dictionary
+    if _progress:
         if not isinstance(worker, GeneratorWorker):
             raise TypeError(
                 trans._(
@@ -620,6 +622,8 @@ def create_worker(
                     deferred=True,
                 )
             )
+        if isinstance(_progress, bool):
+            _progress = {}
 
         desc = _progress.get('desc', None)
         total = _progress.get('total', 0)
@@ -698,9 +702,10 @@ def thread_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
-    progress : Dict[str, Union[int, bool, str]], optional
-        Requires mapping of 'total' to number of expected yields. If total is
-        not provided, progress bar will be indeterminate. Will connect
+    progress : Union[bool, Dict[str, Union[int, bool, str]]], optional
+        Can be True, to provide indeterminate progress bar, or dictionary.
+        If dict, requires mapping of 'total' to number of expected yields.
+        If total is not provided, progress bar will be indeterminate. Will connect
         progress bar update to yields and display this progress in the viewer.
         Can also take a mapping of 'desc' to the progress bar description.
         Progress bar will become indeterminate when number of yields exceeds 'total'.
