@@ -258,12 +258,12 @@ def test_grid_mode(make_napari_viewer):
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
     # sample 6 squares of the grid and check they have right colors
     pos = [
-        (1 / 3, 1 / 3),
+        (1 / 3, 1 / 4),
         (1 / 3, 1 / 2),
-        (1 / 3, 2 / 3),
-        (2 / 3, 1 / 3),
+        (1 / 3, 3 / 4),
+        (2 / 3, 1 / 4),
         (2 / 3, 1 / 2),
-        (2 / 3, 2 / 3),
+        (2 / 3, 3 / 4),
     ]
     # BGRMYC color order
     color = [
