@@ -754,9 +754,9 @@ class Labels(_ImageBase):
             Value of selected label to color, by default None
         """
         if selected_label:
-            if selected_label > len(self._all_vals) + 1:
+            if selected_label > len(self._all_vals):
                 self._color_lookup_func = self._get_color_lookup_func(
-                    im, np.max(im)
+                    im, max(np.max(im), selected_label)
                 )
             if (
                 self._color_lookup_func
