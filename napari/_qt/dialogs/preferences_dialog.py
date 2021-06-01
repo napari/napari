@@ -180,13 +180,12 @@ class PreferencesDialog(QDialog):
 
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
-
-        widget = ConfirmDialog(
+        self._reset_dialog = ConfirmDialog(
             parent=self,
             text=trans._("Are you sure you want to restore default settings?"),
         )
-        widget.valueChanged.connect(self._reset_widgets)
-        widget.exec_()
+        self._reset_dialog.valueChanged.connect(self._reset_widgets)
+        self._reset_dialog.exec_()
 
     def _reset_widgets(self):
         """Deletes the widgets and rebuilds with defaults."""
@@ -322,6 +321,17 @@ class PreferencesDialog(QDialog):
                 and setting_name in self._setting_changed_dict[page]
             ):
                 self._setting_changed_dict[page].pop(setting_name)
+
+    def set_current_index(self, index: int):
+        """
+        Set the current page on the preferences by index.
+
+        Parameters
+        ----------
+        index : int
+            Index of page to set as current one.
+        """
+        self._list.setCurrentRow(index)
 
     def check_differences(self, new_dict, old_dict):
         """Changes settings in settings manager with changes from dialog.
