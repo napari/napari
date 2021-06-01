@@ -34,7 +34,7 @@ class PreferencesDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        SETTINGS.experimental.events.octree.connect(self._octree_restart_info)
+        SETTINGS.experimental.events.octree.connect(self._restart_dialog)
         SETTINGS.experimental.events.async_.connect(self._restart_dialog)
 
         self._list = QListWidget(self)
@@ -78,18 +78,6 @@ class PreferencesDialog(QDialog):
         self.make_dialog()
         self._list.setCurrentRow(0)
 
-    def _octree_restart_info(self, event):
-        """Sets extra string to display if octree enabled."""
-
-        if SETTINGS.experimental.octree is True:
-            extra_str = (
-                "Asynchronous rendering cannot be changed with this setting."
-            )
-        else:
-            extra_str = ""
-
-        self._restart_dialog(extra_str=extra_str)
-
     def _restart_dialog(self, event=None, extra_str=""):
         """Displays the dialog informing user a restart is required.
 
@@ -101,8 +89,7 @@ class PreferencesDialog(QDialog):
         """
 
         text_str = trans._(
-            "Napari requires a restart for this setting to apply.\n"
-            + extra_str
+            "Napari requires a restart for image rendering changes to apply."
         )
 
         widget = ResetNapariInfoDialog(
