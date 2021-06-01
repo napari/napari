@@ -34,9 +34,6 @@ class PreferencesDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        SETTINGS.experimental.events.octree.connect(self._restart_dialog)
-        SETTINGS.experimental.events.async_.connect(self._restart_dialog)
-
         self._list = QListWidget(self)
         self._stack = QStackedWidget(self)
 
@@ -337,12 +334,23 @@ class PreferencesDialog(QDialog):
                     setattr(SETTINGS._settings[page], setting_name, value)
                     self._values_dict[page] = new_dict
 
-                    if page == 'experimental' and setting_name == 'octree':
+                    if page == 'experimental':
 
-                        # disable/enable async checkbox
-                        widget = self._stack.currentWidget()
-                        cstate = True if value is True else False
-                        self._disable_async(widget, new_dict, disable=cstate)
+                        if setting_name == 'octree':
+
+                            # disable/enable async checkbox
+                            widget = self._stack.currentWidget()
+                            cstate = True if value is True else False
+                            self._disable_async(
+                                widget, new_dict, disable=cstate
+                            )
+
+                            # need to inform user that napari restart needed.
+                            self._restart_dialog()
+
+                        elif setting_name == 'async_':
+                            # need to inform user that napari restart needed.
+                            self._restart_dialog()
 
                 except:  # noqa: E722
                     continue
