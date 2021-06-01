@@ -1,13 +1,9 @@
 import inspect
-from contextvars import ContextVar
 from typing import Iterable, Optional
-from weakref import ref
 
 from tqdm import tqdm
 
 from ..utils.translations import trans
-
-CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
 
 _tqdm_kwargs = {
     p.name
@@ -78,7 +74,7 @@ class progress(tqdm):
         try:
             from .widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(CURRENT_GROUP.get(), **pbar_kwargs)
+            pbar = get_pbar(**pbar_kwargs)
         except ImportError:
             pbar = None
 
@@ -103,18 +99,6 @@ class progress(tqdm):
         else:
             self.set_description(trans._("progress"))
 
-    def __enter__(self):
-        if self.has_viewer:
-            group_ref = ref(self._pbar)
-            self._group_token = CURRENT_GROUP.set(group_ref)
-        return super().__enter__()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.has_viewer:
-            CURRENT_GROUP.reset(self._group_token)
-            self.close()
-        return super().__exit__(exc_type, exc_value, traceback)
-
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
         if not self.has_viewer:
@@ -136,15 +120,8 @@ class progress(tqdm):
         if self.disable:
             return
         if self.has_viewer:
-            # closing groups of pbars
-            if CURRENT_GROUP.get():
-                pbr_group = self._pbar.parentWidget()
-                pbr_group.close()
-                pbr_group.deleteLater()
-            else:
-                # otherwise we just close the current progress bar
-                self._pbar.close()
-                self._pbar.deleteLater()
+            self._pbar.close()
+            self._pbar.deleteLater()
         super().close()
 
 

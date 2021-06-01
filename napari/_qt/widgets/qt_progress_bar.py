@@ -9,13 +9,8 @@ from qtpy.QtWidgets import (
 )
 
 
-def get_pbar(current_group_ref=None, **kwargs):
+def get_pbar(**kwargs):
     """Adds ProgressBar to viewer Activity Dock and returns it.
-
-    Parameters
-    ----------
-    current_group_ref : weakref or None
-        reference to existing progress bar to nest with
 
     Returns
     -------
@@ -31,13 +26,7 @@ def get_pbar(current_group_ref=None, **kwargs):
     pbar = ProgressBar(**kwargs)
     pbr_layout = viewer_instance.activityDock.widget().layout()
 
-    if current_group_ref:
-        current_pbar = current_group_ref()
-        new_group = ProgressBarGroup(pbar=current_pbar)
-        new_group.layout().addWidget(pbar)
-        pbr_layout.addWidget(new_group)
-    else:
-        pbr_layout.addWidget(pbar)
+    pbr_layout.addWidget(pbar)
 
     return pbar
 
