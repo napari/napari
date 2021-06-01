@@ -1,6 +1,12 @@
+from ...utils.action_manager import action_manager
+from ...utils.translations import trans
+from ...layers.utils.layer_utils import register_layer_action
+
 from ._points_constants import Mode
 from .points import Points
 
+def register_points_action(description, shortcuts):
+    return register_layer_action(Points, description, shortcuts)
 
 @Points.bind_key('Space')
 def hold_to_pan_zoom(layer):
@@ -19,15 +25,13 @@ def hold_to_pan_zoom(layer):
         layer._set_highlight()
 
 
-@Points.bind_key('P')
-def activate_add_mode(layer):
-    """Activate add points tool."""
+@register_points_action(trans._('Add points'), 'P')
+def activate_points_add_mode(layer):
     layer.mode = Mode.ADD
 
 
-@Points.bind_key('S')
-def activate_select_mode(layer):
-    """Activate select points tool."""
+@register_points_action(trans._('Select points'), 'S')
+def activate_points_select_mode(layer):
     layer.mode = Mode.SELECT
 
 
