@@ -3,6 +3,7 @@ import json
 from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -32,6 +33,9 @@ class PreferencesDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        SETTINGS.experimental.events.octree.connect(self._octree_restart_info)
+        SETTINGS.experimental.events.async_.connect(self._restart_dialog)
 
         self._list = QListWidget(self)
         self._stack = QStackedWidget(self)
@@ -73,6 +77,39 @@ class PreferencesDialog(QDialog):
 
         self.make_dialog()
         self._list.setCurrentRow(0)
+
+    def _octree_restart_info(self, event):
+        """Sets extra string to display if octree enabled."""
+
+        if SETTINGS.experimental.octree is True:
+            extra_str = (
+                "Asynchronous rendering cannot be changed with this setting."
+            )
+        else:
+            extra_str = ""
+
+        self._restart_dialog(extra_str=extra_str)
+
+    def _restart_dialog(self, event=None, extra_str=""):
+        """Displays the dialog informing user a restart is required.
+
+        Paramters
+        ---------
+        event : Event
+        extra_str : str
+            Extra information to add to the message about needing a restart.
+        """
+
+        text_str = trans._(
+            "Napari requires a restart for this setting to apply.\n"
+            + extra_str
+        )
+
+        widget = ResetNapariInfoDialog(
+            parent=self,
+            text=text_str,
+        )
+        widget.exec_()
 
     def closeEvent(self, event):
         """Override to emit signal."""
@@ -367,4 +404,41 @@ class ConfirmDialog(QDialog):
         """Restore defaults and close window."""
         SETTINGS.reset()
         self.valueChanged.emit()
+        self.close()
+
+
+class ResetNapariInfoDialog(QDialog):
+    """Dialog to inform the user that restart of Napari is necessary to enable setting."""
+
+    valueChanged = Signal()
+
+    def __init__(
+        self,
+        parent: QWidget = None,
+        text: str = "",
+    ):
+        super().__init__(parent)
+        # Set up components
+        self._info_str = QLabel(self)
+        self._button_ok = QPushButton(trans._("OK"))
+        # Widget set up
+        self._info_str.setText(text)
+
+        # Layout
+        button_layout = QGridLayout()
+        button_layout.addWidget(self._button_ok, 0, 1)
+        button_layout.setColumnStretch(0, 1)
+        button_layout.setColumnStretch(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self._info_str)
+        main_layout.addLayout(button_layout)
+
+        self.setLayout(main_layout)
+
+        # Signals
+        self._button_ok.clicked.connect(self._close_dialog)
+
+    def _close_dialog(self):
+        """Close window."""
         self.close()
