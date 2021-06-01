@@ -86,7 +86,7 @@ class PreferencesDialog(QDialog):
         """
 
         text_str = trans._(
-            "Napari requires a restart for image rendering changes to apply."
+            "napari requires a restart for image rendering changes to apply."
         )
 
         widget = ResetNapariInfoDialog(
@@ -287,6 +287,7 @@ class PreferencesDialog(QDialog):
         idx = list(values.keys()).index('async_')
         form_layout = form.widget.layout()
         widget = form_layout.itemAt(idx, form_layout.FieldRole).widget()
+        widget.opacity.setOpacity(0.3 if disable else 1)
         widget.setDisabled(disable)
 
         return form

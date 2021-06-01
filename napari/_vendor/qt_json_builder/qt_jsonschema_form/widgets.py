@@ -117,6 +117,9 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
 
     def configure(self):
         self.stateChanged.connect(lambda _: self.on_changed.emit(self.state))
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
     def setDescription(self, description: str):
         self.description = description
