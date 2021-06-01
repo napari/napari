@@ -1,4 +1,3 @@
-from ...utils.action_manager import action_manager
 from ...utils.translations import trans
 from ...layers.utils.layer_utils import register_layer_action
 
