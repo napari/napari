@@ -4,8 +4,10 @@ from ...layers.utils.layer_utils import register_layer_action
 from ._points_constants import Mode
 from .points import Points
 
+
 def register_points_action(description, shortcuts):
     return register_layer_action(Points, description, shortcuts)
+
 
 @Points.bind_key('Space')
 def hold_to_pan_zoom(layer):
