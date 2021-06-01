@@ -4,7 +4,7 @@ import inspect
 import re
 from collections import ChainMap
 
-from .misc import ROOT_DIR, formatdoc
+from .misc import formatdoc
 
 sep = ' '
 start = 1
@@ -46,7 +46,7 @@ def inc_name_count(name):
     return numbered_patt.sub(_inc_name_count_sub, name, count=1)
 
 
-def magic_name(value, *, path_prefix=ROOT_DIR):
+def magic_name(value, *, path_prefix):
     """Fetch the name of the variable with the given value passed to the calling function.
 
     Parameters

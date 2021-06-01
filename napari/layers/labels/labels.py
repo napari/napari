@@ -14,7 +14,6 @@ from ...utils.colormaps import (
 )
 from ...utils.events import Event
 from ...utils.events.event import WarningEmitter
-from ...utils.naming import magic_name
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
@@ -175,8 +174,6 @@ class Labels(_ImageBase):
         visible=True,
         multiscale=None,
     ):
-        if name is None and data is not None:
-            name = magic_name(data)
 
         self._seed = seed
         self._background_label = 0

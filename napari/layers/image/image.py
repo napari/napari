@@ -9,9 +9,7 @@ from scipy import ndimage as ndi
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
-from ...utils.naming import magic_name
 from ...utils.translations import trans
-from .._data_protocols import MultiScaleData
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -186,9 +184,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         visible=True,
         multiscale=None,
     ):
-        if name is None and data is not None:
-            name = magic_name(data)
-
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
@@ -200,17 +195,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         # Determine if data is a multiscale
         if multiscale is None:
             multiscale, data = guess_multiscale(data)
-        elif multiscale and not isinstance(data, MultiScaleData):
-            data = MultiScaleData(data)
+
+        # Determine initial shape
+        if multiscale:
+            init_shape = data[0].shape
+        else:
+            init_shape = data.shape
 
         # Determine if rgb
         if rgb is None:
-            rgb = guess_rgb(data.shape)
+            rgb = guess_rgb(init_shape)
 
         # Determine dimensionality of the data
-        ndim = len(data.shape)
         if rgb:
-            ndim -= 1
+            ndim = len(init_shape) - 1
+        else:
+            ndim = len(init_shape)
 
         super().__init__(
             data,
@@ -320,12 +320,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         return self._slice.image.raw
 
     def _calc_data_range(self):
-        input_data = self._data[-1] if self.multiscale else self._data
+        if self.multiscale:
+            input_data = self.data[-1]
+        else:
+            input_data = self.data
         return calc_data_range(input_data, rgb=self.rgb)
 
     @property
     def dtype(self):
-        return self._data.dtype
+        return self.data[0].dtype if self.multiscale else self.data.dtype
 
     @property
     def data(self):
@@ -369,9 +372,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self):
         """array: Shapes of each level of the multiscale or just of image."""
-        shapes = self.data.shapes if self.multiscale else [self.data.shape]
-        if self.rgb:
-            shapes = [s[:-1] for s in shapes]
+        if self.multiscale:
+            if self.rgb:
+                shapes = [im.shape[:-1] for im in self.data]
+            else:
+                shapes = [im.shape for im in self.data]
+        else:
+            if self.rgb:
+                shapes = [self.data.shape[:-1]]
+            else:
+                shapes = [self.data.shape]
         return np.array(shapes)
 
     @property
