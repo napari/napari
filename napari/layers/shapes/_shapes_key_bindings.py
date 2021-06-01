@@ -1,8 +1,7 @@
 import numpy as np
 
-from ...utils.translations import trans
 from ...layers.utils.layer_utils import register_layer_action
-
+from ...utils.translations import trans
 from ._shapes_constants import Box, Mode
 from ._shapes_mouse_bindings import _move
 from .shapes import Shapes

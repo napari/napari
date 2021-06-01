@@ -1,6 +1,5 @@
-from ...utils.translations import trans
 from ...layers.utils.layer_utils import register_layer_action
-
+from ...utils.translations import trans
 from ._labels_constants import Mode
 from .labels import Labels
 

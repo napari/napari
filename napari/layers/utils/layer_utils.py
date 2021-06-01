@@ -1,8 +1,9 @@
 from typing import Dict
-from ...utils.action_manager import action_manager
 
 import dask
 import numpy as np
+
+from ...utils.action_manager import action_manager
 
 
 def register_layer_action(keymapprovider, description, shortcuts):
