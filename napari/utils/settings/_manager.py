@@ -5,7 +5,7 @@ import json
 import os
 import warnings
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from appdirs import user_config_dir
 from yaml import safe_dump, safe_load
@@ -235,7 +235,7 @@ class SettingsManager:
         self._plugins.append(plugin)
 
 
-_SETTINGS: Optional[SettingsManager] = None
+SETTINGS: Optional[SettingsManager] = None
 
 
 def get_settings(path: Optional[Path] = None) -> SettingsManager:
@@ -256,11 +256,11 @@ def get_settings(path: Optional[Path] = None) -> SettingsManager:
     -----
     The path can only be set once per session.
     """
-    global _SETTINGS
+    global SETTINGS
 
-    if _SETTINGS is None:
+    if SETTINGS is None:
         config_path = path.resolve() if path else None
-        _SETTINGS = SettingsManager(config_path=config_path)
+        SETTINGS = SettingsManager(config_path=config_path)
     elif path is not None:
         import inspect
 
@@ -274,4 +274,4 @@ def get_settings(path: Optional[Path] = None) -> SettingsManager:
             )
         )
 
-    return _SETTINGS
+    return SETTINGS

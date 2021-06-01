@@ -211,13 +211,13 @@ def test_core_settings_are_class_variables_in_settings_manager():
 
 
 def test_get_settings(monkeypatch, tmp_path):
-    monkeypatch.setattr(_manager, "_SETTINGS", None)
+    monkeypatch.setattr(_manager, "SETTINGS", None)
     settings = _manager.get_settings(tmp_path)
     assert settings._config_path == tmp_path
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
-    monkeypatch.setattr(_manager, "_SETTINGS", None)
+    monkeypatch.setattr(_manager, "SETTINGS", None)
     _manager.get_settings(tmp_path)
     with pytest.raises(Exception):
         _manager.get_settings(tmp_path)

@@ -251,6 +251,7 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
+        settings = get_settings()
         builder = WidgetBuilder()
         form = builder.create_form(schema, self.ui_schema)
 
@@ -261,7 +262,7 @@ class PreferencesDialog(QDialog):
             widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
             name = widget._name
             disable = bool(
-                SETTINGS._env_settings.get(section, {}).get(name, None)
+                get_settings()._env_settings.get(section, {}).get(name, None)
             )
             widget.setDisabled(disable)
             try:
