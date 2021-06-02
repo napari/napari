@@ -49,6 +49,7 @@ from ._shapes_mouse_bindings import (
 from ._shapes_utils import (
     create_box,
     extract_shape_type,
+    get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
 )
@@ -573,7 +574,10 @@ class Shapes(Layer):
         # more shapes, add attributes
         elif self.nshapes < n_new_shapes:
             n_shapes_difference = n_new_shapes - self.nshapes
-            shape_type = shape_type + ["rectangle"] * n_shapes_difference
+            shape_type = (
+                shape_type
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
+            )
             edge_widths = edge_widths + [1] * n_shapes_difference
             z_indices = z_indices + [0] * n_shapes_difference
             edge_color = np.concatenate(
@@ -1360,7 +1364,7 @@ class Shapes(Layer):
         return new_colors
 
     def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
+        """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
                 return True
@@ -2325,7 +2329,7 @@ class Shapes(Layer):
                 "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
 

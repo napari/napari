@@ -371,7 +371,7 @@ def test_custom_color_dict():
 
 def test_add_colors():
     """Test adding new colors"""
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
     assert len(layer._all_vals) == layer.num_colors
 
@@ -379,8 +379,8 @@ def test_add_colors():
     assert len(layer._all_vals) == 52
 
     layer.show_selected_label = True
-    layer.selected_label = 60
-    assert len(layer._all_vals) == 61
+    layer.selected_label = 53
+    assert len(layer._all_vals) == 54
 
 
 def test_metadata():
@@ -868,3 +868,40 @@ def test_ndim_paint():
             ]
         ),
     )
+
+
+def test_switching_display_func():
+    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+
+    label_data = np.random.randint(0, 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_index
+
+
+def test_cursor_size_with_negative_scale():
+    layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
+    layer.mode = 'paint'
+    assert layer.cursor_size > 0
+
+
+def test_switching_display_func_during_slicing():
+    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
+    label_array[0, :, :] = [[0, 1], [2, 3]]
+    layer = Labels(label_array)
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+    assert layer._all_vals.size < 1026
+
+
+def test_add_large_colors():
+    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
+    label_array[0, :, :] = [[0, 1], [2, 3]]
+    layer = Labels(label_array)
+    assert len(layer._all_vals) == layer.num_colors
+
+    layer.show_selected_label = True
+    layer.selected_label = int(5e6)
+    assert layer._all_vals.size < 1026

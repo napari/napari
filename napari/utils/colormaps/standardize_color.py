@@ -131,7 +131,7 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
     except ValueError:
         warnings.warn(
             trans._(
-                "Coudln't convert input color array to a proper numpy array. Please make sure that your input data is in a parsable format. Converting input to a white color array.",
+                "Couldn't convert input color array to a proper numpy array. Please make sure that your input data is in a parsable format. Converting input to a white color array.",
                 deferred=True,
             )
         )

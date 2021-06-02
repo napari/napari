@@ -95,7 +95,7 @@ class VispyCamera:
     @property
     def zoom(self):
         """float: Scale from canvas pixels to world pixels."""
-        canvas_size = np.min(self._view.canvas.size)
+        canvas_size = np.array(self._view.canvas.size)
         if self._view.camera == self._3D_camera:
             # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
             # Note that the scaling is stored in the `_projection` property of the
@@ -103,23 +103,23 @@ class VispyCamera:
             # https://github.com/vispy/vispy/blob/v0.6.5/vispy/scene/cameras/perspective.py#L301-L313
             scale = self._view.camera.scale_factor
         else:
-            scale = np.min(
+            scale = np.array(
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
-        zoom = canvas_size / scale
+        zoom = np.min(canvas_size / scale)
         return zoom
 
     @zoom.setter
     def zoom(self, zoom):
         if self.zoom == zoom:
             return
-        scale = np.min(self._view.canvas.size) / zoom
+        scale = np.array(self._view.canvas.size) / zoom
         if self._view.camera == self._3D_camera:
-            self._view.camera.scale_factor = scale
+            self._view.camera.scale_factor = np.min(scale)
         else:
             # Set view rectangle, as left, right, width, height
             corner = np.subtract(self._view.camera.center[:2], scale / 2)
-            self._view.camera.rect = tuple(corner) + (scale, scale)
+            self._view.camera.rect = tuple(corner) + tuple(scale)
 
     @property
     def perspective(self):
