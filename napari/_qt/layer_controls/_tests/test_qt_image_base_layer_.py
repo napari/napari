@@ -91,7 +91,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
         assert rangebtn is None
 
 
-@pytest.mark.parametrize('mag', list(range(-32, 32, 4)))
+@pytest.mark.parametrize('mag', list(range(-16, 16, 4)))
 def test_clim_slider_step_size_and_precision(qtbot, mag):
     """Make sure the slider has a reasonable step size and precision.
 
@@ -104,9 +104,9 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
     # the range slider popup labels should have a number of decimal points that
     # is inversely proportional to the order of magnitude of the range of data,
     # but should never be greater than 5 or less than 0
-    assert popup.slider.decimals() == (4 if mag > 3 else 3) - mag
+    decimals = min(6, max(int(3 - mag), 0))
+    assert popup.slider.decimals() == decimals
 
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
-    rounded_step = np.ceil(popup.slider.singleStep() * 10 ** (4 - mag))
-    assert rounded_step == 1 if mag > 3 else 10
+    assert popup.slider.singleStep() == 10 ** -decimals

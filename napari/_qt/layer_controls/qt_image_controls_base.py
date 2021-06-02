@@ -221,15 +221,12 @@ class QContrastLimitsPopup(QRangeSliderPopup):
             #       0 - 10  (1 order of mag)  -> 2 decimals
             #       0 - 100 (2 orders of mag) -> 1 decimal
             #       ≥ 3 orders of mag -> no decimals
+            # no more than 6 decimals
             d_range = np.subtract(*layer.contrast_limits_range[::-1])
-            decimals = int(3 - np.log10(d_range))
+            decimals = min(6, max(int(3 - np.log10(d_range)), 0))
 
-        if decimals < 6:
-            self.slider.setDecimals(decimals)
-            self.slider.setRange(*layer.contrast_limits_range)
-        else:
-            self.slider.setRange(*layer.contrast_limits_range)
-            self.slider.setDecimals(decimals)
+        self.slider.setRange(*layer.contrast_limits_range)
+        self.slider.setDecimals(decimals)
         self.slider.setSingleStep(10 ** -decimals)
         self.slider.setValue(layer.contrast_limits)
 
