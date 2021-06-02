@@ -91,7 +91,7 @@ def test_range_popup_clim_buttons(mock_show, qtbot, layer):
         assert rangebtn is None
 
 
-@pytest.mark.parametrize('mag', [-5, -3, 0, 3, 9, 12, 18])
+@pytest.mark.parametrize('mag', list(range(-32, 32, 4)))
 def test_clim_slider_step_size_and_precision(qtbot, mag):
     """Make sure the slider has a reasonable step size and precision.
 
