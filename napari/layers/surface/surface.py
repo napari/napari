@@ -174,8 +174,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                     length=len(data),
                 )
             )
-        # fix for vispy/vispy#2007
-        self._vertices = np.asarray(data[0], dtype=np.float32)
+        self._vertices = data[0]
         self._faces = data[1]
         if len(data) == 3:
             self._vertex_values = data[2]
@@ -224,8 +223,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                     data_length=len(data),
                 )
             )
-        # fix for vispy/vispy#2007
-        self._vertices = np.asarray(data[0], dtype=np.float32)
+        self._vertices = data[0]
         self._faces = data[1]
         if len(data) == 3:
             self._vertex_values = data[2]
