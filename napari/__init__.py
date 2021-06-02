@@ -6,11 +6,16 @@ except ImportError:
 # Add everything that needs to be accessible from the napari namespace here.
 __all__ = [
     '__version__',
+    'components',
+    'experimental',
     'gui_qt',
+    'layers',
     'notification_manager',
+    'qt',
     'run',
     'save_layers',
     'sys_info',
+    'utils',
     'view_image',
     'view_labels',
     'view_path',
