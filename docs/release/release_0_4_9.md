@@ -57,12 +57,7 @@ It also contains a variety of bug fixes and improvements.
 - Connect axes visual to dims range change (#2802)
 - Add fix for large labels in new slices (#2804)
 - Fix zoom for non square image (#2805)
-
-
-## API Changes
-
-
-## Deprecations
+- Implement lazy module importing for all public submodules (#2816)
 
 
 ## Tasks
@@ -73,6 +68,7 @@ It also contains a variety of bug fixes and improvements.
 - Add PR labeler and update templates (#2775)
 - Add pytest-order and move threading tests to the top of the suite (#2779)
 - Auto assign PR to author (#2794)
+
 
 ## 12 authors added to this release (alphabetical)
 
