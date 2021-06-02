@@ -209,6 +209,11 @@ class AppearanceSettings(BaseNapariSettings):
         ),
     )
 
+    layer_tooltip_appearance: bool = Field(
+        True,
+        description=trans._("If layer tooltip will be shown when hower mouse"),
+    )
+
     class Config:
         # Pydantic specific configuration
         title = trans._("Appearance")

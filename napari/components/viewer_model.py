@@ -34,6 +34,7 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
+from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -127,6 +128,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_appearance
+        SETTINGS.appearance.events.layer_tooltip_appearance.connect(
+            self._tooltip_visible_update
+        )
 
         # Add extra events - ideally these will be removed too!
         self.events.add(layers_change=Event, reset_view=Event)
@@ -159,6 +164,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 type='active_layer',
             )
         )
+
+    def _tooltip_visible_update(self, event):
+        self.tooltip.visible = event.value
 
     @validator('theme')
     def _valid_theme(cls, v):
