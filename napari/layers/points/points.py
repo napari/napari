@@ -1074,7 +1074,7 @@ class Points(Layer):
         )
 
         # Update properties based on selected points
-        if not self._selected_data:
+        if not len(self._selected_data):
             self._set_highlight()
             return
         index = list(self._selected_data)
@@ -1484,7 +1484,7 @@ class Points(Layer):
         """Removes selected points if any."""
         index = list(self.selected_data)
         index.sort()
-        if index:
+        if len(index):
             self._size = np.delete(self._size, index, axis=0)
             with self._edge.events.blocker_all():
                 self._edge._remove(indices_to_remove=index)
