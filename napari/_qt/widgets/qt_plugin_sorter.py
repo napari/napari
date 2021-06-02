@@ -21,7 +21,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ... import plugins
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
@@ -412,4 +411,4 @@ class QtPluginSorter(QWidget):
 
         """
 
-        return plugins.plugin_manager.call_order()
+        return napari_plugin_manager.call_order()

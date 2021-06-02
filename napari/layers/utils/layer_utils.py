@@ -3,6 +3,34 @@ from typing import Dict
 import dask
 import numpy as np
 
+from ...utils.action_manager import action_manager
+
+
+def register_layer_action(keymapprovider, description, shortcuts):
+    """
+    Convenient decorator to register an action with the current Layers
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+    """
+
+    def _inner(func):
+        nonlocal shortcuts
+        name = 'napari:' + func.__name__
+        action_manager.register_action(
+            name=name,
+            command=func,
+            description=description,
+            keymapprovider=keymapprovider,
+        )
+        if isinstance(shortcuts, str):
+            shortcuts = [shortcuts]
+        for shortcut in shortcuts:
+            action_manager.bind_shortcut(name, shortcut)
+        return func
+
+    return _inner
+
 
 def calc_data_range(data, rgb=False):
     """Calculate range of data values. If all values are equal return [0, 1].

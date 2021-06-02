@@ -8,7 +8,7 @@ import time
 import warnings
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
-from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -65,6 +65,7 @@ class _QtMainWindow(QMainWindow):
 
     def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
+        self._ev = None
         self.qt_viewer = qt_viewer
 
         self._quit_app = False
@@ -262,13 +263,24 @@ class _QtMainWindow(QMainWindow):
                 parent.close()
                 break
 
-            parent = parent.parent()
+            try:
+                parent = parent.parent()
+            except Exception:
+                parent = getattr(parent, "_parent", None)
+
+    def show(self, block=False):
+        super().show()
+        if block:
+            self._ev = QEventLoop()
+            self._ev.exec()
 
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if self._ev and self._ev.isRunning():
+            self._ev.quit()
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
             if dock.isFloating():
@@ -495,6 +507,25 @@ class Window:
         )
         screenshot_wv.triggered.connect(self._screenshot_dialog)
 
+        clipboard = QAction(
+            trans._('Copy Screenshot to Clipboard'), self._qt_window
+        )
+        clipboard.setStatusTip(
+            trans._('Copy screenshot of current display to the clipboard')
+        )
+        clipboard.triggered.connect(lambda: self.qt_viewer.clipboard())
+
+        clipboard_wv = QAction(
+            trans._('Copy Screenshot with Viewer to Clipboard'),
+            self._qt_window,
+        )
+        clipboard_wv.setStatusTip(
+            trans._(
+                'Copy screenshot of current display with the viewer to the clipboard'
+            )
+        )
+        clipboard_wv.triggered.connect(lambda: self.clipboard())
+
         # OS X will rename this to Quit and put it in the app menu.
         # This quits the entire QApplication and all windows that may be open.
         quitAction = QAction(trans._('Exit'), self._qt_window)
@@ -529,6 +560,8 @@ class Window:
         self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
         self.file_menu.addAction(screenshot_wv)
+        self.file_menu.addAction(clipboard)
+        self.file_menu.addAction(clipboard_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(closeAction)
 
@@ -1237,7 +1270,7 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
-    def show(self):
+    def show(self, *, block=False):
         """Resize, show, and bring forward the window.
 
         Raises
@@ -1246,7 +1279,7 @@ class Window:
             If the viewer.window has already been closed and deleted.
         """
         try:
-            self._qt_window.show()
+            self._qt_window.show(block=block)
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
@@ -1366,13 +1399,32 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
-    def screenshot(self, path=None):
+    def _screenshot(self, flash=True):
+        """Capture screenshot of the currently displayed viewer.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        img = self._qt_window.grab().toImage()
+        if flash:
+            from .utils import add_flash_animation
+
+            add_flash_animation(self._qt_window)
+        return img
+
+    def screenshot(self, path=None, flash=True):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
 
         Returns
         -------
@@ -1380,10 +1432,25 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self._qt_window.grab().toImage()
+        img = self._screenshot(flash)
         if path is not None:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
+
+    def clipboard(self, flash=True):
+        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        from qtpy.QtGui import QGuiApplication
+
+        img = self._screenshot(flash)
+        cb = QGuiApplication.clipboard()
+        cb.setImage(img)
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

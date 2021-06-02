@@ -16,7 +16,9 @@ from ._defaults import (
     AppearanceSettings,
     ApplicationSettings,
     BaseNapariSettings,
+    ExperimentalSettings,
     PluginsSettings,
+    ShortcutsSettings,
 )
 
 
@@ -59,6 +61,8 @@ class SettingsManager:
     appearance: AppearanceSettings
     application: ApplicationSettings
     plugins: PluginsSettings
+    shortcuts: ShortcutsSettings
+    experimental: ExperimentalSettings
 
     def __init__(self, config_path: str = None, save_to_disk: bool = True):
         self._config_path = (
@@ -69,6 +73,7 @@ class SettingsManager:
         self._save_to_disk = save_to_disk
         self._settings = {}
         self._defaults = {}
+        self._env_settings = {}
         self._plugins = []
 
         if not self._config_path.is_dir():
@@ -104,8 +109,28 @@ class SettingsManager:
         """Save configuration to disk."""
         if self._save_to_disk:
             path = self.path / self._FILENAME
+
+            if self._env_settings:
+                # If using environment variables do not save them in the
+                # `settings.yaml` file. We will use the original values found
+                # in the file.
+                loaded_data = BaseNapariSettings._LOADED_DATA
+                data = self._to_dict(safe=True)
+                for section, env_data in self._env_settings.items():
+                    for env_key, _ in env_data.items():
+                        try:
+                            data[section][env_key] = loaded_data[section][
+                                env_key
+                            ]
+                        except KeyError:
+                            pass
+
+                data_str = safe_dump(data)
+            else:
+                data_str = str(self)
+
             with open(path, "w") as fh:
-                fh.write(str(self))
+                fh.write(data_str)
 
     def _load(self):
         """Read configuration from disk."""
@@ -147,6 +172,7 @@ class SettingsManager:
             model = setting()
             model.events.connect(lambda x: self._save())
             self._settings[section] = model
+            self._env_settings[section] = model.__config__._env_settings(model)
 
         self._save()
 

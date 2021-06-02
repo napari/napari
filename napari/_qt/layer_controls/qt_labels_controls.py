@@ -17,6 +17,7 @@ from ...layers.labels._labels_constants import (
     Mode,
 )
 from ...layers.labels._labels_utils import get_dtype
+from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
@@ -160,33 +161,51 @@ class QtLabelsControls(QtLayerControls):
             layer,
             'zoom',
             Mode.PAN_ZOOM,
-            tooltip=trans._('Pan/zoom mode (Space)'),
             checked=True,
         )
-        self.pick_button = QtModeRadioButton(
-            layer, 'picker', Mode.PICK, tooltip=trans._('Pick mode (L)')
+        action_manager.bind_button(
+            'napari:activate_label_pan_zoom_mode', self.panzoom_button
         )
-        self.paint_button = QtModeRadioButton(
-            layer, 'paint', Mode.PAINT, tooltip=trans._('Paint mode (P)')
+
+        self.pick_button = QtModeRadioButton(layer, 'picker', Mode.PICK)
+        action_manager.bind_button(
+            'napari:activate_label_picker_mode', self.pick_button
         )
+
+        self.paint_button = QtModeRadioButton(layer, 'paint', Mode.PAINT)
+        action_manager.bind_button(
+            'napari:activate_paint_mode', self.paint_button
+        )
+
         self.fill_button = QtModeRadioButton(
             layer,
             'fill',
             Mode.FILL,
-            tooltip=trans._(
-                "Fill mode (F) \nToggle with {shortcut}",
+        )
+        action_manager.bind_button(
+            'napari:activate_fill_mode',
+            self.fill_button,
+            extra_tooltip_text=trans._(
+                "Toggle with {shortcut}",
                 shortcut=Shortcut("Control"),
             ),
         )
+
         self.erase_button = QtModeRadioButton(
             layer,
             'erase',
             Mode.ERASE,
-            tooltip=trans._(
-                "Erase mode (E) \nToggle with {shortcut}",
+        )
+        action_manager.bind_button(
+            'napari:activate_label_erase_mode',
+            self.erase_button,
+            extra_tooltip_text=trans._(
+                "Toggle with {shortcut}",
                 shortcut=Shortcut("Alt"),
             ),
         )
+
+        # don't bind with action manager as this would remove "Toggle with {shortcut}"
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)

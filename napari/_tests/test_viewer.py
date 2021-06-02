@@ -24,10 +24,13 @@ viewer_methods = _get_all_keybinding_methods(Viewer)
 EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
 
 
-def test_len_methods_viewer():
+def test_len_methods_viewer(make_napari_viewer):
     """
     Make sure we do find all the methods attached to a viewer via keybindings
     """
+
+    viewer = make_napari_viewer()  # noqa: F841
+    viewer_methods = _get_all_keybinding_methods(Viewer)
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
 
 
@@ -157,11 +160,11 @@ def test_screenshot(make_napari_viewer):
     viewer.add_shapes(data)
 
     # Take screenshot of the image canvas only
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert screenshot.ndim == 3
 
     # Take screenshot with the viewer included
-    screenshot = viewer.screenshot(canvas_only=False)
+    screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
 
 
@@ -174,11 +177,11 @@ def test_changing_theme(make_napari_viewer):
     viewer.window.qt_viewer.setFixedSize(size)
 
     assert viewer.theme == 'dark'
-    screenshot_dark = viewer.screenshot(canvas_only=False)
+    screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
 
     viewer.theme = 'light'
     assert viewer.theme == 'light'
-    screenshot_light = viewer.screenshot(canvas_only=False)
+    screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
 
     equal = (screenshot_dark == screenshot_light).min(-1)
 
