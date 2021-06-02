@@ -262,7 +262,7 @@ class PreferencesDialog(QDialog):
             widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
             name = widget._name
             disable = bool(
-                get_settings()._env_settings.get(section, {}).get(name, None)
+                settings._env_settings.get(section, {}).get(name, None)
             )
             widget.setDisabled(disable)
             try:
@@ -290,11 +290,11 @@ class PreferencesDialog(QDialog):
 
     def _disable_async(self, form, values, disable=True, state=True):
         """Disable async if octree is True."""
-
+        settings = get_settings()
         # need to make sure that if async_ is an environment setting, that we don't
         # enable it here.
         if (
-            SETTINGS._env_settings['experimental'].get('async_', None)
+            settings._env_settings['experimental'].get('async_', None)
             is not None
         ):
             disable = True
