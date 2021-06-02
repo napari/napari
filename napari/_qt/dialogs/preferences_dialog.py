@@ -3,6 +3,7 @@ import json
 from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -73,6 +74,26 @@ class PreferencesDialog(QDialog):
 
         self.make_dialog()
         self._list.setCurrentRow(0)
+
+    def _restart_dialog(self, event=None, extra_str=""):
+        """Displays the dialog informing user a restart is required.
+
+        Paramters
+        ---------
+        event : Event
+        extra_str : str
+            Extra information to add to the message about needing a restart.
+        """
+
+        text_str = trans._(
+            "napari requires a restart for image rendering changes to apply."
+        )
+
+        widget = ResetNapariInfoDialog(
+            parent=self,
+            text=text_str,
+        )
+        widget.exec_()
 
     def closeEvent(self, event):
         """Override to emit signal."""
@@ -239,18 +260,45 @@ class PreferencesDialog(QDialog):
         for row in range(form.widget.layout().rowCount()):
             widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
             name = widget._name
-            widget.setDisabled(
-                bool(SETTINGS._env_settings.get(section, {}).get(name, None))
+            disable = bool(
+                SETTINGS._env_settings.get(section, {}).get(name, None)
             )
+            widget.setDisabled(disable)
+            widget.opacity.setOpacity(0.3 if disable else 1)
 
         # set state values for widget
         form.widget.state = values
+
+        if section == 'experimental':
+            # need to disable async if octree is enabled.
+            if values['octree'] is True:
+                form = self._disable_async(form, values)
+
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
                 d,
                 self._values_dict[schema["title"].lower()],
             )
         )
+
+        return form
+
+    def _disable_async(self, form, values, disable=True, state=True):
+        """Disable async if octree is True."""
+
+        # need to make sure that if async_ is an environment setting, that we don't
+        # enable it here.
+        if (
+            SETTINGS._env_settings['experimental'].get('async_', None)
+            is not None
+        ):
+            disable = True
+
+        idx = list(values.keys()).index('async_')
+        form_layout = form.widget.layout()
+        widget = form_layout.itemAt(idx, form_layout.FieldRole).widget()
+        widget.opacity.setOpacity(0.3 if disable else 1)
+        widget.setDisabled(disable)
 
         return form
 
@@ -296,6 +344,25 @@ class PreferencesDialog(QDialog):
                 try:
                     setattr(SETTINGS._settings[page], setting_name, value)
                     self._values_dict[page] = new_dict
+
+                    if page == 'experimental':
+
+                        if setting_name == 'octree':
+
+                            # disable/enable async checkbox
+                            widget = self._stack.currentWidget()
+                            cstate = True if value is True else False
+                            self._disable_async(
+                                widget, new_dict, disable=cstate
+                            )
+
+                            # need to inform user that napari restart needed.
+                            self._restart_dialog()
+
+                        elif setting_name == 'async_':
+                            # need to inform user that napari restart needed.
+                            self._restart_dialog()
+
                 except:  # noqa: E722
                     continue
 
@@ -343,4 +410,41 @@ class ConfirmDialog(QDialog):
         """Restore defaults and close window."""
         SETTINGS.reset()
         self.valueChanged.emit()
+        self.close()
+
+
+class ResetNapariInfoDialog(QDialog):
+    """Dialog to inform the user that restart of Napari is necessary to enable setting."""
+
+    valueChanged = Signal()
+
+    def __init__(
+        self,
+        parent: QWidget = None,
+        text: str = "",
+    ):
+        super().__init__(parent)
+        # Set up components
+        self._info_str = QLabel(self)
+        self._button_ok = QPushButton(trans._("OK"))
+        # Widget set up
+        self._info_str.setText(text)
+
+        # Layout
+        button_layout = QGridLayout()
+        button_layout.addWidget(self._button_ok, 0, 1)
+        button_layout.setColumnStretch(0, 1)
+        button_layout.setColumnStretch(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self._info_str)
+        main_layout.addLayout(button_layout)
+
+        self.setLayout(main_layout)
+
+        # Signals
+        self._button_ok.clicked.connect(self._close_dialog)
+
+    def _close_dialog(self):
+        """Close window."""
         self.close()
