@@ -1,14 +1,12 @@
 import numpy.testing as npt
-import pytest
 
-from napari.utils.transforms import Affine, ScaleTranslate, TransformChain
+from napari.utils.transforms import CompositeAffine, TransformChain
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_transform_chain(Transform):
+def test_transform_chain():
     coord = [10, 13]
-    transform_a = Transform(scale=[2, 3], translate=[8, -5])
-    transform_b = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = CompositeAffine(scale=[2, 3], translate=[8, -5])
+    transform_b = CompositeAffine(scale=[0.3, 1.4], translate=[-2.2, 3])
     transform_c = transform_b.compose(transform_a)
 
     transform_chain = TransformChain([transform_a, transform_b])
@@ -18,11 +16,10 @@ def test_transform_chain(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_transform_chain_simplified(Transform):
+def test_transform_chain_simplified():
     coord = [10, 13]
-    transform_a = Transform(scale=[2, 3], translate=[8, -5])
-    transform_b = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = CompositeAffine(scale=[2, 3], translate=[8, -5])
+    transform_b = CompositeAffine(scale=[0.3, 1.4], translate=[-2.2, 3])
 
     transform_chain = TransformChain([transform_a, transform_b])
     transform_c = transform_chain.simplified
@@ -32,11 +29,10 @@ def test_transform_chain_simplified(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_transform_chain_inverse(Transform):
+def test_transform_chain_inverse():
     coord = [10, 13]
-    transform_a = Transform(scale=[2, 3], translate=[8, -5])
-    transform_b = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = CompositeAffine(scale=[2, 3], translate=[8, -5])
+    transform_b = CompositeAffine(scale=[0.3, 1.4], translate=[-2.2, 3])
 
     transform_chain = TransformChain([transform_a, transform_b])
     transform_chain_inverse = transform_chain.inverse
@@ -46,13 +42,12 @@ def test_transform_chain_inverse(Transform):
     npt.assert_allclose(coord, orig_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_transform_chain_slice(Transform):
+def test_transform_chain_slice():
     coord = [10, 13]
-    transform_a = Transform(scale=[2, 3, 3], translate=[8, 2, -5])
-    transform_b = Transform(scale=[0.3, 1, 1.4], translate=[-2.2, 4, 3])
-    transform_c = Transform(scale=[2, 3], translate=[8, -5])
-    transform_d = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = CompositeAffine(scale=[2, 3, 3], translate=[8, 2, -5])
+    transform_b = CompositeAffine(scale=[0.3, 1, 1.4], translate=[-2.2, 4, 3])
+    transform_c = CompositeAffine(scale=[2, 3], translate=[8, -5])
+    transform_d = CompositeAffine(scale=[0.3, 1.4], translate=[-2.2, 3])
 
     transform_chain_a = TransformChain([transform_a, transform_b])
     transform_chain_b = TransformChain([transform_c, transform_d])
@@ -64,13 +59,12 @@ def test_transform_chain_slice(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_transform_chain_expanded(Transform):
+def test_transform_chain_expanded():
     coord = [10, 3, 13]
-    transform_a = Transform(scale=[2, 1, 3], translate=[8, 0, -5])
-    transform_b = Transform(scale=[0.3, 1, 1.4], translate=[-2.2, 0, 3])
-    transform_c = Transform(scale=[2, 3], translate=[8, -5])
-    transform_d = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = CompositeAffine(scale=[2, 1, 3], translate=[8, 0, -5])
+    transform_b = CompositeAffine(scale=[0.3, 1, 1.4], translate=[-2.2, 0, 3])
+    transform_c = CompositeAffine(scale=[2, 3], translate=[8, -5])
+    transform_d = CompositeAffine(scale=[0.3, 1.4], translate=[-2.2, 3])
 
     transform_chain_a = TransformChain([transform_a, transform_b])
     transform_chain_b = TransformChain([transform_c, transform_d])
@@ -82,7 +76,7 @@ def test_transform_chain_expanded(Transform):
 
 
 def test_base_transform_init_is_called():
-    # TransformChain() was not calling Transform.__init__() at one point.
+    # TransformChain() was not calling CompositeAffine.__init__() at one point.
     # So below would fail with AttributeError: 'TransformChain' object has
     # no attribute 'name'.
     chain = TransformChain()

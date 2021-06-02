@@ -15,6 +15,7 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
+from ...utils.transforms.transform_utils import decompose_linear_matrix
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -51,7 +52,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -394,6 +395,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._transforms[1:3].simplified
 
     @property
+    def data2world_scale(self):
+        return decompose_linear_matrix(
+            self.data2world_transform.linear_matrix
+        )[1]
+
+    @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2world'].scale
@@ -605,7 +612,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
         )
-        full_world_extent = self._transforms['data2world'](full_data_extent)
+        full_world_extent = self.data2world_transform(full_data_extent)
         world_extent = np.array(
             [
                 np.min(full_world_extent, axis=0),
@@ -621,13 +628,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return Extent(
             data=data,
             world=self._get_extent_world(data),
-            step=abs(self.scale),
+            step=abs(self.data2world_scale),
         )
 
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self._transforms['data2world'].inverse
+        inv_transform = self.data2world_transform.inverse
 
         if self.ndim > self._ndisplay:
             # Subspace spanned by non displayed dimensions

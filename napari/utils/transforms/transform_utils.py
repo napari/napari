@@ -1,30 +1,7 @@
 import numpy as np
+import scipy.linalg
 
 from ...utils.translations import trans
-
-
-def coerce_shear(shear):
-    # Check if an upper-triangular representation of shear or
-    # a full nD shear matrix has been passed
-    if np.isscalar(shear):
-        raise ValueError(
-            trans._(
-                'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.',
-                deferred=True,
-            )
-        )
-    if np.array(shear).ndim == 1:
-        return expand_upper_triangular(shear)
-
-    if not is_matrix_triangular(shear):
-        raise ValueError(
-            trans._(
-                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
-                deferred=True,
-                shear=shear,
-            )
-        )
-    return np.array(shear)
 
 
 def coerce_rotate(rotate):
@@ -35,23 +12,19 @@ def coerce_rotate(rotate):
     return np.array(rotate)
 
 
-""" Makes a 2D rotation matrix from an angle in degrees. """
-
-
 def _make_2d_rotation(theta_degrees):
+    """Makes a 2D rotation matrix from an angle in degrees."""
     theta = np.deg2rad(theta_degrees)
     return np.array(
         [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
     )
 
 
-""" Makes a 3D rotation matrix from roll, pitch, and yaw in degrees.
-
-For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
-"""
-
-
 def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
+    """Makes a 3D rotation matrix from roll, pitch, and yaw in degrees.
+
+    For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+    """
     alpha = np.deg2rad(alpha_deg)
     beta = np.deg2rad(beta_deg)
     gamma = np.deg2rad(gamma_deg)
@@ -91,6 +64,30 @@ def coerce_scale(ndim, scale):
     if scale is not None:
         scale_arr[ndim - len(scale) :] = scale
     return scale_arr
+
+
+def coerce_shear(shear):
+    # Check if an upper-triangular representation of shear or
+    # a full nD shear matrix has been passed
+    if np.isscalar(shear):
+        raise ValueError(
+            trans._(
+                'Scalars are not valid values for shear. Shear must be an upper triangular vector or square matrix with ones along the main diagonal.',
+                deferred=True,
+            )
+        )
+    if np.array(shear).ndim == 1:
+        return expand_upper_triangular(shear)
+
+    if not is_matrix_triangular(shear):
+        raise ValueError(
+            trans._(
+                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
+                deferred=True,
+                shear=shear,
+            )
+        )
+    return np.array(shear)
 
 
 def expand_upper_triangular(vector):
@@ -199,3 +196,61 @@ def is_matrix_triangular(matrix):
     return is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
         matrix
     )
+
+
+def decompose_linear_matrix(
+    matrix, upper_triangular=True
+) -> (np.array, np.array, np.array):
+    """Decompose linear transform matrix into rotate, scale, shear.
+    Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
+    In particular, the `decompose` function in the `affines` module.
+    https://github.com/matthew-brett/transforms3d/blob/0.3.1/transforms3d/affines.py#L156-L246.
+    Parameters
+    ----------
+    matrix : np.array shape (N, N)
+        nD array representing the composed linear transform.
+    upper_triangular : bool
+        Whether to decompose shear into an upper triangular or
+        lower triangular matrix.
+    Returns
+    -------
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    shear : 1-D array or n-D array
+        1-D array of upper triangular values or an n-D matrix if lower
+        triangular.
+    """
+    n = matrix.shape[0]
+
+    if upper_triangular:
+        rotate, tri = scipy.linalg.qr(matrix)
+    else:
+        upper_tri, rotate = scipy.linalg.rq(matrix.T)
+        rotate = rotate.T
+        tri = upper_tri.T
+
+    scale = np.diag(tri).copy()
+
+    # Take any reflection into account
+    if np.linalg.det(rotate) < 0:
+        scale[0] *= -1
+        tri[0] *= -1
+        rotate = matrix @ np.linalg.inv(tri)
+
+    tri_normalized = tri @ np.linalg.inv(np.diag(scale))
+
+    if upper_triangular:
+        shear = tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
+    else:
+        shear = tri_normalized
+
+    return rotate, scale, shear
