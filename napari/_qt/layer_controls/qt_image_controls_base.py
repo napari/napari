@@ -73,6 +73,10 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.setSingleStep(0.01)
         self.contrastLimitsSlider.setRange(*self.layer.contrast_limits_range)
         self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
+        self.contrastLimitsSlider.setToolTip(
+            trans._('Right click for detailed slider popup.')
+        )
+
         self.clim_popup = None
 
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
