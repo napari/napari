@@ -62,6 +62,9 @@ if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
 
 
+__all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -239,8 +242,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
-            self.camera.zoom = (
-                0.95 * np.min(self._canvas_size) / np.max(size[-2:])
+            self.camera.zoom = 0.95 * np.min(
+                np.array(self._canvas_size) / np.array(size[-2:])
             )
         self.camera.angles = (0, 0, 90)
 
@@ -507,7 +510,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Parameters
         ----------
         data : array or list of array
-            Image data. Can be N dimensional. If the last dimension has length
+            Image data. Can be N >= 2 dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
             a multiscale image.
@@ -910,7 +913,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: Optional[str] = None
+        self,
+        data,
+        meta: Dict[str, Any] = None,
+        layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 

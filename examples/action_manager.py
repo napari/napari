@@ -80,4 +80,30 @@ for c in callbacks:
     print('calling', c)
     c()
 
+
+# We can set the action manager in debug mode, to help us figure out which 
+# button is triggering which action. This will update the tooltips of the buttons
+# to include the name of the action in between square brackets.
+
+action_manager._debug(True)
+
+# Let's also modify some existing shortcuts, by unbinding a few existing actions, 
+# and rebinding them with new shortcuts; below we change the add and select mode
+# to be the = (same as + key on US Keyboards but without modifiers) and - keys.
+# unbinding returns the old key if it exists; but we don't use it.
+
+# in practice you likely don't need to modify the shortcuts this way as it will
+# be implemented in settings, though you could imagine a plugin that would 
+# allow toggling between many keymaps.
+
+settings = {
+        'napari:activate_points_add_mode' : '=',
+        'napari:activate_points_select_mode': '-',
+}
+
+
+for action, key in settings.items():
+   _old_shortcut = action_manager.unbind_shortcut(action)
+   action_manager.bind_shortcut(action, key)
+
 napari.run()

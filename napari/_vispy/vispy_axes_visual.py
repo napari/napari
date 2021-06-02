@@ -221,6 +221,7 @@ class VispyAxesVisual:
         self._viewer.axes.events.labels.connect(self._on_data_change)
         self._viewer.axes.events.arrows.connect(self._on_data_change)
         self._viewer.dims.events.order.connect(self._on_data_change)
+        self._viewer.dims.events.range.connect(self._on_data_change)
         self._viewer.dims.events.ndisplay.connect(self._on_data_change)
         self._viewer.dims.events.axis_labels.connect(self._on_data_change)
         self._viewer.camera.events.zoom.connect(self._on_zoom_change)

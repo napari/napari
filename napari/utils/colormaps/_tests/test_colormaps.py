@@ -10,6 +10,7 @@ from napari.utils.colormaps.colormap_utils import (
     AVAILABLE_COLORMAPS,
     _increment_unnamed_colormap,
     ensure_colormap,
+    vispy_or_mpl_colormap,
 )
 from napari.utils.colormaps.vendored import cm
 
@@ -149,3 +150,21 @@ def test_mpl_colormap_exists():
     """Test that all localized mpl colormap names exist."""
     for name in _MATPLOTLIB_COLORMAP_NAMES:
         assert getattr(cm, name, None) is not None
+
+
+def test_colormap_error_suggestion():
+    """
+    Test that vispy/mpl errors, when using `display_name`, suggest `name`.
+    """
+    name = '"twilight_shifted"'
+    display_name = 'twilight shifted'
+    with pytest.raises(KeyError) as excinfo:
+        vispy_or_mpl_colormap(display_name)
+
+    assert name in str(excinfo.value)
+
+    wrong_name = 'foobar'
+    with pytest.raises(KeyError) as excinfo:
+        vispy_or_mpl_colormap(wrong_name)
+
+    assert name in str(excinfo.value)
