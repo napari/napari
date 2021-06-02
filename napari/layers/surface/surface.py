@@ -69,7 +69,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         {'opaque', 'translucent', and 'additive'}.
     shading: str, Shading
         One of a list of preset shading modes that determine the lighting model
-        using when rendering the surface.
+        using when rendering the surface in 3D.
             * Shading.NONE
                 Corresponds to shading='none'.
             * Shading.FLAT
@@ -200,7 +200,10 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
         # Shading mode
-        self._shading = shading
+        if self._ndisplay == 3:
+            self._shading = shading
+        else:
+            self._shading = 'none'
 
     def _calc_data_range(self):
         return calc_data_range(self.vertex_values)
@@ -309,6 +312,10 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @shading.setter
     def shading(self, shading):
+        if self._ndisplay < 3:
+            raise ValueError(
+                trans._("Alternative shading modes are only available in 3D")
+            )
         if isinstance(shading, Shading):
             self._shading = shading
         else:
