@@ -73,7 +73,7 @@ class QtViewer(QSplitter):
     canvas : vispy.scene.SceneCanvas
         Canvas for rendering the current view.
     console : QtConsole
-        iPython console terminal integrated into the napari GUI.
+        IPython console terminal integrated into the napari GUI.
     controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
@@ -373,6 +373,8 @@ class QtViewer(QSplitter):
         if console is not None:
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
+        if getattr(self, '_console', None) is not None:
+            self._console.shell.user_ns['action_manager'] = action_manager
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
