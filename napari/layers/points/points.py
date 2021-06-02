@@ -316,7 +316,7 @@ class Points(Layer):
             property_choices = properties
             properties = {}
         self._properties, self._property_choices = self._prepare_properties(
-            properties, property_choices, True
+            properties, property_choices, save_choices=True
         )
 
         # make the text
@@ -1115,17 +1115,16 @@ class Points(Layer):
 
         Returns
         -------
-        box : np.ndarray
+        box : np.ndarray or None
             4x2 array of corners of the interaction box in clockwise order
             starting in the upper-left corner.
         """
-        if len(index) == 0:
-            return None
-
-        data = self._view_data[index]
-        size = self._view_size[index]
-        data = points_to_squares(data, size)
-        return create_box(data)
+        if len(index) > 0:
+            data = self._view_data[index]
+            size = self._view_size[index]
+            data = points_to_squares(data, size)
+            return create_box(data)
+        return None
 
     @property
     def mode(self) -> str:
