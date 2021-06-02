@@ -260,9 +260,11 @@ class PreferencesDialog(QDialog):
         for row in range(form.widget.layout().rowCount()):
             widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
             name = widget._name
-            widget.setDisabled(
-                bool(SETTINGS._env_settings.get(section, {}).get(name, None))
+            disable = bool(
+                SETTINGS._env_settings.get(section, {}).get(name, None)
             )
+            widget.setDisabled(disable)
+            widget.opacity.setOpacity(0.3 if disable else 1)
 
         # set state values for widget
         form.widget.state = values
@@ -283,6 +285,14 @@ class PreferencesDialog(QDialog):
 
     def _disable_async(self, form, values, disable=True, state=True):
         """Disable async if octree is True."""
+
+        # need to make sure that if async_ is an environment setting, that we don't
+        # enable it here.
+        if (
+            SETTINGS._env_settings['experimental'].get('async_', None)
+            is not None
+        ):
+            disable = True
 
         idx = list(values.keys()).index('async_')
         form_layout = form.widget.layout()
