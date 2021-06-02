@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from ..utils.settings import SETTINGS
 
@@ -43,8 +44,7 @@ def get_open_history():
     """A helper for history handling."""
     folders = SETTINGS.application.open_history
     folders = [f for f in folders if os.path.isdir(f)]
-
-    return folders
+    return folders or [str(Path.home())]
 
 
 def get_save_history():

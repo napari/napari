@@ -1,8 +1,6 @@
-import os
-import sys
-
 import numpy as np
-import pytest
+
+from napari._tests.utils import skip_on_win_ci
 
 
 def test_image_rendering(make_napari_viewer):
@@ -41,10 +39,7 @@ def test_image_rendering(make_napari_viewer):
     assert layer.rendering == 'additive'
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
 def test_visibility_consistency(qtbot, make_napari_viewer):
     """Make sure toggling visibility maintains image contrast.
 
@@ -57,7 +52,7 @@ def test_visibility_consistency(qtbot, make_napari_viewer):
     )
     qtbot.wait(10)
     layer.contrast_limits = (0, 2)
-    screen1 = viewer.screenshot().astype('float')
+    screen1 = viewer.screenshot(flash=False).astype('float')
     layer.visible = True
-    screen2 = viewer.screenshot().astype('float')
+    screen2 = viewer.screenshot(flash=False).astype('float')
     assert np.max(np.abs(screen2 - screen1)) < 5

@@ -182,7 +182,7 @@ class TrackManager:
     @property
     def track_ids(self):
         """return the track identifiers"""
-        return self.data[:, 0].astype(np.uint16)
+        return self.data[:, 0].astype(np.uint32)
 
     @property
     def unique_track_ids(self):

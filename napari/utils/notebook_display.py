@@ -63,7 +63,9 @@ class NotebookScreenshot:
         from .._qt.qt_event_loop import get_app
 
         get_app().processEvents()
-        self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
+        self.image = self.viewer.screenshot(
+            canvas_only=self.canvas_only, flash=False
+        )
         with BytesIO() as file_obj:
             imsave(file_obj, self.image, format='png')
             file_obj.seek(0)

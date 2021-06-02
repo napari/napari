@@ -1,13 +1,14 @@
 from contextlib import contextmanager
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QSize, Qt
-from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
+    QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
@@ -15,6 +16,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events.custom_types import Array
 from ..utils.misc import is_sequence
 from ..utils.translations import trans
 
@@ -250,6 +253,56 @@ def combine_widgets(
     raise TypeError(
         trans._('"widget" must be a QWidget or a sequence of QWidgets')
     )
+
+
+def add_flash_animation(
+    widget: QWidget, duration: int = 300, color: Array = (0.5, 0.5, 0.5, 0.5)
+):
+    """Add flash animation to widget to highlight certain action (e.g. taking a screenshot).
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    duration : int
+        Duration of the flash animation.
+    color : Array
+        Color of the flash animation. By default, we use light gray.
+    """
+    color = transform_color(color)[0]
+    color = (255 * color).astype("int")
+
+    effect = QGraphicsColorizeEffect(widget)
+    widget.setGraphicsEffect(effect)
+
+    widget._flash_animation = QPropertyAnimation(effect, b"color")
+    widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setLoopCount(1)
+
+    # let's make sure to remove the animation from the widget because
+    # if we don't, the widget will actually be black and white.
+    widget._flash_animation.finished.connect(
+        partial(remove_flash_animation, widget)
+    )
+
+    widget._flash_animation.start()
+
+    # now  set an actual time for the flashing and an intermediate color
+    widget._flash_animation.setDuration(duration)
+    widget._flash_animation.setKeyValueAt(0.5, QColor(*color))
+
+
+def remove_flash_animation(widget: QWidget):
+    """Remove flash animation from widget.
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    """
+    widget.setGraphicsEffect(None)
+    del widget._flash_animation
 
 
 def delete_qapp(app):

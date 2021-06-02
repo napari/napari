@@ -73,6 +73,7 @@ class QtViewerDockWidget(QDockWidget):
     ):
         self.qt_viewer = qt_viewer
         super().__init__(name)
+        self._parent = qt_viewer
         self.name = name
 
         areas = {
@@ -225,6 +226,10 @@ class QtViewerDockWidget(QDockWidget):
                     self, title=self.name, vertical=not self.is_vertical
                 )
                 self.setTitleBarWidget(self.title)
+
+    def setWidget(self, widget):
+        widget._parent = self
+        super().setWidget(widget)
 
 
 class QtCustomTitleBar(QLabel):
