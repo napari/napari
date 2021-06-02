@@ -384,8 +384,10 @@ class Labels(_ImageBase):
 
     @classmethod
     def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
-        """
-        Parameters:
+        """Convert an input properties value to a standard dict-of-columns format.
+
+        Parameters
+        ----------
         properties : dict or DataFrame
             properties to be transformed
 

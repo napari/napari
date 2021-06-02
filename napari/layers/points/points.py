@@ -308,8 +308,7 @@ class Points(Layer):
         if self.data.size == 0 and properties:
             warnings.warn(
                 trans._(
-                    "Property_choices should be passed as property_choices, not properties. "
-                    "Workaround will be removed in 4.11"
+                    "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
                 ),
                 DeprecationWarning,
                 stacklevel=2,
@@ -556,14 +555,16 @@ class Points(Layer):
         property_choices: Dict[str, Union[np.ndarray, list]] = None,
         save_choices: bool = False,
     ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-        """
-        Args:
-        properties )Union[dict, DataFrame]):
+        """Return properties in a normalized dict-of-columns format.
+
+        Parameters
+        ----------
+        properties : Union[dict, DataFrame]
             properties to be transformed
-        property_choices (Dict[str, np.ndarray]):
+        property_choices : Dict[str, np.ndarray]
             previous choices
-        save_choices (bool):
-            preserve property choices which are not available in data
+        save_choices : bool
+            preserve property choices that are not available in input columns.
 
         Returns
         -------
