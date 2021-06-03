@@ -166,7 +166,8 @@ class WorkerBase(QRunnable):
                     return
                 else:
                     raise result
-            self.returned.emit(result)
+            if not self.abort_requested:
+                self.returned.emit(result)
         except Exception as exc:
             self.errored.emit(exc)
         self._running = False

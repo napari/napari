@@ -90,11 +90,11 @@ class Notification(Event):
         self.date = datetime.now()
 
     @classmethod
-    def from_exception(cls, exc: BaseException, **kwargs) -> 'Notification':
+    def from_exception(cls, exc: BaseException, **kwargs) -> Notification:
         return ErrorNotification(exc, **kwargs)
 
     @classmethod
-    def from_warning(cls, warning: Warning, **kwargs) -> 'Notification':
+    def from_warning(cls, warning: Warning, **kwargs) -> Notification:
         return WarningNotification(warning, **kwargs)
 
 

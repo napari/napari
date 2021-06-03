@@ -12,8 +12,8 @@ from napari import __main__
 def mock_run():
     """mock to prevent starting the event loop."""
     with mock.patch('napari._qt.widgets.qt_splash_screen.NapariSplashScreen'):
-        with mock.patch('napari.__main__.run'):
-            yield napari.__main__.run
+        with mock.patch('napari.run'):
+            yield napari.run
 
 
 def test_cli_works(monkeypatch, capsys):
@@ -41,7 +41,7 @@ def test_cli_parses_unknowns(mock_run, monkeypatch):
         assert kwargs['contrast_limits'] == (0, 1)
 
     # testing all the variants of literal_evals
-    monkeypatch.setattr(napari.__main__, 'view_path', assert_kwargs)
+    monkeypatch.setattr(napari, 'view_path', assert_kwargs)
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['n', 'file', '--contrast-limits', '(0, 1)'])
         __main__._run()
@@ -84,7 +84,7 @@ def test_cli_runscript(run_path, monkeypatch, tmp_path):
     run_path.assert_called_once_with(str(script))
 
 
-@mock.patch('napari.__main__.view_path')
+@mock.patch('napari.view_path')
 def test_cli_passes_kwargs(view_path, mock_run, monkeypatch):
     """test that we can parse layer keyword arg variants"""
 
@@ -121,9 +121,8 @@ def test_cli_retains_viewer_ref(mock_run, monkeypatch):
     mock_run.side_effect = _check_refs
     with monkeypatch.context() as m:
         m.setattr(sys, 'argv', ['napari', 'path/to/file.tif'])
-        with mock.patch(
-            'napari.__main__.view_path', return_value=v  # return our local v
-        ) as mock_vp:
+        # return our local v
+        with mock.patch('napari.view_path', return_value=v) as mock_vp:
             ref_count = sys.getrefcount(v)  # count current references
             __main__._run()
             mock_vp.assert_called_once()
