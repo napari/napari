@@ -418,7 +418,7 @@ def find_issues(
 @pytest.fixture(scope="module")
 def checks():
     if sys.version_info[:2] < (3, 8):
-        raise Exception("The strings check must sue python 3.8 or higher!")
+        raise Exception("The strings check must use python 3.8 or higher!")
 
     paths = find_files(NAPARI_MODULE, SKIP_FOLDERS, SKIP_FILES)
     issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
