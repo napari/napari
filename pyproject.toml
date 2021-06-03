@@ -60,6 +60,7 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
+  "mypy.ini",
   "napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",

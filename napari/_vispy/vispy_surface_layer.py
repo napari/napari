@@ -36,7 +36,10 @@ class VispySurfaceLayer(VispyBaseLayer):
             vertex_values = np.array([0])
         else:
             # Offsetting so pixels now centered
-            vertices = self.layer._data_view[:, ::-1]
+            # coerce to float to solve vispy/vispy#2007
+            vertices = np.asarray(
+                self.layer._data_view[:, ::-1], dtype=np.float32
+            )
             faces = self.layer._view_faces
             vertex_values = self.layer._view_vertex_values
 

@@ -270,6 +270,11 @@ def test_properties():
     assert isinstance(layer.properties, dict)
     assert layer.properties == properties
     assert layer._label_index == label_index
+    layer = Labels(data)
+    layer.properties = properties
+    assert isinstance(layer.properties, dict)
+    assert layer.properties == properties
+    assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
@@ -283,6 +288,12 @@ def test_properties():
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+    layer = Labels(data)
+    layer.properties = properties
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
