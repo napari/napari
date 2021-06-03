@@ -100,7 +100,7 @@ You can also view trace files using the
 It is similar to `chrome://tracing` but has some different features.
 
 The trace file format is specified in the
-[Trace File Format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview>)
+[Trace File Format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview)
 Google Doc. The format is well-documented, but there are no pictures so
 it's not always clear how a given feature actually looks in the Chrome
 Tracing GUI.
@@ -169,7 +169,7 @@ file on exit.
 ### View Trace in Chrome
 
 Run Chrome and go to the URL `chrome://tracing`. Drag and drop
-`/temp/latest.json` into the Chrome window, or use the **Load** button to
+`/tmp/latest.json` into the Chrome window, or use the **Load** button to
 load the JSON file. You will usually need to pan and zoom the trace to
 explore it, to figure out what is going on.
 
