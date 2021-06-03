@@ -107,41 +107,6 @@ def transpose_axes(viewer):
     viewer.dims._transpose()
 
 
-@register_viewer_action(trans._("Remove selected layers."))
-def remove_selected(viewer):
-    viewer.layers.remove_selected()
-
-
-@register_viewer_action(trans._("Selected all layers."))
-def select_all(viewer):
-    viewer.layers.select_all()
-
-
-@register_viewer_action(trans._("Remove all layers."))
-def remove_all_layers(viewer):
-    viewer.layers.clear()
-
-
-@register_viewer_action(trans._("Select layer above."))
-def select_layer_above(viewer):
-    viewer.layers.select_next()
-
-
-@register_viewer_action(trans._("Select layer below."))
-def select_layer_below(viewer):
-    viewer.layers.select_previous()
-
-
-@register_viewer_action(trans._("Also select layer above."))
-def also_select_layer_above(viewer):
-    viewer.layers.select_next(shift=True)
-
-
-@register_viewer_action(trans._("Also select layer below."))
-def also_select_layer_below(viewer):
-    viewer.layers.select_previous(shift=True)
-
-
 @register_viewer_action(trans._("Toggle grid mode."))
 def toggle_grid(viewer):
     viewer.grid.enabled = not viewer.grid.enabled

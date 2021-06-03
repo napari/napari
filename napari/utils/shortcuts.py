@@ -10,16 +10,6 @@ default_shortcuts = {
     'napari:focus_axes_down': ['Alt-Down'],
     'napari:roll_axes': ['Control-E'],
     'napari:transpose_axes': ['Control-T'],
-    'napari:remove_selected': ['Control-Backspace', 'Control-Delete'],
-    'napari:select_all': ['Control-A'],
-    'napari:remove_all_layers': [
-        'Control-Shift-Backspace',
-        'Control-Shift-Delete',
-    ],
-    'napari:select_layer_above': ['Up'],
-    'napari:select_layer_below': ['Down'],
-    'napari:also_select_layer_above': ['Shift-Up'],
-    'napari:also_select_layer_below': ['Shift-Down'],
     'napari:toggle_grid': ['Control-G'],
     'napari:toggle_selected_visibility': ['V'],
 }
