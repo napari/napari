@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
 
 import napari
 
+from ...utils.action_manager import action_manager
 from ...utils.interactions import get_key_bindings_summary
 from ...utils.theme import get_theme
 from ...utils.translations import trans
@@ -65,11 +66,13 @@ class QtAboutKeyBindings(QDialog):
         self.textEditBox = QTextEdit()
         self.textEditBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.textEditBox.setMinimumWidth(360)
+
         # Can switch to a normal dict when our minimum Python is 3.7
         self.key_bindings_strs = OrderedDict()
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
         self.key_map_handler = key_map_handler
         theme = get_theme(self.viewer.theme)
+
         col = theme['secondary']
         layers = [
             napari.layers.Image,
@@ -79,19 +82,24 @@ class QtAboutKeyBindings(QDialog):
             napari.layers.Surface,
             napari.layers.Vectors,
         ]
+        layer_shortcuts = action_manager._get_layer_shortcuts(layers)
         for layer in layers:
             if len(layer.class_keymap) == 0:
                 text = trans._('No key bindings')
             else:
-                text = get_key_bindings_summary(layer.class_keymap, col=col)
+                text = get_key_bindings_summary(
+                    layer_shortcuts[layer], col=col
+                )
+
+            # TODO: Add localization. Add localized layer name to layer types.
             self.key_bindings_strs[f"{layer.__name__} layer"] = text
 
         # layer type selection
         self.layerTypeComboBox = QComboBox()
         self.layerTypeComboBox.addItems(list(self.key_bindings_strs))
+
         self.layerTypeComboBox.activated[str].connect(self.change_layer_type)
         self.layerTypeComboBox.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
-        # self.change_layer_type(current_layer)
         layer_type_layout = QHBoxLayout()
         layer_type_layout.setContentsMargins(10, 5, 0, 0)
         layer_type_layout.addWidget(self.layerTypeComboBox)
@@ -131,10 +139,13 @@ class QtAboutKeyBindings(QDialog):
         """
         theme = get_theme(self.viewer.theme)
         col = theme['secondary']
+
         # Add class and instance viewer key bindings
-        text = get_key_bindings_summary(
-            self.key_map_handler.active_keymap, col=col
+        active_shortcuts = action_manager._get_active_shortcuts(
+            self.key_map_handler.active_keymap
         )
+        text = get_key_bindings_summary(active_shortcuts, col=col)
+
         # Update layer speficic key bindings if all active are displayed
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:

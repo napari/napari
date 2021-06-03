@@ -355,5 +355,53 @@ class ActionManager:
         self._update_gui_elements(name)
         return shortcut
 
+    def _get_layer_shortcuts(self, layers):
+        """
+        Get shortcuts filterd by the given layers.
+
+        Parameters
+        ----------
+        layers : list of layers
+            Layers to use for shortcuts filtering.
+
+        Returns
+        -------
+        dict
+            Dictionary of layers with dictionaries of shortcuts to
+            descriptions.
+        """
+        layer_shortcuts = {}
+        for layer in layers:
+            layer_shortcuts[layer] = {}
+            for name, shortcut in self._shortcuts.items():
+                action = self._actions.get(name, None)
+                if action and layer == action.keymapprovider:
+                    layer_shortcuts[layer][str(shortcut)] = action.description
+
+        return layer_shortcuts
+
+    def _get_active_shortcuts(self, active_keymap):
+        """
+        Get active shortcuts for the given active keymap.
+
+        Parameters
+        ----------
+        active_keymap : KeymapProvider
+            The active keymap provider.
+
+        Returns
+        -------
+        dict
+            Dictionary of shortcuts to descriptions.
+        """
+        active_func_names = [i[1].__name__ for i in active_keymap.items()]
+        active_shortcuts = {}
+        for name, shortcut in self._shortcuts.items():
+            action = self._actions.get(name, None)
+            if action and action.command.__name__ in active_func_names:
+                active_shortcuts[str(shortcut)] = action.description
+
+        return active_shortcuts
+
 
 action_manager = ActionManager()
