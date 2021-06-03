@@ -313,9 +313,11 @@ class Surface(IntensityVisualizationMixin, Layer):
     @shading.setter
     def shading(self, shading):
         if self._ndisplay < 3:
-            raise ValueError(
+            warnings.warn(
                 trans._("Alternative shading modes are only available in 3D")
             )
+            self._shading = Shading('none')
+            return
         if isinstance(shading, Shading):
             self._shading = shading
         else:
