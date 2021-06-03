@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Optional
 
 from ..utils.settings import SETTINGS
+from ..utils.translations import trans
 
 LOGGER = logging.getLogger("napari.loader")
-
 DEFAULT_OCTREE_CONFIG = {
     "loader_defaults": {
         "log_path": None,
@@ -49,7 +49,12 @@ def _get_async_config() -> Optional[dict]:
 
     # NAPARI_ASYNC can now only be "0" or "1".
     if async_var not in [None, "0", "1"]:
-        raise ValueError('NAPARI_ASYNC can only be "0" or "1"')
+        raise ValueError(
+            trans._(
+                'NAPARI_ASYNC can only be "0" or "1"',
+                deferred=True,
+            )
+        )
 
     # If NAPARI_ASYNC is "1" use defaults but with octree disabled.
     if async_var == "1":
