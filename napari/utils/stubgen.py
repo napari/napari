@@ -69,7 +69,7 @@ def _iter_imports(hint) -> Iterator[str]:
     # inspect.formatannotation strips "typing." from type annotations
     # so our signatures won't have it in there
     if not repr(hint).startswith("typing."):
-        if orig := get_origin(hint):
+        if orig == get_origin(hint):
             yield orig.__module__
     for arg in get_args(hint):
         yield from _iter_imports(arg)

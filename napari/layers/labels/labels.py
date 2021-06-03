@@ -33,7 +33,8 @@ class Labels(_ImageBase):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or multiscale. Must be integer type or bools
+        Labels data as an array or multiscale. Must be integer type or bools.
+        Please note multiscale rendering is only supported in 2D.
     num_colors : int
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)} or DataFrame
@@ -81,18 +82,21 @@ class Labels(_ImageBase):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D.
 
     Attributes
     ----------
-    data : array
-        Integer label data. Can be N dimensional. Every pixel contains
-        an integer ID corresponding to the region it belongs to. The label 0 is
-        rendered as transparent.
+    data : array or list of array
+        Integer label data as an array or multiscale. Can be N dimensional.
+        Every pixel contains an integer ID corresponding to the region it
+        belongs to. The label 0 is rendered as transparent. Please note
+        multiscale rendering is only supported in 2D.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D.
     metadata : dict
         Labels metadata.
     num_colors : int

@@ -39,7 +39,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Image data. Can be N >= 2 dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        a multiscale image.
+        a multiscale image. Please note multiscale rendering is only
+        supported in 2D.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -103,7 +104,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D.
 
     Attributes
     ----------
@@ -111,7 +113,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreasing in shape then the data is treated as a
-        multiscale image.
+        multiscale image. Please note multiscale rendering is only
+        supported in 2D.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -122,7 +125,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
