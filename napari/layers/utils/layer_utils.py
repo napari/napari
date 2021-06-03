@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict, Optional, Tuple
 
 import dask
@@ -6,12 +8,32 @@ import numpy as np
 from ...utils.action_manager import action_manager
 
 
-def register_layer_action(keymapprovider, description, shortcuts):
+def register_layer_action(keymapprovider, description: str, shortcuts=None):
     """
     Convenient decorator to register an action with the current Layers
 
     It will use the function name as the action name. We force the description
     to be given instead of function docstring for translation purpose.
+
+
+    Parameters
+    ----------
+
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
     """
 
     def _inner(func):
