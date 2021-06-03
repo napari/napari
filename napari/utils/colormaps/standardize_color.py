@@ -128,12 +128,11 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
         # The following conversion works for most cases, and so it's expected
         # that most valid inputs will pass this .asarray() call
         # with ease. Those who don't are usually too cryptic to decipher.
-        # If any of the elements are strings, explicitly provide the dtype to
-        # avoid the deprecated behavior described in:
+        # If only some of the colors are strings, explicitly provide an object
+        # dtype to avoid the deprecated behavior described in:
         # https://github.com/napari/napari/issues/2791
-        dtype = (
-            np.dtype(str) if any(isinstance(c, str) for c in colors) else None
-        )
+        num_str = len([c for c in colors if isinstance(c, str)])
+        dtype = 'O' if 0 < num_str < len(colors) else None
         color_array = np.atleast_2d(np.asarray(colors, dtype=dtype))
     except ValueError:
         warnings.warn(
