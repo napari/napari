@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 import dask
 import numpy as np
@@ -182,7 +182,9 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
-def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
+def dataframe_to_properties(
+    dataframe,
+) -> Tuple[Dict[str, np.ndarray], Optional[Dict[int, int]]]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
     Parameters
@@ -195,6 +197,8 @@ def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     dict[str, np.ndarray]
         A properties dictionary where the key is the property name and the value
         is an ndarray with the property value for each point.
+    Optional[dict[int, int]]
+        mapping from label number to position (row) in properties
     """
 
     properties = {col: np.asarray(dataframe[col]) for col in dataframe}

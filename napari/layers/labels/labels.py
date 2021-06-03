@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -36,7 +36,7 @@ class Labels(_ImageBase):
         Labels data as an array or multiscale. Must be integer type or bools
     num_colors : int
         Number of unique colors to use in colormap.
-    properties : dict {str: array (N,)}, DataFrame
+    properties : dict {str: array (N,)} or DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds
         to background.
@@ -191,20 +191,9 @@ class Labels(_ImageBase):
         data = self._ensure_int_labels(data)
         self._color_lookup_func = None
 
-        if properties is None:
-            self._properties = {}
-            label_index = {}
-        else:
-            properties = self._validate_properties(properties)
-            self._properties, label_index = dataframe_to_properties(properties)
-        if label_index is None:
-            props = self._properties
-            if len(props) > 0:
-                self._label_index = self._map_index(properties)
-            else:
-                self._label_index = {}
-        else:
-            self._label_index = label_index
+        self._properties, self._label_index = self._prepare_properties(
+            properties
+        )
 
         super().__init__(
             data,
@@ -390,13 +379,44 @@ class Labels(_ImageBase):
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties, label_index = dataframe_to_properties(properties)
-            if label_index is None:
-                label_index = self._map_index(properties)
-            self._label_index = label_index
-        self._properties = self._validate_properties(properties)
+        self._properties, self._label_index = self._prepare_properties(
+            properties
+        )
         self.events.properties()
+
+    @classmethod
+    def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
+        """Convert an input properties value to a standard dict-of-columns format.
+
+        Parameters
+        ----------
+        properties : dict or DataFrame
+            properties to be transformed
+
+        Returns
+        -------
+        properties : dict
+            properties dictionary
+        index: dict
+            index mapping dictionary
+        """
+        if properties is None or not properties:
+            # None or empty dict properties
+            return {}, {}
+        if isinstance(properties, dict):
+            properties = cls._validate_properties(properties)
+            label_index = properties.get("index", None)
+            if label_index is not None:
+                # got array of indexes
+                label_index = {v: i for i, v in enumerate(label_index)}
+        else:
+            # assume that properties is a DataFrame.
+            properties, label_index = dataframe_to_properties(properties)
+            properties = cls._validate_properties(properties)
+        if label_index is None:
+            label_index = cls._map_index(properties)
+
+        return properties, label_index
 
     @property
     def color(self):
@@ -451,8 +471,9 @@ class Labels(_ImageBase):
             data = data[0]
         return data
 
+    @staticmethod
     def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
+        properties: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
         """Validate the type and size of properties."""
         lens = []
@@ -461,7 +482,7 @@ class Labels(_ImageBase):
             if not isinstance(v, np.ndarray):
                 properties[k] = np.asarray(v)
 
-        if not all([v == lens[0] for v in lens]):
+        if any(v != lens[0] for v in lens):
             raise ValueError(
                 trans._(
                     "the number of items must be equal for all properties",
@@ -470,11 +491,13 @@ class Labels(_ImageBase):
             )
         return properties
 
-    def _map_index(self, properties: Dict[str, np.ndarray]) -> Dict[int, int]:
+    @staticmethod
+    def _map_index(properties: Dict[str, np.ndarray]) -> Dict[int, int]:
         """Map rows in given properties to label indices"""
-        arbitrary_key = list(properties.keys())[0]
-        label_index = {i: i for i in range(len(properties[arbitrary_key]))}
-        return label_index
+        if not properties:
+            return {}
+        max_len = max(len(x) for x in properties.values())
+        return {i: i for i in range(max_len)}
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1200,16 +1223,16 @@ class Labels(_ImageBase):
         if self._label_index and self._properties:
             value = self.get_value(position, world=world)
             # if the cursor is not outside the image or on the background
-            if value is not None:
-                if self.multiscale:
-                    label_value = value[1]
-                else:
-                    label_value = value
+            if value is not None and value != 0:
+                label_value = value[1] if self.multiscale else value
                 if label_value in self._label_index:
                     idx = self._label_index[label_value]
                     for k, v in self._properties.items():
                         if k != 'index':
-                            msg += f', {k}: {v[idx]}'
+                            try:
+                                msg += f', {k}: {v[idx]}'
+                            except IndexError:
+                                pass
                 else:
                     msg += ' ' + trans._('[No Properties]')
         return msg
