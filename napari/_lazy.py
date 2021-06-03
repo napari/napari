@@ -42,6 +42,11 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
         # see: https://github.com/napari/napari/issues/1347
         from scipy import stats  # noqa: F401
 
+        # Import added to fix circular imports
+        from .viewer import Viewer
+
+        del Viewer
+
         # This must come before .plugins
         from .utils import _magicgui
 
