@@ -1,7 +1,16 @@
 import subprocess
 import sys
 
+CREATE_VIEWER_SCRIPT = """
+import numpy as np
+import napari
+v = napari.view_image(np.random.rand(512, 512))
+"""
+
 
 def test_octree_import():
-    cmd = [sys.executable, '-c', 'import napari; v = napari.Viewer()']
+    """Test we can create a viewer with NAPARI_OCTREE."""
+
+    cmd = [sys.executable, '-c', CREATE_VIEWER_SCRIPT]
+
     subprocess.run(cmd, check=True, env={'NAPARI_OCTREE': '1'})
