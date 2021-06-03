@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -13,4 +14,6 @@ def test_octree_import():
 
     cmd = [sys.executable, '-c', CREATE_VIEWER_SCRIPT]
 
-    subprocess.run(cmd, check=True, env={'NAPARI_OCTREE': '1'})
+    env = os.environ.copy()
+    env['NAPARI_OCTREE'] = '1'
+    subprocess.run(cmd, check=True, env=env)
