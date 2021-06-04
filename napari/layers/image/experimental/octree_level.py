@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 import numpy as np
 
 from ....types import ArrayLike
-from .octree_chunk import OctreeChunk, OctreeChunkGeom, OctreeLocation
+from .octree_chunk import OctreeChunk, OctreeChunkGeom
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree")
@@ -151,6 +151,8 @@ class OctreeLevel:
 
         meta = self.info.meta
         layer_ref = meta.layer_ref
+
+        from ....components.experimental.chunk._request import OctreeLocation
 
         location = OctreeLocation(
             layer_ref, self.slice_id, level_index, row, col
