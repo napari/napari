@@ -210,6 +210,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
         data2world_transform = CompositeAffine(
+            ndim=ndim,
             scale=scale,
             translate=translate,
             rotate=rotate,
