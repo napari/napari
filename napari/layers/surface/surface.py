@@ -200,10 +200,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
         # Shading mode
-        if self._ndisplay == 3:
-            self._shading = shading
-        else:
-            self._shading = 'none'
+        self._shading = shading
 
     def _calc_data_range(self):
         return calc_data_range(self.vertex_values)
@@ -312,12 +309,6 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @shading.setter
     def shading(self, shading):
-        if self._ndisplay < 3:
-            warnings.warn(
-                trans._("Alternative shading modes are only available in 3D")
-            )
-            self._shading = Shading('none')
-            return
         if isinstance(shading, Shading):
             self._shading = shading
         else:
