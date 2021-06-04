@@ -63,8 +63,8 @@ def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
     cos_alpha, sin_alpha = _cos_sin(alpha_deg)
     R_alpha = np.array(
         [
-            [cos_alpha, sin_alpha, 0],
-            [-sin_alpha, cos_alpha, 0],
+            [cos_alpha, -sin_alpha, 0],
+            [sin_alpha, cos_alpha, 0],
             [0, 0, 1],
         ]
     )
