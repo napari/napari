@@ -84,6 +84,27 @@ class NapariPluginManager(PluginManager):
             self.events.registered(value=name)
         return name
 
+    def unregister(
+        self,
+        name_or_object: Any,
+    ) -> Optional[Any]:
+        plugin = super().unregister(name_or_object)
+
+        # remove widgets, sample data
+
+        if type(name_or_object) is str:
+
+            for _dict in (
+                self._dock_widgets,
+                self._sample_data,
+                self._function_widgets,
+            ):
+                _dict.pop(name_or_object, None)
+
+        self.events.registered(value=name_or_object)
+
+        return plugin
+
     def _on_blocked_change(self, event):
         # things that are "added to the blocked list" become disabled
         for item in event.added:
