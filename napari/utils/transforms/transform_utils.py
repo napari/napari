@@ -49,12 +49,10 @@ def coerce_rotate(rotate):
     return np.array(rotate)
 
 
-def _make_2d_rotation(theta_degrees):
+def _make_2d_rotation(theta_deg):
     """Makes a 2D rotation matrix from an angle in degrees."""
-    theta = np.deg2rad(theta_degrees)
-    return np.array(
-        [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
-    )
+    cos_theta, sin_theta = _cos_sin(theta_deg)
+    return np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
 
 
 def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
@@ -62,31 +60,39 @@ def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
 
     For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
     """
-    alpha = np.deg2rad(alpha_deg)
-    beta = np.deg2rad(beta_deg)
-    gamma = np.deg2rad(gamma_deg)
+    cos_alpha, sin_alpha = _cos_sin(alpha_deg)
     R_alpha = np.array(
         [
-            [np.cos(alpha), np.sin(alpha), 0],
-            [-np.sin(alpha), np.cos(alpha), 0],
+            [cos_alpha, sin_alpha, 0],
+            [-sin_alpha, cos_alpha, 0],
             [0, 0, 1],
         ]
     )
+
+    cos_beta, sin_beta = _cos_sin(beta_deg)
     R_beta = np.array(
         [
-            [np.cos(beta), 0, np.sin(beta)],
+            [cos_beta, 0, sin_beta],
             [0, 1, 0],
-            [-np.sin(beta), 0, np.cos(beta)],
+            [-sin_beta, 0, cos_beta],
         ]
     )
+
+    cos_gamma, sin_gamma = _cos_sin(gamma_deg)
     R_gamma = np.array(
         [
             [1, 0, 0],
-            [0, np.cos(gamma), -np.sin(gamma)],
-            [0, np.sin(gamma), np.cos(gamma)],
+            [0, cos_gamma, -sin_gamma],
+            [0, sin_gamma, cos_gamma],
         ]
     )
+
     return R_alpha @ R_beta @ R_gamma
+
+
+def _cos_sin(angle_deg):
+    angle_rad = np.deg2rad(angle_deg)
+    return np.cos(angle_rad), np.sin(angle_rad)
 
 
 def coerce_translate(ndim, translate):
