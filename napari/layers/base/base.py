@@ -14,7 +14,7 @@ from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
-from ...utils.transforms import Affine, TransformChain
+from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -51,7 +51,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -195,8 +195,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndisplay = 2
         self._dims_order = list(range(ndim))
 
-        # Create a transform chain consisting of three transforms:
-        # 1. `tile2data`: An initial transform only needed displaying tiles
+        # Create a transform chain consisting of four transforms:
+        # 1. `tile2data`: An initial transform only needed to display tiles
         #   of an image. It maps pixels of the tile into the coordinate space
         #   of the full resolution data and can usually be represented by a
         #   scale factor and a translation. A common use case is viewing part
@@ -205,44 +205,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
         #   coordinate.
-        # 3. `world2grid`: An additional transform mapping world-coordinates
+        # 3. `world2world`: An extra transform applied in world-coordinates that
+        #   typically aligns this layer with another.
+        # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
-
-        # First create the `data2world` transform from the input parameters
-        if affine is None:
-            if scale is None:
-                scale = [1] * ndim
-            if translate is None:
-                translate = [0] * ndim
-            data2world_transform = Affine(
-                scale,
-                translate,
-                rotate=rotate,
-                shear=shear,
-                name='data2world',
-            )
-        elif isinstance(affine, np.ndarray) or isinstance(affine, list):
-            data2world_transform = Affine(
-                affine_matrix=np.array(affine),
-                name='data2world',
-            )
-        elif isinstance(affine, Affine):
-            affine.name = 'data2world'
-            data2world_transform = affine
-        else:
-            raise TypeError(
-                trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
-                    deferred=True,
-                    dtype=type(affine),
-                )
-            )
-
+        data2world_transform = CompositeAffine(
+            scale=scale,
+            translate=translate,
+            rotate=rotate,
+            shear=shear,
+            name='data2world',
+        )
+        world2world_transform = self._coerce_affine(affine)
         self._transforms = TransformChain(
             [
-                Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
+                CompositeAffine(ndim=ndim, name='tile2data'),
                 data2world_transform,
-                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
+                world2world_transform,
+                CompositeAffine(ndim=ndim, name='world2grid'),
             ]
         )
 
@@ -408,6 +388,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.editable()
 
     @property
+    def data2world_transform(self) -> Affine:
+        """Transform: the transform from data coordinates to world coordinates.
+
+        This generates an affine transform by composing the affine property with
+        the other transform properties in the following order:
+
+        affine * rotate * skew * scale + translate.
+        """
+        return self._transforms[1:3].simplified
+
+    @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2world'].scale
@@ -454,25 +445,31 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def affine(self):
         """napari.utils.transforms.Affine: Affine transform."""
-        return self._transforms['data2world']
+        return self._transforms['world2world']
 
     @affine.setter
     def affine(self, affine):
-        if isinstance(affine, np.ndarray) or isinstance(affine, list):
-            self._transforms['data2world'].affine_matrix = np.array(affine)
-        elif isinstance(affine, Affine):
-            affine.name = 'data2world'
-            self._transforms['data2world'] = affine
-        else:
+        self._transforms[2] = self._coerce_affine(affine)
+        self._update_dims()
+        self.events.affine()
+
+    def _coerce_affine(self, affine):
+        if affine is None:
+            affine = Affine(affine_matrix=np.eye(self.ndim + 1))
+        elif isinstance(affine, np.ndarray):
+            affine = Affine(affine_matrix=affine)
+        elif isinstance(affine, list):
+            affine = Affine(affine_matrix=np.array(affine))
+        elif not isinstance(affine, Affine):
             raise TypeError(
                 trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
                     deferred=True,
                     dtype=type(affine),
                 )
             )
-        self._update_dims()
-        self.events.affine()
+        affine.name = 'world2world'
+        return affine
 
     @property
     def translate_grid(self):
@@ -613,7 +610,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
         )
-        full_world_extent = self._transforms['data2world'](full_data_extent)
+        full_world_extent = self.data2world_transform(full_data_extent)
         world_extent = np.array(
             [
                 np.min(full_world_extent, axis=0),
@@ -629,13 +626,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return Extent(
             data=data,
             world=self._get_extent_world(data),
-            step=abs(self.scale),
+            step=abs(self.data2world_transform.scale),
         )
 
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self._transforms['data2world'].inverse
+        inv_transform = self.data2world_transform.inverse
 
         if self.ndim > self._ndisplay:
             # Subspace spanned by non displayed dimensions

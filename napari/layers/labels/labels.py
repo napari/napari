@@ -326,7 +326,7 @@ class Labels(_ImageBase):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         data2world_scale = np.mean(
-            [self.scale[d] for d in self._dims_displayed]
+            [self.data2world_transform.scale[d] for d in self._dims_displayed]
         )
         self.cursor_size = abs(self.brush_size * data2world_scale)
         self.events.brush_size()
@@ -678,7 +678,10 @@ class Labels(_ImageBase):
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims_displayed]
+                [
+                    self.data2world_transform.scale[d]
+                    for d in self._dims_displayed
+                ]
             )
             self.cursor_size = abs(self.brush_size * data2world_scale)
             self.interactive = False
@@ -698,7 +701,10 @@ class Labels(_ImageBase):
             # Convert from brush size in data coordinates to
             # cursor size in world coordinates
             data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims_displayed]
+                [
+                    self.data2world_transform.scale[d]
+                    for d in self._dims_displayed
+                ]
             )
             self.cursor_size = abs(self.brush_size * data2world_scale)
             self.interactive = False
