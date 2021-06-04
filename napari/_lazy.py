@@ -1,5 +1,4 @@
-import importlib
-import importlib.util
+from importlib import import_module
 
 
 def install_lazy(module_name, submodules=None, submod_attrs=None):
@@ -42,21 +41,10 @@ def install_lazy(module_name, submodules=None, submod_attrs=None):
         # see: https://github.com/napari/napari/issues/1347
         from scipy import stats  # noqa: F401
 
-        # This must come before .plugins
-        from .utils import _magicgui
-
-        _magicgui.register_types_with_magicgui()
-        del _magicgui
-
         if name in submodules:
-            module = importlib.import_module(f'{module_name}.{name}')
-            del stats
-            return module
+            return import_module(f'{module_name}.{name}')
         elif name in attr_to_modules:
-            submod = importlib.import_module(
-                f'{module_name}.{attr_to_modules[name]}'
-            )
-            del stats
+            submod = import_module(f'{module_name}.{attr_to_modules[name]}')
             return getattr(submod, name)
         else:
             raise AttributeError(f'No {module_name} attribute {name}')
