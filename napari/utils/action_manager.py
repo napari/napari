@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Set, Union
+from typing import TYPE_CHECKING, Callable, Dict, List, Set, Tuple, Union
 
 from .interactions import Shortcut
 from .key_bindings import KeymapProvider
@@ -69,16 +69,17 @@ class ButtonWrapper:
     changed.
     """
 
-    def __init__(self, button):
+    def __init__(self, button, extra_tooltip_text):
         """
         wrapper around button to disconnect an action only
         if it has been connected before.
         """
         self._button = button
         self._connected = None
+        self._extra_tooltip_text: str = extra_tooltip_text
 
-    def setToolTip(self, *args, **kwargs):
-        return self._button.setToolTip(*args, **kwargs)
+    def setToolTip(self, value):
+        return self._button.setToolTip(value + ' ' + self._extra_tooltip_text)
 
     def clicked_maybe_connect(self, callback):
         if callback is not self._connected:
@@ -93,6 +94,30 @@ class ButtonWrapper:
     @property
     def destroyed(self):
         return self._button.destroyed
+
+
+class Context:
+    def __init__(self):
+        self._attr = {}
+        self._callables = {}
+
+    def __getitem__(self, key):
+        if key in self._attr:
+            return self._attr[key]
+        elif key in self._callables:
+            return self._callables[key]()
+
+    def items(self):
+        for k, v in self._attr.items():
+            yield k, v
+        for k, v in self._callables.items():
+            yield k, v()
+
+    def __setitem__(self, key, value):
+        if callable(value):
+            self._callables[key] = value
+        else:
+            self._attr[key] = value
 
 
 class ActionManager:
@@ -132,11 +157,17 @@ class ActionManager:
         # map associating a name/id with a Comm
         self._actions: Dict[str, Action] = {}
         self._buttons: Dict[
-            str, Set[Union[QPushButton, QtStateButton]]
+            str, Set[Tuple(Union[QPushButton, QtStateButton], str)]
         ] = defaultdict(lambda: set())
         self._shortcuts: Dict[str, str] = {}
-        self.context: Dict[str, Any] = {}
+        self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
+        self._tooltip_include_action_name = False
+
+    def _debug(self, val):
+        self._tooltip_include_action_name = val
+        for name in self._buttons.keys():
+            self._update_gui_elements(name)
 
     def _validate_action_name(self, name):
         if ":" not in name:
@@ -144,7 +175,7 @@ class ActionManager:
                 trans._(
                     'Action names need to be in the form `package:name`, got {name}',
                     name=name,
-                    delayed=True,
+                    deferred=True,
                 )
             )
 
@@ -222,7 +253,11 @@ class ActionManager:
             shortcut_str = ''
 
         callable_ = self._actions[name].callable(self.context)
-        self._update_buttons(buttons, desc + shortcut_str, callable_)
+        if self._tooltip_include_action_name:
+            append = '[' + name + ']'
+        else:
+            append = ''
+        self._update_buttons(buttons, desc + shortcut_str + append, callable_)
 
     def _update_shortcut_bindings(self, name: str):
         """
@@ -239,7 +274,7 @@ class ActionManager:
         if hasattr(keymapprovider, 'bind_key'):
             keymapprovider.bind_key(shortcut, overwrite=True)(action.command)
 
-    def bind_button(self, name: str, button) -> None:
+    def bind_button(self, name: str, button, extra_tooltip_text='') -> None:
         """
         Bind `button` to trigger Action `name` on click.
 
@@ -251,6 +286,10 @@ class ActionManager:
             A abject presenting a qt-button like interface that when clicked
             should trigger the action. The tooltip will be set the action
             description and the corresponding shortcut if available.
+        extra_tooltip_text : str
+            Extra text to add at the end of the tooltip. This is useful to
+            convey more information about this action as the action manager may
+            update the tooltip based on the action name.
 
         Notes
         -----
@@ -262,7 +301,7 @@ class ActionManager:
         self._validate_action_name(name)
         if hasattr(button, 'change'):
             button.clicked.disconnect(button.change)
-        button = ButtonWrapper(button)
+        button = ButtonWrapper(button, extra_tooltip_text)
         assert button not in [x._button for x in self._buttons['name']]
 
         button.destroyed.connect(lambda: self._buttons[name].remove(button))
@@ -300,13 +339,69 @@ class ActionManager:
         ----------
         name : str
             name of the action in the form `packagename:name` to unbind.
+
+        Returns
+        -------
+
+        shortcut: str | None
+            previously bound shortcut.
         """
         action = self._actions[name]
         shortcut = self._shortcuts.get(name)
-        if hasattr(action.keymapprovider, 'bind_key'):
-            action.keymapprovider.bind_key(shortcut)(None)
-        del self._shortcuts[name]
+        if shortcut is not None:
+            if hasattr(action.keymapprovider, 'bind_key'):
+                action.keymapprovider.bind_key(shortcut)(None)
+            del self._shortcuts[name]
         self._update_gui_elements(name)
+        return shortcut
+
+    def _get_layer_shortcuts(self, layers):
+        """
+        Get shortcuts filterd by the given layers.
+
+        Parameters
+        ----------
+        layers : list of layers
+            Layers to use for shortcuts filtering.
+
+        Returns
+        -------
+        dict
+            Dictionary of layers with dictionaries of shortcuts to
+            descriptions.
+        """
+        layer_shortcuts = {}
+        for layer in layers:
+            layer_shortcuts[layer] = {}
+            for name, shortcut in self._shortcuts.items():
+                action = self._actions.get(name, None)
+                if action and layer == action.keymapprovider:
+                    layer_shortcuts[layer][str(shortcut)] = action.description
+
+        return layer_shortcuts
+
+    def _get_active_shortcuts(self, active_keymap):
+        """
+        Get active shortcuts for the given active keymap.
+
+        Parameters
+        ----------
+        active_keymap : KeymapProvider
+            The active keymap provider.
+
+        Returns
+        -------
+        dict
+            Dictionary of shortcuts to descriptions.
+        """
+        active_func_names = [i[1].__name__ for i in active_keymap.items()]
+        active_shortcuts = {}
+        for name, shortcut in self._shortcuts.items():
+            action = self._actions.get(name, None)
+            if action and action.command.__name__ in active_func_names:
+                active_shortcuts[str(shortcut)] = action.description
+
+        return active_shortcuts
 
 
 action_manager = ActionManager()

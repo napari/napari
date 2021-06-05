@@ -1,8 +1,10 @@
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
 
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
+from ..dialogs.qt_modal import QtPopup
 
 
 class QtLayerButtons(QFrame):
@@ -100,6 +102,14 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
         action_manager.context['viewer'] = viewer
 
+        def active_layer():
+            if len(self.viewer.layers.selection) == 1:
+                return next(iter(self.viewer.layers.selection))
+            else:
+                return None
+
+        action_manager.context['layer'] = active_layer
+
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
@@ -143,7 +153,10 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-
+        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ndisplayButton.customContextMenuRequested.connect(
+            self.open_perspective_popup
+        )
         action_manager.bind_button(
             'napari:toggle_ndisplay', self.ndisplayButton
         )
@@ -158,6 +171,29 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
+
+    def open_perspective_popup(self):
+        """Show a slider to control the viewer `camera.perspective`."""
+        if self.viewer.dims.ndisplay != 3:
+            return
+
+        # make slider connected to perspective parameter
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setRange(0, max(90, self.viewer.camera.perspective))
+        sld.setValue(self.viewer.camera.perspective)
+        sld.valueChanged.connect(
+            lambda v: setattr(self.viewer.camera, 'perspective', v)
+        )
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(trans._('Perspective'), self))
+        layout.addWidget(sld)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
 
 
 class QtDeleteButton(QPushButton):

@@ -1,0 +1,25 @@
+name: Test typing
+
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 2 * * *'
+
+jobs:
+  typing:
+    name: Test typing on modules
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install napari
+        run: |
+          pip install -e .[all]
+          pip install -e .[testing]
+          pip install mypy
+      - name: Run mypy on typed modules
+        run: |
+          mypy napari/utils/settings

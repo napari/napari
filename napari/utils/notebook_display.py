@@ -1,3 +1,4 @@
+import base64
 from io import BytesIO
 
 __all__ = ['nbscreenshot']
@@ -62,12 +63,20 @@ class NotebookScreenshot:
         from .._qt.qt_event_loop import get_app
 
         get_app().processEvents()
-        self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
+        self.image = self.viewer.screenshot(
+            canvas_only=self.canvas_only, flash=False
+        )
         with BytesIO() as file_obj:
             imsave(file_obj, self.image, format='png')
             file_obj.seek(0)
             png = file_obj.read()
         return png
+
+    def _repr_html_(self):
+        png = self._repr_png_()
+        url = 'data:image/png;base64,' + base64.b64encode(png).decode('utf-8')
+        html = f'<img src="{url}"></img>'
+        return html
 
 
 nbscreenshot = NotebookScreenshot

@@ -1,50 +1,33 @@
-"""Methods to create a new viewer instance and add a particular layer type.
+"""Methods to create a new viewer instance then add a particular layer type.
 
-This module autogenerates a number of convenience functions, such as
-"view_image", or "view_surface", that both instantiate a new viewer instance,
-and add a new layer of a specific type to the viewer.  Each convenience
-function signature is a merged version of one of the ``Viewer.__init__`` method
-and the ``Viewer.add_<layer_type>`` methods.  The final generated functions
-follow this pattern
-(where <layer_type> is replaced with one of the layer types):
+All functions follow this pattern, (where <layer_type> is replaced with one
+of the layer types, like "image", "points", etc...):
 
     def view_<layer_type>(*args, **kwargs):
-        # pop all of the viewer kwargs out of kwargs into viewer_kwargs
+        # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
         viewer = Viewer(**viewer_kwargs)
         add_method = getattr(viewer, f"add_{<layer_type>}")
         add_method(*args, **kwargs)
         return viewer
-
-Note however: the real function signatures and documentation are maintained in
-the final functions, along with introspection, and tab autocompletion, etc...
 """
 import inspect
-import sys
-import textwrap
-import typing
 
-from numpydoc.docscrape import NumpyDocString
+from numpydoc.docscrape import NumpyDocString as _NumpyDocString
 
-from .utils.translations import trans
 from .viewer import Viewer
 
-VIEW_DOC = NumpyDocString(Viewer.__doc__)
-VIEW_PARAMS = "    " + "\n".join(VIEW_DOC._str_param_list('Parameters')[2:])
+__all__ = [
+    'view_image',
+    'view_labels',
+    'view_path',
+    'view_points',
+    'view_shapes',
+    'view_surface',
+    'view_tracks',
+    'view_vectors',
+]
 
-
-def merge_docs(add_method, layer_string):
-    # create combined docstring with parameters from add_* and Viewer methods
-    add_method_doc = NumpyDocString(add_method.__doc__)
-    params = (
-        "\n".join(add_method_doc._str_param_list('Parameters')) + VIEW_PARAMS
-    )
-    # this ugliness is because the indentation of the parsed numpydocstring
-    # is different for the first parameter :(
-    lines = params.splitlines()
-    lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
-    params = "\n".join(lines)
-    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
-    return f"""Create a viewer and add a{n} {layer_string} layer.
+_doc_template = """Create a viewer and add a{n} {layer_string} layer.
 
 {params}
 
@@ -54,112 +37,133 @@ viewer : :class:`napari.Viewer`
     The newly-created viewer.
 """
 
+_VIEW_DOC = _NumpyDocString(Viewer.__doc__)
+_VIEW_PARAMS = "    " + "\n".join(_VIEW_DOC._str_param_list('Parameters')[2:])
 
-def _generate_view_function(layer_string: str, method_name: str = None):
-    """Autogenerate a ``view_<layer_string>`` method.
 
-    Combines the signatures and docs of ``Viewer`` and
-    ``Viewer.add_<layer_string>``.  The returned function is compatible with
-    IPython help, introspection, tab completion, and autodocs.
+def _merge_docstrings(add_method, layer_string):
+    # create combined docstring with parameters from add_* and Viewer methods
+    import textwrap
 
-    Here's how it works:
-    1. we create a **string** (`fakefunc`) that represents how we _would_ have
-       typed out the original `view_*` method.
-        - `{combo_sig}` is an `inspect.Signature
-          <https://docs.python.org/3/library/inspect.html#inspect.Signature>`_
-          object (whose string representation is, conveniently, exactly how we
-          would have typed the original function).
-        - the inner part is basically how we were typing the body of the
-          `view_*` functions before.  That is, ``Viewer`` kwargs go to the
-          ``Viewer`` constructor, and everything else goes to the ``add_*``
-          method.  Note that we use ``_kw = locals()`` to get a dict of all
-          arguments passed to the function.
-    2. we compile that string, giving ``__file__`` as the second (``filename``)
-       argument, so it appears that the compiled code comes from this file.
-    3. finally, we evaluate the compiled code and add it to the
-       current module's "globals".  The second argument in the ``eval`` call
-       is a locals() namespace required to interpret the evaluated code.
-       (Note: evaluation at this step is essentially exactly what was
-       previously happening when python hit each `def view_*` declaration when
-       importing `view_layers.py`)
+    add_method_doc = _NumpyDocString(add_method.__doc__)
+    params = (
+        "\n".join(add_method_doc._str_param_list('Parameters')) + _VIEW_PARAMS
+    )
+    # this ugliness is because the indentation of the parsed numpydocstring
+    # is different for the first parameter :(
+    lines = params.splitlines()
+    lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
+    params = "\n".join(lines)
+    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
+    return _doc_template.format(n=n, layer_string=layer_string, params=params)
+
+
+def _merge_layer_viewer_sigs_docs(func):
+    """Make combined signature, docstrings, and annotations for `func`.
+
+    This is a decorator that combines information from `Viewer.__init__`,
+    and one of the `viewer.add_*` methods.  It updates the docstring,
+    signature, and type annotations of the decorated function with the merged
+    versions.
 
     Parameters
     ----------
-    layer_string : str
-        The name of the layer type
-    method_name : str
-        The name of the method in Viewer to use, by default will use
-        f'add_{layer_string}'
+    func : callable
+        `view_<layer_type>` function to modify
 
     Returns
     -------
-    view_func : Callable
-        The complete view_* function
+    func : callable
+        The same function, with merged metadata.
     """
-    # name of the corresponding add_* func
-    add_string = method_name or f'add_{layer_string}'
-    try:
-        add_method = getattr(Viewer, add_string)
-    except AttributeError:
-        raise AttributeError(
-            trans._(
-                "No Viewer method named '{add_string}'",
-                deferred=True,
-                add_string=add_string,
-            )
-        )
+    from .utils.misc import _combine_signatures
 
-    # get signatures of the add_* method and Viewer.__init__
-    add_sig = inspect.signature(add_method)
-    view_sig = inspect.signature(Viewer)
+    # get the `Viewer.add_*` method
+    layer_string = func.__name__.replace("view_", "")
+    if layer_string == 'path':
+        add_method = Viewer.open
+    else:
+        add_method = getattr(Viewer, f'add_{layer_string}')
 
-    # create a new combined signature
-    new_params = list(add_sig.parameters.values())[1:]  # [1:] to remove self
-    new_params += view_sig.parameters.values()
-    new_params = sorted(new_params, key=lambda p: p.kind)
-    combo_sig = add_sig.replace(parameters=new_params)
+    # merge the docstrings of Viewer and viewer.add_*
+    func.__doc__ = _merge_docstrings(add_method, layer_string)
 
-    # make new function string with the combined signature
-    fakefunc = f"def view_{layer_string}{combo_sig}:"
-    fakefunc += """
-        _kw = locals()
-        view_kwargs = {
-            k: _kw.pop(k) for k in list(_kw) if k in view_sig.parameters
-        }
-        viewer = napari.Viewer(**view_kwargs)
-        if 'kwargs' in _kw:
-            _kw.update(_kw.pop("kwargs"))
-    """
-    fakefunc += f"    viewer.{add_string}(**_kw)\n        return viewer"
-    # evaluate the new function into the current module namespace
-    globals = sys.modules[__name__].__dict__
-    eval(
-        compile(fakefunc, __file__, "exec"),
-        {
-            'typing': typing,
-            'view_sig': view_sig,
-            'Union': typing.Union,
-            'Optional': typing.Optional,
-            'List': typing.List,
-            'NoneType': type(None),
-            'Sequence': typing.Sequence,
-            'napari': sys.modules.get('napari'),
-        },
-        globals,
+    # merge the signatures of Viewer and viewer.add_*
+    func.__signature__ = _combine_signatures(
+        add_method, Viewer, return_annotation=Viewer, exclude=('self',)
     )
-    view_func = globals[f'view_{layer_string}']  # this is the final function.
-    view_func.__doc__ = merge_docs(add_method, layer_string)
+
+    # merge the __annotations__
+    func.__annotations__ = {
+        **add_method.__annotations__,
+        **Viewer.__init__.__annotations__,
+        'return': Viewer,
+    }
+
+    # _forwardrefns_ is used by stubgen.py to populate the globalns
+    # when evaluate forward references with get_type_hints
+    func._forwardrefns_ = {**add_method.__globals__}
+    return func
 
 
-for _layer in (
-    'image',
-    'points',
-    'labels',
-    'shapes',
-    'surface',
-    'vectors',
-    'tracks',
-):
-    _generate_view_function(_layer)
+_viewer_params = inspect.signature(Viewer).parameters
 
-_generate_view_function('path', 'open')
+
+def _make_viewer_then(add_method: str, args, kwargs) -> Viewer:
+    """Utility function that creates a viewer, adds a layer, returns viewer."""
+    vkwargs = {k: kwargs.pop(k) for k in list(kwargs) if k in _viewer_params}
+    viewer = Viewer(**vkwargs)
+    if 'kwargs' in kwargs:
+        kwargs.update(kwargs.pop("kwargs"))
+    method = getattr(viewer, add_method)
+    method(*args, **kwargs)
+    return viewer
+
+
+# Each of the following functions will have this pattern:
+#
+# def view_image(*args, **kwargs):
+#     # ... pop all of the viewer kwargs out of kwargs into viewer_kwargs
+#     viewer = Viewer(**viewer_kwargs)
+#     viewer.add_image(*args, **kwargs)
+#     return viewer
+
+
+@_merge_layer_viewer_sigs_docs
+def view_image(*args, **kwargs):
+    return _make_viewer_then('add_image', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_labels(*args, **kwargs):
+    return _make_viewer_then('add_labels', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_points(*args, **kwargs):
+    return _make_viewer_then('add_points', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_shapes(*args, **kwargs):
+    return _make_viewer_then('add_shapes', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_surface(*args, **kwargs):
+    return _make_viewer_then('add_surface', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_tracks(*args, **kwargs):
+    return _make_viewer_then('add_tracks', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_vectors(*args, **kwargs):
+    return _make_viewer_then('add_vectors', args, kwargs)
+
+
+@_merge_layer_viewer_sigs_docs
+def view_path(*args, **kwargs):
+    return _make_viewer_then('open', args, kwargs)

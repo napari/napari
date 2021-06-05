@@ -35,6 +35,7 @@ from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_activity_dock import QtActivityDock
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -51,6 +52,9 @@ from .._vispy import (  # isort:skip
 
 if TYPE_CHECKING:
     from ..viewer import Viewer
+
+from ..utils.io import imsave_extensions
+from ..utils.settings import SETTINGS
 
 
 class QtViewer(QSplitter):
@@ -69,7 +73,7 @@ class QtViewer(QSplitter):
     canvas : vispy.scene.SceneCanvas
         Canvas for rendering the current view.
     console : QtConsole
-        iPython console terminal integrated into the napari GUI.
+        IPython console terminal integrated into the napari GUI.
     controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
@@ -128,6 +132,10 @@ class QtViewer(QSplitter):
         layerListLayout.addWidget(self.viewerButtons)
         layerListLayout.setContentsMargins(8, 4, 8, 6)
         layerList.setLayout(layerListLayout)
+
+        activityDock = QtActivityDock()
+        activityDock.setObjectName('activityDock')
+
         self.dockLayerList = QtViewerDockWidget(
             self,
             layerList,
@@ -143,6 +151,14 @@ class QtViewer(QSplitter):
             area='left',
             allowed_areas=['left', 'right'],
             object_name='layer controls',
+        )
+        self.activityDock = QtViewerDockWidget(
+            self,
+            activityDock,
+            name=trans._('activity dock'),
+            area='right',
+            allowed_areas=['right', 'bottom'],
+            object_name='activity dock',
         )
         self.dockConsole = QtViewerDockWidget(
             self,
@@ -162,6 +178,8 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        self.activityDock.setVisible(False)
+
         # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
 
@@ -170,15 +188,12 @@ class QtViewer(QSplitter):
         action_manager.register_action(
             "napari:toggle_console_visibility",
             self.toggle_console_visibility,
-            "Show/Hide IPython console",
+            trans._("Show/Hide IPython console"),
             self.viewer,
         )
         action_manager.bind_button(
             'napari:toggle_console_visibility',
             self.viewerButtons.consoleButton,
-        )
-        action_manager.bind_shortcut(
-            'napari:toggle_console_visibility', 'Control-Shift-C'
         )
 
         self._create_canvas()
@@ -219,9 +234,6 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
 
-        # stop any animations whenever the layers change
-        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
-
         self.setAcceptDrops(True)
 
         for layer in self.viewer.layers:
@@ -254,6 +266,18 @@ class QtViewer(QSplitter):
             self.chunk_receiver = QtChunkReceiver(self.layers)
         else:
             self.chunk_receiver = None
+
+        # bind shortcuts stored in SETTINGS last.
+        self._bind_shortcuts()
+
+    def _bind_shortcuts(self):
+        """Bind shortcuts stored in SETTINGS to actions."""
+
+        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+            if action in action_manager._shortcuts:
+                action_manager.unbind_shortcut(action)
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(action, shortcut)
 
     def _create_canvas(self) -> None:
         """Create the canvas and hook up events."""
@@ -329,7 +353,10 @@ class QtViewer(QSplitter):
             try:
                 from napari_console import QtConsole
 
+                import napari
+
                 self.console = QtConsole(self.viewer)
+                self.console.push({'napari': napari})
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -345,6 +372,9 @@ class QtViewer(QSplitter):
         self._console = console
         if console is not None:
             self.dockConsole.setWidget(console)
+            console.setParent(self.dockConsole)
+        if getattr(self, '_console', None) is not None:
+            self._console.shell.user_ns['action_manager'] = action_manager
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -367,12 +397,11 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        active_layer = self.viewer.layers.selection.active
-        if active_layer in self._key_map_handler.keymap_providers:
-            self._key_map_handler.keymap_providers.remove(active_layer)
-
-        if active_layer is not None:
-            self._key_map_handler.keymap_providers.insert(0, active_layer)
+        self._key_map_handler.keymap_providers = (
+            [self.viewer]
+            if self.viewer.layers.selection.active is None
+            else [self.viewer.layers.selection.active, self.viewer]
+        )
 
         # If a QtAboutKeyBindings exists, update its text.
         if self._key_bindings_dialog is not None:
@@ -463,14 +492,47 @@ class QtViewer(QSplitter):
         if msg:
             raise OSError(trans._("Nothing to save"))
 
+        # prepare list of extensions for drop down menu.
+        if selected and len(self.viewer.layers.selection) == 1:
+            selected_layer = list(self.viewer.layers.selection)[0]
+            # single selected layer.
+            if selected_layer._type_string == 'image':
+
+                ext = imsave_extensions()
+
+                ext_list = []
+                for val in ext:
+                    ext_list.append("*" + val)
+
+                ext_str = ';;'.join(ext_list)
+
+                ext_str = trans._(
+                    "All Files (*);; Image file types:;;{ext_str}",
+                    ext_str=ext_str,
+                )
+
+            elif selected_layer._type_string == 'points':
+
+                ext_str = trans._("All Files (*);; *.csv;;")
+
+            else:
+                # layer other than image or points
+                ext_str = trans._("All Files (*);;")
+
+        else:
+            # multiple layers.
+            ext_str = trans._("All Files (*);;")
+
         msg = trans._("selected") if selected else trans._("all")
         dlg = QFileDialog()
         hist = get_save_history()
         dlg.setHistory(hist)
+
         filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default
+            directory=hist[0],  # home dir by default,
+            filter=ext_str,
         )
 
         if filename:
@@ -503,13 +565,36 @@ class QtViewer(QSplitter):
         if self._show_welcome_screen:
             self._canvas_overlay.set_welcome_visible(not self.viewer.layers)
 
-    def screenshot(self, path=None):
+    def _screenshot(self, flash=True):
+        """Capture a screenshot of the Vispy canvas.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        img = self.canvas.native.grabFramebuffer()
+        if flash:
+            from .utils import add_flash_animation
+
+            # Here we are actually applying the effect to the `_canvas_overlay`
+            # and not # the `native` widget because it does not work on the
+            # `native` widget. It's probably because the widget is in a stack
+            # with the `QtWelcomeWidget`.
+            add_flash_animation(self._canvas_overlay)
+        return img
+
+    def screenshot(self, path=None, flash=True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
 
         Returns
         -------
@@ -517,10 +602,23 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = QImg2array(self.canvas.native.grabFramebuffer())
+        img = QImg2array(self._screenshot(flash))
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
         return img
+
+    def clipboard(self, flash=True):
+        """Take a screenshot of the currently displayed screen and copy the
+        image to the clipboard.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        cb = QGuiApplication.clipboard()
+        cb.setImage(self._screenshot(flash))
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
@@ -876,7 +974,7 @@ if TYPE_CHECKING:
     from .experimental.qt_poll import QtPoll
 
 
-def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
+def _create_qt_poll(parent: QObject, camera: Camera) -> Optional[QtPoll]:
     """Create and return a QtPoll instance, if needed.
 
     Create a QtPoll instance for octree or monitor.
@@ -913,7 +1011,7 @@ def _create_qt_poll(parent: QObject, camera: Camera) -> 'Optional[QtPoll]':
 
 def _create_remote_manager(
     layers: LayerList, qt_poll
-) -> 'Optional[RemoteManager]':
+) -> Optional[RemoteManager]:
     """Create and return a RemoteManager instance, if we need one.
 
     Parameters

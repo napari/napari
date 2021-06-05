@@ -1,7 +1,9 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
+from __future__ import annotations
+
 import re
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
@@ -19,13 +21,14 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ... import plugins
-from ...plugins import PluginManager
 from ...plugins import plugin_manager as napari_plugin_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
 from ..widgets.qt_eliding_label import ElidingLabel
+
+if TYPE_CHECKING:
+    from napari_plugin_engine import PluginManager
 
 
 def rst2html(text):
@@ -258,7 +261,7 @@ class QtPluginSorter(QWidget):
     ----------
     plugin_manager : PluginManager, optional
         An instance of a PluginManager. by default, the main
-        :class:`~napari.plugins.manager.PluginManager` instance
+        ``napari.plugins.plugin_manager`` instance
     parent : QWidget, optional
         Optional parent widget, by default None
     initial_hook : str, optional
@@ -312,6 +315,9 @@ class QtPluginSorter(QWidget):
             self.hook_combo_box.addItem(
                 name.replace("napari_", ""), hook_caller
             )
+
+        self.plugin_manager.events.disabled.connect(self._on_disabled)
+        self.plugin_manager.events.registered.connect(self.refresh)
 
         self.hook_combo_box.setToolTip(
             trans._("select the hook specification to reorder")
@@ -387,19 +393,14 @@ class QtPluginSorter(QWidget):
             self.info.hide()
             self.docstring.setToolTip('')
 
-    def refresh(self):
+    def refresh(self, event=None):
         self._on_hook_change(self.hook_combo_box.currentIndex())
 
-    def set_setting_default_value(self):
-        """On start up, this function is used to set the defaults in settings.
-        Note: use before loading in the saved settings.
-        """
-        if SETTINGS._defaults["plugins"].call_order is None:
-            setattr(
-                SETTINGS._defaults['plugins'],
-                'call_order',
-                self.plugin_manager.call_order(),
-            )
+    def _on_disabled(self, event):
+        for i in range(self.hook_list.count()):
+            item = self.hook_list.item(i)
+            if item and item.hook_implementation.plugin_name == event.value:
+                self.hook_list.takeItem(i)
 
     def value(self):
         """Returns the call order from the plugin manager.
@@ -410,4 +411,4 @@ class QtPluginSorter(QWidget):
 
         """
 
-        return plugins.plugin_manager.call_order()
+        return napari_plugin_manager.call_order()

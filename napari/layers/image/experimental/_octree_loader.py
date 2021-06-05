@@ -2,17 +2,22 @@
 
 Uses ChunkLoader to load data into OctreeChunks in the octree.
 """
-import logging
-from typing import List, Set
+from __future__ import annotations
 
-from ....components.experimental.chunk import (
-    ChunkRequest,
-    LayerRef,
-    chunk_loader,
-)
+import logging
+from typing import TYPE_CHECKING, List, Set
+
 from ._chunk_set import ChunkSet
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeLocation
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import (
+        ChunkRequest,
+        LayerRef,
+        OctreeLocation,
+    )
+    from .octree_chunk import OctreeChunk
+
 
 LOGGER = logging.getLogger("napari.octree.loader")
 LOADER = logging.getLogger("napari.loader.futures")
@@ -371,6 +376,11 @@ class OctreeLoader:
         # Mark that this chunk is being loaded.
         octree_chunk.loading = True
 
+        from ....components.experimental.chunk import (
+            ChunkRequest,
+            chunk_loader,
+        )
+
         # Create the ChunkRequest and load it with the ChunkLoader.
         request = ChunkRequest(octree_chunk.location, chunks, priority)
         satisfied_request = chunk_loader.load_request(request)
@@ -407,6 +417,8 @@ class OctreeLoader:
         seen : ChunkSet
             The set of chunks the loader can see.
         """
+
+        from ....components.experimental.chunk import chunk_loader
 
         def _should_cancel(chunk_request: ChunkRequest) -> bool:
             """Cancel if we are no longer seeing this location."""

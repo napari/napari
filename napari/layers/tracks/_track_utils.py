@@ -95,12 +95,12 @@ class TrackManager:
 
     @property
     def data(self) -> np.ndarray:
-        """ array (N, D+1): Coordinates for N points in D+1 dimensions. """
+        """array (N, D+1): Coordinates for N points in D+1 dimensions."""
         return self._data
 
     @data.setter
     def data(self, data: Union[list, np.ndarray]):
-        """ set the vertex data and build the vispy arrays for display """
+        """set the vertex data and build the vispy arrays for display"""
 
         # convert data to a numpy array if it is not already one
         data = np.asarray(data)
@@ -149,7 +149,7 @@ class TrackManager:
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        """ set track properties """
+        """set track properties"""
 
         # make copy so as not to mutate original
         properties = properties.copy()
@@ -176,29 +176,29 @@ class TrackManager:
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
-        """ set the track graph """
+        """set the track graph"""
         self._graph = self._validate_track_graph(graph)
 
     @property
     def track_ids(self):
-        """ return the track identifiers"""
-        return self.data[:, 0].astype(np.uint16)
+        """return the track identifiers"""
+        return self.data[:, 0].astype(np.uint32)
 
     @property
     def unique_track_ids(self):
-        """ return the unique track identifiers"""
+        """return the unique track identifiers"""
         return np.unique(self.track_ids)
 
     def __len__(self):
-        """ return the number of tracks """
+        """return the number of tracks"""
         return len(self.unique_track_ids) if self.data is not None else 0
 
     def _vertex_indices_from_id(self, track_id: int):
-        """ return the vertices corresponding to a track id """
+        """return the vertices corresponding to a track id"""
         return self._id2idxs[track_id].nonzero()[1]
 
     def _validate_track_data(self, data: np.ndarray) -> np.ndarray:
-        """ validate the coordinate data """
+        """validate the coordinate data"""
 
         if data.ndim != 2:
             raise ValueError(
@@ -241,7 +241,7 @@ class TrackManager:
     def _validate_track_properties(
         self, properties: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
-        """ validate the track properties """
+        """validate the track properties"""
 
         for k, v in properties.items():
             if len(v) != len(self.data):
@@ -260,7 +260,7 @@ class TrackManager:
     def _validate_track_graph(
         self, graph: Dict[int, Union[int, List[int]]]
     ) -> Dict[int, List[int]]:
-        """ validate the track graph """
+        """validate the track graph"""
 
         # check that graph nodes are of correct format
         for node_idx, parents_idx in graph.items():
@@ -284,7 +284,7 @@ class TrackManager:
         return graph
 
     def build_tracks(self):
-        """ build the tracks """
+        """build the tracks"""
 
         points_id = []
         track_vertices = []
@@ -308,7 +308,7 @@ class TrackManager:
         self._track_connex = np.concatenate(track_connex, axis=0)
 
     def build_graph(self):
-        """ build the track graph """
+        """build the track graph"""
 
         graph_vertices = []
         graph_connex = []
@@ -338,7 +338,7 @@ class TrackManager:
             self._graph_connex = None
 
     def vertex_properties(self, color_by: str) -> np.ndarray:
-        """ return the properties of tracks by vertex """
+        """return the properties of tracks by vertex"""
 
         if color_by not in self.properties:
             raise ValueError(
@@ -352,7 +352,7 @@ class TrackManager:
         return self.properties[color_by]
 
     def get_value(self, coords):
-        """ use a kd-tree to lookup the ID of the nearest tree """
+        """use a kd-tree to lookup the ID of the nearest tree"""
         if self._kdtree is None:
             return
 
@@ -379,12 +379,12 @@ class TrackManager:
 
     @property
     def track_vertices(self) -> np.ndarray:
-        """ return the track vertices """
+        """return the track vertices"""
         return self._track_vertices
 
     @property
     def track_connex(self) -> np.ndarray:
-        """ vertex connections for drawing track lines """
+        """vertex connections for drawing track lines"""
         return self._track_connex
 
     @property
@@ -395,28 +395,28 @@ class TrackManager:
 
     @property
     def graph_vertices(self) -> np.ndarray:
-        """ return the graph vertices """
+        """return the graph vertices"""
         return self._graph_vertices
 
     @property
     def graph_connex(self):
-        """ vertex connections for drawing the graph """
+        """vertex connections for drawing the graph"""
         return self._graph_connex
 
     @property
     def track_times(self) -> np.ndarray:
-        """ time points associated with each track vertex """
+        """time points associated with each track vertex"""
         return self.track_vertices[:, 0]
 
     @property
     def graph_times(self) -> np.ndarray:
-        """ time points assocaite with each graph vertex """
+        """time points assocaite with each graph vertex"""
         if self.graph_vertices is not None:
             return self.graph_vertices[:, 0]
         return None
 
     def track_labels(self, current_time: int) -> tuple:
-        """ return track labels at the current time """
+        """return track labels at the current time"""
         # this is the slice into the time ordered points array
         if current_time not in self._points_lookup:
             return [], []

@@ -1,17 +1,22 @@
 """Octree class.
 """
+from __future__ import annotations
+
 import logging
 import math
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from ....utils.perf import block_timer
 from ....utils.translations import trans
-from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree")
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk._request import OctreeLocation
+    from .octree_chunk import OctreeChunk
 
 
 class Octree:

@@ -64,6 +64,9 @@ if TYPE_CHECKING:
     from ..types import FullLayerData, LayerData
 
 
+__all__ = ['ViewerModel', 'valid_add_kwargs']
+
+
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
 class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
     """Viewer containing the rendered scene, layers, and controlling elements
@@ -249,8 +252,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
-            self.camera.zoom = (
-                0.95 * np.min(self._canvas_size) / np.max(size[-2:])
+            self.camera.zoom = 0.95 * np.min(
+                np.array(self._canvas_size) / np.array(size[-2:])
             )
         self.camera.angles = (0, 0, 90)
 
@@ -520,7 +523,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Parameters
         ----------
         data : array or list of array
-            Image data. Can be N dimensional. If the last dimension has length
+            Image data. Can be N >= 2 dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
             a multiscale image.
@@ -735,12 +738,18 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         KeyError
             If `plugin` does not provide a sample named `sample`.
         """
-        from ..plugins import _sample_data, available_samples
+        from ..plugins import plugin_manager
 
         try:
-            data = _sample_data[plugin][sample]['data']
+            data = plugin_manager._sample_data[plugin][sample]['data']
         except KeyError:
-            samples = available_samples()
+            samples = plugin_manager.available_samples()
+            msg = trans._(
+                "Plugin {plugin!r} does not provide sample data named {sample!r}. ",
+                plugin=plugin,
+                sample=sample,
+                deferred=True,
+            )
             if samples:
                 msg = trans._(
                     "Plugin {plugin!r} does not provide sample data named {sample!r}. Available samples include: {samples}.",
@@ -917,7 +926,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: Optional[str] = None
+        self,
+        data,
+        meta: Dict[str, Any] = None,
+        layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 
@@ -1000,7 +1012,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return layer if isinstance(layer, list) else [layer]
 
 
-def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
+def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
     Parameters
@@ -1053,11 +1065,11 @@ def _normalize_layer_data(data: 'LayerData') -> 'FullLayerData':
 
 
 def _unify_data_and_user_kwargs(
-    data: 'LayerData',
+    data: LayerData,
     kwargs: Optional[dict] = None,
     layer_type: Optional[str] = None,
     fallback_name: str = None,
-) -> 'FullLayerData':
+) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
     If ``data == (_data, _meta, _type)``.  Then:
