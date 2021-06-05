@@ -47,7 +47,11 @@ class NapariPluginManager(PluginManager):
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
-            source=self, registered=None, enabled=None, disabled=None
+            source=self,
+            registered=None,
+            unregistered=None,
+            enabled=None,
+            disabled=None,
         )
         self._blocked: EventedSet[str] = EventedSet()
         self._blocked.events.changed.connect(self._on_blocked_change)
@@ -101,7 +105,7 @@ class NapariPluginManager(PluginManager):
             ):
                 _dict.pop(name_or_object, None)
 
-        self.events.registered(value=name_or_object)
+        self.events.unregistered(value=None)
 
         return plugin
 

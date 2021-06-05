@@ -82,17 +82,18 @@ def test_plugin_widgets(monkeypatch, napari_plugin_manager):
 def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     """Test the plugin widgets get added to the window menu correctly."""
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()[3:]
     assert len(actions) == 3
     expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
     assert [a.text() for a in actions] == expected_text
 
-    # the first item in the menu is a submenu (for "Test plugin1")
+    # the first item of the plugins is a submenu (for "Test plugin1")
     assert actions[0].menu()
     subnames = ['Widg1', 'Widg2']
     assert [a.text() for a in actions[0].menu().actions()] == subnames
 
-    # the other items in the menu are not submenus
+    # the other items for the plugins are not submenus
     assert not actions[1].menu()
     assert not actions[2].menu()
 
@@ -100,7 +101,8 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
 def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()[3:]
 
     # trigger the 'TestP2: Widg3' action
     actions[1].trigger()
@@ -132,7 +134,8 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     import magicgui
 
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()[3:]
 
     # trigger the 'TestP3: magic' action
     actions[2].trigger()
@@ -157,7 +160,8 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
 def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()[3:]
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()
     assert len(viewer.window._dock_widgets) == 2

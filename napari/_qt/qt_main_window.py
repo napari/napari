@@ -396,6 +396,10 @@ class Window:
             self._rebuild_dock_widget_menu
         )
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
+        plugin_manager.events.unregistered.connect(
+            self._rebuild_dock_widget_menu
+        )
+        plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
