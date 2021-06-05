@@ -105,7 +105,7 @@ class NapariPluginManager(PluginManager):
             ):
                 _dict.pop(name_or_object, None)
 
-        self.events.unregistered(value=None)
+        self.events.unregistered(value=name_or_object)
 
         return plugin
 
