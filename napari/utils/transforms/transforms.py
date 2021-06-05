@@ -13,6 +13,7 @@ from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
+    infer_ndim,
     is_matrix_triangular,
     is_matrix_upper_triangular,
 )
@@ -261,7 +262,7 @@ class Affine(Transform):
     """n-dimensional affine transformation class.
 
     The affine transform can be represented as a n+1 dimensional
-    transformation matrix in homogenous coordinates [1]_, an n
+    transformation matrix in homogeneous coordinates [1]_, an n
     dimensional matrix and a length n translation vector, or be
     composed and decomposed from scale, rotate, and shear
     transformations in the following order:
@@ -530,7 +531,8 @@ class CompositeAffine(Transform):
         without modification. An empty translation vector implies no
         translation.
     ndim : int
-        The dimensionality of the transform. If None, this is inferred from the other parameters.
+        The dimensionality of the transform. If None, this is inferred from the
+        other parameters.
     name : string
         A string name for the transform.
     """
@@ -546,13 +548,11 @@ class CompositeAffine(Transform):
     ):
         super().__init__(name=name)
         if ndim is None:
-            ndim = _infer_ndim(scale, translate, rotate, shear)
-        self._translate = coerce_translate(ndim, translate)
-        self._scale = coerce_scale(ndim, scale)
-        self._rotate = (
-            np.eye(ndim) if rotate is None else coerce_rotate(rotate)
-        )
-        self._shear = np.eye(ndim) if shear is None else coerce_shear(shear)
+            ndim = infer_ndim(scale, translate, rotate, shear)
+        self._translate = coerce_translate(translate, ndim)
+        self._scale = coerce_scale(scale, ndim)
+        self._rotate = coerce_rotate(rotate, ndim)
+        self._shear = coerce_shear(shear, ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     def __call__(self, coords):
@@ -577,7 +577,7 @@ class CompositeAffine(Transform):
     @translate.setter
     def translate(self, translate):
         """Set the translation of the transform."""
-        self._translate = coerce_translate(self.ndim, translate)
+        self._translate = coerce_translate(translate, self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -588,7 +588,7 @@ class CompositeAffine(Transform):
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        self._scale = coerce_scale(self.ndim, scale)
+        self._scale = coerce_scale(scale, self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -599,18 +599,20 @@ class CompositeAffine(Transform):
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        self._rotate = coerce_rotate(rotate)
+        self._rotate = coerce_rotate(rotate, self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
+        if is_matrix_upper_triangular(self._shear):
+            return self._shear[np.triu_indices(n=self.ndim, k=1)]
         return self._shear
 
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        self._shear = coerce_shear(shear)
+        self._shear = coerce_shear(shear, self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -651,10 +653,10 @@ class CompositeAffine(Transform):
             Resulting transform.
         """
         return CompositeAffine(
-            scale=self.scale[axes],
-            translate=self.translate[axes],
-            rotate=self.rotate[np.ix_(axes, axes)],
-            shear=self.shear[np.ix_(axes, axes)],
+            scale=self._scale[axes],
+            translate=self._translate[axes],
+            rotate=self._rotate[np.ix_(axes, axes)],
+            shear=self._shear[np.ix_(axes, axes)],
             name=self.name,
         )
 
@@ -676,13 +678,13 @@ class CompositeAffine(Transform):
         n = len(axes) + len(self.scale)
         not_axes = [i for i in range(n) if i not in axes]
         rotate = np.eye(n)
-        rotate[np.ix_(not_axes, not_axes)] = self.rotate
+        rotate[np.ix_(not_axes, not_axes)] = self._rotate
         shear = np.eye(n)
-        shear[np.ix_(not_axes, not_axes)] = self.shear
+        shear[np.ix_(not_axes, not_axes)] = self._shear
         translate = np.zeros(n)
-        translate[not_axes] = self.translate
+        translate[not_axes] = self._translate
         scale = np.ones(n)
-        scale[not_axes] = self.scale
+        scale[not_axes] = self._scale
         return CompositeAffine(
             translate=translate,
             scale=scale,
@@ -709,16 +711,3 @@ def _apply_affine_with_padding(coords, linear_matrix, translate):
     return np.atleast_1d(
         np.squeeze(coords @ padded_linear_matrix.T + translate)
     )
-
-
-def _infer_ndim(scale, translate, rotate, shear):
-    ndim = 0
-    if scale is not None:
-        ndim = max(ndim, len(scale))
-    if translate is not None:
-        ndim = max(ndim, len(translate))
-    if rotate is not None:
-        ndim = max(ndim, coerce_rotate(rotate).shape[0])
-    if shear is not None:
-        ndim = max(ndim, coerce_shear(shear).shape[0])
-    return ndim

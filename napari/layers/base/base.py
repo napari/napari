@@ -395,7 +395,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This generates an affine transform by composing the affine property with
         the other transform properties in the following order:
 
-        affine * rotate * skew * scale + translate.
+        affine * (rotate * skew * scale + translate).
         """
         return self._transforms[1:3].simplified
 

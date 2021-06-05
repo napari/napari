@@ -282,3 +282,22 @@ def test_repeat_shear_setting():
     transform.shear = mat.copy()
     # Check shear still decomposed into lower triangular
     np.testing.assert_almost_equal(mat, transform.shear)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_composite_affine_equiv_to_affine(dimensionality):
+    rng = np.random.default_rng(0)
+    translate = rng.standard_normal(dimensionality)
+    scale = rng.standard_normal(dimensionality)
+    rotate, shear = np.linalg.qr(rng.standard_normal((dimensionality,) * 2))
+
+    composite = CompositeAffine(
+        translate=translate, scale=scale, rotate=rotate, shear=shear
+    )
+    affine = Affine(
+        translate=translate, scale=scale, rotate=rotate, shear=shear
+    )
+
+    np.testing.assert_almost_equal(
+        composite.affine_matrix, affine.affine_matrix
+    )

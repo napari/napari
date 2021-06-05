@@ -29,9 +29,9 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     matrix : array
         nD array representing the composed linear transform.
     """
-    rotate_mat = coerce_rotate(rotate)
+    rotate_mat = _make_rotate_mat(rotate)
     scale_mat = np.diag(scale)
-    shear_mat = coerce_shear(shear)
+    shear_mat = _make_shear_mat(shear)
 
     ndim = max(mat.shape[0] for mat in (rotate_mat, scale_mat, shear_mat))
     full_scale = embed_in_identity_matrix(scale_mat, ndim)
@@ -41,7 +41,43 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     return full_rotate @ full_shear @ full_scale
 
 
-def coerce_rotate(rotate):
+def infer_ndim(scale, translate, rotate, shear):
+    ndim = 0
+    if scale is not None:
+        ndim = max(ndim, len(scale))
+    if translate is not None:
+        ndim = max(ndim, len(translate))
+    if rotate is not None:
+        ndim = max(ndim, _make_rotate_mat(rotate).shape[0])
+    if shear is not None:
+        ndim = max(ndim, _make_shear_mat(shear).shape[0])
+    return ndim
+
+
+def coerce_translate(translate, ndim):
+    translate_arr = np.zeros(ndim)
+    if translate is not None:
+        translate_arr[-len(translate) :] = translate
+    return translate_arr
+
+
+def coerce_scale(scale, ndim):
+    scale_arr = np.ones(ndim)
+    if scale is not None:
+        scale_arr[-len(scale) :] = scale
+    return scale_arr
+
+
+def coerce_rotate(rotate, ndim):
+    full_rotate_mat = np.eye(ndim)
+    if rotate is not None:
+        rotate_mat = _make_rotate_mat(rotate)
+        rotate_mat_ndim = rotate_mat.shape[0]
+        full_rotate_mat[-rotate_mat_ndim:, -rotate_mat_ndim:] = rotate_mat
+    return full_rotate_mat
+
+
+def _make_rotate_mat(rotate):
     if np.isscalar(rotate):
         return _make_2d_rotation(rotate)
     elif np.array(rotate).ndim == 1 and len(rotate) == 3:
@@ -95,21 +131,16 @@ def _cos_sin(angle_deg):
     return np.cos(angle_rad), np.sin(angle_rad)
 
 
-def coerce_translate(ndim, translate):
-    translate_arr = np.zeros(ndim)
-    if translate is not None:
-        translate_arr[ndim - len(translate) :] = translate
-    return translate_arr
+def coerce_shear(shear, ndim):
+    full_shear_mat = np.eye(ndim)
+    if shear is not None:
+        shear_mat = _make_shear_mat(shear)
+        shear_mat_ndim = shear_mat.shape[0]
+        full_shear_mat[-shear_mat_ndim:, -shear_mat_ndim:] = shear_mat
+    return full_shear_mat
 
 
-def coerce_scale(ndim, scale):
-    scale_arr = np.ones(ndim)
-    if scale is not None:
-        scale_arr[ndim - len(scale) :] = scale
-    return scale_arr
-
-
-def coerce_shear(shear):
+def _make_shear_mat(shear):
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
