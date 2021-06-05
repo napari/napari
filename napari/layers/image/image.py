@@ -535,8 +535,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._empty = False
 
         if self.multiscale:
-            # If 3d redering just show lowest level of multiscale
             if self._ndisplay == 3:
+                # If 3d redering just show lowest level of multiscale
+                warnings.warn(
+                    trans._(
+                        'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                )
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
