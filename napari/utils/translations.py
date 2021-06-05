@@ -432,7 +432,7 @@ class TranslationBundle:
             Define if the string translation should be deferred or executed
             in place. Default is False.
         **kwargs : dict, optional
-            Any additional arguments to use when formating the string.
+            Any additional arguments to use when formatting the string.
 
         Returns
         -------

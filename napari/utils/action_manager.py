@@ -159,7 +159,7 @@ class ActionManager:
         self._buttons: Dict[
             str, Set[Tuple(Union[QPushButton, QtStateButton], str)]
         ] = defaultdict(lambda: set())
-        self._shortcuts: Dict[str, list[str]] = defaultdict(lambda: set())
+        self._shortcuts: Dict[str, set[str]] = defaultdict(lambda: set())
         self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
@@ -248,9 +248,14 @@ class ActionManager:
         # update buttons with shortcut and description
         if name in self._shortcuts:
             shortcuts = self._shortcuts[name]
+            joinstr = (
+                ' '
+                + trans._('or', msgctxt='<keysequence> or <keysequence>')
+                + ' '
+            )
             shortcut_str = (
                 '('
-                + ','.join(
+                + joinstr.join(
                     f"{Shortcut(shortcut).platform}" for shortcut in shortcuts
                 )
                 + ')'
