@@ -57,11 +57,13 @@ def get_max_texture_sizes() -> Tuple[int, int]:
     if max_size_2d == ():
         max_size_2d = None
 
-    # vispy/gloo doesn't provide the GL_MAX_3D_TEXTURE_SIZE constant value
-    # so we hard coded it from the documentation, section constants at the bottom
+    # vispy/gloo doesn't provide the GL_MAX_3D_TEXTURE_SIZE location,
+    # but it can be found in this list of constants
     # http://pyopengl.sourceforge.net/documentation/pydoc/OpenGL.GL.html
-    GL_MAX_3D_TEXTURE_SIZE = 32883
-    max_size_3d = gl.glGetParameter(GL_MAX_3D_TEXTURE_SIZE)
+    with _opengl_context():
+        GL_MAX_3D_TEXTURE_SIZE = 32883
+        max_size_3d = gl.glGetParameter(GL_MAX_3D_TEXTURE_SIZE)
+
     if max_size_3d == ():
         max_size_3d = None
 
