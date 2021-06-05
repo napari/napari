@@ -95,6 +95,22 @@ class SettingsManager:
     def __str__(self):
         return safe_dump(self._to_dict(safe=True))
 
+    def _remove_default(self, settings_data):
+        """
+        Attempt to convert self to dict and to remove any default values from the configuration
+        """
+
+        for section, values in settings_data.items():
+            if section not in self._defaults:
+                continue
+
+            default_values = self._defaults[section].dict()
+            for k, v in list(values.items()):
+                if default_values.get(k, None) == v:
+                    del values[k]
+
+        return settings_data
+
     def _to_dict(self, safe: bool = False) -> dict:
         """Convert the settings to a dictionary."""
         data = {}
@@ -128,9 +144,11 @@ class SettingsManager:
                         except KeyError:
                             pass
 
-                data_str = safe_dump(data)
+                data_str = safe_dump(self._remove_default(data))
             else:
-                data_str = str(self)
+                data_str = safe_dump(
+                    self._remove_default(self._to_dict(safe=True))
+                )
 
             with open(path, "w") as fh:
                 fh.write(data_str)
