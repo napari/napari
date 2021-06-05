@@ -94,6 +94,8 @@ class VispySurfaceLayer(VispyBaseLayer):
                 )
             )
             self.node.shading = None
+            if self.node.shading_filter is not None:
+                self.node.shading_filter._attached = False
         else:
             self.node.shading = self.layer.shading
         self.node.mesh_data_changed()
