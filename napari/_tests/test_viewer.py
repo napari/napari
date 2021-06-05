@@ -21,7 +21,7 @@ def _get_all_keybinding_methods(type_):
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 12
 
 
 def test_len_methods_viewer(make_napari_viewer):
