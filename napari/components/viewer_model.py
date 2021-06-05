@@ -131,8 +131,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
-        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_appearance
-        SETTINGS.appearance.events.layer_tooltip_appearance.connect(
+        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
+        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visible_update
         )
 
@@ -378,7 +378,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active is not None:
             self.status = active.get_status(self.cursor.position, world=True)
             self.help = active.help
-            self.tooltip.text = active.get_tooltip_text(
+            self.tooltip.text = active._get_tooltip_text(
                 self.cursor.position, world=True
             )
 

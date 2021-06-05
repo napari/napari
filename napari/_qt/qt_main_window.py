@@ -764,8 +764,27 @@ class Window:
         scale_bar_menu.addAction(scale_bar_colored_action)
         scale_bar_menu.addAction(scale_bar_ticks_action)
         self.view_menu.addMenu(scale_bar_menu)
+        self.tooltip_menu = QAction(
+            trans._('Layer Tooltip visibility'),
+            parent=self._qt_window,
+            checkable=True,
+            checked=SETTINGS.appearance.layer_tooltip_visibility,
+        )
+        self.tooltip_menu.triggered.connect(self._tooltip_visibility_toggle)
+        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+            self._tooltip_visibility_toggled
+        )
+        self.view_menu.addAction(self.tooltip_menu)
 
         self.view_menu.addSeparator()
+
+    def _tooltip_visibility_toggle(self, value):
+        SETTINGS.appearance.layer_tooltip_visibility = value
+
+    def _tooltip_visibility_toggled(self, event):
+        self.tooltip_menu.setChecked(
+            SETTINGS.appearance.layer_tooltip_visibility
+        )
 
     def _event_to_action(self, action, event):
         """Connect triggered event in model to respective action in menu."""

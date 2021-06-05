@@ -400,7 +400,9 @@ class Labels(_ImageBase):
         index: dict
             index mapping dictionary
         """
-        if properties is None or not properties:
+        if properties is None or (
+            isinstance(properties, dict) and not len(properties)
+        ):
             # None or empty dict properties
             return {}, {}
         if isinstance(properties, dict):

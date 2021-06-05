@@ -264,8 +264,8 @@ class AppearanceSettings(BaseNapariSettings):
         le=10,
     )
 
-    layer_tooltip_appearance: bool = Field(
-        True,
+    layer_tooltip_visibility: bool = Field(
+        False,
         description=trans._("If layer tooltip will be shown when hower mouse"),
     )
 
