@@ -1226,7 +1226,7 @@ class Labels(_ImageBase):
 
         return msg
 
-    def get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(self, position, *, world=False):
         """
         tooltip message of the data at a coordinate position.
 

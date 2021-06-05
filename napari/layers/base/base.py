@@ -1096,7 +1096,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         value = self.get_value(position, world=world)
         return generate_layer_status(self.name, position, value)
 
-    def get_tooltip_text(self, position, *, world=False):
+    def _get_tooltip_text(self, position, *, world=False):
         """
         tooltip message of the data at a coordinate position.
 
