@@ -40,7 +40,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
         a multiscale image. Please note multiscale rendering is only
-        supported in 2D.
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -105,7 +106,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
         should be the largest. Please note multiscale rendering is only
-        supported in 2D.
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
 
     Attributes
     ----------
@@ -114,7 +116,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreasing in shape then the data is treated as a
         multiscale image. Please note multiscale rendering is only
-        supported in 2D.
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -126,7 +129,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest. Please note multiscale rendering is only
-        supported in 2D.
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
