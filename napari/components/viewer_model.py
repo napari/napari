@@ -378,9 +378,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active is not None:
             self.status = active.get_status(self.cursor.position, world=True)
             self.help = active.help
-            self.tooltip.text = active._get_tooltip_text(
-                self.cursor.position, world=True
-            )
+            if self.tooltip.visible:
+                self.tooltip.text = active._get_tooltip_text(
+                    self.cursor.position, world=True
+                )
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
