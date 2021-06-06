@@ -263,7 +263,11 @@ class PreferencesDialog(QDialog):
                 SETTINGS._env_settings.get(section, {}).get(name, None)
             )
             widget.setDisabled(disable)
-            widget.opacity.setOpacity(0.3 if disable else 1)
+            try:
+                widget.opacity.setOpacity(0.3 if disable else 1)
+            except AttributeError:
+                # some widgets may not have opacity (such as the QtPluginSorter)
+                pass
 
         # set state values for widget
         form.widget.state = values
