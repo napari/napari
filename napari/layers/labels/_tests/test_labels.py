@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 from numpy.core.numerictypes import issubdtype
@@ -294,6 +295,12 @@ def test_properties():
 
     layer = Labels(data)
     layer.properties = properties
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+    layer = Labels(data)
+    layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
