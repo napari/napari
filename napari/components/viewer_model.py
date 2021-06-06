@@ -513,7 +513,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             Image data. Can be N >= 2 dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
-            a multiscale image.
+            a multiscale image. Please note multiscale rendering is only
+            supported in 2D. In 3D, only the lowest resolution scale is
+            displayed.
         channel_axis : int, optional
             Axis to expand image along.  If provided, each channel in the data
             will be added as an individual image layer.  In channel_axis mode,
@@ -608,7 +610,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             represented by a list of array like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be multiscale. The first image in the list
-            should be the largest.
+            should be the largest. Please note multiscale rendering is only
+            supported in 2D. In 3D, only the lowest resolution scale is
+            displayed.
 
         Returns
         -------

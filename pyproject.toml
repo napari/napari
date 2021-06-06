@@ -91,6 +91,7 @@ filterwarnings = [
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
   "ignore:For best performance with Dask arrays in napari:UserWarning:",
   "ignore:numpy.ufunc size changed:RuntimeWarning",
+  "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
   "ignore:Alternative shading modes are only available in 3D, defaulting to none",
 ]
 markers = [
