@@ -18,10 +18,10 @@ It also contains a variety of bug fixes and improvements.
 
 
 ## New Features
+- Add tooltip for labels (#2658)
 - Added copy-to-clipboard functionality (#2721)
 - Add `make watch` command for hot reload (#2763)
 - Expose alternative shading modes for surfaces (#2792)
-
 
 ## Improvements
 - Global plugin setting (#2565)
