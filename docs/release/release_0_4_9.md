@@ -44,10 +44,11 @@ It also contains a variety of bug fixes and improvements.
 - Update typing and checks with mypy for settings module (#2795)
 - Do not write settings loaded from environment values (#2797)
 - Update settings descriptions (#2812)
+- Extend the action manager to support multiple shortcuts (#2830)
+- Adds notes about multiscale only being 2D to docs (#2833)
 - Set upper limit of Vectors spinboxes to infinity (#2842)
 - Update to openGL max texture size (#2845)
 - Followup to #2485 to add opengl context (#2846)
-- Adds notes about multiscale only being 2D to docs (#2833)
 
 
 ## Bug Fixes
