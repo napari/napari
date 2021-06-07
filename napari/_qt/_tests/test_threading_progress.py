@@ -29,11 +29,11 @@ def test_worker_with_progress(qtbot):
         assert worker.pbar.n == test_val[0]
 
 
-def test_function_worker_nonzero_total_raises_error():
+def test_function_worker_nonzero_total_warns():
     def not_a_generator():
         return
 
-    with pytest.raises(TypeError):
+    with pytest.warns(RuntimeWarning):
         thread_func = qthreading.thread_worker(
             not_a_generator,
             progress={'total': 2},

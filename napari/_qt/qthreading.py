@@ -499,7 +499,7 @@ def create_worker(
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    _progress: Optional[Dict[str, Union[int, bool, str]]] = None,
+    _progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -621,14 +621,15 @@ def create_worker(
         desc = _progress.get('desc', None)
         total = _progress.get('total', 0)
 
-        if isinstance(worker, FunctionWorker):
-            if total != 0:
-                raise TypeError(
-                    trans._(
-                        "_progress total != 0 but worker is FunctionWorker and will not yield.",
-                        deferred=True,
-                    )
-                )
+        if isinstance(worker, FunctionWorker) and total != 0:
+            warnings.warn(
+                trans._(
+                    "_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...",
+                    deferred=True,
+                ),
+                RuntimeWarning,
+            )
+            total = 0
 
         pbar = progress(total=total, desc=desc)
         worker.finished.connect(pbar.close)
@@ -657,7 +658,7 @@ def thread_worker(
     function: Callable,
     start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
-    progress: Optional[Dict[str, Union[int, bool, str]]] = None,
+    progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
