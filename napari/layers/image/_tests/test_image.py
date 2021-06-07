@@ -629,3 +629,20 @@ def test_world_data_extent():
     layer = Image(data)
     extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_data2world_transform_2d_scale_translate_affine_composed():
+    data = np.ones((4, 3))
+    scale = (3, 2)
+    translate = (-4, 8)
+    affine = [[4, 0, 0], [0, 1.5, 0], [0, 0, 1]]
+
+    image = Image(data, scale=scale, translate=translate, affine=affine)
+
+    np.testing.assert_array_equal(image.scale, scale)
+    np.testing.assert_array_equal(image.translate, translate)
+    np.testing.assert_array_equal(image.affine, affine)
+    np.testing.assert_almost_equal(
+        image.data2world_transform.affine_matrix,
+        ((12, 0, -16), (0, 3, 12), (0, 0, 1)),
+    )
