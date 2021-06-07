@@ -1,4 +1,3 @@
-import contextvars
 import os
 import sys
 from contextlib import contextmanager
@@ -96,27 +95,17 @@ def test_progress_no_viewer():
         assert pbr.n == 3
 
 
-def test_progress_nested_viewer(make_napari_viewer):
-    viewer = make_napari_viewer()
+def test_progress_nested(make_napari_viewer):
+    viewer = make_napari_viewer(show=SHOW)
 
     with assert_pbar_added_to(viewer):
-        with progress(range(10)):
-            pbr2 = progress(range(2))
+        with progress(range(10)) as pbr:
+            pbr2 = progress(range(2), nest_under=pbr)
             prog_groups = get_progress_groups(viewer.window.qt_viewer)
             assert len(prog_groups) == 1
-            assert prog_groups[0].layout().count() == 2
+            # two progress bars + separator
+            assert prog_groups[0].layout().count() == 3
             pbr2.close()
-
-
-def test_progress_nested_context(make_napari_viewer):
-    make_napari_viewer()
-    with progress(range(2)) as pbr:
-        assert isinstance(pbr._group_token, contextvars.Token)
-        assert pbr._group_token.var.get()
-
-    pbr2 = progress(range(2))
-    assert pbr2._group_token is None
-    pbr2.close()
 
 
 def test_progress_update(make_napari_viewer):
