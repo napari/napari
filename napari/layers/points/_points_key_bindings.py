@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from ...layers.utils.layer_utils import register_layer_action
+from ...layers.utils.layer_utils import (
+    register_layer_action,
+    register_layer_alternate_hold_action,
+)
 from ...utils.translations import trans
 from ._points_constants import Mode
 from .points import Points
@@ -10,7 +13,7 @@ def register_points_action(description):
     return register_layer_action(Points, description)
 
 
-@Points.bind_key('Space')
+@register_layer_alternate_hold_action('activate_points_pan_zoom_mode', 'Space')
 def hold_to_pan_zoom(layer):
     """Hold to pan and zoom in the viewer."""
     if layer._mode != Mode.PAN_ZOOM:

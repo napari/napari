@@ -39,7 +39,6 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
     function:
         Actual decorator to apply to a function. Given decorator returns the
         function unmodified to allow decorator stacking.
-
     """
 
     def _inner(func):
@@ -57,6 +56,41 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
 
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(name, shortcut)
+        return func
+
+    return _inner
+
+
+def register_layer_alternate_hold_action(n, shortcuts=None):
+    """
+    Allow to register an action alternate that is undone when a key (button?) is
+    released
+
+    See `register_layer_action`
+
+    Parameters
+    ----------
+    n : str
+        name of the action this is an alternate for.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
+    """
+
+    def _inner(func):
+        nonlocal shortcuts
+        name = 'napari:' + n
+        action_manager._hold_actions[name] = func
+        if isinstance(shortcuts, str):
+            shortcuts = [shortcuts]
+        for shortcut in shortcuts:
+            action_manager.bind_hold_shortcut(name, shortcut)
         return func
 
     return _inner

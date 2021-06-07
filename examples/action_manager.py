@@ -28,7 +28,20 @@ def rotate45(viewer: napari.Viewer):
 
     r = np.array([[cos(angle), -sin(angle)], [sin(angle), cos(angle)]])
     layer = viewer.layers[0]
+    original_rotation = layer.rotate
     layer.rotate = layer.rotate @ r
+    return original_rotation
+
+
+
+def rotate_unrotate_45(viewer: napari.Viewer):
+    """
+    identical to rotate_45, but unrotate when keypress is released
+    """
+    layer = viewer.layers[0]
+    original_rotation = rotate45(viewer)
+    yield 
+    layer.rotate = original_rotation
 
 
 # create the viewer with an image
@@ -57,6 +70,7 @@ def register_action():
         command=rotate45,
         description='Rotate layer 0 by 45deg',
         keymapprovider=ViewerModel,
+        alternate_hold=rotate_unrotate_45
     )
 
 
@@ -65,6 +79,7 @@ def bind_shortcut():
     # remove the shortcut.
     action_manager.unbind_shortcut('napari:reset_view')  # Control-R
     action_manager.bind_shortcut('napari:rotate45', 'Control-R')
+    action_manager.bind_hold_shortcut('napari:rotate45', '7')
 
 
 def bind_button():
