@@ -106,20 +106,23 @@ class NapariPluginManager(PluginManager):
         self,
         name_or_object: Any,
     ) -> Optional[Any]:
+
+        if isinstance(name_or_object, str):
+            _name = name_or_object
+        else:
+            _name = self.get_name(name_or_object)
+
         plugin = super().unregister(name_or_object)
 
         # remove widgets, sample data
+        for _dict in (
+            self._dock_widgets,
+            self._sample_data,
+            self._function_widgets,
+        ):
+            _dict.pop(_name, None)
 
-        if type(name_or_object) is str:
-
-            for _dict in (
-                self._dock_widgets,
-                self._sample_data,
-                self._function_widgets,
-            ):
-                _dict.pop(name_or_object, None)
-
-        self.events.unregistered(value=name_or_object)
+        self.events.unregistered(value=_name)
 
         return plugin
 
