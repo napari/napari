@@ -1,34 +1,13 @@
 from qtpy import QtCore
 from qtpy.QtWidgets import (
     QApplication,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QProgressBar,
     QVBoxLayout,
     QWidget,
 )
-
-
-def get_pbar(**kwargs):
-    """Adds ProgressBar to viewer Activity Dock and returns it.
-
-    Returns
-    -------
-    ProgressBar
-        progress bar to associate with iterable
-    """
-    from ..qt_main_window import _QtMainWindow
-
-    current_window = _QtMainWindow.current()
-    if current_window is None:
-        return
-    viewer_instance = current_window.qt_viewer
-    pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.activityDock.widget().layout()
-
-    pbr_layout.addWidget(pbar)
-
-    return pbar
 
 
 class ProgressBar(QWidget):
@@ -71,4 +50,50 @@ class ProgressBarGroup(QWidget):
         pbr_group_layout = QVBoxLayout()
         pbr_group_layout.addWidget(pbar)
         pbr_group_layout.setContentsMargins(0, 0, 0, 0)
+
+        line = QFrame(self)
+        line.setObjectName("QtCustomTitleBarLine")
+        line.setFixedHeight(1)
+        pbr_group_layout.addWidget(line)
+
         self.setLayout(pbr_group_layout)
+
+
+def get_pbar(nest_under=None, **kwargs):
+    """Adds ProgressBar to viewer Activity Dock and returns it.
+    If nest_under is valid ProgressBar, nests new bar underneath
+    parent in a ProgressBarGroup
+
+    Parameters
+    ----------
+    nest_under : Optional[ProgressBar]
+        parent ProgressBar to nest under, by default None
+
+    Returns
+    -------
+    ProgressBar
+        progress bar to associate with iterable
+    """
+    from ..qt_main_window import _QtMainWindow
+
+    current_window = _QtMainWindow.current()
+    if current_window is None:
+        return
+    viewer_instance = current_window.qt_viewer
+    pbar = ProgressBar(**kwargs)
+    pbr_layout = viewer_instance.activityDock.widget().layout()
+
+    if nest_under is None:
+        pbr_layout.addWidget(pbar)
+    else:
+        parent_widg = nest_under._pbar.parent()
+        if isinstance(parent_widg, ProgressBarGroup):
+            nested_layout = parent_widg.layout()
+        else:
+            new_group = ProgressBarGroup(nest_under._pbar)
+            nested_layout = new_group.layout()
+            pbr_layout.addWidget(new_group)
+        new_pbar_index = nested_layout.count() - 1
+        nested_layout.insertWidget(new_pbar_index, pbar)
+
+    return pbar

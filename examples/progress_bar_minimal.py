@@ -38,7 +38,7 @@ def iterable_w_context():
             # a context manager is also the only way to make use
             # of nested progress bars and have them aligned in
             # activity dock nicely
-            for channel in progress(im_slice):
+            for channel in progress(im_slice, nest_under=pbr):
                 process(channel)
                 
 def indeterminate():

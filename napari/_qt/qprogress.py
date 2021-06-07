@@ -3,6 +3,8 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
+from napari._qt.widgets.qt_progress_bar import ProgressBar
+
 from ..utils.translations import trans
 
 _tqdm_kwargs = {
@@ -63,6 +65,7 @@ class progress(tqdm):
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
+        nest_under: Optional[ProgressBar] = None,
         *args,
         **kwargs,
     ) -> None:
@@ -74,7 +77,7 @@ class progress(tqdm):
         try:
             from .widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(**pbar_kwargs)
+            pbar = get_pbar(nest_under=nest_under, **pbar_kwargs)
         except ImportError:
             pbar = None
 
