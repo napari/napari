@@ -3,7 +3,7 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
-from napari._qt.widgets.qt_progress_bar import ProgressBar
+from napari._qt.widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
 from ..utils.translations import trans
 
@@ -123,8 +123,17 @@ class progress(tqdm):
         if self.disable:
             return
         if self.has_viewer:
+            parent_widget = self._pbar.parent()
             self._pbar.close()
             self._pbar.deleteLater()
+            if isinstance(parent_widget, ProgressBarGroup):
+                pbar_children = [
+                    child
+                    for child in parent_widget.children()
+                    if isinstance(child, ProgressBar)
+                ]
+                if not any(child.isVisible() for child in pbar_children):
+                    parent_widget.close()
         super().close()
 
 

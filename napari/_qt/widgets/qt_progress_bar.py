@@ -17,12 +17,20 @@ class ProgressBar(QWidget):
         self.pbar = QProgressBar()
         self.description_label = QLabel()
         self.eta_label = QLabel()
+        base_layout = QVBoxLayout()
 
-        layout = QHBoxLayout()
-        layout.addWidget(self.description_label)
-        layout.addWidget(self.pbar)
-        layout.addWidget(self.eta_label)
-        self.setLayout(layout)
+        pbar_layout = QHBoxLayout()
+        pbar_layout.addWidget(self.description_label)
+        pbar_layout.addWidget(self.pbar)
+        pbar_layout.addWidget(self.eta_label)
+        base_layout.addLayout(pbar_layout)
+
+        line = QFrame(self)
+        line.setObjectName("QtCustomTitleBarLine")
+        line.setFixedHeight(1)
+        base_layout.addWidget(line)
+
+        self.setLayout(base_layout)
 
     def setRange(self, min, max):
         self.pbar.setRange(min, max)
@@ -86,7 +94,18 @@ def get_pbar(nest_under=None, **kwargs):
     if nest_under is None:
         pbr_layout.addWidget(pbar)
     else:
-        parent_widg = nest_under._pbar.parent()
+        # this is going to be nested, remove its parent's separator
+        # as the group will have its own
+        parent_pbar = nest_under._pbar
+        current_pbars = [parent_pbar, pbar]
+        for current_pbar in current_pbars:
+            line_widg = current_pbar.findChild(QFrame, "QtCustomTitleBarLine")
+            if line_widg:
+                current_pbar.layout().removeWidget(line_widg)
+                line_widg.hide()
+                line_widg.deleteLater()
+
+        parent_widg = parent_pbar.parent()
         if isinstance(parent_widg, ProgressBarGroup):
             nested_layout = parent_widg.layout()
         else:
