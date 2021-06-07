@@ -406,7 +406,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @scale.setter
     def scale(self, scale):
-        self._transforms['data2world'].scale = np.array(scale)
+        self._transforms['data2world'].scale = scale
         self._update_dims()
         self.events.scale()
 
@@ -417,7 +417,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @translate.setter
     def translate(self, translate):
-        self._transforms['data2world'].translate = np.array(translate)
+        self._transforms['data2world'].translate = translate
         self._update_dims()
         self.events.translate()
 
