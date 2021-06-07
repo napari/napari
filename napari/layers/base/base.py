@@ -395,7 +395,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         This generates an affine transform by composing the affine property with
         the other transform properties in the following order:
 
-        affine * (rotate * skew * scale + translate).
+        affine * (rotate * shear * scale + translate).
         """
         return self._transforms[1:3].simplified
 
@@ -434,7 +434,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @property
     def shear(self):
-        """array: Sheer matrix in world coordinates."""
+        """array: Shear matrix in world coordinates."""
         return self._transforms['data2world'].shear
 
     @shear.setter
@@ -464,7 +464,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         elif not isinstance(affine, Affine):
             raise TypeError(
                 trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
+                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
                     deferred=True,
                     dtype=type(affine),
                 )

@@ -41,7 +41,41 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     return full_rotate @ full_shear @ full_scale
 
 
-def infer_ndim(scale, translate, rotate, shear):
+def infer_ndim(scale=None, translate=None, rotate=None, shear=None):
+    """Infer the dimensionality of a transformation from its input components.
+
+    This is most useful when the dimensions of the inputs do not match, either
+    when broadcasting is desired or when an input represents a parameterization
+    of a transform component (e.g. rotate as an angle of a 2D rotation).
+
+    Parameters
+    ----------
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    translate : 1-D array
+        A 1-D array of factors to shift each axis by. Translation is broadcast
+        to 0 in leading dimensions, so that, for example, a translation of
+        [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
+        without modification. An empty translation vector implies no
+        translation.
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+
+    Returns
+    -------
+    ndim : int
+        The maximum dimensionality of the component inputs.
+    """
     ndim = 0
     if scale is not None:
         ndim = max(ndim, len(scale))
@@ -55,6 +89,24 @@ def infer_ndim(scale, translate, rotate, shear):
 
 
 def coerce_translate(translate, ndim):
+    """Coerce a translate input into an n-dimensional transform component.
+
+    Parameters
+    ----------
+    translate : 1-D array
+        A 1-D array of factors to shift each axis by. Translation is broadcast
+        to 0 in leading dimensions, so that, for example, a translation of
+        [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
+        without modification. An empty translation vector implies no
+        translation.
+    ndim : int
+        The desired dimensionality of the output transform component.
+
+    Returns
+    -------
+    np.ndarray
+        The translate component as a 1D numpy array of length ndim.
+    """
     translate_arr = np.zeros(ndim)
     if translate is not None:
         translate_arr[-len(translate) :] = translate
@@ -62,6 +114,23 @@ def coerce_translate(translate, ndim):
 
 
 def coerce_scale(scale, ndim):
+    """Coerce a scale input into an n-dimensional transform component.
+
+    Parameters
+    ----------
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    ndim : int
+        The desired dimensionality of the output transform component.
+
+    Returns
+    -------
+    np.ndarray
+        The scale component as a 1D numpy array of length ndim.
+    """
     scale_arr = np.ones(ndim)
     if scale is not None:
         scale_arr[-len(scale) :] = scale
@@ -69,6 +138,24 @@ def coerce_scale(scale, ndim):
 
 
 def coerce_rotate(rotate, ndim):
+    """Coerce a rotate input into an n-dimensional transform component.
+
+    Parameters
+    ----------
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    ndim : int
+        The desired dimensionality of the output transform component.
+
+    Returns
+    -------
+    np.ndarray
+        The rotate component as a 2D numpy array of size ndim.
+    """
     full_rotate_mat = np.eye(ndim)
     if rotate is not None:
         rotate_mat = _make_rotate_mat(rotate)
@@ -132,6 +219,21 @@ def _cos_sin(angle_deg):
 
 
 def coerce_shear(shear, ndim):
+    """Coerce a shear input into an n-dimensional transform component.
+
+    Parameters
+    ----------
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    ndim : int
+        The desired dimensionality of the output transform matrix.
+
+    Returns
+    -------
+    np.ndarray
+        The shear component as a triangular 2D numpy array of size ndim.
+    """
     full_shear_mat = np.eye(ndim)
     if shear is not None:
         shear_mat = _make_shear_mat(shear)
