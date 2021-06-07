@@ -25,6 +25,7 @@ It also contains a variety of bug fixes and improvements.
 
 ## Improvements
 - Global plugin setting (#2565)
+- Provide interface for progress bars in @thread_workers (#2655)
 - Delay all imports in `napari.__init__` behind module level `napari.__getattr__` (#2662)
 - Add `block` to viewer.show (#2669)
 - New type stubs PR, and simpler `napari.view_layers` module (#2675)
