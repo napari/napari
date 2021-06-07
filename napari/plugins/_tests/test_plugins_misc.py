@@ -57,7 +57,7 @@ def test_plugin_events(napari_plugin_manager):
 
     tnpm.unregister(Plugin)
     assert len(unregister_events) == 1
-    assert unregister_events[0].value == Plugin
+    assert unregister_events[0].value == 'Plugin'
 
     tnpm.set_blocked('Plugin')
     assert len(disable_events) == 1
