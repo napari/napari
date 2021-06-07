@@ -112,12 +112,6 @@ class NapariPluginManager(PluginManager):
     def _on_blocked_change(self, event):
         # things that are "added to the blocked list" become disabled
         for item in event.added:
-            for _dict in (
-                self._dock_widgets,
-                self._sample_data,
-                self._function_widgets,
-            ):
-                _dict.pop(item, None)
             self.events.disabled(value=item)
 
         # things that are "removed from the blocked list" become enabled
