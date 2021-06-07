@@ -83,7 +83,12 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     """Test the plugin widgets get added to the window menu correctly."""
     viewer = make_napari_viewer()
     # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()[3:]
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
     assert len(actions) == 3
     expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
     assert [a.text() for a in actions] == expected_text
@@ -102,7 +107,12 @@ def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_napari_viewer()
     # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()[3:]
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
 
     # trigger the 'TestP2: Widg3' action
     actions[1].trigger()
@@ -135,7 +145,12 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
 
     viewer = make_napari_viewer()
     # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()[3:]
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
 
     # trigger the 'TestP3: magic' action
     actions[2].trigger()
@@ -161,7 +176,12 @@ def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
     viewer = make_napari_viewer()
     # only take the plugin actions
-    actions = viewer.window.plugins_menu.actions()[3:]
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()
     assert len(viewer.window._dock_widgets) == 2
