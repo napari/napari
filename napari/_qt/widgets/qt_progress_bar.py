@@ -94,16 +94,11 @@ def get_pbar(nest_under=None, **kwargs):
     if nest_under is None:
         pbr_layout.addWidget(pbar)
     else:
-        # this is going to be nested, remove its parent's separator
+        # this is going to be nested, remove separators
         # as the group will have its own
         parent_pbar = nest_under._pbar
         current_pbars = [parent_pbar, pbar]
-        for current_pbar in current_pbars:
-            line_widg = current_pbar.findChild(QFrame, "QtCustomTitleBarLine")
-            if line_widg:
-                current_pbar.layout().removeWidget(line_widg)
-                line_widg.hide()
-                line_widg.deleteLater()
+        remove_separators(current_pbars)
 
         parent_widg = parent_pbar.parent()
         if isinstance(parent_widg, ProgressBarGroup):
@@ -116,3 +111,20 @@ def get_pbar(nest_under=None, **kwargs):
         nested_layout.insertWidget(new_pbar_index, pbar)
 
     return pbar
+
+
+def remove_separators(current_pbars):
+    """Remove any existing line separators from current_pbars
+    as they will get a separator from the group
+
+    Parameters
+    ----------
+    current_pbars : List[ProgressBar]
+        parent and new progress bar to remove separators from
+    """
+    for current_pbar in current_pbars:
+        line_widg = current_pbar.findChild(QFrame, "QtCustomTitleBarLine")
+        if line_widg:
+            current_pbar.layout().removeWidget(line_widg)
+            line_widg.hide()
+            line_widg.deleteLater()
