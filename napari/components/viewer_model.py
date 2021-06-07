@@ -34,6 +34,7 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
+from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -45,6 +46,7 @@ from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
+from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -110,6 +112,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     help: str = ''
     status: str = 'Ready'
+    tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = DEFAULT_THEME
     title: str = 'napari'
 
@@ -128,6 +131,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
+        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+            self._tooltip_visible_update
+        )
 
         # Add extra events - ideally these will be removed too!
         self.events.add(layers_change=Event, reset_view=Event)
@@ -160,6 +167,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 type='active_layer',
             )
         )
+
+    def _tooltip_visible_update(self, event):
+        self.tooltip.visible = event.value
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -368,6 +378,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active is not None:
             self.status = active.get_status(self.cursor.position, world=True)
             self.help = active.help
+            if self.tooltip.visible:
+                self.tooltip.text = active._get_tooltip_text(
+                    self.cursor.position, world=True
+                )
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""

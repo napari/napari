@@ -1077,7 +1077,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return [coordinates[i] for i in self._dims_displayed]
 
     def get_status(self, position, *, world=False):
-        """Status message of the data at a coordinate position.
+        """
+        Status message of the data at a coordinate position.
 
         Parameters
         ----------
@@ -1094,6 +1095,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         value = self.get_value(position, world=world)
         return generate_layer_status(self.name, position, value)
+
+    def _get_tooltip_text(self, position, *, world=False):
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return ""
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.

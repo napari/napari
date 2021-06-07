@@ -408,7 +408,9 @@ class Labels(_ImageBase):
         index: dict
             index mapping dictionary
         """
-        if properties is None or not properties:
+        if properties is None or (
+            isinstance(properties, dict) and not len(properties)
+        ):
             # None or empty dict properties
             return {}, {}
         if isinstance(properties, dict):
@@ -1209,7 +1211,7 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position=None, world=False):
+    def get_status(self, position=None, *, world=False):
         """Status message of the data at a coordinate position.
 
         Parameters
@@ -1228,22 +1230,53 @@ class Labels(_ImageBase):
         msg = super().get_status(position, world=world)
 
         # if this labels layer has properties
-        if self._label_index and self._properties:
-            value = self.get_value(position, world=world)
-            # if the cursor is not outside the image or on the background
-            if value is not None and value != 0:
-                label_value = value[1] if self.multiscale else value
-                if label_value in self._label_index:
-                    idx = self._label_index[label_value]
-                    for k, v in self._properties.items():
-                        if k != 'index':
-                            try:
-                                msg += f', {k}: {v[idx]}'
-                            except IndexError:
-                                pass
-                else:
-                    msg += ' ' + trans._('[No Properties]')
+        properties = self._get_properties(position, world)
+        if properties:
+            msg += "; " + ", ".join(properties)
+
         return msg
+
+    def _get_tooltip_text(self, position, *, world=False):
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return "\n".join(self._get_properties(position, world))
+
+    def _get_properties(self, position, world) -> list:
+        if not (self._label_index and self._properties):
+            return []
+
+        value = self.get_value(position, world=world)
+        # if the cursor is not outside the image or on the background
+        if value is None:
+            return []
+
+        label_value = value[1] if self.multiscale else value
+        if label_value not in self._label_index:
+            return [trans._('[No Properties]')]
+
+        idx = self._label_index[label_value]
+        return [
+            f'{k}: {v[idx]}'
+            for k, v in self._properties.items()
+            if k != 'index'
+            and len(v) > idx
+            and v[idx] is not None
+            and not (isinstance(v[idx], float) and np.isnan(v[idx]))
+        ]
 
 
 if config.async_octree:
