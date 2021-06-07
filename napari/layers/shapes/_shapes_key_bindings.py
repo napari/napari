@@ -49,7 +49,7 @@ def hold_to_lock_aspect_ratio(layer):
         _move(layer, layer._moving_coordinates)
 
 
-def register_shapes_action(description, shortcuts):
+def register_shapes_action(description, shortcuts=()):
     return register_layer_action(Shapes, description, shortcuts)
 
 
@@ -137,10 +137,22 @@ def select_all_shapes(layer):
         layer._set_highlight()
 
 
-@register_shapes_action(trans._('Delete any selected shapes'), "Backspace")
+@register_shapes_action(
+    trans._('Delete any selected shapes'), ("Backspace", "Delete")
+)
 def delete_selected_shapes(layer):
     """."""
     layer.remove_selected()
+
+
+@register_shapes_action(trans._('Move to front'))
+def move_shapes_selection_to_front(layer):
+    layer.move_to_front()
+
+
+@register_shapes_action(trans._('Move to back'))
+def move_shapes_selection_to_back(layer):
+    layer.move_to_back()
 
 
 @register_shapes_action(

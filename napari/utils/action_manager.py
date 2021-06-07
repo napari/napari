@@ -159,7 +159,7 @@ class ActionManager:
         self._buttons: Dict[
             str, Set[Tuple(Union[QPushButton, QtStateButton], str)]
         ] = defaultdict(lambda: set())
-        self._shortcuts: Dict[str, str] = {}
+        self._shortcuts: Dict[str, set[str]] = defaultdict(lambda: set())
         self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
@@ -247,8 +247,19 @@ class ActionManager:
 
         # update buttons with shortcut and description
         if name in self._shortcuts:
-            shortcut = self._shortcuts[name]
-            shortcut_str = f' ({Shortcut(shortcut).platform})'
+            shortcuts = self._shortcuts[name]
+            joinstr = (
+                ' '
+                + trans._('or', msgctxt='<keysequence> or <keysequence>')
+                + ' '
+            )
+            shortcut_str = (
+                '('
+                + joinstr.join(
+                    f"{Shortcut(shortcut).platform}" for shortcut in shortcuts
+                )
+                + ')'
+            )
         else:
             shortcut_str = ''
 
@@ -269,10 +280,13 @@ class ActionManager:
         action = self._actions[name]
         if name not in self._shortcuts:
             return
-        shortcut = self._shortcuts.get(name)
+        shortcuts = self._shortcuts.get(name)
         keymapprovider = action.keymapprovider
         if hasattr(keymapprovider, 'bind_key'):
-            keymapprovider.bind_key(shortcut, overwrite=True)(action.command)
+            for shortcut in shortcuts:
+                keymapprovider.bind_key(shortcut, overwrite=True)(
+                    action.command
+                )
 
     def bind_button(self, name: str, button, extra_tooltip_text='') -> None:
         """
@@ -327,7 +341,7 @@ class ActionManager:
         delayed until the corresponding action is registered.
         """
         self._validate_action_name(name)
-        self._shortcuts[name] = shortcut
+        self._shortcuts[name].add(shortcut)
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
@@ -347,10 +361,11 @@ class ActionManager:
             previously bound shortcut.
         """
         action = self._actions[name]
-        shortcut = self._shortcuts.get(name)
-        if shortcut is not None:
+        shortcuts = self._shortcuts.get(name)
+        if shortcuts:
             if hasattr(action.keymapprovider, 'bind_key'):
-                action.keymapprovider.bind_key(shortcut)(None)
+                for shortcut in shortcuts:
+                    action.keymapprovider.bind_key(shortcut)(None)
             del self._shortcuts[name]
         self._update_gui_elements(name)
         return shortcut
