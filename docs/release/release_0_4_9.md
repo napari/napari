@@ -18,16 +18,18 @@ It also contains a variety of bug fixes and improvements.
 
 
 ## New Features
+- Add tooltip for labels (#2658)
 - Added copy-to-clipboard functionality (#2721)
 - Add `make watch` command for hot reload (#2763)
 - Expose alternative shading modes for surfaces (#2792)
 
-
 ## Improvements
 - Global plugin setting (#2565)
+- Provide interface for progress bars in @thread_workers (#2655)
 - Delay all imports in `napari.__init__` behind module level `napari.__getattr__` (#2662)
 - Add `block` to viewer.show (#2669)
 - New type stubs PR, and simpler `napari.view_layers` module (#2675)
+- Extend the action manager to work with layer. (#2677)
 - Add `MultiScaleData` wrapper to give multiscale data a consistent API (#2683)
 - Revert "add `MultiScaleData` wrapper to give multiscale data a consistent API (#2683)" (#2807)
 - Add repr-html to nbscreenshot (#2740)
@@ -38,11 +40,20 @@ It also contains a variety of bug fixes and improvements.
 - Improve colormap error message, when using display names or wrong colormap names (#2769)
 - Add parent to console and dockwidgets in a separate private attribute. (#2773)
 - Improve error message when legacy Qt installed from conda over pip (#2776)
+- Add octree and async to preferences (#2783)
 - Change remove to uninstall in plugin dialog (#2787)
+- Update typing and checks with mypy for settings module (#2795)
 - Do not write settings loaded from environment values (#2797)
+- Update settings descriptions (#2812)
+- Extend the action manager to support multiple shortcuts (#2830)
+- Adds notes about multiscale only being 2D to docs (#2833)
+- Set upper limit of Vectors spinboxes to infinity (#2842)
+- Update to openGL max texture size (#2845)
+- Followup to #2485 to add opengl context (#2846)
 
 
 ## Bug Fixes
+- Fix Labels and Points properties set (#2657)
 - Fixing `add_dock_widget` compatibility with `magicgui v0.2` (#2734)
 - Shortcuts: Render properly shortcuts with minus and space. (#2735)
 - Fix runtime error when running doc tests on napari site (#2738)
@@ -58,6 +69,15 @@ It also contains a variety of bug fixes and improvements.
 - Add fix for large labels in new slices (#2804)
 - Fix zoom for non square image (#2805)
 - Implement lazy module importing for all public submodules (#2816)
+- Coerce surface vertex data to float32 (#2820)
+- Vendor shading filter from vispy (#2821)
+- Small doc fixes (#2822)
+- Fix key bindings display dialog (#2824)
+- Work around numpy's string casting deprecation (#2825)
+- Update translation strings (#2827)
+- Fix keypress skipping layers in layerlist (#2837)
+- Fix octree imports (#2838)
+- Remove opacity from plugin sorter widget (#2840)
 
 
 ## Tasks
@@ -68,6 +88,7 @@ It also contains a variety of bug fixes and improvements.
 - Add PR labeler and update templates (#2775)
 - Add pytest-order and move threading tests to the top of the suite (#2779)
 - Auto assign PR to author (#2794)
+- Typo in PR template (#2831)
 
 
 ## 12 authors added to this release (alphabetical)
