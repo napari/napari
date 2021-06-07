@@ -390,15 +390,11 @@ class Window:
 
         SETTINGS.appearance.events.theme.connect(self._update_theme)
 
-        plugin_manager.events.disabled.connect(self._rebuild_dock_widget_menu)
+        plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
-        plugin_manager.events.registered.connect(
-            self._rebuild_dock_widget_menu
-        )
+        plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
-        plugin_manager.events.unregistered.connect(
-            self._rebuild_dock_widget_menu
-        )
+        plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
 
         viewer.events.status.connect(self._status_changed)
@@ -786,9 +782,9 @@ class Window:
         self.plugins_menu = self.main_menu.addMenu(trans._('&Plugins'))
 
         plugin_manager.discover_widgets()
-        self._rebuild_dock_widget_menu()
+        self._rebuild_plugins_menu()
 
-    def _rebuild_dock_widget_menu(self, event=None):
+    def _rebuild_plugins_menu(self, event=None):
 
         self.plugins_menu.clear()
 
