@@ -41,6 +41,20 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class NapariPluginManager(PluginManager):
+    """PluginManager subclass for napari-specific functionality.
+
+    Events
+    ------
+    registered (value: str)
+        Emitted after plugin named `value` has been registered.
+    unregistered (value: str)
+        Emitted after plugin named `value` has been unregistered.
+    enabled (value: str)
+        Emitted after plugin named `value` has been removed from the block list.
+    disabled (value: str)
+        Emitted after plugin named `value` has been added to the block list.
+    """
+
     ENTRY_POINT = 'napari.plugin'
 
     def __init__(self):
