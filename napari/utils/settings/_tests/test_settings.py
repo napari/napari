@@ -168,7 +168,7 @@ def test_settings_env_variables(tmp_path, monkeypatch):
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     data = """
 appearance:
-  theme: dark
+  theme: pink
 """
     with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
         fh.write(data)
@@ -181,11 +181,13 @@ appearance:
     with open(tmp_path / SettingsManager._FILENAME) as fh:
         saved_data = fh.read()
 
-    model_values = settings._to_dict(safe=True)
+    model_values = settings._remove_default(settings._to_dict(safe=True))
     saved_values = safe_load(saved_data)
 
     assert model_values["appearance"]["theme"] == value
-    assert saved_values["appearance"]["theme"] == "dark"
+    # Note: Pink is currently not a valid theme, but if we use dark as it is the
+    # default it is not saved in the saved_values. We can't use "Light" either
+    assert saved_values["appearance"]["theme"] == "pink"
 
     model_values["appearance"].pop("theme")
     saved_values["appearance"].pop("theme")
