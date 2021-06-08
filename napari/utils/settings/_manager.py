@@ -5,7 +5,7 @@ import json
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from appdirs import user_config_dir
 from yaml import safe_dump, safe_load
@@ -23,7 +23,15 @@ from ._defaults import (
 )
 
 
-class SettingsManager:
+class _SettingsMixin:
+    appearance: AppearanceSettings
+    application: ApplicationSettings
+    plugins: PluginsSettings
+    shortcuts: ShortcutsSettings
+    experimental: ExperimentalSettings
+
+
+class SettingsManager(_SettingsMixin):
     """
     Napari settings manager using evented SettingsModels.
 
@@ -59,11 +67,6 @@ class SettingsManager:
     _FILENAME = _FILENAME
     _APPNAME = _APPNAME
     _APPAUTHOR = _APPAUTHOR
-    appearance: AppearanceSettings
-    application: ApplicationSettings
-    plugins: PluginsSettings
-    shortcuts: ShortcutsSettings
-    experimental: ExperimentalSettings
 
     def __init__(
         self,
@@ -235,10 +238,17 @@ class SettingsManager:
         self._plugins.append(plugin)
 
 
-SETTINGS: Optional[SettingsManager] = None
+class _SettingsProxy(_SettingsMixin):
+    """Backwards compatibility layer."""
+
+    def __getattribute__(self, name) -> Any:
+        return getattr(get_settings(), name)
 
 
-def get_settings(path: Optional[Path] = None) -> SettingsManager:
+SETTINGS: Union[SettingsManager, _SettingsProxy] = _SettingsProxy()
+
+
+def get_settings(path: Optional[Union[Path, str]] = None) -> SettingsManager:
     """
     Get settings for a given path.
 
@@ -258,8 +268,8 @@ def get_settings(path: Optional[Path] = None) -> SettingsManager:
     """
     global SETTINGS
 
-    if SETTINGS is None:
-        config_path = path.resolve() if path else None
+    if isinstance(SETTINGS, _SettingsProxy):
+        config_path = Path(path).resolve() if path else None
         SETTINGS = SettingsManager(config_path=config_path)
     elif path is not None:
         import inspect

@@ -642,6 +642,7 @@ class Window:
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
+        settings = get_settings()
         toggle_visible = QAction(
             trans._('Toggle Menubar Visibility'), self._qt_window
         )
@@ -772,10 +773,10 @@ class Window:
             trans._('Layer Tooltip visibility'),
             parent=self._qt_window,
             checkable=True,
-            checked=SETTINGS.appearance.layer_tooltip_visibility,
+            checked=settings.appearance.layer_tooltip_visibility,
         )
         self.tooltip_menu.triggered.connect(self._tooltip_visibility_toggle)
-        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+        settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visibility_toggled
         )
         self.view_menu.addAction(self.tooltip_menu)
@@ -783,11 +784,11 @@ class Window:
         self.view_menu.addSeparator()
 
     def _tooltip_visibility_toggle(self, value):
-        SETTINGS.appearance.layer_tooltip_visibility = value
+        get_settings().appearance.layer_tooltip_visibility = value
 
     def _tooltip_visibility_toggled(self, event):
         self.tooltip_menu.setChecked(
-            SETTINGS.appearance.layer_tooltip_visibility
+            get_settings().appearance.layer_tooltip_visibility
         )
 
     def _event_to_action(self, action, event):

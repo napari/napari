@@ -6,7 +6,11 @@ import pytest
 from yaml import safe_load
 
 import napari.utils.settings._manager as _manager
-from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
+from napari.utils.settings._manager import (
+    CORE_SETTINGS,
+    SettingsManager,
+    _SettingsProxy,
+)
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -211,13 +215,13 @@ def test_core_settings_are_class_variables_in_settings_manager():
 
 
 def test_get_settings(monkeypatch, tmp_path):
-    monkeypatch.setattr(_manager, "SETTINGS", None)
+    monkeypatch.setattr(_manager, "SETTINGS", _SettingsProxy())
     settings = _manager.get_settings(tmp_path)
     assert settings._config_path == tmp_path
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
-    monkeypatch.setattr(_manager, "SETTINGS", None)
+    monkeypatch.setattr(_manager, "SETTINGS", _SettingsProxy())
     _manager.get_settings(tmp_path)
     with pytest.raises(Exception):
         _manager.get_settings(tmp_path)
