@@ -1,9 +1,12 @@
 import itertools
+from tempfile import TemporaryDirectory
 
 import numpy as np
 import pandas as pd
 import pytest
+import tensorstore as ts
 import xarray as xr
+import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
@@ -923,3 +926,35 @@ def test_add_large_colors():
     layer.show_selected_label = True
     layer.selected_label = int(5e6)
     assert layer._all_vals.size < 1026
+
+
+def test_fill_tensorstore():
+    labels = np.zeros((5, 7, 8, 9), dtype=int)
+    labels[1, 2:4, 4:6, 4:6] = 1
+    labels[1, 3:5, 5:7, 6:8] = 2
+    labels[2, 3:5, 5:7, 6:8] = 3
+    with TemporaryDirectory(suffix='.zarr') as fout:
+        labels_temp = zarr.open(
+            fout,
+            mode='w',
+            shape=labels.shape,
+            dtype=np.uint32,
+            chunks=(1, 1, 8, 9),
+        )
+        labels_temp[:] = labels
+        labels_ts_spec = {
+            'driver': 'zarr',
+            'kvstore': {'driver': 'file', 'path': fout},
+            'path': '',
+            'metadata': {
+                'dtype': labels_temp.dtype.str,
+                'order': labels_temp.order,
+                'shape': labels.shape,
+            },
+        }
+        data = ts.open(labels_ts_spec, create=False, open=True).result()
+        layer = Labels(data)
+        layer.n_edit_dimensions = 3
+        layer.fill((1, 4, 6, 7), 4)
+        modified_labels = np.where(labels == 2, 4, labels)
+        np.testing.assert_array_equal(modified_labels, np.asarray(data))
