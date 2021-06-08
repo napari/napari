@@ -266,7 +266,8 @@ class AppearanceSettings(BaseNapariSettings):
 
     layer_tooltip_visibility: bool = Field(
         False,
-        description=trans._("If layer tooltip will be shown when hower mouse"),
+        title=trans._("Show layer tooltips"),
+        description=trans._("Toggle to display a tooltip on mouse hover."),
     )
 
     class Config:
@@ -323,55 +324,6 @@ class ApplicationSettings(BaseNapariSettings):
         True,
         title=trans._("Save window state"),
         description=trans._("Toggle saving the main window state of widgets."),
-    )
-    window_position: Tuple[int, int] = Field(
-        None,
-        title=trans._("Window position"),
-        description=trans._(
-            "Last saved x and y coordinates for the main window. This setting is managed by the application."
-        ),
-    )
-    window_size: Tuple[int, int] = Field(
-        None,
-        title=trans._("Window size"),
-        description=trans._(
-            "Last saved width and height for the main window. This setting is managed by the application."
-        ),
-    )
-    window_maximized: bool = Field(
-        None,
-        title=trans._("Window maximized state"),
-        description=trans._(
-            "Last saved maximized state for the main window. This setting is managed by the application."
-        ),
-    )
-    window_fullscreen: bool = Field(
-        None,
-        title=trans._("Window fullscreen"),
-        description=trans._(
-            "Last saved fullscreen state for the main window. This setting is managed by the application."
-        ),
-    )
-    window_state: str = Field(
-        None,
-        title=trans._("Window state"),
-        description=trans._(
-            "Last saved state of dockwidgets and toolbars for the main window. This setting is managed by the application."
-        ),
-    )
-    window_statusbar: bool = Field(
-        True,
-        title=trans._("Show status bar"),
-        description=trans._(
-            "Toggle diplaying the status bar for the main window."
-        ),
-    )
-    preferences_size: Tuple[int, int] = Field(
-        None,
-        title=trans._("Preferences size"),
-        description=trans._(
-            "Last saved width and height for the preferences dialog. This setting is managed by the application."
-        ),
     )
     window_position: Tuple[int, int] = Field(
         None,
@@ -530,7 +482,13 @@ class PluginsSettings(BaseNapariSettings):
         ),
     )
 
-    disabled_plugins: Set[str] = set()
+    disabled_plugins: Set[str] = Field(
+        set(),
+        title=trans._("Disabled plugins"),
+        description=trans._(
+            "Plugins to disable on application start.",
+        ),
+    )
 
     class Config:
         # Pydantic specific configuration

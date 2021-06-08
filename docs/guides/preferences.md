@@ -14,175 +14,262 @@ from napari.utils.settings import SETTINGS
 
 The settings are grouped by sections and napari core provides the following:
 
-### Appearance
+### APPEARANCE
 
 User interface appearance settings.
 
 
 #### Highlight thickness
 
-Select the highlight thickness when hovering over shapes/points.
+*Select the highlight thickness when hovering over shapes/points.*
 
-* Access programmatically with `SETTINGS.appearance.highlight_thickness`.
-* Type: `<class 'napari.utils.events.evented_model.ConstrainedIntValue'>`.
-* Default: `1`.
-* UI: This setting can be configured via the preferences dialog.
+* <small>Access programmatically with `SETTINGS.appearance.highlight_thickness`.</small>
+
+* <small>Type: `napari.utils.events.evented_model.ConstrainedIntValue`.</small>
+
+* <small>Default: `1`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
+#### Show layer tooltips
+
+*Toggle to display a tooltip on mouse hover.*
+
+* <small>Access programmatically with `SETTINGS.appearance.layer_tooltip_visibility`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `False`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 #### Theme
 
-Select the user interface theme.
+*Select the user interface theme.*
 
-* Access programmatically with `SETTINGS.appearance.theme`.
-* Type: `<class 'napari.utils.settings._defaults.Theme'>`.
-* Default: `'dark'`.
-* UI: This setting can be configured via the preferences dialog.
+* <small>Access programmatically with `SETTINGS.appearance.theme`.</small>
 
-### Application
+* <small>Type: `napari.utils.settings._defaults.Theme`.</small>
+
+* <small>Default: `'dark'`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
+
+### APPLICATION
 
 Main application settings.
 
 
 #### Console notification level
 
-Select the notification level for the console.
+*Select the notification level for the console.*
 
-* Access programmatically with `SETTINGS.application.console_notification_level`.
-* Type: `<enum 'NotificationSeverity'>`.
-* Default: `<NotificationSeverity.NONE: 'none'>`.
+* <small>Access programmatically with `SETTINGS.application.console_notification_level`.</small>
 
+* <small>Type: `napari.utils.notifications.NotificationSeverity`.</small>
+
+* <small>Default: `<NotificationSeverity.NONE: 'none'>`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 #### First time
 
-Indicate if napari is running for the first time. This setting is managed by the application.
+*Indicate if napari is running for the first time. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.first_time`.
-* Type: `<class 'bool'>`.
-* Default: `True`.
+* <small>Access programmatically with `SETTINGS.application.first_time`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `True`.</small>
 
 #### GUI notification level
 
-Select the notification level for the user interface.
+*Select the notification level for the user interface.*
 
-* Access programmatically with `SETTINGS.application.gui_notification_level`.
-* Type: `<enum 'NotificationSeverity'>`.
-* Default: `<NotificationSeverity.INFO: 'info'>`.
+* <small>Access programmatically with `SETTINGS.application.gui_notification_level`.</small>
 
+* <small>Type: `napari.utils.notifications.NotificationSeverity`.</small>
+
+* <small>Default: `<NotificationSeverity.INFO: 'info'>`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 #### IPython interactive
 
-Toggle the use of interactive `%gui qt` event loop when creating napari Viewers in IPython.
+*Toggle the use of interactive `%gui qt` event loop when creating napari Viewers in IPython.*
 
-* Access programmatically with `SETTINGS.application.ipy_interactive`.
-* Type: `<class 'bool'>`.
-* Default: `True`.
+* <small>Access programmatically with `SETTINGS.application.ipy_interactive`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `True`.</small>
 
 #### Language
 
-Select the display language for the user interface.
+*Select the display language for the user interface.*
 
-* Access programmatically with `SETTINGS.application.language`.
-* Type: `<class 'napari.utils.settings._defaults.Language'>`.
-* Default: `'en'`.
-* UI: This setting can be configured via the preferences dialog.
+* <small>Access programmatically with `SETTINGS.application.language`.</small>
+
+* <small>Type: `napari.utils.settings._defaults.Language`.</small>
+
+* <small>Default: `'en'`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 #### Opened folders history
 
-Last saved list of opened folders. This setting is managed by the application.
+*Last saved list of opened folders. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.open_history`.
-* Type: `<class 'str'>`.
-* Default: `[]`.
+* <small>Access programmatically with `SETTINGS.application.open_history`.</small>
+
+* <small>Type: `builtins.str`.</small>
+
+* <small>Default: `[]`.</small>
 
 #### Preferences size
 
-Last saved width and height for the preferences dialog. This setting is managed by the application.
+*Last saved width and height for the preferences dialog. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.preferences_size`.
-* Type: `typing.Tuple[int, int]`.
-* Default: `None`.
+* <small>Access programmatically with `SETTINGS.application.preferences_size`.</small>
+
+* <small>Type: `typing.Tuple[int, int]`.</small>
+
+* <small>Default: `None`.</small>
 
 #### Saved folders history
 
-Last saved list of saved folders. This setting is managed by the application.
+*Last saved list of saved folders. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.save_history`.
-* Type: `<class 'str'>`.
-* Default: `[]`.
+* <small>Access programmatically with `SETTINGS.application.save_history`.</small>
+
+* <small>Type: `builtins.str`.</small>
+
+* <small>Default: `[]`.</small>
 
 #### Save window geometry
 
-Toggle saving the main window size and position.
+*Toggle saving the main window size and position.*
 
-* Access programmatically with `SETTINGS.application.save_window_geometry`.
-* Type: `<class 'bool'>`.
-* Default: `True`.
-* UI: This setting can be configured via the preferences dialog.
+* <small>Access programmatically with `SETTINGS.application.save_window_geometry`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `True`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 #### Save window state
 
-Toggle saving the main window state of widgets.
+*Toggle saving the main window state of widgets.*
 
-* Access programmatically with `SETTINGS.application.save_window_state`.
-* Type: `<class 'bool'>`.
-* Default: `True`.
-* UI: This setting can be configured via the preferences dialog.
+* <small>Access programmatically with `SETTINGS.application.save_window_state`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `True`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 #### Window fullscreen
 
-Last saved fullscreen state for the main window. This setting is managed by the application.
+*Last saved fullscreen state for the main window. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.window_fullscreen`.
-* Type: `<class 'bool'>`.
-* Default: `None`.
+* <small>Access programmatically with `SETTINGS.application.window_fullscreen`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `None`.</small>
 
 #### Window maximized state
 
-Last saved maximized state for the main window. This setting is managed by the application.
+*Last saved maximized state for the main window. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.window_maximized`.
-* Type: `<class 'bool'>`.
-* Default: `None`.
+* <small>Access programmatically with `SETTINGS.application.window_maximized`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `None`.</small>
 
 #### Window position
 
-Last saved x and y coordinates for the main window. This setting is managed by the application.
+*Last saved x and y coordinates for the main window. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.window_position`.
-* Type: `typing.Tuple[int, int]`.
-* Default: `None`.
+* <small>Access programmatically with `SETTINGS.application.window_position`.</small>
+
+* <small>Type: `typing.Tuple[int, int]`.</small>
+
+* <small>Default: `None`.</small>
 
 #### Window size
 
-Last saved width and height for the main window. This setting is managed by the application.
+*Last saved width and height for the main window. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.window_size`.
-* Type: `typing.Tuple[int, int]`.
-* Default: `None`.
+* <small>Access programmatically with `SETTINGS.application.window_size`.</small>
+
+* <small>Type: `typing.Tuple[int, int]`.</small>
+
+* <small>Default: `None`.</small>
 
 #### Window state
 
-Last saved state of dockwidgets and toolbars for the main window. This setting is managed by the application.
+*Last saved state of dockwidgets and toolbars for the main window. This setting is managed by the application.*
 
-* Access programmatically with `SETTINGS.application.window_state`.
-* Type: `<class 'str'>`.
-* Default: `None`.
+* <small>Access programmatically with `SETTINGS.application.window_state`.</small>
+
+* <small>Type: `builtins.str`.</small>
+
+* <small>Default: `None`.</small>
 
 #### Show status bar
 
-Toggle diplaying the status bar for the main window.
+*Toggle diplaying the status bar for the main window.*
 
-* Access programmatically with `SETTINGS.application.window_statusbar`.
-* Type: `<class 'bool'>`.
-* Default: `True`.
+* <small>Access programmatically with `SETTINGS.application.window_statusbar`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `True`.</small>
 
 
-### Plugins
+### PLUGINS
 
-Plugin configuration.
+Plugins settings.
 
 
 #### Plugin sort order
 
-Sort plugins for each action in the order to be called.
+*Sort plugins for each action in the order to be called.*
 
-* Access programmatically with `SETTINGS.plugins.call_order`.
-* Type: `typing.List[napari.utils.settings._defaults.PluginHookOption]`.
-* Default: `None`.
-* UI: This setting can be configured via the preferences dialog.
+* <small>Access programmatically with `SETTINGS.plugins.call_order`.</small>
+
+* <small>Type: `typing.List[napari.utils.settings._defaults.PluginHookOption]`.</small>
+
+* <small>Default: `None`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
+#### Disabled plugins
+
+*Plugins to disable on application start.*
+
+* <small>Access programmatically with `SETTINGS.plugins.disabled_plugins`.</small>
+
+* <small>Type: `builtins.str`.</small>
+
+* <small>Default: `set()`.</small>
+
+
+### EXPERIMENTAL
+
+Experimental settings.
+
+
+#### Render Images Asynchronously
+
+*Asynchronous loading of image data. 
+This setting partially loads data while viewing. 
+You must restart napari for changes of this setting to apply.*
+
+* <small>Access programmatically with `SETTINGS.experimental.async_`.</small>
+
+* <small>Type: `builtins.bool`.</small>
+
+* <small>Default: `False`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
+#### Enable Asynchronous Tiling of Images
+
+*Renders images asynchronously using tiles. 
+You must restart napari for changes of this setting to apply.*
+
+* <small>Access programmatically with `SETTINGS.experimental.octree`.</small>
+
+* <small>Type: `typing.Union[bool, str]`.</small>
+
+* <small>Default: `False`.</small>
+* <small>UI: This setting can be configured via the preferences dialog.</small>
 
 **Support for plugin specific settings will be provided in an upcoming release.**
 
@@ -209,19 +296,25 @@ some of the provided options.
 
 ### Appearance
 
-![appearance](images/preferences-appearance.png)
+![appearance](../images/_autogenerated/preferences-appearance.png)
 
 
 
 ### Application
 
-![application](images/preferences-application.png)
+![application](../images/_autogenerated/preferences-application.png)
 
 
 
 ### Plugins
 
-![plugins](images/preferences-plugins.png)
+![plugins](../images/_autogenerated/preferences-plugins.png)
+
+
+
+### Experimental
+
+![experimental](../images/_autogenerated/preferences-experimental.png)
 
 
 
@@ -230,4 +323,4 @@ some of the provided options.
 To reset the preferences click on the `Restore defaults` button and continue
 by clicking on `Restore`.
 
-![](images/preferences-reset.png)
+![](../images/_autogenerated/preferences-reset.png)
