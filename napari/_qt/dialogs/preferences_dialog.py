@@ -26,6 +26,7 @@ class PreferencesDialog(QDialog):
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
+        "shortcuts": {"ui:widget": "shortcuts"},
     }
 
     resized = Signal(QSize)
