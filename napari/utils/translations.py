@@ -7,18 +7,22 @@ import gettext
 import os
 import sys
 from pathlib import Path
+from typing import Optional, Union
+
+from yaml import safe_load
+
+from ._base import _DEFAULT_CONFIG_PATH, _DEFAULT_LOCALE
 
 # Entry points
 NAPARI_LANGUAGEPACK_ENTRY = "napari.languagepack"
 
 # Constants
-DEFAULT_LOCALE = "en"
 LOCALE_DIR = "locale"
 PY37_OR_LOWER = sys.version_info[:2] <= (3, 7)
 
 
 def _get_display_name(
-    locale: str, display_locale: str = DEFAULT_LOCALE
+    locale: str, display_locale: str = _DEFAULT_LOCALE
 ) -> str:
     """
     Return the language name to use with a `display_locale` for a given language locale.
@@ -37,15 +41,22 @@ def _get_display_name(
     str
         Localized `locale` and capitalized language name using `display_locale` as language.
     """
-    # This is a dependency of the language packs to keep out of core
-    import babel
+    try:
+        # This is a dependency of the language packs to keep out of core
+        import babel
 
-    locale = locale if _is_valid_locale(locale) else DEFAULT_LOCALE
-    display_locale = (
-        display_locale if _is_valid_locale(display_locale) else DEFAULT_LOCALE
-    )
-    loc = babel.Locale.parse(locale)
-    return loc.get_display_name(display_locale).capitalize()
+        locale = locale if _is_valid_locale(locale) else _DEFAULT_LOCALE
+        display_locale = (
+            display_locale
+            if _is_valid_locale(display_locale)
+            else _DEFAULT_LOCALE
+        )
+        loc = babel.Locale.parse(locale)
+        dislay_name = loc.get_display_name(display_locale).capitalize()
+    except ImportError:
+        dislay_name = display_locale.capitalize()
+
+    return dislay_name
 
 
 def _is_valid_locale(locale: str) -> bool:
@@ -63,7 +74,7 @@ def _is_valid_locale(locale: str) -> bool:
     optional territory (See ISO-3166 standard).
 
     Examples of valid locales:
-    - English: DEFAULT_LOCALE
+    - English: "en"
     - Australian English: "en_AU"
     - Portuguese: "pt"
     - Brazilian Portuguese: "pt_BR"
@@ -72,22 +83,24 @@ def _is_valid_locale(locale: str) -> bool:
     - Australian Spanish: "es_AU"
     - Brazilian German: "de_BR"
     """
-    # This is a dependency of the language packs to keep out of core
-    import babel
-
     valid = False
     try:
+        # This is a dependency of the language packs to keep out of core
+        import babel
+
         babel.Locale.parse(locale)
         valid = True
-    except babel.core.UnknownLocaleError:
-        pass
+    except ImportError:
+        valid = True
     except ValueError:
+        pass
+    except babel.core.UnknownLocaleError:
         pass
 
     return valid
 
 
-def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
+def get_language_packs(display_locale: str = _DEFAULT_LOCALE) -> dict:
     """
     Return the available language packs installed in the system.
 
@@ -97,15 +110,15 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
     Parameters
     ----------
     display_locale : str, optional
-        Default is DEFAULT_LOCALE.
+        Default is _DEFAULT_LOCALE.
 
     Returns
     -------
     dict
         A dict with the native and display language for all locales found.
 
-    Example
-    -------
+    Examples
+    --------
     >>> get_language_packs("es_CO")
     {
         'en': {'displayName': 'Inglés', 'nativeName': 'English'},
@@ -122,7 +135,6 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
 
     invalid_locales = []
     valid_locales = []
-    messages = []
     for locale in found_locales:
         if _is_valid_locale(locale):
             valid_locales.append(locale)
@@ -130,12 +142,12 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
             invalid_locales.append(locale)
 
     display_locale = (
-        display_locale if display_locale in valid_locales else DEFAULT_LOCALE
+        display_locale if display_locale in valid_locales else _DEFAULT_LOCALE
     )
     locales = {
-        DEFAULT_LOCALE: {
-            "displayName": _get_display_name(DEFAULT_LOCALE, display_locale),
-            "nativeName": _get_display_name(DEFAULT_LOCALE, DEFAULT_LOCALE),
+        _DEFAULT_LOCALE: {
+            "displayName": _get_display_name(_DEFAULT_LOCALE, display_locale),
+            "nativeName": _get_display_name(_DEFAULT_LOCALE, _DEFAULT_LOCALE),
         }
     }
     for locale in valid_locales:
@@ -144,20 +156,152 @@ def get_language_packs(display_locale: str = DEFAULT_LOCALE) -> dict:
             "nativeName": _get_display_name(locale, locale),
         }
 
-    if invalid_locales:
-        messages.append(
-            f"The following locales are invalid: {invalid_locales}!"
-        )
-
     return locales
 
 
 # --- Translators
 # ----------------------------------------------------------------------------
+class TranslationString(str):
+    """
+    A class that allows to create a deferred translations.
+    """
+
+    def __new__(
+        cls,
+        domain: Optional[str] = None,
+        msgctxt: Optional[str] = None,
+        msgid: Optional[str] = None,
+        msgid_plural: Optional[str] = None,
+        n: Optional[str] = None,
+        deferred: bool = False,
+        **kwargs,
+    ):
+        if msgid is None:
+            raise ValueError(
+                trans._("Must provide at least a `msgid` parameter!")
+            )
+
+        kwargs["n"] = n
+
+        return str.__new__(
+            cls,
+            cls._original_value(
+                msgid,
+                msgid_plural,
+                n,
+                kwargs,
+            ),
+        )
+
+    def __init__(
+        self,
+        domain: Optional[str] = None,
+        msgctxt: Optional[str] = None,
+        msgid: Optional[str] = None,
+        msgid_plural: Optional[str] = None,
+        n: Optional[str] = None,
+        deferred: bool = False,
+        **kwargs,
+    ):
+        if msgid is None:
+            raise ValueError(
+                trans._("Must provide at least a `msgid` parameter!")
+            )
+
+        self._domain = domain
+        self._msgctxt = msgctxt
+        self._msgid = msgid
+        self._msgid_plural = msgid_plural
+        self._n = n
+        self._deferred = deferred
+        self._kwargs = kwargs
+
+        # Add `n` to `kwargs` to use with `format`
+        self._kwargs['n'] = n
+
+    def __repr__(self):
+        return repr(self.__str__())
+
+    def __str__(self):
+        return self.value() if self._deferred else self.translation()
+
+    @classmethod
+    def _original_value(cls, msgid, msgid_plural, n, kwargs):
+        """
+        Return the original string with interpolated kwargs, if provided.
+
+        Parameters
+        ----------
+        msgid : str
+            The singular string to translate.
+        msgid_plural : str
+            The plural string to translate.
+        n : int
+            The number for pluralization.
+        kwargs : dict
+            Any additional arguments to use when formating the string.
+        """
+        string = msgid if n is None or n == 1 else msgid_plural
+        return string.format(**kwargs)
+
+    def value(self) -> str:
+        """
+        Return the original string with interpolated kwargs, if provided.
+        """
+        return self._original_value(
+            self._msgid,
+            self._msgid_plural,
+            self._n,
+            self._kwargs,
+        )
+
+    def translation(self) -> str:
+        """
+        Return the translated string with interpolated kwargs, if provided.
+        """
+        # Python 3.7 or lower does not offer translations based on context.
+        # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
+        if PY37_OR_LOWER:
+            if self._n is None:
+                translation = gettext.dgettext(self._domain, self._msgid)
+            else:
+                translation = gettext.dngettext(
+                    self._domain, self._msgid, self._msgid_plural, self._n
+                )
+        else:
+            if self._n is None and self._msgctxt is None:
+                translation = gettext.dgettext(
+                    self._domain,
+                    self._msgid,
+                )
+            elif self._n is None:
+                translation = gettext.dpgettext(
+                    self._domain,
+                    self._msgctxt,
+                    self._msgid,
+                )
+            elif self._msgctxt is None:
+                translation = gettext.dngettext(
+                    self._domain,
+                    self._msgid,
+                    self._msgid_plural,
+                    self._n,
+                )
+            else:
+                translation = gettext.dnpgettext(
+                    self._domain,
+                    self._msgctxt,
+                    self._msgid,
+                    self._msgid_plural,
+                    self._n,
+                )
+
+        return translation.format(**self._kwargs)
+
+
 class TranslationBundle:
     """
     Translation bundle providing gettext translation functionality.
-
 
     Parameters
     ----------
@@ -187,7 +331,7 @@ class TranslationBundle:
         """
         self._locale = locale
         localedir = None
-        if locale.split("_")[0] != DEFAULT_LOCALE:
+        if locale.split("_")[0] != _DEFAULT_LOCALE:
             from napari_plugin_engine.manager import iter_available_plugins
 
             lang_packs = iter_available_plugins(NAPARI_LANGUAGEPACK_ENTRY)
@@ -195,7 +339,14 @@ class TranslationBundle:
             if locale not in data:
                 import warnings
 
-                warnings.warn("Requested locale not available: {locale}")
+                trans = self
+                warnings.warn(
+                    trans._(
+                        "Requested locale not available: {locale}",
+                        deferred=True,
+                        locale=locale,
+                    )
+                )
             else:
                 import importlib
 
@@ -204,178 +355,238 @@ class TranslationBundle:
 
         gettext.bindtextdomain(self._domain, localedir=localedir)
 
-    def gettext(self, msgid: str) -> str:
-        """
-        Translate a singular string.
-
-        Parameters
-        ----------
-        msgid: str
-            The singular string to translate.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        return gettext.dgettext(self._domain, msgid)
-
-    def ngettext(self, msgid: str, msgid_plural: str, n: int) -> str:
-        """
-        Translate a singular string with pluralization.
-
-        Parameters
-        ----------
-        msgid: str
-            The singular string to translate.
-        msgid_plural: str
-            The plural string to translate.
-        n: int
-            The number for pluralization.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        return gettext.dngettext(self._domain, msgid, msgid_plural, n)
-
-    def pgettext(self, msgctxt: str, msgid: str) -> str:
-        """
-        Translate a singular string with context.
-
-        Parameters
-        ----------
-        msgctxt: str
-            The message context.
-        msgid: str
-            The singular string to translate.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        # Python 3.7 or lower does not offer translations based on context.
-        # On these versions `gettext.pgettext` falls back to `gettext.gettext`
-        if PY37_OR_LOWER:
-            translation = gettext.dgettext(self._domain, msgid)
-        else:
-            translation = gettext.dpgettext(self._domain, msgctxt, msgid)
-
-        return translation
-
-    def npgettext(
-        self, msgctxt: str, msgid: str, msgid_plural: str, n: int
+    def _dnpgettext(
+        self,
+        msgctxt: Optional[str] = None,
+        msgid: Optional[str] = None,
+        msgid_plural: Optional[str] = None,
+        n: Optional[int] = None,
+        **kwargs,
     ) -> str:
         """
-        Translate a singular string with context and pluralization.
+        Helper to handle all trans methods and delegate to corresponding
+        gettext methods.
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str, optional
             The message context.
-        msgid: str
+        msgid : str, optional
             The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str, optional
             The plural string to translate.
-        n: int
+        n : int, optional
             The number for pluralization.
-
-        Returns
-        -------
-        str
-            The translated string.
+        **kwargs : dict, optional
+            Any additional arguments to use when formating the string.
         """
-        # Python 3.7 or lower does not offer translations based on context.
-        # On these versions `gettext.npgettext` falls back to `gettext.ngettext`
+        if msgid is None:
+            trans = self
+            raise ValueError(
+                trans._(
+                    "Must provide at least a `msgid` parameter!", deferred=True
+                )
+            )
+
         if PY37_OR_LOWER:
-            translation = gettext.dngettext(
-                self._domain, msgid, msgid_plural, n
+            translation = (
+                gettext.dgettext(self._domain, msgid)
+                if n is None
+                else gettext.dngettext(self._domain, msgid, msgid_plural, n)
             )
         else:
-            translation = gettext.dnpgettext(
-                self._domain, msgctxt, msgid, msgid_plural, n
+            if n is None and msgctxt is None:
+                translation = gettext.dgettext(self._domain, msgid)
+            elif n is None:
+                translation = gettext.dpgettext(self._domain, msgctxt, msgid)
+            elif msgctxt is None:
+                translation = gettext.dngettext(
+                    self._domain,
+                    msgid,
+                    msgid_plural,
+                    n,
+                )
+            else:
+                translation = gettext.dnpgettext(
+                    self._domain,
+                    msgctxt,
+                    msgid,
+                    msgid_plural,
+                    n,
+                )
+
+        kwargs['n'] = n
+        return translation.format(**kwargs)
+
+    def _(
+        self, msgid: str, deferred: bool = False, **kwargs
+    ) -> Union[TranslationString, str]:
+        """
+        Shorthand for `gettext.gettext` with enhanced functionality.
+
+        Parameters
+        ----------
+        msgid : str
+            The singular string to translate.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        **kwargs : dict, optional
+            Any additional arguments to use when formatting the string.
+
+        Returns
+        -------
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
+        """
+        return (
+            TranslationString(
+                domain=self._domain, msgid=msgid, deferred=deferred, **kwargs
             )
+            if deferred
+            else self._dnpgettext(msgid=msgid, **kwargs)
+        )
 
-        return translation
-
-    # Shorthands
-    def _(self, msgid: str) -> str:
+    def _n(
+        self,
+        msgid: str,
+        msgid_plural: str,
+        n: int,
+        deferred: Optional[bool] = False,
+        **kwargs,
+    ) -> Union[TranslationString, str]:
         """
-        Shorthand for gettext.
+        Shorthand for `gettext.ngettext` with enhanced functionality.
 
         Parameters
         ----------
-        msgid: str
+        msgid : str
             The singular string to translate.
-
-        Returns
-        -------
-        str
-            The translated string.
-        """
-        return self.gettext(msgid)
-
-    def _n(self, msgid: str, msgid_plural: str, n: int) -> str:
-        """
-        Shorthand for ngettext.
-
-        Parameters
-        ----------
-        msgid: str
-            The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str
             The plural string to translate.
-        n: int
+        n : int
             The number for pluralization.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        **kwargs : dict, optional
+            Any additional arguments to use when formating the string.
 
         Returns
         -------
-        str
-            The translated string.
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
         """
-        return self.ngettext(msgid, msgid_plural, n)
+        return (
+            TranslationString(
+                domain=self._domain,
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                n=n,
+                deferred=deferred,
+                **kwargs,
+            )
+            if deferred
+            else self._dnpgettext(
+                msgid=msgid, msgid_plural=msgid_plural, n=n, **kwargs
+            )
+        )
 
-    def _p(self, msgctxt: str, msgid: str) -> str:
+    def _p(
+        self,
+        msgctxt: str,
+        msgid: str,
+        deferred: Optional[bool] = False,
+        **kwargs,
+    ) -> Union[TranslationString, str]:
         """
-        Shorthand for pgettext.
+        Shorthand for `gettext.pgettext` with enhanced functionality.
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str
             The message context.
-        msgid: str
+        msgid : str
             The singular string to translate.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        **kwargs : dict, optional
+            Any additional arguments to use when formating the string.
 
         Returns
         -------
-        str
-            The translated string.
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
         """
-        return self.pgettext(msgctxt, msgid)
+        return (
+            TranslationString(
+                domain=self._domain,
+                msgctxt=msgctxt,
+                msgid=msgid,
+                deferred=deferred,
+                **kwargs,
+            )
+            if deferred
+            else self._dnpgettext(msgctxt=msgctxt, msgid=msgid, **kwargs)
+        )
 
-    def _np(self, msgctxt: str, msgid: str, msgid_plural: str, n: str) -> str:
+    def _np(
+        self,
+        msgctxt: str,
+        msgid: str,
+        msgid_plural: str,
+        n: str,
+        deferred: Optional[bool] = False,
+        **kwargs,
+    ) -> Union[TranslationString, str]:
         """
-        Shorthand for npgettext.
+        Shorthand for `gettext.npgettext` with enhanced functionality.
 
         Parameters
         ----------
-        msgctxt: str
+        msgctxt : str
             The message context.
-        msgid: str
+        msgid : str
             The singular string to translate.
-        msgid_plural: str
+        msgid_plural : str
             The plural string to translate.
-        n: int
+        n : int
             The number for pluralization.
+        deferred : bool, optional
+            Define if the string translation should be deferred or executed
+            in place. Default is False.
+        **kwargs : dict, optional
+            Any additional arguments to use when formating the string.
 
         Returns
         -------
-        str
-            The translated string.
+        TranslationString or str
+            The translation string which might be deferred or translated in
+            place.
         """
-        return self.npgettext(msgctxt, msgid, msgid_plural, n)
+        return (
+            TranslationString(
+                domain=self._domain,
+                msgctxt=msgctxt,
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                n=n,
+                deferred=deferred,
+                **kwargs,
+            )
+            if deferred
+            else self._dnpgettext(
+                msgctxt=msgctxt,
+                msgid=msgid,
+                msgid_plural=msgid_plural,
+                n=n,
+                **kwargs,
+            )
+        )
 
 
 class _Translator:
@@ -384,7 +595,7 @@ class _Translator:
     """
 
     _TRANSLATORS = {}
-    _LOCALE = DEFAULT_LOCALE
+    _LOCALE = _DEFAULT_LOCALE
 
     @staticmethod
     def _update_env(locale: str):
@@ -393,7 +604,7 @@ class _Translator:
 
         Parameters
         ----------
-        locale: str
+        locale : str
             The language name to use.
         """
         for key in ["LANGUAGE", "LANG"]:
@@ -406,14 +617,14 @@ class _Translator:
 
         Parameters
         ----------
-        locale: str
+        locale : str
             The language name to use.
         """
         if _is_valid_locale(locale):
             cls._LOCALE = locale
 
-            if locale.split("_")[0] != DEFAULT_LOCALE:
-                translator._update_env(locale)
+            if locale.split("_")[0] != _DEFAULT_LOCALE:
+                _Translator._update_env(locale)
 
             for __, bundle in cls._TRANSLATORS.items():
                 bundle._update_locale(locale)
@@ -427,7 +638,7 @@ class _Translator:
 
         Parameters
         ----------
-        domain: str
+        domain : str
             The translations domain. The normalized python package name.
 
         Returns
@@ -443,5 +654,51 @@ class _Translator:
 
         return trans
 
+
+def _load_language(
+    default_config_path: str = _DEFAULT_CONFIG_PATH,
+    locale: str = _DEFAULT_LOCALE,
+) -> str:
+    """
+    Load language from configuration file directly.
+
+    Parameters
+    ----------
+    default_config_path : str or Path
+        The default configuration path, optional
+    locale : str
+        The default locale used to display options, optional
+
+    Returns
+    -------
+    str
+        The language locale set by napari.
+    """
+    default_config_path = Path(default_config_path)
+    if default_config_path.exists():
+        with open(default_config_path) as fh:
+            try:
+                data = safe_load(fh) or {}
+            except Exception as err:
+                import warnings
+
+                warnings.warn(
+                    "The `language` setting defined in the napari "
+                    "configuration file could not be read.\n\n"
+                    "The default language will be used.\n\n"
+                    f"Error:\n{err}"
+                ),
+                data = {}
+
+        locale = data.get("application", {}).get("language", locale)
+
+    return os.environ.get("NAPARI_LANGUAGE", locale)
+
+
+# Default translator
+trans = _Translator.load("napari")
+
+# Update Translator locale before any other import uses it
+_Translator._set_locale(_load_language())
 
 translator = _Translator

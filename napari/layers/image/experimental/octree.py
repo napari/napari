@@ -1,16 +1,22 @@
 """Octree class.
 """
+from __future__ import annotations
+
 import logging
 import math
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from ....utils.perf import block_timer
-from .octree_chunk import OctreeChunk, OctreeLocation
+from ....utils.translations import trans
 from .octree_level import OctreeLevel, log_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree")
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk._request import OctreeLocation
+    from .octree_chunk import OctreeChunk
 
 
 class Octree:
@@ -62,7 +68,11 @@ class Octree:
         if not self.levels:
             # Probably we will allow empty trees, but for now raise:
             raise ValueError(
-                f"Data of shape {data.shape} resulted " "no octree levels?"
+                trans._(
+                    "Data of shape {shape} resulted no octree levels?",
+                    deferred=True,
+                    shape=data.shape,
+                )
             )
 
         LOGGER.info("Multiscale data has %d levels.", len(self.levels))
@@ -104,7 +114,12 @@ class Octree:
             return self.levels[level_index]
         except IndexError as exc:
             raise IndexError(
-                f"Level {level_index} is not in range(0, {len(self.levels)})"
+                trans._(
+                    "Level {level_index} is not in range(0, {top})",
+                    deferred=True,
+                    level_index=level_index,
+                    top=len(self.levels),
+                )
             ) from exc
 
     def get_chunk_at_location(
@@ -309,8 +324,6 @@ class Octree:
         ----------
         slice_id : int
             The id of the slice this octree is in.
-        tile_size : int
-            Keep creating levels until one fits with a tile of this size.
 
         Returns
         -------
@@ -392,7 +405,11 @@ def _check_downscale_ratio(data) -> None:
     # if its off, so allow a small fudge factor.
     if not math.isclose(ratio, 2, rel_tol=0.01):
         raise ValueError(
-            f"Multiscale data has downsampling ratio of {ratio}, expected 2."
+            trans._(
+                "Multiscale data has downsampling ratio of {ratio}, expected 2.",
+                deferred=True,
+                ratio=ratio,
+            )
         )
 
 

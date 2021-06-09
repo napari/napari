@@ -2,6 +2,7 @@ from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
 from ...utils import config
+from ...utils.translations import trans
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
 from .qt_points_controls import QtPointsControls
@@ -48,7 +49,11 @@ def create_qt_layer_controls(layer):
             return controls(layer)
 
     raise TypeError(
-        f'Could not find QtControls for layer of type {type(layer)}'
+        trans._(
+            'Could not find QtControls for layer of type {type_}',
+            deferred=True,
+            type_=type(layer),
+        )
     )
 
 
@@ -84,7 +89,7 @@ class QtLayerControlsContainer(QStackedWidget):
 
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
-        self.viewer.events.active_layer.connect(self._display)
+        viewer.layers.selection.events.active.connect(self._display)
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

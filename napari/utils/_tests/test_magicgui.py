@@ -63,6 +63,7 @@ def test_magicgui_add_data(make_napari_viewer, LayerType, data, ndim):
     add_data()
     assert len(viewer.layers) == 1
     assert isinstance(viewer.layers[0], LayerType)
+    assert viewer.layers[0].source.widget == add_data
 
 
 @pytest.mark.parametrize('LayerType, data, ndim', test_data)
@@ -99,6 +100,7 @@ def test_magicgui_add_layer(make_napari_viewer, LayerType, data, ndim):
     add_layer()
     assert len(viewer.layers) == 1
     assert isinstance(viewer.layers[0], LayerType)
+    assert viewer.layers[0].source.widget == add_layer
 
 
 def test_magicgui_add_layer_data_tuple(make_napari_viewer):
@@ -106,7 +108,11 @@ def test_magicgui_add_layer_data_tuple(make_napari_viewer):
 
     @magicgui
     def add_layer() -> types.LayerDataTuple:
-        data = (np.random.rand(10, 10), {'name': 'hi'}, 'labels')
+        data = (
+            np.random.randint(0, 10, size=(10, 10)),
+            {'name': 'hi'},
+            'labels',
+        )
         # it works fine to just return `data`
         # but this will avoid mypy/linter errors and has no runtime burden
         return types.LayerDataTuple(data)
@@ -115,6 +121,7 @@ def test_magicgui_add_layer_data_tuple(make_napari_viewer):
     add_layer()
     assert len(viewer.layers) == 1
     assert isinstance(viewer.layers[0], Labels)
+    assert viewer.layers[0].source.widget == add_layer
 
 
 def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
@@ -123,7 +130,11 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     @magicgui
     def add_layer() -> List[types.LayerDataTuple]:
         data1 = (np.random.rand(10, 10), {'name': 'hi'})
-        data2 = (np.random.rand(10, 10), {'name': 'hi2'}, 'labels')
+        data2 = (
+            np.random.randint(0, 10, size=(10, 10)),
+            {'name': 'hi2'},
+            'labels',
+        )
         return [data1, data2]  # type: ignore
 
     viewer.window.add_dock_widget(add_layer)
@@ -131,6 +142,9 @@ def test_magicgui_add_layer_data_tuple_list(make_napari_viewer):
     assert len(viewer.layers) == 2
     assert isinstance(viewer.layers[0], Image)
     assert isinstance(viewer.layers[1], Labels)
+
+    assert viewer.layers[0].source.widget == add_layer
+    assert viewer.layers[1].source.widget == add_layer
 
 
 def test_magicgui_data_updated(make_napari_viewer):

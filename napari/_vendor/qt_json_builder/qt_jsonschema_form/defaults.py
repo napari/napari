@@ -6,7 +6,12 @@ def enum_defaults(schema):
 
 
 def object_defaults(schema):
-    return {k: compute_defaults(s) for k, s in schema["properties"].items()}
+    if "properties" in schema:
+        return {
+            k: compute_defaults(s) for k, s in schema["properties"].items()
+        }
+    else:
+        return None
 
 
 def array_defaults(schema):
@@ -26,7 +31,6 @@ def compute_defaults(schema):
         return enum_defaults(schema)
 
     schema_type = schema["type"]
-
     if schema_type == "object":
         return object_defaults(schema)
 

@@ -15,6 +15,7 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
+from ...utils.translations import trans
 from ..base import Layer
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
@@ -45,7 +46,13 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import create_box, get_shape_ndim, number_of_shapes
+from ._shapes_utils import (
+    create_box,
+    extract_shape_type,
+    get_default_shape_type,
+    get_shape_ndim,
+    number_of_shapes,
+)
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -206,8 +213,8 @@ class Shapes(Layer):
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
         modes all allow for their corresponding shape type to be added.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _data_dict : Dict of ShapeList
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList
@@ -324,9 +331,15 @@ class Shapes(Layer):
                 ndim = 2
             data = np.empty((0, 0, ndim))
         else:
+            data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError("Shape dimensions must be equal to ndim")
+                raise ValueError(
+                    trans._(
+                        "Shape dimensions must be equal to ndim",
+                        deferred=True,
+                    )
+                )
             ndim = data_ndim
 
         super().__init__(
@@ -391,7 +404,12 @@ class Shapes(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError('text should be a string, array, or dict')
+            raise TypeError(
+                trans._(
+                    'text should be a string, array, or dict',
+                    deferred=True,
+                )
+            )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -419,6 +437,9 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+        # _moving_coordinates are needed for fixing aspect ratio during
+        # a resize
+        self._moving_coordinates = None
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -429,7 +450,7 @@ class Shapes(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
-        self._help = 'enter a selection mode to edit shape properties'
+        self._help = trans._('enter a selection mode to edit shape properties')
 
         self._init_shapes(
             data,
@@ -529,30 +550,66 @@ class Shapes(Layer):
         return self._data_view.data
 
     @data.setter
-    def data(self, data, shape_type='rectangle'):
+    def data(self, data):
         self._finish_drawing()
+
+        data, shape_type = extract_shape_type(data)
+        n_new_shapes = number_of_shapes(data)
+        # not given a shape_type through data
+        if shape_type is None:
+            shape_type = self.shape_type
+
+        edge_widths = self._data_view.edge_widths
+        edge_color = self._data_view.edge_color
+        face_color = self._data_view.face_color
+        z_indices = self._data_view.z_indices
+
+        # fewer shapes, trim attributes
+        if self.nshapes > n_new_shapes:
+            shape_type = shape_type[:n_new_shapes]
+            edge_widths = edge_widths[:n_new_shapes]
+            z_indices = z_indices[:n_new_shapes]
+            edge_color = edge_color[:n_new_shapes]
+            face_color = face_color[:n_new_shapes]
+        # more shapes, add attributes
+        elif self.nshapes < n_new_shapes:
+            n_shapes_difference = n_new_shapes - self.nshapes
+            shape_type = (
+                shape_type
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
+            )
+            edge_widths = edge_widths + [1] * n_shapes_difference
+            z_indices = z_indices + [0] * n_shapes_difference
+            edge_color = np.concatenate(
+                (
+                    edge_color,
+                    self._get_new_shape_color(n_shapes_difference, 'edge'),
+                )
+            )
+            face_color = np.concatenate(
+                (
+                    face_color,
+                    self._get_new_shape_color(n_shapes_difference, 'face'),
+                )
+            )
+
         self._data_view = ShapeList()
-        self.add(data, shape_type=shape_type)
+        self.add(
+            data,
+            shape_type=shape_type,
+            edge_width=edge_widths,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_indices,
+        )
 
         self._update_dims()
         self.events.data(value=self.data)
         self._set_editable()
 
-    @property
-    def selected(self):
-        """bool: Whether this layer is selected or not."""
-        return self._selected
-
-    @selected.setter
-    def selected(self, selected):
-        if selected == self.selected:
-            return
-        self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+    def _on_selection(self, selected: bool):
+        # this method is slated for removal.  don't add anything new.
+        if not selected:
             self._finish_drawing()
 
     @property
@@ -570,7 +627,11 @@ class Shapes(Layer):
         ):
             self._face_color_property = ''
             warnings.warn(
-                'property used for face_color dropped', RuntimeWarning
+                trans._(
+                    'property used for face_color dropped',
+                    deferred=True,
+                ),
+                RuntimeWarning,
             )
 
         if self._edge_color_property and (
@@ -578,7 +639,11 @@ class Shapes(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn(
-                'property used for edge_color dropped', RuntimeWarning
+                trans._(
+                    'property used for edge_color dropped',
+                    deferred=True,
+                ),
+                RuntimeWarning,
             )
 
         if self.text.values is not None:
@@ -685,6 +750,25 @@ class Shapes(Layer):
     def shape_type(self):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
+
+    @shape_type.setter
+    def shape_type(self, shape_type):
+        self._finish_drawing()
+
+        new_data_view = ShapeList()
+        shape_inputs = zip(
+            self._data_view.data,
+            ensure_iterable(shape_type),
+            self._data_view.edge_widths,
+            self._data_view.edge_color,
+            self._data_view.face_color,
+            self._data_view.z_indices,
+        )
+
+        self._add_shapes_to_view(shape_inputs, new_data_view)
+
+        self._data_view = new_data_view
+        self._update_dims()
 
     @property
     def edge_color(self):
@@ -848,13 +932,20 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        f'_{attribute}_color_property was not set, '
-                        f'setting to: {new_color_property}'
+                        trans._(
+                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            deferred=True,
+                            attribute=attribute,
+                            new_color_property=new_color_property,
+                        )
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Shapes.properties to use '
-                        f'{color_mode}'
+                        trans._(
+                            'There must be a valid Shapes.properties to use {color_mode}',
+                            deferred=True,
+                            color_mode=color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -863,7 +954,10 @@ class Shapes(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
@@ -897,10 +991,58 @@ class Shapes(Layer):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
 
+    @edge_width.setter
+    def edge_width(self, width):
+        """Set edge width of shapes using float or list of float.
+
+        If list of float, must be of equal length to n shapes
+
+        Parameters
+        ----------
+        width : float or list of float
+            width of all shapes, or each shape if list
+        """
+        if isinstance(width, list):
+            if not len(width) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                widths = width
+        else:
+            widths = [width for _ in range(self.nshapes)]
+
+        for i, width in enumerate(widths):
+            self._data_view.update_edge_width(i, width)
+
     @property
     def z_index(self):
         """list of int: z_index for each shape."""
         return self._data_view.z_indices
+
+    @z_index.setter
+    def z_index(self, z_index):
+        """Set z_index of shape using either int or list of int.
+
+        When list of int is provided, must be of equal length to n shapes.
+
+        Parameters
+        ----------
+        z_index : int or list of int
+            z-index of shapes
+        """
+        if isinstance(z_index, list):
+            if not len(z_index) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                z_indices = z_index
+        else:
+            z_indices = [z_index for _ in range(self.nshapes)]
+
+        for i, z_idx in enumerate(z_indices):
+            self._data_view.update_z_index(i, z_idx)
 
     @property
     def selected_data(self):
@@ -1222,7 +1364,7 @@ class Shapes(Layer):
         return new_colors
 
     def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
+        """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
                 return True
@@ -1232,7 +1374,10 @@ class Shapes(Layer):
             return False
         else:
             raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an property'
+                trans._(
+                    'face_color should be the name of a color, an array of colors, or the name of an property',
+                    deferred=True,
+                )
             )
 
     def _get_state(self):
@@ -1358,20 +1503,22 @@ class Shapes(Layer):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter a selection mode to edit shape properties'
+            self.help = trans._(
+                'enter a selection mode to edit shape properties'
+            )
         elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = (
-                'hold <space> to pan/zoom, '
-                f'press <{BACKSPACE}> to remove selected'
+            self.help = trans._(
+                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
+                BACKSPACE=BACKSPACE,
             )
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.VERTEX_INSERT:
                 self.mouse_drag_callbacks.append(vertex_insert)
             else:
@@ -1380,7 +1527,7 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.ADD_RECTANGLE:
                 self.mouse_drag_callbacks.append(add_rectangle)
             elif mode == Mode.ADD_ELLIPSE:
@@ -1390,13 +1537,18 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = (
-                'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
+            self.help = trans._(
+                'hold <space> to pan/zoom, press <esc> to finish drawing'
             )
             self.mouse_drag_callbacks.append(add_path_polygon)
             self.mouse_move_callbacks.append(add_path_polygon_creating)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(
+                trans._(
+                    "Mode not recognized",
+                    deferred=True,
+                )
+            )
 
         self._mode = mode
 
@@ -1442,16 +1594,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1476,6 +1630,8 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        data, shape_type = extract_shape_type(data, shape_type)
+
         if edge_width is None:
             edge_width = self.current_edge_width
 
@@ -1549,16 +1705,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1636,16 +1794,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1722,27 +1882,28 @@ class Shapes(Layer):
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, z in shape_inputs:
-
-                # A False slice_key means the shape is invalid as it is not
-                # confined to a single plane
-                shape_cls = shape_classes[ShapeType(st)]
-                shape = shape_cls(
-                    d,
-                    edge_width=ew,
-                    z_index=z,
-                    dims_order=self._dims_order,
-                    ndisplay=self._ndisplay,
-                )
-
-                # Add shape
-                self._data_view.add(
-                    shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
-                )
+            self._add_shapes_to_view(shape_inputs, self._data_view)
 
         self._display_order_stored = copy(self._dims_order)
         self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
+
+    def _add_shapes_to_view(self, shape_inputs, data_view):
+        """Build new shapes and add them to the _data_view"""
+        for d, st, ew, ec, fc, z in shape_inputs:
+
+            shape_cls = shape_classes[ShapeType(st)]
+            shape = shape_cls(
+                d,
+                edge_width=ew,
+                z_index=z,
+                dims_order=self._dims_order,
+                ndisplay=self._ndisplay,
+            )
+
+            # Add shape
+            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
+        data_view._update_z_order()
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
@@ -1753,7 +1914,10 @@ class Shapes(Layer):
         for k, v in properties.items():
             if len(v) != n_shapes:
                 raise ValueError(
-                    'the number of properties must equal the number of shapes'
+                    trans._(
+                        'the number of properties must equal the number of shapes',
+                        deferred=True,
+                    )
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -2161,11 +2325,11 @@ class Shapes(Layer):
             Full D dimensional data array of the shape.
         """
         warnings.warn(
-            "expand_shape is deprecated and will be removed in version 0.4.9."
-            " It should no longer be used as layers should will soon not know"
-            " which dimensions are displayed. Instead you should work with"
-            " full nD shape data as much as possible.",
-            category=DeprecationWarning,
+            trans._(
+                "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
+                deferred=True,
+            ),
+            category=FutureWarning,
             stacklevel=2,
         )
 

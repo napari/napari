@@ -8,6 +8,8 @@ import types
 from importlib import import_module
 from typing import Callable, List, Set, Tuple, Union
 
+from ...utils.translations import trans
+
 # The parent of a callable is a module or a class, class is of type "type".
 CallableParent = Union[types.ModuleType, type]
 
@@ -41,7 +43,13 @@ def _patch_attribute(
     # We expect attribute_str is <function> or <class>.<method>. We could
     # allow nested classes and functions if we wanted to extend this some.
     if attribute_str.count('.') > 1:
-        raise PatchError(f"Nested attribute not found: {attribute_str}")
+        raise PatchError(
+            trans._(
+                "Nested attribute not found: {attribute_str}",
+                deferred=True,
+                attribute_str=attribute_str,
+            )
+        )
 
     if '.' in attribute_str:
         # Assume attribute_str is <class>.<method>
@@ -50,7 +58,12 @@ def _patch_attribute(
             parent = getattr(module, class_str)
         except AttributeError:
             raise PatchError(
-                f"Module {module.__name__} has no attribute {attribute_str}"
+                trans._(
+                    "Module {module_name} has no attribute {attribute_str}",
+                    deferred=True,
+                    module_name=module.__name__,
+                    attribute_str=attribute_str,
+                )
             )
         parent_str = class_str
     else:
@@ -64,7 +77,12 @@ def _patch_attribute(
         getattr(parent, callable_str)
     except AttributeError:
         raise PatchError(
-            f"Parent {parent_str} has no attribute {callable_str}"
+            trans._(
+                "Parent {parent_str} has no attribute {callable_str}",
+                deferred=True,
+                parent_str=parent_str,
+                callable_str=callable_str,
+            )
         )
 
     label = (
@@ -113,7 +131,13 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
         except ModuleNotFoundError:
             if module is None:
                 # The very first top-level module import failed!
-                raise PatchError(f"Module not found: {module_path}")
+                raise PatchError(
+                    trans._(
+                        "Module not found: {module_path}",
+                        deferred=True,
+                        module_path=module_path,
+                    )
+                )
 
             # We successfully imported part of the target_str but then
             # we got a failure. Usually this is because we tried

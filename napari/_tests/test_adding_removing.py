@@ -1,8 +1,17 @@
 import numpy as np
 import pytest
 
-from napari._tests.utils import layer_test_data
+from napari._tests.utils import layer_test_data, skip_local_popups
 from napari.layers import Image
+from napari.utils.events.event import WarningEmitter
+
+
+@skip_local_popups
+@pytest.mark.parametrize('Layer, data, _', layer_test_data)
+def test_add_all_layers(make_napari_viewer, Layer, data, _):
+    """Make sure that all layers can show in the viewer."""
+    viewer = make_napari_viewer(show=True)
+    viewer.layers.append(Layer(data))
 
 
 def test_layers_removed_on_close(make_napari_viewer):
@@ -104,7 +113,9 @@ def test_add_remove_layer_external_callbacks(
     # Check that no internal callbacks have been registered
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        # warningEmitters are not connected when connecting to the emitterGroup
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1
 
     viewer.layers.append(layer)
     # Check layer added correctly
@@ -119,4 +130,6 @@ def test_add_remove_layer_external_callbacks(
     # Check that all internal callbacks have been removed
     assert len(layer.events.callbacks) == 1
     for em in layer.events.emitters.values():
-        assert len(em.callbacks) == 1
+        # warningEmitters are not connected when connecting to the emitterGroup
+        if not isinstance(em, WarningEmitter):
+            assert len(em.callbacks) == 1

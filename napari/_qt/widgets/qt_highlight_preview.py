@@ -66,7 +66,7 @@ class QtStar(QFrame):
 
         Parameters
         ----------
-        value: int
+        value : int
             line width value for star
         """
 
@@ -78,7 +78,7 @@ class QtStar(QFrame):
 
         Parameters
         ----------
-        qp: QPainter object
+        qp : QPainter object
         """
         width = self.rect().width()
         height = self.rect().height()
@@ -186,7 +186,7 @@ class QtTriangle(QFrame):
 
         Parameters
         ----------
-        qp: QPainter object
+        qp : QPainter object
         """
         width = self.rect().width()
         height = self.rect().height()
@@ -221,7 +221,7 @@ class QtTriangle(QFrame):
 
         Parameters
         ----------
-        value: int
+        value : int
             Value to use for line in triangle widget.
         """
         self._value = value
@@ -252,7 +252,7 @@ class QtTriangle(QFrame):
 
         Parameters
         ----------
-        value: int
+        value : int
             Minimum value of triangle.
         """
         self._min_value = value
@@ -264,7 +264,7 @@ class QtTriangle(QFrame):
 
         Parameters
         ----------
-        value: int
+        value : int
             Maximum value of triangle.
         """
         self._max_value = value
@@ -277,8 +277,8 @@ class QtTriangle(QFrame):
 
         Parameters
         ----------
-        qp: QPainter object
-        value: int
+        qp : QPainter object
+        value : int
             Value of highlight thickness.
         """
         col = QColor('white')
@@ -418,7 +418,7 @@ class QtHighlightSizePreviewWidget(QDialog):
 
         Parameters
         ----------
-        value: int
+        value : int
             Highlight value.
         """
         if value == "":
@@ -462,7 +462,7 @@ class QtHighlightSizePreviewWidget(QDialog):
 
         Parameters
         ----------
-        value: int
+        value : int
             Highlight value.
         """
         self._update_value(value)
@@ -483,7 +483,7 @@ class QtHighlightSizePreviewWidget(QDialog):
 
         Parameters
         ----------
-        text: str
+        text : str
             Text to use in description box.
         """
         self._description.setText(text)
@@ -503,7 +503,7 @@ class QtHighlightSizePreviewWidget(QDialog):
 
         Parameters
         ----------
-        text: str
+        text : str
             Text used to describe units.
         """
         self._unit.setText(text)
@@ -513,7 +513,7 @@ class QtHighlightSizePreviewWidget(QDialog):
 
         Parameters
         ----------
-        value: int
+        value : int
             Minimum highlight value.
         """
         value = int(value)
@@ -530,7 +530,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             self._refresh()
         else:
             raise ValueError(
-                f"Minimum value must be smaller than {self._max_value}"
+                trans._(
+                    "Minimum value must be smaller than {max_value}",
+                    deferred=True,
+                    max_value=self._max_value,
+                )
             )
 
     def minimum(self):
@@ -548,7 +552,7 @@ class QtHighlightSizePreviewWidget(QDialog):
 
         Parameters
         ----------
-        value: int
+        value : int
             Maximum highlight value.
         """
         value = int(value)
@@ -565,7 +569,11 @@ class QtHighlightSizePreviewWidget(QDialog):
             self._refresh()
         else:
             raise ValueError(
-                f"Maximum value must be larger than {self._min_value}"
+                trans._(
+                    "Maximum value must be larger than {min_value}",
+                    deferred=True,
+                    min_value=self._min_value,
+                )
             )
 
     def maximum(self):

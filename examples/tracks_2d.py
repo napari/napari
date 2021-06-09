@@ -1,13 +1,14 @@
 import napari
 import numpy as np
 
+
 def _circle(r, theta):
-    x = r*np.cos(theta)
-    y = r*np.sin(theta)
+    x = r * np.cos(theta)
+    y = r * np.sin(theta)
     return x, y
 
 
-def tracks_2d(num_tracks = 10):
+def tracks_2d(num_tracks=10):
     """ create 2d+t track data """
     tracks = []
 
@@ -19,26 +20,27 @@ def tracks_2d(num_tracks = 10):
         # time
         timestamps = np.arange(track.shape[0])
 
-        radius = 20+30*np.random.random()
-        theta = timestamps*0.1 + np.random.random()*np.pi
+        radius = 20 + 30 * np.random.random()
+        theta = timestamps * 0.1 + np.random.random() * np.pi
         x, y = _circle(radius, theta)
 
         track[:, 0] = track_id
         track[:, 1] = timestamps
-        track[:, 2] = 50. + y
-        track[:, 3] = 50. + x
+        track[:, 2] = 50.0 + y
+        track[:, 3] = 50.0 + x
         track[:, 4] = theta
         track[:, 5] = radius
 
         tracks.append(track)
 
-
     tracks = np.concatenate(tracks, axis=0)
-    data = tracks[:, :4] # just the coordinate data
+    data = tracks[:, :4]  # just the coordinate data
 
-    properties = {'time': tracks[:, 1],
-                  'theta': tracks[:, 4],
-                  'radius': tracks[:, 5]}
+    properties = {
+        'time': tracks[:, 1],
+        'theta': tracks[:, 4],
+        'radius': tracks[:, 5],
+    }
 
     graph = {}
     return data, properties, graph
@@ -47,7 +49,8 @@ def tracks_2d(num_tracks = 10):
 tracks, properties, graph = tracks_2d(num_tracks=10)
 vertices = tracks[:, 1:]
 
-with napari.gui_qt():
-    viewer = napari.Viewer()
-    viewer.add_points(vertices, size=1, name='points', opacity=0.3)
-    viewer.add_tracks(tracks, properties=properties, name='tracks')
+viewer = napari.Viewer()
+viewer.add_points(vertices, size=1, name='points', opacity=0.3)
+viewer.add_tracks(tracks, properties=properties, name='tracks')
+
+napari.run()

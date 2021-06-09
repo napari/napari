@@ -11,9 +11,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...utils.translations import translator
-
-trans = translator.load()
+from ...utils.translations import trans
 
 
 class QtFontSizePreview(QFrame):
@@ -176,9 +174,14 @@ class QtSizeSliderPreviewWidget(QWidget):
 
     def _update_line_width(self):
         """Update width ofg line text edit."""
-        size = self._lineedit.fontMetrics().horizontalAdvance(
-            "m" * (1 + len(str(self._max_value)))
-        )
+        txt = "m" * (1 + len(str(self._max_value)))
+        fm = self._lineedit.fontMetrics()
+        if hasattr(fm, 'horizontalAdvance'):
+            # Qt >= 5.11
+            size = fm.horizontalAdvance(txt)
+        else:
+            size = fm.width(txt)
+
         self._lineedit.setMaximumWidth(size)
         self._lineedit.setMinimumWidth(size)
 
@@ -309,9 +312,8 @@ class QtSizeSliderPreviewWidget(QWidget):
         else:
             raise ValueError(
                 trans._(
-                    "Minimum value must be smaller than {}".format(
-                        self._max_value
-                    )
+                    "Minimum value must be smaller than {max_value}",
+                    max_value=self._max_value,
                 )
             )
 
@@ -349,9 +351,8 @@ class QtSizeSliderPreviewWidget(QWidget):
         else:
             raise ValueError(
                 trans._(
-                    "Maximum value must be larger than {}".format(
-                        self._min_value
-                    )
+                    "Maximum value must be larger than {min_value}",
+                    min_value=self._min_value,
                 )
             )
 

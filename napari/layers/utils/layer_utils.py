@@ -1,7 +1,57 @@
-from typing import Dict
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple
 
 import dask
 import numpy as np
+
+from ...utils.action_manager import action_manager
+
+
+def register_layer_action(keymapprovider, description: str, shortcuts=None):
+    """
+    Convenient decorator to register an action with the current Layers
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+
+
+    Parameters
+    ----------
+
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
+    """
+
+    def _inner(func):
+        nonlocal shortcuts
+        name = 'napari:' + func.__name__
+        action_manager.register_action(
+            name=name,
+            command=func,
+            description=description,
+            keymapprovider=keymapprovider,
+        )
+        if isinstance(shortcuts, str):
+            shortcuts = [shortcuts]
+        for shortcut in shortcuts:
+            action_manager.bind_shortcut(name, shortcut)
+        return func
+
+    return _inner
 
 
 def calc_data_range(data, rgb=False):
@@ -154,7 +204,9 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
-def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
+def dataframe_to_properties(
+    dataframe,
+) -> Tuple[Dict[str, np.ndarray], Optional[Dict[int, int]]]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
     Parameters
@@ -167,6 +219,8 @@ def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     dict[str, np.ndarray]
         A properties dictionary where the key is the property name and the value
         is an ndarray with the property value for each point.
+    Optional[dict[int, int]]
+        mapping from label number to position (row) in properties
     """
 
     properties = {col: np.asarray(dataframe[col]) for col in dataframe}

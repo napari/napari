@@ -55,7 +55,7 @@ def test_updating_with_layer_change(make_napari_viewer, monkeypatch):
     # add a shape layer (different keybindings)
     viewer.add_shapes(None, shape_type='polygon')
     # check that the new layer is the active_layer
-    assert viewer.active_layer == viewer.layers[1]
+    assert viewer.layers.selection.active == viewer.layers[1]
     # capture dialog text after active_layer events
     active_shape_layer_text = dialog.textEditBox.toHtml()
     # check that the text has changed for the new key bindings

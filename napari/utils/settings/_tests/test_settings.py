@@ -3,8 +3,9 @@
 
 import pydantic
 import pytest
+from yaml import safe_load
 
-from napari.utils.settings._manager import SettingsManager
+from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -15,35 +16,26 @@ def settings(tmp_path):
 
 def test_settings_file(tmp_path):
     SettingsManager(tmp_path, save_to_disk=True)
-    fpath = tmp_path / "settings.yaml"
+    fpath = tmp_path / SettingsManager._FILENAME
     assert fpath.exists()
 
 
 def test_settings_file_not_created(tmp_path):
     SettingsManager(tmp_path, save_to_disk=False)
-    fpath = tmp_path / "settings.yaml"
+    fpath = tmp_path / SettingsManager._FILENAME
     assert not fpath.exists()
-
-
-def test_settings_get_section_name():
-    class SomeSectionSettings:
-        class Config:
-            title = "Some Section Settings"
-
-    section = SettingsManager._get_section_name(SomeSectionSettings())
-    assert section == "some_section"
 
 
 def test_settings_loads(tmp_path):
     data = """
-application:
+appearance:
   theme: light
 """
     with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
         fh.write(data)
 
     settings = SettingsManager(tmp_path)
-    assert settings.application.theme == "light"
+    assert settings.appearance.theme == "light"
 
 
 def test_settings_load_invalid_type(tmp_path):
@@ -93,11 +85,11 @@ def test_settings_to_dict(settings):
 
 def test_settings_reset(settings):
     settings.reset()
-    assert settings.application.theme == "dark"
-    settings.application.theme = "light"
-    assert settings.application.theme == "light"
+    assert settings.appearance.theme == "dark"
+    settings.appearance.theme = "light"
+    assert settings.appearance.theme == "light"
     settings.reset()
-    assert settings.application.theme == "dark"
+    assert settings.appearance.theme == "dark"
 
 
 def test_settings_schemas(settings):
@@ -109,20 +101,20 @@ def test_settings_schemas(settings):
 def test_settings_model(settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be string
-        settings.application.theme = 1
+        settings.appearance.theme = 1
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be a valid string
-        settings.application.theme = "vaporwave"
+        settings.appearance.theme = "vaporwave"
 
 
 def test_custom_theme_settings(settings):
     # See: https://github.com/napari/napari/issues/2340
-    custom_theme_name = "blue"
+    custom_theme_name = "_test_blue_"
 
     # No theme registered yet, this should fail
     with pytest.raises(pydantic.error_wrappers.ValidationError):
-        settings.application.theme = custom_theme_name
+        settings.appearance.theme = custom_theme_name
 
     blue_theme = get_theme('dark')
     blue_theme.update(
@@ -134,4 +126,84 @@ def test_custom_theme_settings(settings):
     register_theme(custom_theme_name, custom_theme_name)
 
     # Theme registered, should pass validation
-    settings.application.theme = custom_theme_name
+    settings.appearance.theme = custom_theme_name
+
+
+def test_settings_string(settings):
+    assert 'application:\n' in str(settings)
+
+
+def test_settings_load_invalid_content(tmp_path):
+    # This is invalid content
+    data = ":"
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(data)
+
+    with pytest.warns(UserWarning):
+        SettingsManager(tmp_path)
+
+
+def test_model_fields_are_annotated():
+    errors = []
+    for model in CORE_SETTINGS:
+        difference = set(model.__fields__) - set(model.__annotations__)
+        if difference:
+            errors.append(
+                f"Model '{model.__name__}' does not provide annotations "
+                f"for the fields:\n{', '.join(repr(f) for f in difference)}"
+            )
+
+    if errors:
+        raise ValueError("\n\n".join(errors))
+
+
+def test_settings_env_variables(tmp_path, monkeypatch):
+    value = 'light'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    assert CORE_SETTINGS[0]().theme == value
+    assert settings.appearance.theme == value
+
+
+def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
+    data = """
+appearance:
+  theme: pink
+"""
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(data)
+
+    value = 'light'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    settings._save()
+
+    with open(tmp_path / SettingsManager._FILENAME) as fh:
+        saved_data = fh.read()
+
+    model_values = settings._remove_default(settings._to_dict(safe=True))
+    saved_values = safe_load(saved_data)
+
+    assert model_values["appearance"]["theme"] == value
+    # Note: Pink is currently not a valid theme, but if we use dark as it is the
+    # default it is not saved in the saved_values. We can't use "Light" either
+    assert saved_values["appearance"]["theme"] == "pink"
+
+    model_values["appearance"].pop("theme")
+    saved_values["appearance"].pop("theme")
+    assert model_values == saved_values
+
+
+def test_settings_env_variables_fails(tmp_path, monkeypatch):
+    value = 'FOOBAR'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        SettingsManager(tmp_path, save_to_disk=True)
+
+
+def test_core_settings_are_class_variables_in_settings_manager():
+    for setting in CORE_SETTINGS:
+        schema = setting.schema()
+        section = schema["section"]
+        assert section in SettingsManager.__annotations__
+        assert setting == SettingsManager.__annotations__[section]

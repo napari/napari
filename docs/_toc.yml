@@ -6,10 +6,12 @@
 - file: guides/index
   sections:
     - file: guides/event_loop
+    - file: guides/connecting_events
     - file: guides/threading
     - file: guides/magicgui
     - file: guides/perfmon
     - file: guides/rendering
+    - file: guides/translations
 
 - file: plugins/index
   sections:
@@ -19,11 +21,13 @@
 
 - file: developers/index
   sections:
+    - file: developers/team
     - file: developers/benchmarks
     - file: developers/code_of_conduct
     - file: developers/code_of_conduct_reporting
     - file: developers/contributing
     - file: developers/core_dev_guide
+    - file: developers/docs
     - file: developers/governance
     - file: developers/mission_and_values
     - file: developers/release

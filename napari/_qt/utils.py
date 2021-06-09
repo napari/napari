@@ -1,22 +1,25 @@
 from contextlib import contextmanager
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Sequence, Union
 
 import numpy as np
 import qtpy
-from qtpy.QtCore import QByteArray, QSize, Qt
-from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
+    QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events.custom_types import Array
 from ..utils.misc import is_sequence
+from ..utils.translations import trans
 
 QBYTE_FLAG = "!QBYTE_"
 
@@ -57,7 +60,10 @@ def str_to_qbytearray(string: str) -> QByteArray:
     """
     if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
         raise ValueError(
-            f"Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'"
+            trans._(
+                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
+                QBYTE_FLAG=QBYTE_FLAG,
+            )
         )
 
     return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
@@ -104,6 +110,20 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+@contextmanager
+def event_hook_removed():
+    """Context manager to temporarily remove the PyQt5 input hook"""
+    from qtpy import QtCore
+
+    if hasattr(QtCore, 'pyqtRemoveInputHook'):
+        QtCore.pyqtRemoveInputHook()
+    try:
+        yield
+    finally:
+        if hasattr(QtCore, 'pyqtRestoreInputHook'):
+            QtCore.pyqtRestoreInputHook()
 
 
 def disable_with_opacity(obj, widget_list, disabled):
@@ -218,22 +238,71 @@ def combine_widgets(
         return widgets.native  # type: ignore
     elif isinstance(widgets, QWidget):
         return widgets
-    elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
-        container = QWidget()
-        container.layout = QVBoxLayout() if vertical else QHBoxLayout()
-        container.setLayout(container.layout)
-        for widget in widgets:
-            container.layout.addWidget(widget)
-        # if this is a vertical layout, and none of the widgets declare a size
-        # policy of "expanding", add our own stretch.
-        if vertical and not any(
-            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
-            for w in widgets
-        ):
-            container.layout.addStretch()
-        return container
-    else:
-        raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
+    elif is_sequence(widgets):
+        # the same as above, compatibility with magicgui v0.2.0
+        widgets = [
+            i.native if isinstance(getattr(i, 'native', None), QWidget) else i
+            for i in widgets
+        ]
+        if all(isinstance(i, QWidget) for i in widgets):
+            container = QWidget()
+            container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
+            for widget in widgets:
+                container.layout().addWidget(widget)
+            return container
+    raise TypeError(
+        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+    )
+
+
+def add_flash_animation(
+    widget: QWidget, duration: int = 300, color: Array = (0.5, 0.5, 0.5, 0.5)
+):
+    """Add flash animation to widget to highlight certain action (e.g. taking a screenshot).
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    duration : int
+        Duration of the flash animation.
+    color : Array
+        Color of the flash animation. By default, we use light gray.
+    """
+    color = transform_color(color)[0]
+    color = (255 * color).astype("int")
+
+    effect = QGraphicsColorizeEffect(widget)
+    widget.setGraphicsEffect(effect)
+
+    widget._flash_animation = QPropertyAnimation(effect, b"color")
+    widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setLoopCount(1)
+
+    # let's make sure to remove the animation from the widget because
+    # if we don't, the widget will actually be black and white.
+    widget._flash_animation.finished.connect(
+        partial(remove_flash_animation, widget)
+    )
+
+    widget._flash_animation.start()
+
+    # now  set an actual time for the flashing and an intermediate color
+    widget._flash_animation.setDuration(duration)
+    widget._flash_animation.setKeyValueAt(0.5, QColor(*color))
+
+
+def remove_flash_animation(widget: QWidget):
+    """Remove flash animation from widget.
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    """
+    widget.setGraphicsEffect(None)
+    del widget._flash_animation
 
 
 def delete_qapp(app):

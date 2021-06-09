@@ -1,12 +1,16 @@
 """OctreeDisplayOptions, NormalNoise and OctreeMetadata classes.
 """
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 
-from ....components.experimental.chunk import LayerRef
 from ....utils.config import octree_config
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import LayerRef
 
 
 def _get_tile_size() -> int:
@@ -192,8 +196,8 @@ def linear_index(row_range, col_range):
 
     A linear index starts at the top left and procedes in a raster fashion.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     row_range : range
         Range of rows to be accessed.
     col_range : range

@@ -1,9 +1,11 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
-import re
-from typing import List, Optional, Union
+from __future__ import annotations
 
-from napari_plugin_engine import HookCaller, HookImplementation, PluginManager
+import re
+from typing import TYPE_CHECKING, List, Optional, Union
+
+from napari_plugin_engine import HookCaller, HookImplementation
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -20,8 +22,13 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins import plugin_manager as napari_plugin_manager
+from ...utils.settings import SETTINGS
+from ...utils.translations import trans
 from ..utils import drag_with_pixmap
 from ..widgets.qt_eliding_label import ElidingLabel
+
+if TYPE_CHECKING:
+    from napari_plugin_engine import PluginManager
 
 
 def rst2html(text):
@@ -66,6 +73,8 @@ class ImplementationListItem(QFrame):
         unchecked, the opacity of the item is decreased.
     """
 
+    on_changed = Signal()  # when user changes whether plugin is enabled.
+
     def __init__(self, item: QListWidgetItem, parent: QWidget = None):
         super().__init__(parent)
         self.item = item
@@ -77,7 +86,7 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        self.setToolTip("Click and drag to change call order")
+        self.setToolTip(trans._("Click and drag to change call order"))
         self.plugin_name_label = ElidingLabel(parent=self)
         self.plugin_name_label.setObjectName('small_text')
         self.plugin_name_label.setText(item.hook_implementation.plugin_name)
@@ -92,7 +101,9 @@ class ImplementationListItem(QFrame):
         )
 
         self.enabled_checkbox = QCheckBox(self)
-        self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
+        self.enabled_checkbox.setToolTip(
+            trans._("Uncheck to disable this plugin")
+        )
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
         self.enabled_checkbox.setChecked(
             getattr(item.hook_implementation, 'enabled', True)
@@ -108,6 +119,7 @@ class ImplementationListItem(QFrame):
         """Set the enabled state of this hook implementation to ``state``."""
         self.item.hook_implementation.enabled = bool(state)
         self.opacity.setOpacity(1 if state else 0.5)
+        self.on_changed.emit()
 
     def update_position_label(self, order=None):
         """Update the label showing the position of this item in the list.
@@ -144,6 +156,7 @@ class QtHookImplementationListWidget(QListWidget):
     """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
+    on_changed = Signal()  # when user changes whether plugin is enabled.
 
     def __init__(
         self,
@@ -199,6 +212,7 @@ class QtHookImplementationListWidget(QListWidget):
         item.hook_implementation = hook_implementation
         self.addItem(item)
         widg = ImplementationListItem(item, parent=self)
+        widg.on_changed.connect(self.on_changed.emit)
         item.setSizeHint(widg.sizeHint())
         self.order_changed.connect(widg.update_position_label)
         self.setItemWidget(item, widg)
@@ -247,7 +261,7 @@ class QtPluginSorter(QWidget):
     ----------
     plugin_manager : PluginManager, optional
         An instance of a PluginManager. by default, the main
-        :class:`~napari.plugins.manager.PluginManager` instance
+        ``napari.plugins.plugin_manager`` instance
     parent : QWidget, optional
         Optional parent widget, by default None
     initial_hook : str, optional
@@ -269,7 +283,7 @@ class QtPluginSorter(QWidget):
         implementations for the currently selected hook.
     """
 
-    NULL_OPTION = 'select hook... '
+    NULL_OPTION = trans._('select hook... ')
 
     def __init__(
         self,
@@ -280,11 +294,13 @@ class QtPluginSorter(QWidget):
         firstresult_only: bool = True,
     ):
         super().__init__(parent)
+
         self.plugin_manager = plugin_manager
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
 
         # populate comboBox with all of the hooks known by the plugin manager
+
         for name, hook_caller in plugin_manager.hooks.items():
             # only show hooks with specifications
             if not hook_caller.spec:
@@ -299,19 +315,25 @@ class QtPluginSorter(QWidget):
             self.hook_combo_box.addItem(
                 name.replace("napari_", ""), hook_caller
             )
+
+        self.plugin_manager.events.disabled.connect(self._on_disabled)
+        self.plugin_manager.events.registered.connect(self.refresh)
+
         self.hook_combo_box.setToolTip(
-            "select the hook specification to reorder"
+            trans._("select the hook specification to reorder")
         )
         self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
+        self.hook_list.order_changed.connect(self._change_settings_plugins)
+        self.hook_list.on_changed.connect(self._change_settings_plugins)
 
-        title = QLabel('Plugin Sorter')
+        title = QLabel(trans._('Plugin Sorter'))
         title.setObjectName("h3")
 
         instructions = QLabel(
-            'Select a hook to rearrange, then drag and '
-            'drop plugins into the desired call order.\n\n'
-            'Disable plugins for a specific hook by unchecking their checkbox.'
+            trans._(
+                'Select a hook to rearrange, then drag and drop plugins into the desired call order.\n\nDisable plugins for a specific hook by unchecking their checkbox.'
+            )
         )
         instructions.setWordWrap(True)
 
@@ -337,6 +359,10 @@ class QtPluginSorter(QWidget):
 
         if initial_hook is not None:
             self.set_hookname(initial_hook)
+
+    def _change_settings_plugins(self):
+        """Update settings if plugin call order changes."""
+        SETTINGS.plugins.call_order = self.plugin_manager.call_order()
 
     def set_hookname(self, hook: str):
         """Change the hook specification shown in the list widget.
@@ -367,5 +393,22 @@ class QtPluginSorter(QWidget):
             self.info.hide()
             self.docstring.setToolTip('')
 
-    def refresh(self):
+    def refresh(self, event=None):
         self._on_hook_change(self.hook_combo_box.currentIndex())
+
+    def _on_disabled(self, event):
+        for i in range(self.hook_list.count()):
+            item = self.hook_list.item(i)
+            if item and item.hook_implementation.plugin_name == event.value:
+                self.hook_list.takeItem(i)
+
+    def value(self):
+        """Returns the call order from the plugin manager.
+
+        Returns
+        -------
+        call_order : CallOrderDict
+
+        """
+
+        return napari_plugin_manager.call_order()

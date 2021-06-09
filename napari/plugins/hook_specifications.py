@@ -30,21 +30,82 @@ For more general background on the plugin hook calling mechanism, see the
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
-
 # These hook specifications also serve as the API reference for plugin
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
+from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import AugmentedWidget, ReaderFunction, WriterFunction
+from ..types import (
+    AugmentedWidget,
+    ReaderFunction,
+    SampleData,
+    SampleDict,
+    WriterFunction,
+)
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
 # -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
+    """Provide sample data.
+
+    Plugins may implement this hook to provide sample data for use in napari.
+    Sample data is accessible in the `File > Open Sample` menu, or
+    programmatically, with :meth:`napari.Viewer.open_sample`.
+
+    Plugins implementing this hook specification must return a ``dict``, where
+    each key is a `sample_key` (the string that will appear in the
+    `Open Sample` menu), and the value is either a string, or
+    a callable that returns an iterable of ``LayerData`` tuples, where each
+    tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
+    meta, layer_type)`` (thus, an individual sample-loader may provide multiple
+    layers).  If the value is a string, it will be opened with
+    :meth:`napari.Viewer.open`.
+
+    Examples
+    --------
+    Here's a minimal example of a plugin that provides three samples:
+
+        1. random data from numpy
+        2. a random image pulled from the internet
+        3. random data from numpy, provided as a dict with the keys:
+            'display_name': a string that will show in the menu (by default,
+                the `sample_key` will be shown)
+            'data': a string or callable, as in 1/2.
+
+    .. code-block:: python
+
+        import numpy as np
+        from napari_plugin_engine import napari_hook_implementation
+
+        def _generate_random_data(shape=(512, 512)):
+            data = np.random.rand(*shape)
+            return [(data, {'name': 'random data'})]
+
+        @napari_hook_implementation
+        def napari_provide_sample_data():
+            return {
+                'random data': _generate_random_data,
+                'random image': 'https://picsum.photos/1024',
+                'sample_key': {
+                    'display_name': 'Some Random Data (512 x 512)'
+                    'data': _generate_random_data,
+                }
+            }
+
+    Returns
+    -------
+    Dict[ str, Union[str, Callable[..., Iterable[LayerData]]] ]
+        A mapping of `sample_key` to `data_loader`
+    """
 
 
 @napari_hook_specification(firstresult=True)

@@ -28,6 +28,16 @@ class Interpolation(StringEnum):
     SPLINE16 = auto()
     SPLINE36 = auto()
 
+    @classmethod
+    def view_subset(cls):
+        return (
+            cls.BICUBIC,
+            cls.BILINEAR,
+            cls.KAISER,
+            cls.NEAREST,
+            cls.SPLINE36,
+        )
+
 
 class Interpolation3D(StringEnum):
     """INTERPOLATION: Vispy interpolation mode for volume rendering."""

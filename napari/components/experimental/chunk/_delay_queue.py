@@ -2,15 +2,19 @@
 
 Delay load requests a configurable amount of time before submitting them.
 """
+from __future__ import annotations
+
 import logging
 import threading
 import time
-from typing import Callable, List, NamedTuple, Optional
+from typing import TYPE_CHECKING, Callable, List, NamedTuple, Optional
 
 from ....utils.perf import add_counter_event
-from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ._request import ChunkRequest
 
 
 class QueueEntry(NamedTuple):

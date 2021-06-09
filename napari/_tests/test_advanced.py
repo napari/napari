@@ -193,7 +193,7 @@ def test_changing_display_surface(make_napari_viewer):
     )
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim

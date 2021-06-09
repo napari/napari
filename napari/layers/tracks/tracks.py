@@ -9,6 +9,7 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ._track_utils import TrackManager
 
@@ -297,16 +298,16 @@ class Tracks(Layer):
 
     @property
     def _view_data(self):
-        """ return a view of the data """
+        """return a view of the data"""
         return self._pad_display_data(self._manager.track_vertices)
 
     @property
     def _view_graph(self):
-        """ return a view of the graph """
+        """return a view of the graph"""
         return self._pad_display_data(self._manager.graph_vertices)
 
     def _pad_display_data(self, vertices):
-        """ pad display data when moving between 2d and 3d """
+        """pad display data when moving between 2d and 3d"""
         if vertices is None:
             return
 
@@ -321,7 +322,7 @@ class Tracks(Layer):
 
     @property
     def current_time(self):
-        """ current time according to the first dimension """
+        """current time according to the first dimension"""
         # TODO(arl): get the correct index here
         time_step = self._slice_indices[0]
 
@@ -340,12 +341,12 @@ class Tracks(Layer):
 
     @property
     def data(self) -> np.ndarray:
-        """ array (N, D+1): Coordinates for N points in D+1 dimensions. """
+        """array (N, D+1): Coordinates for N points in D+1 dimensions."""
         return self._manager.data
 
     @data.setter
     def data(self, data: np.ndarray):
-        """ set the data and build the vispy arrays for display """
+        """set the data and build the vispy arrays for display"""
         # set the data and build the tracks
         self._manager.data = data
         self._manager.build_tracks()
@@ -372,17 +373,20 @@ class Tracks(Layer):
 
     @property
     def properties_to_color_by(self) -> List[str]:
-        """ track properties that can be used for coloring etc... """
+        """track properties that can be used for coloring etc..."""
         return list(self.properties.keys())
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        """ set track properties """
+        """set track properties"""
         if self._color_by not in [*properties.keys(), 'track_id']:
             warn(
                 (
-                    f"Previous color_by key {self._color_by!r} not present in"
-                    " new properties. Falling back to track_id"
+                    trans._(
+                        "Previous color_by key {key!r} not present in new properties. Falling back to track_id",
+                        deferred=True,
+                        key=self._color_by,
+                    )
                 ),
                 UserWarning,
             )
@@ -398,7 +402,7 @@ class Tracks(Layer):
 
     @graph.setter
     def graph(self, graph: Dict[int, Union[int, List[int]]]):
-        """ Set the track graph. """
+        """Set the track graph."""
         self._manager.graph = graph
         self._manager.build_graph()
         self.events.rebuild_graph()
@@ -425,7 +429,7 @@ class Tracks(Layer):
 
     @property
     def display_id(self) -> bool:
-        """ display the track id """
+        """display the track id"""
         return self._display_id
 
     @display_id.setter
@@ -436,7 +440,7 @@ class Tracks(Layer):
 
     @property
     def display_tail(self) -> bool:
-        """ display the track tail """
+        """display the track tail"""
         return self._display_tail
 
     @display_tail.setter
@@ -446,7 +450,7 @@ class Tracks(Layer):
 
     @property
     def display_graph(self) -> bool:
-        """ display the graph edges """
+        """display the graph edges"""
         return self._display_graph
 
     @display_graph.setter
@@ -460,9 +464,15 @@ class Tracks(Layer):
 
     @color_by.setter
     def color_by(self, color_by: str):
-        """ set the property to color vertices by """
+        """set the property to color vertices by"""
         if color_by not in self.properties_to_color_by:
-            raise ValueError(f'{color_by} is not a valid property key')
+            raise ValueError(
+                trans._(
+                    '{color_by} is not a valid property key',
+                    deferred=True,
+                    color_by=color_by,
+                )
+            )
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -473,9 +483,15 @@ class Tracks(Layer):
 
     @colormap.setter
     def colormap(self, colormap: str):
-        """ set the default colormap """
+        """set the default colormap"""
         if colormap not in AVAILABLE_COLORMAPS:
-            raise ValueError(f'Colormap {colormap} not available')
+            raise ValueError(
+                trans._(
+                    'Colormap {colormap} not available',
+                    deferred=True,
+                    colormap=colormap,
+                )
+            )
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()
@@ -490,13 +506,14 @@ class Tracks(Layer):
         self._colormaps_dict = colormaps_dict
 
     def _recolor_tracks(self):
-        """ recolor the tracks """
+        """recolor the tracks"""
 
         # this catch prevents a problem coloring the tracks if the data is
         # updated before the properties are. properties should always contain
         # a track_id key
         if self.color_by not in self.properties_to_color_by:
-            self.color_by = 'track_id'
+            self._color_by = 'track_id'
+            self.events.color_by()
 
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = self._manager.vertex_properties(self.color_by)
@@ -516,7 +533,7 @@ class Tracks(Layer):
 
     @property
     def track_connex(self) -> np.ndarray:
-        """ vertex connections for drawing track lines """
+        """vertex connections for drawing track lines"""
         return self._manager.track_connex
 
     @property
@@ -527,22 +544,22 @@ class Tracks(Layer):
 
     @property
     def graph_connex(self) -> np.ndarray:
-        """ vertex connections for drawing the graph """
+        """vertex connections for drawing the graph"""
         return self._manager.graph_connex
 
     @property
     def track_times(self) -> np.ndarray:
-        """ time points associated with each track vertex """
+        """time points associated with each track vertex"""
         return self._manager.track_times
 
     @property
     def graph_times(self) -> np.ndarray:
-        """ time points assocaite with each graph vertex """
+        """time points assocaite with each graph vertex"""
         return self._manager.graph_times
 
     @property
     def track_labels(self) -> tuple:
-        """ return track labels at the current time """
+        """return track labels at the current time"""
         labels, positions = self._manager.track_labels(self.current_time)
 
         # if there are no labels, return empty for vispy

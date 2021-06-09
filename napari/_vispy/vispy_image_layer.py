@@ -4,6 +4,7 @@ import numpy as np
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
+from ..utils.translations import trans
 from .image import Image as ImageNode
 from .utils_gl import fix_data_dtype
 from .vispy_base_layer import VispyBaseLayer
@@ -168,16 +169,22 @@ class VispyImageLayer(VispyBaseLayer):
         if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
             if self.layer.multiscale:
                 raise ValueError(
-                    f"Shape of individual tiles in multiscale {data.shape} "
-                    f"cannot exceed GL_MAX_TEXTURE_SIZE "
-                    f"{MAX_TEXTURE_SIZE}. Rendering is currently in "
-                    f"{self.layer._ndisplay}D mode."
+                    trans._(
+                        "Shape of in dividual tiles in multiscale {shape} cannot exceed GL_MAX_TEXTURE_SIZE {texture_size}. Rendering is currently in {ndisplay}D mode.",
+                        deferred=True,
+                        shape=data.shape,
+                        texture_size=MAX_TEXTURE_SIZE,
+                        ndisplay=self.layer._ndisplay,
+                    )
                 )
             warnings.warn(
-                f"data shape {data.shape} exceeds GL_MAX_TEXTURE_SIZE "
-                f"{MAX_TEXTURE_SIZE} in at least one axis and "
-                f"will be downsampled. Rendering is currently in "
-                f"{self.layer._ndisplay}D mode."
+                trans._(
+                    "data shape {shape} exceeds GL_MAX_TEXTURE_SIZE {texture_size} in at least one axis and will be downsampled. Rendering is currently in {ndisplay}D mode.",
+                    deferred=True,
+                    shape=data.shape,
+                    texture_size=MAX_TEXTURE_SIZE,
+                    ndisplay=self.layer._ndisplay,
+                )
             )
             downsample = np.ceil(
                 np.divide(data.shape, MAX_TEXTURE_SIZE)

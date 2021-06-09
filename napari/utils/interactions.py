@@ -1,8 +1,12 @@
 import inspect
+import re
 import sys
+import warnings
 
 import wrapt
 from numpydoc.docscrape import FunctionDoc
+
+from ..utils.translations import trans
 
 
 class ReadOnlyWrapper(wrapt.ObjectProxy):
@@ -12,11 +16,20 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 
     def __setattr__(self, name, val):
         if name != '__wrapped__':
-            raise TypeError(f'cannot set attribute {name}')
+            raise TypeError(
+                trans._(
+                    'cannot set attribute {name}',
+                    deferred=True,
+                    name=name,
+                )
+            )
+
         super().__setattr__(name, val)
 
     def __setitem__(self, name, val):
-        raise TypeError(f'cannot set item {name}')
+        raise TypeError(
+            trans._('cannot set item {name}', deferred=True, name=name)
+        )
 
 
 def mouse_wheel_callbacks(obj, event):
@@ -204,19 +217,82 @@ KEY_SYMBOLS = {
     'Up': '↑',
     'Down': '↓',
     'Backspace': '⌫',
+    'Delete': '⌦',
     'Tab': '↹',
     'Escape': 'Esc',
     'Return': '⏎',
     'Enter': '↵',
+    'Space': '␣',
 }
 
 
+joinchar = '-'
 if sys.platform.startswith('darwin'):
     KEY_SYMBOLS.update(
         {'Control': '⌘', 'Alt': '⌥', 'Option': '⌥', 'Meta': '⌃'}
     )
+    joinchar = ''
 elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
+
+
+class Shortcut:
+    """
+    Wrapper object around shortcuts,
+
+    Mostly help to handle cross platform differences in UI:
+      - whether the joiner is -,'' or something else.
+      - replace the corresponding modifier with their equivalents.
+
+    As well as integration with qt which uses a different convention with +
+    instead of -.
+    """
+
+    def __init__(self, shortcut: str):
+        """
+        Parameters
+        ----------
+        shortcut : string
+            shortcut to format in the form of dash separated keys to press
+
+        """
+        self._values = re.split('-(?=.+)', shortcut)
+        for shortcut_key in self._values:
+            if (
+                len(shortcut_key) > 1
+                and shortcut_key not in KEY_SYMBOLS.keys()
+            ):
+                warnings.warn(
+                    trans._(
+                        "{shortcut_key} does not seem to be a valid shortcut Key.",
+                        shortcut_key=shortcut_key,
+                    ),
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+    @property
+    def qt(self) -> str:
+        return '+'.join(self._values)
+
+    @property
+    def platform(self) -> str:
+        """
+        Format the given shortcut for the current platform.
+
+        Replace Cmd, Ctrl, Meta...etc by appropriate symbols if relevant for the
+        given platform.
+
+        Returns
+        -------
+        string
+            Shortcut formatted to be displayed on current paltform.
+        """
+
+        return joinchar.join(KEY_SYMBOLS.get(x, x) for x in self._values)
+
+    def __str__(self):
+        return self.platform
 
 
 def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
@@ -232,23 +308,23 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
 
     Returns
     -------
-    key_bindings_str : str
+    str
         String with summary of all key_bindings and their functions.
     """
-    key_bindings_str = '<table border="0" width="100%">'
+    key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
         keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
-        key_bindings_str += (
+        key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{get_function_summary(keymap[key])}</td></tr>"
+            f"{keymap[key]}</td></tr>"
         )
-    key_bindings_str += '</table>'
-    return key_bindings_str
+    key_bindings_strs.append('</table>')
+    return ''.join(key_bindings_strs)
 
 
 def get_function_summary(func):

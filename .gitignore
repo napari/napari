@@ -110,6 +110,11 @@ venv.bak/
 # Pycharm files
 .idea
 
+# Liclipse
+.project
+.pydevproject
+.settings/
+
 # OS stuff
 .DS_store
 
@@ -135,3 +140,7 @@ napari/_version.py
 docs/api/*
 !docs/api/index.rst
 docs/_build
+
+# built in setup.py
+napari/view_layers.pyi
+napari/components/viewer_model.pyi

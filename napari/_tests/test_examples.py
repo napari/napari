@@ -12,6 +12,7 @@ skip = [
     'surface_timeseries.py',  # needs nilearn
     '3d_kymograph.py',  # needs tqdm
     'live_tiffs.py',  # requires files
+    'tiled-rendering-2d.py',  # too slow
     'live_tiffs_generator.py',
     'embed_ipython.py',  # fails without monkeypatch
 ]
@@ -50,11 +51,11 @@ def test_examples(qapp, fname, monkeypatch, capsys):
     # hide viewer window
     monkeypatch.setattr(Window, 'show', lambda *a: None)
 
-    # make sure our sys.excepthook override in gui_qt doesn't hide errors
+    # make sure our sys.excepthook override doesn't hide errors
     def raise_errors(etype, value, tb):
         raise value
 
     monkeypatch.setattr(notification_manager, 'receive_error', raise_errors)
 
     # run the example!
-    assert runpy.run_path(str(EXAMPLE_DIR / fname))
+    runpy.run_path(str(EXAMPLE_DIR / fname))

@@ -37,10 +37,6 @@ class Labels2DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 2)
 
-    def time_save_history(self, n):
-        """Time to save history."""
-        self.layer._save_history()
-
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
@@ -48,18 +44,18 @@ class Labels2DSuite:
     def time_paint_square(self, n):
         """Time to paint square."""
         self.layer.brush_shape = 'square'
-        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+        self.layer.paint((0,) * 2, self.layer.selected_label)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
         self.layer.brush_shape = 'circle'
-        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+        self.layer.paint((0,) * 2, self.layer.selected_label)
 
     def time_fill(self, n):
         """Time to fill."""
         self.layer.fill(
-            self.layer.coordinates,
-            self.layer._value,
+            (0,) * 2,
+            1,
             self.layer.selected_label,
         )
 
@@ -102,10 +98,6 @@ class Labels3DSuite:
         """Time to get current value."""
         self.layer.get_value((0,) * 3)
 
-    def time_save_history(self, n):
-        """Time to save history."""
-        self.layer._save_history()
-
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
@@ -113,18 +105,18 @@ class Labels3DSuite:
     def time_paint_square(self, n):
         """Time to paint square."""
         self.layer.brush_shape = 'square'
-        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+        self.layer.paint((0,) * 3, self.layer.selected_label)
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
         self.layer.brush_shape = 'circle'
-        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+        self.layer.paint((0,) * 3, self.layer.selected_label)
 
     def time_fill(self, n):
         """Time to fill."""
         self.layer.fill(
-            self.layer.coordinates,
-            self.layer._value,
+            (0,) * 3,
+            1,
             self.layer.selected_label,
         )
 

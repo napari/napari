@@ -14,7 +14,9 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
 from .. import layers, types
+from ..layers._source import Source, layer_source
 from ..utils.misc import ensure_list_of_layer_data_tuple
+from ..utils.translations import trans
 from ..viewer import Viewer
 
 try:
@@ -53,6 +55,19 @@ def register_types_with_magicgui():
             Viewer. And expects the user to return a list of layer data tuples.
 
     """
+    # only run this function once
+    if getattr(register_types_with_magicgui, '_called', False):
+        return
+    register_types_with_magicgui._called = True
+
+    from magicgui.widgets import FunctionGui
+
+    # the widget field in `_source.py` was defined with a forward reference
+    # to avoid having to import magicgui when we define the layer `Source` obj.
+    # Now that we know we have imported magicgui, we update that forward ref
+    # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
+    Source.update_forward_refs(FunctionGui=FunctionGui)
+
     register_type(
         layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
     )
@@ -110,12 +125,13 @@ def add_layer_data_to_viewer(gui, result, return_type):
     if not viewer:
         return
 
-    try:
-        viewer.layers[gui.result_name].data = result
-    except KeyError:
-        layer_type = return_type.__name__.replace("Data", "").lower()
-        adder = getattr(viewer, f'add_{layer_type}')
-        adder(data=result, name=gui.result_name)
+    with layer_source(widget=gui):
+        try:
+            viewer.layers[gui.result_name].data = result
+        except KeyError:
+            layer_type = return_type.__name__.replace("Data", "").lower()
+            adder = getattr(viewer, f'add_{layer_type}')
+            adder(data=result, name=gui.result_name)
 
 
 def add_layer_data_tuples_to_viewer(gui, result, return_type):
@@ -163,29 +179,32 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
         result = ensure_list_of_layer_data_tuple(result)
     except TypeError:
         raise TypeError(
-            f'magicgui function {gui} annotated with a return type of '
-            'napari.types.LayerDataTuple did not return LayerData tuple(s)'
+            trans._(
+                'magicgui function {gui} annotated with a return type of napari.types.LayerDataTuple did not return LayerData tuple(s)',
+                deferred=True,
+                gui=gui,
+            )
         )
 
-    for layer_datum in result:
-        # if the layer data has a meta dict with a 'name' key in it...
-        if (
-            len(layer_datum) > 1
-            and isinstance(layer_datum[1], dict)
-            and layer_datum[1].get("name")
-        ):
-            # then try to update the viewer layer with that name.
-            try:
-                layer = viewer.layers[layer_datum[1].get('name')]
-                layer.data = layer_datum[0]
-                for k, v in layer_datum[1].items():
-                    setattr(layer, k, v)
-                continue
-            except KeyError:  # layer not in the viewer
-                pass
-        # otherwise create a new layer from the layer data
-        layer = viewer._add_layer_from_data(*layer_datum)
-        layer._source = gui
+    with layer_source(widget=gui):
+        for layer_datum in result:
+            # if the layer data has a meta dict with a 'name' key in it...
+            if (
+                len(layer_datum) > 1
+                and isinstance(layer_datum[1], dict)
+                and layer_datum[1].get("name")
+            ):
+                # then try to update the viewer layer with that name.
+                try:
+                    layer = viewer.layers[layer_datum[1].get('name')]
+                    layer.data = layer_datum[0]
+                    for k, v in layer_datum[1].items():
+                        setattr(layer, k, v)
+                    continue
+                except KeyError:  # layer not in the viewer
+                    pass
+            # otherwise create a new layer from the layer data
+            viewer._add_layer_from_data(*layer_datum)
 
 
 def find_viewer_ancestor(widget) -> Optional[Viewer]:
@@ -338,4 +357,5 @@ def add_layer_to_viewer(
     if not viewer:
         return
 
+    result._source = result.source.copy(update={'widget': gui})
     viewer.add_layer(result)

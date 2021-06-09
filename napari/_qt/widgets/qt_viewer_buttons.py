@@ -1,6 +1,10 @@
-from qtpy.QtWidgets import QFrame, QHBoxLayout, QPushButton
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QSlider
 
-from ...utils.interactions import KEY_SYMBOLS
+from ...utils.action_manager import action_manager
+from ...utils.interactions import Shortcut
+from ...utils.translations import trans
+from ..dialogs.qt_modal import QtPopup
 
 
 class QtLayerButtons(QFrame):
@@ -33,7 +37,7 @@ class QtLayerButtons(QFrame):
         self.newPointsButton = QtViewerPushButton(
             self.viewer,
             'new_points',
-            'New points layer',
+            trans._('New points layer'),
             lambda: self.viewer.add_points(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -43,7 +47,7 @@ class QtLayerButtons(QFrame):
         self.newShapesButton = QtViewerPushButton(
             self.viewer,
             'new_shapes',
-            'New shapes layer',
+            trans._('New shapes layer'),
             lambda: self.viewer.add_shapes(
                 ndim=max(self.viewer.dims.ndim, 2),
                 scale=self.viewer.layers.extent.step,
@@ -52,7 +56,7 @@ class QtLayerButtons(QFrame):
         self.newLabelsButton = QtViewerPushButton(
             self.viewer,
             'new_labels',
-            'New labels layer',
+            trans._('New labels layer'),
             lambda: self.viewer._new_labels(),
         )
 
@@ -96,30 +100,42 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
+        action_manager.context['viewer'] = viewer
+
+        def active_layer():
+            if len(self.viewer.layers.selection) == 1:
+                return next(iter(self.viewer.layers.selection))
+            else:
+                return None
+
+        action_manager.context['layer'] = active_layer
+
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',
-            f"Open IPython terminal ({KEY_SYMBOLS['Control']}-{KEY_SYMBOLS['Shift']}-C)",
+            trans._(
+                "Open IPython terminal",
+            ),
         )
         self.consoleButton.setProperty('expanded', False)
         self.rollDimsButton = QtViewerPushButton(
             self.viewer,
             'roll',
-            f"Roll dimensions order for display ({KEY_SYMBOLS['Control']}-E)",
-            lambda: self.viewer.dims._roll(),
         )
+
+        action_manager.bind_button('napari:roll_axes', self.rollDimsButton)
+
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
-            f"Transpose displayed dimensions ({KEY_SYMBOLS['Control']}-T)",
-            lambda: self.viewer.dims._transpose(),
         )
-        self.resetViewButton = QtViewerPushButton(
-            self.viewer,
-            'home',
-            f"Reset view ({KEY_SYMBOLS['Control']}-R)",
-            lambda: self.viewer.reset_view(),
+
+        action_manager.bind_button(
+            'napari:transpose_axes', self.transposeDimsButton
         )
+
+        self.resetViewButton = QtViewerPushButton(self.viewer, 'home')
+        action_manager.bind_button('napari:reset_view', self.resetViewButton)
 
         self.gridViewButton = QtStateButton(
             'grid_view_button',
@@ -127,9 +143,7 @@ class QtViewerButtons(QFrame):
             'enabled',
             self.viewer.grid.events,
         )
-        self.gridViewButton.setToolTip(
-            f"Toggle grid view ({KEY_SYMBOLS['Control']}-G)"
-        )
+        action_manager.bind_button('napari:toggle_grid', self.gridViewButton)
 
         self.ndisplayButton = QtStateButton(
             "ndisplay_button",
@@ -139,8 +153,12 @@ class QtViewerButtons(QFrame):
             2,
             3,
         )
-        self.ndisplayButton.setToolTip(
-            f"Toggle number of displayed dimensions ({KEY_SYMBOLS['Control']}-Y)"
+        self.ndisplayButton.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ndisplayButton.customContextMenuRequested.connect(
+            self.open_perspective_popup
+        )
+        action_manager.bind_button(
+            'napari:toggle_ndisplay', self.ndisplayButton
         )
 
         layout = QHBoxLayout()
@@ -153,6 +171,29 @@ class QtViewerButtons(QFrame):
         layout.addWidget(self.resetViewButton)
         layout.addStretch(0)
         self.setLayout(layout)
+
+    def open_perspective_popup(self):
+        """Show a slider to control the viewer `camera.perspective`."""
+        if self.viewer.dims.ndisplay != 3:
+            return
+
+        # make slider connected to perspective parameter
+        sld = QSlider(Qt.Horizontal, self)
+        sld.setRange(0, max(90, self.viewer.camera.perspective))
+        sld.setValue(self.viewer.camera.perspective)
+        sld.valueChanged.connect(
+            lambda v: setattr(self.viewer.camera, 'perspective', v)
+        )
+
+        # make layout
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(trans._('Perspective'), self))
+        layout.addWidget(sld)
+
+        # popup and show
+        pop = QtPopup(self)
+        pop.frame.setLayout(layout)
+        pop.show_above_mouse()
 
 
 class QtDeleteButton(QPushButton):
@@ -176,7 +217,10 @@ class QtDeleteButton(QPushButton):
 
         self.viewer = viewer
         self.setToolTip(
-            f"Delete selected layers ({KEY_SYMBOLS['Control']}-{KEY_SYMBOLS['Backspace']})"
+            trans._(
+                "Delete selected layers ({shortcut})",
+                shortcut=Shortcut("Control-Backspace"),
+            )
         )
         self.setAcceptDrops(True)
         self.clicked.connect(lambda: self.viewer.layers.remove_selected())
@@ -294,13 +338,7 @@ class QtStateButton(QtViewerPushButton):
         self._on_change()
 
     def change(self):
-        """Toggle between the multiple states of this button.
-
-        Parameters
-        ----------
-        state : qtpy.QtCore.Qt.CheckState
-            State of the checkbox.
-        """
+        """Toggle between the multiple states of this button."""
         if self.isChecked():
             newstate = self._onstate
         else:

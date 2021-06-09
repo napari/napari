@@ -2,20 +2,25 @@
 
 A tiled image layer that uses TiledImageVisual and TextureAtlas2D.
 """
+from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import TYPE_CHECKING, List
 
 from vispy.scene.visuals import create_visual_node
 
 from ...components.experimental.chunk import chunk_loader
-from ...layers.image.experimental import OctreeChunk
-from ...layers.image.image import Image
 from ...utils.events import EmitterGroup
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
+
+if TYPE_CHECKING:
+    from ...layers.image.experimental import OctreeChunk
+    from ...layers.image.image import Image
+
 
 # Create the scene graph Node version of this visual. Visuals are a mix of
 # the visual itself and a scene graph node. The scene graph node is what

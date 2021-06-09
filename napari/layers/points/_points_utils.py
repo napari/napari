@@ -2,6 +2,8 @@ from typing import Optional, Tuple
 
 import numpy as np
 
+from ...utils.translations import trans
+
 
 def create_box(data):
     """Create the axis aligned interaction box of a list of points
@@ -113,6 +115,11 @@ def fix_data_points(
         points = np.atleast_2d(points)
         data_ndim = points.shape[1]
         if ndim is not None and ndim != data_ndim:
-            raise ValueError("Points dimensions must be equal to ndim")
+            raise ValueError(
+                trans._(
+                    "Points dimensions must be equal to ndim",
+                    deferred=True,
+                )
+            )
         ndim = data_ndim
     return points, ndim

@@ -12,6 +12,8 @@ from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
 from ...utils import perf
+from ...utils.history import get_save_history, update_save_history
+from ...utils.translations import trans
 
 
 def _ensure_extension(filename: str, extension: str):
@@ -30,10 +32,10 @@ class DebugMenu:
         main_window : qtpy.QtWidgets.QMainWindow.menuBar
             We add ourselves to this menu.
         """
-        self.debug_menu = main_window.main_menu.addMenu('&Debug')
+        self.debug_menu = main_window.main_menu.addMenu(trans._('&Debug'))
 
         self.perf = PerformanceSubMenu(
-            main_window, self.debug_menu.addMenu("Performance Trace")
+            main_window, self.debug_menu.addMenu(trans._("Performance Trace"))
         )
 
 
@@ -69,18 +71,20 @@ class PerformanceSubMenu:
 
     def _add_start(self):
         """Add Start Recording action."""
-        start = QAction('Start Recording...', self.main_window._qt_window)
+        start = QAction(
+            trans._('Start Recording...'), self.main_window._qt_window
+        )
         start.setShortcut('Alt+T')
-        start.setStatusTip('Start recording a trace file')
+        start.setStatusTip(trans._('Start recording a trace file'))
         start.triggered.connect(self._start_trace_dialog)
         self.sub_menu.addAction(start)
         return start
 
     def _add_stop(self):
         """Add Stop Recording action."""
-        stop = QAction('Stop Recording', self.main_window._qt_window)
+        stop = QAction(trans._('Stop Recording'), self.main_window._qt_window)
         stop.setShortcut('Shift+Alt+T')
-        stop.setStatusTip('Stop recording a trace file')
+        stop.setStatusTip(trans._('Stop recording a trace file'))
         stop.triggered.connect(self._stop_trace)
         self.sub_menu.addAction(stop)
         return stop
@@ -89,11 +93,14 @@ class PerformanceSubMenu:
         """Open Save As dialog to start recording a trace file."""
         viewer = self.main_window.qt_viewer
 
-        filename, _ = QFileDialog.getSaveFileName(
+        dlg = QFileDialog()
+        hist = get_save_history()
+        dlg.setHistory(hist)
+        filename, _ = dlg.getSaveFileName(
             parent=viewer,
-            caption='Record performance trace file',
-            directory=viewer._last_visited_dir,
-            filter="Trace Files (*.json)",
+            caption=trans._('Record performance trace file'),
+            directory=hist[0],
+            filter=trans._("Trace Files (*.json)"),
         )
         if filename:
             filename = _ensure_extension(filename, '.json')
@@ -104,6 +111,8 @@ class PerformanceSubMenu:
             # Schedule this to avoid bogus "MetaCall" event for the entire
             # time the file dialog was up.
             QTimer.singleShot(0, start_trace)
+
+            update_save_history(filename)
 
     def _start_trace(self, path: str):
         perf.timers.start_trace_file(path)
