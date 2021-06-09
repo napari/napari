@@ -48,8 +48,10 @@ It also contains a variety of bug fixes and improvements.
 - Extend the action manager to support multiple shortcuts (#2830)
 - Adds notes about multiscale only being 2D to docs (#2833)
 - Set upper limit of Vectors spinboxes to infinity (#2842)
+- Plugin dock widgets menu (#2843)
 - Update to openGL max texture size (#2845)
 - Followup to #2485 to add opengl context (#2846)
+- Do not store default values in preference files (#2848)
 
 
 ## Bug Fixes
