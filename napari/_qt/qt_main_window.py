@@ -397,12 +397,12 @@ class Window:
 
         SETTINGS.appearance.events.theme.connect(self._update_theme)
 
-        plugin_manager.events.disabled.connect(self._rebuild_dock_widget_menu)
+        plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
-        plugin_manager.events.registered.connect(
-            self._rebuild_dock_widget_menu
-        )
+        plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
+        plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
+        plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -807,6 +807,13 @@ class Window:
         """Add 'Plugins' menu to app menubar."""
         self.plugins_menu = self.main_menu.addMenu(trans._('&Plugins'))
 
+        plugin_manager.discover_widgets()
+        self._rebuild_plugins_menu()
+
+    def _rebuild_plugins_menu(self, event=None):
+
+        self.plugins_menu.clear()
+
         pip_install_action = QAction(
             trans._("Install/Uninstall Package(s)..."), self._qt_window
         )
@@ -822,29 +829,19 @@ class Window:
             )
         )
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+
         self.plugins_menu.addAction(report_plugin_action)
 
-        self._plugin_dock_widget_menu = QMenu(
-            trans._('Add Dock Widget'), self._qt_window
-        )
-
-        plugin_manager.discover_widgets()
-        self._rebuild_dock_widget_menu()
-
-        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
-
-    def _rebuild_dock_widget_menu(self, event=None):
-
-        self._plugin_dock_widget_menu.clear()
+        self.plugins_menu.addSeparator()
 
         # Add a menu item (QAction) for each available plugin widget
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
-                self._plugin_dock_widget_menu.addMenu(menu)
+                self.plugins_menu.addMenu(menu)
             else:
-                menu = self._plugin_dock_widget_menu
+                menu = self.plugins_menu
 
             for wdg_name in widgets:
                 key = (plugin_name, wdg_name)
