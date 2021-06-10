@@ -18,6 +18,7 @@ from ...utils.transforms import Affine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
+    coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
 )
@@ -223,7 +224,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     shear=shear,
                     name='data2world',
                 ),
-                self._coerce_affine(affine),
+                coerce_affine(affine, ndim, name='world2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -456,27 +457,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @affine.setter
     def affine(self, affine):
-        self._transforms['world2world'] = self._coerce_affine(affine)
+        self._transforms['world2world'] = coerce_affine(
+            affine, self.ndim, name='world2world'
+        )
         self._update_dims()
         self.events.affine()
-
-    def _coerce_affine(self, affine):
-        if affine is None:
-            affine = Affine(affine_matrix=np.eye(self.ndim + 1))
-        elif isinstance(affine, np.ndarray):
-            affine = Affine(affine_matrix=affine)
-        elif isinstance(affine, list):
-            affine = Affine(affine_matrix=np.array(affine))
-        elif not isinstance(affine, Affine):
-            raise TypeError(
-                trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
-                    deferred=True,
-                    dtype=type(affine),
-                )
-            )
-        affine.name = 'world2world'
-        return affine
 
     @property
     def translate_grid(self):
