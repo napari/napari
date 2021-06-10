@@ -1047,7 +1047,7 @@ class Labels(_ImageBase):
             return
 
         # If requested new label doesn't change old label then return
-        old_label = self.data[int_coord]
+        old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label or (
             self.preserve_labels and old_label != self._background_label
         ):
@@ -1058,7 +1058,7 @@ class Labels(_ImageBase):
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
         data_slice = tuple(data_slice_list)
-        labels = self.data[data_slice]
+        labels = np.asarray(self.data[data_slice])
         slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
         matches = labels == old_label

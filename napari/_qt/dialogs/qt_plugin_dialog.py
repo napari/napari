@@ -99,6 +99,9 @@ class Installer:
             self._output_widget.clear()
         self.process.start()
 
+        for pkg in pkg_list:
+            plugin_manager.unregister(pkg)
+
 
 class PluginListItem(QFrame):
     def __init__(

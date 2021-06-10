@@ -41,13 +41,31 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class NapariPluginManager(PluginManager):
+    """PluginManager subclass for napari-specific functionality.
+
+    Events
+    ------
+    registered (value: str)
+        Emitted after plugin named `value` has been registered.
+    unregistered (value: str)
+        Emitted after plugin named `value` has been unregistered.
+    enabled (value: str)
+        Emitted after plugin named `value` has been removed from the block list.
+    disabled (value: str)
+        Emitted after plugin named `value` has been added to the block list.
+    """
+
     ENTRY_POINT = 'napari.plugin'
 
     def __init__(self):
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
-            source=self, registered=None, enabled=None, disabled=None
+            source=self,
+            registered=None,
+            unregistered=None,
+            enabled=None,
+            disabled=None,
         )
         self._blocked: EventedSet[str] = EventedSet()
         self._blocked.events.changed.connect(self._on_blocked_change)
@@ -84,15 +102,33 @@ class NapariPluginManager(PluginManager):
             self.events.registered(value=name)
         return name
 
+    def unregister(
+        self,
+        name_or_object: Any,
+    ) -> Optional[Any]:
+
+        if isinstance(name_or_object, str):
+            _name = name_or_object
+        else:
+            _name = self.get_name(name_or_object)
+
+        plugin = super().unregister(name_or_object)
+
+        # remove widgets, sample data
+        for _dict in (
+            self._dock_widgets,
+            self._sample_data,
+            self._function_widgets,
+        ):
+            _dict.pop(_name, None)
+
+        self.events.unregistered(value=_name)
+
+        return plugin
+
     def _on_blocked_change(self, event):
         # things that are "added to the blocked list" become disabled
         for item in event.added:
-            for _dict in (
-                self._dock_widgets,
-                self._sample_data,
-                self._function_widgets,
-            ):
-                _dict.pop(item, None)
             self.events.disabled(value=item)
 
         # things that are "removed from the blocked list" become enabled
