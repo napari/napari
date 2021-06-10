@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
@@ -356,19 +357,39 @@ class ActionManager:
 
         Returns
         -------
-
         shortcut: str | None
-            previously bound shortcut.
+            Previously bound shortcut or None if not such shortcuts was bound,
+            or  no such action exists.
+
+        Warns
+        -----
+        UserWarning:
+            When trying to unbind an action unknown form the action manager,
+            this warning will be emitted.
+
         """
-        action = self._actions[name]
+        action = self._actions.get(name, None)
+        if action is None:
+            warnings.warn(
+                trans._(
+                    "Attempting to unbind an action which does not exists ({name}), "
+                    "this may have no effects. This can happen if your settings are out of "
+                    "date, if you upgraded napari, upgraded or deactivated a plugin, or made "
+                    "a typo in in your custom keybinding.",
+                    name=name,
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
+
         shortcuts = self._shortcuts.get(name)
         if shortcuts:
-            if hasattr(action.keymapprovider, 'bind_key'):
+            if action and hasattr(action.keymapprovider, 'bind_key'):
                 for shortcut in shortcuts:
                     action.keymapprovider.bind_key(shortcut)(None)
             del self._shortcuts[name]
         self._update_gui_elements(name)
-        return shortcut
+        return shortcuts
 
     def _get_layer_shortcuts(self, layers):
         """
