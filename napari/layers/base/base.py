@@ -391,22 +391,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.editable()
 
     @property
-    def data2world_transform(self) -> Affine:
-        """Returns the transform from data coordinates to world coordinates.
-
-        This generates an affine transform by composing the affine property with
-        the other transform properties in the following order:
-
-        affine * (rotate * shear * scale + translate).
-
-        Returns
-        -------
-        Transform
-            The transform from data coordinates to world coordinates.
-        """
-        return self._transforms[1:3].simplified
-
-    @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2world'].scale
@@ -602,7 +586,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
         )
-        full_world_extent = self.data2world_transform(full_data_extent)
+        full_world_extent = self.data_to_world(full_data_extent)
         world_extent = np.array(
             [
                 np.min(full_world_extent, axis=0),
@@ -618,13 +602,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return Extent(
             data=data,
             world=self._get_extent_world(data),
-            step=abs(self.data2world_transform.scale),
+            step=abs(self.data_to_world.scale),
         )
 
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self.data2world_transform.inverse
+        inv_transform = self.data_to_world.inverse
 
         if self.ndim > self._ndisplay:
             # Subspace spanned by non displayed dimensions
@@ -983,7 +967,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Parameters
         ----------
         position : tuple, list, 1D array
-            Position in world coorindates. If longer then the
+            Position in world coordinates. If longer then the
             number of dimensions of the layer, the later
             dimensions will be used.
 
@@ -999,9 +983,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    @property
+    def data_to_world(self) -> Affine:
+        """Returns the transform from data coordinates to world coordinates.
+
+        This generates an affine transform by composing the affine property with
+        the other transform properties in the following order:
+
+        affine * (rotate * shear * scale + translate)
+
+        Returns
+        -------
+        Transform
+            The transform from data coordinates to world coordinates.
+        """
+        return self._transforms[1:3].simplified
+
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
-        For layer multiscale determing if a new resolution level or tile is
+        For layer multiscale determining if a new resolution level or tile is
         required.
         Parameters
         ----------
