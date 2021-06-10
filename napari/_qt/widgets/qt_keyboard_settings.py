@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from qtpy.QtCore import Qt  # Signal
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QDialog,
@@ -19,13 +19,11 @@ from ...utils.action_manager import action_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 
-# from qtpy.QtCore import Qt.ItemIsEditable
-
 
 class ShortcutEditor(QDialog):
     """ """
 
-    # onChanged = Signal(list[str, str])
+    ALL_ACTIVE_KEYBINDINGS = trans._('All active key bindings')
 
     def __init__(
         self,
@@ -38,12 +36,6 @@ class ShortcutEditor(QDialog):
 
         super().__init__(parent=parent)
 
-        #  for name, shortcut in self._shortcuts.items():
-        #         action = self._actions.get(name, None)
-        #         if action and layer == action.keymapprovider:
-        #             layer_shortcuts[layer][str(shortcut)] = action.description
-
-        # col = theme['secondary']
         layers = [
             Image,
             Labels,
@@ -54,7 +46,6 @@ class ShortcutEditor(QDialog):
         ]
 
         self.key_bindings_strs = OrderedDict()
-        self.key_bindings_strs[trans._('All active key bindings')] = 'base'
 
         # widgets
         self.layer_combo_box = QComboBox(self)
@@ -65,23 +56,25 @@ class ShortcutEditor(QDialog):
         self._restore_button = QPushButton(trans._("Reset All Keybindings"))
 
         # set up
+        # all actions
+        all_actions = action_manager._actions.copy()
+        self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = []
         for layer in layers:
-            self.key_bindings_strs[f"{layer.__name__} layer"] = layer
+            if len(layer.class_keymap) == 0:
+                actions = []
+            else:
+                actions = action_manager._get_layer_actions(layer)
+                for name, action in actions.items():
+                    all_actions.pop(name)
+            self.key_bindings_strs[f"{layer.__name__} layer"] = actions
+        # left over actions can go here.
+        self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = all_actions
 
         self.layer_combo_box.addItems(list(self.key_bindings_strs))
-        self._label.setText("Layer")
-
-        # layer_shortcuts = action_manager._get_layer_shortcuts(layers)
-        # print(layer_shortcuts)
-
-        #     if len(layer.class_keymap) == 0:
-        #         text = trans._('No key bindings')
-        #     else:
-        #         text = get_key_bindings_summary(
-        #             layer_shortcuts[layer], col=col
-        #         )
-
+        self.layer_combo_box.activated[str].connect(self._set_table)
+        self.layer_combo_box.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
         self._set_table()
+        self._label.setText("Layer")
 
         # layout
 
@@ -103,66 +96,79 @@ class ShortcutEditor(QDialog):
 
         self.setLayout(layout)
 
-    def _set_table(self, layer=None):
+    def _set_table(self, layer_str=''):
+        if layer_str == '':
+            layer_str = self.ALL_ACTIVE_KEYBINDINGS
+
+        try:
+            self._table.cellChanged.disconnect(self._set_keybinding)
+        except TypeError:
+            pass
+
+        self._table.clearContents()
 
         self._table.horizontalHeader().setStretchLastSection(True)
         self._table.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
-        self._table.setRowCount(len(action_manager._actions))
-        self._table.setColumnCount(3)
-        self._table.setHorizontalHeaderLabels(['Action', 'Keybinding'])
-        self._table.verticalHeader().setVisible(False)
 
-        self._table.setColumnHidden(2, True)
+        actions = self.key_bindings_strs[layer_str]
 
-        for row, (action_name, action) in enumerate(
-            action_manager._actions.items()
-        ):
-            shortcuts = action_manager._shortcuts.get(action_name, [])
-            # for row, (action_name, shortcuts) in enumerate(SETTINGS.shortcuts.shortcuts.items()):
-            # shortcuts = action_manager._shortcuts.get(action_name, [])
-            item = QTableWidgetItem(action.description)
+        if len(actions) > 0:
 
+            self._table.setRowCount(len(actions))
+            # self._table.setRowCount(len(action_manager._actions))
+            self._table.setColumnCount(3)
+            self._table.setHorizontalHeaderLabels(['Action', 'Keybinding'])
+            self._table.verticalHeader().setVisible(False)
+
+            self._table.setColumnHidden(2, True)
+
+            for row, (action_name, action) in enumerate(actions.items()):
+                shortcuts = action_manager._shortcuts.get(action_name, [])
+                item = QTableWidgetItem(action.description)
+
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
+                self._table.setItem(row, 0, item)
+                item_shortcut = QTableWidgetItem(
+                    list(shortcuts)[0] if shortcuts else ""
+                )
+
+                self._table.setItem(row, 1, item_shortcut)
+
+                item_action = QTableWidgetItem(action_name)
+                # action_name is stored in the table to use later, but is not shown on dialog.
+                self._table.setItem(row, 2, item_action)
+
+            self._table.cellChanged.connect(self._set_keybinding)
+        else:
+            # no actions-- display that.
+            self._table.setRowCount(1)
+            self._table.setColumnCount(3)
+            self._table.setHorizontalHeaderLabels(['Action', 'Keybinding'])
+            self._table.verticalHeader().setVisible(False)
+
+            self._table.setColumnHidden(2, True)
+            item = QTableWidgetItem('No key bindings')
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
-
-            self._table.setItem(row, 0, item)
-            item_shortcut = QTableWidgetItem(
-                list(shortcuts)[0] if shortcuts else ""
-            )
-
-            self._table.setItem(row, 1, item_shortcut)
-
-            item_action = QTableWidgetItem(action_name)
-            # action_name is stored in the table to use later, but is not shown on dialog.
-            self._table.setItem(row, 2, item_action)
-
-        # self._table.itemChanged.connect(self._set_keybinding)
-        self._table.cellChanged.connect(self._set_keybinding)
+            self._table.setItem(0, 0, item)
 
     def _set_keybinding(self, event):
         # event is the index of the event.
 
+        current_layer_text = self.layer_combo_box.currentText()
+        layer_actions = self.key_bindings_strs[current_layer_text]
+
         # get the current item from shortcuts column
         item1 = self._table.currentItem()
         new_shortcut = item1.text()
-        # get the current action description
-        # action_description = self._table.item(event, 0).text()
 
         # get the action name
         current_action = self._table.item(event, 2).text()
-        # print(action_manager._actions.items()[event]._description)
-        # print(event.text())
-        #
-        # check if shortcut is in use in layer or globally
-        # current_shortcut = list(
-        #     action_manager._shortcuts.get(current_action, [])
-        # )[0]
 
         replace = True
-        for row, (action_name, action) in enumerate(
-            action_manager._actions.items()
-        ):
+        for row, (action_name, action) in enumerate(layer_actions.items()):
             shortcuts = action_manager._shortcuts.get(action_name, [])
 
             if new_shortcut in shortcuts:
@@ -177,13 +183,11 @@ class ShortcutEditor(QDialog):
                         + f"that shortcut before assigning <b>{new_shortcut}</b> to this one."
                     )
 
-                    print(message)
-
                     self._warn_dialog = KeyBindWarnPopup(
                         parent=self,
                         text=message,
                     )
-                    # self._reset_dialog.valueChanged.connect(print('works!'))
+
                     self._warn_dialog.exec_()
 
                     # get the original shortcut
@@ -193,13 +197,10 @@ class ShortcutEditor(QDialog):
                     # reset value in table to value stored in action manager.
                     item1.setText(current_shortcuts[0])
 
-                    print('done!')
-
                     break
 
             # else:
 
-        print('replace', replace)
         if replace is True:
 
             # this shortcut is not taken, can set it and save in settings
@@ -208,13 +209,10 @@ class ShortcutEditor(QDialog):
             # all the other widgets.
 
             #  Bind new shortcut to the action manager
-            print('unbind', current_action)
             action_manager.unbind_shortcut(current_action)
-            print('bind', new_shortcut)
             action_manager.bind_shortcut(current_action, new_shortcut)
 
-            #     break
-            # Save to settings here temporarily
+            # Save to settings here temporarily (probably won't do this here)
             if current_action in SETTINGS.shortcuts.shortcuts:
                 # This one was here, need to save the new shortcut
                 SETTINGS.shortcuts.shortcuts[current_action][0] = new_shortcut
@@ -255,17 +253,3 @@ class KeyBindWarnPopup(QDialog):
         main_layout.addWidget(self._message)
 
         self.setLayout(main_layout)
-
-        # # Signals
-        # self._button_cancel.clicked.connect(self.on_click_cancel)
-        # self._button_restore.clicked.connect(self.on_click_restore)
-
-    #     QDialog *popup = new QDialog(0, Qt::Popup | Qt::FramelessWindowHint);
-    # QVBoxLayout *layout = new QVBoxLayout;
-    # QLabel *popupLabel = new QLabel(data_.value(rowIndex).displayHtml(), 0);
-    # layout->addWidget(popupLabel);
-    # popupLabel->setTextFormat(Qt::RichText);
-    # popupLabel->setOpenExternalLinks(true);
-    # popup->setLayout(layout);
-    # popup->move(location);
-    # popup->exec();
