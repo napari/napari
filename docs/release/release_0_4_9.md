@@ -82,6 +82,7 @@ It also contains a variety of bug fixes and improvements.
 - Remove opacity from plugin sorter widget (#2840)
 - Fix Labels.fill for tensorstore data (#2856)
 - Be more robust for non-existant keybindings in settings (#2861)
+- trans NameError bugfix (#2865)
 
 
 ## Tasks
