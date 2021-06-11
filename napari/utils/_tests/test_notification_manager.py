@@ -28,6 +28,12 @@ class PurposefulException(Exception):
     pass
 
 
+def test_notification_repr_has_message():
+    assert "='this is the message'" in repr(
+        Notification("this is the message")
+    )
+
+
 def test_notification_manager_no_gui():
     """
     Direct test of the notification manager.
