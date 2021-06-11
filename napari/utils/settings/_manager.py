@@ -104,7 +104,6 @@ class SettingsManager(_SettingsMixin):
         """
         Attempt to convert self to dict and to remove any default values from the configuration
         """
-
         for section, values in settings_data.items():
             if section not in self._defaults:
                 continue
@@ -136,27 +135,17 @@ class SettingsManager(_SettingsMixin):
 
             if self._env_settings:
                 # If using environment variables do not save them in the
-                # `settings.yaml` file. We will use the original values found
-                # in the file.
-                loaded_data = BaseNapariSettings._LOADED_DATA
+                # `settings.yaml` file. We just delete any keys loaded
+                # as environment variables
                 data = self._to_dict(safe=True)
                 for section, env_data in self._env_settings.items():
-                    for env_key, _ in env_data.items():
-                        try:
-                            data[section][env_key] = loaded_data[section][
-                                env_key
-                            ]
-                        except KeyError:
-                            pass
-
-                data_str = safe_dump(self._remove_default(data))
+                    for k, v in env_data.items():
+                        del data[section][k]
             else:
-                data_str = safe_dump(
-                    self._remove_default(self._to_dict(safe=True))
-                )
+                data = self._to_dict(safe=True)
 
             with open(path, "w") as fh:
-                fh.write(data_str)
+                fh.write(safe_dump(self._remove_default(data)))
 
     def _load(self):
         """Read configuration from disk."""

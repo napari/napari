@@ -173,30 +173,23 @@ def test_settings_env_variables(tmp_path, monkeypatch):
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     data = """
 appearance:
-  theme: pink
+  theme: light
 """
     with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
         fh.write(data)
 
-    value = 'light'
+    value = 'dark'
     monkeypatch.setenv('NAPARI_THEME', value)
     settings = SettingsManager(tmp_path, save_to_disk=True)
     settings._save()
-
     with open(tmp_path / SettingsManager._FILENAME) as fh:
         saved_data = fh.read()
 
-    model_values = settings._remove_default(settings._to_dict(safe=True))
+    model_values = settings._to_dict(safe=True)
     saved_values = safe_load(saved_data)
 
     assert model_values["appearance"]["theme"] == value
-    # Note: Pink is currently not a valid theme, but if we use dark as it is the
-    # default it is not saved in the saved_values. We can't use "Light" either
-    assert saved_values["appearance"]["theme"] == "pink"
-
-    model_values["appearance"].pop("theme")
-    saved_values["appearance"].pop("theme")
-    assert model_values == saved_values
+    assert saved_values.get("appearance", {}).get("theme", "") == ""
 
 
 def test_settings_env_variables_fails(tmp_path, monkeypatch):
