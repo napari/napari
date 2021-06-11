@@ -18,6 +18,7 @@ def update_open_history(filename):
         folders.insert(0, folders.pop(folders.index(new_loc)))
     else:
         folders.insert(0, new_loc)
+
     folders = folders[0:10]
     SETTINGS.application.open_history = folders
 
@@ -36,6 +37,7 @@ def update_save_history(filename):
         folders.insert(0, folders.pop(folders.index(new_loc)))
     else:
         folders.insert(0, new_loc)
+
     folders = folders[0:10]
     SETTINGS.application.save_history = folders
 
@@ -51,5 +53,4 @@ def get_save_history():
     """A helper for history handling."""
     folders = SETTINGS.application.save_history
     folders = [f for f in folders if os.path.isdir(f)]
-
-    return folders
+    return folders or [str(Path.home())]
