@@ -3,7 +3,7 @@
 
 import pydantic
 import pytest
-from yaml import safe_load
+from yaml import safe_dump, safe_load
 
 import napari.utils.settings._manager as _manager
 from napari.utils.settings._manager import (
@@ -205,6 +205,22 @@ def test_core_settings_are_class_variables_in_settings_manager():
         section = schema["section"]
         assert section in SettingsManager.__annotations__
         assert setting == SettingsManager.__annotations__[section]
+
+
+def test_settings_only_saves_non_default_values(tmp_path):
+    settings = SettingsManager(tmp_path, save_to_disk=False)
+    all_data = settings._to_dict(safe=True)
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(safe_dump(all_data))
+
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    settings._save()
+
+    with open(tmp_path / SettingsManager._FILENAME) as fh:
+        data = safe_load(fh.read())
+
+    assert all_data.keys() == data.keys()
+    assert all_data != data
 
 
 def test_get_settings(monkeypatch, tmp_path):
