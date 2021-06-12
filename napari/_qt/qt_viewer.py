@@ -355,7 +355,9 @@ class QtViewer(QSplitter):
                 import napari
 
                 self.console = QtConsole(self.viewer)
-                self.console.push({'napari': napari})
+                self.console.push(
+                    {'napari': napari, 'action_manager': action_manager}
+                )
             except ImportError:
                 warnings.warn(
                     trans._(
@@ -372,8 +374,6 @@ class QtViewer(QSplitter):
         if console is not None:
             self.dockConsole.setWidget(console)
             console.setParent(self.dockConsole)
-        if getattr(self, '_console', None) is not None:
-            self._console.shell.user_ns['action_manager'] = action_manager
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
