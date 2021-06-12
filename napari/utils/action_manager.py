@@ -393,7 +393,7 @@ class ActionManager:
 
     def _get_layer_shortcuts(self, layers):
         """
-        Get shortcuts filterd by the given layers.
+        Get shortcuts filtered by the given layers.
 
         Parameters
         ----------
