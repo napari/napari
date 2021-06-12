@@ -1,6 +1,8 @@
 # Description
 <!-- What does this pull request (PR) do? Why is it necessary? -->
 <!-- Tell us about your new feature, improvement, or fix! -->
+<!-- If your change includes user interface changes, please add an image, or an animation "An image is worth a thousand words!" -->
+<!-- You can use https://www.cockos.com/licecap/ or similar to create animations -->
 
 ## Type of change
 <!-- Please delete options that are not relevant. -->
@@ -23,3 +25,5 @@
 - [ ] I have commented my code, particularly in hard-to-understand areas
 - [ ] I have made corresponding changes to the documentation
 - [ ] I have added tests that prove my fix is effective or that my feature works
+- [ ] If I included new strings, I have used `trans.` to make them localizable.
+      For more information see our [translations guide](https://napari.org/docs/dev/guides/translations.html).

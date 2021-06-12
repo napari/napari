@@ -1,4 +1,8 @@
+import os
+import sys
+
 import numpy as np
+import pytest
 
 from napari import Viewer
 from napari.layers import (
@@ -10,6 +14,17 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+
+skip_on_win_ci = pytest.mark.skipif(
+    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
+    reason='Screenshot tests are not supported on windows CI.',
+)
+
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
+
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
@@ -97,7 +112,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert view.layers.model().rowCount() == len(viewer.layers)
 
     assert viewer.dims.ndim == ndim
     assert view.dims.nsliders == viewer.dims.ndim
@@ -110,12 +125,12 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     # Flip dims order displayed
     dims_order = list(range(ndim))
     viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    assert viewer.dims.order == tuple(dims_order)
 
     # Flip dims order including non-displayed
     dims_order[0], dims_order[-1] = dims_order[-1], dims_order[0]
     viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    assert viewer.dims.order == tuple(dims_order)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
@@ -144,7 +159,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
     vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
-        disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
+        disp_dims = list(viewer.dims.displayed)  # dimensions displayed in 2D
         # values of visual layer
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 

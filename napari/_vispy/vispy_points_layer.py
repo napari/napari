@@ -2,6 +2,8 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Text
 
 from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events import disconnect_events
+from ..utils.settings import SETTINGS
 from ._text_utils import update_text
 from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer
@@ -9,7 +11,7 @@ from .vispy_base_layer import VispyBaseLayer
 
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
-    _highlight_width = 2
+    _highlight_width = SETTINGS.appearance.highlight_thickness
 
     def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
@@ -23,12 +25,17 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.symbol.connect(self._on_data_change)
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer._edge.events.colors.connect(self._on_data_change)
+        self.layer._edge.events.color_properties.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
+        self.layer._face.events.colors.connect(self._on_data_change)
+        self.layer._face.events.color_properties.connect(self._on_data_change)
         self.layer.text._connect_update_events(
             self._on_text_change, self._on_blending_change
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_data_change()
+        self._reset_base()
 
     def _on_data_change(self, event=None):
         if len(self.layer._indices_view) > 0:
@@ -42,7 +49,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
         if len(self.layer._indices_view) == 0:
-            data = np.zeros((1, self.layer._dims.ndisplay))
+            data = np.zeros((1, self.layer._ndisplay))
             size = [0]
         else:
             data = self.layer._view_data
@@ -74,13 +81,13 @@ class VispyPointsLayer(VispyBaseLayer):
                 data = np.expand_dims(data, axis=0)
             size = self.layer._view_size[self.layer._highlight_index]
         else:
-            data = np.zeros((1, self.layer._dims.ndisplay))
+            data = np.zeros((1, self.layer._ndisplay))
             size = 0
 
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
             size=size,
-            edge_width=self._highlight_width,
+            edge_width=SETTINGS.appearance.highlight_thickness,
             symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
@@ -88,23 +95,26 @@ class VispyPointsLayer(VispyBaseLayer):
         )
 
         # only draw a box in 2D
-        if self.layer._dims.ndisplay == 2:
+        if self.layer._ndisplay == 2:
             if (
                 self.layer._highlight_box is None
                 or 0 in self.layer._highlight_box.shape
             ):
-                pos = np.zeros((1, self.layer._dims.ndisplay))
+                pos = np.zeros((1, self.layer._ndisplay))
                 width = 0
             else:
                 pos = self.layer._highlight_box
-                width = self._highlight_width
+                width = SETTINGS.appearance.highlight_thickness
 
             self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1], color=self._highlight_color, width=width,
+                pos=pos[:, ::-1],
+                color=self._highlight_color,
+                width=width,
             )
         else:
             self.node._subvisuals[2].set_data(
-                pos=np.zeros((1, self.layer._dims.ndisplay)), width=0,
+                pos=np.zeros((1, self.layer._ndisplay)),
+                width=0,
             )
 
         self.node.update()
@@ -117,7 +127,7 @@ class VispyPointsLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._dims.ndisplay
+        ndisplay = self.layer._ndisplay
         if (len(self.layer._indices_view) == 0) or (
             self.layer._text.visible is False
         ):
@@ -157,3 +167,8 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         text_node.set_gl_state(self.layer.text.blending)
         self.node.update()
+
+    def close(self):
+        """Vispy visual is closing."""
+        disconnect_events(self.layer.text.events, self)
+        super().close()

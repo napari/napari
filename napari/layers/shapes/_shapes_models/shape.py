@@ -3,6 +3,7 @@ from copy import copy
 
 import numpy as np
 
+from ....utils.translations import trans
 from .._shapes_utils import (
     is_collinear,
     path_to_mask,
@@ -56,8 +57,8 @@ class Shape(ABC):
         Min and max values of the M non-displayed dimensions, useful for
         slicing multidimensional shapes.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray
@@ -170,8 +171,7 @@ class Shape(ABC):
 
     @property
     def edge_width(self):
-        """float: thickness of lines and edges.
-        """
+        """float: thickness of lines and edges."""
         return self._edge_width
 
     @edge_width.setter
@@ -343,8 +343,10 @@ class Shape(ABC):
             transform = np.array([[-1, 0], [0, 1]])
         else:
             raise ValueError(
-                """Axis not recognized, must be one of "{0, 1}"
-                             """
+                trans._(
+                    'Axis not recognized, must be one of "{{0, 1}}"',
+                    deferred=True,
+                )
             )
         if center is None:
             self.transform(transform)
@@ -391,9 +393,12 @@ class Shape(ABC):
             shape_plane = [mask_shape[d] for d in self.dims_displayed]
         else:
             raise ValueError(
-                f"""mask shape length must either be 2 or the same
-            as the dimensionality of the shape, expected {self.data.shape[1]}
-            got {len(mask_shape)}."""
+                trans._(
+                    "mask shape length must either be 2 or the same as the dimensionality of the shape, expected {expected} got {received}.",
+                    deferred=True,
+                    expected=self.data.shape[1],
+                    received=len(mask_shape),
+                )
             )
 
         if self._use_face_vertices:

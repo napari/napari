@@ -1,35 +1,31 @@
 import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, List, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
     hex_to_name,
     rgb_to_hex,
-    transform_color,
 )
 from ...utils.events import Event
-from ...utils.status_messages import format_float
+from ...utils.translations import trans
 from ..base import Layer
-from ..utils.color_transformations import (
-    ColorType,
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
-)
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils._color_manager_constants import ColorMode
+from ..utils.color_manager import ColorManager
+from ..utils.color_transformations import ColorType
+from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
-from ._points_constants import SYMBOL_ALIAS, ColorMode, Mode, Symbol
+from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
-from ._points_utils import create_box, points_to_squares
+from ._points_utils import create_box, fix_data_points, points_to_squares
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
+
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -64,7 +60,7 @@ class Points(Layer):
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str, array-like
+    edge_color : str, array-like, dict
         Color of the point marker border. Numeric color values should be RGB(A).
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
@@ -76,7 +72,7 @@ class Points(Layer):
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
-    face_color : str, array-like
+    face_color : str, array-like, dict
         Color of the point marker body. Numeric color values should be RGB(A).
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
@@ -108,7 +104,7 @@ class Points(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -122,12 +118,14 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
 
     Attributes
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
-    properties : dict {str: array (N,)}
+    properties : dict {str: array (N,)} or DataFrame
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
     text : str
@@ -206,8 +204,8 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
         If properties is not provided, it will be {} (empty dictionary).
@@ -228,6 +226,8 @@ class Points(Layer):
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
     """
+
+    # TODO  write better documentation for edge_color and face_color
 
     # The max number of points that will ever be used to render the thumbnail
     # If more points are present then they are randomly subsampled
@@ -262,17 +262,12 @@ class Points(Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        property_choices=None,
     ):
-        if data is None:
-            if ndim is None:
-                ndim = 2
-            data = np.empty((0, ndim))
-        else:
-            data = np.atleast_2d(data)
-            data_ndim = data.shape[1]
-            if ndim is not None and ndim != data_ndim:
-                raise ValueError("Points dimensions must be equal to ndim")
-            ndim = data_ndim
+        if ndim is None and scale is not None:
+            ndim = len(scale)
+
+        data, ndim = fix_data_points(data, ndim)
 
         super().__init__(
             data,
@@ -297,14 +292,12 @@ class Points(Layer):
             current_face_color=Event,
             edge_color=Event,
             current_edge_color=Event,
+            properties=Event,
             current_properties=Event,
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
         )
-        # update highlights when the layer is selected/deselected
-        self.events.select.connect(self._set_highlight)
-        self.events.deselect.connect(self._set_highlight)
 
         self._colors = get_color_namelist()
 
@@ -312,24 +305,19 @@ class Points(Layer):
         self._data = np.asarray(data)
 
         # Save the properties
-        if properties is None:
-            self._properties = {}
-            self._property_choices = {}
-        elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
-            self._properties = self._validate_properties(properties)
-            self._property_choices = {
-                k: np.unique(v) for k, v in properties.items()
-            }
-        elif len(data) == 0:
-            self._property_choices = {
-                k: np.asarray(v) for k, v in properties.items()
-            }
-            empty_properties = {
-                k: np.empty(0, dtype=v.dtype)
-                for k, v in self._property_choices.items()
-            }
-            self._properties = empty_properties
+        if self.data.size == 0 and properties:
+            warnings.warn(
+                trans._(
+                    "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
+                ),
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            property_choices = properties
+            properties = {}
+        self._properties, self._property_choices = self._prepare_properties(
+            properties, property_choices, save_choices=True
+        )
 
         # make the text
         if text is None or isinstance(text, (list, np.ndarray, str)):
@@ -340,7 +328,12 @@ class Points(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError('text should be a string, array, or dict')
+            raise TypeError(
+                trans._(
+                    'text should be a string, array, or dict',
+                    deferred=True,
+                )
+            )
 
         # Save the point style params
         self.symbol = symbol
@@ -351,11 +344,7 @@ class Points(Layer):
         # be added. For any given property, if a list is passed to the
         # constructor so each point gets its own value then the default
         # value is used when adding new points
-        if np.isscalar(size):
-            self._current_size = np.asarray(size)
-        else:
-            self._current_size = 10
-
+        self._current_size = np.asarray(size) if np.isscalar(size) else 10
         # Indices of selected points
         self._selected_data = set()
         self._selected_data_stored = set()
@@ -374,40 +363,40 @@ class Points(Layer):
         self._drag_start = None
 
         # initialize view data
-        self._indices_view = []
+        self._indices_view = np.empty(0)
         self._view_size_scale = []
 
         self._drag_box = None
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
+        self._round_index = False
 
-        with self.block_update_properties():
-            self._edge_color_property = ''
-            self.edge_color = edge_color
-            if edge_color_cycle is None:
-                edge_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
-            self.edge_color_cycle = edge_color_cycle
-            self.edge_color_cycle_map = {}
-            self.edge_colormap = edge_colormap
-            self._edge_contrast_limits = edge_contrast_limits
-
-            self._face_color_property = ''
-            self.face_color = face_color
-            if face_color_cycle is None:
-                face_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
-            self.face_color_cycle = face_color_cycle
-            self.face_color_cycle_map = {}
-            self.face_colormap = face_colormap
-            self._face_contrast_limits = face_contrast_limits
-
-        self.refresh_colors()
+        self._edge = ColorManager._from_layer_kwargs(
+            n_colors=len(data),
+            colors=edge_color,
+            continuous_colormap=edge_colormap,
+            contrast_limits=edge_contrast_limits,
+            categorical_colormap=edge_color_cycle,
+            properties=self._properties
+            if self._data.size
+            else self._property_choices,
+        )
+        self._face = ColorManager._from_layer_kwargs(
+            n_colors=len(data),
+            colors=face_color,
+            continuous_colormap=face_colormap,
+            contrast_limits=face_contrast_limits,
+            categorical_colormap=face_color_cycle,
+            properties=self._properties
+            if self._data.size
+            else self._property_choices,
+        )
 
         self.size = size
-        # set the current_* properties
+
+        # set the current_properties
         if len(data) > 0:
-            self._current_edge_color = self.edge_color[-1]
-            self._current_face_color = self.face_color[-1]
             self.current_properties = {
                 k: np.asarray([v[-1]]) for k, v in self.properties.items()
             }
@@ -416,62 +405,11 @@ class Points(Layer):
                 k: np.asarray([v[0]])
                 for k, v in self._property_choices.items()
             }
-            self._initialize_current_color_for_empty_layer(edge_color, 'edge')
-            self._initialize_current_color_for_empty_layer(face_color, 'face')
         else:
-            self._current_edge_color = self.edge_color[-1]
-            self._current_face_color = self.face_color[-1]
-            self._face_color = np.empty((0, 4))
-            self._edge_color = np.empty((0, 4))
             self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-
-    def _initialize_current_color_for_empty_layer(
-        self, color: ColorType, attribute: str
-    ):
-        """Initialize current_{edge,face}_color when starting with empty layer.
-
-        Parameters
-        ----------
-        color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        """
-        color_mode = getattr(self, f'_{attribute}_color_mode')
-        if color_mode == ColorMode.DIRECT:
-            curr_color = transform_color_with_defaults(
-                num_entries=1,
-                colors=color,
-                elem_name=f'{attribute}_color',
-                default="white",
-            )
-
-        elif color_mode == ColorMode.CYCLE:
-            color_cycle = getattr(self, f'_{attribute}_color_cycle')
-            curr_color = transform_color(next(color_cycle))
-
-            # add the new color cycle mapping
-            color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self._property_choices[color_property][0]
-            color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
-            color_cycle_map[prop_value] = np.squeeze(curr_color)
-            setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
-
-        elif color_mode == ColorMode.COLORMAP:
-            color_property = getattr(self, f'_{attribute}_color_property')
-            prop_value = self._property_choices[color_property][0]
-            colormap = getattr(self, f'{attribute}_colormap')
-            contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
-            curr_color, _ = map_property(
-                prop=prop_value,
-                colormap=colormap,
-                contrast_limits=contrast_limits,
-            )
-        setattr(self, f'_current_{attribute}_color', curr_color)
 
     @property
     def data(self) -> np.ndarray:
@@ -479,143 +417,191 @@ class Points(Layer):
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: Optional[np.ndarray]):
+        data, _ = fix_data_points(data, self.ndim)
         cur_npoints = len(self._data)
         self._data = data
 
         # Adjust the size array when the number of points has changed
-        if len(data) < cur_npoints:
-            # If there are now fewer points, remove the size and colors of the
-            # extra ones
-            with self.events.set_data.blocker():
-                self._edge_color = self.edge_color[: len(data)]
-                self._face_color = self.face_color[: len(data)]
-                self._size = self._size[: len(data)]
+        with self.events.blocker_all():
+            with self._edge.events.blocker_all():
+                with self._face.events.blocker_all():
+                    if len(data) < cur_npoints:
+                        # If there are now fewer points, remove the size and colors of the
+                        # extra ones
+                        if len(self._edge.colors) > len(data):
+                            self._edge._remove(
+                                np.arange(len(data), len(self._edge.colors))
+                            )
+                        if len(self._face.colors) > len(data):
+                            self._face._remove(
+                                np.arange(len(data), len(self._face.colors))
+                            )
+                        self._size = self._size[: len(data)]
 
-                for k in self.properties:
-                    self.properties[k] = self.properties[k][: len(data)]
+                        for k in self.properties:
+                            self.properties[k] = self.properties[k][
+                                : len(data)
+                            ]
 
-        elif len(data) > cur_npoints:
-            # If there are now more points, add the size and colors of the
-            # new ones
-            with self.events.set_data.blocker():
-                adding = len(data) - cur_npoints
-                if len(self._size) > 0:
-                    new_size = copy(self._size[-1])
-                    for i in self._dims.displayed:
-                        new_size[i] = self.current_size
-                else:
-                    # Add the default size, with a value for each dimension
-                    new_size = np.repeat(
-                        self.current_size, self._size.shape[1]
-                    )
-                size = np.repeat([new_size], adding, axis=0)
+                    elif len(data) > cur_npoints:
+                        # If there are now more points, add the size and colors of the
+                        # new ones
+                        adding = len(data) - cur_npoints
+                        if len(self._size) > 0:
+                            new_size = copy(self._size[-1])
+                            for i in self._dims_displayed:
+                                new_size[i] = self.current_size
+                        else:
+                            # Add the default size, with a value for each dimension
+                            new_size = np.repeat(
+                                self.current_size, self._size.shape[1]
+                            )
+                        size = np.repeat([new_size], adding, axis=0)
 
-                for k in self.properties:
-                    new_property = np.repeat(
-                        self.current_properties[k], adding, axis=0
-                    )
-                    self.properties[k] = np.concatenate(
-                        (self.properties[k], new_property), axis=0
-                    )
+                        for k in self.properties:
+                            new_property = np.repeat(
+                                self.current_properties[k], adding, axis=0
+                            )
+                            self.properties[k] = np.concatenate(
+                                (self.properties[k], new_property), axis=0
+                            )
 
-                # add new edge colors
-                self._add_point_color(adding, 'edge')
+                        # add new colors
+                        self._edge._add(n_colors=adding)
+                        self._face._add(n_colors=adding)
 
-                # add new face colors
-                self._add_point_color(adding, 'face')
+                        self.size = np.concatenate((self._size, size), axis=0)
+                        self.selected_data = set(
+                            np.arange(cur_npoints, len(data))
+                        )
 
-                self.size = np.concatenate((self._size, size), axis=0)
-                self.selected_data = set(np.arange(cur_npoints, len(data)))
-
-                self.text.add(self.current_properties, adding)
+                        self.text.add(self.current_properties, adding)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
 
-    def _add_point_color(self, adding: int, attribute: str):
-        """Add the edge or face colors for new points.
-
-        Parameters
-        ----------
-        adding : int
-            the number of points that were added
-            (and thus the number of color entries to add)
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
-        """
-        color_mode = getattr(self, f'_{attribute}_color_mode')
-        if color_mode == ColorMode.DIRECT:
-            current_face_color = getattr(self, f'_current_{attribute}_color')
-            new_colors = np.tile(current_face_color, (adding, 1))
-        elif color_mode == ColorMode.CYCLE:
-            property_name = getattr(self, f'_{attribute}_color_property')
-            color_property_value = self.current_properties[property_name][0]
-
-            # check if the new color property is in the cycle map
-            # and add it if it is not
-            color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
-            color_cycle_keys = [*color_cycle_map]
-            if color_property_value not in color_cycle_keys:
-                color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                color_cycle_map[color_property_value] = np.squeeze(
-                    transform_color(next(color_cycle))
-                )
-
-                setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
-
-            new_colors = np.tile(
-                color_cycle_map[color_property_value], (adding, 1)
-            )
-        elif color_mode == ColorMode.COLORMAP:
-            property_name = getattr(self, f'_{attribute}_color_property')
-            color_property_value = self.current_properties[property_name][0]
-            colormap = getattr(self, f'{attribute}_colormap')
-            contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
-
-            fc, _ = map_property(
-                prop=color_property_value,
-                colormap=colormap,
-                contrast_limits=contrast_limits,
-            )
-            new_colors = np.tile(fc, (adding, 1))
-        colors = getattr(self, f'{attribute}_color')
-        if len(colors) == 0:
-            setattr(self, f'_{attribute}_color', new_colors)
+    def _on_selection(self, selected):
+        if selected:
+            self._set_highlight()
         else:
-            setattr(
-                self, f'_{attribute}_color', np.vstack((colors, new_colors))
-            )
+            self._highlight_box = None
+            self._highlight_index = []
+            self.events.highlight()
+
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
-    @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
-        if self._face_color_property and (
-            self._face_color_property not in self._properties
-        ):
-            self._face_color_property = ''
-            warnings.warn(
-                'property used for face_color dropped', RuntimeWarning
-            )
+    @staticmethod
+    def _update_color_manager(
+        color_manager, properties, current_properties, name
+    ):
+        if color_manager.color_properties is not None:
+            if color_manager.color_properties.name not in properties:
+                color_manager.color_mode = ColorMode.DIRECT
+                color_manager.color_properties = None
+                warnings.warn(
+                    trans._(
+                        'property used for {name} dropped',
+                        deferred=True,
+                        name=name,
+                    ),
+                    RuntimeWarning,
+                )
+            else:
+                color_name = color_manager.color_properties.name
+                color_manager.color_properties = {
+                    'name': color_name,
+                    'values': properties[color_name],
+                    'current_value': current_properties[color_name],
+                }
 
-        if self._edge_color_property and (
-            self._edge_color_property not in self._properties
-        ):
-            self._edge_color_property = ''
-            warnings.warn(
-                'property used for edge_color dropped', RuntimeWarning
-            )
+    @properties.setter
+    def properties(
+        self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
+    ):
+        self._properties, self._property_choices = self._prepare_properties(
+            properties, self._property_choices
+        )
+        self._update_color_manager(
+            self._face,
+            self._properties,
+            self._current_properties,
+            "face_color",
+        )
+        self._update_color_manager(
+            self._edge,
+            self._properties,
+            self._current_properties,
+            "edge_color",
+        )
 
         if self.text.values is not None:
             self.refresh_text()
+        self.events.properties()
+
+    def _prepare_properties(
+        self,
+        properties: Union[
+            Dict[str, Union[np.ndarray, list]], 'DataFrame', None
+        ],
+        property_choices: Dict[str, Union[np.ndarray, list]] = None,
+        save_choices: bool = False,
+    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+        """Return properties in a normalized dict-of-columns format.
+
+        Parameters
+        ----------
+        properties : Union[dict, DataFrame]
+            properties to be transformed
+        property_choices : Dict[str, np.ndarray]
+            previous choices
+        save_choices : bool
+            preserve property choices that are not available in input columns.
+
+        Returns
+        -------
+        properties (dict):
+            properties dictionary
+        """
+        if property_choices is None:
+            property_choices = {}
+        if properties is None:
+            properties = {}
+        if not isinstance(properties, dict):
+            properties, _ = dataframe_to_properties(properties)
+
+        new_choices = {
+            k: np.unique(np.concatenate((v, property_choices.get(k, []))))
+            for k, v in properties.items()
+        }
+        if not new_choices:
+            # case of set empty properties when have available choices list
+            new_choices = {
+                k: np.unique(v) for k, v in property_choices.items()
+            }
+        if not properties and new_choices:
+            if self._data.size:
+                properties = {
+                    k: [None] * self._data.shape[0] for k in new_choices
+                }
+            else:
+                properties = {
+                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
+                }
+        if save_choices:
+            for k, v in property_choices.items():
+                if k not in new_choices:
+                    new_choices[k] = np.unique(v)
+                    properties[k] = [None] * self._data.shape[0]
+        return self._validate_properties(properties), new_choices
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
@@ -636,7 +622,8 @@ class Points(Layer):
                 props[k][list(self.selected_data)] = current_properties[k]
             self.properties = props
 
-            self.refresh_colors()
+        self._edge._update_current_properties(current_properties)
+        self._face._update_current_properties(current_properties)
         self.events.current_properties()
 
     def _validate_properties(
@@ -646,7 +633,10 @@ class Points(Layer):
         for k, v in properties.items():
             if len(v) != len(self.data):
                 raise ValueError(
-                    'the number of properties must equal the number of points'
+                    trans._(
+                        'the number of properties must equal the number of points',
+                        deferred=True,
+                    )
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -736,7 +726,12 @@ class Points(Layer):
                     size, self.data.shape[::-1]
                 ).T.copy()
             except Exception:
-                raise ValueError("Size is not compatible for broadcasting")
+                raise ValueError(
+                    trans._(
+                        "Size is not compatible for broadcasting",
+                        deferred=True,
+                    )
+                )
         self.refresh()
 
     @property
@@ -756,7 +751,6 @@ class Points(Layer):
                 self.size[i, :] = (self.size[i, :] > 0) * size
             self.refresh()
             self.events.size()
-        self.status = format_float(self.current_size)
 
     @property
     def edge_width(self) -> Union[None, int, float]:
@@ -766,31 +760,36 @@ class Points(Layer):
     @edge_width.setter
     def edge_width(self, edge_width: Union[None, float]) -> None:
         self._edge_width = edge_width
-        self.status = format_float(self.edge_width)
         self.events.edge_width()
 
     @property
     def edge_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each point"""
-        return self._edge_color
+        return self._edge.colors
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        self._set_color(edge_color, 'edge')
+        self._edge._set_color(
+            color=edge_color,
+            n_colors=len(self.data),
+            properties=self.properties,
+            current_properties=self.current_properties,
+        )
+        self.events.edge_color()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
         """Union[list, np.ndarray] :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle_values
+        return self._edge.categorical_colormap.fallback_color.values
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
-        self._set_color_cycle(edge_color_cycle, 'edge')
+        self._edge.categorical_colormap = edge_color_cycle
 
     @property
-    def edge_colormap(self) -> Tuple[str, Colormap]:
+    def edge_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -798,43 +797,44 @@ class Points(Layer):
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._edge_colormap
+        return self._edge.continuous_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        self._edge_colormap = ensure_colormap(colormap)
+        self._edge.continuous_colormap = colormap
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
-        return self._edge_contrast_limits
+        return self._edge.contrast_limits
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._edge_contrast_limits = contrast_limits
+        self._edge.contrast_limits = contrast_limits
 
     @property
     def current_edge_color(self) -> str:
         """str: Edge color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._current_edge_color)[0]
+        hex_ = rgb_to_hex(self._edge.current_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
     def current_edge_color(self, edge_color: ColorType) -> None:
-        self._current_edge_color = transform_color(edge_color)
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode != Mode.ADD
         ):
-            cur_colors: np.ndarray = self.edge_color
-            index = list(self.selected_data)
-            cur_colors[index] = self._current_edge_color
-            self.edge_color = cur_colors
+            update_indices = list(self.selected_data)
+        else:
+            update_indices = []
+        self._edge._update_current_color(
+            edge_color, update_indices=update_indices
+        )
         self.events.current_edge_color()
 
     @property
@@ -847,7 +847,7 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return str(self._edge_color_mode)
+        return self._edge.color_mode
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
@@ -856,25 +856,31 @@ class Points(Layer):
     @property
     def face_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA face colors for each point"""
-        return self._face_color
+        return self._face.colors
 
     @face_color.setter
     def face_color(self, face_color):
-        self._set_color(face_color, 'face')
+        self._face._set_color(
+            color=face_color,
+            n_colors=len(self.data),
+            properties=self.properties,
+            current_properties=self.current_properties,
+        )
+        self.events.face_color()
 
     @property
     def face_color_cycle(self) -> np.ndarray:
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._face_color_cycle_values
+        return self._face.categorical_colormap.fallback_color.values
 
     @face_color_cycle.setter
     def face_color_cycle(self, face_color_cycle: Union[np.ndarray, cycle]):
-        self._set_color_cycle(face_color_cycle, 'face')
+        self._face.categorical_colormap = face_color_cycle
 
     @property
-    def face_colormap(self) -> Tuple[str, Colormap]:
+    def face_colormap(self) -> Colormap:
         """Return the colormap to be applied to a property to get the face color.
 
         Returns
@@ -882,44 +888,45 @@ class Points(Layer):
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._face_colormap
+        return self._face.continuous_colormap
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg):
-        self._face_colormap = ensure_colormap(colormap)
+        self._face.continuous_colormap = colormap
 
     @property
     def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
-        return self._face_contrast_limits
+        return self._face.contrast_limits
 
     @face_contrast_limits.setter
     def face_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._face_contrast_limits = contrast_limits
+        self._face.contrast_limits = contrast_limits
 
     @property
     def current_face_color(self) -> str:
         """Face color of marker for the next added point or the selected point(s)."""
-        hex_ = rgb_to_hex(self._current_face_color)[0]
+        hex_ = rgb_to_hex(self._face.current_color)[0]
         return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
     def current_face_color(self, face_color: ColorType) -> None:
-        self._current_face_color = transform_color(face_color)
+
         if (
             self._update_properties
             and len(self.selected_data) > 0
             and self._mode != Mode.ADD
         ):
-            cur_colors: np.ndarray = self.face_color
-            index = list(self.selected_data)
-            cur_colors[index] = self._current_face_color
-            self.face_color = cur_colors
-
+            update_indices = list(self.selected_data)
+        else:
+            update_indices = []
+        self._face._update_current_color(
+            face_color, update_indices=update_indices
+        )
         self.events.current_face_color()
 
     @property
@@ -932,7 +939,7 @@ class Points(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return str(self._face_color_mode)
+        return self._face.color_mode
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
@@ -941,7 +948,7 @@ class Points(Layer):
     def _set_color_mode(
         self, color_mode: Union[ColorMode, str], attribute: str
     ):
-        """ Set the face_color_mode or edge_color_mode property
+        """Set the face_color_mode or edge_color_mode property
 
         Parameters
         ----------
@@ -953,116 +960,57 @@ class Points(Layer):
             Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
         """
         color_mode = ColorMode(color_mode)
+        color_manager = getattr(self, f'_{attribute}')
 
         if color_mode == ColorMode.DIRECT:
-            setattr(self, f'_{attribute}_color_mode', color_mode)
+            color_manager.color_mode = color_mode
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            color_property = getattr(self, f'_{attribute}_color_property')
+            if color_manager.color_properties is not None:
+                color_property = color_manager.color_properties.name
+            else:
+                color_property = ''
             if color_property == '':
                 if self.properties:
                     new_color_property = next(iter(self.properties))
-                    setattr(
-                        self,
-                        f'_{attribute}_color_property',
-                        new_color_property,
-                    )
+                    color_manager.color_properties = {
+                        'name': new_color_property,
+                        'values': self.properties[new_color_property],
+                        'current_value': np.squeeze(
+                            self.current_properties[new_color_property]
+                        ),
+                    }
                     warnings.warn(
-                        f'_{attribute}_color_property was not set, '
-                        f'setting to: {new_color_property}'
+                        trans._(
+                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            deferred=True,
+                            attribute=attribute,
+                            new_color_property=new_color_property,
+                        )
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use '
-                        f'{color_mode}'
+                        trans._(
+                            'There must be a valid Points.properties to use {color_mode}',
+                            deferred=True,
+                            color_mode=color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
-            color_property = getattr(self, f'_{attribute}_color_property')
+            color_property = color_manager.color_properties.name
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
-            setattr(self, f'_{attribute}_color_mode', color_mode)
-            self.refresh_colors()
-
-    def _set_color(self, color: ColorType, attribute: str):
-        """ Set the face_color or edge_color property
-
-        Parameters
-        ----------
-        color : (N, 4) array or str
-            The value for setting edge or face_color
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        """
-        # if the provided color is a string, first check if it is a key in the properties.
-        # otherwise, assume it is the name of a color
-        if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
-                setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
-            else:
-                setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
-            setattr(self, f'_{attribute}_color_property', color)
-            self.refresh_colors()
-
-        else:
-            transformed_color = transform_color_with_defaults(
-                num_entries=len(self.data),
-                colors=color,
-                elem_name="face_color",
-                default="white",
-            )
-            colors = normalize_and_broadcast_colors(
-                len(self.data), transformed_color
-            )
-            setattr(self, f'_{attribute}_color', colors)
-            setattr(self, f'_{attribute}_color_mode', ColorMode.DIRECT)
-
-            color_event = getattr(self.events, f'{attribute}_color')
-            color_event()
-
-    def _set_color_cycle(self, color_cycle: np.ndarray, attribute: str):
-        """ Set the face_color_cycle or edge_color_cycle property
-
-        Parameters
-        ----------
-        color_cycle : (N, 4) or (N, 1) array
-            The value for setting edge or face_color_cycle
-        attribute : str in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        """
-        if isinstance(color_cycle, dict):
-            if None not in color_cycle:
-                color_cycle[None] = 'white'
-            transformed_colors = {
-                key: transform_color(value)[0]
-                for key, value in color_cycle.items()
-            }
-            setattr(self, f'_{attribute}_color_cycle', transformed_colors)
-        else:
-            (
-                transformed_color_cycle,
-                transformed_colors,
-            ) = transform_color_cycle(
-                color_cycle=color_cycle,
-                elem_name=f'{attribute}_color_cycle',
-                default="white",
-            )
-            setattr(
-                self, f'_{attribute}_color_cycle_values', transformed_colors
-            )
-            setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
-        color_mode = getattr(self, f'_{attribute}_color_mode')
-        if color_mode == ColorMode.CYCLE:
-            self.refresh_colors(update_color_mapping=True)
+            color_manager.color_mode = color_mode
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
-
         Parameters
         ----------
         update_color_mapping : bool
@@ -1074,132 +1022,8 @@ class Points(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-
-        self._refresh_color('face', update_color_mapping)
-        self._refresh_color('edge', update_color_mapping)
-
-    def _refresh_color(self, attribute, update_color_mapping: bool = False):
-        """Calculate and update face or edge colors if using a cycle or color map
-
-        Parameters
-        ----------
-        attribute : str  in {'edge', 'face'}
-            The name of the attribute to set the color of.
-            Should be 'edge' for edge_color or 'face' for face_color.
-        update_color_mapping : bool
-            If set to True, the function will recalculate the color cycle map
-            or colormap (whichever is being used). If set to False, the function
-            will use the current color cycle map or color map. For example, if you
-            are adding/modifying points and want them to be colored with the same
-            mapping as the other points (i.e., the new points shouldn't affect
-            the color cycle map or colormap), set update_color_mapping=False.
-            Default value is False.
-        """
-        if self._update_properties:
-            color_mode = getattr(self, f'_{attribute}_color_mode')
-            if color_mode == ColorMode.CYCLE:
-                color_property = getattr(self, f'_{attribute}_color_property')
-                color_properties = self.properties[color_property]
-                if update_color_mapping:
-                    color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                    if isinstance(color_cycle, dict):
-                        color_cycle_map = color_cycle
-                    else:
-                        color_cycle_map = {
-                            k: np.squeeze(transform_color(c))
-                            for k, c in zip(
-                                np.unique(color_properties), color_cycle
-                            )
-                        }
-                    setattr(
-                        self, f'{attribute}_color_cycle_map', color_cycle_map
-                    )
-
-                else:
-                    # add properties if they are not in the colormap
-                    # and update_color_mapping==False
-                    color_cycle_map = getattr(
-                        self, f'{attribute}_color_cycle_map'
-                    )
-                    color_cycle_keys = [*color_cycle_map]
-                    props_in_map = np.in1d(color_properties, color_cycle_keys)
-                    if not np.all(props_in_map):
-                        props_to_add = np.unique(
-                            color_properties[np.logical_not(props_in_map)]
-                        )
-                        color_cycle = getattr(
-                            self, f'_{attribute}_color_cycle'
-                        )
-                        for prop in props_to_add:
-                            color_cycle_map[prop] = np.squeeze(
-                                transform_color(
-                                    color_cycle[prop]
-                                    if isinstance(color_cycle, dict)
-                                    and prop in color_cycle
-                                    else color_cycle[None]
-                                    if isinstance(color_cycle, dict)
-                                    else next(color_cycle)
-                                )
-                            )
-                        setattr(
-                            self,
-                            f'{attribute}_color_cycle_map',
-                            color_cycle_map,
-                        )
-                colors = np.array(
-                    [color_cycle_map[x] for x in color_properties]
-                )
-                if len(colors) == 0:
-                    colors = np.empty((0, 4))
-                setattr(self, f'_{attribute}_color', colors)
-
-            elif color_mode == ColorMode.COLORMAP:
-                color_property = getattr(self, f'_{attribute}_color_property')
-                color_properties = self.properties[color_property]
-                if len(color_properties) > 0:
-                    contrast_limits = getattr(
-                        self, f'{attribute}_contrast_limits'
-                    )
-                    colormap = getattr(self, f'{attribute}_colormap')
-                    if update_color_mapping or contrast_limits is None:
-
-                        colors, contrast_limits = map_property(
-                            prop=color_properties, colormap=colormap
-                        )
-                        setattr(
-                            self,
-                            f'{attribute}_contrast_limits',
-                            contrast_limits,
-                        )
-                    else:
-
-                        colors, _ = map_property(
-                            prop=color_properties,
-                            colormap=colormap,
-                            contrast_limits=contrast_limits,
-                        )
-                else:
-                    colors = np.empty((0, 4))
-                setattr(self, f'_{attribute}_color', colors)
-
-            color_event = getattr(self.events, f'{attribute}_color')
-            color_event()
-
-    def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
-        if isinstance(color, str):
-            if color in self.properties:
-                return True
-            else:
-                return False
-        elif isinstance(color, dict):
-            return True
-        elif isinstance(color, (list, np.ndarray)):
-            return False
-        else:
-            raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an property'
-            )
+        self._edge._refresh_colors(self.properties, update_color_mapping)
+        self._face._refresh_colors(self.properties, update_color_mapping)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -1223,6 +1047,7 @@ class Points(Layer):
                 'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
+                'property_choices': self._property_choices,
                 'text': self.text._get_state(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
@@ -1249,7 +1074,7 @@ class Points(Layer):
         )
 
         # Update properties based on selected points
-        if len(self._selected_data) == 0:
+        if not len(self._selected_data):
             self._set_highlight()
             return
         index = list(self._selected_data)
@@ -1265,9 +1090,7 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_face_color = face_color
 
-        size = list(
-            set([self.size[i, self._dims.displayed].mean() for i in index])
-        )
+        size = list({self.size[i, self._dims_displayed].mean() for i in index})
         if len(size) == 1:
             size = size[0]
             with self.block_update_properties():
@@ -1282,7 +1105,7 @@ class Points(Layer):
                 self.current_properties = properties
         self._set_highlight()
 
-    def interaction_box(self, index) -> np.ndarray:
+    def interaction_box(self, index) -> Optional[np.ndarray]:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1292,19 +1115,16 @@ class Points(Layer):
 
         Returns
         -------
-        box : np.ndarray
+        box : np.ndarray or None
             4x2 array of corners of the interaction box in clockwise order
             starting in the upper-left corner.
         """
-        if len(index) == 0:
-            box = None
-        else:
+        if len(index) > 0:
             data = self._view_data[index]
             size = self._view_size[index]
             data = points_to_squares(data, size)
-            box = create_box(data)
-
-        return box
+            return create_box(data)
+        return None
 
     @property
     def mode(self) -> str:
@@ -1341,15 +1161,15 @@ class Points(Layer):
 
         if mode == Mode.ADD:
             self.cursor = 'pointing'
-            self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.interactive = True
+            self.help = trans._('hold <space> to pan/zoom')
             self.selected_data = set()
             self._set_highlight()
             self.mouse_drag_callbacks.append(add)
         elif mode == Mode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             # add mouse drag and move callbacks
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
@@ -1358,12 +1178,16 @@ class Points(Layer):
             self.interactive = True
             self.help = ''
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(
+                trans._(
+                    "Mode not recognized",
+                    deferred=True,
+                )
+            )
 
-        if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
+        if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
 
-        self.status = str(mode)
         self._mode = mode
         self._set_highlight()
 
@@ -1379,12 +1203,10 @@ class Points(Layer):
             Array of coordinates for the N points in view
         """
         if len(self._indices_view) > 0:
-
-            data = self.data[np.ix_(self._indices_view, self._dims.displayed)]
-
+            data = self.data[np.ix_(self._indices_view, self._dims_displayed)]
         else:
             # if no points in this slice send dummy data
-            data = np.zeros((0, self._dims.ndisplay))
+            data = np.zeros((0, self._ndisplay))
 
         return data
 
@@ -1400,7 +1222,7 @@ class Points(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> np.ndarray:
+    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -1408,9 +1230,8 @@ class Points(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
-        return self.text.compute_text_coords(
-            self._view_data, self._dims.ndisplay
-        )
+        # TODO check if it is used, as it has wrong signature and this not cause errors.
+        return self.text.compute_text_coords(self._view_data, self._ndisplay)
 
     @property
     def _view_size(self) -> np.ndarray:
@@ -1425,7 +1246,7 @@ class Points(Layer):
             # Get the point sizes and scale for ndim display
             sizes = (
                 self.size[
-                    np.ix_(self._indices_view, self._dims.displayed)
+                    np.ix_(self._indices_view, self._dims_displayed)
                 ].mean(axis=1)
                 * self._view_size_scale
             )
@@ -1462,11 +1283,7 @@ class Points(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._dims.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
-
+            self.editable = self._ndisplay < 3
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
@@ -1490,7 +1307,7 @@ class Points(Layer):
             less than 1 correspond to points located in neighboring slices.
         """
         # Get a list of the data for the points in this slice
-        not_disp = list(self._dims.not_displayed)
+        not_disp = list(self._dims_not_displayed)
         indices = np.array(dims_indices)
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
@@ -1505,25 +1322,34 @@ class Points(Layer):
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, scale
             else:
-                data = self.data[:, not_disp].astype('int')
-                matches = np.all(data == indices[not_disp], axis=1)
+                data = self.data[:, not_disp]
+                distances = np.abs(data - indices[not_disp])
+                matches = np.all(distances < 1e-5, axis=1)
                 slice_indices = np.where(matches)[0].astype(int)
                 return slice_indices, 1
         else:
-            return [], []
+            return [], np.empty(0)
 
-    def _get_value(self) -> Union[None, int]:
-        """Determine if points at current coordinates.
+    def _get_value(self, position) -> Union[None, int]:
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        selection : int or None
+        value : int or None
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
-        if len(self._view_data) > 0:
+        view_data = self._view_data
+        selection = None
+        if len(view_data) > 0:
+            displayed_position = [position[i] for i in self._dims_displayed]
             # Get the point sizes
-            distances = abs(self._view_data - self.displayed_coordinates)
+            distances = abs(view_data - displayed_position)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
@@ -1531,10 +1357,6 @@ class Points(Layer):
             indices = np.where(in_slice_matches)[0]
             if len(indices) > 0:
                 selection = self._indices_view[indices[-1]]
-            else:
-                selection = None
-        else:
-            selection = None
 
         return selection
 
@@ -1543,7 +1365,7 @@ class Points(Layer):
         # get the indices of points in view
         indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
-        self._indices_view = indices
+        self._indices_view = np.array(indices)
         # get the selected points that are in view
         self._selected_view = list(
             np.intersect1d(
@@ -1566,86 +1388,76 @@ class Points(Layer):
             Bool that forces a redraw to occur when `True`
         """
         # Check if any point ids have changed since last call
-        if self.selected:
-            if (
-                self.selected_data == self._selected_data_stored
-                and self._value == self._value_stored
-                and np.all(self._drag_box == self._drag_box_stored)
-            ) and not force:
-                return
-            self._selected_data_stored = copy(self.selected_data)
-            self._value_stored = copy(self._value)
-            self._drag_box_stored = copy(self._drag_box)
+        if (
+            self.selected_data == self._selected_data_stored
+            and self._value == self._value_stored
+            and np.all(self._drag_box == self._drag_box_stored)
+        ) and not force:
+            return
+        self._selected_data_stored = copy(self.selected_data)
+        self._value_stored = copy(self._value)
+        self._drag_box_stored = copy(self._drag_box)
 
-            if self._value is not None or len(self._selected_view) > 0:
-                if len(self._selected_view) > 0:
-                    index = copy(self._selected_view)
-                    # highlight the hovered point if not in adding mode
-                    if (
-                        self._value in self._indices_view
-                        and self._mode == Mode.SELECT
-                        and not self._is_selecting
-                    ):
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        if hover_point in index:
-                            pass
-                        else:
-                            index.append(hover_point)
-                    index.sort()
+        if self._value is not None or len(self._selected_view) > 0:
+            if len(self._selected_view) > 0:
+                index = copy(self._selected_view)
+                # highlight the hovered point if not in adding mode
+                if (
+                    self._value in self._indices_view
+                    and self._mode == Mode.SELECT
+                    and not self._is_selecting
+                ):
+                    hover_point = list(self._indices_view).index(self._value)
+                    if hover_point not in index:
+                        index.append(hover_point)
+                index.sort()
+            else:
+                # only highlight hovered points in select mode
+                if (
+                    self._value in self._indices_view
+                    and self._mode == Mode.SELECT
+                    and not self._is_selecting
+                ):
+                    hover_point = list(self._indices_view).index(self._value)
+                    index = [hover_point]
                 else:
-                    # only highlight hovered points in select mode
-                    if (
-                        self._value in self._indices_view
-                        and self._mode == Mode.SELECT
-                        and not self._is_selecting
-                    ):
-                        hover_point = list(self._indices_view).index(
-                            self._value
-                        )
-                        index = [hover_point]
-                    else:
-                        index = []
+                    index = []
 
-                self._highlight_index = index
-            else:
-                self._highlight_index = []
-
-            # only display dragging selection box in 2D
-            if self._dims.ndisplay == 2 and self._is_selecting:
-                pos = create_box(self._drag_box)
-                pos = pos[list(range(4)) + [0]]
-            else:
-                pos = None
-
-            self._highlight_box = pos
-            self.events.highlight()
+            self._highlight_index = index
         else:
-            self._highlight_box = None
             self._highlight_index = []
-            self.events.highlight()
+
+        # only display dragging selection box in 2D
+        if self._ndisplay == 2 and self._is_selecting:
+            pos = create_box(self._drag_box)
+            pos = pos[list(range(4)) + [0]]
+        else:
+            pos = None
+
+        self._highlight_box = pos
+        self.events.highlight()
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        if len(self._view_data) > 0:
+        view_data = self._view_data
+        if len(view_data) > 0:
             de = self._extent_data
-            min_vals = [de[0, i] for i in self._dims.displayed]
+            min_vals = [de[0, i] for i in self._dims_displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self._dims.displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._dims_displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
-            if len(self._view_data) > self._max_points_thumbnail:
+            if len(view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
-                    0, len(self._view_data), self._max_points_thumbnail
+                    0, len(view_data), self._max_points_thumbnail
                 )
-                points = self._view_data[thumbnail_indices]
+                points = view_data[thumbnail_indices]
             else:
-                points = self._view_data
+                points = view_data
                 thumbnail_indices = self._indices_view
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
@@ -1653,7 +1465,7 @@ class Points(Layer):
             coords = np.clip(
                 coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
             )
-            colors = self.face_color[thumbnail_indices]
+            colors = self._face.colors[thumbnail_indices]
             colormapped[coords[:, 0], coords[:, 1]] = colors
 
         colormapped[..., 3] *= self.opacity
@@ -1672,10 +1484,12 @@ class Points(Layer):
         """Removes selected points if any."""
         index = list(self.selected_data)
         index.sort()
-        if len(index) > 0:
+        if len(index):
             self._size = np.delete(self._size, index, axis=0)
-            self._edge_color = np.delete(self.edge_color, index, axis=0)
-            self._face_color = np.delete(self.face_color, index, axis=0)
+            with self._edge.events.blocker_all():
+                self._edge._remove(indices_to_remove=index)
+            with self._face.events.blocker_all():
+                self._face._remove(indices_to_remove=index)
             for k in self.properties:
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
@@ -1698,7 +1512,7 @@ class Points(Layer):
         """
         if len(index) > 0:
             index = list(index)
-            disp = list(self._dims.displayed)
+            disp = list(self._dims_displayed)
             if self._drag_start is None:
                 center = self.data[np.ix_(index, disp)].mean(axis=0)
                 self._drag_start = np.array(coord)[disp] - center
@@ -1715,7 +1529,7 @@ class Points(Layer):
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
-            not_disp = self._dims.not_displayed
+            not_disp = self._dims_not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
@@ -1726,18 +1540,15 @@ class Points(Layer):
             self._size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge_color = np.vstack(
-                (
-                    self.edge_color,
-                    transform_color(deepcopy(self._clipboard['edge_color'])),
-                )
+            self._edge._paste(
+                colors=self._clipboard['edge_color'],
+                properties=self._clipboard['properties'],
             )
-            self._face_color = np.vstack(
-                (
-                    self.face_color,
-                    transform_color(deepcopy(self._clipboard['face_color'])),
-                )
+            self._face._paste(
+                colors=self._clipboard['face_color'],
+                properties=self._clipboard['properties'],
             )
+
             for k in self.properties:
                 self.properties[k] = np.concatenate(
                     (self.properties[k], self._clipboard['properties'][k]),
@@ -1750,7 +1561,7 @@ class Points(Layer):
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
 
-            if self._clipboard['text'] is not None:
+            if len(self._clipboard['text']) > 0:
                 self.text._values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
@@ -1772,8 +1583,8 @@ class Points(Layer):
                 'indices': self._slice_indices,
             }
 
-            if self.text.values is None:
-                self._clipboard['text'] = None
+            if len(self.text.values) == 0:
+                self._clipboard['text'] = np.empty(0)
 
             else:
                 self._clipboard['text'] = deepcopy(self.text.values[index])

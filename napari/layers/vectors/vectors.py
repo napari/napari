@@ -4,22 +4,15 @@ from typing import Dict, Tuple, Union
 
 import numpy as np
 
-from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
-from ...utils.status_messages import format_float
+from ...utils.translations import trans
 from ..base import Layer
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_cycle,
-    transform_color_with_defaults,
-)
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils._color_manager_constants import ColorMode
+from ..utils.color_manager import ColorManager
+from ..utils.color_transformations import ColorType
+from ..utils.layer_utils import dataframe_to_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
-from ._vectors_constants import DEFAULT_COLOR_CYCLE, ColorMode
 
 
 class Vectors(Layer):
@@ -70,7 +63,7 @@ class Vectors(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -109,8 +102,8 @@ class Vectors(Layer):
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.
@@ -186,9 +179,8 @@ class Vectors(Layer):
             edge_width=Event,
             edge_color=Event,
             edge_color_mode=Event,
+            properties=Event,
         )
-
-        self.visible = False
 
         # Save the vector style params
         self._edge_width = edge_width
@@ -196,19 +188,29 @@ class Vectors(Layer):
         # length attribute
         self._length = length
 
-        self.data = data
+        self._data = vectors_to_coordinates(data)
+
+        vertices, triangles = generate_vector_meshes(
+            self._data[:, :, list(self._dims_displayed)],
+            self.edge_width,
+            self.length,
+        )
+        self._mesh_vertices = vertices
+        self._mesh_triangles = triangles
+        self._displayed_stored = copy(self._dims_displayed)
 
         # Save the properties
         if properties is None:
-            self._properties = {}
-            self._property_choices = {}
+            properties = {}
+            self._properties = properties
+            self._property_choices = properties
         elif len(data) > 0:
             properties, _ = dataframe_to_properties(properties)
             self._properties = self._validate_properties(properties)
             self._property_choices = {
                 k: np.unique(v) for k, v in properties.items()
             }
-        elif len(data) == 0:
+        elif len(self.data) == 0:
             self._property_choices = {
                 k: np.asarray(v) for k, v in properties.items()
             }
@@ -218,18 +220,14 @@ class Vectors(Layer):
             }
             self._properties = empty_properties
 
-        with self.block_update_properties():
-            self._edge_color_property = ''
-            self._edge_color_mode = ColorMode.DIRECT
-            self.edge_color = edge_color
-            if edge_color_cycle is None:
-                edge_color_cycle = DEFAULT_COLOR_CYCLE
-            self.edge_color_cycle = edge_color_cycle
-            self.edge_color_cycle_map = {}
-            self.edge_colormap = edge_colormap
-            self._edge_contrast_limits = edge_contrast_limits
-
-        self.refresh_colors()
+        self._edge = ColorManager._from_layer_kwargs(
+            n_colors=len(self.data),
+            colors=edge_color,
+            continuous_colormap=edge_colormap,
+            contrast_limits=edge_contrast_limits,
+            categorical_colormap=edge_color_cycle,
+            properties=properties,
+        )
 
         # Data containing vectors in the currently viewed slice
         self._view_data = np.empty((0, 2, 2))
@@ -239,6 +237,7 @@ class Vectors(Layer):
         self._view_indices = []
 
         # now that everything is set up, make the layer visible (if set to visible)
+        self._update_dims()
         self.visible = visible
 
     @property
@@ -248,19 +247,53 @@ class Vectors(Layer):
 
     @data.setter
     def data(self, vectors: np.ndarray):
+        previous_n_vectors = len(self.data)
+
         self._data = vectors_to_coordinates(vectors)
+        n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims.displayed)],
+            self._data[:, :, list(self._dims_displayed)],
             self.edge_width,
             self.length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims.displayed)
+        self._displayed_stored = copy(self._dims_displayed)
+
+        # Adjust the props/color arrays when the number of vectors has changed
+        with self.events.blocker_all():
+            with self._edge.events.blocker_all():
+                if n_vectors < previous_n_vectors:
+                    # If there are now fewer points, remove the size and colors of the
+                    # extra ones
+                    if len(self._edge.colors) > n_vectors:
+                        self._edge._remove(
+                            np.arange(n_vectors, len(self._edge.colors))
+                        )
+
+                    for k in self.properties:
+                        self.properties[k] = self.properties[k][:n_vectors]
+
+                elif n_vectors > previous_n_vectors:
+                    # If there are now more points, add the size and colors of the
+                    # new ones
+                    adding = n_vectors - previous_n_vectors
+
+                    for k in self.properties:
+                        new_property = np.repeat(
+                            self.properties[k][-1], adding, axis=0
+                        )
+                        self.properties[k] = np.concatenate(
+                            (self.properties[k], new_property), axis=0
+                        )
+
+                    # add new colors
+                    self._edge._add(n_colors=adding)
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -272,11 +305,26 @@ class Vectors(Layer):
         if not isinstance(properties, dict):
             properties, _ = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
-        if self._edge_color_property and (
-            self._edge_color_property not in self._properties
-        ):
-            self._edge_color_property = ''
-            warnings.warn('property used for edge_color dropped')
+
+        if self._edge.color_properties is not None:
+            if self._edge.color_properties.name not in self._properties:
+                self._edge.color_mode = ColorMode.DIRECT
+                self._edge.color_properties = None
+                warnings.warn(
+                    trans._(
+                        'property used for edge_color dropped',
+                        deferred=True,
+                    ),
+                    RuntimeWarning,
+                )
+            else:
+                edge_color_name = self._edge.color_properties.name
+                self._edge.color_properties = {
+                    'name': edge_color_name,
+                    'values': properties[edge_color_name],
+                    'current_value': self._properties[edge_color_name][-1],
+                }
+        self.events.properties()
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
@@ -285,7 +333,10 @@ class Vectors(Layer):
         for v in properties.values():
             if len(v) != len(self.data):
                 raise ValueError(
-                    'the number of properties must equal the number of points'
+                    trans._(
+                        'the number of properties must equal the number of points',
+                        deferred=True,
+                    )
                 )
 
         return properties
@@ -346,17 +397,16 @@ class Vectors(Layer):
         self._edge_width = edge_width
 
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims.displayed)],
+            self.data[:, :, list(self._dims_displayed)],
             self._edge_width,
             self.length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims.displayed)
+        self._displayed_stored = copy(self._dims_displayed)
 
         self.events.edge_width()
         self.refresh()
-        self.status = format_float(self.edge_width)
 
     @property
     def length(self) -> Union[int, float]:
@@ -368,60 +418,34 @@ class Vectors(Layer):
         self._length = length
 
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims.displayed)],
+            self.data[:, :, list(self._dims_displayed)],
             self.edge_width,
             self._length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims.displayed)
+        self._displayed_stored = copy(self._dims_displayed)
 
         self.events.length()
         self.refresh()
-        self.status = format_float(self.length)
 
     @property
     def edge_color(self) -> np.ndarray:
         """(1 x 4) np.ndarray: Array of RGBA edge colors (applied to all vectors)"""
-        return self._edge_color
+        return self._edge.colors
 
     @edge_color.setter
-    def edge_color(self, edge_color: str):
-        # save the old mode, we will emit an event if the mode has changed
-        old_mode = self._edge_color_mode
+    def edge_color(self, edge_color: ColorType):
+        # since Vectors doesn't have "current properties", we have to make them
+        current_properties = {k: v[-1] for k, v in self.properties.items()}
 
-        # if the provided face color is a string, first check if it is a key in the properties.
-        # otherwise, assume it is the name of a color
-        if self._is_color_mapped(edge_color):
-            if guess_continuous(self.properties[edge_color]):
-                new_mode = ColorMode.COLORMAP
-                self._edge_color_mode = new_mode
-            else:
-                new_mode = ColorMode.CYCLE
-                self._edge_color_mode = new_mode
-            self._edge_color_property = edge_color
-            self.refresh_colors()
-
-        else:
-            transformed_color = transform_color_with_defaults(
-                num_entries=len(self.data),
-                colors=edge_color,
-                elem_name="edge_color",
-                default="white",
-            )
-            self._edge_color = normalize_and_broadcast_colors(
-                len(self.data), transformed_color
-            )
-            new_mode = ColorMode.DIRECT
-            self._edge_color_mode = new_mode
-            self._edge_color_property = ''
-
-            self.events.edge_color()
-
-            if self.visible:
-                self._update_thumbnail()
-        if new_mode != old_mode:
-            self.events.edge_color_mode()
+        self._edge._set_color(
+            color=edge_color,
+            n_colors=len(self.data),
+            properties=self.properties,
+            current_properties=current_properties,
+        )
+        self.events.edge_color()
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update edge colors if using a cycle or color map
@@ -437,83 +461,7 @@ class Vectors(Layer):
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
-        if self._update_properties:
-            if self._edge_color_mode == ColorMode.CYCLE:
-                edge_color_properties = self.properties[
-                    self._edge_color_property
-                ]
-                if update_color_mapping:
-                    self.edge_color_cycle_map = {
-                        k: c
-                        for k, c in zip(
-                            np.unique(edge_color_properties),
-                            self._edge_color_cycle,
-                        )
-                    }
-                else:
-                    # add properties if they are not in the colormap
-                    # and update_color_mapping==False
-                    edge_color_cycle_keys = [*self.edge_color_cycle_map]
-                    props_in_map = np.in1d(
-                        edge_color_properties, edge_color_cycle_keys
-                    )
-                    if not np.all(props_in_map):
-                        props_to_add = np.unique(
-                            edge_color_properties[np.logical_not(props_in_map)]
-                        )
-                        for prop in props_to_add:
-                            self.edge_color_cycle_map[prop] = next(
-                                self._edge_color_cycle
-                            )
-                edge_colors = np.array(
-                    [
-                        self.edge_color_cycle_map[x]
-                        for x in edge_color_properties
-                    ]
-                )
-                if len(edge_colors) == 0:
-                    edge_colors = np.empty((0, 4))
-                self._edge_color = edge_colors
-            elif self._edge_color_mode == ColorMode.COLORMAP:
-                edge_color_properties = self.properties[
-                    self._edge_color_property
-                ]
-                if len(edge_color_properties) > 0:
-                    if (
-                        update_color_mapping
-                        or self.edge_contrast_limits is None
-                    ):
-                        edge_colors, contrast_limits = map_property(
-                            prop=edge_color_properties,
-                            colormap=self.edge_colormap,
-                        )
-                        self.edge_contrast_limits = contrast_limits
-                    else:
-                        edge_colors, _ = map_property(
-                            prop=edge_color_properties,
-                            colormap=self.edge_colormap,
-                            contrast_limits=self.edge_contrast_limits,
-                        )
-                else:
-                    edge_colors = np.empty((0, 4))
-                self._edge_color = edge_colors
-            self.events.edge_color()
-            if self.visible:
-                self._update_thumbnail()
-
-    def _is_color_mapped(self, color) -> bool:
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
-        if isinstance(color, str):
-            if color in self.properties:
-                return True
-            else:
-                return False
-        elif isinstance(color, (list, np.ndarray)):
-            return False
-        else:
-            raise ValueError(
-                'edge_color should be the name of a color, an array of colors, or the name of an property'
-            )
+        self._edge._refresh_colors(self.properties, update_color_mapping)
 
     @property
     def edge_color_mode(self) -> ColorMode:
@@ -525,7 +473,7 @@ class Vectors(Layer):
 
         COLORMAP allows color to be set via a color map over an attribute
         """
-        return str(self._edge_color_mode)
+        return self._edge.color_mode
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
@@ -534,30 +482,54 @@ class Vectors(Layer):
         if edge_color_mode == ColorMode.DIRECT:
             self._edge_color_mode = edge_color_mode
         elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            if self._edge_color_property == '':
+            if self._edge.color_properties is not None:
+                color_property = self._edge.color_properties.name
+            else:
+                color_property = ''
+            if color_property == '':
                 if self.properties:
-                    self._edge_color_property = next(iter(self.properties))
-                    warning_msg = (
-                        'edge_color_property was not set, setting to: %s'
-                        % self._edge_color_property
+                    color_property = next(iter(self.properties))
+                    # vectors doesn't have current properties, so we have to make it
+                    current_properties = {
+                        k: v[-1] for k, v in self.properties.items()
+                    }
+                    self._edge.color_properties = {
+                        'name': color_property,
+                        'values': self.properties[color_property],
+                        'current_value': np.squeeze(
+                            current_properties[color_property]
+                        ),
+                    }
+                    warnings.warn(
+                        trans._(
+                            'edge_color property was not set, setting to: {color_property}',
+                            deferred=True,
+                            color_property=color_property,
+                        ),
+                        RuntimeWarning,
                     )
-                    warnings.warn(warning_msg, RuntimeWarning)
                 else:
                     raise ValueError(
-                        'There must valid properties to use %s color mode'
-                        % str(edge_color_mode)
+                        trans._(
+                            'There must be a valid Points.properties to use {edge_color_mode}',
+                            deferred=True,
+                            edge_color_mode=edge_color_mode,
+                        )
                     )
+
             # ColorMode.COLORMAP can only be applied to numeric properties
             if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[self._edge_color_property].dtype.type,
+                self.properties[color_property].dtype.type,
                 np.number,
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
 
-            self._edge_color_mode = edge_color_mode
-            self.refresh_colors()
+            self._edge.color_mode = edge_color_mode
         self.events.edge_color_mode()
 
     @property
@@ -565,19 +537,11 @@ class Vectors(Layer):
         """list, np.ndarray :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle_values
+        return self._edge.categorical_colormap.fallback_color.values
 
     @edge_color_cycle.setter
     def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
-        transformed_color_cycle, transformed_colors = transform_color_cycle(
-            color_cycle=edge_color_cycle,
-            elem_name='edge_color_cycle',
-            default="white",
-        )
-        self._edge_color_cycle_values = transformed_colors
-        self._edge_color_cycle = transformed_color_cycle
-        if self._edge_color_mode == ColorMode.CYCLE:
-            self.refresh_colors(update_color_mapping=True)
+        self._edge.categorical_colormap = edge_color_cycle
 
     @property
     def edge_colormap(self) -> Tuple[str, Colormap]:
@@ -588,30 +552,30 @@ class Vectors(Layer):
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._edge_colormap
+        return self._edge.continuous_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        self._edge_colormap = ensure_colormap(colormap)
+        self._edge.continuous_colormap = colormap
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
-        return self._edge_contrast_limits
+        return self._edge.contrast_limits
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
-        self._edge_contrast_limits = contrast_limits
+        self._edge.contrast_limits = contrast_limits
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """" (Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
-        if self._dims.ndisplay == 3 and self.ndim > 2:
+        if self._ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
@@ -619,19 +583,19 @@ class Vectors(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        if not self._dims.displayed == self._displayed_stored:
+        if not self._dims_displayed == self._displayed_stored:
             vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims.displayed)],
+                self.data[:, :, list(self._dims_displayed)],
                 self.edge_width,
                 self.length,
             )
             self._mesh_vertices = vertices
             self._mesh_triangles = triangles
-            self._displayed_stored = copy(self._dims.displayed)
+            self._displayed_stored = copy(self._dims_displayed)
 
         vertices = self._mesh_vertices
-        not_disp = list(self._dims.not_displayed)
-        disp = list(self._dims.displayed)
+        not_disp = list(self._dims_not_displayed)
+        disp = list(self._dims_displayed)
         indices = np.array(self._slice_indices)
 
         if len(self.data) == 0:
@@ -649,7 +613,7 @@ class Vectors(Layer):
             else:
                 keep_inds = np.repeat(2 * matches, 2)
                 keep_inds[1::2] = keep_inds[1::2] + 1
-                if self._dims.ndisplay == 3:
+                if self._ndisplay == 3:
                     keep_inds = np.concatenate(
                         [
                             keep_inds,
@@ -676,14 +640,14 @@ class Vectors(Layer):
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
         de = self._extent_data
-        offset = (np.array([de[0, d] for d in self._dims.displayed]) + 0.5)[
+        offset = (np.array([de[0, d] for d in self._dims_displayed]) + 0.5)[
             -2:
         ]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [de[1, d] - de[0, d] + 1 for d in self._dims.displayed]
+            [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
@@ -704,7 +668,7 @@ class Vectors(Layer):
         )
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        edge_colors = self.edge_color[thumbnail_color_indices]
+        edge_colors = self._edge.colors[thumbnail_color_indices]
         for v, ec in zip(downsampled, edge_colors):
             start = v[0]
             stop = v[1]
@@ -716,14 +680,17 @@ class Vectors(Layer):
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self) -> None:
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        value : int, None
+        value : None
             Value of the data at the coord.
         """
-
         return None

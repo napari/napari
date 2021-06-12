@@ -3,8 +3,6 @@ Displays a multiscale image
 """
 
 from skimage import data
-from skimage.util import img_as_ubyte
-from skimage.color import rgb2gray
 from skimage.transform import pyramid_gaussian
 import napari
 import numpy as np
@@ -17,6 +15,6 @@ multiscale = list(
 )
 print('multiscale level shapes: ', [p.shape[:2] for p in multiscale])
 
-with napari.gui_qt():
-    # add image multiscale
-    napari.view_image(multiscale, multiscale=True)
+# add image multiscale
+viewer = napari.view_image(multiscale, multiscale=True)
+napari.run()

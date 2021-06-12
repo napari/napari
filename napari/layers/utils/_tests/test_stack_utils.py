@@ -7,6 +7,7 @@ from napari.layers.utils.stack_utils import (
     split_channels,
     stack_to_images,
 )
+from napari.utils.transforms import Affine
 
 
 def test_stack_to_images_basic():
@@ -156,6 +157,8 @@ def test_images_to_stack_none_scale():
             'blending': None,
             'visible': True,
             'multiscale': None,
+            'rotate': None,
+            'affine': None,
         },
         {
             'rgb': None,
@@ -224,3 +227,45 @@ def test_split_channels_missing_keywords():
     for d, meta, _ in result_list:
         assert d.shape == (128, 128)
         assert meta['blending'] == 'additive'
+
+
+def test_split_channels_affine_nparray(kwargs):
+    kwargs['affine'] = np.eye(3)
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for d, meta, _ in result_list:
+        assert d.shape == (128, 128)
+        assert np.array_equal(meta['affine'], np.eye(3))
+
+
+def test_split_channels_affine_napari(kwargs):
+    kwargs['affine'] = Affine(affine_matrix=np.eye(3))
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for d, meta, _ in result_list:
+        assert d.shape == (128, 128)
+        assert np.array_equal(meta['affine'].affine_matrix, np.eye(3))
+
+
+def test_split_channels_multi_affine_napari(kwargs):
+    kwargs['affine'] = [
+        Affine(scale=[1, 1]),
+        Affine(scale=[2, 2]),
+        Affine(scale=[3, 3]),
+    ]
+
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for idx, result_data in enumerate(result_list):
+        d, meta, _ = result_data
+        assert d.shape == (128, 128)
+        assert np.array_equal(
+            meta['affine'].affine_matrix,
+            Affine(scale=[idx + 1, idx + 1]).affine_matrix,
+        )

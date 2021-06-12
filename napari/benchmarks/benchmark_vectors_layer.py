@@ -35,7 +35,7 @@ class Vectors2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 2)
 
     def time_width(self, n):
         """Time to update width."""
@@ -82,7 +82,7 @@ class Vectors3DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 3)
 
     def time_width(self, n):
         """Time to update width."""

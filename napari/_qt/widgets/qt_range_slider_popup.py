@@ -4,6 +4,7 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QDoubleValidator, QFont, QFontMetrics
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
 
+from ...utils.translations import trans
 from ..dialogs.qt_modal import QtPopup
 from ..utils import qt_signals_blocked
 from .qt_range_slider import QHRangeSlider, QVRangeSlider
@@ -145,8 +146,8 @@ class QRangeSliderPopup(QtPopup):
         self.curmax_label = LabelEdit(self._numformat(cmax), self, get_max_pos)
         self.curmin_label.editingFinished.connect(self._curmin_label_changed)
         self.curmax_label.editingFinished.connect(self._curmax_label_changed)
-        self.curmin_label.setToolTip("current minimum contrast limit")
-        self.curmax_label.setToolTip("current maximum contrast limit")
+        self.curmin_label.setToolTip(trans._("current minimum contrast limit"))
+        self.curmax_label.setToolTip(trans._("current maximum contrast limit"))
 
         # create range min/max labels (left & right of slider)
         rmin, rmax = self.slider.range()
@@ -154,8 +155,8 @@ class QRangeSliderPopup(QtPopup):
         self.range_max_label = LabelEdit(self._numformat(rmax))
         self.range_min_label.editingFinished.connect(self._range_label_changed)
         self.range_max_label.editingFinished.connect(self._range_label_changed)
-        self.range_min_label.setToolTip("minimum contrast range")
-        self.range_max_label.setToolTip("maximum contrast range")
+        self.range_min_label.setToolTip(trans._("minimum contrast range"))
+        self.range_max_label.setToolTip(trans._("maximum contrast range"))
         self.range_min_label.setAlignment(Qt.AlignRight)
 
         # add widgets to layout

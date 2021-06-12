@@ -2,30 +2,43 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+from napari_plugin_engine import HookImplementation
 
 from napari._tests.utils import layer_test_data
 from napari.components.viewer_model import ViewerModel
+from napari.layers._source import Source
 
 img = np.random.rand(10, 10)
 layer_data = [(lay[1], {}, lay[0].__name__.lower()) for lay in layer_test_data]
+
+
+def _impl(path):
+    """just a dummy Hookimpl object to return from mocks"""
+    pass
+
+
+_testimpl = HookImplementation(_impl, plugin_name='testimpl')
 
 
 @pytest.mark.parametrize("layer_datum", layer_data)
 def test_add_layers_with_plugins(layer_datum):
     """Test that add_layers_with_plugins adds the expected layer types."""
     with patch(
-        "napari.components.add_layers_mixin.read_data_with_plugins",
-        MagicMock(return_value=[layer_datum]),
+        "napari.plugins.io.read_data_with_plugins",
+        MagicMock(return_value=([layer_datum], _testimpl)),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins('mock_path')
         layertypes = [layer._type_string for layer in v.layers]
         assert layertypes == [layer_datum[2]]
 
+        expected_source = Source(path='mock_path', reader_plugin='testimpl')
+        assert all(lay.source == expected_source for lay in v.layers)
+
 
 @patch(
-    "napari.components.add_layers_mixin.read_data_with_plugins",
-    MagicMock(return_value=[]),
+    "napari.plugins.io.read_data_with_plugins",
+    MagicMock(return_value=([], _testimpl)),
 )
 def test_plugin_returns_nothing():
     """Test that a plugin returning nothing adds nothing to the Viewer."""
@@ -35,8 +48,8 @@ def test_plugin_returns_nothing():
 
 
 @patch(
-    "napari.components.add_layers_mixin.read_data_with_plugins",
-    MagicMock(return_value=[(img,)]),
+    "napari.plugins.io.read_data_with_plugins",
+    MagicMock(return_value=([(img,)], _testimpl)),
 )
 def test_viewer_open():
     """Test that a plugin to returning an image adds stuff to the viewer."""
@@ -52,6 +65,9 @@ def test_viewer_open():
     assert len(viewer.layers) == 2
     assert viewer.layers[1].name.startswith('mock_path')
 
+    expected_source = Source(path='mock_path.tif', reader_plugin='testimpl')
+    assert all(lay.source == expected_source for lay in viewer.layers)
+
 
 plugin_returns = [
     ([(img, {'name': 'foo'})], {'name': 'bar'}),
@@ -66,14 +82,17 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     see also: napari.components._test.test_prune_kwargs
     """
     with patch(
-        "napari.components.add_layers_mixin.read_data_with_plugins",
-        MagicMock(return_value=layer_data),
+        "napari.plugins.io.read_data_with_plugins",
+        MagicMock(return_value=(layer_data, _testimpl)),
     ):
+
         v = ViewerModel()
         v._add_layers_with_plugins('mock_path', kwargs=kwargs)
+        expected_source = Source(path='mock_path', reader_plugin='testimpl')
         for layer in v.layers:
             for key, val in kwargs.items():
                 assert getattr(layer, key) == val
                 # if plugins don't provide "name", it falls back to path name
                 if 'name' not in kwargs:
                     assert layer.name.startswith('mock_path')
+            assert layer.source == expected_source

@@ -21,11 +21,11 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install check-manifest pep517
+          python -m pip install check-manifest build
       - name: Build Distribution
         run: |
           check-manifest  # https://github.com/mgedmin/check-manifest
-          python -m pep517.build .
+          python -m build  # https://pypa-build.readthedocs.io/en/latest/
       - name: Find Release Notes
         id: release_notes
         run: |
@@ -40,8 +40,8 @@ jobs:
           else
             RELEASE_NOTES="pre-release $TAG"
           fi
+          echo "tag=${TAG}" >> $GITHUB_ENV
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
-          echo "::set-env name=tag::$TAG"
           echo "::set-output name=contents::$RELEASE_NOTES"
       - name: Create Release
         id: create_release

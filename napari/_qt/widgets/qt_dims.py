@@ -6,6 +6,7 @@ from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ...components.dims import Dims
+from ...utils.translations import trans
 from .._constants import LoopMode
 from .qt_dims_slider import QtDimSliderWidget
 
@@ -56,10 +57,8 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.current_step.connect(
-            lambda ev: self._update_slider(ev.axis)
-        )
-        self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
+        self.dims.events.current_step.connect(self._update_slider)
+        self.dims.events.range.connect(self._update_range)
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
@@ -89,33 +88,28 @@ class QtDims(QWidget):
             sld.style().unpolish(sld)
             sld.style().polish(sld)
 
-    def _update_slider(self, axis: int):
+    def _update_slider(self, event):
         """Updates position for a given slider.
 
         Parameters
         ----------
-        axis : int
-            Axis index.
+        event : napari.events.Event
+            Event that triggers update, emitted by viewer.dims.current_step.
         """
+        for widget in self.slider_widgets:
+            widget._update_slider()
 
-        if axis >= len(self.slider_widgets):
-            return
-
-        self.slider_widgets[axis]._update_slider()
-        self.dims.last_used = axis
-
-    def _update_range(self, axis: int):
+    def _update_range(self, event):
         """Updates range for a given slider.
 
         Parameters
         ----------
-        axis : int
-            Axis index.
+        event : napari.events.Event
+            Event that triggers update, emitted by viewer.dims.range.
         """
-        if axis >= len(self.slider_widgets):
-            return
+        for widget in self.slider_widgets:
+            widget._update_range()
 
-        self.slider_widgets[axis]._update_range()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
@@ -137,7 +131,7 @@ class QtDims(QWidget):
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
-                self.dims.last_used = None
+                self.dims.last_used = 0
                 widget.hide()
             else:
                 # Non displayed dimensions correspond to displayed sliders
@@ -252,7 +246,7 @@ class QtDims(QWidget):
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
-        self.dims.last_used = None
+        self.dims.last_used = 0
 
     def play(
         self,
@@ -298,12 +292,16 @@ class QtDims(QWidget):
             _modes = LoopMode.keys()
             if loop_mode not in _modes:
                 raise ValueError(
-                    f'loop_mode must be one of {_modes}.  Got: {loop_mode}'
+                    trans._(
+                        'loop_mode must be one of {_modes}. Got: {loop_mode}',
+                        _modes=_modes,
+                        loop_mode=loop_mode,
+                    )
                 )
             loop_mode = LoopMode(loop_mode)
 
         if axis >= self.dims.ndim:
-            raise IndexError('axis argument out of range')
+            raise IndexError(trans._('axis argument out of range'))
 
         if self.is_playing:
             if self._animation_worker.axis == axis:
@@ -323,7 +321,12 @@ class QtDims(QWidget):
             else:
                 self._animation_worker, self._animation_thread = None, None
         else:
-            warnings.warn('Refusing to play a hidden axis')
+            warnings.warn(
+                trans._(
+                    'Refusing to play a hidden axis',
+                    deferred=True,
+                )
+            )
 
     def stop(self):
         """Stop axis animation"""

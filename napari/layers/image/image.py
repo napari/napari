@@ -1,9 +1,10 @@
 """Image class.
 """
+from __future__ import annotations
+
 import types
 import warnings
-from copy import copy
-from typing import Callable, Union
+from typing import TYPE_CHECKING, Callable, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -12,7 +13,7 @@ from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.misc import guess_complex
-from ...utils.status_messages import format_float
+from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -26,26 +27,25 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-# Use sync or async SliceData class.
-if config.async_loading:
-    from .experimental._chunked_slice_data import ChunkedSliceData
-
-    SliceDataClass = ChunkedSliceData
-else:
-    SliceDataClass = ImageSliceData
+if TYPE_CHECKING:
+    from ...components.experimental.chunk import ChunkRequest
 
 
+# It is important to contain at least one abstractmethod to properly exclude this class
+# in creating NAMES set inside of napari.layers.__init__
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class _ImageBase(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
     ----------
     data : array or list of array
-        Image data. Can be N dimensional. If the last dimension has length
+        Image data. Can be N >= 2 dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        a multiscale image.
+        a multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -90,10 +90,10 @@ class Image(IntensityVisualizationMixin, Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -109,7 +109,9 @@ class Image(IntensityVisualizationMixin, Layer):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
 
     Attributes
     ----------
@@ -117,7 +119,9 @@ class Image(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreasing in shape then the data is treated as a
-        multiscale image.
+        multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -128,7 +132,9 @@ class Image(IntensityVisualizationMixin, Layer):
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
@@ -157,8 +163,8 @@ class Image(IntensityVisualizationMixin, Layer):
     attenuation : float
         Attenuation rate for attenuated maximum intensity projection.
 
-    Extended Summary
-    ----------------
+    Notes
+    -----
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
@@ -196,6 +202,11 @@ class Image(IntensityVisualizationMixin, Layer):
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
+
+        if getattr(data, 'ndim', 2) < 2:
+            raise ValueError(
+                trans._('Image data must have at least 2 dimensions.')
+            )
 
         # Determine if data is a multiscale
         if multiscale is None:
@@ -295,20 +306,18 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _new_empty_slice(self):
-        """Initialize the current slice to an empty image.
-        """
+        """Initialize the current slice to an empty image."""
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
         self._empty = True
 
     def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded.
-        """
+        """Get empty image to use as the default before data is loaded."""
         if self.rgb:
-            return np.zeros((1,) * self._dims.ndisplay + (3,))
+            return np.zeros((1,) * self._ndisplay + (3,))
         else:
-            return np.zeros((1,) * self._dims.ndisplay)
+            return np.zeros((1,) * self._ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -316,11 +325,11 @@ class Image(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self._dims.displayed_order + (
-                max(self._dims.displayed_order) + 1,
+            return self._dims_displayed_order + (
+                max(self._dims_displayed_order) + 1,
             )
         else:
-            return self._dims.displayed_order
+            return self._dims_displayed_order
 
     @property
     def _data_view(self):
@@ -339,7 +348,7 @@ class Image(IntensityVisualizationMixin, Layer):
             input_data = self.data
         if self.is_complex:
             input_data = self._complex_rendering(input_data)
-        return calc_data_range(input_data)
+        return calc_data_range(input_data, rgb=self.rgb)
 
     @property
     def dtype(self):
@@ -357,7 +366,8 @@ class Image(IntensityVisualizationMixin, Layer):
         )
         self._data = data
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -413,7 +423,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
-        self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
@@ -425,7 +434,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @attenuation.setter
     def attenuation(self, value):
-        self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
@@ -449,20 +457,18 @@ class Image(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self._dims.ndisplay])
+        return str(self._interpolation[self._ndisplay])
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self._dims.ndisplay == 3:
-            self._interpolation[self._dims.ndisplay] = Interpolation3D(
+        if self._ndisplay == 3:
+            self._interpolation[self._ndisplay] = Interpolation3D(
                 interpolation
             )
         else:
-            self._interpolation[self._dims.ndisplay] = Interpolation(
-                interpolation
-            )
-        self.events.interpolation()
+            self._interpolation[self._ndisplay] = Interpolation(interpolation)
+        self.events.interpolation(value=self._interpolation[self._ndisplay])
 
     @property
     def rendering(self):
@@ -534,56 +540,6 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         return self._slice.loaded
 
-    @property
-    def shape(self):
-        """Size of layer in world coordinates (compatibility).
-
-        Returns
-        -------
-        shape : tuple
-        """
-        warnings.warn(
-            (
-                "The shape attribute is deprecated and will be removed in version 0.4.1."
-                " Instead you should use the extent.data and extent.world attributes"
-                " to get the extent of the data in data or world coordinates."
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        extent = copy(self._extent_data)
-        extent[1] = extent[1] + 1
-        extent = self._transforms['data2world'](extent)
-
-        # Rounding is for backwards compatibility reasons.
-        return tuple(np.round(extent[1] - extent[0]).astype(int))
-
-    def _get_state(self):
-        """Get dictionary of layer state.
-
-        Returns
-        -------
-        state : dict
-            Dictionary of layer state.
-        """
-        state = self._get_base_state()
-        state.update(
-            {
-                'rgb': self.rgb,
-                'multiscale': self.multiscale,
-                'colormap': self.colormap.name,
-                'contrast_limits': self.contrast_limits,
-                'interpolation': self.interpolation,
-                'rendering': self.rendering,
-                'iso_threshold': self.iso_threshold,
-                'attenuation': self.attenuation,
-                'gamma': self.gamma,
-                'data': self.data,
-            }
-        )
-        return state
-
     def _raw_to_displayed(self, raw):
         """Determine displayed image from raw image.
 
@@ -605,7 +561,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
-        not_disp = self._dims.not_displayed
+        not_disp = self._dims_not_displayed
 
         # Check if requested slice outside of data range
         indices = np.array(self._slice_indices)
@@ -625,8 +581,15 @@ class Image(IntensityVisualizationMixin, Layer):
         self._empty = False
 
         if self.multiscale:
-            # If 3d redering just show lowest level of multiscale
-            if self._dims.ndisplay == 3:
+            if self._ndisplay == 3:
+                # If 3d redering just show lowest level of multiscale
+                warnings.warn(
+                    trans._(
+                        'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                )
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
@@ -644,12 +607,12 @@ class Image(IntensityVisualizationMixin, Layer):
             indices[not_disp] = downsampled_indices
 
             scale = np.ones(self.ndim)
-            for d in self._dims.displayed:
+            for d in self._dims_displayed:
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if self._dims.ndisplay == 2:
-                for d in self._dims.displayed:
+            if self._ndisplay == 2:
+                for d in self._dims_displayed:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
                         self.corner_pixels[1, d] + 1,
@@ -690,10 +653,21 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail_source = None
 
         # Load our images, might be sync or async.
-        data = SliceDataClass(self, image_indices, image, thumbnail_source)
+        data = self._SliceDataClass(
+            self, image_indices, image, thumbnail_source
+        )
         self._load_slice(data)
 
-    def _load_slice(self, data: SliceDataClass):
+    @property
+    def _SliceDataClass(self):
+        # Use special ChunkedSlideData for async.
+        if config.async_loading:
+            from .experimental._chunked_slice_data import ChunkedSliceData
+
+            return ChunkedSliceData
+        return ImageSliceData
+
+    def _load_slice(self, data: ImageSliceData):
         """Load the image and maybe thumbnail source.
 
         Parameters
@@ -708,7 +682,7 @@ class Image(IntensityVisualizationMixin, Layer):
             # property is now false, since the load is in progress.
             self.events.loaded()
 
-    def _on_data_loaded(self, data: SliceDataClass, sync: bool) -> None:
+    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.
 
         This routine is called synchronously from _load_async() above, or
@@ -717,7 +691,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         Parameters
         ----------
-        request : ChunkRequest
+        data : ChunkRequest
             The request that was satisfied/loaded.
         sync : bool
             If True the chunk was loaded synchronously.
@@ -749,14 +723,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if not self._slice.loaded:
+        if not self.loaded:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
 
         image = self._slice.thumbnail.view
 
-        if self._dims.ndisplay == 3 and self._dims.ndim > 2:
+        if self._ndisplay == 3 and self.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
@@ -828,21 +802,25 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
         value : tuple
-            Value of the data at the coord.
+            Value of the data.
         """
         if self.multiscale:
             # for multiscale data map the coordinate from the data back to
             # the tile
-            coord = self._transforms['tile2data'].inverse(self.coordinates)
+            coord = self._transforms['tile2data'].inverse(position)
         else:
-            coord = self.coordinates
+            coord = position
 
         coord = np.round(coord).astype(int)
 
@@ -852,8 +830,8 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self._dims.displayed], shape)):
-            value = raw[tuple(coord[self._dims.displayed])]
+        if all(0 <= c < s for c, s in zip(coord[self._dims_displayed], shape)):
+            value = raw[tuple(coord[self._dims_displayed])]
         else:
             value = None
 
@@ -862,9 +840,8 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
-    # One additional method for async
+    # For async we add an on_chunk_loaded() method.
     if config.async_loading:
-        from ...components.experimental.chunk import ChunkRequest
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:
             """An asynchronous ChunkRequest was loaded.
@@ -875,5 +852,39 @@ class Image(IntensityVisualizationMixin, Layer):
                 This request was loaded.
             """
             # Convert the ChunkRequest to SliceData and use it.
-            data = SliceDataClass.from_request(self, request)
+            data = self._SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
+
+
+class Image(_ImageBase):
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'rgb': self.rgb,
+                'multiscale': self.multiscale,
+                'colormap': self.colormap.name,
+                'contrast_limits': self.contrast_limits,
+                'interpolation': self.interpolation,
+                'rendering': self.rendering,
+                'iso_threshold': self.iso_threshold,
+                'attenuation': self.attenuation,
+                'gamma': self.gamma,
+                'data': self.data,
+            }
+        )
+        return state
+
+
+if config.async_octree:
+    from ..image.experimental.octree_image import _OctreeImageBase
+
+    class Image(Image, _OctreeImageBase):
+        pass

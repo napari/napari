@@ -30,6 +30,16 @@ class Interpolation(StringEnum):
     SPLINE16 = auto()
     SPLINE36 = auto()
 
+    @classmethod
+    def view_subset(cls):
+        return (
+            cls.BICUBIC,
+            cls.BILINEAR,
+            cls.KAISER,
+            cls.NEAREST,
+            cls.SPLINE36,
+        )
+
 
 class Interpolation3D(StringEnum):
     """INTERPOLATION: Vispy interpolation mode for volume rendering."""
@@ -53,6 +63,8 @@ class Rendering(StringEnum):
               the result is opaque.
             * mip: maximum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * minip: minimum intensity projection. Cast a ray and display the
+              minimum value that was encountered.
             * attenuated_mip: attenuated maximum intensity projection. Cast a
               ray and attenuate values based on integral of encountered values,
               display the maximum value that was encountered after attenuation.
@@ -62,13 +74,17 @@ class Rendering(StringEnum):
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
+            * average: average intensity projection. Cast a ray and display the
+              average of values that were encountered.
     """
 
     TRANSLUCENT = auto()
     ADDITIVE = auto()
     ISO = auto()
     MIP = auto()
+    MINIP = auto()
     ATTENUATED_MIP = auto()
+    AVERAGE = auto()
 
 
 class ComplexRendering(StringEnum):

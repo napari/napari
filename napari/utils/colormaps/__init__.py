@@ -9,6 +9,7 @@ from .colormap_utils import (
     SIMPLE_COLORMAPS,
     ValidColormapArg,
     color_dict_to_colormap,
+    display_name_to_name,
     ensure_colormap,
     label_colormap,
     low_discrepancy_image,

@@ -8,6 +8,7 @@ from ...layers.image._image_constants import (
     InterpolationComplex,
     Rendering,
 )
+from ...utils.translations import trans
 from .qt_image_controls_base import QtBaseImageControls
 
 
@@ -50,15 +51,14 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer._dims.events.ndisplay.connect(self._on_ndisplay_change)
-        self.layer.events.data.connect(self._on_data_change)
+        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.complex_rendering.connect(
             self._on_complex_rendering_change
         )
 
         self.interpComboBox = QComboBox(self)
         self.interpComboBox.activated[str].connect(self.changeInterpolation)
-        self.interpLabel = QLabel('interpolation:')
+        self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
         renderComboBox.addItems(Rendering.keys())
@@ -68,7 +68,7 @@ class QtImageControls(QtBaseImageControls):
         renderComboBox.setCurrentIndex(index)
         renderComboBox.activated[str].connect(self.changeRendering)
         self.renderComboBox = renderComboBox
-        self.renderLabel = QLabel('rendering:')
+        self.renderLabel = QLabel(trans._('rendering:'))
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -78,7 +78,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setValue(int(self.layer.iso_threshold * 100))
         sld.valueChanged.connect(self.changeIsoThreshold)
         self.isoThresholdSlider = sld
-        self.isoThresholdLabel = QLabel('iso threshold:')
+        self.isoThresholdLabel = QLabel(trans._('iso threshold:'))
 
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -88,10 +88,8 @@ class QtImageControls(QtBaseImageControls):
         sld.setValue(int(self.layer.attenuation * 200))
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
-        self.attenuationLabel = QLabel('attenuation:')
-
-        self.contrastLimitsLabel = QLabel('contrast limits:')
-        self.gammaLabel = QLabel('gamma:')
+        self.attenuationLabel = QLabel(trans._('attenuation:'))
+        self._on_ndisplay_change()
 
         # complex value combo
         self.complexLabel = QLabel('complex:')
@@ -114,15 +112,15 @@ class QtImageControls(QtBaseImageControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
+        self.grid_layout.addWidget(QLabel(trans._('opacity:')), 0, 0)
         self.grid_layout.addWidget(self.opacitySlider, 0, 1)
-        self.grid_layout.addWidget(self.contrastLimitsLabel, 1, 0)
+        self.grid_layout.addWidget(QLabel(trans._('contrast limits:')), 1, 0)
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
-        self.grid_layout.addWidget(self.gammaLabel, 2, 0)
+        self.grid_layout.addWidget(QLabel(trans._('gamma:')), 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
+        self.grid_layout.addWidget(QLabel(trans._('colormap:')), 3, 0)
         self.grid_layout.addLayout(colormap_layout, 3, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
+        self.grid_layout.addWidget(QLabel(trans._('blending:')), 4, 0)
         self.grid_layout.addWidget(self.blendComboBox, 4, 1)
         self.grid_layout.addWidget(self.interpLabel, 5, 0)
         self.grid_layout.addWidget(self.interpComboBox, 5, 1)
@@ -235,11 +233,12 @@ class QtImageControls(QtBaseImageControls):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        interp_string = event.value.value
+
         with self.layer.events.interpolation.blocker():
-            index = self.interpComboBox.findText(
-                self.layer.interpolation, Qt.MatchFixedString
-            )
-            self.interpComboBox.setCurrentIndex(index)
+            if self.interpComboBox.findText(interp_string) == -1:
+                self.interpComboBox.addItem(interp_string)
+            self.interpComboBox.setCurrentText(interp_string)
 
     def _on_rendering_change(self, event):
         """Receive layer model rendering change event and update dropdown menu.
@@ -280,14 +279,14 @@ class QtImageControls(QtBaseImageControls):
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
-        if self.layer._dims.ndisplay == 3:
-            interp_enum = Interpolation3D
-        elif self.layer.is_complex:
-            interp_enum = InterpolationComplex
+        if self.layer._ndisplay == 3:
+            interp_names = Interpolation3D.keys()
+        elif self.layer.is_complex():
+            interp_names = InterpolationComplex.keys()
         else:
-            interp_enum = Interpolation
+            interp_names = [i.value for i in Interpolation.view_subset()]
 
-        self.interpComboBox.addItems(interp_enum.keys())
+        self.interpComboBox.addItems(interp_names)
         index = self.interpComboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString
         )
@@ -302,7 +301,7 @@ class QtImageControls(QtBaseImageControls):
             The napari event that triggered this method, default is None.
         """
         self._update_interpolation_combo()
-        if self.layer._dims.ndisplay == 2:
+        if self.layer._ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()

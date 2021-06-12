@@ -1,8 +1,9 @@
+import inspect
+
 import numpy as np
 import pytest
 
 from napari._tests.utils import layer_test_data
-from napari.utils.misc import callsignature
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -16,7 +17,7 @@ def test_attrs_arrays(Layer, data, ndim):
     properties = layer._get_state()
 
     # Check every property is in call signature
-    signature = callsignature(Layer)
+    signature = inspect.signature(Layer)
 
     for prop in properties.keys():
         assert prop in signature.parameters
@@ -49,3 +50,16 @@ def test_attrs_arrays(Layer, data, ndim):
             )
         else:
             assert np.all(getattr(layer, prop) == getattr(new_layer, prop))
+
+
+@pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
+def test_no_callbacks(Layer, data, ndim):
+    """Test no internal callbacks for layer emmitters."""
+    layer = Layer(data)
+    # Check layer has been correctly created
+    assert layer.ndim == ndim
+
+    # Check that no internal callbacks have been registered
+    len(layer.events.callbacks) == 0
+    for em in layer.events.emitters.values():
+        assert len(em.callbacks) == 0

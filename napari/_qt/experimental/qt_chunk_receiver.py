@@ -1,13 +1,9 @@
 """QtChunkReceiver and QtGuiEvent classes.
 """
-import logging
-
 from qtpy.QtCore import QObject, Signal
 
 from ...components.experimental.chunk import chunk_loader
 from ...utils.events import EmitterGroup, Event, EventEmitter
-
-LOGGER = logging.getLogger('napari.async')
 
 
 class QtGuiEvent(QObject):
@@ -114,7 +110,8 @@ class QtChunkReceiver:
         self.gui_event = QtGuiEvent(parent, listen_event)
         self.gui_event.events.gui_event.connect(self._on_chunk_loaded_gui)
 
-    def _on_chunk_loaded_gui(self, event) -> None:
+    @staticmethod
+    def _on_chunk_loaded_gui(event) -> None:
         """A chunk was loaded. This method is called in the GUI thread.
 
         Parameters
@@ -124,11 +121,6 @@ class QtChunkReceiver:
         """
         layer = event.original_event.layer
         request = event.original_event.request
-
-        LOGGER.info(
-            "QtChunkReceiver._on_chunk_loaded_gui: data_id=%d",
-            request.key.data_id,
-        )
 
         layer.on_chunk_loaded(request)  # Pass the chunk to its layer.
 

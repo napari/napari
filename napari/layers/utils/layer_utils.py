@@ -1,18 +1,68 @@
-from typing import Dict, Tuple, Union
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple
 
 import dask
 import numpy as np
 
-from ...utils.colormaps import Colormap
+from ...utils.action_manager import action_manager
 
 
-def calc_data_range(data):
+def register_layer_action(keymapprovider, description: str, shortcuts=None):
+    """
+    Convenient decorator to register an action with the current Layers
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+
+
+    Parameters
+    ----------
+
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
+
+    Returns
+    -------
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
+    """
+
+    def _inner(func):
+        nonlocal shortcuts
+        name = 'napari:' + func.__name__
+        action_manager.register_action(
+            name=name,
+            command=func,
+            description=description,
+            keymapprovider=keymapprovider,
+        )
+        if isinstance(shortcuts, str):
+            shortcuts = [shortcuts]
+        for shortcut in shortcuts:
+            action_manager.bind_shortcut(name, shortcut)
+        return func
+
+    return _inner
+
+
+def calc_data_range(data, rgb=False):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
     ----------
     data : array
         Data to calculate range of values over.
+    rgb : bool
+        Flag if data is rgb.
 
     Returns
     -------
@@ -26,17 +76,32 @@ def calc_data_range(data):
     """
     if data.dtype == np.uint8:
         return [0, 255]
-    if np.prod(data.shape) > 1e6:
+    if np.prod(data.shape) > 1e7:
         # If data is very large take the average of the top, bottom, and
         # middle slices
-        bottom_plane_idx = (0,) * (data.ndim - 2)
-        middle_plane_idx = tuple(s // 2 for s in data.shape[:-2])
-        top_plane_idx = tuple(s - 1 for s in data.shape[:-2])
+        offset = 2 + int(rgb)
+        bottom_plane_idx = (0,) * (data.ndim - offset)
+        middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
+        top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
         idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
-        reduced_data = [
-            [np.max(data[idx]) for idx in idxs],
-            [np.min(data[idx]) for idx in idxs],
-        ]
+        # If each plane is also very large, look only at a subset of the image
+        if (
+            np.prod(data.shape[-offset:]) > 1e7
+            and data.shape[-offset] > 64
+            and data.shape[-offset + 1] > 64
+        ):
+            # Find a centeral patch of the image to take
+            center = [int(s // 2) for s in data.shape[-offset:]]
+            cental_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
+            reduced_data = [
+                [np.max(data[idx + cental_slice]) for idx in idxs],
+                [np.min(data[idx + cental_slice]) for idx in idxs],
+            ]
+        else:
+            reduced_data = [
+                [np.max(data[idx]) for idx in idxs],
+                [np.min(data[idx]) for idx in idxs],
+            ]
         # compute everything in one go
         reduced_data = dask.compute(*reduced_data)
     else:
@@ -139,7 +204,9 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
-def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
+def dataframe_to_properties(
+    dataframe,
+) -> Tuple[Dict[str, np.ndarray], Optional[Dict[int, int]]]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
     Parameters
@@ -152,6 +219,8 @@ def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     dict[str, np.ndarray]
         A properties dictionary where the key is the property name and the value
         is an ndarray with the property value for each point.
+    Optional[dict[int, int]]
+        mapping from label number to position (row) in properties
     """
 
     properties = {col: np.asarray(dataframe[col]) for col in dataframe}
@@ -159,46 +228,6 @@ def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     if 'index' in properties:
         index = {i: k for k, i in enumerate(properties['index'])}
     return properties, index
-
-
-def guess_continuous(property: np.ndarray) -> bool:
-    """Guess if the property is continuous (return True) or categorical (return False)"""
-    # if the property is a floating type, guess continuous
-    if (
-        issubclass(property.dtype.type, np.floating)
-        or len(np.unique(property)) > 16
-    ):
-        return True
-    else:
-        return False
-
-
-def map_property(
-    prop: np.ndarray,
-    colormap: Colormap,
-    contrast_limits: Union[None, Tuple[float, float]] = None,
-) -> Tuple[np.ndarray, Tuple[float, float]]:
-    """Apply a colormap to a property
-
-    Parameters
-    ----------
-    prop : np.ndarray
-        The property to be colormapped
-    colormap : napari.utils.Colormap
-        The colormap object to apply to the property
-    contrast_limits : Union[None, Tuple[float, float]]
-        The contrast limits for applying the colormap to the property.
-        If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
-        If None is provided, the contrast limits will be set to (property.min(), property.max()).
-        Default value is None.
-    """
-
-    if contrast_limits is None:
-        contrast_limits = (prop.min(), prop.max())
-    normalized_properties = np.interp(prop, contrast_limits, (0, 1))
-    mapped_properties = colormap.map(normalized_properties)
-
-    return mapped_properties, contrast_limits
 
 
 def compute_multiscale_level(

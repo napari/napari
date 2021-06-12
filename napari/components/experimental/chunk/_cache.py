@@ -7,7 +7,7 @@ from ...._vendor.experimental.cachetools import LRUCache
 from ....types import ArrayLike
 from ._request import ChunkRequest
 
-LOGGER = logging.getLogger("napari.async")
+LOGGER = logging.getLogger("napari.loader.cache")
 
 # ChunkCache size as a fraction of total RAM. Keep it small for now until
 # we figure out how ChunkCache will work with the Dask cache, and do
@@ -66,7 +66,7 @@ class ChunkCache:
     that will grow in memory usage up to some limit. Then it will free the
     least recently used entries so total usage does not exceed that limit.
 
-    TODO_ASYNC:
+    TODO_OCTREE:
 
     1) For dynamically computed data the cache should be disabled. So
        should the default be off? Or can we detect dynamic computations?
@@ -97,26 +97,32 @@ class ChunkCache:
             Add the data in this request to the cache.
         """
         if not self.enabled:
-            LOGGER.info("ChunkCache.add_chunk: disabled")
+            LOGGER.debug("ChunkCache.add_chunk: cache is disabled")
             return
-        LOGGER.info("ChunkCache.add_chunk: %s", request.key)
-        self.chunks[request.key.key] = request.chunks
+        LOGGER.debug("add_chunk: %s", request.location)
+        self.chunks[request.location] = request.chunks
 
     def get_chunks(self, request: ChunkRequest) -> Optional[ChunkArrays]:
-        """Return the cached data for this request or None.
+        """Return the cached data for this request if it was cached.
 
         Parameters
         ----------
         request : ChunkRequest
-            We should lookup cached data for this request.
+            Look for cached data for this request.
 
         Returns
         -------
-        ChunkArrays, optional
+        Optional[ChunkArrays]
             The cached data or None of it was not found in the cache.
         """
         if not self.enabled:
             LOGGER.info("ChunkCache.get_chunk: disabled")
             return None
-        LOGGER.info("ChunkCache.get_chunk: %s", request.key)
-        return self.chunks.get(request.key.key)
+
+        data = self.chunks.get(request.location)
+        LOGGER.info(
+            "get_chunk: %s %s",
+            request.location,
+            "found" if data is not None else "not found",
+        )
+        return data

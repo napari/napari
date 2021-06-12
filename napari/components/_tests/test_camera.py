@@ -1,18 +1,15 @@
-from napari.components import Camera, Dims
+from napari.components import Camera
 
 
 def test_camera():
     """Test camera."""
-    camera = Camera(Dims(ndim=3))
-    assert camera.ndisplay == 2
-    assert camera.center == (0, 0)
+    camera = Camera()
+    assert camera.center == (0, 0, 0)
     assert camera.zoom == 1
     assert camera.angles == (0, 0, 90)
 
-    camera.ndisplay = 3
     center = (10, 20, 30)
     camera.center = center
-    assert camera.ndisplay == 3
     assert camera.center == center
     assert camera.angles == (0, 0, 90)
 

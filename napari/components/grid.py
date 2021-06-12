@@ -1,9 +1,11 @@
+from typing import Tuple
+
 import numpy as np
 
-from ..utils.events import EmitterGroup
+from ..utils.events import EventedModel
 
 
-class GridCanvas:
+class GridCanvas(EventedModel):
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
@@ -11,70 +13,32 @@ class GridCanvas:
 
     Attributes
     ----------
-    events : EmitterGroup
-        Event emitter group
     enabled : bool
         If grid is enabled or not.
-    size : 2-tuple of int
-        Number of rows and columns in the grid. A value of -1 for either or
-        both of will be used the row and column numbers will trigger an
-        auto calculation of the necessary grid size to appropriately fill
-        all the layers at the appropriate stride.
     stride : int
         Number of layers to place in each grid square before moving on to
         the next square. The default ordering is to place the most visible
         layer in the top left corner of the grid. A negative stride will
         cause the order in which the layers are placed in the grid to be
         reversed.
+    shape : 2-tuple of int
+        Number of rows and columns in the grid. A value of -1 for either or
+        both of will be used the row and column numbers will trigger an
+        auto calculation of the necessary grid shape to appropriately fill
+        all the layers at the appropriate stride.
     """
 
-    def __init__(self, *, size=(-1, -1), stride=1, enabled=False):
+    # fields
+    enabled: bool = False
+    stride: int = 1
+    shape: Tuple[int, int] = (-1, -1)
 
-        # Events:
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, update=None,
-        )
+    def actual_shape(self, nlayers: int = 1) -> Tuple[int, int]:
+        """Return the actual shape of the grid.
 
-        self._enabled = enabled
-        self._stride = stride
-        self._size = size
-
-    @property
-    def enabled(self):
-        """bool: If grid is enabled or not."""
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, enabled):
-        self._enabled = enabled
-        self.events.update()
-
-    @property
-    def size(self):
-        """2-tuple of int: Number of rows and columns in the grid."""
-        return self._size
-
-    @size.setter
-    def size(self, size):
-        self._size = tuple(size)
-        self.events.update()
-
-    @property
-    def stride(self):
-        """int: Number of layers in each grid square."""
-        return self._stride
-
-    @stride.setter
-    def stride(self, stride):
-        self._stride = stride
-        self.events.update()
-
-    def actual_size(self, nlayers=1):
-        """Return the actual size of the grid.
-
-        This will return the size parameter, unless one of the row
+        This will return the shape parameter, unless one of the row
         or column numbers is -1 in which case it will compute the
-        optimal size of the grid given the number of layers and
+        optimal shape of the grid given the number of layers and
         current stride.
 
         If the grid is not enabled, this will return (1, 1).
@@ -86,11 +50,13 @@ class GridCanvas:
 
         Returns
         -------
-        size : 2-tuple of int
+        shape : 2-tuple of int
             Number of rows and columns in the grid.
         """
         if self.enabled:
-            n_row, n_column = self.size
+            if nlayers == 0:
+                return (1, 1)
+            n_row, n_column = self.shape
             n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
 
             if n_row == -1 and n_column == -1:
@@ -108,7 +74,7 @@ class GridCanvas:
         else:
             return (1, 1)
 
-    def position(self, index, nlayers):
+    def position(self, index: int, nlayers: int) -> Tuple[int, int]:
         """Return the position of a given linear index in grid.
 
         If the grid is not enabled, this will return (0, 0).
@@ -126,7 +92,7 @@ class GridCanvas:
             Row and column position of current index in the grid.
         """
         if self.enabled:
-            n_row, n_column = self.actual_size(nlayers)
+            n_row, n_column = self.actual_shape(nlayers)
 
             # Adjust for forward or reverse ordering
             if self.stride < 0:

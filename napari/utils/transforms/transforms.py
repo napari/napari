@@ -1,14 +1,16 @@
-import warnings
 from typing import Sequence
 
 import numpy as np
 import toolz as tz
 
-from ..list import ListModel
+from ...utils.translations import trans
+from ..events import EventedList
 from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
+    is_matrix_triangular,
+    is_matrix_upper_triangular,
 )
 
 
@@ -42,11 +44,15 @@ class Transform:
         if self._inverse_func is not None:
             return Transform(self._inverse_func, self.func)
         else:
-            raise ValueError('Inverse function was not provided.')
+            raise ValueError(
+                trans._('Inverse function was not provided.', deferred=True)
+            )
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
-        raise ValueError('Transform composition rule not provided')
+        raise ValueError(
+            trans._('Transform composition rule not provided', deferred=True)
+        )
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
@@ -61,7 +67,9 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError('Cannot subset arbitrary transforms.')
+        raise NotImplementedError(
+            trans._('Cannot subset arbitrary transforms.', deferred=True)
+        )
 
     def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform with added axes for non-visible dimensions.
@@ -78,15 +86,17 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError('Cannot subset arbitrary transforms.')
+        raise NotImplementedError(
+            trans._('Cannot subset arbitrary transforms.', deferred=True)
+        )
 
 
-class TransformChain(ListModel, Transform):
+class TransformChain(EventedList, Transform):
     def __init__(self, transforms=[]):
         super().__init__(
+            data=transforms,
             basetype=Transform,
-            iterable=transforms,
-            lookup={str: lambda q, e: q == e.name},
+            lookup={str: lambda x: x.name},
         )
         # The above super().__init__() will not call Transform.__init__().
         # For that to work every __init__() called using super() needs to
@@ -297,7 +307,10 @@ class Affine(Transform):
     def __init__(
         self,
         scale=(1.0, 1.0),
-        translate=(0.0, 0.0,),
+        translate=(
+            0.0,
+            0.0,
+        ),
         *,
         rotate=None,
         shear=None,
@@ -306,6 +319,7 @@ class Affine(Transform):
         name=None,
     ):
         super().__init__(name=name)
+        self._upper_triangular = True
 
         if affine_matrix is not None:
             linear_matrix = affine_matrix[:-1, :-1]
@@ -317,6 +331,20 @@ class Affine(Transform):
                 rotate = np.eye(len(scale))
             if shear is None:
                 shear = np.eye(len(scale))
+            else:
+                if np.array(shear).ndim == 2:
+                    if is_matrix_triangular(shear):
+                        self._upper_triangular = is_matrix_upper_triangular(
+                            shear
+                        )
+                    else:
+                        raise ValueError(
+                            trans._(
+                                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
+                                deferred=True,
+                                shear=shear,
+                            )
+                        )
             linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
         ndim = max(linear_matrix.shape[0], len(translate))
@@ -347,40 +375,59 @@ class Affine(Transform):
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
-        return decompose_linear_matrix(self.linear_matrix)[1]
+        return decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )[1]
 
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        rotate, _, shear = decompose_linear_matrix(self.linear_matrix)
+        rotate, _, shear = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def rotate(self) -> np.array:
         """Return the rotation of the transform."""
-        return decompose_linear_matrix(self.linear_matrix)[0]
+        return decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )[0]
 
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        _, scale, shear = decompose_linear_matrix(self.linear_matrix)
+        _, scale, shear = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
-        return decompose_linear_matrix(self.linear_matrix)[2]
+        return decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )[2]
 
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
         if np.array(shear).ndim == 2:
-            warnings.warn(
-                'Non upper diagonal shear matrix passed so '
-                'reseting rotate to the identity.'
-            )
-            rotate = np.eye(rotate.shape[0])
+            if is_matrix_triangular(shear):
+                self._upper_triangular = is_matrix_upper_triangular(shear)
+            else:
+                raise ValueError(
+                    trans._(
+                        'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
+                        deferred=True,
+                        shear=shear,
+                    )
+                )
+        else:
+            self._upper_triangular = True
+        rotate, scale, _ = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
@@ -396,6 +443,10 @@ class Affine(Transform):
         """Set the affine matrix for the transform."""
         self.linear_matrix = affine_matrix[:-1, :-1]
         self.translate = affine_matrix[:-1, -1]
+
+    def __array__(self, *args, **kwargs):
+        """NumPy __array__ protocol to get the affine transform matrix."""
+        return self.affine_matrix
 
     @property
     def inverse(self) -> 'Affine':

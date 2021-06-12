@@ -26,12 +26,13 @@ timeseries = surface.load_surf_data(nki_dataset['func_left'][0])
 # vertices axis to be placed last to match NumPy broadcasting rules
 timeseries = timeseries.transpose((1, 0))
 
-with napari.gui_qt():
-    # create an empty viewer
-    viewer = napari.Viewer(ndisplay=3)
+# create an empty viewer
+viewer = napari.Viewer(ndisplay=3)
 
-    # add the mri
-    viewer.add_surface((brain_vertices, brain_faces, brain_vertex_depth), name='base')
-    viewer.add_surface((brain_vertices, brain_faces, timeseries),
-                       colormap='turbo', opacity=0.9,
-                       contrast_limits=[-1.5, 3.5], name='timeseries')
+# add the mri
+viewer.add_surface((brain_vertices, brain_faces, brain_vertex_depth), name='base')
+viewer.add_surface((brain_vertices, brain_faces, timeseries),
+                    colormap='turbo', opacity=0.9,
+                    contrast_limits=[-1.5, 3.5], name='timeseries')
+
+napari.run()

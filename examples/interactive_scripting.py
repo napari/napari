@@ -4,24 +4,21 @@ from napari.qt import thread_worker
 import time
 
 
-with napari.gui_qt():
-    # create the viewer with an image
-    data = np.random.random((512, 512))
-    viewer = napari.Viewer()
-    layer = viewer.add_image(data)
+# create the viewer with an image
+data = np.random.random((512, 512))
+viewer = napari.Viewer()
+layer = viewer.add_image(data)
 
-    @thread_worker(start_thread=True)
-    def layer_update(*, update_period, num_updates):
-        # number of times to update
-        for k in range(num_updates):
-            time.sleep(update_period)
+def update_layer(data):
+    layer.data = data
 
-            dat = np.random.random((512, 512))
-            layer.data = dat
+@thread_worker(connect={'yielded': update_layer})
+def create_data(*, update_period, num_updates):
+    # number of times to update
+    for k in range(num_updates):
+        yield np.random.random((512, 512))
+        time.sleep(update_period)
 
-            # check that data layer is properly assigned and not blocked?
-            while layer.data.all() != dat.all():
-                layer.data = dat
-            yield
+create_data(update_period=0.05, num_updates=50)
 
-    layer_update(update_period=0.05, num_updates=100)
+napari.run()

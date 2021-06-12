@@ -30,20 +30,82 @@ For more general background on the plugin hook calling mechanism, see the
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
-
 # These hook specifications also serve as the API reference for plugin
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
+from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from types import FunctionType
+from typing import Any, Dict, List, Optional, Union
 
 from napari_plugin_engine import napari_hook_specification
 
-from ..types import ReaderFunction, WriterFunction
+from ..types import (
+    AugmentedWidget,
+    ReaderFunction,
+    SampleData,
+    SampleDict,
+    WriterFunction,
+)
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #
 # -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_provide_sample_data() -> Dict[str, Union[SampleData, SampleDict]]:
+    """Provide sample data.
+
+    Plugins may implement this hook to provide sample data for use in napari.
+    Sample data is accessible in the `File > Open Sample` menu, or
+    programmatically, with :meth:`napari.Viewer.open_sample`.
+
+    Plugins implementing this hook specification must return a ``dict``, where
+    each key is a `sample_key` (the string that will appear in the
+    `Open Sample` menu), and the value is either a string, or
+    a callable that returns an iterable of ``LayerData`` tuples, where each
+    tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
+    meta, layer_type)`` (thus, an individual sample-loader may provide multiple
+    layers).  If the value is a string, it will be opened with
+    :meth:`napari.Viewer.open`.
+
+    Examples
+    --------
+    Here's a minimal example of a plugin that provides three samples:
+
+        1. random data from numpy
+        2. a random image pulled from the internet
+        3. random data from numpy, provided as a dict with the keys:
+            'display_name': a string that will show in the menu (by default,
+                the `sample_key` will be shown)
+            'data': a string or callable, as in 1/2.
+
+    .. code-block:: python
+
+        import numpy as np
+        from napari_plugin_engine import napari_hook_implementation
+
+        def _generate_random_data(shape=(512, 512)):
+            data = np.random.rand(*shape)
+            return [(data, {'name': 'random data'})]
+
+        @napari_hook_implementation
+        def napari_provide_sample_data():
+            return {
+                'random data': _generate_random_data,
+                'random image': 'https://picsum.photos/1024',
+                'sample_key': {
+                    'display_name': 'Some Random Data (512 x 512)'
+                    'data': _generate_random_data,
+                }
+            }
+
+    Returns
+    -------
+    Dict[ str, Union[str, Callable[..., Iterable[LayerData]]] ]
+        A mapping of `sample_key` to `data_loader`
+    """
 
 
 @napari_hook_specification(firstresult=True)
@@ -52,9 +114,11 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
     This is the primary "**reader plugin**" function.  It accepts a path or
     list of paths, and returns a list of data to be added to the ``Viewer``.
+    The function may return ``[(None, )]`` to indicate that the file was read
+    successfully, but did not contain any data.
 
     The main place this hook is used is in :func:`Viewer.open()
-    <napari.components.add_layers_mixin.AddLayersMixin.open>`, via the
+    <napari.components.viewer_model.ViewerModel.open>`, via the
     :func:`~napari.plugins.io.read_data_with_plugins` function.
 
     It will also be called on ``File -> Open...`` or when a user drops a file
@@ -68,12 +132,12 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
     ``napari`` will then use each tuple in the returned list to generate a new
     layer in the viewer using the :func:`Viewer._add_layer_from_data()
-    <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
+    <napari.components.viewer_model.ViewerModel._add_layer_from_data>`
     method.  The first, (optional) second, and (optional) third items in each
     tuple in the returned layer_data list, therefore correspond to the
     ``data``, ``meta``, and ``layer_type`` arguments of the
     :func:`Viewer._add_layer_from_data()
-    <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
+    <napari.components.viewer_model.ViewerModel._add_layer_from_data>`
     method, respectively.
 
     .. important::
@@ -316,4 +380,119 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
     path : str or None
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
+    """
+
+
+# -------------------------------------------------------------------------- #
+#                                 GUI Hooks                                  #
+# -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_function() -> Union[
+    FunctionType, List[FunctionType]
+]:
+    """Provide function(s) that can be passed to magicgui.
+
+    This hook specification is marked as experimental as the API or how the
+    returned value is handled may change here more frequently then the
+    rest of the codebase.
+
+    Returns
+    -------
+    function(s) : FunctionType or list of FunctionType
+        Implementations should provide either a single function, or a list of
+        functions. Note that this does not preclude specifying multiple
+        separate implementations in the same module or class.
+        The functions should have Python type annotations so that
+        `magicgui <https://napari.org/magicgui>`_ can generate a widget from
+        them.
+
+    Examples
+    --------
+    >>> from napari.types import ImageData, LayerDataTuple
+    >>>
+    >>> def my_function(image : ImageData) -> LayerDataTuple:
+    >>>     # process the image
+    >>>     result = -image
+    >>>     # return it + some layer properties
+    >>>     return result, {'colormap':'turbo'}
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_function():
+    >>>     return my_function
+    """
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_dock_widget() -> Union[
+    AugmentedWidget, List[AugmentedWidget]
+]:
+    """Provide functions that return widgets to be docked in the viewer.
+
+    This hook specification is marked as experimental as the API or how the
+    returned value is handled may change here more frequently then the
+    rest of the codebase.
+
+    Returns
+    -------
+    result : callable or tuple or list of callables or list of tuples
+        A "callable" in this context is a class or function that, when
+        called, returns an instance of either a
+        :class:`~qtpy.QtWidgets.QWidget` or a
+        :class:`~magicgui.widgets.FunctionGui`.
+
+        Implementations of this hook specification must return a callable, or a
+        tuple of ``(callable, dict)``, where the dict contains keyword
+        arguments for :meth:`napari.qt.Window.add_dock_widget`. (note, however,
+        that ``shortcut=`` keyword is not yet supported).
+
+        Implementations may also return a list, in which each item must be a
+        callable or ``(callable, dict)`` tuple. Note that this does not
+        preclude specifying multiple separate implementations in the same module
+        or class.
+
+    Examples
+    --------
+    An example with a QtWidget:
+
+    >>> from qtpy.QtWidgets import QWidget
+    >>> from napari_plugin_engine import napari_hook_implementation
+    >>>
+    >>> class MyWidget(QWidget):
+    ...     def __init__(self, napari_viewer):
+    ...         self.viewer = napari_viewer
+    ...         super().__init__()
+    ...
+    ...         # initialize layout
+    ...         layout = QGridLayout()
+    ...
+    ...         # add a button
+    ...         btn = QPushButton('Click me!', self)
+    ...         def trigger():
+    ...             print("napari has", len(napari_viewer.layers), "layers")
+    ...         btn.clicked.connect(trigger)
+    ...         layout.addWidget(btn)
+    ...
+    ...         # activate layout
+    ...         self.setLayout(layout)
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_dock_widget():
+    ...     return MyWidget
+
+    An example using magicgui:
+
+    >>> from magicgui import magic_factory
+    >>> from napari_plugin_engine import napari_hook_implementation
+    >>>
+    >>> @magic_factory(auto_call=True, threshold={'max': 2 ** 16})
+    >>> def threshold(
+    ...     data: 'napari.types.ImageData', threshold: int
+    ... ) -> 'napari.types.LabelsData':
+    ...     return (data > threshold).astype(int)
+    >>>
+    >>> @napari_hook_implementation
+    >>> def napari_experimental_provide_dock_widget():
+    ...     return threshold
     """

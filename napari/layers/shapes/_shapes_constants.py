@@ -52,8 +52,7 @@ class ColorMode(StringEnum):
 
 
 class Box:
-    """Box: Constants associated with the vertices of the interaction box
-    """
+    """Box: Constants associated with the vertices of the interaction box"""
 
     WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]

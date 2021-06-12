@@ -7,6 +7,7 @@ from typing import List, Optional
 
 import wrapt
 
+from ..translations import trans
 from ._patcher import patch_callables
 from ._timers import perf_timer
 
@@ -106,7 +107,12 @@ class PerfmonConfig:
             return self.data["callable_lists"][list_name]
         except KeyError:
             raise PerfmonConfigError(
-                f"{self.config_path} has no callable list '{list_name}'"
+                trans._(
+                    "{path} has no callable list '{list_name}'",
+                    deferred=True,
+                    path=self.config_path,
+                    list_name=list_name,
+                )
             )
 
     def _patch_callables(self):
@@ -123,8 +129,7 @@ class PerfmonConfig:
 
     @property
     def trace_qt_events(self) -> bool:
-        """Return True if we should time Qt events.
-        """
+        """Return True if we should time Qt events."""
         if self.config_path is None:
             return True  # always trace qt events in legacy mode
         try:
@@ -134,8 +139,7 @@ class PerfmonConfig:
 
     @property
     def trace_file_on_start(self) -> str:
-        """Return path of trace file to write or None.
-        """
+        """Return path of trace file to write or None."""
         if self.config_path is None:
             return None  # don't trace on start in legacy mode
         try:

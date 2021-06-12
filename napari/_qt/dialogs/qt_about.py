@@ -10,10 +10,17 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils import citation_text, sys_info
+from ...utils.translations import trans
 
 
 class QtAbout(QDialog):
     """Qt dialog window for displaying 'About napari' information.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        Parent of the dialog, to correctly inherit and apply theme.
+        Default is None.
 
     Attributes
     ----------
@@ -33,14 +40,16 @@ class QtAbout(QDialog):
         Layout widget for the entire 'About napari' dialog.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         self.layout = QVBoxLayout()
 
         # Description
         title_label = QLabel(
-            "<b>napari: a multi-dimensional image viewer for python</b>"
+            trans._(
+                "<b>napari: a multi-dimensional image viewer for python</b>"
+            )
         )
         title_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.layout.addWidget(title_label)
@@ -63,7 +72,7 @@ class QtAbout(QDialog):
             min(self.infoTextBox.document().size().height() + 10, 500),
         )
 
-        self.layout.addWidget(QLabel('<b>citation information:</b>'))
+        self.layout.addWidget(QLabel(trans._('<b>citation information:</b>')))
         self.citationTextBox = QTextEdit(citation_text)
         self.citationTextBox.setFixedHeight(64)
         self.citationCopyButton = QtCopyToClipboardButton(self.citationTextBox)
@@ -75,18 +84,20 @@ class QtAbout(QDialog):
         self.setLayout(self.layout)
 
     @staticmethod
-    def showAbout(qt_viewer):
+    def showAbout(qt_viewer, parent=None):
         """Display the 'About napari' dialog box.
 
         Parameters
         ----------
         qt_viewer : QtViewer
             QtViewer instance that the `About napari` dialog box belongs to.
+        parent : QWidget, optional
+            Parent of the dialog, to correctly inherit and apply theme.
+            Default is None.
         """
-        d = QtAbout()
+        d = QtAbout(parent)
         d.setObjectName('QtAbout')
-        d.setStyleSheet(qt_viewer.styleSheet())
-        d.setWindowTitle('About')
+        d.setWindowTitle(trans._('About'))
         d.setWindowModality(Qt.ApplicationModal)
         d.exec_()
 
@@ -109,7 +120,7 @@ class QtCopyToClipboardButton(QPushButton):
         super().__init__()
         self.setObjectName("QtCopyToClipboardButton")
         self.text_edit = text_edit
-        self.setToolTip("Copy to clipboard")
+        self.setToolTip(trans._("Copy to clipboard"))
         self.clicked.connect(self.copyToClipboard)
 
     def copyToClipboard(self):

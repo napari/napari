@@ -1,5 +1,6 @@
 import numpy as np
 
+from ...utils.translations import trans
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
 from ._shapes_models import Line, Path, Shape
@@ -41,8 +42,8 @@ class ShapeList:
     z_indices : (N, ) list of int
         z-index for each shape.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _vertices : np.ndarray
         Mx2 array of all displayed vertices from all shapes
     _index : np.ndarray
@@ -134,7 +135,7 @@ class ShapeList:
         self._set_color(face_color, 'face')
 
     def _set_color(self, colors, attribute):
-        """ Set the face_color or edge_color property
+        """Set the face_color or edge_color property
 
         Parameters
         ----------
@@ -148,7 +149,12 @@ class ShapeList:
         n_shapes = len(self.data)
         if not np.all(colors.shape == (n_shapes, 4)):
             raise ValueError(
-                f'{attribute}_color must have shape ({n_shapes}, 4)'
+                trans._(
+                    '{attribute}_color must have shape ({n_shapes}, 4)',
+                    deferred=True,
+                    attribute=attribute,
+                    n_shapes=n_shapes,
+                )
             )
 
         update_method = getattr(self, f'update_{attribute}_color')
@@ -238,7 +244,12 @@ class ShapeList:
             ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
-            raise ValueError('shape must be subclass of Shape')
+            raise ValueError(
+                trans._(
+                    'shape must be subclass of Shape',
+                    deferred=True,
+                )
+            )
 
         if shape_index is None:
             shape_index = len(self.shapes)
@@ -338,8 +349,7 @@ class ShapeList:
             self._update_z_order()
 
     def remove_all(self):
-        """Removes all shapes
-        """
+        """Removes all shapes"""
         self.shapes = []
         self._vertices = np.empty((0, self.ndisplay))
         self._index = np.empty((0), dtype=int)
@@ -433,8 +443,7 @@ class ShapeList:
             self._update_displayed()
 
     def _update_z_order(self):
-        """Updates the z order of the triangles given the z_index list
-        """
+        """Updates the z order of the triangles given the z_index list"""
         self._z_order = np.argsort(self._z_index)
         if len(self._z_order) == 0:
             self._mesh.triangles_z_order = np.empty((0), dtype=int)
@@ -474,7 +483,12 @@ class ShapeList:
                     shape_cls = shape_classes[shape_type]
                 else:
                     raise ValueError(
-                        f'{shape_type} must be one of {set(shape_classes)}'
+                        trans._(
+                            '{shape_type} must be one of {shape_classes}',
+                            deferred=True,
+                            shape_type=shape_type,
+                            shape_classes=set(shape_classes),
+                        )
                     )
             else:
                 shape_cls = new_type

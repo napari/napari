@@ -4,11 +4,14 @@ from functools import partial
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QComboBox, QLabel, QPushButton, QSlider
+from qtpy.QtWidgets import QLabel, QPushButton, QSlider
 
+from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.translations import trans
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
+from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
 
 
@@ -44,13 +47,19 @@ class QtBaseImageControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.contrast_limits.connect(
+            self._on_contrast_limits_change
+        )
 
-        comboBox = QComboBox(self)
+        comboBox = QtColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
-        comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
+
+        for name, cm in AVAILABLE_COLORMAPS.items():
+            if name in self.layer.colormaps:
+                comboBox.addItem(cm._display_name, name)
+
         comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
 
@@ -75,11 +84,11 @@ class QtBaseImageControls(QtLayerControls):
         sld.setValue(100)
         sld.valueChanged.connect(self.gamma_slider_changed)
         self.gammaSlider = sld
-        self.gamma_slider_update()
+        self._on_gamma_change()
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
-        self.colorbarLabel.setToolTip('Colorbar')
+        self.colorbarLabel.setToolTip(trans._('Colorbar'))
 
         self._on_colormap_change()
 
@@ -91,7 +100,7 @@ class QtBaseImageControls(QtLayerControls):
         text : str
             Colormap name.
         """
-        self.layer.colormap = text
+        self.layer.colormap = self.colormapComboBox.currentData()
 
     def _clim_mousepress(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
@@ -120,7 +129,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_clims_change(self, event=None):
+    def _on_contrast_limits_change(self, event=None):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
@@ -154,15 +163,22 @@ class QtBaseImageControls(QtLayerControls):
         """
         name = self.layer.colormap.name
         if name not in self.colormapComboBox._allitems:
-            self.colormapComboBox._allitems.add(name)
-            self.colormapComboBox.addItem(name)
-        if name != self.colormapComboBox.currentText():
-            self.colormapComboBox.setCurrentText(name)
+            cm = AVAILABLE_COLORMAPS.get(name)
+            if cm:
+                self.colormapComboBox._allitems.add(name)
+                self.colormapComboBox.addItem(cm._display_name, name)
+
+        if name != self.colormapComboBox.currentData():
+            index = self.colormapComboBox.findData(name)
+            self.colormapComboBox.setCurrentIndex(index)
 
         # Note that QImage expects the image width followed by height
         cbar = self.layer.colormap.colorbar
         image = QImage(
-            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
+            cbar,
+            cbar.shape[1],
+            cbar.shape[0],
+            QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
@@ -177,7 +193,7 @@ class QtBaseImageControls(QtLayerControls):
         """
         self.layer.gamma = value / 100
 
-    def gamma_slider_update(self, event=None):
+    def _on_gamma_change(self, event=None):
         """Receive the layer model gamma change event and update the slider.
 
         Parameters
@@ -187,9 +203,6 @@ class QtBaseImageControls(QtLayerControls):
         """
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(int(self.layer.gamma * 100))
-
-    def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._contrast_limits_msg
 
     def closeEvent(self, event):
         self.deleteLater()
@@ -222,8 +235,12 @@ def create_range_popup(layer, attr, parent=None):
     range_attr = f'{attr}_range'
     if not hasattr(layer, range_attr):
         raise AttributeError(
-            f'Layer {layer} must have attribute {range_attr} '
-            'to use "create_range_popup"'
+            trans._(
+                'Layer {layer} must have attribute {range_attr} to use "create_range_popup"',
+                deferred=True,
+                layer=layer,
+                range_attr=range_attr,
+            )
         )
     is_integer_type = np.issubdtype(layer.dtype, np.integer)
 
@@ -280,7 +297,7 @@ def create_clim_reset_buttons(layer):
 
     reset_btn = QPushButton("reset")
     reset_btn.setObjectName("reset_clims_button")
-    reset_btn.setToolTip("autoscale contrast to data range")
+    reset_btn.setToolTip(trans._("autoscale contrast to data range"))
     reset_btn.setFixedWidth(40)
     reset_btn.clicked.connect(reset)
 
@@ -291,7 +308,7 @@ def create_clim_reset_buttons(layer):
     if np.issubdtype(layer.dtype, np.integer):
         range_btn = QPushButton("full range")
         range_btn.setObjectName("full_clim_range_button")
-        range_btn.setToolTip("set contrast range to full bit-depth")
+        range_btn.setToolTip(trans._("set contrast range to full bit-depth"))
         range_btn.setFixedWidth(65)
         range_btn.clicked.connect(reset_range)
 

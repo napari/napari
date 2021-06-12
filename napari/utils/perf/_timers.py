@@ -45,8 +45,7 @@ class PerfTimers:
     """
 
     def __init__(self):
-        """Create PerfTimers.
-        """
+        """Create PerfTimers."""
         # Maps a timer name to one Stat object.
         self.timers: Dict[str, Stat] = {}
 
@@ -79,9 +78,9 @@ class PerfTimers:
 
         Parameters
         ----------
-        event : PerfEvent
+        name : PerfEvent
             Add this event.
-        kwargs
+        **kwargs
             Arguments to display in the Args section of the Tracing GUI.
         """
         now = perf_counter_ns()
@@ -94,7 +93,7 @@ class PerfTimers:
         ----------
         name : str
             The name of this event like "draw".
-        kwargs : Dict[str, float]
+        **kwargs : Dict[str, float]
             The individual counters for this event.
 
         Notes
@@ -105,8 +104,7 @@ class PerfTimers:
         self.add_event(PerfEvent(name, now, now, phase="C", **kwargs))
 
     def clear(self):
-        """Clear all timers.
-        """
+        """Clear all timers."""
         # After the GUI displays timing information it clears the timers
         # so that we start accumulating fresh information.
         self.timers.clear()
@@ -122,8 +120,7 @@ class PerfTimers:
         self.trace_file = PerfTraceFile(path)
 
     def stop_trace_file(self) -> None:
-        """Stop recording a trace file.
-        """
+        """Stop recording a trace file."""
         if self.trace_file is not None:
             self.trace_file.close()
             self.trace_file = None
@@ -158,8 +155,8 @@ def block_timer(
     **kwargs : dict
         Additional keyword arguments for the "args" field of the event.
 
-    Example
-    -------
+    Examples
+    --------
     with block_timer("draw") as event:
         draw_stuff()
     print(f"The timer took {event.duration_ms} milliseconds.")
@@ -180,7 +177,7 @@ def block_timer(
         print(f"{name} {event.duration_ms:.3f}ms")
 
 
-if USE_PERFMON:
+def _create_timer():
     # The one global instance
     timers = PerfTimers()
 
@@ -192,9 +189,9 @@ if USE_PERFMON:
 
         Parameters
         ----------
-        event : PerfEvent
+        name : PerfEvent
             Add this event.
-        kwargs
+        **kwargs
             Arguments to display in the Args section of the Chrome Tracing GUI.
         """
         timers.add_instant_event(name, **kwargs)
@@ -206,7 +203,7 @@ if USE_PERFMON:
         ----------
         name : str
             The name of this event like "draw".
-        kwargs : Dict[str, float]
+        **kwargs : Dict[str, float]
             The individual counters for this event.
 
         Notes
@@ -215,6 +212,11 @@ if USE_PERFMON:
         """
         timers.add_counter_event(name, **kwargs)
 
+    return timers, perf_timer, add_instant_event, add_counter_event
+
+
+if USE_PERFMON:
+    timers, perf_timer, add_instant_event, add_counter_event = _create_timer()
 
 else:
     # Make sure no one accesses the timers when they are disabled.

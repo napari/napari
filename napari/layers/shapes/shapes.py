@@ -15,19 +15,16 @@ from ...utils.colormaps.standardize_color import (
 )
 from ...utils.events import Event
 from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
+from ...utils.translations import trans
 from ..base import Layer
+from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     ColorType,
     normalize_and_broadcast_colors,
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    guess_continuous,
-    map_property,
-)
+from ..utils.layer_utils import dataframe_to_properties
 from ..utils.text import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -38,7 +35,6 @@ from ._shapes_constants import (
     ShapeType,
     shape_classes,
 )
-from ._shapes_models import Ellipse, Polygon, Rectangle
 from ._shapes_mouse_bindings import (
     add_ellipse,
     add_line,
@@ -50,7 +46,13 @@ from ._shapes_mouse_bindings import (
     vertex_insert,
     vertex_remove,
 )
-from ._shapes_utils import create_box, get_shape_ndim, number_of_shapes
+from ._shapes_utils import (
+    create_box,
+    extract_shape_type,
+    get_default_shape_type,
+    get_shape_ndim,
+    number_of_shapes,
+)
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -143,7 +145,7 @@ class Shapes(Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -211,8 +213,8 @@ class Shapes(Layer):
         The ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, and ADD_POLYGON
         modes all allow for their corresponding shape type to be added.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _data_dict : Dict of ShapeList
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList
@@ -329,9 +331,15 @@ class Shapes(Layer):
                 ndim = 2
             data = np.empty((0, 0, ndim))
         else:
+            data, shape_type = extract_shape_type(data, shape_type)
             data_ndim = get_shape_ndim(data)
             if ndim is not None and ndim != data_ndim:
-                raise ValueError("Shape dimensions must be equal to ndim")
+                raise ValueError(
+                    trans._(
+                        "Shape dimensions must be equal to ndim",
+                        deferred=True,
+                    )
+                )
             ndim = data_ndim
 
         super().__init__(
@@ -354,6 +362,7 @@ class Shapes(Layer):
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
+            properties=Event,
             current_edge_color=Event,
             current_face_color=Event,
             current_properties=Event,
@@ -364,7 +373,7 @@ class Shapes(Layer):
         self._allow_thumbnail_update = True
 
         self._display_order_stored = []
-        self._ndisplay_stored = self._dims.ndisplay
+        self._ndisplay_stored = self._ndisplay
 
         # Save the properties
         if properties is None:
@@ -395,7 +404,12 @@ class Shapes(Layer):
             copied_text['n_text'] = len(data)
             self._text = TextManager(**copied_text)
         else:
-            raise TypeError('text should be a string, array, or dict')
+            raise TypeError(
+                trans._(
+                    'text should be a string, array, or dict',
+                    deferred=True,
+                )
+            )
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -405,9 +419,9 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        self._data_view = ShapeList(ndisplay=self._dims.ndisplay)
+        self._data_view = ShapeList(ndisplay=self._ndisplay)
         self._data_view.slice_key = np.array(self._slice_indices)[
-            list(self._dims.not_displayed)
+            list(self._dims_not_displayed)
         ]
 
         self._value = (None, None)
@@ -423,6 +437,9 @@ class Shapes(Layer):
         self._fixed_aspect = False
         self._aspect_ratio = 1
         self._is_moving = False
+        # _moving_coordinates are needed for fixing aspect ratio during
+        # a resize
+        self._moving_coordinates = None
         self._fixed_index = 0
         self._is_selecting = False
         self._drag_box = None
@@ -433,11 +450,7 @@ class Shapes(Layer):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
-        self._help = 'enter a selection mode to edit shape properties'
-
-        self.events.deselect.connect(self._finish_drawing)
-        self.events.face_color.connect(self._update_thumbnail)
-        self.events.edge_color.connect(self._update_thumbnail)
+        self._help = trans._('enter a selection mode to edit shape properties')
 
         self._init_shapes(
             data,
@@ -537,16 +550,67 @@ class Shapes(Layer):
         return self._data_view.data
 
     @data.setter
-    def data(self, data, shape_type='rectangle'):
+    def data(self, data):
         self._finish_drawing()
-        self._data_view = ShapeList()
-        self.add(data, shape_type=shape_type)
 
+        data, shape_type = extract_shape_type(data)
         n_new_shapes = number_of_shapes(data)
-        self.text.add(self.current_properties, n_new_shapes)
+        # not given a shape_type through data
+        if shape_type is None:
+            shape_type = self.shape_type
+
+        edge_widths = self._data_view.edge_widths
+        edge_color = self._data_view.edge_color
+        face_color = self._data_view.face_color
+        z_indices = self._data_view.z_indices
+
+        # fewer shapes, trim attributes
+        if self.nshapes > n_new_shapes:
+            shape_type = shape_type[:n_new_shapes]
+            edge_widths = edge_widths[:n_new_shapes]
+            z_indices = z_indices[:n_new_shapes]
+            edge_color = edge_color[:n_new_shapes]
+            face_color = face_color[:n_new_shapes]
+        # more shapes, add attributes
+        elif self.nshapes < n_new_shapes:
+            n_shapes_difference = n_new_shapes - self.nshapes
+            shape_type = (
+                shape_type
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
+            )
+            edge_widths = edge_widths + [1] * n_shapes_difference
+            z_indices = z_indices + [0] * n_shapes_difference
+            edge_color = np.concatenate(
+                (
+                    edge_color,
+                    self._get_new_shape_color(n_shapes_difference, 'edge'),
+                )
+            )
+            face_color = np.concatenate(
+                (
+                    face_color,
+                    self._get_new_shape_color(n_shapes_difference, 'face'),
+                )
+            )
+
+        self._data_view = ShapeList()
+        self.add(
+            data,
+            shape_type=shape_type,
+            edge_width=edge_widths,
+            edge_color=edge_color,
+            face_color=face_color,
+            z_index=z_indices,
+        )
 
         self._update_dims()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
+
+    def _on_selection(self, selected: bool):
+        # this method is slated for removal.  don't add anything new.
+        if not selected:
+            self._finish_drawing()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -563,7 +627,11 @@ class Shapes(Layer):
         ):
             self._face_color_property = ''
             warnings.warn(
-                'property used for face_color dropped', RuntimeWarning
+                trans._(
+                    'property used for face_color dropped',
+                    deferred=True,
+                ),
+                RuntimeWarning,
             )
 
         if self._edge_color_property and (
@@ -571,11 +639,16 @@ class Shapes(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn(
-                'property used for edge_color dropped', RuntimeWarning
+                trans._(
+                    'property used for edge_color dropped',
+                    deferred=True,
+                ),
+                RuntimeWarning,
             )
 
         if self.text.values is not None:
             self.refresh_text()
+        self.events.properties()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -617,7 +690,6 @@ class Shapes(Layer):
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_edge_width(i, edge_width)
-        self.status = format_float(self.current_edge_width)
         self.events.edge_width()
 
     @property
@@ -633,6 +705,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, self._current_edge_color)
             self.events.edge_color()
+            self._update_thumbnail()
         self.events.current_edge_color()
 
     @property
@@ -648,6 +721,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_face_color(i, self._current_face_color)
             self.events.face_color()
+            self._update_thumbnail()
         self.events.current_face_color()
 
     @property
@@ -677,6 +751,25 @@ class Shapes(Layer):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
 
+    @shape_type.setter
+    def shape_type(self, shape_type):
+        self._finish_drawing()
+
+        new_data_view = ShapeList()
+        shape_inputs = zip(
+            self._data_view.data,
+            ensure_iterable(shape_type),
+            self._data_view.edge_widths,
+            self._data_view.edge_color,
+            self._data_view.face_color,
+            self._data_view.z_indices,
+        )
+
+        self._add_shapes_to_view(shape_inputs, new_data_view)
+
+        self._data_view = new_data_view
+        self._update_dims()
+
     @property
     def edge_color(self):
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
@@ -686,6 +779,7 @@ class Shapes(Layer):
     def edge_color(self, edge_color):
         self._set_color(edge_color, 'edge')
         self.events.edge_color()
+        self._update_thumbnail()
 
     @property
     def edge_color_cycle(self) -> np.ndarray:
@@ -716,7 +810,7 @@ class Shapes(Layer):
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
-        """ None, (float, float): contrast limits for mapping
+        """None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
         return self._edge_contrast_limits
@@ -752,6 +846,7 @@ class Shapes(Layer):
     def face_color(self, face_color):
         self._set_color(face_color, 'face')
         self.events.face_color()
+        self._update_thumbnail()
 
     @property
     def face_color_cycle(self) -> np.ndarray:
@@ -811,7 +906,7 @@ class Shapes(Layer):
     def _set_color_mode(
         self, color_mode: Union[ColorMode, str], attribute: str
     ):
-        """ Set the face_color_mode or edge_color_mode property
+        """Set the face_color_mode or edge_color_mode property
 
         Parameters
         ----------
@@ -837,13 +932,20 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        f'_{attribute}_color_property was not set, '
-                        f'setting to: {new_color_property}'
+                        trans._(
+                            '_{attribute}_color_property was not set, setting to: {new_color_property}',
+                            deferred=True,
+                            attribute=attribute,
+                            new_color_property=new_color_property,
+                        )
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Shapes.properties to use '
-                        f'{color_mode}'
+                        trans._(
+                            'There must be a valid Shapes.properties to use {color_mode}',
+                            deferred=True,
+                            color_mode=color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -852,13 +954,16 @@ class Shapes(Layer):
                 self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
             setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
 
     def _set_color_cycle(self, color_cycle: np.ndarray, attribute: str):
-        """ Set the face_color_cycle or edge_color_cycle property
+        """Set the face_color_cycle or edge_color_cycle property
 
         Parameters
         ----------
@@ -886,10 +991,58 @@ class Shapes(Layer):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
 
+    @edge_width.setter
+    def edge_width(self, width):
+        """Set edge width of shapes using float or list of float.
+
+        If list of float, must be of equal length to n shapes
+
+        Parameters
+        ----------
+        width : float or list of float
+            width of all shapes, or each shape if list
+        """
+        if isinstance(width, list):
+            if not len(width) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                widths = width
+        else:
+            widths = [width for _ in range(self.nshapes)]
+
+        for i, width in enumerate(widths):
+            self._data_view.update_edge_width(i, width)
+
     @property
     def z_index(self):
         """list of int: z_index for each shape."""
         return self._data_view.z_indices
+
+    @z_index.setter
+    def z_index(self, z_index):
+        """Set z_index of shape using either int or list of int.
+
+        When list of int is provided, must be of equal length to n shapes.
+
+        Parameters
+        ----------
+        z_index : int or list of int
+            z-index of shapes
+        """
+        if isinstance(z_index, list):
+            if not len(z_index) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                z_indices = z_index
+        else:
+            z_indices = [z_index for _ in range(self.nshapes)]
+
+        for i, z_idx in enumerate(z_indices):
+            self._data_view.update_z_index(i, z_idx)
 
     @property
     def selected_data(self):
@@ -923,12 +1076,7 @@ class Shapes(Layer):
                     self.current_edge_color = edge_color
 
             edge_width = list(
-                set(
-                    [
-                        self._data_view.shapes[i].edge_width
-                        for i in selected_data
-                    ]
-                )
+                {self._data_view.shapes[i].edge_width for i in selected_data}
             )
             if len(edge_width) == 1:
                 edge_width = edge_width[0]
@@ -946,7 +1094,7 @@ class Shapes(Layer):
                     self.current_properties = properties
 
     def _set_color(self, color, attribute: str):
-        """ Set the face_color or edge_color property
+        """Set the face_color or edge_color property
 
         Parameters
         ----------
@@ -1031,7 +1179,7 @@ class Shapes(Layer):
                 color_event()
 
     def _initialize_color(self, color, attribute: str, n_shapes: int):
-        """ Get the face/edge colors the Shapes layer will be initialized with
+        """Get the face/edge colors the Shapes layer will be initialized with
 
         Parameters
         ----------
@@ -1124,7 +1272,9 @@ class Shapes(Layer):
                             transform_color(next(color_cycle))
                         )
                     setattr(
-                        self, f'{attribute}_color_cycle_map', color_cycle_map,
+                        self,
+                        f'{attribute}_color_cycle_map',
+                        color_cycle_map,
                     )
             colors = np.array([color_cycle_map[x] for x in color_properties])
             if len(colors) == 0:
@@ -1142,7 +1292,9 @@ class Shapes(Layer):
                         prop=color_properties, colormap=colormap
                     )
                     setattr(
-                        self, f'{attribute}_contrast_limits', contrast_limits,
+                        self,
+                        f'{attribute}_contrast_limits',
+                        contrast_limits,
                     )
                 else:
 
@@ -1212,7 +1364,7 @@ class Shapes(Layer):
         return new_colors
 
     def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
+        """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
                 return True
@@ -1222,7 +1374,10 @@ class Shapes(Layer):
             return False
         else:
             raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an property'
+                trans._(
+                    'face_color should be the name of a color, an array of colors, or the name of an property',
+                    deferred=True,
+                )
             )
 
     def _get_state(self):
@@ -1280,8 +1435,19 @@ class Shapes(Layer):
         text_coords : (N x D) np.ndarray
             Array of coordindates for the N text elements in view
         """
+        # get the coordinates of the vertices for the shapes in view
+        in_view_shapes_coords = [
+            self._data_view.data[i] for i in self._indices_view
+        ]
+
+        # get the coordinates for the dimensions being displayed
+        sliced_in_view_coords = [
+            position[:, self._dims_displayed]
+            for position in in_view_shapes_coords
+        ]
+
         return self.text.compute_text_coords(
-            self._data_view.data, self._dims.ndisplay
+            sliced_in_view_coords, self._ndisplay
         )
 
     @property
@@ -1337,20 +1503,22 @@ class Shapes(Layer):
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
-            self.help = 'enter a selection mode to edit shape properties'
+            self.help = trans._(
+                'enter a selection mode to edit shape properties'
+            )
         elif mode in [Mode.SELECT, Mode.DIRECT]:
             self.cursor = 'pointing'
             self.interactive = False
-            self.help = (
-                'hold <space> to pan/zoom, '
-                f'press <{BACKSPACE}> to remove selected'
+            self.help = trans._(
+                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
+                BACKSPACE=BACKSPACE,
             )
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
         elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.VERTEX_INSERT:
                 self.mouse_drag_callbacks.append(vertex_insert)
             else:
@@ -1359,7 +1527,7 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom'
+            self.help = trans._('hold <space> to pan/zoom')
             if mode == Mode.ADD_RECTANGLE:
                 self.mouse_drag_callbacks.append(add_rectangle)
             elif mode == Mode.ADD_ELLIPSE:
@@ -1369,15 +1537,19 @@ class Shapes(Layer):
         elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
-            self.help = (
-                'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
+            self.help = trans._(
+                'hold <space> to pan/zoom, press <esc> to finish drawing'
             )
             self.mouse_drag_callbacks.append(add_path_polygon)
             self.mouse_move_callbacks.append(add_path_polygon_creating)
         else:
-            raise ValueError("Mode not recognized")
+            raise ValueError(
+                trans._(
+                    "Mode not recognized",
+                    deferred=True,
+                )
+            )
 
-        self.status = str(mode)
         self._mode = mode
 
         draw_modes = [
@@ -1400,7 +1572,7 @@ class Shapes(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._dims.ndisplay == 3:
+            if self._ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -1422,16 +1594,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1456,6 +1630,8 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        data, shape_type = extract_shape_type(data, shape_type)
+
         if edge_width is None:
             edge_width = self.current_edge_width
 
@@ -1475,14 +1651,30 @@ class Shapes(Layer):
             z_index = z_index or 0
 
         if n_new_shapes > 0:
-            for k in self.properties:
-                new_property = np.repeat(
-                    self.current_properties[k], n_new_shapes, axis=0
-                )
-                self.properties[k] = np.concatenate(
-                    (self.properties[k], new_property), axis=0
-                )
-            self.text.add(self.current_properties, n_new_shapes)
+            if len(self.properties) > 0:
+                first_prop_key = next(iter(self.properties))
+                n_prop_values = len(self.properties[first_prop_key])
+            else:
+                n_prop_values = 0
+            total_shapes = n_new_shapes + self.nshapes
+            if total_shapes > n_prop_values:
+                n_props_to_add = total_shapes - n_prop_values
+                for k in self.properties:
+                    new_property = np.repeat(
+                        self.current_properties[k], n_props_to_add, axis=0
+                    )
+                    self.properties[k] = np.concatenate(
+                        (self.properties[k], new_property), axis=0
+                    )
+                self.text.add(self.current_properties, n_props_to_add)
+            if total_shapes < n_prop_values:
+                for k in self.properties:
+                    self.properties[k] = self.properties[k][:total_shapes]
+                n_props_to_remove = n_prop_values - total_shapes
+                indices_to_remove = np.arange(n_prop_values)[
+                    -n_props_to_remove:
+                ]
+                self.text.remove(indices_to_remove)
 
             self._add_shapes(
                 data,
@@ -1513,16 +1705,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1600,16 +1794,18 @@ class Shapes(Layer):
 
         Parameters
         ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
+        data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+            List of shape data, where each element is either an (N, D) array of the
+            N vertices of a shape in D dimensions or a tuple containing an array of
+            the N vertices and the shape_type string. When a shape_type is present,
+            it overrides keyword arg shape_type. Can be an 3-dimensional array
+            if each shape has the same number of vertices.
         shape_type : string | list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes.
+            shapes. Overriden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1686,27 +1882,28 @@ class Shapes(Layer):
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, z in shape_inputs:
+            self._add_shapes_to_view(shape_inputs, self._data_view)
 
-                # A False slice_key means the shape is invalid as it is not
-                # confined to a single plane
-                shape_cls = shape_classes[ShapeType(st)]
-                shape = shape_cls(
-                    d,
-                    edge_width=ew,
-                    z_index=z,
-                    dims_order=self._dims.order,
-                    ndisplay=self._dims.ndisplay,
-                )
-
-                # Add shape
-                self._data_view.add(
-                    shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
-                )
-
-        self._display_order_stored = copy(self._dims.order)
-        self._ndisplay_stored = copy(self._dims.ndisplay)
+        self._display_order_stored = copy(self._dims_order)
+        self._ndisplay_stored = copy(self._ndisplay)
         self._update_dims()
+
+    def _add_shapes_to_view(self, shape_inputs, data_view):
+        """Build new shapes and add them to the _data_view"""
+        for d, st, ew, ec, fc, z in shape_inputs:
+
+            shape_cls = shape_classes[ShapeType(st)]
+            shape = shape_cls(
+                d,
+                edge_width=ew,
+                z_index=z,
+                dims_order=self._dims_order,
+                ndisplay=self._ndisplay,
+            )
+
+            # Add shape
+            data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
+        data_view._update_z_order()
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
@@ -1717,7 +1914,10 @@ class Shapes(Layer):
         for k, v in properties.items():
             if len(v) != n_shapes:
                 raise ValueError(
-                    'the number of properties must equal the number of shapes'
+                    trans._(
+                        'the number of properties must equal the number of shapes',
+                        deferred=True,
+                    )
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -1745,23 +1945,21 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._dims.ndisplay == self._ndisplay_stored:
+        if not self._ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(
-                self._dims.ndim, self._dims.ndisplay
-            )
-            self._ndisplay_stored = copy(self._dims.ndisplay)
+            self._data_view.ndisplay = min(self.ndim, self._ndisplay)
+            self._ndisplay_stored = copy(self._ndisplay)
             self._clipboard = {}
 
-        if not self._dims.order == self._display_order_stored:
+        if not self._dims_order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims.order)
-            self._display_order_stored = copy(self._dims.order)
+            self._data_view.update_dims_order(self._dims_order)
+            self._display_order_stored = copy(self._dims_order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
         slice_key = np.array(self._slice_indices)[
-            list(self._dims.not_displayed)
+            list(self._dims_not_displayed)
         ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
@@ -1979,23 +2177,17 @@ class Shapes(Layer):
         self._value = (None, None)
         self._moving_value = (None, None)
         if self._is_creating is True and self._mode == Mode.ADD_PATH:
-            vertices = self._data_view.displayed_vertices[
-                self._data_view.displayed_index == index
-            ]
+            vertices = self._data_view.shapes[index].data
             if len(vertices) <= 2:
                 self._data_view.remove(index)
             else:
-                data_full = self.expand_shape(vertices)
-                self._data_view.edit(index, data_full[:-1])
+                self._data_view.edit(index, vertices[:-1])
         if self._is_creating is True and self._mode == Mode.ADD_POLYGON:
-            vertices = self._data_view.displayed_vertices[
-                self._data_view.displayed_index == index
-            ]
+            vertices = self._data_view.shapes[index].data
             if len(vertices) <= 3:
                 self._data_view.remove(index)
             else:
-                data_full = self.expand_shape(vertices)
-                self._data_view.edit(index, data_full[:-1])
+                self._data_view.edit(index, vertices[:-1])
         self._is_creating = False
         self._update_dims()
 
@@ -2015,12 +2207,12 @@ class Shapes(Layer):
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
             de = self._extent_data
-            offset = np.array([de[0, d] for d in self._dims.displayed]) + 0.5
+            offset = np.array([de[0, d] for d in self._dims_displayed]) + 0.5
             # calculate range of values for the vertices and pad with 1
             # padding ensures the entire shape can be represented in the thumbnail
             # without getting clipped
             shape = np.ceil(
-                [de[1, d] - de[0, d] + 1 for d in self._dims.displayed]
+                [de[1, d] - de[0, d] + 1 for d in self._dims_displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -2117,6 +2309,11 @@ class Shapes(Layer):
     def expand_shape(self, data):
         """Expand shape from 2D to the full data dims.
 
+        expand_shape is deprecated and will be removed in version 0.4.9.
+        It should no longer be used as layers should will soon not know
+        which dimensions are displayed. Instead you should work with
+        full nD shape data as much as possible.
+
         Parameters
         ----------
         data : array
@@ -2127,22 +2324,34 @@ class Shapes(Layer):
         data_full : array
             Full D dimensional data array of the shape.
         """
+        warnings.warn(
+            trans._(
+                "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
         if self.ndim == 2:
-            data_full = data[:, self._dims.displayed_order]
+            data_full = data[:, self._dims_displayed_order]
         else:
             data_full = np.zeros((len(data), self.ndim), dtype=float)
             indices = np.array(self._slice_indices)
-            data_full[:, self._dims.not_displayed] = indices[
-                self._dims.not_displayed
+            data_full[:, self._dims_not_displayed] = indices[
+                self._dims_not_displayed
             ]
-            data_full[:, self._dims.displayed] = data
+            data_full[:, self._dims_displayed] = data
 
         return data_full
 
-    def _get_value(self):
-        """Determine if any shape at given coord using triangle meshes.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
 
-        Getting value is not supported yet for 3D meshes
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
@@ -2153,13 +2362,13 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._dims.ndisplay == 3:
+        if self._ndisplay == 3:
             return (None, None)
 
         if self._is_moving:
             return self._moving_value
 
-        coord = self.displayed_coordinates
+        coord = [position[i] for i in self._dims_displayed]
 
         # Check selected shapes
         value = None
@@ -2240,8 +2449,8 @@ class Shapes(Layer):
                 },
                 'indices': self._slice_indices,
             }
-            if self.text.values is None:
-                self._clipboard['text'] = None
+            if len(self.text.values) == 0:
+                self._clipboard['text'] = np.empty(0)
             else:
                 self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
@@ -2254,7 +2463,7 @@ class Shapes(Layer):
             # Calculate offset based on dimension shifts
             offset = [
                 self._slice_indices[i] - self._clipboard['indices'][i]
-                for i in self._dims.not_displayed
+                for i in self._dims_not_displayed
             ]
 
             for k in self.properties:
@@ -2267,8 +2476,8 @@ class Shapes(Layer):
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self._dims.not_displayed] = data[
-                    :, self._dims.not_displayed
+                data[:, self._dims_not_displayed] = data[
+                    :, self._dims_not_displayed
                 ] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]
@@ -2277,7 +2486,7 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            if self._clipboard['text'] is not None:
+            if len(self._clipboard['text']) > 0:
                 self.text._values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
@@ -2287,187 +2496,6 @@ class Shapes(Layer):
             )
 
             self.move_to_front()
-
-    def _move(self, coord):
-        """Moves object at given mouse position and set of indices.
-
-        Parameters
-        ----------
-        coord : sequence of two int
-            Position of mouse cursor in image coordinates.
-        """
-        vertex = self._moving_value[1]
-        if self._mode in (
-            [Mode.SELECT, Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]
-        ):
-            if len(self.selected_data) > 0:
-                self._is_moving = True
-                if vertex is None:
-                    # Check where dragging box from to move whole object
-                    if self._drag_start is None:
-                        center = self._selected_box[Box.CENTER]
-                        self._drag_start = coord - center
-                    center = self._selected_box[Box.CENTER]
-                    shift = coord - center - self._drag_start
-                    for index in self.selected_data:
-                        self._data_view.shift(index, shift)
-                    self._selected_box = self._selected_box + shift
-                    self.refresh()
-                elif vertex < Box.LEN:
-                    # Corner / edge vertex is being dragged so resize object
-                    box = self._selected_box
-                    if self._fixed_vertex is None:
-                        self._fixed_index = (vertex + 4) % Box.LEN
-                        self._fixed_vertex = box[self._fixed_index]
-
-                    size = (
-                        box[(self._fixed_index + 4) % Box.LEN]
-                        - box[self._fixed_index]
-                    )
-                    offset = box[Box.HANDLE] - box[Box.CENTER]
-                    offset = offset / np.linalg.norm(offset)
-                    offset_perp = np.array([offset[1], -offset[0]])
-
-                    fixed = self._fixed_vertex
-                    new = list(coord)
-
-                    if self._fixed_aspect and self._fixed_index % 2 == 0:
-                        if (new - fixed)[0] == 0:
-                            ratio = 1
-                        else:
-                            ratio = abs((new - fixed)[1] / (new - fixed)[0])
-                        if ratio > self._aspect_ratio:
-                            r = self._aspect_ratio / ratio
-                            new[1] = fixed[1] + (new[1] - fixed[1]) * r
-                        else:
-                            r = ratio / self._aspect_ratio
-                            new[0] = fixed[0] + (new[0] - fixed[0]) * r
-
-                    if size @ offset == 0:
-                        dist = 1
-                    else:
-                        dist = ((new - fixed) @ offset) / (size @ offset)
-
-                    if size @ offset_perp == 0:
-                        dist_perp = 1
-                    else:
-                        dist_perp = ((new - fixed) @ offset_perp) / (
-                            size @ offset_perp
-                        )
-
-                    if self._fixed_index % 2 == 0:
-                        # corner selected
-                        scale = np.array([dist_perp, dist])
-                    elif self._fixed_index % 4 == 3:
-                        # top selected
-                        scale = np.array([1, dist])
-                    else:
-                        # side selected
-                        scale = np.array([dist_perp, 1])
-
-                    # prevent box from shrinking below a threshold size
-                    threshold = self._vertex_size * self.scale_factor / 8
-                    scale[abs(scale * size[[1, 0]]) < threshold] = 1
-
-                    # check orientation of box
-                    angle = -np.arctan2(offset[0], -offset[1])
-                    c, s = np.cos(angle), np.sin(angle)
-                    if angle == 0:
-                        for index in self.selected_data:
-                            self._data_view.scale(
-                                index, scale, center=self._fixed_vertex
-                            )
-                        self._scale_box(scale, center=self._fixed_vertex)
-                    else:
-                        rotation = np.array([[c, s], [-s, c]])
-                        scale_mat = np.array([[scale[0], 0], [0, scale[1]]])
-                        inv_rot = np.array([[c, -s], [s, c]])
-                        transform = rotation @ scale_mat @ inv_rot
-                        for index in self.selected_data:
-                            self._data_view.shift(index, -self._fixed_vertex)
-                            self._data_view.transform(index, transform)
-                            self._data_view.shift(index, self._fixed_vertex)
-                        self._transform_box(
-                            transform, center=self._fixed_vertex
-                        )
-                    self.refresh()
-                elif vertex == 8:
-                    # Rotation handle is being dragged so rotate object
-                    handle = self._selected_box[Box.HANDLE]
-                    if self._drag_start is None:
-                        self._fixed_vertex = self._selected_box[Box.CENTER]
-                        offset = handle - self._fixed_vertex
-                        self._drag_start = -np.degrees(
-                            np.arctan2(offset[0], -offset[1])
-                        )
-
-                    new_offset = coord - self._fixed_vertex
-                    new_angle = -np.degrees(
-                        np.arctan2(new_offset[0], -new_offset[1])
-                    )
-                    fixed_offset = handle - self._fixed_vertex
-                    fixed_angle = -np.degrees(
-                        np.arctan2(fixed_offset[0], -fixed_offset[1])
-                    )
-
-                    if np.linalg.norm(new_offset) < 1:
-                        angle = 0
-                    elif self._fixed_aspect:
-                        angle = np.round(new_angle / 45) * 45 - fixed_angle
-                    else:
-                        angle = new_angle - fixed_angle
-
-                    for index in self.selected_data:
-                        self._data_view.rotate(
-                            index, angle, center=self._fixed_vertex
-                        )
-                    self._rotate_box(angle, center=self._fixed_vertex)
-                    self.refresh()
-            else:
-                self._is_selecting = True
-                if self._drag_start is None:
-                    self._drag_start = coord
-                self._drag_box = np.array([self._drag_start, coord])
-                self._set_highlight()
-        elif self._mode in [Mode.DIRECT, Mode.ADD_PATH, Mode.ADD_POLYGON]:
-            if len(self.selected_data) > 0:
-                if vertex is not None:
-                    self._is_moving = True
-                    index = self._moving_value[0]
-                    shape_type = type(self._data_view.shapes[index])
-                    if shape_type == Ellipse:
-                        # DIRECT vertex moving of ellipse not implemented
-                        pass
-                    else:
-                        if shape_type == Rectangle:
-                            new_type = Polygon
-                        else:
-                            new_type = None
-                        indices = self._data_view.displayed_index == index
-                        vertices = self._data_view.displayed_vertices[indices]
-                        vertices[vertex] = coord
-                        data_full = self.expand_shape(vertices)
-                        self._data_view.edit(
-                            index, data_full, new_type=new_type
-                        )
-                        shapes = self.selected_data
-                        self._selected_box = self.interaction_box(shapes)
-                        self.refresh()
-            else:
-                self._is_selecting = True
-                if self._drag_start is None:
-                    self._drag_start = coord
-                self._drag_box = np.array([self._drag_start, coord])
-                self._set_highlight()
-        elif self._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
-            if len(self.selected_data) > 0:
-                pass
-            else:
-                self._is_selecting = True
-                if self._drag_start is None:
-                    self._drag_start = coord
-                self._drag_box = np.array([self._drag_start, coord])
-                self._set_highlight()
 
     def to_masks(self, mask_shape=None):
         """Return an array of binary masks, one for each shape.

@@ -13,6 +13,8 @@ from typing import (
     overload,
 )
 
+from ....utils.translations import trans
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,12 +48,6 @@ class TypedMutableSequence(MutableSequence[_T]):
         into the list using ``list['frank']`` and it will search for an object
         whos attribute ``.name`` equals ``'frank'``.
     """
-
-    # required for inspect.sigature to be correct...
-    def __new__(
-        cls, data=(), *, basetype=(), lookup=dict(),
-    ):
-        return object.__new__(cls)
 
     def __init__(
         self,
@@ -92,7 +88,12 @@ class TypedMutableSequence(MutableSequence[_T]):
     def __setitem__(self, key, value):  # noqa: F811
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
-                raise TypeError('Can only assign an iterable to slice')
+                raise TypeError(
+                    trans._(
+                        'Can only assign an iterable to slice',
+                        deferred=True,
+                    )
+                )
             self._list[key] = [self._type_check(v) for v in value]
         else:
             self._list[key] = self._type_check(value)
@@ -119,8 +120,33 @@ class TypedMutableSequence(MutableSequence[_T]):
         ...  # pragma: no cover
 
     def __getitem__(self, key):  # noqa: F811
-        _key = self.index(key) if type(key) in self._lookup else key
-        result = self._list[_key]
+        """Get an item from the list
+
+        Parameters
+        ----------
+        key : int, slice, or any type in self._lookup
+            The key to get.
+
+        Returns
+        -------
+        The value at `key`
+
+        Raises
+        ------
+        IndexError:
+            If ``type(key)`` is not in ``self._lookup`` (usually an int, like a regular
+            list), and the index is out of range.
+        KeyError:
+            If type(key) is in self._lookup and the key is not in the list (after)
+            applying the self._lookup[key] function to each item in the list
+        """
+        if type(key) in self._lookup:
+            try:
+                return self.__getitem__(self.index(key))
+            except ValueError as e:
+                raise KeyError(str(e)) from e
+
+        result = self._list[key]
         return self.__newlike__(result) if isinstance(result, list) else result
 
     def __delitem__(self, key):
@@ -132,15 +158,22 @@ class TypedMutableSequence(MutableSequence[_T]):
             isinstance(e, t) for t in self._basetypes
         ):
             raise TypeError(
-                f'Cannot add object with type {type(e)!r} to '
-                f'TypedList expecting type {self._basetypes!r}'
+                trans._(
+                    'Cannot add object with type {dtype!r} to TypedList expecting type {basetypes!r}',
+                    deferred=True,
+                    dtype=type(e),
+                    basetypes=self._basetypes,
+                )
             )
         return e
 
     def __newlike__(self, iterable: Iterable[_T]):
-        return self.__class__(
-            iterable, basetype=self._basetypes, lookup=self._lookup
-        )
+        new = self.__class__()
+        # seperating this allows subclasses to omit these from their `__init__`
+        new._basetypes = self._basetypes
+        new._lookup = self._lookup.copy()
+        new.extend(iterable)
+        return new
 
     def copy(self) -> 'TypedMutableSequence[_T]':
         """Return a shallow copy of the list."""
@@ -167,7 +200,9 @@ class TypedMutableSequence(MutableSequence[_T]):
         Parameters
         ----------
         value : Any
-            A value to lookup
+            A value to lookup.  If `type(value)` is in the lookups functions
+            provided for this class, then values in the list will be searched
+            using the corresponding lookup converter function.
         start : int, optional
             The starting index to search, by default 0
         stop : int, optional
@@ -188,19 +223,38 @@ class TypedMutableSequence(MutableSequence[_T]):
         if stop is not None and stop < 0:
             stop += len(self)
 
-        convert = self._lookup.get(type(value), lambda x: x)
+        convert = self._lookup.get(type(value), _noop)
+        special_lookup = type(value) in self._lookup
+        # A "special lookup" means that they type of the value being searched
+        # is in the `self._lookups` dict.  The most common internal use of this
+        # pattern is `layers['name']`.  So we do a "deep" traversal in that
+        # case, which will let the nestable variant search throughout.
+        # we may or may not want that behavior?
+        for i in self._iter_indices(start, stop, deep=special_lookup):
+            v = convert(self[i])
+            if v is value or v == value:
+                return i
 
-        i = start
-        while stop is None or i < stop:
-            try:
-                v = convert(self[i])
-                if v is value or v == value:
-                    return i
-            except IndexError:
-                break
-            i += 1
-        raise ValueError(f"{value!r} is not in list")
+        raise ValueError(
+            trans._(
+                "{value!r} is not in list",
+                deferred=True,
+                value=value,
+            )
+        )
+
+    def _iter_indices(self, start=0, stop=None, deep=False):
+        """Iter indices from start to stop.
+
+        While this is trivial for this basic sequence type, this method lets
+        subclasses (like NestableEventedList modify how they are traversed).
+        """
+        yield from range(start, len(self) if stop is None else stop)
 
     def _ipython_key_completions_(self):
         if str in self._lookup:
             return (self._lookup[str](x) for x in self)
+
+
+def _noop(x):
+    return x

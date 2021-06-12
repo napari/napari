@@ -1,7 +1,8 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
 
-from ...layers.base._base_constants import Blending
+from ...layers.base._base_constants import BLENDING_TRANSLATIONS
+from ...utils.events import disconnect_events
 
 
 class QtLayerControls(QFrame):
@@ -30,8 +31,11 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.blending.connect(self._on_blending_change)
-        layer.events.opacity.connect(self._on_opacity_change)
+        self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.opacity.connect(self._on_opacity_change)
+
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -52,11 +56,12 @@ class QtLayerControls(QFrame):
         self._on_opacity_change()
 
         blend_comboBox = QComboBox(self)
-        blend_comboBox.addItems(Blending.keys())
-        index = blend_comboBox.findText(
-            self.layer.blending, Qt.MatchFixedString
-        )
-        blend_comboBox.setCurrentIndex(index)
+        for index, (data, text) in enumerate(BLENDING_TRANSLATIONS.items()):
+            data = data.value
+            blend_comboBox.addItem(text, data)
+            if data == self.layer.blending:
+                blend_comboBox.setCurrentIndex(index)
+
         blend_comboBox.activated[str].connect(self.changeBlending)
         self.blendComboBox = blend_comboBox
 
@@ -80,7 +85,7 @@ class QtLayerControls(QFrame):
         text : str
             Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
         """
-        self.layer.blending = text
+        self.layer.blending = self.blendComboBox.currentData()
 
     def _on_opacity_change(self, event=None):
         """Receive layer model opacity change event and update opacity slider.
@@ -102,7 +107,15 @@ class QtLayerControls(QFrame):
             The napari event that triggered this method, by default None.
         """
         with self.layer.events.blending.blocker():
-            index = self.blendComboBox.findText(
-                self.layer.blending, Qt.MatchFixedString
+            self.blendComboBox.setCurrentIndex(
+                self.blendComboBox.findData(self.layer.blending)
             )
-            self.blendComboBox.setCurrentIndex(index)
+
+    def close(self):
+        """Disconnect events when widget is closing."""
+        disconnect_events(self.layer.events, self)
+        for child in self.children():
+            close_method = getattr(child, 'close', None)
+            if close_method is not None:
+                close_method()
+        super().close()

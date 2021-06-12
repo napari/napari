@@ -1,6 +1,7 @@
 from collections.abc import MutableSequence
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
+import numpy as np
 import pytest
 
 from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
@@ -29,10 +30,22 @@ def test_list(request, regular_list):
         ('__setitem__', (slice(2), [1, 2]), ('changed',)),  # update slice
         ('__setitem__', (slice(2, 2), [1, 2]), ('changed',)),  # update slice
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
-        ('__delitem__', (slice(2),), ('removing', 'removed') * 2,),
+        (
+            '__delitem__',
+            (slice(2),),
+            ('removing', 'removed') * 2,
+        ),
         ('__delitem__', (slice(0, 0),), ('removing', 'removed')),
-        ('__delitem__', (slice(-3),), ('removing', 'removed') * 2,),
-        ('__delitem__', (slice(-2, None),), ('removing', 'removed') * 2,),
+        (
+            '__delitem__',
+            (slice(-3),),
+            ('removing', 'removed') * 2,
+        ),
+        (
+            '__delitem__',
+            (slice(-2, None),),
+            ('removing', 'removed') * 2,
+        ),
         # inherited interface
         ('append', (3,), ('inserting', 'inserted')),
         ('clear', (), ('removing', 'removed') * 5),
@@ -60,8 +73,8 @@ def test_list_interface_parity(test_list, regular_list, meth):
     else:
         test_list_method(*args)  # smoke test
 
-    for call, expect in zip(test_list.events.call_args_list, expected):
-        event = call.args[0]
+    for c, expect in zip(test_list.events.call_args_list, expected):
+        event = c.args[0]
         assert event.type == expect
 
 
@@ -128,22 +141,28 @@ def test_move(test_list):
     assert test_list == [3, 2, 0, 1, 4]
 
 
-@pytest.mark.parametrize(
-    'sources,dest,expectation',
-    [
-        ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
-        ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
-        ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
-        ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
-        ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
-        ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
-        ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
-        ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
-        ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
-        ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
-        ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
-    ],
-)
+BASIC_INDICES = [
+    ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
+    ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
+    ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
+    ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
+    ([1, 3, 5, 7], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # same as above
+    ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
+]
+OTHER_INDICES = [
+    ([7, 4], 1, [0, 7, 4, 1, 2, 3, 5, 6]),  # move forward reorder
+    ([3, 0, 2], 6, [1, 4, 5, 3, 0, 2, 6, 7]),  # move back reorder
+    ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
+    ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
+    ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
+    ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
+    ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
+    ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
+]
+MOVING_INDICES = BASIC_INDICES + OTHER_INDICES
+
+
+@pytest.mark.parametrize('sources,dest,expectation', MOVING_INDICES)
 def test_move_multiple(sources, dest, expectation):
     """Test the that we can move objects with the move method"""
     el = EventedList(range(8))
@@ -160,14 +179,13 @@ def test_move_multiple(sources, dest, expectation):
 
     el.move_multiple(sources, dest)
     assert el == expectation
-    el.events.moving.assert_called_once()
-    el.events.moved.assert_called_once()
+    el.events.moving.assert_called()
+    el.events.moved.assert_called()
     el.events.reordered.assert_called_with(value=expectation)
 
 
 def test_move_multiple_mimics_slice_reorder():
-    """Test the that move_multiple provides the same result as slice insertion.
-    """
+    """Test the that move_multiple provides the same result as slice insertion."""
     data = list(range(8))
     el = EventedList(data)
     el.events = Mock(wraps=el.events)
@@ -179,10 +197,24 @@ def test_move_multiple_mimics_slice_reorder():
     data[:] = [data[i] for i in new_order]
     assert el == new_order
     assert el == data
-    el.events.moving.assert_called_with(index=new_order, new_index=0)
-    el.events.moved.assert_called_with(
-        index=new_order, new_index=0, value=new_order,
-    )
+    assert el.events.moving.call_args_list == [
+        call(index=1, new_index=0),
+        call(index=5, new_index=1),
+        call(index=4, new_index=2),
+        call(index=5, new_index=3),
+        call(index=6, new_index=4),
+        call(index=7, new_index=5),
+        call(index=7, new_index=6),
+    ]
+    assert el.events.moved.call_args_list == [
+        call(index=1, new_index=0, value=1),
+        call(index=5, new_index=1, value=5),
+        call(index=4, new_index=2, value=3),
+        call(index=5, new_index=3, value=4),
+        call(index=6, new_index=4, value=6),
+        call(index=7, new_index=5, value=7),
+        call(index=7, new_index=6, value=2),
+    ]
     el.events.reordered.assert_called_with(value=new_order)
 
     # move_multiple also works omitting the insertion index
@@ -212,8 +244,7 @@ def flatten(container):
     """
     for i in container:
         if isinstance(i, MutableSequence):
-            for j in flatten(i):
-                yield j
+            yield from flatten(i)
         else:
             yield i
 
@@ -242,9 +273,21 @@ def test_nested_indexing():
         ('__delitem__', ((),), ('removing', 'removed')),  # delete
         ('__delitem__', ((1,),), ('removing', 'removed')),  # delete
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
-        ('__delitem__', (slice(2),), ('removing', 'removed') * 2,),
-        ('__delitem__', (slice(-1),), ('removing', 'removed') * 2,),
-        ('__delitem__', (slice(-2, None),), ('removing', 'removed') * 2,),
+        (
+            '__delitem__',
+            (slice(2),),
+            ('removing', 'removed') * 2,
+        ),
+        (
+            '__delitem__',
+            (slice(-1),),
+            ('removing', 'removed') * 2,
+        ),
+        (
+            '__delitem__',
+            (slice(-2, None),),
+            ('removing', 'removed') * 2,
+        ),
         # inherited interface
         ('append', (3,), ('inserting', 'inserted')),
         ('clear', (), ('removing', 'removed') * 3),
@@ -272,8 +315,8 @@ def test_nested_events(meth, group_index):
         method(*args)
 
     # make sure the correct event type and number was emitted
-    for call, expected in zip(ne_list.events.call_args_list, expected_events):
-        event = call.args[0]
+    for c, expected in zip(ne_list.events.call_args_list, expected_events):
+        event = c.args[0]
         assert event.type == expected
         if group_index == ():
             # in the root group, the index will be an int relative to root
@@ -288,27 +331,68 @@ def test_setting_nested_slice():
     assert tuple(ne_list[1, 1, 1]) == (9, 10, 1112)
 
 
-@pytest.mark.parametrize(
-    'source, dest, expectation',
-    [
-        # indices           2       (2, 1)
-        # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
-        [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 4, 20, 211, 3]],
-        [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
-        [((2, 1, 1),), (0,), [211, 0, 1, [20, [210], 22], 3, 4]],
-        [((2, 1, 1),), (), [0, 1, [20, [210], 22], 3, 4, 211]],
-    ],
-)
-def test_nested_move_multiple(source, dest, expectation):
+NESTED_POS_INDICES = [
+    # indices           2       (2, 1)
+    # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
+    [(), (), [0, 1, [20, [210, 211], 22], 3, 4]],  # no-op
+    [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
+    [((2, 0), (2, 1, 1), (3,)), (2), [0, 1, 20, 211, 3, [[210], 22], 4]],
+    [((2, 0), (2, 1, 1), (3,)), (3), [0, 1, [[210], 22], 20, 211, 3, 4]],
+    [((2, 1, 1), (3,)), (2, 0), [0, 1, [211, 3, 20, [210], 22], 4]],
+    [((2, 1, 1),), (2, 1, 0), [0, 1, [20, [211, 210], 22], 3, 4]],
+    [((2, 1, 1), (3,)), (2, 1, 0), [0, 1, [20, [211, 3, 210], 22], 4]],
+    [((2, 1, 1), (3,)), (2, 1, 1), [0, 1, [20, [210, 211, 3], 22], 4]],
+    [((2, 1, 1),), (0,), [211, 0, 1, [20, [210], 22], 3, 4]],
+    [((2, 1, 1),), (), [0, 1, [20, [210], 22], 3, 4, 211]],
+]
+
+NESTED_NEG_INDICES = [
+    [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 4, 20, 211, 3]],
+    [((2, 0), (2, 1, 1), (3,)), (-2), [0, 1, [[210], 22], 20, 211, 3, 4]],
+    [((2, 0), (2, 1, 1), (3,)), (-4), [0, 1, 20, 211, 3, [[210], 22], 4]],
+    [((2, 1, 1), (3,)), (2, -1), [0, 1, [20, [210], 22, 211, 3], 4]],
+    [((2, 1, 1), (3,)), (2, -2), [0, 1, [20, [210], 211, 3, 22], 4]],
+]
+
+NESTED_INDICES = NESTED_POS_INDICES + NESTED_NEG_INDICES  # type: ignore
+
+
+@pytest.mark.parametrize('sources, dest, expectation', NESTED_INDICES)
+def test_nested_move_multiple(sources, dest, expectation):
     """Test that moving multiple indices works and emits right events."""
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])
     ne_list.events = Mock(wraps=ne_list.events)
-    ne_list.move_multiple(source, dest)
+    ne_list.move_multiple(sources, dest)
     ne_list.events.reordered.assert_called_with(value=expectation)
 
 
-def test_arbitrary_child_events():
-    """Test that any object that supports the events protocol bubbles events.
+class E:
+    def __init__(self):
+        self.events = EmitterGroup(test=None)
+
+
+def test_child_events():
+    """Test that evented lists bubble child events."""
+    # create a random object that emits events
+    e_obj = E()
+    # and two nestable evented lists
+    root = EventedList()
+    observed = []
+    root.events.connect(lambda e: observed.append(e))
+    root.append(e_obj)
+    e_obj.events.test(value="hi")
+    obs = [(e.type, e.index, getattr(e, 'value', None)) for e in observed]
+    expected = [
+        ('inserting', 0, None),  # before we inserted b into root
+        ('inserted', 0, e_obj),  # after b was inserted into root
+        ('test', 0, 'hi'),  # when e_obj emitted an event called "test"
+    ]
+    for o, e in zip(obs, expected):
+        assert o == e
+
+
+def test_nested_child_events():
+    """Test that nested lists bubbles nested child events.
 
     If you add an object that implements the ``SupportsEvents`` Protocol
     (i.e. has an attribute ``events`` that is an ``EmitterGroup``), to a
@@ -319,9 +403,6 @@ def test_arbitrary_child_events():
 
     See docstring of :ref:`NestableEventedList` for more info.
     """
-
-    class E:
-        events = EmitterGroup(test=None)
 
     # create a random object that emits events
     e_obj = E()
@@ -368,13 +449,8 @@ def test_evented_list_subclass():
     assert lst == [1, 2]
 
 
-def test_event_group_depr():
-    events = EmitterGroup(b=None, deprecated={"a": "b"})
-    with pytest.warns(FutureWarning):
-        assert events.b == events.a
-    with pytest.raises(AttributeError):
-        events.c.connect()
-    with pytest.warns(FutureWarning):
-        assert events["b"] == events["a"]
-    with pytest.raises(KeyError):
-        events["c"].connect()
+def test_array_like_setitem():
+    """Test that EventedList.__setitem__ works for array-like items"""
+    array = np.array((10, 10))
+    evented_list = EventedList([array])
+    evented_list[0] = array

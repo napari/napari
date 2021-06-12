@@ -34,15 +34,15 @@ We recommend that you use conda to help manage the virtual environment. Otherwis
 ### from pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.7 and 3.8 using pip. However, for Windows users, you need to preinstall [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/)
+Python 3.7, 3.8, and 3.9 using pip. However, for Windows users, you need to preinstall [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/)
 in order to install VisPy (one of the packages we depend on) on Windows machines.
 
 The simplest command to install with pip is:
 
 ```sh
-pip install napari[all]
+pip install 'napari[all]'
 ```
- 
+
 (See `Specifying a GUI Backend` below for an explanation of the `[all]` notation.)
 Note: while not strictly required, it is *highly* recommended to install
 napari into a clean virtual environment using an environment manager like
@@ -52,7 +52,7 @@ napari into a clean virtual environment using an environment manager like
 ```sh
 conda create -y -n napari-env python=3.8
 conda activate napari-env
-pip install napari[all]
+pip install 'napari[all]'
 ```
 
 ### from source
@@ -62,7 +62,7 @@ To clone the repository locally and install in editable mode use
 ```sh
 git clone https://github.com/napari/napari.git
 cd napari
-pip install -e .[all]
+pip install -e '.[all]'
 
 # or, to install in editable mode AND grab all of the developer tools
 # (this is required if you want to contribute code back to napari)
@@ -83,39 +83,41 @@ For more information or troubleshooting see our [installation tutorial](https://
 > running napari will result in an error message asking you to install one of
 > them.
 >
-> Running `pip install napari[all]` will install the default framework – currently
+> Running `pip install 'napari[all]'` will install the default framework – currently
 > PyQt5, but this could change in the future.
 >
 > To install napari with a specific framework, you can use:
 >
 > ```sh
-> pip install napari[pyqt5]    # for PyQt5
+> pip install 'napari[pyqt5]'    # for PyQt5
 >
 > # OR
-> pip install napari[pyside2]  # for PySide2
+> pip install 'napari[pyside2]'  # for PySide2
 > ```
 
 ## simple example
+
 (The examples below require the `scikit-image` package to run. We just use data samples from this package for demonstration purposes. If you change the examples to use your own dataset, you may not need to install this package.)
 
-From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt`) you can open up an interactive viewer by calling
+From inside an IPython shell, you can open up an interactive viewer by calling
 
 ```python
 from skimage import data
 import napari
+
 viewer = napari.view_image(data.astronaut(), rgb=True)
 ```
 
 ![image](resources/screenshot-add-image.png)
 
-To do the same thing inside a script call
+To use napari from inside a script, use `napari.run()`:
 
 ```python
 from skimage import data
 import napari
 
-with napari.gui_qt():
-    viewer = napari.view_image(data.astronaut(), rgb=True)
+viewer = napari.view_image(data.astronaut(), rgb=True)
+napari.run()  # start the "event loop" and show the viewer
 ```
 
 ## features
@@ -136,20 +138,20 @@ For more details on how to use `napari` checkout our [tutorials](https://napari.
 
 ## mission, values, and roadmap
 
-For more information about our plans for `napari` you can read our [mission and values statement](https://napari.org/docs/dev/developers/MISSION_AND_VALUES.html), which includes more details on our vision for supporting a plugin ecosystem around napari. We also have
-a [roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3.html) that captures current development priorities within the project.
+For more information about our plans for `napari` you can read our [mission and values statement](https://napari.org/docs/dev/developers/mission_and_values.html), which includes more details on our vision for supporting a plugin ecosystem around napari.
+You can see details of [the project roadmap here](https://napari.org/roadmaps/index.html).
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](https://napari.org/docs/dev/developers/CONTRIBUTING.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](https://napari.org/docs/dev/developers/contributing.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](https://napari.org/docs/dev/developers/CODE_OF_CONDUCT.html) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](https://napari.org/docs/dev/developers/code_of_conduct.html) that should be honored by everyone who participates in the `napari` community.
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/docs/dev/developers/GOVERNANCE.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/docs/dev/developers/governance.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
 
 ## citing napari
 

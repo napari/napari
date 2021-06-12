@@ -4,9 +4,11 @@ import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
+from ._surface_constants import Shading
 
 
 # Mixin must come before Layer
@@ -16,12 +18,13 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     Parameters
     ----------
-    data : 3-tuple of array
+    data : 2-tuple or 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (K0, ..., KL, N)
-        array of values used to color vertices where the additional L
-        dimensions are used to color the same mesh with different values.
+        of the mesh triangles. The optional third element is the
+        (K0, ..., KL, N) array of values used to color vertices where the
+        additional L dimensions are used to color the same mesh with
+        different values. If not provided, it defaults to ones.
     colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -52,7 +55,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     shear : 1-D array or n-D array
         Either a vector of upper triangular values, or an nD shear matrix with
         ones along the main diagonal.
-    affine: n-D array or napari.utils.transforms.Affine
+    affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
@@ -64,6 +67,15 @@ class Surface(IntensityVisualizationMixin, Layer):
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
+    shading: str, Shading
+        One of a list of preset shading modes that determine the lighting model
+        using when rendering the surface in 3D.
+            * Shading.NONE
+                Corresponds to shading='none'.
+            * Shading.FLAT
+                Corresponds to shading='flat'.
+            * Shading.SMOOTH
+                Corresponds to shading='smooth'.
     visible : bool
         Whether the layer visual is currently being displayed.
 
@@ -92,11 +104,17 @@ class Surface(IntensityVisualizationMixin, Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If not passed is calculated as the min and max of
         the image.
+    shading: str
+        One of a list of preset shading modes that determine the lighting model
+        using when rendering the surface.
+            * 'none'
+            * 'flat'
+            * 'smooth'
     gamma : float
         Gamma correction for determining colormap linearity.
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _data_view : (M, 2) or (M, 3) array
         The coordinates of the vertices given the viewed dimensions.
     _view_faces : (P, 3) array
@@ -124,6 +142,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         affine=None,
         opacity=1,
         blending='translucent',
+        shading='flat',
         visible=True,
     ):
 
@@ -144,12 +163,28 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
         )
 
-        self.events.add(interpolation=Event, rendering=Event)
+        self.events.add(interpolation=Event, rendering=Event, shading=Event)
+
+        # assign mesh data and establish default behavior
+        if len(data) not in (2, 3):
+            raise ValueError(
+                trans._(
+                    'Surface data tuple must be 2 or 3, specifying verictes, faces, and optionally vertex values, instead got length {length}.',
+                    deferred=True,
+                    length=len(data),
+                )
+            )
+        self._vertices = data[0]
+        self._faces = data[1]
+        if len(data) == 3:
+            self._vertex_values = data[2]
+        else:
+            self._vertex_values = np.ones(len(self._vertices))
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
         if contrast_limits is None:
-            self._contrast_limits_range = calc_data_range(data[2])
+            self._contrast_limits_range = calc_data_range(self._vertex_values)
         else:
             self._contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self._contrast_limits_range)
@@ -157,17 +192,15 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self._dims.ndisplay))
+        self._data_view = np.zeros((0, self._ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
-        # assign mesh data and establish default behavior
-        self._vertices = data[0]
-        self._faces = data[1]
-        self._vertex_values = data[2]
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+        # Shading mode
+        self._shading = shading
 
     def _calc_data_range(self):
         return calc_data_range(self.vertex_values)
@@ -179,6 +212,26 @@ class Surface(IntensityVisualizationMixin, Layer):
     @property
     def data(self):
         return (self.vertices, self.faces, self.vertex_values)
+
+    @data.setter
+    def data(self, data):
+        if len(data) not in (2, 3):
+            raise ValueError(
+                trans._(
+                    'Surface data tuple must be 2 or 3, specifying vertices, faces, and optionally vertex values, instead got length {data_length}.',
+                    deferred=True,
+                    data_length=len(data),
+                )
+            )
+        self._vertices = data[0]
+        self._faces = data[1]
+        if len(data) == 3:
+            self._vertex_values = data[2]
+        else:
+            self._vertex_values = np.ones(len(self._vertices))
+
+        self._update_dims()
+        self.events.data(value=self.data)
 
     @property
     def vertices(self):
@@ -192,7 +245,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.refresh()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
 
     @property
     def vertex_values(self) -> np.ndarray:
@@ -205,7 +259,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertex_values = vertex_values
 
         self.refresh()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
 
     @property
     def faces(self) -> np.ndarray:
@@ -218,7 +273,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.faces = faces
 
         self.refresh()
-        self.events.data()
+        self.events.data(value=self.data)
+        self._set_editable()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -247,6 +303,18 @@ class Surface(IntensityVisualizationMixin, Layer):
             extrema = np.vstack([mins, maxs])
         return extrema
 
+    @property
+    def shading(self):
+        return str(self._shading)
+
+    @shading.setter
+    def shading(self, shading):
+        if isinstance(shading, Shading):
+            self._shading = shading
+        else:
+            self._shading = Shading(shading)
+        self.events.shading(value=self._shading)
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -261,6 +329,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                 'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
+                'shading': self.shading,
                 'data': self.data,
             }
         )
@@ -279,12 +348,12 @@ class Surface(IntensityVisualizationMixin, Layer):
             values = self.vertex_values[values_indices]
             if values.ndim > 1:
                 warnings.warn(
-                    """Assigning multiple values per vertex after slicing is
-                    not allowed. All dimensions corresponding to vertex_values
-                    must be non-displayed dimensions. Data will not be
-                    visible."""
+                    trans._(
+                        "Assigning multiple values per vertex after slicing is not allowed. All dimensions corresponding to vertex_values must be non-displayed dimensions. Data will not be visible.",
+                        deferred=True,
+                    )
                 )
-                self._data_view = np.zeros((0, self._dims.ndisplay))
+                self._data_view = np.zeros((0, self._ndisplay))
                 self._view_faces = np.zeros((0, 3))
                 self._view_vertex_values = []
                 return
@@ -296,24 +365,24 @@ class Surface(IntensityVisualizationMixin, Layer):
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
-                for d in np.subtract(self._dims.displayed, values_ndim)
+                for d in np.subtract(self._dims_displayed, values_ndim)
                 if d >= 0
             ]
             not_disp = [
                 d
-                for d in np.subtract(self._dims.not_displayed, values_ndim)
+                for d in np.subtract(self._dims_not_displayed, values_ndim)
                 if d >= 0
             ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self._dims.not_displayed)
-            disp = list(self._dims.displayed)
+            not_disp = list(self._dims_not_displayed)
+            disp = list(self._dims_displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif vertex_ndim > self._dims.ndisplay:
+        elif vertex_ndim > self._ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))
@@ -329,14 +398,17 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self, position):
+        """Value of the data at a position in data coordinates.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in data coordinates.
 
         Returns
         -------
-        value : int, None
+        value : None
             Value of the data at the coord.
         """
-
         return None

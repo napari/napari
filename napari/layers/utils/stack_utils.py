@@ -8,10 +8,38 @@ from ...layers.image._image_utils import guess_multiscale
 from ...types import FullLayerData
 from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from ...utils.translations import trans
+
+
+def slice_from_axis(array, *, axis, element):
+    """Take a single index slice from array using slicing.
+
+    Equivalent to :func:`np.take`, but using slicing, which ensures that the
+    output is a view of the original array.
+
+    Parameters
+    ----------
+    array : NumPy or other array
+        Input array to be sliced.
+    axis : int
+        The axis along which to slice.
+    element : int
+        The element along that axis to grab.
+
+    Returns
+    -------
+    sliced : NumPy or other array
+        The sliced output array, which has one less dimension than the input.
+    """
+    slices = [slice(None) for i in range(array.ndim)]
+    slices[axis] = element
+    return array[tuple(slices)]
 
 
 def split_channels(
-    data: np.ndarray, channel_axis: int, **kwargs,
+    data: np.ndarray,
+    channel_axis: int,
+    **kwargs,
 ) -> List[FullLayerData]:
     """Split the data array into separate arrays along an axis.
 
@@ -32,7 +60,7 @@ def split_channels(
     data : array or list of array
     channel_axis : int
         Axis to split the image along.
-    kwargs: dict
+    **kwargs : dict
         Keyword arguments will override the default image meta keys
         returned in each layer data tuple.
 
@@ -52,7 +80,13 @@ def split_channels(
     kwargs['blending'] = kwargs.get('blending') or 'additive'
     kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
-    iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+    iterable_kwargs = {
+        'scale',
+        'translate',
+        'affine',
+        'contrast_limits',
+        'metadata',
+    }
 
     # turn the kwargs dict into a mapping of {key: iterator}
     # so that we can use {k: next(v) for k, v in kwargs.items()} below
@@ -79,21 +113,26 @@ def split_channels(
     for i in range(n_channels):
         if multiscale:
             image = [
-                np.take(data[j], i, axis=channel_axis)
+                slice_from_axis(data[j], axis=channel_axis, element=i)
                 for j in range(len(data))
             ]
         else:
-            image = np.take(data, i, axis=channel_axis)
+            image = slice_from_axis(data, axis=channel_axis, element=i)
         i_kwargs = {}
         for key, val in kwargs.items():
             try:
                 i_kwargs[key] = next(val)
             except StopIteration:
                 raise IndexError(
-                    "Error adding multichannel image with data shape "
-                    f"{data.shape!r}.\nRequested channel_axis "
-                    f"({channel_axis}) had length {n_channels}, but "
-                    f"the '{key}' argument only provided {i} values. "
+                    trans._(
+                        "Error adding multichannel image with data shape {data_shape!r}.\nRequested channel_axis ({channel_axis}) had length {n_channels}, but the '{key}' argument only provided {i} values. ",
+                        deferred=True,
+                        data_shape=data.shape,
+                        channel_axis=channel_axis,
+                        n_channels=n_channels,
+                        key=key,
+                        i=i,
+                    )
                 )
 
         layerdata = (image, i_kwargs, 'image')
@@ -102,7 +141,11 @@ def split_channels(
     return layerdata_list
 
 
-def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
+def stack_to_images(
+    stack: Image,
+    axis: int,
+    **kwargs: Dict,
+) -> List[Image]:
     """Splits a single Image layer into a list layers along axis.
 
     Some image layer properties will be changed unless specified as an item in
@@ -138,13 +181,19 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
     if num_dim < 3:
         raise ValueError(
-            "The image needs more than 2 dimensions for splitting",
+            trans._(
+                "The image needs more than 2 dimensions for splitting",
+                deferred=True,
+            )
         )
 
     if axis >= num_dim:
         raise ValueError(
-            "Can't split along axis {}. The image has {} dimensions".format(
-                axis, num_dim
+            trans._(
+                "Can't split along axis {axis}. The image has {num_dim} dimensions",
+                deferred=True,
+                axis=axis,
+                num_dim=num_dim,
             )
         )
 
@@ -181,7 +230,9 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
 
 def images_to_stack(
-    images: List[Image], axis: int = 0, **kwargs: Dict,
+    images: List[Image],
+    axis: int = 0,
+    **kwargs: Dict,
 ) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
@@ -194,18 +245,23 @@ def images_to_stack(
         List of Image Layers
     axis : int
         Index to to insert the new axis
-    kwargs : dict
+    **kwargs : dict
         Dictionary of parameters values to override parameters
         from the first image in images list.
 
-    Returns.
+    Returns
     -------
     stack : napari.layers.Image
         Combined image stack
     """
 
     if len(images) == 0:
-        raise IndexError("images list is empty")
+        raise IndexError(
+            trans._(
+                "images list is empty",
+                deferred=True,
+            )
+        )
 
     data, meta, _ = images[0].as_layer_data_tuple()
 

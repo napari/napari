@@ -14,8 +14,8 @@ class ImageLoader:
         data : ImageSliceData
             The data to load.
 
-        Return
-        ------
+        Returns
+        -------
         bool
             True if load happened synchronously.
         """
@@ -30,8 +30,8 @@ class ImageLoader:
         data : ImageSliceData
             Does this data match what we are loading?
 
-        Return
-        ------
+        Returns
+        -------
         bool
             Return True if data matches.
         """

@@ -1,5 +1,13 @@
-"""ChunkLoader and related.
-"""
-from ._config import async_config
+"""chunk module"""
 from ._loader import chunk_loader, synchronous_loading, wait_for_async
-from ._request import ChunkKey, ChunkRequest
+from ._request import ChunkLocation, ChunkRequest, LayerRef, OctreeLocation
+
+__all__ = [
+    'ChunkLocation',
+    'OctreeLocation',
+    'ChunkRequest',
+    'LayerRef',
+    'chunk_loader',
+    'wait_for_async',
+    'synchronous_loading',
+]
