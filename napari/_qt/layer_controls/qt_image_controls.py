@@ -281,7 +281,7 @@ class QtImageControls(QtBaseImageControls):
         self.interpComboBox.clear()
         if self.layer._ndisplay == 3:
             interp_names = Interpolation3D.keys()
-        elif self.layer.is_complex():
+        elif self.layer.is_complex:
             interp_names = InterpolationComplex.keys()
         else:
             interp_names = [i.value for i in Interpolation.view_subset()]

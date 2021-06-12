@@ -24,10 +24,10 @@ def complex_ramp(size=256, phase_range=(-np.pi, np.pi), mag_range=(0, 10)):
     return mag_ramp * np.exp(1j * phase_ramp)
 
 
-with napari.gui_qt():
-    # create the viewer with an image
-    viewer = napari.Viewer()
-    # a test sample in which the X dimension is a phase ramp from -ip to pi
-    # and Y is a magnitude ramp from 0 - 10
-    viewer.add_image(complex_ramp(512), name="complex ramp")
-    viewer.add_image(imf, name='FFT of astronaut')
+# create the viewer with an image
+viewer = napari.Viewer()
+# a test sample in which the X dimension is a phase ramp from -ip to pi
+# and Y is a magnitude ramp from 0 - 10
+viewer.add_image(complex_ramp(512), name="complex ramp")
+viewer.add_image(imf, name='FFT of astronaut')
+napari.run()
