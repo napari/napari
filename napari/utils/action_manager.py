@@ -346,9 +346,9 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def unbind_shortcut(self, name: str):
+    def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
         """
-        unbind shortcut for action name
+        Unbind all shortcuts for a given action name.
 
         Parameters
         ----------
@@ -357,9 +357,9 @@ class ActionManager:
 
         Returns
         -------
-        shortcut: str | None
-            Previously bound shortcut or None if not such shortcuts was bound,
-            or  no such action exists.
+        shortcuts: set of str | None
+            Previously bound shortcuts or None if not such shortcuts was bound,
+            or no such action exists.
 
         Warns
         -----
