@@ -272,9 +272,12 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from .settings import SETTINGS
+    from .settings import get_settings
 
-    if notification.severity < SETTINGS.application.console_notification_level:
+    if (
+        notification.severity
+        < get_settings().application.console_notification_level
+    ):
         return
 
     print(notification)

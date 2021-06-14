@@ -25,7 +25,7 @@ from ..utils import _magicgui
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -140,7 +140,7 @@ class NapariPluginManager(PluginManager):
             # let's reregister.  # TODO: might be able to be more direct here.
             self.discover()
 
-        SETTINGS.plugins.disabled_plugins = set(self._blocked)
+        get_settings().plugins.disabled_plugins = set(self._blocked)
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
@@ -168,10 +168,10 @@ class NapariPluginManager(PluginManager):
         return order
 
     def set_call_order(self, new_order: CallOrderDict):
-        """Sets the plugin manager call order to match SETTINGS plugin values.
+        """Sets the plugin manager call order to match settings plugin values.
 
         Note: Run this after load_settings_plugin_defaults, which
-        sets the default values in SETTINGS.
+        sets the default values in settings.
 
         Parameters
         ----------

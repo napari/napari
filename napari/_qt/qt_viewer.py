@@ -54,7 +54,7 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 from ..utils.io import imsave_extensions
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 
 
 class QtViewer(QSplitter):
@@ -267,13 +267,12 @@ class QtViewer(QSplitter):
         else:
             self.chunk_receiver = None
 
-        # bind shortcuts stored in SETTINGS last.
+        # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
-
-        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+        for action, shortcuts in get_settings().shortcuts.shortcuts.items():
             action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)

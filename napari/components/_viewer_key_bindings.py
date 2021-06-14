@@ -1,5 +1,5 @@
 from ..utils.action_manager import action_manager
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
@@ -56,14 +56,15 @@ def toggle_ndisplay(viewer):
 @register_viewer_action(trans._("Toggle theme."))
 def toggle_theme(viewer):
     """Toggle theme for viewer"""
+    settings = get_settings()
     themes = available_themes()
-    current_theme = SETTINGS.appearance.theme
+    current_theme = settings.appearance.theme
     idx = themes.index(current_theme)
     idx += 1
     if idx == len(themes):
         idx = 0
 
-    SETTINGS.appearance.theme = themes[idx]
+    settings.appearance.theme = themes[idx]
 
 
 @register_viewer_action(trans._("Reset view to original state."))
