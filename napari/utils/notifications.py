@@ -83,11 +83,19 @@ class Notification(Event):
     ):
         self.severity = NotificationSeverity(severity)
         super().__init__(type=str(self.severity).lower(), **kwargs)
-        self.message = message
+        self._message = message
         self.actions = actions
 
         # let's store when the object was created;
         self.date = datetime.now()
+
+    @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, value):
+        self._message = value
 
     @classmethod
     def from_exception(cls, exc: BaseException, **kwargs) -> Notification:
