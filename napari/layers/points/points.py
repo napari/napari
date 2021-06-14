@@ -1048,7 +1048,7 @@ class Points(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
-                'text': self.text._get_state(),
+                'text': self.text.dict(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'ndim': self.ndim,

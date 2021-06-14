@@ -1393,7 +1393,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'text': self.text._get_state(),
+                'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1433,7 +1433,7 @@ class Shapes(Layer):
         Returns
         -------
         text_coords : (N x D) np.ndarray
-            Array of coordindates for the N text elements in view
+            Array of coordinates for the N text elements in view
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [

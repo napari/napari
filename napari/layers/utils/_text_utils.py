@@ -12,7 +12,8 @@ def get_text_anchors(
     ndisplay: int,
     anchor: Anchor = Anchor.CENTER,
 ) -> np.ndarray:
-    text_anchor_func = TEXT_ANCHOR_CALCULATION[anchor]
+    # TODO: understand why anchor is not coerced to an Anchor from a str
+    text_anchor_func = TEXT_ANCHOR_CALCULATION[Anchor(anchor)]
     text_coords, anchor_x, anchor_y = text_anchor_func(view_data, ndisplay)
     return text_coords, anchor_x, anchor_y
 
