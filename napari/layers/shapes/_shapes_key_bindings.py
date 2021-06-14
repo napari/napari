@@ -49,8 +49,8 @@ def hold_to_lock_aspect_ratio(layer):
         _move(layer, layer._moving_coordinates)
 
 
-def register_shapes_action(description, shortcuts=()):
-    return register_layer_action(Shapes, description, shortcuts)
+def register_shapes_action(description):
+    return register_layer_action(Shapes, description)
 
 
 @register_shapes_action(trans._('Add rectangles'))
