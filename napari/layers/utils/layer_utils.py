@@ -47,8 +47,9 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
         )
         if isinstance(shortcuts, str):
             shortcuts = [shortcuts]
-        for shortcut in shortcuts:
-            action_manager.bind_shortcut(name, shortcut)
+        if shortcuts:
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(name, shortcut)
         return func
 
     return _inner
