@@ -204,9 +204,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         #   of lower resolution level of a multiscale image, another is using a
         #   downsampled version of an image when the full image size is larger
         #   than the maximum allowed texture size of your graphics card.
-        # 2. `data2world`: The main transform mapping data to a world-like
-        #   coordinate.
-        # 3. `world2world`: An extra transform applied in world-coordinates that
+        # 2. `data2physical`: The main transform mapping data to a world-like
+        #   physical coordinate that may also encode acquisition parameters or
+        #   sample spacing.
+        # 3. `physical2world`: An extra transform applied in world-coordinates that
         #   typically aligns this layer with another.
         # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
@@ -222,9 +223,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     translate,
                     rotate=rotate,
                     shear=shear,
-                    name='data2world',
+                    name='data2physical',
                 ),
-                coerce_affine(affine, ndim, name='world2world'),
+                coerce_affine(affine, ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -393,56 +394,56 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
-        return self._transforms['data2world'].scale
+        return self._transforms['data2physical'].scale
 
     @scale.setter
     def scale(self, scale):
-        self._transforms['data2world'].scale = np.array(scale)
+        self._transforms['data2physical'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
 
     @property
     def translate(self):
         """list: Factors to shift the layer by in units of world coordinates."""
-        return self._transforms['data2world'].translate
+        return self._transforms['data2physical'].translate
 
     @translate.setter
     def translate(self, translate):
-        self._transforms['data2world'].translate = np.array(translate)
+        self._transforms['data2physical'].translate = np.array(translate)
         self._update_dims()
         self.events.translate()
 
     @property
     def rotate(self):
         """array: Rotation matrix in world coordinates."""
-        return self._transforms['data2world'].rotate
+        return self._transforms['data2physical'].rotate
 
     @rotate.setter
     def rotate(self, rotate):
-        self._transforms['data2world'].rotate = rotate
+        self._transforms['data2physical'].rotate = rotate
         self._update_dims()
         self.events.rotate()
 
     @property
     def shear(self):
         """array: Shear matrix in world coordinates."""
-        return self._transforms['data2world'].shear
+        return self._transforms['data2physical'].shear
 
     @shear.setter
     def shear(self, shear):
-        self._transforms['data2world'].shear = shear
+        self._transforms['data2physical'].shear = shear
         self._update_dims()
         self.events.shear()
 
     @property
     def affine(self):
-        """napari.utils.transforms.Affine: Extra affine transform to go from data to world coordinates."""
-        return self._transforms['world2world']
+        """napari.utils.transforms.Affine: Extra affine transform to go from physical to world coordinates."""
+        return self._transforms['physical2world']
 
     @affine.setter
     def affine(self, affine):
-        self._transforms['world2world'] = coerce_affine(
-            affine, self.ndim, name='world2world'
+        self._transforms['physical2world'] = coerce_affine(
+            affine, self.ndim, name='physical2world'
         )
         self._update_dims()
         self.events.affine()
