@@ -156,7 +156,9 @@ TEXT_ANCHOR_CALCULATION = {
 }
 
 
-def format_text_properties(text: str, n_text: int, properties: dict = {}):
+def format_text_properties(text: str, n_text: int, properties: dict = None):
+    if properties is None:
+        properties = {}
 
     # If the text value is a property key, the text is the property values
     if text in properties:

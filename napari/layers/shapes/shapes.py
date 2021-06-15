@@ -148,7 +148,7 @@ class Shapes(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -1805,7 +1805,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1825,7 +1825,7 @@ class Shapes(Layer):
             otherwise the same value will be used for all shapes.
         z_index : int | list
             Specifier of z order priority. Shapes with higher z order are
-            displayed ontop of others. If a list is supplied it must be the
+            displayed on top of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.

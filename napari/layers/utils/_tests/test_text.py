@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from napari.layers.utils._text_constants import TextMode
 from napari.layers.utils.text import TextManager
 
 
@@ -12,7 +13,7 @@ def test_empty_text_manager_property():
     text_manager = TextManager(
         text='confidence', n_text=0, properties=properties
     )
-    assert text_manager.mode == 'property'
+    assert text_manager._mode == TextMode.PROPERTY
     np.testing.assert_equal(text_manager.values, np.empty(0))
 
     # add a text element
@@ -28,7 +29,7 @@ def test_empty_text_manager_format():
     properties = {'confidence': np.empty(0, dtype=float)}
     text = 'confidence: {confidence:.2f}'
     text_manager = TextManager(text=text, n_text=0, properties=properties)
-    assert text_manager.mode == 'formatted'
+    assert text_manager._mode == TextMode.FORMATTED
     np.testing.assert_equal(text_manager.values, np.empty(0))
 
     # add a text element
@@ -44,7 +45,7 @@ def test_text_manager_property():
     properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
     text_manager = TextManager(text=text, n_text=n_text, properties=properties)
     np.testing.assert_equal(text_manager.values, classes)
-    assert text_manager.mode == 'property'
+    assert text_manager._mode == TextMode.PROPERTY
 
     # add new text with properties
     new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
@@ -67,7 +68,7 @@ def test_text_manager_format():
     )
     text_manager = TextManager(text=text, n_text=n_text, properties=properties)
     np.testing.assert_equal(text_manager.values, expected_text)
-    assert text_manager.mode == 'formatted'
+    assert text_manager._mode == TextMode.FORMATTED
 
     # add new text with properties
     new_properties = {'class': np.array(['A']), 'confidence': np.array([0.5])}
@@ -79,7 +80,7 @@ def test_text_manager_format():
     text_view = text_manager.view_text([])
     np.testing.assert_equal(text_view, [''])
 
-    # test getting the text elememnts when the first two elements are in view
+    # test getting the text elements when the first two elements are in view
     text_view = text_manager.view_text([0, 1])
     np.testing.assert_equal(text_view, expected_text_2[0:2])
 

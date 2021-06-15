@@ -15,19 +15,31 @@ from ._text_utils import format_text_properties, get_text_anchors
 class TextManager(EventedModel):
     """Manages properties related to text displayed in conjunction with the layer.
 
+    Parameters
+    ----------
+    text : array or str
+        The strings to be displayed, or a format string that will be filled out
+        n_text times using data in properties.
+    n_text : int
+        The number of the strings to be displayed. This may be different to the
+        if text is a format string, or if text should be repeated.
+    properties: dict
+        Stores properties data that will be used to generate strings when text
+        is a format a string.
+
     Attributes
     ----------
     visible : bool
-        Set to true of the text should be displayed.
+        True if the text should be displayed, false otherwise.
     size : float
         Font size of the text. Default value is 12.
     color : array
-        Font color for the text
+        Font color for the text.
     blending : Blending
-        The blending mode that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}. Note that 'opaque` blending
-        is not recommended, as colors the bounding box surrounding the text.
+        The blending mode that determines how RGB and alpha values of the layer
+        visual get mixed. Allowed values are {'opaque', 'translucent', and 'additive'}.
+        Note that 'opaque` blending is not recommended, as it colors the bounding box
+        surrounding the text.
     anchor : Anchor
         The location of the text origin relative to the bounding box.
         Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
@@ -49,9 +61,6 @@ class TextManager(EventedModel):
     _text_format_string: str
 
     def __init__(self, text, n_text, properties=None, **kwargs):
-        # TODO: verify if this is the best way of handling positional arguments that
-        # do not correspond to attributes. Also see:
-        # https://github.com/samuelcolvin/pydantic/issues/691
         super().__init__(**kwargs)
         self._set_text(text, n_text, properties=properties)
 
@@ -61,12 +70,6 @@ class TextManager(EventedModel):
         n_text: int,
         properties: Optional[dict] = None,
     ):
-        """Sets the text and its properties
-
-        Parameters
-        ----------
-
-        """
         if properties is None:
             properties = {}
         if text is None:
@@ -156,7 +159,7 @@ class TextManager(EventedModel):
         anchor_x : str
             The vispy text anchor for the x axis
         anchor_y : str
-            THe vispy text anchor for the y axis
+            The vispy text anchor for the y axis
         """
         if len(self._values) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
@@ -195,30 +198,31 @@ class TextManager(EventedModel):
         """np.ndarray: the text values to be displayed"""
         return self._values
 
-    @property
-    def mode(self) -> str:
-        """str: The current text setting mode."""
-        return str(self._mode)
+    @validator('size')
+    def _check_size(cls, size):
+        if size <= 0:
+            raise ValueError('size must be positive')
+        return size
 
     @validator('color', pre=True, always=True)
-    def _coerce_color(cls, color):
+    def _check_color(cls, color):
         return transform_color(color or 'cyan')[0]
 
     @validator('translation', pre=True, always=True)
-    def _coerce_translation(cls, translation):
-        # TODO: should probably use a 2D [0, 0] array instead of 0.
+    def _check_translation(cls, translation):
+        # Use a scalar default value of 0 to broadcast to all dimensions.
         return np.asarray(translation or 0)
 
     @validator('anchor', pre=True, always=True)
-    def _coerce_anchor(cls, anchor):
+    def _check_anchor(cls, anchor):
         return Anchor(anchor)
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
 
-        # the opaque blending mode is not allowed for text
-        # see: https://github.com/napari/napari/pull/600#issuecomment-554142225
+        # The opaque blending mode is not allowed for text.
+        # See: https://github.com/napari/napari/pull/600#issuecomment-554142225
         if blending_mode == Blending.OPAQUE:
             blending_mode = Blending.TRANSLUCENT
             warnings.warn(
