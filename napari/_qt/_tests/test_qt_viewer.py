@@ -11,6 +11,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
 )
+from napari.layers.points import Points
 from napari.utils.io import imread
 
 
@@ -403,3 +404,20 @@ def test_active_keybindings(make_napari_viewer):
     assert viewer.layers.selection.active == layer_image
     assert len(view._key_map_handler.keymap_providers) == 2
     assert view._key_map_handler.keymap_providers[0] == layer_image
+
+
+def test_points_keybinding(make_napari_viewer):
+    """Test select all key binding."""
+
+    # make viewer to bind shortcuts
+    viewer = make_napari_viewer()  # noqa: F841
+
+    data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+    layer = Points(data, size=1)
+
+    assert len(layer.data) == 4
+    assert len(layer.selected_data) == 0
+
+    layer.mode = 'select'
+    layer.class_keymap['A'](layer)
+    assert len(layer.selected_data) == 4
