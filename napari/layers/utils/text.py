@@ -239,8 +239,6 @@ class TextManager(EventedModel):
         self, text_update_function, blending_update_function
     ):
         """Function to connect all property update events to the update callback.
-        # the opaque blending mode is not allowed for text
-        # see: https://github.com/napari/napari/pull/600#issuecomment-554142225
 
         This is typically used in the vispy view file.
         """
