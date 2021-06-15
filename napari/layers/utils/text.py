@@ -2,7 +2,7 @@ import warnings
 from typing import Optional, Tuple, Union
 
 import numpy as np
-from pydantic import validator
+from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import Event, EventedModel
@@ -32,7 +32,7 @@ class TextManager(EventedModel):
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
-        Font size of the text. Default value is 12.
+        Font size of the text, which must be positive. Default value is 12.
     color : array
         Font color for the text as an [R, G, B, A] array.
     blending : Blending
@@ -50,7 +50,7 @@ class TextManager(EventedModel):
     """
 
     visible: bool = True
-    size: int = 12
+    size: PositiveInt = 12
     color: np.ndarray = None
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
@@ -199,12 +199,6 @@ class TextManager(EventedModel):
     def values(self) -> np.ndarray:
         """np.ndarray: the text values to be displayed"""
         return self._values
-
-    @validator('size')
-    def _check_size(cls, size):
-        if size <= 0:
-            raise ValueError('size must be positive')
-        return size
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
