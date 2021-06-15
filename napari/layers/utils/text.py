@@ -5,7 +5,7 @@ import numpy as np
 from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import Event, EventedModel
+from ...utils.events import EventedModel
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
@@ -29,6 +29,8 @@ class TextManager(EventedModel):
 
     Attributes
     ----------
+    values : np.ndarray
+        The text values to be displayed.
     visible : bool
         True if the text should be displayed, false otherwise.
     size : float
@@ -49,6 +51,7 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
+    values: np.ndarray = None
     visible: bool = True
     size: PositiveInt = 12
     color: np.ndarray = None
@@ -56,14 +59,13 @@ class TextManager(EventedModel):
     anchor: Anchor = Anchor.CENTER
     translation: np.ndarray = None
     rotation: float = 0
-    _values: np.ndarray
     _mode: TextMode
     _text_format_string: str
 
-    def __init__(self, text, n_text, properties=None, **kwargs):
+    def __init__(self, text=None, n_text=None, properties=None, **kwargs):
         super().__init__(**kwargs)
-        self.events.add(text=Event)
-        self._set_text(text, n_text, properties=properties)
+        if 'values' not in kwargs:
+            self._set_text(text, n_text, properties=properties)
 
     def _set_text(
         self,
@@ -82,20 +84,19 @@ class TextManager(EventedModel):
             )
             self._text_format_string = text
             self._mode = text_mode
-            self._values = formatted_text
+            self.values = formatted_text
         elif len(properties) == 0 or len(text) == 0:
             # set text mode to NONE if no props/text are provided
             self._mode = TextMode.NONE
             self._text_format_string = ''
-            self._values = np.empty(0)
+            self.values = np.empty(0)
         else:
             formatted_text, text_mode = format_text_properties(
                 text, n_text, properties
             )
             self._text_format_string = text
-            self._values = formatted_text
             self._mode = text_mode
-        self.events.text()
+            self.values = formatted_text
 
     def refresh_text(self, properties: dict):
         """Refresh all of the current text elements using updated properties values
@@ -107,7 +108,7 @@ class TextManager(EventedModel):
         """
         self._set_text(
             self._text_format_string,
-            n_text=len(self._values),
+            n_text=len(self.values),
             properties=properties,
         )
 
@@ -125,7 +126,7 @@ class TextManager(EventedModel):
             new_text, _ = format_text_properties(
                 self._text_format_string, n_text=n_text, properties=properties
             )
-            self._values = np.concatenate((self._values, new_text))
+            self.values = np.concatenate((self.values, new_text))
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Remove the indicated text elements
@@ -138,9 +139,7 @@ class TextManager(EventedModel):
         if self._mode != TextMode.NONE:
             selected_indices = list(indices_to_remove)
             if len(selected_indices) > 0:
-                self._values = np.delete(
-                    self._values, selected_indices, axis=0
-                )
+                self.values = np.delete(self.values, selected_indices, axis=0)
 
     def compute_text_coords(
         self, view_data: np.ndarray, ndisplay: int
@@ -163,7 +162,7 @@ class TextManager(EventedModel):
         anchor_y : str
             The vispy text anchor for the y axis
         """
-        if len(self._values) > 0:
+        if len(self.values) > 0:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self.anchor
             )
@@ -191,23 +190,28 @@ class TextManager(EventedModel):
             TextMode.FORMATTED,
             TextMode.PROPERTY,
         ]:
-            return self._values[indices_view]
+            return self.values[indices_view]
         # if no points in this slice send dummy data
         return np.array([''])
 
-    @property
-    def values(self) -> np.ndarray:
-        """np.ndarray: the text values to be displayed"""
-        return self._values
+    @validator('values', pre=True, always=True)
+    def _check_values(cls, values):
+        if values is None:
+            values = np.empty(0)
+        return values
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
-        return transform_color(color or 'cyan')[0]
+        if color is None:
+            color = 'cyan'
+        return transform_color(color)[0]
 
     @validator('translation', pre=True, always=True)
     def _check_translation(cls, translation):
         # Use a scalar default value of 0 to broadcast to all dimensions.
-        return np.asarray(translation or 0)
+        if translation is None:
+            translation = 0
+        return np.asarray(translation)
 
     @validator('anchor', pre=True, always=True)
     def _check_anchor(cls, anchor):
@@ -239,7 +243,7 @@ class TextManager(EventedModel):
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
-        self.events.text.connect(text_update_function)
+        self.events.values.connect(text_update_function)
         self.events.rotation.connect(text_update_function)
         self.events.translation.connect(text_update_function)
         self.events.anchor.connect(text_update_function)

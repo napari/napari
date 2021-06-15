@@ -2487,7 +2487,7 @@ class Shapes(Layer):
                 )
 
             if len(self._clipboard['text']) > 0:
-                self.text._values = np.concatenate(
+                self.text.values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
 
