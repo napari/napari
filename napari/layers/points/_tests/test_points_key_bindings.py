@@ -1,4 +1,6 @@
 from napari.layers import Points
+from napari.utils.action_manager import action_manager
+from napari.utils.settings import SETTINGS
 
 
 def test_select_all():
@@ -10,5 +12,10 @@ def test_select_all():
     assert len(layer.selected_data) == 0
 
     layer.mode = 'select'
-    layer.class_keymap['A'](layer)
+    layer.class_keymap['Space'](layer)
     assert len(layer.selected_data) == 4
+
+    # look for 'A' in Points default shortcuts
+    actions = action_manager._get_layer_actions(Points).keys()
+    shortcuts = [SETTINGS.shortcuts.shortcuts[name] for name in actions]
+    assert ['A'] in shortcuts
