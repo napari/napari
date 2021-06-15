@@ -5,7 +5,7 @@ import numpy as np
 from pydantic import validator
 
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.events import EventedModel
+from ...utils.events import Event, EventedModel
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
@@ -34,7 +34,7 @@ class TextManager(EventedModel):
     size : float
         Font size of the text. Default value is 12.
     color : array
-        Font color for the text.
+        Font color for the text as an [R, G, B, A] array.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are {'opaque', 'translucent', and 'additive'}.
@@ -62,6 +62,7 @@ class TextManager(EventedModel):
 
     def __init__(self, text, n_text, properties=None, **kwargs):
         super().__init__(**kwargs)
+        self.events.add(text=Event)
         self._set_text(text, n_text, properties=properties)
 
     def _set_text(
@@ -94,6 +95,7 @@ class TextManager(EventedModel):
             self._text_format_string = text
             self._values = formatted_text
             self._mode = text_mode
+        self.events.text()
 
     def refresh_text(self, properties: dict):
         """Refresh all of the current text elements using updated properties values
