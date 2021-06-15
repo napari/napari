@@ -643,6 +643,6 @@ def test_data_to_world_2d_scale_translate_affine_composed():
     np.testing.assert_array_equal(image.translate, translate)
     np.testing.assert_array_equal(image.affine, affine)
     np.testing.assert_almost_equal(
-        image.data_to_world.affine_matrix,
+        image._data_to_world.affine_matrix,
         ((12, 0, -16), (0, 3, 12), (0, 0, 1)),
     )

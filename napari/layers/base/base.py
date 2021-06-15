@@ -586,7 +586,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
         )
-        full_world_extent = self.data_to_world(full_data_extent)
+        full_world_extent = self._data_to_world(full_data_extent)
         world_extent = np.array(
             [
                 np.min(full_world_extent, axis=0),
@@ -602,13 +602,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return Extent(
             data=data,
             world=self._get_extent_world(data),
-            step=abs(self.data_to_world.scale),
+            step=abs(self._data_to_world.scale),
         )
 
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self.data_to_world.inverse
+        inv_transform = self._data_to_world.inverse
 
         if self.ndim > self._ndisplay:
             # Subspace spanned by non displayed dimensions
@@ -984,18 +984,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
     @property
-    def data_to_world(self) -> Affine:
-        """Returns the transform from data coordinates to world coordinates.
+    def _data_to_world(self) -> Affine:
+        """The transform from data to world coordinates.
 
-        This generates an affine transform by composing the affine property with
-        the other transform properties in the following order:
+        This affine transform is composed from the affine property and the
+        other transform properties in the following order:
 
         affine * (rotate * shear * scale + translate)
-
-        Returns
-        -------
-        Transform
-            The transform from data coordinates to world coordinates.
         """
         return self._transforms[1:3].simplified
 

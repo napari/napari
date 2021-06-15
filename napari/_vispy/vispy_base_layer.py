@@ -138,7 +138,7 @@ class VispyBaseLayer(ABC):
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
-            offset_matrix = self.layer.data_to_world.set_slice(
+            offset_matrix = self.layer._data_to_world.set_slice(
                 self.layer._dims_displayed
             ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2

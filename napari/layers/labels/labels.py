@@ -337,7 +337,7 @@ class Labels(_ImageBase):
     def _calculate_cursor_size(self):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
-        scale = self.data_to_world.scale
+        scale = self._data_to_world.scale
         average_scale = np.mean([scale[d] for d in self._dims_displayed])
         return abs(self.brush_size * average_scale)
 
