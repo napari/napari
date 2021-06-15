@@ -30,7 +30,7 @@ from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
@@ -85,12 +85,12 @@ class _QtMainWindow(QMainWindow):
         self._preferences_dialog_size = QSize()
         self._status_bar = self.statusBar()
 
-        # set SETTINGS plugin defaults.
-        SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
+        settings = get_settings()
+        settings._defaults['plugins'].call_order = plugin_manager.call_order()
 
-        # set the values in plugins to match the ones saved in SETTINGS
-        if SETTINGS.plugins.call_order is not None:
-            plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+        # set the values in plugins to match the ones saved in settings
+        if settings.plugins.call_order is not None:
+            plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
         self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
@@ -133,10 +133,11 @@ class _QtMainWindow(QMainWindow):
         """
         Load window layout settings from configuration.
         """
-        window_size = SETTINGS.application.window_size
-        window_state = SETTINGS.application.window_state
-        preferences_dialog_size = SETTINGS.application.preferences_size
-        window_position = SETTINGS.application.window_position
+        settings = get_settings()
+        window_size = settings.application.window_size
+        window_state = settings.application.window_state
+        preferences_dialog_size = settings.application.preferences_size
+        window_position = settings.application.window_position
 
         # It's necessary to verify if the window/position value is valid with the current screen.
         width, height = window_position
@@ -146,8 +147,8 @@ class _QtMainWindow(QMainWindow):
         if current_width < width or current_height < height:
             window_position = (self.x(), self.y())
 
-        window_maximized = SETTINGS.application.window_maximized
-        window_fullscreen = SETTINGS.application.window_fullscreen
+        window_maximized = settings.application.window_maximized
+        window_fullscreen = settings.application.window_fullscreen
         return (
             window_state,
             window_size,
@@ -236,18 +237,19 @@ class _QtMainWindow(QMainWindow):
             preferences_dialog_size,
         ) = self._get_window_settings()
 
-        if SETTINGS.application.save_window_geometry:
-            SETTINGS.application.window_maximized = window_maximized
-            SETTINGS.application.window_fullscreen = window_fullscreen
-            SETTINGS.application.window_position = window_position
-            SETTINGS.application.window_size = window_size
-            SETTINGS.application.window_statusbar = (
+        settings = get_settings()
+        if settings.application.save_window_geometry:
+            settings.application.window_maximized = window_maximized
+            settings.application.window_fullscreen = window_fullscreen
+            settings.application.window_position = window_position
+            settings.application.window_size = window_size
+            settings.application.window_statusbar = (
                 not self._status_bar.isHidden()
             )
-            SETTINGS.application.preferences_size = preferences_dialog_size
+            settings.application.preferences_size = preferences_dialog_size
 
-        if SETTINGS.application.save_window_state:
-            SETTINGS.application.window_state = window_state
+        if settings.application.save_window_state:
+            settings.application.window_state = window_state
 
     def _update_preferences_dialog_size(self, size):
         """Save preferences dialog size."""
@@ -352,6 +354,8 @@ class Window:
     """
 
     def __init__(self, viewer, *, show: bool = True):
+        settings = get_settings()
+
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -382,7 +386,7 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self.qt_viewer.viewer.theme = SETTINGS.appearance.theme
+        self.qt_viewer.viewer.theme = settings.appearance.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -395,7 +399,7 @@ class Window:
         self._add_viewer_dock_widget(self.qt_viewer.activityDock, tabify=False)
         self.window_menu.addSeparator()
 
-        SETTINGS.appearance.events.theme.connect(self._update_theme)
+        settings.appearance.events.theme.connect(self._update_theme)
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
@@ -630,7 +634,7 @@ class Window:
 
         # need to reset call order to defaults
 
-        plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+        plugin_manager.set_call_order(get_settings().plugins.call_order)
 
     def _on_preferences_closed(self):
         """Reset preferences dialog variable."""
@@ -638,6 +642,7 @@ class Window:
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
+        settings = get_settings()
         toggle_visible = QAction(
             trans._('Toggle Menubar Visibility'), self._qt_window
         )
@@ -768,10 +773,10 @@ class Window:
             trans._('Layer Tooltip visibility'),
             parent=self._qt_window,
             checkable=True,
-            checked=SETTINGS.appearance.layer_tooltip_visibility,
+            checked=settings.appearance.layer_tooltip_visibility,
         )
         self.tooltip_menu.triggered.connect(self._tooltip_visibility_toggle)
-        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+        settings.appearance.events.layer_tooltip_visibility.connect(
             self._tooltip_visibility_toggled
         )
         self.view_menu.addAction(self.tooltip_menu)
@@ -779,11 +784,11 @@ class Window:
         self.view_menu.addSeparator()
 
     def _tooltip_visibility_toggle(self, value):
-        SETTINGS.appearance.layer_tooltip_visibility = value
+        get_settings().appearance.layer_tooltip_visibility = value
 
     def _tooltip_visibility_toggled(self, event):
         self.tooltip_menu.setChecked(
-            SETTINGS.appearance.layer_tooltip_visibility
+            get_settings().appearance.layer_tooltip_visibility
         )
 
     def _event_to_action(self, action, event):
@@ -1301,6 +1306,7 @@ class Window:
         RuntimeError
             If the viewer.window has already been closed and deleted.
         """
+        settings = get_settings()
         try:
             self._qt_window.show(block=block)
         except (AttributeError, RuntimeError):
@@ -1311,8 +1317,8 @@ class Window:
                 )
             )
 
-        if SETTINGS.application.first_time:
-            SETTINGS.application.first_time = False
+        if settings.application.first_time:
+            settings.application.first_time = False
             try:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
             except (AttributeError, RuntimeError):
@@ -1324,7 +1330,7 @@ class Window:
                 )
         else:
             try:
-                if SETTINGS.application.save_window_geometry:
+                if settings.application.save_window_geometry:
                     self._qt_window._set_window_settings(
                         *self._qt_window._load_window_settings()
                     )
@@ -1365,9 +1371,10 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
+        settings = get_settings()
         if event:
             value = event.value
-            SETTINGS.appearance.theme = value
+            settings.appearance.theme = value
             self.qt_viewer.viewer.theme = value
         else:
             value = self.qt_viewer.viewer.theme

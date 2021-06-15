@@ -83,11 +83,19 @@ class Notification(Event):
     ):
         self.severity = NotificationSeverity(severity)
         super().__init__(type=str(self.severity).lower(), **kwargs)
-        self.message = message
+        self._message = message
         self.actions = actions
 
         # let's store when the object was created;
         self.date = datetime.now()
+
+    @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, value):
+        self._message = value
 
     @classmethod
     def from_exception(cls, exc: BaseException, **kwargs) -> Notification:
@@ -272,9 +280,12 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from .settings import SETTINGS
+    from .settings import get_settings
 
-    if notification.severity < SETTINGS.application.console_notification_level:
+    if (
+        notification.severity
+        < get_settings().application.console_notification_level
+    ):
         return
 
     print(notification)

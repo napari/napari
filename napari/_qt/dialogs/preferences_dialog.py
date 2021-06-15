@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-from ...utils.settings import SETTINGS
+from ...utils.settings import get_settings
 from ...utils.translations import trans
 
 
@@ -112,7 +112,7 @@ class PreferencesDialog(QDialog):
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-
+        settings = get_settings()
         # Because there are multiple pages, need to keep a dictionary of values dicts.
         # One set of keywords are for each page, then in each entry for a page, there are dicts
         # of setting and its value.
@@ -120,7 +120,7 @@ class PreferencesDialog(QDialog):
         self._values_dict = {}
         self._setting_changed_dict = {}
 
-        for page, setting in SETTINGS.schemas().items():
+        for page, setting in settings.schemas().items():
             schema, values, properties = self.get_page_dict(setting)
 
             self._setting_changed_dict[page] = {}
@@ -202,12 +202,13 @@ class PreferencesDialog(QDialog):
         self.show()
 
     def on_click_ok(self):
-        """Keeps the selected preferences saved to SETTINGS."""
+        """Keeps the selected preferences saved to settings."""
         self.close()
 
     def on_click_cancel(self):
         """Restores the settings in place when dialog was launched."""
         # Need to check differences for each page.
+        settings = get_settings()
         for n in range(self._stack.count()):
             # Must set the current row so that the proper list is updated
             # in check differences.
@@ -217,7 +218,7 @@ class PreferencesDialog(QDialog):
             # of preference dialog session, change them back.
             # Using the settings value seems to be the best way to get the checkboxes right
             # on the plugin call order widget.
-            setting = SETTINGS.schemas()[page]
+            setting = settings.schemas()[page]
             schema, new_values, properties = self.get_page_dict(setting)
             self.check_differences(self._values_orig_dict[page], new_values)
 
@@ -250,6 +251,7 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
+        settings = get_settings()
         builder = WidgetBuilder()
         form = builder.create_form(schema, self.ui_schema)
 
@@ -260,7 +262,7 @@ class PreferencesDialog(QDialog):
             widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
             name = widget._name
             disable = bool(
-                SETTINGS._env_settings.get(section, {}).get(name, None)
+                settings._env_settings.get(section, {}).get(name, None)
             )
             widget.setDisabled(disable)
             try:
@@ -288,11 +290,11 @@ class PreferencesDialog(QDialog):
 
     def _disable_async(self, form, values, disable=True, state=True):
         """Disable async if octree is True."""
-
+        settings = get_settings()
         # need to make sure that if async_ is an environment setting, that we don't
         # enable it here.
         if (
-            SETTINGS._env_settings['experimental'].get('async_', None)
+            settings._env_settings['experimental'].get('async_', None)
             is not None
         ):
             disable = True
@@ -348,15 +350,16 @@ class PreferencesDialog(QDialog):
         old_dict : dict
             Dict wtih values set at the beginning of the preferences dialog session.
         """
+        settings = get_settings()
         page = self._list.currentItem().text().split(" ")[0].lower()
         self._values_changed(page, new_dict, old_dict)
         different_values = self._setting_changed_dict[page]
 
         if len(different_values) > 0:
-            # change the values in SETTINGS
+            # change the values in settings
             for setting_name, value in different_values.items():
                 try:
-                    setattr(SETTINGS._settings[page], setting_name, value)
+                    setattr(settings._settings[page], setting_name, value)
                     self._values_dict[page] = new_dict
 
                     if page == 'experimental':
@@ -422,7 +425,7 @@ class ConfirmDialog(QDialog):
 
     def on_click_restore(self):
         """Restore defaults and close window."""
-        SETTINGS.reset()
+        get_settings().reset()
         self.valueChanged.emit()
         self.close()
 
