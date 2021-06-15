@@ -64,8 +64,10 @@ class TextManager(EventedModel):
 
     def __init__(self, text=None, n_text=None, properties=None, **kwargs):
         super().__init__(**kwargs)
-        if 'values' not in kwargs:
-            self._set_text(text, n_text, properties=properties)
+        if 'values' in kwargs:
+            text = kwargs['values']
+            n_text = len(text)
+        self._set_text(text, n_text, properties=properties)
 
     def _set_text(
         self,
@@ -77,15 +79,7 @@ class TextManager(EventedModel):
             properties = {}
         if text is None:
             text = np.empty(0)
-        if n_text == 0 and len(text) != 0:
-            # initialize text but don't add text elements
-            formatted_text, text_mode = format_text_properties(
-                text, n_text, properties
-            )
-            self._text_format_string = text
-            self._mode = text_mode
-            self.values = formatted_text
-        elif len(properties) == 0 or len(text) == 0:
+        if len(properties) == 0 or len(text) == 0:
             # set text mode to NONE if no props/text are provided
             self._mode = TextMode.NONE
             self._text_format_string = ''
