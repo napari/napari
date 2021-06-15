@@ -59,8 +59,8 @@ class TextManager(EventedModel):
     anchor: Anchor = Anchor.CENTER
     translation: np.ndarray = None
     rotation: float = 0
-    _mode: TextMode
-    _text_format_string: str
+    _mode: TextMode = TextMode.NONE
+    _text_format_string: str = None
 
     def __init__(self, text=None, n_text=None, properties=None, **kwargs):
         super().__init__(**kwargs)
