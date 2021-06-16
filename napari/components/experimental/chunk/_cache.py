@@ -11,22 +11,23 @@ if TYPE_CHECKING:
     from ....types import ArrayLike
     from ._request import ChunkRequest
 
+    # A ChunkRequest is just a dict of the arrays we need to load. We allow
+    # loading multiple arrays in one request so the caller does not have to
+    # deal with partial loads, where it has received some arrays but it cannot
+    # use them until other arrays have finished loading.
+    #
+    # The caller is free to use whatever names it wants to organize the arrays,
+    # for example "image" and "thumbnail", or spatially neighboring tiles like
+    # "tile.1.1", "tile1.2", "tile2.1", "tile2.2".
+    ChunkArrays = Dict[str, ArrayLike]
+
+
 LOGGER = logging.getLogger("napari.loader.cache")
 
 # ChunkCache size as a fraction of total RAM. Keep it small for now until
 # we figure out how ChunkCache will work with the Dask cache, and do
 # a lot more testing.
 CACHE_MEM_FRACTION = 0.1
-
-# A ChunkRequest is just a dict of the arrays we need to load. We allow
-# loading multiple arrays in one request so the caller does not have to
-# deal with partial loads, where it has received some arrays but it cannot
-# use them until other arrays have finished loading.
-#
-# The caller is free to use whatever names it wants to organize the arrays,
-# for example "image" and "thumbnail", or spatially neighboring tiles like
-# "tile.1.1", "tile1.2", "tile2.1", "tile2.2".
-ChunkArrays = Dict[str, ArrayLike]
 
 
 def _get_cache_size_bytes(mem_fraction: float) -> int:
