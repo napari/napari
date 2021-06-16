@@ -10,7 +10,9 @@ from ...utils.transforms import Affine
 from ...utils.translations import trans
 
 
-def register_layer_action(keymapprovider, description: str, shortcuts=None):
+def register_layer_action(
+    keymapprovider, description: str, shortcuts=None, invert=None
+):
     """
     Convenient decorator to register an action with the current Layers
 
@@ -46,6 +48,7 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
             command=func,
             description=description,
             keymapprovider=keymapprovider,
+            invert=invert,
         )
         if shortcuts:
             if isinstance(shortcuts, str):

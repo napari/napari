@@ -28,8 +28,15 @@ def rotate45(viewer: napari.Viewer):
 
     r = np.array([[cos(angle), -sin(angle)], [sin(angle), cos(angle)]])
     layer = viewer.layers[0]
+    original_rotation = layer.rotate
     layer.rotate = layer.rotate @ r
+    return original_rotation
 
+
+
+def unrotate_45(viewer: napari.Viewer, state):
+    layer = viewer.layers[0]
+    layer.rotate = state
 
 # create the viewer with an image
 viewer = napari.view_image(data.astronaut(), rgb=True)
@@ -57,6 +64,7 @@ def register_action():
         command=rotate45,
         description='Rotate layer 0 by 45deg',
         keymapprovider=ViewerModel,
+        invert=unrotate_45
     )
 
 
@@ -65,6 +73,7 @@ def bind_shortcut():
     # remove the shortcut.
     action_manager.unbind_shortcut('napari:reset_view')  # Control-R
     action_manager.bind_shortcut('napari:rotate45', 'Control-R')
+    action_manager.bind_hold_shortcut('napari:rotate45', '7') # key `&`
 
 
 def bind_button():
@@ -105,5 +114,7 @@ settings = {
 for action, key in settings.items():
    _old_shortcut = action_manager.unbind_shortcut(action)
    action_manager.bind_shortcut(action, key)
+
+action_manager.bind_hold_shortcut('napari:activate_points_pan_zoom_mode', 'Space')
 
 napari.run()

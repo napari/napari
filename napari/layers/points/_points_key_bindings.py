@@ -6,25 +6,8 @@ from ._points_constants import Mode
 from .points import Points
 
 
-def register_points_action(description):
-    return register_layer_action(Points, description)
-
-
-@Points.bind_key('Space')
-def hold_to_pan_zoom(layer):
-    """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
-        # on key press
-        prev_mode = layer.mode
-        prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
-
-        yield
-
-        # on key release
-        layer.mode = prev_mode
-        layer.selected_data = prev_selected
-        layer._set_highlight()
+def register_points_action(description, invert=None):
+    return register_layer_action(Points, description, invert=invert)
 
 
 @register_points_action(trans._('Add points'))
@@ -37,9 +20,22 @@ def activate_points_select_mode(layer):
     layer.mode = Mode.SELECT
 
 
-@register_points_action(trans._('Pan/zoom'))
+def _pan_zoom_invert(layer, state):
+    """Hold to pan and zoom in the viewer."""
+    prev_selected, prev_mode = state
+    layer.mode = prev_mode
+    layer.selected_data = prev_selected
+    layer._set_highlight()
+
+
+@register_points_action(trans._('Pan/zoom'), invert=_pan_zoom_invert)
 def activate_points_pan_zoom_mode(layer):
-    layer.mode = Mode.PAN_ZOOM
+    if layer._mode != Mode.PAN_ZOOM:
+        # on key press
+        prev_mode = layer.mode
+        prev_selected = layer.selected_data.copy()
+        layer.mode = Mode.PAN_ZOOM
+        return prev_selected, prev_mode
 
 
 @Points.bind_key('Control-C')

@@ -48,6 +48,7 @@ class Action:
     command: Callable
     description: str
     keymapprovider: KeymapProvider  # subclassclass or instance of a subclass
+    invert: Callable
 
     def callable(self, context):
         if not hasattr(self, '_command_with_context'):
@@ -55,6 +56,19 @@ class Action:
                 self.command, context
             )
         return self._command_with_context
+
+    def gen(self):
+        """
+        Shim to turn a action and an invert into a generator for keymap provider,
+        we turn them into a generator.
+        """
+
+        def _(*args, **kwargs):
+            res = self.command(*args, **kwargs)
+            yield
+            self.invert(*args, state=res, **kwargs)
+
+        return _
 
 
 class ButtonWrapper:
@@ -161,6 +175,7 @@ class ActionManager:
             str, Set[Tuple(Union[QPushButton, QtStateButton], str)]
         ] = defaultdict(lambda: set())
         self._shortcuts: Dict[str, set[str]] = defaultdict(lambda: set())
+        self._hold_shortcuts: Dict[str, set[str]] = defaultdict(lambda: set())
         self.context = Context()  # Dict[str, Any] = {}
         self._stack: List[str] = []
         self._tooltip_include_action_name = False
@@ -181,7 +196,12 @@ class ActionManager:
             )
 
     def register_action(
-        self, name, command, description, keymapprovider: KeymapProvider
+        self,
+        name,
+        command,
+        description,
+        keymapprovider: KeymapProvider,
+        invert=None,
     ):
         """
         Register an action for future usage
@@ -211,6 +231,10 @@ class ActionManager:
             KeymapProvider class or instance to use to bind the shortcut(s) when
             registered. This make sure the shortcut is active only when an
             instance of this is in focus.
+        invert: callable
+            How to "undo" a command, will be passed the typical instance but as
+            also a parameter "state" which was returned from `command`.
+
 
         Notes
         -----
@@ -227,7 +251,9 @@ class ActionManager:
 
         """
         self._validate_action_name(name)
-        self._actions[name] = Action(command, description, keymapprovider)
+        self._actions[name] = Action(
+            command, description, keymapprovider, invert
+        )
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
@@ -248,6 +274,7 @@ class ActionManager:
 
         # update buttons with shortcut and description
         if name in self._shortcuts:
+            hold_shortcuts = self._hold_shortcuts.get(name, ())
             shortcuts = self._shortcuts[name]
             joinstr = (
                 ' '
@@ -255,9 +282,16 @@ class ActionManager:
                 + ' '
             )
             shortcut_str = (
-                '('
+                ' ('
                 + joinstr.join(
-                    f"{Shortcut(shortcut).platform}" for shortcut in shortcuts
+                    [
+                        str(Shortcut(shortcut).platform)
+                        for shortcut in shortcuts
+                    ]
+                    + [
+                        trans._("hold ") + str(Shortcut(shortcut).platform)
+                        for shortcut in hold_shortcuts
+                    ]
                 )
                 + ')'
             )
@@ -283,10 +317,16 @@ class ActionManager:
             return
         shortcuts = self._shortcuts.get(name)
         keymapprovider = action.keymapprovider
+        shortcuts = self._shortcuts.get(name, ())
+        hold_shortcuts = set(self._hold_shortcuts.get(name, []))
         if hasattr(keymapprovider, 'bind_key'):
             for shortcut in shortcuts:
                 keymapprovider.bind_key(shortcut, overwrite=True)(
                     action.command
+                )
+            for shortcut in hold_shortcuts:
+                keymapprovider.bind_key(shortcut, overwrite=True)(
+                    self._actions[name].gen()
                 )
 
     def bind_button(self, name: str, button, extra_tooltip_text='') -> None:
@@ -343,6 +383,24 @@ class ActionManager:
         """
         self._validate_action_name(name)
         self._shortcuts[name].add(shortcut)
+        self._update_shortcut_bindings(name)
+        self._update_gui_elements(name)
+
+    def bind_hold_shortcut(self, name: str, shortcut: str) -> None:
+        """
+        Parameters
+        ----------
+        name : str
+            name of the corresponding action in the form ``packagename:name``
+        shortcut : str
+            Shortcut to assign to this action use dash as separator. See
+            `Shortcut` for known modifiers.
+        Identical to `bind_shortcut`, but bind the variant of the action which is
+        reverted when the key is released. This is typically used for Pan/Zoom
+        while holding a key.
+        """
+        self._validate_action_name(name)
+        self._hold_shortcuts[name].add(shortcut)
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
