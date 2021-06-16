@@ -18,6 +18,7 @@ from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
 from ...utils.action_manager import action_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
+from ..dialogs.qt_message_dialogs import ConfirmDialog
 
 
 class ShortcutEditor(QDialog):
@@ -74,7 +75,9 @@ class ShortcutEditor(QDialog):
         self.layer_combo_box.activated[str].connect(self._set_table)
         self.layer_combo_box.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
         self._set_table()
-        self._label.setText("Layer")
+        self._label.setText("Group")
+
+        self._restore_button.clicked.connect(self.restore_defaults)
 
         # layout
 
@@ -95,6 +98,28 @@ class ShortcutEditor(QDialog):
         layout.addWidget(self._table)
 
         self.setLayout(layout)
+
+    def restore_defaults(self):
+        """Launches dialog to confirm restore choice."""
+        self._reset_dialog = ConfirmDialog(
+            parent=self,
+            text=trans._(
+                "Are you sure you want to restore default shortcuts?"
+            ),
+        )
+        self._reset_dialog.valueChanged.connect(self._reset_shortcuts)
+        self._reset_dialog.exec_()
+
+    def _reset_shortcuts(self, event=None):
+        if event is True:
+            SETTINGS.reset(sections=['shortcuts'])
+            for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+                action_manager.unbind_shortcut(action)
+                for shortcut in shortcuts:
+                    action_manager.bind_shortcut(action, shortcut)
+
+            self.layer_combo_box.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
+            self._set_table()
 
     def _set_table(self, layer_str=''):
         if layer_str == '':
@@ -117,7 +142,6 @@ class ShortcutEditor(QDialog):
         if len(actions) > 0:
 
             self._table.setRowCount(len(actions))
-            # self._table.setRowCount(len(action_manager._actions))
             self._table.setColumnCount(3)
             self._table.setHorizontalHeaderLabels(['Action', 'Keybinding'])
             self._table.verticalHeader().setVisible(False)
