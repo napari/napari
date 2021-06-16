@@ -1,11 +1,15 @@
 """ChunkCache stores loaded chunks.
 """
+from __future__ import annotations
+
 import logging
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from ...._vendor.experimental.cachetools import LRUCache
-from ....types import ArrayLike
-from ._request import ChunkRequest
+
+if TYPE_CHECKING:
+    from ....types import ArrayLike
+    from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.loader.cache")
 
