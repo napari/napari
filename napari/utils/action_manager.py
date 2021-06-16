@@ -416,6 +416,28 @@ class ActionManager:
 
         return layer_shortcuts
 
+    def _get_layer_actions(self, layer):
+        """
+        Get actions filtered by the given layers.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer to use for actions filtering.
+
+        Returns
+        -------
+        layer_actions: dict
+            Dictionary of names of actions with action values for a layer.
+
+        """
+        layer_actions = {}
+        for name, action in self._actions.items():
+            if action and layer == action.keymapprovider:
+                layer_actions[name] = action
+
+        return layer_actions
+
     def _get_active_shortcuts(self, active_keymap):
         """
         Get active shortcuts for the given active keymap.

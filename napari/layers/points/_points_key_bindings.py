@@ -6,8 +6,8 @@ from ._points_constants import Mode
 from .points import Points
 
 
-def register_points_action(description, shortcuts):
-    return register_layer_action(Points, description, shortcuts)
+def register_points_action(description):
+    return register_layer_action(Points, description)
 
 
 @Points.bind_key('Space')
@@ -27,17 +27,17 @@ def hold_to_pan_zoom(layer):
         layer._set_highlight()
 
 
-@register_points_action(trans._('Add points'), 'P')
+@register_points_action(trans._('Add points'))
 def activate_points_add_mode(layer):
     layer.mode = Mode.ADD
 
 
-@register_points_action(trans._('Select points'), 'S')
+@register_points_action(trans._('Select points'))
 def activate_points_select_mode(layer):
     layer.mode = Mode.SELECT
 
 
-@register_points_action(trans._('Pan/zoom'), 'Z')
+@register_points_action(trans._('Pan/zoom'))
 def activate_points_pan_zoom_mode(layer):
     layer.mode = Mode.PAN_ZOOM
 
@@ -57,7 +57,7 @@ def paste(layer):
 
 
 @register_points_action(
-    trans._("Select all points in the current view slice."), "A"
+    trans._("Select all points in the current view slice."),
 )
 def select_all(layer):
     if layer._mode == Mode.SELECT:
@@ -65,9 +65,7 @@ def select_all(layer):
         layer._set_highlight()
 
 
-@register_points_action(
-    trans._('Delete selected points'), ['Backspace', 'Delete']
-)
+@register_points_action(trans._('Delete selected points'))
 def delete_selected_points(layer):
     """Delete all selected points."""
     if layer._mode in (Mode.SELECT, Mode.ADD):
