@@ -34,7 +34,7 @@ layers (in #2855).
 - Fix save and update tests (#2876)
 - Fix not saving values in settings when loaded from env variables (#2877)
 - Fix ipython + visible console results in AttributeError (#2881)
-
+- Fix for too-late magicgui type registration #2891
 
 ## API Changes
 - In #2855 we have now changed the composition behavior of the affine kwarg and the individual
