@@ -331,13 +331,15 @@ class Labels(_ImageBase):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
+        self.cursor_size = self._calculate_cursor_size()
+        self.events.brush_size()
+
+    def _calculate_cursor_size(self):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
-        data2world_scale = np.mean(
-            [self.scale[d] for d in self._dims_displayed]
-        )
-        self.cursor_size = abs(self.brush_size * data2world_scale)
-        self.events.brush_size()
+        scale = self._data_to_world.scale
+        average_scale = np.mean([scale[d] for d in self._dims_displayed])
+        return abs(self.brush_size * average_scale)
 
     @property
     def seed(self):
@@ -685,12 +687,7 @@ class Labels(_ImageBase):
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor = str(self._brush_shape)
-            # Convert from brush size in data coordinates to
-            # cursor size in world coordinates
-            data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims_displayed]
-            )
-            self.cursor_size = abs(self.brush_size * data2world_scale)
+            self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
@@ -705,12 +702,7 @@ class Labels(_ImageBase):
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor = str(self._brush_shape)
-            # Convert from brush size in data coordinates to
-            # cursor size in world coordinates
-            data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims_displayed]
-            )
-            self.cursor_size = abs(self.brush_size * data2world_scale)
+            self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, drag to erase a label'

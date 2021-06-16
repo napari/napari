@@ -171,8 +171,8 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
 
     Parameters
     ----------
-    layer : napar.layers.Layer
-        Layet to be tested.
+    layer : napari.layers.Layer
+        Layer to be tested.
     extent : array, shape (2, D)
         Extent of data in layer.
     scale : array, shape (D,)
