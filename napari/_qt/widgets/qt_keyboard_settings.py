@@ -237,8 +237,6 @@ class ShortcutEditor(QDialog):
                             + f"that shortcut before assigning <b>{new_shortcut}</b> to this one."
                         )
 
-                        # style = self.style()
-
                         delta_y = 105
                         delta_x = 10
                         global_point = self.mapToGlobal(
@@ -275,7 +273,10 @@ class ShortcutEditor(QDialog):
                             action_manager._shortcuts.get(current_action, {})
                         )
                         # reset value in table to value stored in action manager.
-                        item1.setText(current_shortcuts[0])
+                        if len(current_shortcuts) > 0:
+                            item1.setText(current_shortcuts[0])
+                        else:
+                            item1.setText("")
 
                         self._table.setCellWidget(
                             row, self._icon_col, QLabel("")
@@ -299,7 +300,8 @@ class ShortcutEditor(QDialog):
 
                 #  Bind new shortcut to the action manager
                 action_manager.unbind_shortcut(current_action)
-                action_manager.bind_shortcut(current_action, new_shortcut)
+                if new_shortcut != "":
+                    action_manager.bind_shortcut(current_action, new_shortcut)
 
                 # Save to settings here temporarily (probably won't do this here)
                 if current_action in SETTINGS.shortcuts.shortcuts:
