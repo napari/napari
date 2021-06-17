@@ -354,7 +354,10 @@ def block_threads(monkeypatch, request):
                 old_start(self)
 
     def not_start(self):
-        raise RuntimeError("Thread should not be used in test")
+        raise RuntimeError(
+            "Thread should not be used implicit in test. If You are sure that this"
+            " test needs to use threads them mark it with `pytest.mark.enablethread`"
+        )
 
     monkeypatch.setattr(QTimer, "start", not_start)
     monkeypatch.setattr(QThread, "start", not_start)
