@@ -338,9 +338,11 @@ def pytest_collection_modifyitems(session, config, items):
 def block_threads(monkeypatch, request):
     if 'enablethread' in request.keywords:
         return
-
-    from pytestqt.qt_compat import qt_api
-    from qtpy.QtCore import QThread, QTimer
+    try:
+        from pytestqt.qt_compat import qt_api
+        from qtpy.QtCore import QThread, QTimer
+    except ImportError:
+        return
 
     old_start = QTimer.start
 
