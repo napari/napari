@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from qtpy.QtCore import Qt
+from qtpy.QtCore import QPoint, Qt
 from qtpy.QtWidgets import (
     QComboBox,
     QDialog,
@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QHeaderView,
     QLabel,
     QPushButton,
+    QStyle,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -19,6 +20,7 @@ from ...utils.action_manager import action_manager
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..dialogs.qt_message_dialogs import ConfirmDialog
+from ..qt_resources import get_stylesheet
 
 
 class ShortcutEditor(QDialog):
@@ -52,6 +54,8 @@ class ShortcutEditor(QDialog):
         self.layer_combo_box = QComboBox(self)
         self._label = QLabel(self)
         self._table = QTableWidget(self)
+
+        self._table.setShowGrid(False)
 
         # Set up buttons
         self._restore_button = QPushButton(trans._("Reset All Keybindings"))
@@ -136,14 +140,21 @@ class ShortcutEditor(QDialog):
         self._table.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch
         )
+        self._table.horizontalHeader().setStyleSheet(
+            'border-bottom: 2px solid white;'
+        )
+
+        # self._table.resizeColumnsToContents()
 
         actions = self.key_bindings_strs[layer_str]
 
         if len(actions) > 0:
 
             self._table.setRowCount(len(actions))
-            self._table.setColumnCount(3)
-            self._table.setHorizontalHeaderLabels(['Action', 'Keybinding'])
+            self._table.setColumnCount(4)
+            self._table.setHorizontalHeaderLabels(
+                ['Action', 'Keybinding', '', '']
+            )
             self._table.verticalHeader().setVisible(False)
 
             self._table.setColumnHidden(2, True)
@@ -153,6 +164,7 @@ class ShortcutEditor(QDialog):
                 item = QTableWidgetItem(action.description)
 
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                # item.setStyleSheet('border-top: 1px solid white; border-bottom: 1px solid white;')
 
                 self._table.setItem(row, 0, item)
                 item_shortcut = QTableWidgetItem(
@@ -169,82 +181,114 @@ class ShortcutEditor(QDialog):
         else:
             # no actions-- display that.
             self._table.setRowCount(1)
-            self._table.setColumnCount(3)
-            self._table.setHorizontalHeaderLabels(['Action', 'Keybinding'])
+            self._table.setColumnCount(4)
+            self._table.setHorizontalHeaderLabels(
+                ['Action', 'Keybinding', '', '']
+            )
             self._table.verticalHeader().setVisible(False)
 
-            self._table.setColumnHidden(2, True)
+            self._table.setColumnHidden(3, True)
             item = QTableWidgetItem('No key bindings')
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self._table.setItem(0, 0, item)
 
-    def _set_keybinding(self, event):
-        # event is the index of the event.
+    def _set_keybinding(self, row, col):
 
-        current_layer_text = self.layer_combo_box.currentText()
-        layer_actions = self.key_bindings_strs[current_layer_text]
+        if col == 1:
+            # event is the index of the event.
+            current_layer_text = self.layer_combo_box.currentText()
+            layer_actions = self.key_bindings_strs[current_layer_text]
 
-        # get the current item from shortcuts column
-        item1 = self._table.currentItem()
-        new_shortcut = item1.text()
+            # get the current item from shortcuts column
+            item1 = self._table.currentItem()
+            new_shortcut = item1.text()
 
-        # get the action name
-        current_action = self._table.item(event, 2).text()
+            # get the action name
+            current_action = self._table.item(row, 2).text()
 
-        replace = True
-        for row, (action_name, action) in enumerate(layer_actions.items()):
-            shortcuts = action_manager._shortcuts.get(action_name, [])
+            replace = True
+            for row1, (action_name, action) in enumerate(
+                layer_actions.items()
+            ):
+                shortcuts = action_manager._shortcuts.get(action_name, [])
 
-            if new_shortcut in shortcuts:
-                # shortcut is here (either same action or not), don't replace in settings.
-                replace = False
-                if action_name != current_action:
-                    # the shortcut is saved to a different action, show message.
-                    # pop up window for warning.
-                    message = trans._(
-                        f"The keybinding <b>{new_shortcut}</b> "
-                        + f"is already assigned to <b>{action.description}</b>; change or clear "
-                        + f"that shortcut before assigning <b>{new_shortcut}</b> to this one."
-                    )
+                shortcuts = [kb.lower() for kb in shortcuts]
 
-                    self._warn_dialog = KeyBindWarnPopup(
-                        parent=self,
-                        text=message,
-                    )
+                if new_shortcut.lower() in shortcuts:
+                    # shortcut is here (either same action or not), don't replace in settings.
+                    replace = False
+                    if action_name != current_action:
+                        # the shortcut is saved to a different action, show message.
+                        # pop up window for warning.
+                        message = trans._(
+                            f"The keybinding <b>{new_shortcut}</b> "
+                            + f"is already assigned to <b>{action.description}</b>; change or clear "
+                            + f"that shortcut before assigning <b>{new_shortcut}</b> to this one."
+                        )
 
-                    self._warn_dialog.exec_()
+                        style = self.style()
 
-                    # get the original shortcut
-                    current_shortcuts = list(
-                        action_manager._shortcuts.get(current_action, {})
-                    )
-                    # reset value in table to value stored in action manager.
-                    item1.setText(current_shortcuts[0])
+                        print(row, col)
 
-                    break
+                        delta_y = 105
+                        delta_x = 10
+                        global_point = self.mapToGlobal(
+                            QPoint(
+                                self._table.columnViewportPosition(col)
+                                + delta_x,
+                                self._table.rowViewportPosition(row) + delta_y,
+                            )
+                        )
 
-            # else:
+                        self._warn_dialog = KeyBindWarnPopup(
+                            text=message,
+                        )
+                        self._warn_dialog.move(global_point)
 
-        if replace is True:
+                        item_icon = QTableWidgetItem("")
+                        item_icon.setIcon(
+                            style.standardIcon(QStyle.SP_MessageBoxCritical)
+                        )
+                        self._table.setItem(row, 3, item_icon)
+                        self._warn_dialog.exec_()
 
-            # this shortcut is not taken, can set it and save in settings
-            # how are we doing this? saving in settings and then that triggers to update the action manager?
-            # right now I'm updating the action manager, and settings will be saved after a trigger as with
-            # all the other widgets.
+                        # get the original shortcut
+                        current_shortcuts = list(
+                            action_manager._shortcuts.get(current_action, {})
+                        )
+                        # reset value in table to value stored in action manager.
+                        item1.setText(current_shortcuts[0])
 
-            #  Bind new shortcut to the action manager
-            action_manager.unbind_shortcut(current_action)
-            action_manager.bind_shortcut(current_action, new_shortcut)
+                        self._table.takeItem(row, 3)
 
-            # Save to settings here temporarily (probably won't do this here)
-            if current_action in SETTINGS.shortcuts.shortcuts:
-                # This one was here, need to save the new shortcut
-                SETTINGS.shortcuts.shortcuts[current_action][0] = new_shortcut
-            else:
-                # this action not currently set in SETTINGS, need to save it.
-                SETTINGS.shortcuts.shortcuts[current_action] = [new_shortcut]
+                        break
 
-                # self.onChanged.emit([action, new_shortcut])
+                # else:
+
+            if replace is True:
+
+                # this shortcut is not taken, can set it and save in settings
+                # how are we doing this? saving in settings and then that triggers to update the action manager?
+                # right now I'm updating the action manager, and settings will be saved after a trigger as with
+                # all the other widgets.
+
+                #  Bind new shortcut to the action manager
+                action_manager.unbind_shortcut(current_action)
+                action_manager.bind_shortcut(current_action, new_shortcut)
+
+                # Save to settings here temporarily (probably won't do this here)
+                if current_action in SETTINGS.shortcuts.shortcuts:
+                    # This one was here, need to save the new shortcut
+                    SETTINGS.shortcuts.shortcuts[current_action][
+                        0
+                    ] = new_shortcut
+                else:
+                    # this action not currently set in SETTINGS, need to save it.
+                    SETTINGS.shortcuts.shortcuts[current_action] = [
+                        new_shortcut
+                    ]
+
+                    # self.onChanged.emit([action, new_shortcut])
 
     def value(self):
         # need to return value from widget.
@@ -255,25 +299,38 @@ class KeyBindWarnPopup(QDialog):
     """Dialog to inform user that shortcut is already assigned."""
 
     # valueChanged = Signal()
-
     def __init__(
         self,
-        parent: QWidget = None,
+        parent=None,
         text: str = "",
     ):
         super().__init__(parent)
 
-        # self.setWindowFlags(Qt.FramelessWindowHint)
-
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        # print('setting up')
         # Set up components
-        self._message = QLabel(self)
+        self._message = QLabel()
+        self._xbutton = QPushButton('x', self)
+        self._xbutton.setFixedSize(20, 20)
 
         # Widget set up
         self._message.setText(text)
         self._message.setWordWrap(True)
+        self._xbutton.clicked.connect(self._close)
 
         # Layout
         main_layout = QVBoxLayout()
         main_layout.addWidget(self._message)
 
+        # self._xbutton.move(0, 0)
+
         self.setLayout(main_layout)
+
+        # print(dir(self))
+        self.setStyleSheet(get_stylesheet(SETTINGS.appearance.theme))
+
+        # self.setWindowFlags(Qt.FramelessWindowHint)
+
+    def _close(self):
+
+        self.close()
