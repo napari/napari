@@ -127,7 +127,7 @@ def test_empty_layer_with_text_properties():
         property_choices=default_properties,
         text=text_kwargs,
     )
-    np.testing.assert_equal(layer.text.values, np.empty(0))
+    assert layer.text.values.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
@@ -143,7 +143,7 @@ def test_empty_layer_with_text_formatted():
         property_choices=default_properties,
         text='point_type: {point_type:.2f}',
     )
-    np.testing.assert_equal(layer.text.values, np.empty(0))
+    assert layer.text.values.size == 0
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])

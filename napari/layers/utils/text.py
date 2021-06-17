@@ -56,7 +56,7 @@ class TextManager(EventedModel):
     values: Array[str, (-1,)] = None
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (1, 4)] = None
+    color: Array[float, (4,)] = None
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     translation: Array[float, (-1,)] = None
