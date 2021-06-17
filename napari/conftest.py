@@ -332,3 +332,28 @@ def pytest_collection_modifyitems(session, config, items):
             at_end.append(items.pop(i))
 
     items.extend([x for _, x in sorted(zip(put_at_end, at_end))])
+
+
+@pytest.fixture(autouse=True)
+def block_threads(monkeypatch, request):
+    if 'enablethread' in request.keywords:
+        return
+
+    from pytestqt.qt_compat import qt_api
+    from qtpy.QtCore import QThread, QTimer
+
+    old_start = QTimer.start
+
+    class OldTimer(QTimer):
+        def start(self, time=None):
+            if time is not None:
+                old_start(self, time)
+            else:
+                old_start(self)
+
+    def not_start(self):
+        raise RuntimeError("Thread should not be used in test")
+
+    monkeypatch.setattr(QTimer, "start", not_start)
+    monkeypatch.setattr(QThread, "start", not_start)
+    monkeypatch.setattr(qt_api.QtCore, "QTimer", OldTimer)

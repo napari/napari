@@ -29,6 +29,7 @@ def test_as_generator_function():
 # qtbot is necessary for qthreading here.
 # note: pytest-cov cannot check coverage of code run in the other thread.
 @pytest.mark.order(2)
+@pytest.mark.enablethread
 def test_thread_worker(qtbot):
     """Test basic threadworker on a function"""
 
@@ -46,6 +47,7 @@ def test_thread_worker(qtbot):
 
 
 @pytest.mark.order(3)
+@pytest.mark.enablethread
 def test_thread_generator_worker(qtbot):
     """Test basic threadworker on a generator"""
 
@@ -67,6 +69,7 @@ def test_thread_generator_worker(qtbot):
 
 
 @pytest.mark.order(4)
+@pytest.mark.enablethread
 def test_thread_raises2(qtbot):
     handle_val = [0]
 
@@ -94,6 +97,7 @@ def test_thread_raises2(qtbot):
 
 
 @pytest.mark.order(5)
+@pytest.mark.enablethread
 def test_thread_warns(qtbot):
     """Test warnings get returned to main thread"""
     import warnings
@@ -121,6 +125,7 @@ def test_thread_warns(qtbot):
 
 
 @pytest.mark.order(6)
+@pytest.mark.enablethread
 def test_multiple_connections(qtbot):
     """Test the connect dict accepts a list of functions, and type checks"""
 
@@ -255,6 +260,7 @@ def test_worker_base_attribute():
 
 
 @pytest.mark.order(11)
+@pytest.mark.enablethread
 def test_abort_does_not_return(qtbot):
     loop_counter = 0
 

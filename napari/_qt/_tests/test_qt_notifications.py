@@ -109,6 +109,7 @@ def test_notification_display(mock_show, severity, monkeypatch):
 
     monkeypatch.delenv('NAPARI_CATCH_ERRORS', raising=False)
     monkeypatch.setattr(settings.application, 'gui_notification_level', 'info')
+    monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
     notif = Notification('hi', severity, actions=[('click', lambda x: None)])
     NapariQtNotification.show_notification(notif)
     if NotificationSeverity(severity) >= NotificationSeverity.INFO:

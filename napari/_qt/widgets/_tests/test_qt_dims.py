@@ -274,6 +274,7 @@ def test_slider_press_updates_last_used(qtbot):
     os.environ.get('CI') and platform == 'win32',
     reason='not working in windows VM',
 )
+@pytest.mark.enablethread
 def test_play_button(qtbot):
     """test that the play button and its popup dialog work"""
     ndim = 3

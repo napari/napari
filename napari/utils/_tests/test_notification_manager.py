@@ -6,6 +6,7 @@ from typing import List
 
 import pytest
 
+from napari._qt.dialogs.qt_notification import NapariQtNotification
 from napari.utils.notifications import (
     Notification,
     notification_manager,
@@ -34,7 +35,7 @@ def test_notification_repr_has_message():
     )
 
 
-def test_notification_manager_no_gui():
+def test_notification_manager_no_gui(monkeypatch):
     """
     Direct test of the notification manager.
 
@@ -42,6 +43,7 @@ def test_notification_manager_no_gui():
     notification manager itself can receive a info, warning or error.
     """
     previous_exhook = sys.excepthook
+    monkeypatch.setattr(NapariQtNotification, "DISMISS_AFTER", 0)
     with notification_manager:
         notification_manager.records.clear()
         # save all of the events that get emitted
