@@ -5,10 +5,8 @@ from qtpy.QtWidgets import (
     QComboBox,
     QDialog,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QPushButton,
-    QStyle,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -26,7 +24,7 @@ from ..qt_resources import get_stylesheet
 class ShortcutEditor(QDialog):
     """ """
 
-    ALL_ACTIVE_KEYBINDINGS = trans._('All active key bindings')
+    ALL_ACTIVE_KEYBINDINGS = trans._('Viewer key bindings')
 
     def __init__(
         self,
@@ -64,6 +62,7 @@ class ShortcutEditor(QDialog):
         # all actions
         all_actions = action_manager._actions.copy()
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = []
+
         for layer in layers:
             if len(layer.class_keymap) == 0:
                 actions = []
@@ -115,6 +114,7 @@ class ShortcutEditor(QDialog):
         self._reset_dialog.exec_()
 
     def _reset_shortcuts(self, event=None):
+        # event is True if the user confirmed reset shortcuts
         if event is True:
             SETTINGS.reset(sections=['shortcuts'])
             for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
@@ -122,10 +122,22 @@ class ShortcutEditor(QDialog):
                 for shortcut in shortcuts:
                     action_manager.bind_shortcut(action, shortcut)
 
-            self.layer_combo_box.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
-            self._set_table()
+            self._set_table(layer_str=self.layer_combo_box.currentText())
+            # self.layer_combo_box.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
+            # self.layer_combo_box.setCurrentText(self.layer_combo_box.currentText())
 
     def _set_table(self, layer_str=''):
+
+        # keep track of what is in each column
+        self._action_name_col = 0
+        self._icon_col = 1
+        self._shortcut_col = 2
+        self._action_col = 3
+
+        header_strs = ['', '', '', '']
+        header_strs[self._action_name_col] = 'Action'
+        header_strs[self._shortcut_col] = 'Keybinding'
+
         if layer_str == '':
             layer_str = self.ALL_ACTIVE_KEYBINDINGS
 
@@ -137,9 +149,9 @@ class ShortcutEditor(QDialog):
         self._table.clearContents()
 
         self._table.horizontalHeader().setStretchLastSection(True)
-        self._table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch
-        )
+        # self._table.horizontalHeader().setSectionResizeMode(
+        #     QHeaderView.Stretch
+        # )
         self._table.horizontalHeader().setStyleSheet(
             'border-bottom: 2px solid white;'
         )
@@ -152,12 +164,13 @@ class ShortcutEditor(QDialog):
 
             self._table.setRowCount(len(actions))
             self._table.setColumnCount(4)
-            self._table.setHorizontalHeaderLabels(
-                ['Action', 'Keybinding', '', '']
-            )
+            self._table.setHorizontalHeaderLabels(header_strs)
             self._table.verticalHeader().setVisible(False)
 
-            self._table.setColumnHidden(2, True)
+            self._table.setColumnHidden(self._action_col, True)
+            self._table.setColumnWidth(self._action_name_col, 250)
+            self._table.setColumnWidth(self._shortcut_col, 200)
+            self._table.setColumnWidth(self._icon_col, 50)
 
             for row, (action_name, action) in enumerate(actions.items()):
                 shortcuts = action_manager._shortcuts.get(action_name, [])
@@ -166,35 +179,33 @@ class ShortcutEditor(QDialog):
                 item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                 # item.setStyleSheet('border-top: 1px solid white; border-bottom: 1px solid white;')
 
-                self._table.setItem(row, 0, item)
+                self._table.setItem(row, self._action_name_col, item)
                 item_shortcut = QTableWidgetItem(
                     list(shortcuts)[0] if shortcuts else ""
                 )
 
-                self._table.setItem(row, 1, item_shortcut)
+                self._table.setItem(row, self._shortcut_col, item_shortcut)
 
                 item_action = QTableWidgetItem(action_name)
                 # action_name is stored in the table to use later, but is not shown on dialog.
-                self._table.setItem(row, 2, item_action)
+                self._table.setItem(row, self._action_col, item_action)
 
             self._table.cellChanged.connect(self._set_keybinding)
         else:
             # no actions-- display that.
             self._table.setRowCount(1)
             self._table.setColumnCount(4)
-            self._table.setHorizontalHeaderLabels(
-                ['Action', 'Keybinding', '', '']
-            )
+            self._table.setHorizontalHeaderLabels(header_strs)
             self._table.verticalHeader().setVisible(False)
 
-            self._table.setColumnHidden(3, True)
+            self._table.setColumnHidden(self._action_col, True)
             item = QTableWidgetItem('No key bindings')
             item.setFlags(item.flags() & ~Qt.ItemIsEditable)
             self._table.setItem(0, 0, item)
 
     def _set_keybinding(self, row, col):
 
-        if col == 1:
+        if col == self._shortcut_col:
             # event is the index of the event.
             current_layer_text = self.layer_combo_box.currentText()
             layer_actions = self.key_bindings_strs[current_layer_text]
@@ -204,7 +215,7 @@ class ShortcutEditor(QDialog):
             new_shortcut = item1.text()
 
             # get the action name
-            current_action = self._table.item(row, 2).text()
+            current_action = self._table.item(row, self._action_col).text()
 
             replace = True
             for row1, (action_name, action) in enumerate(
@@ -226,9 +237,7 @@ class ShortcutEditor(QDialog):
                             + f"that shortcut before assigning <b>{new_shortcut}</b> to this one."
                         )
 
-                        style = self.style()
-
-                        print(row, col)
+                        # style = self.style()
 
                         delta_y = 105
                         delta_x = 10
@@ -245,11 +254,20 @@ class ShortcutEditor(QDialog):
                         )
                         self._warn_dialog.move(global_point)
 
-                        item_icon = QTableWidgetItem("")
-                        item_icon.setIcon(
-                            style.standardIcon(QStyle.SP_MessageBoxCritical)
+                        self.warning_indicator = QLabel(self)
+                        self.warning_indicator.setObjectName("error_label")
+
+                        self.warning_indicator2 = QLabel(self)
+                        self.warning_indicator2.setObjectName("error_label")
+
+                        self._table.setCellWidget(
+                            row, self._icon_col, self.warning_indicator
                         )
-                        self._table.setItem(row, 3, item_icon)
+                        self._table.setCellWidget(
+                            row1, self._icon_col, self.warning_indicator2
+                        )
+                        # self._table.setItem(row, self._icon_col, item_icon1)
+                        # self._table.setItem(row1, self._icon_col, item_icon2)
                         self._warn_dialog.exec_()
 
                         # get the original shortcut
@@ -259,7 +277,14 @@ class ShortcutEditor(QDialog):
                         # reset value in table to value stored in action manager.
                         item1.setText(current_shortcuts[0])
 
-                        self._table.takeItem(row, 3)
+                        self._table.setCellWidget(
+                            row, self._icon_col, QLabel("")
+                        )
+                        self._table.setCellWidget(
+                            row1, self._icon_col, QLabel("")
+                        )
+                        # self._table.takeItem(row, self._icon_col)
+                        # self._table.takeItem(row1, self._icon_col)
 
                         break
 
@@ -288,10 +313,9 @@ class ShortcutEditor(QDialog):
                         new_shortcut
                     ]
 
-                    # self.onChanged.emit([action, new_shortcut])
-
     def value(self):
         # need to return value from widget.
+
         pass
 
 
@@ -307,7 +331,7 @@ class KeyBindWarnPopup(QDialog):
         super().__init__(parent)
 
         self.setWindowFlags(Qt.FramelessWindowHint)
-        # print('setting up')
+
         # Set up components
         self._message = QLabel()
         self._xbutton = QPushButton('x', self)
@@ -317,6 +341,7 @@ class KeyBindWarnPopup(QDialog):
         self._message.setText(text)
         self._message.setWordWrap(True)
         self._xbutton.clicked.connect(self._close)
+        self._xbutton.setStyleSheet("background-color: rgba(0, 0, 0, 0);")
 
         # Layout
         main_layout = QVBoxLayout()
@@ -326,7 +351,6 @@ class KeyBindWarnPopup(QDialog):
 
         self.setLayout(main_layout)
 
-        # print(dir(self))
         self.setStyleSheet(get_stylesheet(SETTINGS.appearance.theme))
 
         # self.setWindowFlags(Qt.FramelessWindowHint)
