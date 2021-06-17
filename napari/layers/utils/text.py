@@ -39,9 +39,9 @@ class TextManager(EventedModel):
         Font color for the text as an [R, G, B, A] array.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
-        visual get mixed. Allowed values are {'opaque', 'translucent', and 'additive'}.
-        Note that 'opaque` blending is not recommended, as it colors the bounding box
-        surrounding the text.
+        visual get mixed. Allowed values are 'translucent' and 'additive'.
+        Note that 'opaque` blending is not allowed, as it colors the bounding box
+        surrounding the text, and if given, 'translucent' will be used instead.
     anchor : Anchor
         The location of the text origin relative to the bounding box.
         Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
