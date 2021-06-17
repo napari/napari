@@ -6,6 +6,7 @@ from pydantic import PositiveInt, validator
 
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EventedModel
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
@@ -36,7 +37,8 @@ class TextManager(EventedModel):
     size : float
         Font size of the text, which must be positive. Default value is 12.
     color : array
-        Font color for the text as an [R, G, B, A] array.
+        Font color for the text as an [R, G, B, A] array. Can also be expressed
+        as a string on construction or setting.
     blending : Blending
         The blending mode that determines how RGB and alpha values of the layer
         visual get mixed. Allowed values are 'translucent' and 'additive'.
@@ -51,13 +53,13 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
-    values: np.ndarray = None
+    values: Array[str, (-1,)] = None
     visible: bool = True
     size: PositiveInt = 12
-    color: np.ndarray = None
+    color: Array[float, (1, 4)] = None
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
-    translation: np.ndarray = None
+    translation: Array[float, (-1,)] = None
     rotation: float = 0
     _mode: TextMode = TextMode.NONE
     _text_format_string: str = None
@@ -191,8 +193,8 @@ class TextManager(EventedModel):
     @validator('values', pre=True, always=True)
     def _check_values(cls, values):
         if values is None:
-            values = np.empty(0)
-        return values
+            values = np.empty(0, dtype=str)
+        return np.array(values)
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
@@ -202,7 +204,7 @@ class TextManager(EventedModel):
 
     @validator('translation', pre=True, always=True)
     def _check_translation(cls, translation):
-        # Use a scalar default value of 0 to broadcast to all dimensions.
+        # Use a scalar default value of 0 to broadcast to any dimensionality.
         if translation is None:
             translation = 0
         return np.asarray(translation)

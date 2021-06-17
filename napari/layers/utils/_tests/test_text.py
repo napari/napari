@@ -14,7 +14,7 @@ def test_empty_text_manager_property():
         text='confidence', n_text=0, properties=properties
     )
     assert text_manager._mode == TextMode.PROPERTY
-    np.testing.assert_equal(text_manager.values, np.empty(0))
+    np.testing.assert_equal(text_manager.values, np.empty(0, dtype=str))
 
     # add a text element
     new_properties = {'confidence': np.array([0.5])}
@@ -30,7 +30,7 @@ def test_empty_text_manager_format():
     text = 'confidence: {confidence:.2f}'
     text_manager = TextManager(text=text, n_text=0, properties=properties)
     assert text_manager._mode == TextMode.FORMATTED
-    np.testing.assert_equal(text_manager.values, np.empty(0))
+    np.testing.assert_equal(text_manager.values, np.empty(0, dtype=str))
 
     # add a text element
     new_properties = {'confidence': np.array([0.5])}
