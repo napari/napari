@@ -6,6 +6,8 @@ import dask
 import numpy as np
 
 from ...utils.action_manager import action_manager
+from ...utils.transforms import Affine
+from ...utils.translations import trans
 
 
 def register_layer_action(keymapprovider, description: str, shortcuts=None):
@@ -45,10 +47,12 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
             description=description,
             keymapprovider=keymapprovider,
         )
-        if isinstance(shortcuts, str):
-            shortcuts = [shortcuts]
-        for shortcut in shortcuts:
-            action_manager.bind_shortcut(name, shortcut)
+        if shortcuts:
+            if isinstance(shortcuts, str):
+                shortcuts = [shortcuts]
+
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(name, shortcut)
         return func
 
     return _inner
@@ -305,3 +309,43 @@ def compute_multiscale_level_and_corners(
     corners = np.array([np.floor(corners[0]), np.ceil(corners[1])]).astype(int)
 
     return level, corners
+
+
+def coerce_affine(affine, ndim, name=None):
+    """Coerce a user input into an affine transform object.
+
+    If the input is already an affine transform object, that same object is returned
+    with a name change if the given name is not None. If the input is None, an identity
+    affine transform object of the given dimensionality is returned.
+
+     Parameters
+    ----------
+    affine : array-like or napari.utils.transforms.Affine
+        An existing affine transform object or an array-like that is its transform matrix.
+    ndim : int
+        The desired dimensionality of the transform. Ignored if implied by affine.
+    name : str
+        The desired name of the transform.
+
+    Returns
+    -------
+    napari.utils.transforms.Affine
+        The input coerced into an affine transform object.
+    """
+    if affine is None:
+        affine = Affine(affine_matrix=np.eye(ndim + 1))
+    elif isinstance(affine, np.ndarray):
+        affine = Affine(affine_matrix=affine)
+    elif isinstance(affine, list):
+        affine = Affine(affine_matrix=np.array(affine))
+    elif not isinstance(affine, Affine):
+        raise TypeError(
+            trans._(
+                'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                deferred=True,
+                dtype=type(affine),
+            )
+        )
+    if name is not None:
+        affine.name = name
+    return affine

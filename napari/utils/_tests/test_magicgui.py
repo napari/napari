@@ -182,3 +182,24 @@ def test_magicgui_get_viewer(make_napari_viewer):
     assert func() is viewer
     # no widget should be shown
     assert not func.v.visible
+
+
+def test_magicgui_imports(tmp_path):
+    """Test that magicgui is registered in time"""
+    import subprocess
+    import sys
+    from textwrap import dedent
+
+    script = """
+    from napari.types import ImageData
+    from magicgui import magicgui
+
+    @magicgui()
+    def filter_widget(image: ImageData) -> ImageData:
+        return None
+
+    filter_widget()
+    """
+    script_path = tmp_path / 'script.py'
+    script_path.write_text(dedent(script))
+    subprocess.run([sys.executable, script_path], check=True)

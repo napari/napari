@@ -346,9 +346,9 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def unbind_shortcut(self, name: str):
+    def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
         """
-        unbind shortcut for action name
+        Unbind all shortcuts for a given action name.
 
         Parameters
         ----------
@@ -357,9 +357,9 @@ class ActionManager:
 
         Returns
         -------
-        shortcut: str | None
-            Previously bound shortcut or None if not such shortcuts was bound,
-            or  no such action exists.
+        shortcuts: set of str | None
+            Previously bound shortcuts or None if not such shortcuts was bound,
+            or no such action exists.
 
         Warns
         -----
@@ -393,7 +393,7 @@ class ActionManager:
 
     def _get_layer_shortcuts(self, layers):
         """
-        Get shortcuts filterd by the given layers.
+        Get shortcuts filtered by the given layers.
 
         Parameters
         ----------
@@ -415,6 +415,28 @@ class ActionManager:
                     layer_shortcuts[layer][str(shortcut)] = action.description
 
         return layer_shortcuts
+
+    def _get_layer_actions(self, layer):
+        """
+        Get actions filtered by the given layers.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer to use for actions filtering.
+
+        Returns
+        -------
+        layer_actions: dict
+            Dictionary of names of actions with action values for a layer.
+
+        """
+        layer_actions = {}
+        for name, action in self._actions.items():
+            if action and layer == action.keymapprovider:
+                layer_actions[name] = action
+
+        return layer_actions
 
     def _get_active_shortcuts(self, active_keymap):
         """

@@ -113,7 +113,7 @@ def expand_upper_triangular(vector):
     Returns
     -------
     upper_tri : np.array shape (N, N)
-        Upper triangluar matrix.
+        Upper triangular matrix.
     """
     n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root

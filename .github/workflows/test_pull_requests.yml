@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        task: [flake8, black, isort]
+        task: [flake8, black, isort, import-lint]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.8
