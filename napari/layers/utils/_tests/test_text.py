@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from napari.layers.utils._text_constants import TextMode
-from napari.layers.utils.text import TextManager
+from napari.layers.utils.text_manager import TextManager
 
 
 def test_empty_text_manager_property():

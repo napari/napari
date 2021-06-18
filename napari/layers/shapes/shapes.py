@@ -25,7 +25,7 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
 )
 from ..utils.layer_utils import dataframe_to_properties
-from ..utils.text import TextManager
+from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
     BACKSPACE,
