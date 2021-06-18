@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QPoint, Qt, Signal
 from qtpy.QtWidgets import (
     QComboBox,
     QDialog,
@@ -24,6 +24,7 @@ from ..qt_resources import get_stylesheet
 class ShortcutEditor(QDialog):
     """ """
 
+    valueChanged = Signal(dict)
     ALL_ACTIVE_KEYBINDINGS = trans._('Viewer key bindings')
 
     def __init__(
@@ -289,8 +290,6 @@ class ShortcutEditor(QDialog):
 
                         break
 
-                # else:
-
             if replace is True:
 
                 # this shortcut is not taken, can set it and save in settings
@@ -300,25 +299,37 @@ class ShortcutEditor(QDialog):
 
                 #  Bind new shortcut to the action manager
                 action_manager.unbind_shortcut(current_action)
+
                 if new_shortcut != "":
                     action_manager.bind_shortcut(current_action, new_shortcut)
 
-                # Save to settings here temporarily (probably won't do this here)
-                if current_action in SETTINGS.shortcuts.shortcuts:
-                    # This one was here, need to save the new shortcut
-                    SETTINGS.shortcuts.shortcuts[current_action][
-                        0
-                    ] = new_shortcut
+                    new_value_dict = {current_action: [new_shortcut]}
                 else:
-                    # this action not currently set in SETTINGS, need to save it.
-                    SETTINGS.shortcuts.shortcuts[current_action] = [
-                        new_shortcut
-                    ]
+
+                    if action_manager._shortcuts[current_action] != "":
+                        new_value_dict = {current_action: [""]}
+
+                if new_value_dict:
+
+                    self.setChangedValue(new_value_dict)
+                    self.valueChanged.emit(new_value_dict)
+
+    def setChangedValue(self, value):
+        self._changed_value = value
 
     def value(self):
-        # need to return value from widget.
+        # consult action manager for current actions.
 
-        pass
+        # return self._changed_value
+        value = {}
+
+        for row, (action_name, action) in enumerate(
+            action_manager._actions.items()
+        ):
+            shortcuts = action_manager._shortcuts.get(action_name, [])
+            value[action_name] = list(shortcuts)
+
+        return value
 
 
 class KeyBindWarnPopup(QDialog):

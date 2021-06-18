@@ -577,19 +577,19 @@ class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget
 
 class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
     @state_property
-    def state(self) -> int:
+    def state(self) -> dict:
         return self.value()
 
     def setDescription(self, description: str):
         self.description = description
 
     @state.setter
-    def state(self, state: int):
+    def state(self, state: dict):
         # self.setValue(state)
         return None
 
     def configure(self):
-        # self.valueChanged.connect(self.on_changed.emit)
+        self.valueChanged.connect(self.on_changed.emit)
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
