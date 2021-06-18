@@ -138,11 +138,9 @@ class VispyBaseLayer(ABC):
             # of pixel to center of pixel.
             # Note this offset is only required for array like data in
             # 2D.
-            offset_matrix = (
-                self.layer._transforms['data2world']
-                .set_slice(self.layer._dims_displayed)
-                .linear_matrix
-            )
+            offset_matrix = self.layer._data_to_world.set_slice(
+                self.layer._dims_displayed
+            ).linear_matrix
             offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
             # Convert NumPy axis ordering to VisPy axis ordering
             # and embed in full affine matrix

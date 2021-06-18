@@ -34,8 +34,13 @@ def iterable_w_context():
             # using a context manager also allows us to manipulate
             # the progress object e.g. by setting a description
             pbr.set_description(f"Slice {i}")
-            process(im_slice)
-                
+
+            # we can group progress bars together in the viewer
+            # by passing a parent progress bar to new progress
+            # objects' nest_under attribute
+            for channel in progress(im_slice, nest_under=pbr):
+                process(channel)
+
 def indeterminate():
     """By passing a total of 0, we can have an indeterminate progress bar
     """

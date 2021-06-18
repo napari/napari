@@ -54,7 +54,7 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 from ..utils.io import imsave_extensions
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 
 
 class QtViewer(QSplitter):
@@ -73,7 +73,7 @@ class QtViewer(QSplitter):
     canvas : vispy.scene.SceneCanvas
         Canvas for rendering the current view.
     console : QtConsole
-        iPython console terminal integrated into the napari GUI.
+        IPython console terminal integrated into the napari GUI.
     controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
@@ -267,15 +267,13 @@ class QtViewer(QSplitter):
         else:
             self.chunk_receiver = None
 
-        # bind shortcuts stored in SETTINGS last.
+        # bind shortcuts stored in settings last.
         self._bind_shortcuts()
 
     def _bind_shortcuts(self):
         """Bind shortcuts stored in SETTINGS to actions."""
-
-        for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
-            if action in action_manager._shortcuts:
-                action_manager.unbind_shortcut(action)
+        for action, shortcuts in get_settings().shortcuts.shortcuts.items():
+            action_manager.unbind_shortcut(action)
             for shortcut in shortcuts:
                 action_manager.bind_shortcut(action, shortcut)
 
@@ -356,7 +354,9 @@ class QtViewer(QSplitter):
                 import napari
 
                 self.console = QtConsole(self.viewer)
-                self.console.push({'napari': napari})
+                self.console.push(
+                    {'napari': napari, 'action_manager': action_manager}
+                )
             except ImportError:
                 warnings.warn(
                     trans._(

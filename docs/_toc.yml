@@ -11,6 +11,8 @@
     - file: guides/magicgui
     - file: guides/perfmon
     - file: guides/rendering
+    - file: guides/preferences
+    - file: guides/translations
 
 - file: plugins/index
   sections:

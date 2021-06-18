@@ -1,11 +1,15 @@
 """ImageSliceData class.
 """
-from typing import Optional, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import numpy as np
 
-from ...types import ArrayLike
 from ..base import Layer
+
+if TYPE_CHECKING:
+    from ...types import ArrayLike
 
 
 class ImageSliceData:

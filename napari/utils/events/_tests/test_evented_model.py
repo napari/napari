@@ -5,6 +5,8 @@ from unittest.mock import Mock
 import dask.array as da
 import numpy as np
 import pytest
+from dask import delayed
+from dask.delayed import Delayed
 from pydantic import Field
 
 from napari.utils.events import EmitterGroup, EventedModel
@@ -300,3 +302,19 @@ def test_nested_evented_model_serialization():
     assert raw == r'{"nest": {"obj": {"a": 1, "b": "hi"}}}'
     deserialized = Model.parse_raw(raw)
     assert deserialized == m
+
+
+def test_evented_model_dask_delayed():
+    """Test that evented models work with dask delayed objects"""
+
+    class MyObject(EventedModel):
+        attribute: Delayed
+
+    @delayed
+    def my_function():
+        pass
+
+    o1 = MyObject(attribute=my_function)
+
+    # check that equality checking works as expected
+    assert o1 == o1
