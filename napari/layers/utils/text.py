@@ -53,16 +53,17 @@ class TextManager(EventedModel):
         Angle of the text elements around the anchor point. Default value is 0.
     """
 
-    values: Array[str, (-1,)] = None
+    values: Array[str] = []
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (4,)] = None
+    color: Array[float, (4,)] = 'cyan'
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
-    translation: Array[float, (-1,)] = None
+    # Use a scalar default translation to broadcast to any dimensionality.
+    translation: Array[float] = 0
     rotation: float = 0
     _mode: TextMode = TextMode.NONE
-    _text_format_string: str = None
+    _text_format_string: str = ''
 
     def __init__(self, text=None, n_text=None, properties=None, **kwargs):
         super().__init__(**kwargs)
@@ -190,24 +191,9 @@ class TextManager(EventedModel):
         # if no points in this slice send dummy data
         return np.array([''])
 
-    @validator('values', pre=True, always=True)
-    def _check_values(cls, values):
-        if values is None:
-            values = np.empty(0, dtype=str)
-        return np.array(values)
-
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
-        if color is None:
-            color = 'cyan'
         return transform_color(color)[0]
-
-    @validator('translation', pre=True, always=True)
-    def _check_translation(cls, translation):
-        # Use a scalar default value of 0 to broadcast to any dimensionality.
-        if translation is None:
-            translation = 0
-        return np.asarray(translation)
 
     @validator('anchor', pre=True, always=True)
     def _check_anchor(cls, anchor):
