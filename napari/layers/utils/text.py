@@ -195,10 +195,6 @@ class TextManager(EventedModel):
     def _check_color(cls, color):
         return transform_color(color)[0]
 
-    @validator('anchor', pre=True, always=True)
-    def _check_anchor(cls, anchor):
-        return Anchor(anchor)
-
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):
         blending_mode = Blending(blending)
