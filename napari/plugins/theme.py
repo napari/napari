@@ -1,11 +1,12 @@
 """Handling of theme data by the hook specification."""
-from typing import Dict, List, Optional, Tuple
 from logging import getLogger
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 from napari_plugin_engine import HookImplementation, PluginCallError
-from . import plugin_manager
+
 from ..utils.translations import trans
+from . import plugin_manager
 
 logger = getLogger(__name__)
 
@@ -13,7 +14,40 @@ logger = getLogger(__name__)
 def get_stylesheet_from_plugins(
     plugin: Optional[str] = None,
 ) -> Tuple[List[str], List[str], Dict[str, Dict[str, str]]]:
-    """Iterate through hooks and return stylesheet."""
+    """Iterate through hooks and return stylesheet.
+
+    This function returns a list of qss files, list of svg icons and
+    dictionary of themes. If multiple plugins implement the theme
+    hook, all of their data will be loaded.
+
+    Parameters
+    ----------
+    plugin : str, optional
+        Name of a plugin to use. If provided, will force the theme data to be
+        provided by the specified ``plugin``. If the requested plugin cannot
+        provide the data, a PluginCallError will be raised.
+
+    Returns
+    -------
+    qss_files : List[str]
+        A list of Qt stylesheets with the file extension .qss. Napari provides
+        several default stylesheets with names `00_base.qss`, `01_buttons.qss` etc
+        which are first sorted (hence the number at the front) and then progressively
+        read and appended to single stylesheet. You can provide your own stylesheets
+        that override the napari defaults by creating a new stylesheet with progressively
+        larger name.
+    svg_paths : List[str]
+        A list of svg files to be colorized and used in napari. These can be new icons that
+        are required by your own plugin or icons to replace the currently available icons.
+    color_dict : Dict[str, Dict[str, str]
+        A dictionary containing new color scheme to be used by napari. You can replace
+        existing themes by using the same names.
+
+    Raises
+    ------
+    PluginCallError
+        If ``plugin`` is specified but raises an Exception while executing.
+    """
 
     hook_caller = plugin_manager.hook.napari_experimental_provide_theme
     if plugin:
@@ -76,7 +110,12 @@ def get_stylesheet_from_plugins(
 
 
 def register_plugin_themes(plugin: Optional[str] = None):
-    """Register plugin theme data."""
+    """Register plugin theme data.
+
+    This function will load the theme data and update dictionary
+    of icons, stylesheets and themes. If any of the plugins have
+    returned the data, napari resources will be forcefully refreshed.
+    """
     from .._qt.qt_resources import _register_napari_resources
 
     # get data from each plugin (or single specified plugin)
