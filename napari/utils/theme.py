@@ -160,7 +160,7 @@ def get_theme(name):
     else:
         raise ValueError(
             trans._(
-                "Unrecognized theme {name}. Availabe themes are {themes}",
+                "Unrecognized theme {name}. Available themes are {themes}",
                 deferred=True,
                 name=name,
                 themes=available_themes(),

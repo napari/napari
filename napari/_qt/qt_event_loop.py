@@ -11,6 +11,7 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
+from ..plugins.theme import register_plugin_themes
 from ..utils import config, perf
 from ..utils.notifications import (
     notification_manager,
@@ -23,7 +24,6 @@ from .dialogs.qt_notification import (
     NapariQtNotification,
     NotificationDispatcher,
 )
-from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
 if TYPE_CHECKING:
@@ -179,7 +179,7 @@ def get_app(
 
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
-        _register_napari_resources()
+        register_plugin_themes()
 
     _app_ref = app  # prevent garbage collection
 

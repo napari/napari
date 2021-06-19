@@ -36,7 +36,7 @@ For more general background on the plugin hook calling mechanism, see the
 from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -495,4 +495,34 @@ def napari_experimental_provide_dock_widget() -> Union[
     >>> @napari_hook_implementation
     >>> def napari_experimental_provide_dock_widget():
     ...     return threshold
+    """
+
+
+@napari_hook_specification(firstresult=True)
+def napari_experimental_provide_theme() -> Tuple[
+    List[str], List[str], Dict[str, Dict[str, str]]
+]:
+    """Provide GUI theme metadata that can be used when generating theme .py files.
+
+    This hook specification is marked as experimental as the API or how the returned
+    value is handled may change here more frequently than the rest of the codebase.
+
+    Returns
+    -------
+    qss_files : List[str]
+        A list of Qt stylesheets with the file extension .qss. Napari provides
+        several default stylesheets with names `00_base.qss`, `01_buttons.qss` etc
+        which are first sorted (hence the number at the front) and then progressively
+        read and appended to single stylesheet. You can provide your own stylesheets
+        that override the napari defaults by creating a new stylesheet with progressively
+        larger name.
+    svg_paths : List[str]
+        A list of svg files to be colorized and used in napari. These can be new icons that
+        are required by your own plugin or icons to replace the currently available icons.
+    color_dict : Dict[str, Dict[str, str]
+        A dictionary containing new color scheme to be used by napari. You can replace
+        existing themes by using the same names.
+
+    Examples
+    --------
     """
