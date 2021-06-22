@@ -431,7 +431,9 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
-            value = np.clip(int(value), 1, 40)
+            value = np.clip(int(value), 1, None)
+            if value > self.brushSizeSlider.maximum():
+                self.brushSizeSlider.setMaximum(value)
             self.brushSizeSlider.setValue(value)
 
     def _on_n_edit_dimensions_change(self, event=None):
