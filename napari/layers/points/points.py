@@ -684,7 +684,7 @@ class Points(Layer):
 
     @property
     def n_dimensional(self) -> bool:
-        """bool: renders points as n-dimensionsal."""
+        """bool: renders vectors as n-dimensionsal."""
         return self._n_dimensional
 
     @n_dimensional.setter
