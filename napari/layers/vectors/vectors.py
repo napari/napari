@@ -598,11 +598,13 @@ class Vectors(Layer):
     @property
     def _view_face_color(self) -> np.ndarray:
         """(Mx4) np.ndarray : colors for the M in view vectors"""
-        face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
+        face_color = self.edge_color[self._view_indices]
+        face_color[:, -1] *= self._view_alphas
+        face_color = np.repeat(face_color, 2, axis=0)
+
         if self._ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
-        face_color[:, -1] *= np.repeat(self._view_alphas, 2, axis=0)
         return face_color
 
     def _slice_data(
