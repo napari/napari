@@ -73,6 +73,9 @@ jobs:
         platform: [ubuntu-latest]
         python: [3.7, 3.8, 3.9]
         include:
+          # Windows py37
+          - python: 3.7
+            platform: windows-latest
           # Windows py38
           - python: 3.8
             platform: windows-latest
