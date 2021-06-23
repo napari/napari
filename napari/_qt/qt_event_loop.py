@@ -295,9 +295,10 @@ def _ipython_has_eventloop() -> bool:
 
 def _pycharm_has_eventloop(app: QApplication) -> bool:
     """Return true if running in PyCharm and eventloop is active.
-    
-    PyCharm runs a custom interactive shell which overrides
-    `InteractiveShell.enable_gui()`, breaking some superclass behaviour.
+
+    Explicit checking is necessary because PyCharm runs a custom interactive
+    shell which overrides `InteractiveShell.enable_gui()`, breaking some
+    superclass behaviour.
     """
     in_pycharm = 'PYCHARM_HOSTED' in os.environ
     in_event_loop = getattr(app, '_in_event_loop', False)
