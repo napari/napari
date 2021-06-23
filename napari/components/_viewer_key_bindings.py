@@ -1,10 +1,32 @@
-from ..utils.settings import SETTINGS
+from ..utils.action_manager import action_manager
+from ..utils.settings import get_settings
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from .viewer_model import ViewerModel
 
 
-@ViewerModel.bind_key('Control')
+def register_viewer_action(description):
+    """
+    Convenient decorator to register an action with the current ViewerModel
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+    """
+
+    def _inner(func):
+        name = 'napari:' + func.__name__
+        action_manager.register_action(
+            name=name,
+            command=func,
+            description=description,
+            keymapprovider=ViewerModel,
+        )
+        return func
+
+    return _inner
+
+
+@register_viewer_action(trans._("Reset scroll."))
 def reset_scroll_progress(viewer):
 
     # on key press
@@ -18,117 +40,79 @@ def reset_scroll_progress(viewer):
 reset_scroll_progress.__doc__ = trans._("Reset dims scroll progress")
 
 
-@ViewerModel.bind_key('Control-Y')
+@register_viewer_action(trans._("Toggle ndisplay."))
 def toggle_ndisplay(viewer):
-    """Toggle ndisplay."""
     if viewer.dims.ndisplay == 3:
         viewer.dims.ndisplay = 2
     else:
         viewer.dims.ndisplay = 3
 
 
-toggle_ndisplay.__doc__ = trans._("Toggle ndisplay.")
-
-
-@ViewerModel.bind_key('Control-Shift-T')
+# Making this an action makes vispy really unhappy during the tests
+# on mac only with:
+# ```
+# RuntimeError: wrapped C/C++ object of type CanvasBackendDesktop has been deleted
+# ```
+@register_viewer_action(trans._("Toggle theme."))
 def toggle_theme(viewer):
     """Toggle theme for viewer"""
+    settings = get_settings()
     themes = available_themes()
-    current_theme = SETTINGS.appearance.theme
+    current_theme = settings.appearance.theme
     idx = themes.index(current_theme)
     idx += 1
     if idx == len(themes):
         idx = 0
 
-    SETTINGS.appearance.theme = themes[idx]
+    settings.appearance.theme = themes[idx]
 
 
-@ViewerModel.bind_key('Left')
-def increment_dims_left(viewer):
-    """Increment dimensions slider to the left."""
-    viewer.dims._increment_dims_left()
-
-
-increment_dims_left.__doc__ = trans._(
-    "Increment dimensions slider to the left."
-)
-
-
-@ViewerModel.bind_key('Right')
-def increment_dims_right(viewer):
-    """Increment dimensions slider to the right."""
-    viewer.dims._increment_dims_right()
-
-
-increment_dims_right.__doc__ = trans._(
-    "Increment dimensions slider to the right."
-)
-
-
-@ViewerModel.bind_key('Alt-Up')
-def focus_axes_up(viewer):
-    """Move focus of dimensions slider up."""
-    viewer.dims._focus_up()
-
-
-focus_axes_up.__doc__ = trans._("Move focus of dimensions slider up.")
-
-
-@ViewerModel.bind_key('Alt-Down')
-def focus_axes_down(viewer):
-    """Move focus of dimensions slider down."""
-    viewer.dims._focus_down()
-
-
-focus_axes_down.__doc__ = trans._("Move focus of dimensions slider down.")
-
-
-@ViewerModel.bind_key('Control-E')
-def roll_axes(viewer):
-    """Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."""
-    viewer.dims._roll()
-
-
-roll_axes.__doc__ = trans._(
-    "Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."
-)
-
-
-@ViewerModel.bind_key('Control-T')
-def transpose_axes(viewer):
-    """Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."""
-    viewer.dims._transpose()
-
-
-transpose_axes.__doc__ = trans._(
-    "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
-)
-
-
-@ViewerModel.bind_key('Control-R')
+@register_viewer_action(trans._("Reset view to original state."))
 def reset_view(viewer):
-    """Reset view to original state."""
     viewer.reset_view()
 
 
-reset_view.__doc__ = trans._("Reset view to original state.")
+@register_viewer_action(trans._("Increment dimensions slider to the left."))
+def increment_dims_left(viewer):
+    viewer.dims._increment_dims_left()
 
 
-@ViewerModel.bind_key('Control-G')
+@register_viewer_action(trans._("Increment dimensions slider to the right."))
+def increment_dims_right(viewer):
+    viewer.dims._increment_dims_right()
+
+
+@register_viewer_action(trans._("Move focus of dimensions slider up."))
+def focus_axes_up(viewer):
+    viewer.dims._focus_up()
+
+
+@register_viewer_action(trans._("Move focus of dimensions slider down."))
+def focus_axes_down(viewer):
+    viewer.dims._focus_down()
+
+
+@register_viewer_action(
+    trans._("Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."),
+)
+def roll_axes(viewer):
+    viewer.dims._roll()
+
+
+@register_viewer_action(
+    trans._(
+        "Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."
+    ),
+)
+def transpose_axes(viewer):
+    viewer.dims._transpose()
+
+
+@register_viewer_action(trans._("Toggle grid mode."))
 def toggle_grid(viewer):
-    """Toggle grid mode."""
     viewer.grid.enabled = not viewer.grid.enabled
 
 
-toggle_grid.__doc__ = trans._("Toggle grid mode.")
-
-
-@ViewerModel.bind_key('V')
+@register_viewer_action(trans._("Toggle visibility of selected layers"))
 def toggle_selected_visibility(viewer):
-    """Toggle visibility of selected layers"""
     viewer.layers.toggle_selected_visibility()
-
-
-toggle_selected_visibility.__doc__ = trans._(
-    "Toggle visibility of selected layers"
-)

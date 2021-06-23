@@ -5,12 +5,13 @@ until napari has a system-wide one.
 """
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Optional
 
-LOGGER = logging.getLogger("napari.loader")
+from ..utils.settings import get_settings
+from ..utils.translations import trans
 
+LOGGER = logging.getLogger("napari.loader")
 DEFAULT_OCTREE_CONFIG = {
     "loader_defaults": {
         "log_path": None,
@@ -40,11 +41,20 @@ def _get_async_config() -> Optional[dict]:
     Optional[dict]
         The async config to use or None if async not specified.
     """
-    async_var = os.getenv("NAPARI_ASYNC")
+
+    async_var = get_settings().experimental.async_
+
+    if async_var in [True, False]:
+        async_var = str(int(async_var))
 
     # NAPARI_ASYNC can now only be "0" or "1".
     if async_var not in [None, "0", "1"]:
-        raise ValueError('NAPARI_ASYNC can only be "0" or "1"')
+        raise ValueError(
+            trans._(
+                'NAPARI_ASYNC can only be "0" or "1"',
+                deferred=True,
+            )
+        )
 
     # If NAPARI_ASYNC is "1" use defaults but with octree disabled.
     if async_var == "1":
@@ -64,7 +74,11 @@ def get_octree_config() -> dict:
     dict
         The config data we should use.
     """
-    octree_var = os.getenv("NAPARI_OCTREE")
+    settings = get_settings()
+    octree_var = settings.experimental.octree
+
+    if octree_var in [True, False]:
+        octree_var = str(int(octree_var))
 
     # If NAPARI_OCTREE is not enabled, defer to NAPARI_ASYNC
     if octree_var in [None, "0"]:
@@ -78,4 +92,9 @@ def get_octree_config() -> dict:
     # NAPARI_OCTREE should be a config file path
     path = Path(octree_var).expanduser()
     with path.open() as infile:
-        return json.load(infile)
+        json_config = json.load(infile)
+
+    # Need to set this for the preferences dialog to build.
+    settings.experimental.octree = True
+
+    return json_config

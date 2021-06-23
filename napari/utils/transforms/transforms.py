@@ -3,6 +3,7 @@ from typing import Sequence
 import numpy as np
 import toolz as tz
 
+from ...utils.translations import trans
 from ..events import EventedList
 from .transform_utils import (
     compose_linear_matrix,
@@ -43,11 +44,15 @@ class Transform:
         if self._inverse_func is not None:
             return Transform(self._inverse_func, self.func)
         else:
-            raise ValueError('Inverse function was not provided.')
+            raise ValueError(
+                trans._('Inverse function was not provided.', deferred=True)
+            )
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
-        raise ValueError('Transform composition rule not provided')
+        raise ValueError(
+            trans._('Transform composition rule not provided', deferred=True)
+        )
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
@@ -62,7 +67,9 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError('Cannot subset arbitrary transforms.')
+        raise NotImplementedError(
+            trans._('Cannot subset arbitrary transforms.', deferred=True)
+        )
 
     def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform with added axes for non-visible dimensions.
@@ -79,7 +86,9 @@ class Transform:
         Transform
             Resulting transform.
         """
-        raise NotImplementedError('Cannot subset arbitrary transforms.')
+        raise NotImplementedError(
+            trans._('Cannot subset arbitrary transforms.', deferred=True)
+        )
 
 
 class TransformChain(EventedList, Transform):
@@ -247,11 +256,13 @@ class ScaleTranslate(Transform):
 class Affine(Transform):
     """n-dimensional affine transformation class.
 
-    The affine transform can be represented as a n+1 dimensionsal
-    transformation matrix in homogenous coordinates [1]_, an n
+    The affine transform can be represented as a n+1 dimensional
+    transformation matrix in homogeneous coordinates [1]_, an n
     dimensional matrix and a length n translation vector, or be
     composed and decomposed from scale, rotate, and shear
-    transformations.
+    transformations defined in the following order:
+
+    rotate * shear * scale + translate
 
     The affine_matrix representation can be used for easy compatibility
     with other libraries that can generate affine transformations.
@@ -284,7 +295,7 @@ class Affine(Transform):
     affine_matrix : n-D array, optional
         (N+1, N+1) affine transformation matrix in homogeneous coordinates [1]_.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     name : string
@@ -330,9 +341,11 @@ class Affine(Transform):
                         )
                     else:
                         raise ValueError(
-                            f'Only upper triangular or lower triangular matrices are '
-                            f'accepted for shear, got {shear}. For other matrices, set the '
-                            f'affine_matrix or linear_matrix directly.'
+                            trans._(
+                                'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
+                                deferred=True,
+                                shear=shear,
+                            )
                         )
             linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
@@ -406,9 +419,11 @@ class Affine(Transform):
                 self._upper_triangular = is_matrix_upper_triangular(shear)
             else:
                 raise ValueError(
-                    f'Only upper triangular or lower triangular matrices are '
-                    f'accepted for shear, got {shear}. For other matrices, set the '
-                    f'affine_matrix or linear_matrix directly.'
+                    trans._(
+                        'Only upper triangular or lower triangular matrices are accepted for shear, got {shear}. For other matrices, set the affine_matrix or linear_matrix directly.',
+                        deferred=True,
+                        shear=shear,
+                    )
                 )
         else:
             self._upper_triangular = True

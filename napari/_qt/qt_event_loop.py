@@ -17,8 +17,12 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
-from ..utils.settings import SETTINGS
-from .dialogs.qt_notification import NapariQtNotification
+from ..utils.settings import get_settings
+from ..utils.translations import trans
+from .dialogs.qt_notification import (
+    NapariQtNotification,
+    NotificationDispatcher,
+)
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
@@ -118,8 +122,11 @@ def get_app(
         if set_values:
 
             warn(
-                "QApplication already existed, these arguments to to 'get_app'"
-                " were ignored: {}".format(set_values)
+                trans._(
+                    "QApplication already existed, these arguments to to 'get_app' were ignored: {args}",
+                    deferred=True,
+                    args=set_values,
+                )
             )
         if perf_config and perf_config.trace_qt_events:
             from .perf.qt_event_tracing import convert_app_for_tracing
@@ -146,6 +153,7 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
+    if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
         )
@@ -157,7 +165,7 @@ def get_app(
         app.setWindowIcon(QIcon(kwargs.get('icon')))
 
     if ipy_interactive is None:
-        ipy_interactive = SETTINGS.application.ipy_interactive
+        ipy_interactive = get_settings().application.ipy_interactive
     _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
@@ -174,6 +182,13 @@ def get_app(
         _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
+
+    # Add the dispatcher attribute to the application to be able to dispatch
+    # notifications coming from threads
+    dispatcher = getattr(app, "_dispatcher", None)
+    if dispatcher is None:
+        app._dispatcher = NotificationDispatcher()
+
     return app
 
 
@@ -238,16 +253,10 @@ def gui_qt(*, startup_logo=False, gui_exceptions=False, force=False):
     ``ipython --gui=qt``.
     """
     warn(
-        "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running "
-        "napari from a script, please use 'napari.run()' as follows:\n\n"
-        "    import napari\n\n"
-        "    viewer = napari.Viewer()  # no prior setup needed\n"
-        "    # other code using the viewer...\n"
-        "    napari.run()\n\n"
-        "In IPython or Jupyter, 'napari.run()' is not necessary. napari will "
-        "automatically\nstart an interactive event loop for you: \n\n"
-        "    import napari\n"
-        "    viewer = napari.Viewer()  # that's it!\n",
+        trans._(
+            "\nThe 'gui_qt()' context manager is deprecated.\nIf you are running napari from a script, please use 'napari.run()' as follows:\n\n    import napari\n\n    viewer = napari.Viewer()  # no prior setup needed\n    # other code using the viewer...\n    napari.run()\n\nIn IPython or Jupyter, 'napari.run()' is not necessary. napari will automatically\nstart an interactive event loop for you: \n\n    import napari\n    viewer = napari.Viewer()  # that's it!\n",
+            deferred=True,
+        ),
         FutureWarning,
     )
 
@@ -334,24 +343,32 @@ def run(
     app = QApplication.instance()
     if not app:
         raise RuntimeError(
-            'No Qt app has been created. '
-            'One can be created by calling `get_app()` '
-            'or qtpy.QtWidgets.QApplication([])'
+            trans._(
+                'No Qt app has been created. One can be created by calling `get_app()` or `qtpy.QtWidgets.QApplication([])`',
+                deferred=True,
+            )
         )
     if not app.topLevelWidgets() and not force:
         warn(
-            "Refusing to run a QApplication with no topLevelWidgets. "
-            f"To run the app anyway, use `{_func_name}(force=True)`"
+            trans._(
+                "Refusing to run a QApplication with no topLevelWidgets. To run the app anyway, use `{_func_name}(force=True)`",
+                deferred=True,
+                _func_name=_func_name,
+            )
         )
         return
 
     if app.thread().loopLevel() >= max_loop_level:
         loops = app.thread().loopLevel()
-        s = 's' if loops > 1 else ''
         warn(
-            f"A QApplication is already running with {loops} event loop{s}."
-            "To enter *another* event loop, use "
-            f"`{_func_name}(max_loop_level={loops + 1})`"
+            trans._n(
+                "A QApplication is already running with 1 event loop. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                "A QApplication is already running with {n} event loops. To enter *another* event loop, use `{_func_name}(max_loop_level={max_loop_level})`",
+                n=loops,
+                deferred=True,
+                _func_name=_func_name,
+                max_loop_level=loops + 1,
+            )
         )
         return
 

@@ -8,6 +8,7 @@ import numpy as np
 from pydantic import BaseModel, PrivateAttr, main, utils
 
 from ...utils.misc import pick_equality_operator
+from ..translations import trans
 from .event import EmitterGroup, Event
 
 # encoders for non-napari specific field types.  To declare a custom encoder
@@ -161,9 +162,9 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def asdict(self):
         """Convert a model to a dictionary."""
         warnings.warn(
-            (
-                "The `asdict` method has been renamed `dict` and is now "
-                "deprecated. It will be removed in 0.4.7"
+            trans._(
+                "The `asdict` method has been renamed `dict` and is now deprecated. It will be removed in 0.4.7",
+                deferred=True,
             ),
             category=FutureWarning,
             stacklevel=2,
@@ -183,7 +184,13 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         if isinstance(values, self.__class__):
             values = values.dict()
         if not isinstance(values, dict):
-            raise ValueError(f"Unsupported update from {type(values)}")
+            raise ValueError(
+                trans._(
+                    "Unsupported update from {values}",
+                    deferred=True,
+                    values=type(values),
+                )
+            )
 
         with self.events.blocker() as block:
             for key, value in values.items():
@@ -196,7 +203,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
         """Check equality with another object.
 
         We override the pydantic approach (which just checks
-        ``self.dict() == other.dict()``) to accomodate more complicated types
+        ``self.dict() == other.dict()``) to accommodate more complicated types
         like arrays, whose truth value is often ambiguous. ``__eq_operators__``
         is constructed in ``EqualityMetaclass.__new__``
         """

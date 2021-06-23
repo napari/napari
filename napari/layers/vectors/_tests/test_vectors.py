@@ -384,7 +384,7 @@ def test_edge_color_cycle():
 
 
 def test_edge_color_colormap():
-    """Test creating Vectors where edge color is set by a colormap """
+    """Test creating Vectors where edge color is set by a colormap"""
     shape = (10, 2)
     shape = (10, 2, 2)
     data = np.random.random(shape)

@@ -155,7 +155,7 @@ def generate_colorized_svgs(
             from ...utils.theme import get_theme
 
             clrkey, theme_key = color
-            theme_key = theme_override.get(theme_key, theme_key)
+            theme_key = theme_override.get(svg_stem, theme_key)
             color = get_theme(clrkey)[theme_key]
 
         op_key = "" if op == 1 else f"_{op * 100:.0f}"
@@ -312,7 +312,7 @@ def _compile_napari_resources(
         svg_paths=ICONS.values(),
         colors=[(k, 'icon') for k in _themes],
         opacities=(0.5, 1),
-        theme_override={'warning': 'warning'},
+        theme_override={'warning': 'warning', 'logo_silhouette': 'background'},
     )
 
     with _temporary_qrc_file(svgs, prefix='themes') as qrc:

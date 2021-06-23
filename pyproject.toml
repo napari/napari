@@ -60,9 +60,11 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
+  "mypy.ini",
   "napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
+  "napari/_qt/qt_resources/_qt_resources_*.py"
 ]
 
 [tool.isort]
@@ -73,10 +75,14 @@ skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 [tool.pytest.ini_options]
 # These follow standard library warnings filters syntax.  See more here:
 # https://docs.python.org/3/library/warnings.html#describing-warning-filters
-addopts = "--durations=10"
+addopts = "--maxfail=5 --durations=5"
+
+# NOTE: only put things that will never change in here.
+# napari deprecation and future warnings should NOT go in here.
+# instead... assert the warning with `pytest.warns()` in the relevant test,
+# That way we can clean them up when no longer necessary
 filterwarnings = [
-  # turn warnings from napari into errors, unless explicitly allowed below
-  "error:::napari\\.",
+  "error:::napari", # turn warnings from napari into errors
   "default:::napari.+vendored.+",  # just print warnings inside vendored modules
   "ignore::DeprecationWarning:shibokensupport",
   "ignore::DeprecationWarning:ipykernel",
@@ -84,7 +90,9 @@ filterwarnings = [
   "ignore:pythonw executable not found:UserWarning:",
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
   "ignore:For best performance with Dask arrays in napari:UserWarning:",
-  "ignore:The square brush shape is deprecated and will be removed:FutureWarning",
+  "ignore:numpy.ufunc size changed:RuntimeWarning",
+  "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
+  "ignore:Alternative shading modes are only available in 3D, defaulting to none",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",

@@ -1,8 +1,12 @@
 import itertools
+from tempfile import TemporaryDirectory
 
 import numpy as np
+import pandas as pd
 import pytest
+import tensorstore as ts
 import xarray as xr
+import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
@@ -270,6 +274,11 @@ def test_properties():
     assert isinstance(layer.properties, dict)
     assert layer.properties == properties
     assert layer._label_index == label_index
+    layer = Labels(data)
+    layer.properties = properties
+    assert isinstance(layer.properties, dict)
+    assert layer.properties == properties
+    assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
@@ -283,6 +292,18 @@ def test_properties():
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+    layer = Labels(data)
+    layer.properties = properties
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+    layer = Labels(data)
+    layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
@@ -371,7 +392,7 @@ def test_custom_color_dict():
 
 def test_add_colors():
     """Test adding new colors"""
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(40, 40))
     layer = Labels(data)
     assert len(layer._all_vals) == layer.num_colors
 
@@ -379,8 +400,8 @@ def test_add_colors():
     assert len(layer._all_vals) == 52
 
     layer.show_selected_label = True
-    layer.selected_label = 60
-    assert len(layer._all_vals) == 61
+    layer.selected_label = 53
+    assert len(layer._all_vals) == 54
 
 
 def test_metadata():
@@ -416,15 +437,17 @@ def test_contiguous():
     assert layer.contiguous is False
 
 
-def test_n_dimensional():
-    """Test changing n_dimensional."""
+def test_n_edit_dimensions():
+    """Test changing the number of editable dimensions."""
     np.random.seed(0)
-    data = np.random.randint(20, size=(10, 15))
+    data = np.random.randint(20, size=(5, 10, 15))
     layer = Labels(data)
-    assert layer.n_dimensional is False
-
-    layer.n_dimensional = True
-    assert layer.n_dimensional is True
+    layer.n_edit_dimensions = 2
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is False
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        assert layer.n_dimensional is True
 
 
 @pytest.mark.parametrize(
@@ -596,7 +619,9 @@ def test_paint():
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
@@ -621,7 +646,8 @@ def test_paint_with_preserve_labels():
     data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
-    layer.brush_shape = 'square'
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'square'
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
@@ -642,7 +668,8 @@ def test_paint_2d(brush_shape, expected_sum):
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
@@ -676,7 +703,8 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
@@ -692,18 +720,19 @@ def test_paint_3d(brush_shape, expected_sum):
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.mode = 'paint'
 
     # Paint in 2D
     layer.paint((10, 10, 10), 3)
 
     # Paint in 3D
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.paint((10, 25, 10), 4)
 
     # Paint in 3D, preserve labels
-    layer.n_dimensional = True
+    layer.n_edit_dimensions = 3
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
@@ -788,12 +817,13 @@ def test_undo_redo(
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    layer.brush_shape = brush_shape
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = brush_shape
     layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
     layer.preserve_labels = preserve_labels
-    layer.n_dimensional = n_dimensional
+    layer.n_edit_dimensions = 3 if n_dimensional else 2
     coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
     while layer.data[tuple(coord.astype(int))] == 0 and np.any(layer.data):
         coord = np.random.random((3,)) * (np.array(blobs.shape) - 1)
@@ -808,3 +838,123 @@ def test_undo_redo(
     np.testing.assert_array_equal(layer.data, data_history[0])
     layer.redo()
     np.testing.assert_array_equal(layer.data, data_history[1])
+
+
+def test_ndim_fill():
+    test_array = np.zeros((5, 5, 5, 5), dtype=int)
+
+    test_array[:, 1:3, 1:3, 1:3] = 1
+
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+
+    layer.fill((0, 1, 1, 1), 2)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1, 1:3, 1:3, 1:3], 1)
+
+    layer.n_edit_dimensions = 4
+
+    layer.fill((1, 1, 1, 1), 3)
+
+    np.testing.assert_equal(layer.data[0, 1:3, 1:3, 1:3], 2)
+    np.testing.assert_equal(layer.data[1:, 1:3, 1:3, 1:3], 3)
+
+
+def test_ndim_paint():
+    test_array = np.zeros((5, 6, 7, 8), dtype=int)
+    layer = Labels(test_array)
+    layer.n_edit_dimensions = 3
+    with pytest.warns(FutureWarning):
+        layer.brush_shape = 'circle'
+    layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
+    layer.paint((1, 1, 1, 1), 1)
+
+    assert np.sum(layer.data) == 19  # 18 + center
+    assert not np.any(layer.data[0]) and not np.any(layer.data[2:])
+
+    layer.n_edit_dimensions = 2  # 3x3 square
+    layer._dims_order = [1, 2, 0, 3]
+    layer.paint((4, 5, 6, 7), 8)
+    assert len(np.flatnonzero(layer.data == 8)) == 4  # 2D square is in corner
+    np.testing.assert_array_equal(
+        test_array[:, 5, 6, :],
+        np.array(
+            [
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+                [0, 0, 0, 0, 0, 0, 8, 8],
+            ]
+        ),
+    )
+
+
+def test_switching_display_func():
+    label_data = np.random.randint(2 ** 25, 2 ** 25 + 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+
+    label_data = np.random.randint(0, 5, size=(50, 50))
+    layer = Labels(label_data)
+    assert layer._color_lookup_func == layer._lookup_with_index
+
+
+def test_cursor_size_with_negative_scale():
+    layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
+    layer.mode = 'paint'
+    assert layer.cursor_size > 0
+
+
+def test_switching_display_func_during_slicing():
+    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
+    label_array[0, :, :] = [[0, 1], [2, 3]]
+    layer = Labels(label_array)
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+    assert layer._all_vals.size < 1026
+
+
+def test_add_large_colors():
+    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
+    label_array[0, :, :] = [[0, 1], [2, 3]]
+    layer = Labels(label_array)
+    assert len(layer._all_vals) == layer.num_colors
+
+    layer.show_selected_label = True
+    layer.selected_label = int(5e6)
+    assert layer._all_vals.size < 1026
+
+
+def test_fill_tensorstore():
+    labels = np.zeros((5, 7, 8, 9), dtype=int)
+    labels[1, 2:4, 4:6, 4:6] = 1
+    labels[1, 3:5, 5:7, 6:8] = 2
+    labels[2, 3:5, 5:7, 6:8] = 3
+    with TemporaryDirectory(suffix='.zarr') as fout:
+        labels_temp = zarr.open(
+            fout,
+            mode='w',
+            shape=labels.shape,
+            dtype=np.uint32,
+            chunks=(1, 1, 8, 9),
+        )
+        labels_temp[:] = labels
+        labels_ts_spec = {
+            'driver': 'zarr',
+            'kvstore': {'driver': 'file', 'path': fout},
+            'path': '',
+            'metadata': {
+                'dtype': labels_temp.dtype.str,
+                'order': labels_temp.order,
+                'shape': labels.shape,
+            },
+        }
+        data = ts.open(labels_ts_spec, create=False, open=True).result()
+        layer = Labels(data)
+        layer.n_edit_dimensions = 3
+        layer.fill((1, 4, 6, 7), 4)
+        modified_labels = np.where(labels == 2, 4, labels)
+        np.testing.assert_array_equal(modified_labels, np.asarray(data))

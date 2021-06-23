@@ -3,6 +3,7 @@ from vispy.scene.visuals import Compound, Line, Text
 
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import disconnect_events
+from ..utils.settings import get_settings
 from ._text_utils import update_text
 from .markers import Markers
 from .vispy_base_layer import VispyBaseLayer
@@ -10,9 +11,11 @@ from .vispy_base_layer import VispyBaseLayer
 
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
-    _highlight_width = 2
+    _highlight_width = None
 
     def __init__(self, layer):
+        self._highlight_width = get_settings().appearance.highlight_thickness
+
         # Create a compound visual with the following four subvisuals:
         # Lines: The lines of the interaction box used for highlights.
         # Markers: The the outlines for each point used for highlights.
@@ -73,6 +76,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self._on_matrix_change()
 
     def _on_highlight_change(self, event=None):
+        settings = get_settings()
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
             data = self.layer._view_data[self.layer._highlight_index]
@@ -86,7 +90,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node._subvisuals[1].set_data(
             data[:, ::-1],
             size=size,
-            edge_width=self._highlight_width,
+            edge_width=settings.appearance.highlight_thickness,
             symbol=self.layer.symbol,
             edge_color=self._highlight_color,
             face_color=transform_color('transparent'),
@@ -103,7 +107,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 width = 0
             else:
                 pos = self.layer._highlight_box
-                width = self._highlight_width
+                width = settings.appearance.highlight_thickness
 
             self.node._subvisuals[2].set_data(
                 pos=pos[:, ::-1],

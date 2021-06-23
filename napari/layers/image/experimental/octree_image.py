@@ -3,19 +3,24 @@
 An eventual replacement for Image that combines single-scale and
 chunked (tiled) multi-scale into one implementation.
 """
+from __future__ import annotations
+
 import logging
-from typing import List, Set
+from typing import TYPE_CHECKING, List, Set
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.events import Event
+from ....utils.translations import trans
 from ..image import _ImageBase
 from ._octree_slice import OctreeSlice, OctreeView
 from .octree_chunk import OctreeChunk
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import OctreeDisplayOptions, OctreeMetadata
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import ChunkRequest
 
 LOGGER = logging.getLogger("napari.octree.image")
 
@@ -218,7 +223,13 @@ class _OctreeImageBase(_ImageBase):
         # Quickly check for less than 0. We can't check for a level
         # that's too high because the Octree might have extended levels?
         if level < 0:
-            raise ValueError(f"Octree level {level} is negative.")
+            raise ValueError(
+                trans._(
+                    "Octree level {level} is negative.",
+                    deferred=True,
+                    level=level,
+                )
+            )
 
         self._data_level = level
         self.events.octree_level()
@@ -403,10 +414,9 @@ class _OctreeImageBase(_ImageBase):
         logic in Image._set_view_slice goes away entirely.
         """
         # Consider non-multiscale data as just having a single level
-        if self.multiscale:
-            multilevel_data = self.data
-        else:
-            multilevel_data = [self.data]
+        from ....components.experimental.chunk import LayerRef
+
+        multilevel_data = self.data if self.multiscale else [self.data]
 
         if self._slice is not None:
             # For now bail out so we don't nuke an existing slice which

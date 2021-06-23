@@ -10,6 +10,7 @@ from ...utils.colormaps.categorical_colormap import CategoricalColormap
 from ...utils.colormaps.colormap_utils import ensure_colormap
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
+from ...utils.translations import trans
 from ._color_manager_constants import ColorMode
 from .color_manager_utils import (
     _validate_colormap_mode,
@@ -61,15 +62,21 @@ class ColorProperties:
                     val['values'] = np.asarray(val['values'])
                     color_properties = cls(**val)
                 except ValueError:
-                    err_msg = 'color_properties dictionary should have keys: name, values, and optionally current_value'
-
-                    raise ValueError(err_msg)
+                    raise ValueError(
+                        trans._(
+                            'color_properties dictionary should have keys: name, values, and optionally current_value',
+                            deferred=True,
+                        )
+                    )
 
         elif isinstance(val, cls):
             color_properties = val
         else:
             raise TypeError(
-                'color_properties should be None, a dict, or ColorProperties object'
+                trans._(
+                    'color_properties should be None, a dict, or ColorProperties object',
+                    deferred=True,
+                )
             )
 
         return color_properties
@@ -176,6 +183,8 @@ class ColorManager(EventedModel):
             colors, values = _validate_colormap_mode(values)
         elif color_mode == ColorMode.DIRECT:
             colors = values['colors']
+
+        # FIXME Local variable 'colors' might be referenced before assignment
 
         # set the current color to the last color/property value
         # if it wasn't already set
@@ -475,7 +484,10 @@ class ColorManager(EventedModel):
                     )
                 except KeyError:
                     raise KeyError(
-                        'if color_properties is a string, it should be a property name'
+                        trans._(
+                            'if color_properties is a string, it should be a property name',
+                            deferred=True,
+                        )
                     )
         else:
             color_values = colors

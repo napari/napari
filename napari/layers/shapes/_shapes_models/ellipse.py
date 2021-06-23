@@ -1,5 +1,6 @@
 import numpy as np
 
+from ....utils.translations import trans
 from .._shapes_utils import (
     center_radii_to_corners,
     rectangle_to_box,
@@ -69,9 +70,11 @@ class Ellipse(Shape):
 
         if len(data) != 4:
             raise ValueError(
-                f"""Data shape does not match a ellipse.
-                             Ellipse expects four corner vertices,
-                             {len(data)} provided."""
+                trans._(
+                    "Data shape does not match a ellipse. Ellipse expects four corner vertices, {number} provided.",
+                    deferred=True,
+                    number=len(data),
+                )
             )
 
         self._data = data

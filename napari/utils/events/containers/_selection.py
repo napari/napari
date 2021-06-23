@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Generic, Iterable, Optional, TypeVar
 
+from ...translations import trans
 from ._set import EventedSet
 
 if TYPE_CHECKING:
@@ -145,7 +146,13 @@ class Selection(EventedSet[_T]):
             current = None
 
         if not sequence_like(data):
-            raise TypeError(f'Value is not a valid sequence: {data}')
+            raise TypeError(
+                trans._(
+                    'Value is not a valid sequence: {data}',
+                    deferred=True,
+                    data=data,
+                )
+            )
 
         # no type parameter was provided, just return
         if not field.sub_fields:

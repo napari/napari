@@ -1,5 +1,13 @@
+from __future__ import annotations
+
+from ...layers.utils.layer_utils import register_layer_action
+from ...utils.translations import trans
 from ._points_constants import Mode
 from .points import Points
+
+
+def register_points_action(description):
+    return register_layer_action(Points, description)
 
 
 @Points.bind_key('Space')
@@ -19,21 +27,18 @@ def hold_to_pan_zoom(layer):
         layer._set_highlight()
 
 
-@Points.bind_key('P')
-def activate_add_mode(layer):
-    """Activate add points tool."""
+@register_points_action(trans._('Add points'))
+def activate_points_add_mode(layer):
     layer.mode = Mode.ADD
 
 
-@Points.bind_key('S')
-def activate_select_mode(layer):
-    """Activate select points tool."""
+@register_points_action(trans._('Select points'))
+def activate_points_select_mode(layer):
     layer.mode = Mode.SELECT
 
 
-@Points.bind_key('Z')
-def activate_pan_zoom_mode(layer):
-    """Activate pan and zoom mode."""
+@register_points_action(trans._('Pan/zoom'))
+def activate_points_pan_zoom_mode(layer):
     layer.mode = Mode.PAN_ZOOM
 
 
@@ -51,17 +56,17 @@ def paste(layer):
         layer._paste_data()
 
 
-@Points.bind_key('A')
+@register_points_action(
+    trans._("Select all points in the current view slice."),
+)
 def select_all(layer):
-    """Select all points in the current view slice."""
     if layer._mode == Mode.SELECT:
         layer.selected_data = set(layer._indices_view[: len(layer._view_data)])
         layer._set_highlight()
 
 
-@Points.bind_key('Backspace')
-@Points.bind_key('Delete')
-def delete_selected(layer):
+@register_points_action(trans._('Delete selected points'))
+def delete_selected_points(layer):
     """Delete all selected points."""
     if layer._mode in (Mode.SELECT, Mode.ADD):
         layer.remove_selected()

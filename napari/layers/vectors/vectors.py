@@ -6,6 +6,7 @@ import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
@@ -101,8 +102,8 @@ class Vectors(Layer):
         The default value is None. If set the none, the clims will be set to
         (property.min(), property.max())
 
-    Extended Summary
-    ----------
+    Notes
+    -----
     _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.
@@ -310,7 +311,11 @@ class Vectors(Layer):
                 self._edge.color_mode = ColorMode.DIRECT
                 self._edge.color_properties = None
                 warnings.warn(
-                    'property used for edge_color dropped', RuntimeWarning
+                    trans._(
+                        'property used for edge_color dropped',
+                        deferred=True,
+                    ),
+                    RuntimeWarning,
                 )
             else:
                 edge_color_name = self._edge.color_properties.name
@@ -328,7 +333,10 @@ class Vectors(Layer):
         for v in properties.values():
             if len(v) != len(self.data):
                 raise ValueError(
-                    'the number of properties must equal the number of points'
+                    trans._(
+                        'the number of properties must equal the number of points',
+                        deferred=True,
+                    )
                 )
 
         return properties
@@ -493,14 +501,20 @@ class Vectors(Layer):
                         ),
                     }
                     warnings.warn(
-                        f'edge_color property was not set, '
-                        f'setting to: {color_property}',
+                        trans._(
+                            'edge_color property was not set, setting to: {color_property}',
+                            deferred=True,
+                            color_property=color_property,
+                        ),
                         RuntimeWarning,
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use '
-                        f'{edge_color_mode}'
+                        trans._(
+                            'There must be a valid Points.properties to use {edge_color_mode}',
+                            deferred=True,
+                            edge_color_mode=edge_color_mode,
+                        )
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -509,7 +523,10 @@ class Vectors(Layer):
                 np.number,
             ):
                 raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
+                    trans._(
+                        'selected property must be numeric to use ColorMode.COLORMAP',
+                        deferred=True,
+                    )
                 )
 
             self._edge.color_mode = edge_color_mode
@@ -556,7 +573,7 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-        """" (Mx4) np.ndarray : colors for the M in view vectors"""
+        """(Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
         if self._ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])

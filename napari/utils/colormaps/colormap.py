@@ -6,6 +6,7 @@ from pydantic import PrivateAttr, validator
 
 from ..events import EventedModel
 from ..events.custom_types import Array
+from ..translations import trans
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 
@@ -92,7 +93,12 @@ class Colormap(EventedModel):
             )
             cols = self.colors[indices.astype(np.int32)]
         else:
-            raise ValueError('Unrecognized Colormap Interpolation Mode')
+            raise ValueError(
+                trans._(
+                    'Unrecognized Colormap Interpolation Mode',
+                    deferred=True,
+                )
+            )
 
         return cols
 

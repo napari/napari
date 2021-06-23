@@ -84,6 +84,7 @@ class QtVectorsControls(QtLayerControls):
         self.widthSpinBox.setKeyboardTracking(False)
         self.widthSpinBox.setSingleStep(0.1)
         self.widthSpinBox.setMinimum(0.1)
+        self.widthSpinBox.setMaximum(np.inf)
         self.widthSpinBox.setValue(self.layer.edge_width)
         self.widthSpinBox.valueChanged.connect(self.change_width)
 
@@ -93,6 +94,7 @@ class QtVectorsControls(QtLayerControls):
         self.lengthSpinBox.setSingleStep(0.1)
         self.lengthSpinBox.setValue(self.layer.length)
         self.lengthSpinBox.setMinimum(0.1)
+        self.lengthSpinBox.setMaximum(np.inf)
         self.lengthSpinBox.valueChanged.connect(self.change_length)
 
         # grid_layout created in QtLayerControls

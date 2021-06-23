@@ -61,6 +61,5 @@ class QtLayerListModel(QtListModel[Layer]):
             'name': Qt.DisplayRole,
         }.get(event.type, None)
         roles = [role] if role is not None else []
-        top = self.index(event.index)
-        bot = self.index(event.index + 1)
-        self.dataChanged.emit(top, bot, roles)
+        row = self.index(event.index)
+        self.dataChanged.emit(row, row, roles)

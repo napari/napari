@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+import warnings
 from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -11,6 +12,7 @@ from dask import delayed
 
 from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
+from ..utils.translations import trans
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -27,7 +29,24 @@ def imsave(filename: str, data: np.ndarray):
     if ext in [".tif", ".tiff"]:
         import tifffile
 
-        tifffile.imsave(filename, data, compress=1)
+        compression_instead_of_compress = False
+        try:
+            current_version = tuple(
+                int(x) for x in tifffile.__version__.split('.')[:3]
+            )
+            compression_instead_of_compress = current_version >= (2021, 6, 6)
+        except Exception:
+            # Just in case anything goes wrong in parsing version number
+            # like repackaging on linux or anything else we fallback to
+            # using compress
+            warnings.warn(
+                f'Error parsing tiffile version number {tifffile.__version__:!r}'
+            )
+
+        if compression_instead_of_compress:
+            tifffile.imsave(filename, data, compression=1)
+        else:  # older version of tifffile since 2021.6.6  this is deprecated
+            tifffile.imsave(filename, data, compress=1)
     else:
         import imageio
 
@@ -192,7 +211,11 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
 
     if not filenames_expanded:
         raise ValueError(
-            f"No files found in {filenames} after removing subdirectories"
+            trans._(
+                "No files found in {filenames} after removing subdirectories",
+                deferred=True,
+                filenames=filenames,
+            )
         )
 
     # then, read in images
@@ -201,6 +224,9 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     for filename in filenames_expanded:
         if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
+            # 1D images are currently unsupported, so skip them.
+            if len(zarr_shape) == 1:
+                continue
             if shape is None:
                 shape = zarr_shape
         else:
@@ -215,6 +241,10 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
             elif len(images) > 0:  # not read by shape clause
                 image = imread(filename)
         images.append(image)
+
+    if len(images) == 0:
+        return None
+
     if len(images) == 1:
         image = images[0]
     else:
@@ -226,11 +256,9 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
                     image = np.stack(images)
                 except ValueError as e:
                     if 'input arrays must have the same shape' in str(e):
-                        msg = (
-                            'To stack multiple files into a single array with '
-                            'numpy, all input arrays must have the same shape.'
-                            ' Set `use_dask` to True to stack arrays with '
-                            'different shapes.'
+                        msg = trans._(
+                            'To stack multiple files into a single array with numpy, all input arrays must have the same shape. Set `use_dask` to True to stack arrays with different shapes.',
+                            deferred=True,
                         )
                         raise ValueError(msg) from e
                     else:
@@ -290,7 +318,11 @@ def read_zarr_dataset(path):
                 image.append(read_zarr_dataset(os.path.join(path, subpath))[0])
         shape = image[0].shape
     else:
-        raise ValueError(f"Not a zarr dataset or group: {path}")
+        raise ValueError(
+            trans._(
+                "Not a zarr dataset or group: {path}", deferred=True, path=path
+            )
+        )
     return image, shape
 
 
@@ -392,11 +424,20 @@ def read_csv(
         if require_type:
             if not layer_type:
                 raise ValueError(
-                    f'File "{filename}" not recognized as valid Layer data'
+                    trans._(
+                        'File "{filename}" not recognized as valid Layer data',
+                        deferred=True,
+                        filename=filename,
+                    )
                 )
             elif layer_type != require_type and require_type.lower() != "any":
                 raise ValueError(
-                    f'File "{filename}" not recognized as {require_type} data'
+                    trans._(
+                        'File "{filename}" not recognized as {require_type} data',
+                        deferred=True,
+                        filename=filename,
+                        require_type=require_type,
+                    )
                 )
 
         data = np.array(list(reader))
@@ -515,7 +556,9 @@ def _shapes_csv_to_layerdata(
     transitions = list((np.diff(inds)).nonzero()[0] + 1)
     shape_boundaries = [0] + transitions + [len(table)]
     if n_shapes != len(shape_boundaries) - 1:
-        raise ValueError('Expected number of shapes not found')
+        raise ValueError(
+            trans._('Expected number of shapes not found', deferred=True)
+        )
 
     data = []
     shape_type = []
