@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
 from ...utils.action_manager import action_manager
+from ...utils.interactions import Shortcut
 from ...utils.settings import SETTINGS
 from ...utils.translations import trans
 from ..dialogs.qt_message_dialogs import ConfirmDialog
@@ -182,7 +183,7 @@ class ShortcutEditor(QDialog):
 
                 self._table.setItem(row, self._action_name_col, item)
                 item_shortcut = QTableWidgetItem(
-                    list(shortcuts)[0] if shortcuts else ""
+                    Shortcut(list(shortcuts)[0]).platform if shortcuts else ""
                 )
 
                 self._table.setItem(row, self._shortcut_col, item_shortcut)
@@ -233,9 +234,11 @@ class ShortcutEditor(QDialog):
                         # the shortcut is saved to a different action, show message.
                         # pop up window for warning.
                         message = trans._(
-                            f"The keybinding <b>{new_shortcut}</b> "
-                            + f"is already assigned to <b>{action.description}</b>; change or clear "
-                            + f"that shortcut before assigning <b>{new_shortcut}</b> to this one."
+                            "The keybinding <b>{new_shortcut}</b>  "
+                            + "is already assigned to <b>{action_description}</b>; change or clear "
+                            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+                            new_shortcut=new_shortcut,
+                            action_description=action.description,
                         )
 
                         delta_y = 105
@@ -252,6 +255,17 @@ class ShortcutEditor(QDialog):
                             text=message,
                         )
                         self._warn_dialog.move(global_point)
+
+                        print(self._warn_dialog.sizeHint().width())
+                        self._warn_dialog.resize(
+                            250, self._warn_dialog.sizeHint().height()
+                        )
+
+                        print(self._warn_dialog._message.sizeHint())
+                        self._warn_dialog._message.resize(
+                            200, self._warn_dialog._message.sizeHint().height()
+                        )
+                        # self._warn_dialog.setSizeHint()
 
                         self.warning_indicator = QLabel(self)
                         self.warning_indicator.setObjectName("error_label")
