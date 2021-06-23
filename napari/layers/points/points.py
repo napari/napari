@@ -107,7 +107,7 @@ class Points(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -395,21 +395,23 @@ class Points(Layer):
 
         self.size = size
 
-        # set the current_properties
-        if len(data) > 0:
+        self._update_current_properties()
+
+        # Trigger generation of view slice and thumbnail
+        self._update_dims()
+
+    def _update_current_properties(self):
+        if len(self._data) > 0:
             self.current_properties = {
                 k: np.asarray([v[-1]]) for k, v in self.properties.items()
             }
-        elif len(data) == 0 and self.properties:
+        elif len(self._data) == 0 and self.properties:
             self.current_properties = {
                 k: np.asarray([v[0]])
                 for k, v in self._property_choices.items()
             }
         else:
             self.current_properties = {}
-
-        # Trigger generation of view slice and thumbnail
-        self._update_dims()
 
     @property
     def data(self) -> np.ndarray:
@@ -530,6 +532,7 @@ class Points(Layer):
         self._properties, self._property_choices = self._prepare_properties(
             properties, self._property_choices
         )
+        self._update_current_properties()
         self._update_color_manager(
             self._face,
             self._properties,

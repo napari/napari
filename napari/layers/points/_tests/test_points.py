@@ -1593,3 +1593,28 @@ def test_prepare_properties():
     properties, choices = layer._prepare_properties({"aa": [1, 2, 1]})
     assert np.array_equal(properties["aa"], [1, 2, 1])
     assert np.array_equal(choices["aa"], [1, 2])
+
+
+def test_bug_2755_works():
+    rng = np.random.default_rng()
+    points = Points(
+        rng.random((5, 2)) * 512,
+        properties={
+            'cat': rng.integers(low=0, high=5, size=5),
+            'cont': rng.random(5),
+        },
+    )
+
+    points.face_color_mode = 'cycle'
+
+
+def test_bug_2755():
+    rng = np.random.default_rng()
+    points = Points(rng.random((5, 2)) * 512)
+
+    points.properties = {
+        'cat': rng.integers(low=0, high=5, size=5),
+        'cont': rng.random(5),
+    }
+
+    points.face_color_mode = 'cycle'
