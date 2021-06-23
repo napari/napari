@@ -142,9 +142,16 @@ def test_notification_manager_no_gui_with_threading():
         assert warnings.showwarning == notification_manager.receive_warning
         warning_thread = threading.Thread(target=_warn)
         warning_thread.start()
-        time.sleep(0.02)
-        assert len(notification_manager.records) == 2
-        assert store[-1].type == 'warning'
+
+        for _ in range(100):
+            time.sleep(0.01)
+            if (
+                len(notification_manager.records) == 2
+                and store[-1].type == 'warning'
+            ):
+                break
+        else:
+            raise AssertionError("Thread notification not received in time")
 
     # make sure we've restored the threading except hook
     if PY38_OR_HIGHER:
