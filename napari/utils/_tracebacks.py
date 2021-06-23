@@ -1,6 +1,8 @@
 import re
 from typing import Callable, Dict, Generator
 
+import numpy as np
+
 from ..types import ExcInfo
 
 
@@ -27,6 +29,10 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
         def format_exc_info(
             info: ExcInfo, as_html: bool, color='Neutral'
         ) -> str:
+            # avoids printing the array data
+            np.set_string_function(
+                lambda arr: f'<{type(arr)} {arr.shape} {arr.dtype}>'
+            )
             vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
             if as_html:
                 ansi_string = vbtb.text(*info).replace(" ", "&nbsp;")
@@ -37,9 +43,12 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
                     + html
                     + "</span>"
                 )
-                return html
+                tb_text = html
             else:
-                return vbtb.text(*info)
+                tb_text = vbtb.text(*info)
+            # resets to default behavior
+            np.set_string_function(None)
+            return tb_text
 
     except ImportError:
         import cgitb
