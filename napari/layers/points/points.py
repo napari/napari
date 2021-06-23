@@ -401,17 +401,10 @@ class Points(Layer):
         self._update_dims()
 
     def _update_current_properties(self):
-        if len(self._data) > 0:
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
-        elif len(self._data) == 0 and self.properties:
-            self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self._property_choices.items()
-            }
-        else:
-            self.current_properties = {}
+        index = 0 if len(self._data) == 0 else -1
+        self.current_properties = {
+            k: np.asarray([v[index]]) for k, v in self.properties.items()
+        }
 
     @property
     def data(self) -> np.ndarray:
