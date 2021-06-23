@@ -5,12 +5,35 @@ from typing import List, Optional
 
 import numpy as np
 
-from ..layers import Layer
+from ..layers import Image, Labels, Layer
+from ..layers.utils._link_layers import get_linked_layers, layer_is_linked
 from ..utils.events.containers import SelectableEventedList
 from ..utils.naming import inc_name_count
 from ..utils.translations import trans
 
 Extent = namedtuple('Extent', 'data world step')
+
+
+CONTEXT_KEYS = {
+    'selection_count': lambda ll: len(ll.selection),
+    'all_layers_linked': lambda ll: all(
+        layer_is_linked(x) for x in ll.selection
+    ),
+    'linked_layers_unselected': lambda ll: len(
+        get_linked_layers(*ll.selection) - ll.selection
+    ),
+    'active_is_rgb': lambda ll: getattr(ll.selection.active, 'rgb', False),
+    'only_images_selected': lambda ll: (
+        ll.selection and all(isinstance(x, Image) for x in ll.selection)
+    ),
+    'only_labels_selected': lambda ll: (
+        ll.selection and all(isinstance(x, Labels) for x in ll.selection)
+    ),
+    'image_active': lambda ll: isinstance(ll.selection.active, Image),
+    'active_shape': lambda ll: ll.selection.active
+    and getattr(ll.selection.active.data, 'shape', None),
+    'same_shape': lambda ll: len({x.data.shape for x in ll.selection}) == 1,
+}
 
 
 class LayerList(SelectableEventedList[Layer]):
@@ -327,3 +350,6 @@ class LayerList(SelectableEventedList[Layer]):
             return []
 
         return save_layers(path, layers, plugin=plugin)
+
+    def context(self):
+        return {k: v(self) for k, v in CONTEXT_KEYS.items()}
