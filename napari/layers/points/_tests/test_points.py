@@ -1600,20 +1600,23 @@ def test_set_face_color_mode_after_set_properties():
     # See GitHub issue for more details:
     # https://github.com/napari/napari/issues/2755
     rng = np.random.default_rng(0)
-    points = Points(rng.random((5, 2)) * 3)
+    num_points = 3
+    points = Points(rng.random((num_points, 2)))
 
     points.properties = {
-        'cat': rng.integers(low=0, high=5, size=5),
-        'cont': rng.random(5),
+        'cat': rng.integers(low=0, high=num_points, size=num_points),
+        'cont': rng.random(num_points),
     }
 
     with pytest.warns(UserWarning):
         points.face_color_mode = 'cycle'
 
-    property_key, property_values = next(iter(points.properties.items()))
+    first_property_key, first_property_values = next(
+        iter(points.properties.items())
+    )
     expected_properties = ColorProperties(
-        name=property_key,
-        values=property_values,
-        current_value=property_values[-1],
+        name=first_property_key,
+        values=first_property_values,
+        current_value=first_property_values[-1],
     )
     assert points._face.color_properties == expected_properties
