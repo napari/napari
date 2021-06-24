@@ -6,8 +6,8 @@ from ...layers._layer_actions import ContextAction
 
 
 class QtActionContextMenu(QMenu):
-    def __init__(self, actions: Dict[str, ContextAction]):
-        super().__init__()
+    def __init__(self, actions: Dict[str, ContextAction], parent=None):
+        super().__init__(parent)
         self._actions = actions
         self._menu_actions = {}
 

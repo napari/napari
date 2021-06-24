@@ -176,7 +176,7 @@ class LayerDelegate(QStyledItemDelegate):
         self, index: QtCore.QModelIndex, model, pos: QPoint, parent: QWidget
     ):
         if not hasattr(self, '_context_menu'):
-            self._context_menu = QtActionContextMenu(LAYER_ACTIONS)
+            self._context_menu = QtActionContextMenu(LAYER_ACTIONS, self)
 
         layer_list: LayerList = model.sourceModel()._root
         self._context_menu._update(layer_list.selection_context())
