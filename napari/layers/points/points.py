@@ -532,7 +532,8 @@ class Points(Layer):
         self._properties, self._property_choices = self._prepare_properties(
             properties, self._property_choices
         )
-        self._update_current_properties()
+        with self.block_update_properties():
+            self._update_current_properties()
         self._update_color_manager(
             self._face,
             self._properties,
