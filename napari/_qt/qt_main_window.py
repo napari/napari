@@ -6,7 +6,6 @@ import inspect
 import sys
 import time
 import warnings
-from functools import partial
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
 from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
@@ -45,17 +44,11 @@ from .perf.qt_debug_menu import DebugMenu
 from .qt_event_loop import NAPARI_ICON_PATH, get_app, quit_app
 from .qt_resources import get_stylesheet
 from .qt_viewer import QtViewer
-from .utils import (
-    QImg2array,
-    move_to_canvas_offset,
-    qbytearray_to_str,
-    str_to_qbytearray,
-)
+from .utils import QImg2array, qbytearray_to_str, str_to_qbytearray
 from .widgets.qt_viewer_dock_widget import (
     _SHORTCUT_DEPRECATION_STRING,
     QtViewerDockWidget,
 )
-from .widgets.qt_welcome import QtWidgetOverlay
 
 _sentinel = object()
 
@@ -405,15 +398,12 @@ class Window:
         self._activity_btn.setCheckable(True)
         self._activity_btn.clicked.connect(self._toggle_activity_dock)
 
-        canvas_widg = self.qt_viewer.findChildren(QtWidgetOverlay)[0].parent()
+        canvas_widg = self.qt_viewer._canvas_overlay
         self._qt_window._activity_dialog.setParent(canvas_widg)
-        move_activity_dialog_to_bottom_right = partial(
-            move_to_canvas_offset, self._qt_window._activity_dialog, (16, 18)
-        )
         self.qt_viewer._canvas_overlay.resized.connect(
-            move_activity_dialog_to_bottom_right
+            self._qt_window._activity_dialog.move_to_bottom_right
         )
-        move_to_canvas_offset(self._qt_window._activity_dialog)
+        self._qt_window._activity_dialog.move_to_bottom_right()
         self._qt_window._activity_dialog.hide()
         self._status_bar.addPermanentWidget(self._activity_btn)
 
@@ -932,6 +922,7 @@ class Window:
         if state:
             self._activity_btn.setArrowType(Qt.DownArrow)
             self._qt_window._activity_dialog.show()
+            self._qt_window._activity_dialog.raise_()
         else:
             self._activity_btn.setArrowType(Qt.UpArrow)
             self._qt_window._activity_dialog.hide()

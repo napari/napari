@@ -1,4 +1,4 @@
-from qtpy.QtCore import QSize, Signal
+from qtpy.QtCore import QPoint, QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QDialog,
     QFrame,
@@ -30,6 +30,8 @@ class ActivityDialog(QDialog):
         self.setSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
+        self.setWindowFlags(Qt.SubWindow | Qt.WindowStaysOnTopHint)
+        self.setModal(False)
 
         opacity_effect = QGraphicsOpacityEffect(self)
         opacity_effect.setOpacity(0.8)
@@ -66,3 +68,10 @@ class ActivityDialog(QDialog):
         self.base_layout.addWidget(self.title_bar)
         self.base_layout.addWidget(self.scroll)
         self.setLayout(self.base_layout)
+
+    def move_to_bottom_right(self, offset=(8, 8)):
+        """Position widget at the bottom right edge of the parent."""
+        if not self.parent():
+            return
+        sz = self.parent().size() - self.size() - QSize(*offset)
+        self.move(QPoint(sz.width(), sz.height()))
