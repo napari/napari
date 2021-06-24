@@ -207,7 +207,7 @@ class ActionManager:
             command
         command : callable
             take 0, or 1 parameter; if `keymapprovider` is not None, will be
-            called `keymapprovider` as first parameter.
+            called with `keymapprovider` as first parameter.
         description : str
             Long string to describe what the command does, will be used in
             tooltips.
