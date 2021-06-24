@@ -179,7 +179,7 @@ class LayerDelegate(QStyledItemDelegate):
             self._context_menu = QtActionContextMenu(LAYER_ACTIONS)
 
         layer_list: LayerList = model.sourceModel()._root
-        self._context_menu._update(layer_list.context())
+        self._context_menu._update(layer_list.selection_context())
         action = self._context_menu.exec_(pos)
         if action is not None:
             QTimer.singleShot(0, partial(action.data(), layer_list))
