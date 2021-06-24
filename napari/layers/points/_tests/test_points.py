@@ -9,6 +9,7 @@ from vispy.color import get_colormap
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -1595,26 +1596,24 @@ def test_prepare_properties():
     assert np.array_equal(choices["aa"], [1, 2])
 
 
-def test_bug_2755_works():
-    rng = np.random.default_rng()
-    points = Points(
-        rng.random((5, 2)) * 512,
-        properties={
-            'cat': rng.integers(low=0, high=5, size=5),
-            'cont': rng.random(5),
-        },
-    )
-
-    points.face_color_mode = 'cycle'
-
-
-def test_bug_2755():
-    rng = np.random.default_rng()
-    points = Points(rng.random((5, 2)) * 512)
+def test_set_face_color_mode_after_set_properties():
+    # See GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2755
+    rng = np.random.default_rng(0)
+    points = Points(rng.random((5, 2)) * 3)
 
     points.properties = {
         'cat': rng.integers(low=0, high=5, size=5),
         'cont': rng.random(5),
     }
 
-    points.face_color_mode = 'cycle'
+    with pytest.warns(UserWarning):
+        points.face_color_mode = 'cycle'
+
+    property_key, property_values = next(iter(points.properties.items()))
+    expected_properties = ColorProperties(
+        name=property_key,
+        values=property_values,
+        current_value=property_values[-1],
+    )
+    assert points._face.color_properties == expected_properties
