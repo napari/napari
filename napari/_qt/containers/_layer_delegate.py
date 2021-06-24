@@ -73,10 +73,6 @@ class LayerDelegate(QStyledItemDelegate):
     the appropriate icon for the layer, and some additional style/UX issues.
     """
 
-    def __init__(self):
-        super().__init__()
-        self._context_menu = QtActionContextMenu(LAYER_ACTIONS)
-
     def paint(
         self,
         painter: QPainter,
@@ -179,8 +175,10 @@ class LayerDelegate(QStyledItemDelegate):
     def show_context_menu(
         self, index: QtCore.QModelIndex, model, pos: QPoint, parent: QWidget
     ):
+        if not hasattr(self, '_context_menu'):
+            self._context_menu = QtActionContextMenu(LAYER_ACTIONS)
+
         layer_list: LayerList = model.sourceModel()._root
-        # layer = index.data(ItemRole)
         self._context_menu._update(layer_list.context())
         action = self._context_menu.exec_(pos)
         if action is not None:
