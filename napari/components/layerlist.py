@@ -348,5 +348,6 @@ CONTEXT_KEYS = {
     'active_shape': lambda s: (
         s.active and getattr(s.active.data, 'shape', None)
     ),
-    'same_shape': lambda s: len({x.data.shape for x in s}) == 1,
+    'same_shape': lambda s: len({getattr(x.data, 'shape', ()) for x in s})
+    == 1,
 }
