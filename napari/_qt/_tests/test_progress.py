@@ -17,11 +17,15 @@ SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
 
 
 def get_progress_groups(qt_viewer):
-    return qt_viewer.activityDock.findChildren(ProgressBarGroup)
+    return qt_viewer.window()._activity_dialog.findChildren(ProgressBarGroup)
 
 
 def qt_viewer_has_pbar(qt_viewer):
-    return bool(qt_viewer.activityDock.findChildren(ProgressBar))
+    return bool(
+        qt_viewer.window.qt_viewer.window()._activity_dialog.findChildren(
+            ProgressBar
+        )
+    )
 
 
 @contextmanager

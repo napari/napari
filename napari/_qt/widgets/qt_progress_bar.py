@@ -89,7 +89,7 @@ def get_pbar(nest_under=None, **kwargs):
         return
     viewer_instance = current_window.qt_viewer
     pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.activityDock.widget().layout()
+    pbr_layout = viewer_instance.window()._activity_dialog.activity_layout
 
     if nest_under is None:
         pbr_layout.addWidget(pbar)
