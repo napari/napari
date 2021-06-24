@@ -2,22 +2,30 @@
 
 For viewing one slice of a multiscale image using an octree.
 """
+from __future__ import annotations
+
 import logging
 import math
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, LayerRef
 from ....utils.translations import trans
 from ._octree_loader import OctreeLoader
 from .octree import Octree
-from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevel, OctreeLevelInfo
 from .octree_util import OctreeMetadata
 
 LOGGER = logging.getLogger("napari.octree.slice")
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk import (
+        ChunkRequest,
+        LayerRef,
+        OctreeLocation,
+    )
+    from .octree_chunk import OctreeChunk
 
 
 class OctreeSlice:

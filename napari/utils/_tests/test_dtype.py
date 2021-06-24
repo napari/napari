@@ -2,12 +2,13 @@ import itertools
 
 import numpy as np
 import pytest
-import tensorstore as ts
-import torch
 import zarr
 from dask import array as da
 
 from napari.utils._dtype import normalize_dtype
+
+ts = pytest.importorskip('tensorstore')
+torch = pytest.importorskip('torch')
 
 bit_depths = [str(2 ** i) for i in range(3, 7)]
 uints = ['uint' + b for b in bit_depths]

@@ -9,24 +9,34 @@ from napari._tests.utils import (
     check_view_transform_consistency,
     check_viewer_functioning,
     layer_test_data,
+    skip_local_popups,
 )
 from napari.utils._tests.test_naming import eval_with_filename
+from napari.utils.action_manager import action_manager
 
 
 def _get_all_keybinding_methods(type_):
     obj_methods = set(super(type_, type_).class_keymap.values())
     obj_methods.update(type_.class_keymap.values())
+
+    # need to get methods in action_manager
+    am_methods = action_manager._get_layer_actions(type_)
+    for name, action in am_methods.items():
+        obj_methods.add(action.command)
     return obj_methods
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 12
 
 
-def test_len_methods_viewer():
+def test_len_methods_viewer(make_napari_viewer):
     """
     Make sure we do find all the methods attached to a viewer via keybindings
     """
+
+    viewer = make_napari_viewer()  # noqa: F841
+    viewer_methods = _get_all_keybinding_methods(Viewer)
     assert len(viewer_methods) == EXPECTED_NUMBER_OF_VIEWER_METHODS
 
 
@@ -81,7 +91,7 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Tracks': 0,
     'Points': 8,
     'Labels': 14,
-    'Shapes': 17,
+    'Shapes': 19,
 }
 
 
@@ -156,11 +166,11 @@ def test_screenshot(make_napari_viewer):
     viewer.add_shapes(data)
 
     # Take screenshot of the image canvas only
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     assert screenshot.ndim == 3
 
     # Take screenshot with the viewer included
-    screenshot = viewer.screenshot(canvas_only=False)
+    screenshot = viewer.screenshot(canvas_only=False, flash=False)
     assert screenshot.ndim == 3
 
 
@@ -173,11 +183,11 @@ def test_changing_theme(make_napari_viewer):
     viewer.window.qt_viewer.setFixedSize(size)
 
     assert viewer.theme == 'dark'
-    screenshot_dark = viewer.screenshot(canvas_only=False)
+    screenshot_dark = viewer.screenshot(canvas_only=False, flash=False)
 
     viewer.theme = 'light'
     assert viewer.theme == 'light'
-    screenshot_light = viewer.screenshot(canvas_only=False)
+    screenshot_light = viewer.screenshot(canvas_only=False, flash=False)
 
     equal = (screenshot_dark == screenshot_light).min(-1)
 
@@ -280,3 +290,15 @@ def test_deleting_points(make_napari_viewer):
     pts_layer.remove_selected()
 
     assert len(pts_layer.data) == 3
+
+
+@skip_local_popups
+def test_custom_layer(make_napari_viewer):
+    """Make sure that custom layers subclasses can be added to the viewer."""
+
+    class NewLabels(layers.Labels):
+        """'Empty' extension of napari Labels layer."""
+
+    # Make a viewer and add the custom layer
+    viewer = make_napari_viewer(show=True)
+    viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))

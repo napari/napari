@@ -1,17 +1,6 @@
-import os
-import sys
-
 import numpy as np
-import pytest
 
-skip_on_win_ci = pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
-    reason='Screenshot tests are not supported on windows CI.',
-)
-skip_local_popups = pytest.mark.skipif(
-    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
-)
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 
 
 def test_multiscale(make_napari_viewer):
@@ -82,7 +71,7 @@ def test_multiscale_screenshot(make_napari_viewer):
     # Set canvas size to target amount
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
 
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
@@ -118,7 +107,7 @@ def test_multiscale_screenshot_zoomed(make_napari_viewer):
     # Check that current level is bottom level of multiscale
     assert viewer.layers[0].data_level == 0
 
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -149,7 +138,7 @@ def test_image_screenshot_zoomed(make_napari_viewer):
     view.view.camera.rect = [1000, 1000, 200, 150]
     viewer.window.qt_viewer.on_draw(None)
 
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(int)
     target_center = np.array([255, 255, 255, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders

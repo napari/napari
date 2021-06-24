@@ -74,7 +74,7 @@ class Viewer(ViewerModel):
         else:
             self.window.qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, canvas_only=True):
+    def screenshot(self, path=None, *, canvas_only=True, flash: bool = True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -85,6 +85,10 @@ class Viewer(ViewerModel):
             If True, screenshot shows only the image display canvas, and
             if False include the napari viewer frame in the screenshot,
             By default, True.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
 
         Returns
         -------
@@ -93,14 +97,14 @@ class Viewer(ViewerModel):
             upper-left corner of the rendered region.
         """
         if canvas_only:
-            image = self.window.qt_viewer.screenshot(path=path)
+            image = self.window.qt_viewer.screenshot(path=path, flash=flash)
         else:
-            image = self.window.screenshot(path=path)
+            image = self.window.screenshot(path=path, flash=flash)
         return image
 
-    def show(self):
+    def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
-        self.window.show()
+        self.window.show(block=block)
 
     def close(self):
         """Close the viewer window."""

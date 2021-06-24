@@ -1,13 +1,11 @@
 import inspect
-from contextvars import ContextVar
 from typing import Iterable, Optional
-from weakref import ref
 
 from tqdm import tqdm
 
-from ..utils.translations import trans
+from napari._qt.widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
-CURRENT_GROUP = ContextVar('CURRENT_GROUP', default=None)
+from ..utils.translations import trans
 
 _tqdm_kwargs = {
     p.name
@@ -60,11 +58,14 @@ class progress(tqdm):
 
     """
 
+    monitor_interval = 0  # set to 0 to disable the thread
+
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
+        nest_under: Optional[ProgressBar] = None,
         *args,
         **kwargs,
     ) -> None:
@@ -76,7 +77,7 @@ class progress(tqdm):
         try:
             from .widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(CURRENT_GROUP.get(), **pbar_kwargs)
+            pbar = get_pbar(nest_under=nest_under, **pbar_kwargs)
         except ImportError:
             pbar = None
 
@@ -101,20 +102,6 @@ class progress(tqdm):
         else:
             self.set_description(trans._("progress"))
 
-        self.show()
-
-    def __enter__(self):
-        if self.has_viewer:
-            group_ref = ref(self._pbar.parentWidget())
-            self._group_token = CURRENT_GROUP.set(group_ref)
-        return super().__enter__()
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self.has_viewer:
-            CURRENT_GROUP.reset(self._group_token)
-            self._pbar.parentWidget().close()
-        return super().__exit__(exc_type, exc_value, traceback)
-
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
         if not self.has_viewer:
@@ -124,10 +111,6 @@ class progress(tqdm):
             etas = str(self).split('|')[-1]
             self._pbar._set_value(self.n)
             self._pbar._set_eta(etas)
-
-    def increment(self):
-        """Update current value by 1."""
-        self.update(1)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
@@ -144,26 +127,22 @@ class progress(tqdm):
         if self.has_viewer:
             self._pbar._set_description(self.desc)
 
-    def hide(self):
-        """Hide the progress bar"""
-        if self.has_viewer:
-            self._pbar.hide()
-
-    def show(self):
-        """Show the progress bar"""
-        if self.has_viewer:
-            self._pbar.show()
-
     def close(self):
         """Closes and deletes the progress bar widget"""
         if self.disable:
             return
         if self.has_viewer:
-            # still need to close groups of pbars outside context
-            if not CURRENT_GROUP.get():
-                self._pbar.parentWidget().close()
-            # otherwise we just close the current progress bar
+            parent_widget = self._pbar.parent()
             self._pbar.close()
+            self._pbar.deleteLater()
+            if isinstance(parent_widget, ProgressBarGroup):
+                pbar_children = [
+                    child
+                    for child in parent_widget.children()
+                    if isinstance(child, ProgressBar)
+                ]
+                if not any(child.isVisible() for child in pbar_children):
+                    parent_widget.close()
         super().close()
 
 

@@ -27,20 +27,38 @@ def my_long_running_thread(_):
         sleep(0.1)
         yield i
 
-# in the previous example, yielding values beyond the total value passed to
-# the progress dictionary simply leaves the progress bar on 100% with 
-# no further indicator.
+
 @thread_worker(
     # If we are unsure of the number of expected yields,
-    # we can instruct the progress bar to become indeterminate once the 
-    # expected number of yields is exceeded using `may_exceed_total`
-    progress={'total': 5, 'may_exceed_total': True},
+    # we can still pass an estimate to total,
+    # and the progress bar will become indeterminate
+    # once this number is exceeded.
+    progress={'total': 5},
+    # we can also get a simple indeterminate progress bar
+    # by passing progress=True
     connect={'yielded': handle_yields}
 )
 def my_indeterminate_thread(_):
     for i in range(10):
         sleep(0.1)
         yield i
+
+def return_func(return_val):
+    print(f"Returned: {return_val}")
+
+# finally, a FunctionWorker can still provide an indeterminate
+# progress bar, but will not take a total>0
+@thread_worker(
+    progress={'total': 0, 'desc':'FunctionWorker'},
+    #can use progress=True if not passing description
+    connect={'returned': return_func}
+)
+def my_function(_):
+    sum = 0
+    for i in range(10):
+        sum += i
+        sleep(0.1)
+    return sum
 
 button_layout = QVBoxLayout()
 start_btn = QPushButton("Start")
@@ -50,6 +68,10 @@ button_layout.addWidget(start_btn)
 start_btn2 = QPushButton("Start Indeterminate")
 start_btn2.clicked.connect(my_indeterminate_thread)
 button_layout.addWidget(start_btn2)
+
+start_btn3 = QPushButton("Start FunctionWorker")
+start_btn3.clicked.connect(my_function)
+button_layout.addWidget(start_btn3)
 
 pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)

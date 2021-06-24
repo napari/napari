@@ -361,14 +361,16 @@ class NapariQtNotification(QDialog):
 
     @classmethod
     def show_notification(cls, notification: Notification):
-        from ...utils.settings import SETTINGS
+        from ...utils.settings import get_settings
+
+        settings = get_settings()
 
         # after https://github.com/napari/napari/issues/2370,
         # the os.getenv can be removed (and NAPARI_CATCH_ERRORS retired)
         if (
             os.getenv("NAPARI_CATCH_ERRORS") not in ('0', 'False')
             and notification.severity
-            >= SETTINGS.application.gui_notification_level
+            >= settings.application.gui_notification_level
         ):
             application_instance = QApplication.instance()
             if application_instance:

@@ -21,9 +21,11 @@ from napari_plugin_engine import PluginManager as PluginManager
 from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
+from ..utils import _magicgui
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
+from ..utils.settings import get_settings
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -39,25 +41,34 @@ CallOrderDict = Dict[str, List[PluginHookOption]]
 
 
 class NapariPluginManager(PluginManager):
+    """PluginManager subclass for napari-specific functionality.
+
+    Events
+    ------
+    registered (value: str)
+        Emitted after plugin named `value` has been registered.
+    unregistered (value: str)
+        Emitted after plugin named `value` has been unregistered.
+    enabled (value: str)
+        Emitted after plugin named `value` has been removed from the block list.
+    disabled (value: str)
+        Emitted after plugin named `value` has been added to the block list.
+    """
+
     ENTRY_POINT = 'napari.plugin'
 
     def __init__(self):
         super().__init__('napari', discover_entry_point=self.ENTRY_POINT)
 
         self.events = EmitterGroup(
-            source=self, registered=None, enabled=None, disabled=None
+            source=self,
+            registered=None,
+            unregistered=None,
+            enabled=None,
+            disabled=None,
         )
         self._blocked: EventedSet[str] = EventedSet()
-
-        def _on_blocked_change(event):
-            # things that are "added to the blocked list" become disabled
-            for item in event.added:
-                self.events.disabled(value=item)
-            # things that are "removed from the blocked list" become enabled
-            for item in event.removed:
-                self.events.enabled(value=item)
-
-        self._blocked.events.changed.connect(_on_blocked_change)
+        self._blocked.events.changed.connect(self._on_blocked_change)
 
         with self.discovery_blocked():
             self.add_hookspecs(hook_specifications)
@@ -72,6 +83,8 @@ class NapariPluginManager(PluginManager):
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
+
+        _magicgui.register_types_with_magicgui()
 
     def _initialize(self):
         with self.discovery_blocked():
@@ -88,6 +101,46 @@ class NapariPluginManager(PluginManager):
         if name:
             self.events.registered(value=name)
         return name
+
+    def unregister(
+        self,
+        name_or_object: Any,
+    ) -> Optional[Any]:
+
+        if isinstance(name_or_object, str):
+            _name = name_or_object
+        else:
+            _name = self.get_name(name_or_object)
+
+        plugin = super().unregister(name_or_object)
+
+        # remove widgets, sample data
+        for _dict in (
+            self._dock_widgets,
+            self._sample_data,
+            self._function_widgets,
+        ):
+            _dict.pop(_name, None)
+
+        self.events.unregistered(value=_name)
+
+        return plugin
+
+    def _on_blocked_change(self, event):
+        # things that are "added to the blocked list" become disabled
+        for item in event.added:
+            self.events.disabled(value=item)
+
+        # things that are "removed from the blocked list" become enabled
+        for item in event.removed:
+            self.events.enabled(value=item)
+
+        if event.removed:
+            # if an event was removed from the "disabled" list...
+            # let's reregister.  # TODO: might be able to be more direct here.
+            self.discover()
+
+        get_settings().plugins.disabled_plugins = set(self._blocked)
 
     def call_order(self, first_result_only=True) -> CallOrderDict:
         """Returns the call order from the plugin manager.
@@ -115,10 +168,10 @@ class NapariPluginManager(PluginManager):
         return order
 
     def set_call_order(self, new_order: CallOrderDict):
-        """Sets the plugin manager call order to match SETTINGS plugin values.
+        """Sets the plugin manager call order to match settings plugin values.
 
         Note: Run this after load_settings_plugin_defaults, which
-        sets the default values in SETTINGS.
+        sets the default values in settings.
 
         Parameters
         ----------
@@ -128,15 +181,19 @@ class NapariPluginManager(PluginManager):
             sooner.
         """
         for spec_name, hook_caller in self.hooks.items():
-            order = []
-            for p in new_order.get(spec_name, []):
-                try:
-                    hook_caller._set_plugin_enabled(p['plugin'], p['enabled'])
-                    order.append(p['plugin'])
-                except KeyError:
-                    pass
-            if order:
-                hook_caller.bring_to_front(order)
+            if spec_name in new_order:
+                order = []
+                for p in new_order.get(spec_name, []):
+                    try:
+                        # the plugin may not be there if its been disabled.
+                        hook_caller._set_plugin_enabled(
+                            p['plugin'], p['enabled']
+                        )
+                        order.append(p['plugin'])
+                    except KeyError:
+                        continue
+                if order:
+                    hook_caller.bring_to_front(order)
 
     # SAMPLE DATA ---------------------------
 
@@ -366,6 +423,7 @@ class NapariPluginManager(PluginManager):
         (historic here means that even plugins that are discovered after this
         is called will be added.)
         """
+
         if self._dock_widgets:
             return
         self.hook.napari_experimental_provide_dock_widget.call_historic(

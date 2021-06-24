@@ -102,6 +102,14 @@ class QtViewerButtons(QFrame):
         self.viewer = viewer
         action_manager.context['viewer'] = viewer
 
+        def active_layer():
+            if len(self.viewer.layers.selection) == 1:
+                return next(iter(self.viewer.layers.selection))
+            else:
+                return None
+
+        action_manager.context['layer'] = active_layer
+
         self.consoleButton = QtViewerPushButton(
             self.viewer,
             'console',

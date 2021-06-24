@@ -9,7 +9,7 @@ import warnings
 from functools import partial
 from typing import Any, ClassVar, Dict, List, Optional, Sequence, Tuple
 
-from qtpy.QtCore import QEvent, QPoint, QProcess, QSize, Qt, Slot
+from qtpy.QtCore import QEvent, QEventLoop, QPoint, QProcess, QSize, Qt, Slot
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
@@ -32,7 +32,7 @@ from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -74,6 +74,7 @@ class _QtMainWindow(QMainWindow):
 
     def __init__(self, qt_viewer: QtViewer, parent=None) -> None:
         super().__init__(parent)
+        self._ev = None
         self.qt_viewer = qt_viewer
 
         self._quit_app = False
@@ -95,14 +96,21 @@ class _QtMainWindow(QMainWindow):
         self._activity_dialog = ActivityDialog()
         self._status_bar = self.statusBar()
 
-        # set SETTINGS plugin defaults.
-        SETTINGS._defaults['plugins'].call_order = plugin_manager.call_order()
+        settings = get_settings()
+        settings._defaults['plugins'].call_order = plugin_manager.call_order()
 
-        # set the values in plugins to match the ones saved in SETTINGS
-        if SETTINGS.plugins.call_order is not None:
-            plugin_manager.set_call_order(SETTINGS.plugins.call_order)
+        # set the values in plugins to match the ones saved in settings
+        if settings.plugins.call_order is not None:
+            plugin_manager.set_call_order(settings.plugins.call_order)
 
         _QtMainWindow._instances.append(self)
+        self.qt_viewer.viewer.tooltip.events.text.connect(self.update_tooltip)
+
+    def update_tooltip(self, event):
+        if self.qt_viewer.viewer.tooltip.visible:
+            self.qt_viewer.setToolTip(event.value)
+        else:
+            self.qt_viewer.setToolTip("")
 
         # Connect the notification dispacther to correctly propagate
         # notifications from threads. See: `napari._qt.qt_event_loop::get_app`
@@ -136,10 +144,11 @@ class _QtMainWindow(QMainWindow):
         """
         Load window layout settings from configuration.
         """
-        window_size = SETTINGS.application.window_size
-        window_state = SETTINGS.application.window_state
-        preferences_dialog_size = SETTINGS.application.preferences_size
-        window_position = SETTINGS.application.window_position
+        settings = get_settings()
+        window_size = settings.application.window_size
+        window_state = settings.application.window_state
+        preferences_dialog_size = settings.application.preferences_size
+        window_position = settings.application.window_position
 
         # It's necessary to verify if the window/position value is valid with the current screen.
         width, height = window_position
@@ -149,8 +158,8 @@ class _QtMainWindow(QMainWindow):
         if current_width < width or current_height < height:
             window_position = (self.x(), self.y())
 
-        window_maximized = SETTINGS.application.window_maximized
-        window_fullscreen = SETTINGS.application.window_fullscreen
+        window_maximized = settings.application.window_maximized
+        window_fullscreen = settings.application.window_fullscreen
         return (
             window_state,
             window_size,
@@ -239,18 +248,19 @@ class _QtMainWindow(QMainWindow):
             preferences_dialog_size,
         ) = self._get_window_settings()
 
-        if SETTINGS.application.save_window_geometry:
-            SETTINGS.application.window_maximized = window_maximized
-            SETTINGS.application.window_fullscreen = window_fullscreen
-            SETTINGS.application.window_position = window_position
-            SETTINGS.application.window_size = window_size
-            SETTINGS.application.window_statusbar = (
+        settings = get_settings()
+        if settings.application.save_window_geometry:
+            settings.application.window_maximized = window_maximized
+            settings.application.window_fullscreen = window_fullscreen
+            settings.application.window_position = window_position
+            settings.application.window_size = window_size
+            settings.application.window_statusbar = (
                 not self._status_bar.isHidden()
             )
-            SETTINGS.application.preferences_size = preferences_dialog_size
+            settings.application.preferences_size = preferences_dialog_size
 
-        if SETTINGS.application.save_window_state:
-            SETTINGS.application.window_state = window_state
+        if settings.application.save_window_state:
+            settings.application.window_state = window_state
 
     def _update_preferences_dialog_size(self, size):
         """Save preferences dialog size."""
@@ -273,13 +283,24 @@ class _QtMainWindow(QMainWindow):
                 parent.close()
                 break
 
-            parent = parent.parent()
+            try:
+                parent = parent.parent()
+            except Exception:
+                parent = getattr(parent, "_parent", None)
+
+    def show(self, block=False):
+        super().show()
+        if block:
+            self._ev = QEventLoop()
+            self._ev.exec()
 
     def closeEvent(self, event):
         """This method will be called when the main window is closing.
 
         Regardless of whether cmd Q, cmd W, or the close button is used...
         """
+        if self._ev and self._ev.isRunning():
+            self._ev.quit()
         # Close any floating dockwidgets
         for dock in self.findChildren(QtViewerDockWidget):
             if dock.isFloating():
@@ -344,6 +365,8 @@ class Window:
     """
 
     def __init__(self, viewer, *, show: bool = True):
+        settings = get_settings()
+
         # create QApplication if it doesn't already exist
         get_app()
 
@@ -394,7 +417,7 @@ class Window:
         self._qt_window._activity_dialog.hide()
         self._status_bar.addPermanentWidget(self._activity_btn)
 
-        self.qt_viewer.viewer.theme = SETTINGS.appearance.theme
+        self.qt_viewer.viewer.theme = settings.appearance.theme
         self._update_theme()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
@@ -406,7 +429,14 @@ class Window:
         )
         self.window_menu.addSeparator()
 
-        SETTINGS.appearance.events.theme.connect(self._update_theme)
+        settings.appearance.events.theme.connect(self._update_theme)
+
+        plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
+        plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
+        plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
+        plugin_manager.events.registered.connect(self._rebuild_samples_menu)
+        plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
+        plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
@@ -518,6 +548,25 @@ class Window:
         )
         screenshot_wv.triggered.connect(self._screenshot_dialog)
 
+        clipboard = QAction(
+            trans._('Copy Screenshot to Clipboard'), self._qt_window
+        )
+        clipboard.setStatusTip(
+            trans._('Copy screenshot of current display to the clipboard')
+        )
+        clipboard.triggered.connect(lambda: self.qt_viewer.clipboard())
+
+        clipboard_wv = QAction(
+            trans._('Copy Screenshot with Viewer to Clipboard'),
+            self._qt_window,
+        )
+        clipboard_wv.setStatusTip(
+            trans._(
+                'Copy screenshot of current display with the viewer to the clipboard'
+            )
+        )
+        clipboard_wv.triggered.connect(lambda: self.clipboard())
+
         # OS X will rename this to Quit and put it in the app menu.
         # This quits the entire QApplication and all windows that may be open.
         quitAction = QAction(trans._('Exit'), self._qt_window)
@@ -536,14 +585,42 @@ class Window:
         closeAction.triggered.connect(self._qt_window.close_window)
 
         plugin_manager.discover_sample_data()
-        open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+        self.open_sample_menu = QMenu(trans._('Open Sample'), self._qt_window)
+
+        self._rebuild_samples_menu()
+
+        self.file_menu = self.main_menu.addMenu(trans._('&File'))
+        self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_stack)
+        self.file_menu.addAction(open_folder)
+        self.file_menu.addMenu(self.open_sample_menu)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(preferences)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(save_selected_layers)
+        self.file_menu.addAction(save_all_layers)
+        self.file_menu.addAction(screenshot)
+        self.file_menu.addAction(screenshot_wv)
+        self.file_menu.addAction(clipboard)
+        self.file_menu.addAction(clipboard_wv)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(closeAction)
+
+        if running_as_bundled_app():
+            self.file_menu.addAction(restartAction)
+
+        self.file_menu.addAction(quitAction)
+
+    def _rebuild_samples_menu(self, event=None):
+        self.open_sample_menu.clear()
+
         for plugin_name, samples in plugin_manager._sample_data.items():
             multiprovider = len(samples) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
-                open_sample_menu.addMenu(menu)
+                self.open_sample_menu.addMenu(menu)
             else:
-                menu = open_sample_menu
+                menu = self.open_sample_menu
 
             for samp_name, samp_dict in samples.items():
                 display_name = samp_dict['display_name']
@@ -561,26 +638,6 @@ class Window:
                 menu.addAction(action)
                 action.triggered.connect(_add_sample)
 
-        self.file_menu = self.main_menu.addMenu(trans._('&File'))
-        self.file_menu.addAction(open_images)
-        self.file_menu.addAction(open_stack)
-        self.file_menu.addAction(open_folder)
-        self.file_menu.addMenu(open_sample_menu)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(preferences)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(save_selected_layers)
-        self.file_menu.addAction(save_all_layers)
-        self.file_menu.addAction(screenshot)
-        self.file_menu.addAction(screenshot_wv)
-        self.file_menu.addSeparator()
-        self.file_menu.addAction(closeAction)
-
-        if running_as_bundled_app():
-            self.file_menu.addAction(restartAction)
-
-        self.file_menu.addAction(quitAction)
-
     def _open_preferences(self):
         """Edit preferences from the menubar."""
         if self._qt_window._preferences_dialog is None:
@@ -593,10 +650,21 @@ class Window:
                 win.resize(self._qt_window._preferences_dialog_size)
 
             self._qt_window._preferences_dialog = win
+            win.valueChanged.connect(self._reset_plugin_state)
             win.closed.connect(self._on_preferences_closed)
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
+
+    def _reset_plugin_state(self):
+        # resetting plugin states in plugin manager
+        plugin_manager._blocked.clear()
+
+        plugin_manager.discover()
+
+        # need to reset call order to defaults
+
+        plugin_manager.set_call_order(get_settings().plugins.call_order)
 
     def _on_preferences_closed(self):
         """Reset preferences dialog variable."""
@@ -604,6 +672,7 @@ class Window:
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
+        settings = get_settings()
         toggle_visible = QAction(
             trans._('Toggle Menubar Visibility'), self._qt_window
         )
@@ -730,8 +799,27 @@ class Window:
         scale_bar_menu.addAction(scale_bar_colored_action)
         scale_bar_menu.addAction(scale_bar_ticks_action)
         self.view_menu.addMenu(scale_bar_menu)
+        self.tooltip_menu = QAction(
+            trans._('Layer Tooltip visibility'),
+            parent=self._qt_window,
+            checkable=True,
+            checked=settings.appearance.layer_tooltip_visibility,
+        )
+        self.tooltip_menu.triggered.connect(self._tooltip_visibility_toggle)
+        settings.appearance.events.layer_tooltip_visibility.connect(
+            self._tooltip_visibility_toggled
+        )
+        self.view_menu.addAction(self.tooltip_menu)
 
         self.view_menu.addSeparator()
+
+    def _tooltip_visibility_toggle(self, value):
+        get_settings().appearance.layer_tooltip_visibility = value
+
+    def _tooltip_visibility_toggled(self, event):
+        self.tooltip_menu.setChecked(
+            get_settings().appearance.layer_tooltip_visibility
+        )
 
     def _event_to_action(self, action, event):
         """Connect triggered event in model to respective action in menu."""
@@ -754,6 +842,13 @@ class Window:
         """Add 'Plugins' menu to app menubar."""
         self.plugins_menu = self.main_menu.addMenu(trans._('&Plugins'))
 
+        plugin_manager.discover_widgets()
+        self._rebuild_plugins_menu()
+
+    def _rebuild_plugins_menu(self, event=None):
+
+        self.plugins_menu.clear()
+
         pip_install_action = QAction(
             trans._("Install/Uninstall Package(s)..."), self._qt_window
         )
@@ -769,22 +864,19 @@ class Window:
             )
         )
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+
         self.plugins_menu.addAction(report_plugin_action)
 
-        self._plugin_dock_widget_menu = QMenu(
-            trans._('Add Dock Widget'), self._qt_window
-        )
-
-        plugin_manager.discover_widgets()
+        self.plugins_menu.addSeparator()
 
         # Add a menu item (QAction) for each available plugin widget
         for hook_type, (plugin_name, widgets) in plugin_manager.iter_widgets():
             multiprovider = len(widgets) > 1
             if multiprovider:
                 menu = QMenu(plugin_name, self._qt_window)
-                self._plugin_dock_widget_menu.addMenu(menu)
+                self.plugins_menu.addMenu(menu)
             else:
-                menu = self._plugin_dock_widget_menu
+                menu = self.plugins_menu
 
             for wdg_name in widgets:
                 key = (plugin_name, wdg_name)
@@ -802,8 +894,6 @@ class Window:
 
                 menu.addAction(action)
                 action.triggered.connect(_add_widget)
-
-        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
 
     def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -1246,7 +1336,7 @@ class Window:
         """
         self._qt_window.resize(width, height)
 
-    def show(self):
+    def show(self, *, block=False):
         """Resize, show, and bring forward the window.
 
         Raises
@@ -1254,8 +1344,9 @@ class Window:
         RuntimeError
             If the viewer.window has already been closed and deleted.
         """
+        settings = get_settings()
         try:
-            self._qt_window.show()
+            self._qt_window.show(block=block)
         except (AttributeError, RuntimeError):
             raise RuntimeError(
                 trans._(
@@ -1264,8 +1355,8 @@ class Window:
                 )
             )
 
-        if SETTINGS.application.first_time:
-            SETTINGS.application.first_time = False
+        if settings.application.first_time:
+            settings.application.first_time = False
             try:
                 self._qt_window.resize(self._qt_window.layout().sizeHint())
             except (AttributeError, RuntimeError):
@@ -1277,7 +1368,7 @@ class Window:
                 )
         else:
             try:
-                if SETTINGS.application.save_window_geometry:
+                if settings.application.save_window_geometry:
                     self._qt_window._set_window_settings(
                         *self._qt_window._load_window_settings()
                     )
@@ -1318,9 +1409,10 @@ class Window:
 
     def _update_theme(self, event=None):
         """Update widget color theme."""
+        settings = get_settings()
         if event:
             value = event.value
-            SETTINGS.appearance.theme = value
+            settings.appearance.theme = value
             self.qt_viewer.viewer.theme = value
         else:
             value = self.qt_viewer.viewer.theme
@@ -1328,6 +1420,9 @@ class Window:
         try:
             self._qt_window.setStyleSheet(get_stylesheet(value))
         except AttributeError:
+            pass
+        except RuntimeError:
+            # wrapped C/C++ object may have been deleted
             pass
 
     def _status_changed(self, event):
@@ -1372,13 +1467,32 @@ class Window:
         """Restart the napari application."""
         self._qt_window.restart()
 
-    def screenshot(self, path=None):
+    def _screenshot(self, flash=True):
+        """Capture screenshot of the currently displayed viewer.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        img = self._qt_window.grab().toImage()
+        if flash:
+            from .utils import add_flash_animation
+
+            add_flash_animation(self._qt_window)
+        return img
+
+    def screenshot(self, path=None, flash=True):
         """Take currently displayed viewer and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
 
         Returns
         -------
@@ -1386,10 +1500,25 @@ class Window:
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self._qt_window.grab().toImage()
+        img = self._screenshot(flash)
         if path is not None:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
+
+    def clipboard(self, flash=True):
+        """Take a screenshot of the currently displayed viewer and copy the image to the clipboard.
+
+        Parameters
+        ----------
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+        """
+        from qtpy.QtGui import QGuiApplication
+
+        img = self._screenshot(flash)
+        cb = QGuiApplication.clipboard()
+        cb.setImage(img)
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""

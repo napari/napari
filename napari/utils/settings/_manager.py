@@ -3,23 +3,35 @@
 
 import json
 import os
+import warnings
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from appdirs import user_config_dir
-from pydantic import ValidationError
 from yaml import safe_dump, safe_load
 
 from ...utils.translations import trans
 from .._base import _APPAUTHOR, _APPNAME, _FILENAME
+from ._defaults import CORE_SETTINGS as CORE_SETTINGS
 from ._defaults import (
-    CORE_SETTINGS,
     AppearanceSettings,
     ApplicationSettings,
+    BaseNapariSettings,
+    ExperimentalSettings,
     PluginsSettings,
+    ShortcutsSettings,
 )
 
 
-class SettingsManager:
+class _SettingsMixin:
+    appearance: AppearanceSettings
+    application: ApplicationSettings
+    plugins: PluginsSettings
+    shortcuts: ShortcutsSettings
+    experimental: ExperimentalSettings
+
+
+class SettingsManager(_SettingsMixin):
     """
     Napari settings manager using evented SettingsModels.
 
@@ -55,21 +67,22 @@ class SettingsManager:
     _FILENAME = _FILENAME
     _APPNAME = _APPNAME
     _APPAUTHOR = _APPAUTHOR
-    appearance: AppearanceSettings
-    application: ApplicationSettings
-    plugins: PluginsSettings
 
-    def __init__(self, config_path: str = None, save_to_disk: bool = True):
+    def __init__(
+        self,
+        config_path: Optional[Path] = None,
+        save_to_disk: bool = True,
+    ):
         self._config_path = (
             Path(user_config_dir(self._APPNAME, self._APPAUTHOR))
             if config_path is None
             else Path(config_path)
         )
         self._save_to_disk = save_to_disk
-        self._settings = {}
-        self._defaults = {}
-        self._models = {}
-        self._plugins = []
+        self._settings: Dict[str, BaseNapariSettings] = {}
+        self._defaults: Dict[str, BaseNapariSettings] = {}
+        self._plugins: List[str] = []
+        self._env_settings: Dict[str, Any] = {}
 
         if not self._config_path.is_dir():
             os.makedirs(self._config_path)
@@ -82,17 +95,25 @@ class SettingsManager:
 
     def __dir__(self):
         """Add setting keys to make tab completion works."""
-        return super().__dir__() + list(self._settings)
+        return list(super().__dir__()) + list(self._settings)
 
     def __str__(self):
         return safe_dump(self._to_dict(safe=True))
 
-    @staticmethod
-    def _get_section_name(setting) -> str:
+    def _remove_default(self, settings_data):
         """
-        Return the normalized name of a section based on its config title.
+        Attempt to convert self to dict and to remove any default values from the configuration
         """
-        return setting.__name__.replace("Settings", "").lower()
+        for section, values in settings_data.items():
+            if section not in self._defaults:
+                continue
+
+            default_values = self._defaults[section].dict()
+            for k, v in list(values.items()):
+                if default_values.get(k, None) == v:
+                    del values[k]
+
+        return settings_data
 
     def _to_dict(self, safe: bool = False) -> dict:
         """Convert the settings to a dictionary."""
@@ -111,59 +132,64 @@ class SettingsManager:
         """Save configuration to disk."""
         if self._save_to_disk:
             path = self.path / self._FILENAME
+
+            if self._env_settings:
+                # If using environment variables do not save them in the
+                # `settings.yaml` file. We just delete any keys loaded
+                # as environment variables
+                data = self._to_dict(safe=True)
+                for section, env_data in self._env_settings.items():
+                    for k, v in env_data.items():
+                        del data[section][k]
+            else:
+                data = self._to_dict(safe=True)
+
             with open(path, "w") as fh:
-                fh.write(str(self))
+                fh.write(safe_dump(self._remove_default(data)))
 
     def _load(self):
         """Read configuration from disk."""
         path = self.path / self._FILENAME
-        for setting in CORE_SETTINGS:
-            section = self._get_section_name(setting)
-            self._defaults[section] = setting()
-            self._settings[section] = setting()
-            self._models[section] = setting
-            self._settings[section] = setting()
 
         if path.is_file():
             try:
                 with open(path) as fh:
                     data = safe_load(fh.read()) or {}
             except Exception as err:
-                import warnings
-
                 warnings.warn(
                     trans._(
                         "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
+                        deferred=True,
                         err=err,
                     )
                 )
                 data = {}
 
-            # Check with models
-            for section, model_data in data.items():
-                try:
-                    model = self._models[section](**model_data)
-                    model.events.connect(lambda x: self._save())
-                    self._settings[section] = model
-                except KeyError:
-                    pass
-                except ValidationError as e:
-                    # Handle extra fields
-                    model_data_replace = {}
-                    for error in e.errors():
-                        # Grab the first error entry
-                        item = error["loc"][0]
-                        try:
-                            model_data_replace[item] = getattr(
-                                self._defaults[section], item
-                            )
-                        except AttributeError:
-                            model_data.pop(item)
+            # Load data once and save it in the base class
+            BaseNapariSettings._LOADED_DATA = data
 
-                    model_data.update(model_data_replace)
-                    model = self._models[section](**model_data)
-                    model.events.connect(lambda x: self._save())
-                    self._settings[section] = model
+        for setting in CORE_SETTINGS:
+            section = setting.schema().get("section", None)
+            if section is None:
+                raise ValueError(
+                    trans._(
+                        "Settings model {setting!r} must provide a `section` in the `schemas_extra`",
+                        deferred=True,
+                        setting=setting,
+                    )
+                )
+
+            _section_defaults = {}
+            for option, option_data in setting.schema()["properties"].items():
+                _section_defaults[option] = option_data.get("default", None)
+
+            self._defaults[section] = setting(**_section_defaults)
+            model = setting()
+            model.events.connect(lambda x: self._save())
+            self._settings[section] = model
+            self._env_settings[section] = getattr(
+                model.__config__, "_env_settings"
+            )(model)
 
         self._save()
 
@@ -201,4 +227,50 @@ class SettingsManager:
         self._plugins.append(plugin)
 
 
-SETTINGS = SettingsManager()
+class _SettingsProxy(_SettingsMixin):
+    """Backwards compatibility layer."""
+
+    def __getattribute__(self, name) -> Any:
+        return getattr(get_settings(), name)
+
+
+SETTINGS: Union[SettingsManager, _SettingsProxy] = _SettingsProxy()
+
+
+def get_settings(path: Optional[Union[Path, str]] = None) -> SettingsManager:
+    """
+    Get settings for a given path.
+
+    Parameters
+    ----------
+    path: Path, optional
+        The path to read/write the settings from.
+
+    Returns
+    -------
+    SettingsManager
+        The settings manager.
+
+    Notes
+    -----
+    The path can only be set once per session.
+    """
+    global SETTINGS
+
+    if isinstance(SETTINGS, _SettingsProxy):
+        config_path = Path(path).resolve() if path else None
+        SETTINGS = SettingsManager(config_path=config_path)
+    elif path is not None:
+        import inspect
+
+        curframe = inspect.currentframe()
+        calframe = inspect.getouterframes(curframe, 2)
+        raise Exception(
+            trans._(
+                "The path can only be set once per session. Settings called from {calframe[1][3]}",
+                deferred=True,
+                calframe=calframe,
+            )
+        )
+
+    return SETTINGS

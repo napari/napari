@@ -37,6 +37,9 @@ matplotlib_colormaps = _MATPLOTLIB_COLORMAP_NAMES = OrderedDict(
     gist_earth=trans._p('colormap', 'gist earth'),
     PiYG=trans._p('colormap', 'PiYG'),
 )
+_MATPLOTLIB_COLORMAP_NAMES_REVERSE = {
+    v: k for k, v in matplotlib_colormaps.items()
+}
 _VISPY_COLORMAPS_ORIGINAL = _VCO = get_colormaps()
 _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     autumn=(trans._p('colormap', 'autumn'), _VCO['autumn']),
@@ -66,6 +69,9 @@ _VISPY_COLORMAPS_TRANSLATIONS = OrderedDict(
     diverging=(trans._p('colormap', 'diverging'), _VCO['diverging']),
     RdYeBuCy=(trans._p('colormap', 'RdYeBuCy'), _VCO['RdYeBuCy']),
 )
+_VISPY_COLORMAPS_TRANSLATIONS_REVERSE = {
+    v[0]: k for k, v in _VISPY_COLORMAPS_TRANSLATIONS.items()
+}
 _PRIMARY_COLORS = OrderedDict(
     red=(trans._p('colormap', 'red'), [1.0, 0.0, 0.0]),
     green=(trans._p('colormap', 'green'), [0.0, 1.0, 0.0]),
@@ -390,13 +396,32 @@ def vispy_or_mpl_colormap(name):
             else:
                 display_name = name
         except AttributeError:
-            raise KeyError(
-                trans._(
-                    'Colormap "{name}" not found in either vispy or matplotlib.',
-                    deferred=True,
-                    name=name,
+            suggestion = _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(
+                name
+            ) or _MATPLOTLIB_COLORMAP_NAMES_REVERSE.get(name)
+            if suggestion:
+                raise KeyError(
+                    trans._(
+                        'Colormap "{name}" not found in either vispy or matplotlib but you might want to use "{suggestion}".',
+                        deferred=True,
+                        name=name,
+                        suggestion=suggestion,
+                    )
                 )
-            )
+            else:
+                colormaps = set(_VISPY_COLORMAPS_ORIGINAL).union(
+                    set(_MATPLOTLIB_COLORMAP_NAMES)
+                )
+                raise KeyError(
+                    trans._(
+                        'Colormap "{name}" not found in either vispy or matplotlib. Recognized colormaps are: {colormaps}',
+                        deferred=True,
+                        name=name,
+                        colormaps=", ".join(
+                            sorted([f'"{cm}"' for cm in colormaps])
+                        ),
+                    )
+                )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(
             name=name, display_name=display_name, colors=mpl_colors

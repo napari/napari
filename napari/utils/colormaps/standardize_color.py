@@ -115,7 +115,7 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
     Parameters
     ----------
     colors : Sequence
-        A list-like container of colors. The colors inside should be homogeneuous
+        A list-like container of colors. The colors inside should be homogeneous
         in their representation.
 
     Returns
@@ -123,15 +123,21 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
     color_array : np.ndarray
         Nx4 numpy array, with N being the length of ``colors``.
     """
+
     try:
         # The following conversion works for most cases, and so it's expected
         # that most valid inputs will pass this .asarray() call
         # with ease. Those who don't are usually too cryptic to decipher.
-        color_array = np.atleast_2d(np.asarray(colors))
+        # If only some of the colors are strings, explicitly provide an object
+        # dtype to avoid the deprecated behavior described in:
+        # https://github.com/napari/napari/issues/2791
+        num_str = len([c for c in colors if isinstance(c, str)])
+        dtype = 'O' if 0 < num_str < len(colors) else None
+        color_array = np.atleast_2d(np.asarray(colors, dtype=dtype))
     except ValueError:
         warnings.warn(
             trans._(
-                "Coudln't convert input color array to a proper numpy array. Please make sure that your input data is in a parsable format. Converting input to a white color array.",
+                "Couldn't convert input color array to a proper numpy array. Please make sure that your input data is in a parsable format. Converting input to a white color array.",
                 deferred=True,
             )
         )

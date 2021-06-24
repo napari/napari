@@ -75,7 +75,12 @@ jobs:
           python -m pip install -e ".[all]"
           python -m pip install -r docs/requirements.txt
         working-directory: main
-      - name: Build Docs
+      - name: Build Generated Docs
+        run: python docs/update_docs.py
+        working-directory: main
+        env:
+          DISPLAY: ":99.0"
+        - name: Build Docs
         run: jupyter-book build docs
         working-directory: main
         env:

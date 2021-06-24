@@ -10,8 +10,8 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.points._points_constants import SYMBOL_TRANSLATION, Mode
+from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
-from ...utils.interactions import Shortcut
 from ...utils.translations import trans
 from ..utils import disable_with_opacity, qt_signals_blocked
 from ..widgets.qt_color_swatch import QColorSwatchEdit
@@ -131,26 +131,29 @@ class QtPointsControls(QtLayerControls):
             layer,
             'select_points',
             Mode.SELECT,
-            tooltip=trans._('Select points (S)'),
         )
-        self.addition_button = QtModeRadioButton(
-            layer, 'add_points', Mode.ADD, tooltip=trans._('Add points (P)')
+        action_manager.bind_button(
+            'napari:activate_points_select_mode', self.select_button
+        )
+        self.addition_button = QtModeRadioButton(layer, 'add_points', Mode.ADD)
+        action_manager.bind_button(
+            'napari:activate_points_add_mode', self.addition_button
         )
         self.panzoom_button = QtModeRadioButton(
             layer,
             'pan_zoom',
             Mode.PAN_ZOOM,
-            tooltip=trans._('Pan/zoom (Z)'),
             checked=True,
+        )
+        action_manager.bind_button(
+            'napari:activate_points_pan_zoom_mode', self.panzoom_button
         )
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
-            slot=self.layer.remove_selected,
-            tooltip=trans._(
-                "Delete selected points ({shortcut})",
-                shortcut=Shortcut('Backspace').platform,
-            ),
+        )
+        action_manager.bind_button(
+            'napari:delete_selected_points', self.delete_button
         )
 
         text_disp_cb = QCheckBox()

@@ -1,20 +1,9 @@
-import os
-import sys
-
 import numpy as np
 import pytest
 
+from napari._tests.utils import skip_local_popups, skip_on_win_ci
 from napari._vispy.experimental.vispy_tiled_image_layer import (
     VispyTiledImageLayer,
-)
-
-skip_on_win_ci = pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
-    reason='Screenshot tests are not supported on windows CI.',
-)
-skip_local_popups = pytest.mark.skipif(
-    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
-    reason='Tests requiring GUI windows are skipped locally by default.',
 )
 
 # Add a loading delay in ms.
@@ -67,7 +56,7 @@ def test_tiled_screenshot(qtbot, monkeypatch, make_napari_viewer, dtype):
     qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
     target_center = np.array([0, 0, 128, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
@@ -108,7 +97,7 @@ def test_tiled_rgb(qtbot, monkeypatch, make_napari_viewer):
     qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
     target_center = np.array([128, 128, 128, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
@@ -154,7 +143,7 @@ def test_tiled_changing_contrast_limits(
     qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
     target_center = np.array([0, 0, 255, 255], dtype='uint8')
     target_edge = np.array([0, 0, 0, 255], dtype='uint8')
@@ -175,7 +164,7 @@ def test_tiled_changing_contrast_limits(
     # Required wait is longer, ToDo change this to a qtbot.waitSignal
     qtbot.wait(LONG_LOADING_DELAY)
 
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     np.testing.assert_allclose(screenshot[tuple(center_coord)], target_center)
 
 
@@ -208,7 +197,7 @@ def test_tiled_single_scale(qtbot, monkeypatch, make_napari_viewer):
     qtbot.wait(10 * LONG_LOADING_DELAY)
 
     # Take the screenshot
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
     target_center = np.array([128, 128, 128, 255], dtype='uint8')
     screen_offset = 3  # Offset is needed as our screenshots have black borders
@@ -249,7 +238,7 @@ def test_tiled_labels(qtbot, monkeypatch, make_napari_viewer):
     qtbot.wait(SHORT_LOADING_DELAY)
 
     # Take the screenshot
-    screenshot = viewer.screenshot(canvas_only=True)
+    screenshot = viewer.screenshot(canvas_only=True, flash=False)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
     col = layer.get_color(1)
     target_center = np.array([c * 255 for c in col], dtype='uint8')

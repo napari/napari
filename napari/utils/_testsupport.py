@@ -40,7 +40,6 @@ def napari_plugin_manager(monkeypatch):
     # make it so that internal requests for the plugin_manager
     # get this test version for the duration of the test.
     monkeypatch.setattr(napari.plugins, 'plugin_manager', pm)
-    monkeypatch.setattr(napari.plugins.io, 'plugin_manager', pm)
     try:
         monkeypatch.setattr(napari._qt.qt_main_window, 'plugin_manager', pm)
     except AttributeError:  # headless tests
@@ -101,9 +100,11 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
-    from napari.utils.settings import SETTINGS
+    from napari.utils.settings import get_settings
 
-    SETTINGS.reset()
+    settings = get_settings()
+    settings.reset()
+
     viewers: List[Viewer] = []
 
     # may be overridden by using `make_napari_viewer(strict=True)`
@@ -138,7 +139,7 @@ def make_napari_viewer(
     # Some tests might have the viewer closed, so this call will not be able
     # to access the window.
     with suppress(AttributeError):
-        SETTINGS.reset()
+        get_settings().reset()
 
     # close viewers, but don't saving window settings while closing
     for viewer in viewers:
