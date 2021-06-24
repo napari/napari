@@ -100,7 +100,6 @@ class QtViewerButtons(QFrame):
         super().__init__()
 
         self.viewer = viewer
-        action_manager.context['viewer'] = viewer
 
         def active_layer():
             if len(self.viewer.layers.selection) == 1:

@@ -53,6 +53,7 @@ if TYPE_CHECKING:
 
 from ..utils.io import imsave_extensions
 from ..utils.settings import get_settings
+from ..viewer import ViewerModel
 
 
 class QtViewer(QSplitter):
@@ -97,6 +98,12 @@ class QtViewer(QSplitter):
     viewerButtons : QtViewerButtons
         Button controls for the napari viewer.
     """
+
+    @classmethod
+    def active_instance(self):
+        import napari
+
+        return napari._qt.qt_main_window._QtMainWindow.current().qt_viewer
 
     def __init__(self, viewer: Viewer, show_welcome_screen: bool = False):
         # Avoid circular import.
@@ -169,12 +176,6 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        action_manager.register_action(
-            "napari:toggle_console_visibility",
-            self.toggle_console_visibility,
-            trans._("Show/Hide IPython console"),
-            self.viewer,
-        )
         action_manager.bind_button(
             'napari:toggle_console_visibility',
             self.viewerButtons.consoleButton,
@@ -696,33 +697,6 @@ class QtViewer(QSplitter):
 
         self.canvas.native.setCursor(q_cursor)
 
-    def toggle_console_visibility(self, event=None):
-        """Toggle console visible and not visible.
-
-        Imports the console the first time it is requested.
-        """
-        # force instantiation of console if not already instantiated
-        _ = self.console
-
-        viz = not self.dockConsole.isVisible()
-        # modulate visibility at the dock widget level as console is dockable
-        self.dockConsole.setVisible(viz)
-        if self.dockConsole.isFloating():
-            self.dockConsole.setFloating(True)
-
-        if viz:
-            self.dockConsole.raise_()
-
-        self.viewerButtons.consoleButton.setProperty(
-            'expanded', self.dockConsole.isVisible()
-        )
-        self.viewerButtons.consoleButton.style().unpolish(
-            self.viewerButtons.consoleButton
-        )
-        self.viewerButtons.consoleButton.style().polish(
-            self.viewerButtons.consoleButton
-        )
-
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
 
@@ -1013,3 +987,42 @@ def _create_remote_manager(
     qt_poll.events.poll.connect(monitor.on_poll)
 
     return manager
+
+
+def toggle_console_visibility(viewer, event=None):
+    """Toggle console visible and not visible.
+
+    Imports the console the first time it is requested.
+    """
+    # force instantiation of console if not already instantiated
+    qt_viewer = QtViewer.active_instance()
+    _ = qt_viewer.console
+
+    viz = not qt_viewer.dockConsole.isVisible()
+    # modulate visibility at the dock widget level as console is dockable
+    qt_viewer.dockConsole.setVisible(viz)
+    if qt_viewer.dockConsole.isFloating():
+        qt_viewer.dockConsole.setFloating(True)
+
+    if viz:
+        qt_viewer.dockConsole.raise_()
+
+    qt_viewer.viewerButtons.consoleButton.setProperty(
+        'expanded', qt_viewer.dockConsole.isVisible()
+    )
+    qt_viewer.viewerButtons.consoleButton.style().unpolish(
+        qt_viewer.viewerButtons.consoleButton
+    )
+    qt_viewer.viewerButtons.consoleButton.style().polish(
+        qt_viewer.viewerButtons.consoleButton
+    )
+
+
+action_manager.register_action(
+    name="napari:toggle_console_visibility",
+    command=toggle_console_visibility,
+    description=trans._("Show/Hide IPython console"),
+    keymapprovider=ViewerModel,
+)
+
+action_manager.context['qt_viewer'] = QtViewer.active_instance

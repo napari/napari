@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from .components.viewer_model import ViewerModel
-from .utils import _magicgui, config
+from .utils import _magicgui, action_manager, config
 
 if TYPE_CHECKING:
     # helpful for IDE support
@@ -30,6 +30,14 @@ class Viewer(ViewerModel):
 
     # Create private variable for window
     _window: 'Window'
+
+    @classmethod
+    def active_instance(self):
+        import napari
+
+        return (
+            napari._qt.qt_main_window._QtMainWindow.current().qt_viewer.viewer
+        )
 
     def __init__(
         self,
@@ -123,3 +131,6 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+
+
+action_manager.action_manager.context['viewer'] = Viewer.active_instance
