@@ -124,7 +124,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=True)
+        return fmt(exc_info, as_html=True, reduced_array_fmt=True)
 
     def __str__(self):
         from ._tracebacks import get_tb_formatter
@@ -135,7 +135,7 @@ class ErrorNotification(Notification):
             self.exception,
             self.exception.__traceback__,
         )
-        return fmt(exc_info, as_html=False)
+        return fmt(exc_info, as_html=False, reduced_array_fmt=True)
 
 
 class WarningNotification(Notification):

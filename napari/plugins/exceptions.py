@@ -11,7 +11,9 @@ else:
 Distribution = importlib_metadata.Distribution
 
 
-def format_exceptions(plugin_name: str, as_html: bool = False):
+def format_exceptions(
+    plugin_name: str, as_html: bool = False, reduced_array_fmt: bool = True
+):
     """Return formatted tracebacks for all exceptions raised by plugin.
 
     Parameters
@@ -21,6 +23,8 @@ def format_exceptions(plugin_name: str, as_html: bool = False):
     as_html : bool
         Whether to return the exception string as formatted html,
         defaults to False.
+    reduced_array_fmt: bool
+        Whether to display array data content or just it shape and dtype.
 
     Returns
     -------
@@ -67,7 +71,13 @@ def format_exceptions(plugin_name: str, as_html: bool = False):
     for n, err in enumerate(_plugin_errors):
         _pad = _linewidth - len(str(err)) - 10
         msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
-        msg.append(format_exc_info(err.info(), as_html))
+        msg.append(
+            format_exc_info(
+                err.info(),
+                as_html=as_html,
+                reduced_array_fmt=reduced_array_fmt,
+            )
+        )
 
     msg.append('=' * _linewidth)
 

@@ -6,7 +6,7 @@ import numpy as np
 from ..types import ExcInfo
 
 
-def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
+def get_tb_formatter() -> Callable[[ExcInfo, bool, bool], str]:
     """Return a formatter callable that uses IPython VerboseTB if available.
 
     Imports IPython lazily if available to take advantage of ultratb.VerboseTB.
@@ -17,7 +17,8 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
     Returns
     -------
     callable
-        A function that accepts a 3-tuple and a boolean ``(exc_info, as_html)``
+        A function that accepts a 3-tuple, two booleans and an optional string
+        indicating the color scheme ``(exc_info, as_html, reduced_array_fmt, color)``
         and returns a formatted traceback string. The ``exc_info`` tuple is of
         the ``(type, value, traceback)`` format returned by sys.exc_info().
         The ``as_html`` determines whether the traceback is formatted in html
@@ -27,12 +28,17 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
         import IPython.core.ultratb
 
         def format_exc_info(
-            info: ExcInfo, as_html: bool, color='Neutral'
+            info: ExcInfo,
+            as_html: bool,
+            reduced_array_fmt: bool,
+            color='Neutral',
         ) -> str:
-            # avoids printing the array data
-            np.set_string_function(
-                lambda arr: f'<{type(arr)} {arr.shape} {arr.dtype}>'
-            )
+            if reduced_array_fmt:
+                # avoids printing the array data
+                np.set_string_function(
+                    lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
+                )
+
             vbtb = IPython.core.ultratb.VerboseTB(color_scheme=color)
             if as_html:
                 ansi_string = vbtb.text(*info).replace(" ", "&nbsp;")
@@ -46,8 +52,10 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
                 tb_text = html
             else:
                 tb_text = vbtb.text(*info)
-            # resets to default behavior
-            np.set_string_function(None)
+
+            if reduced_array_fmt:
+                # resets to default behavior
+                np.set_string_function(None)
             return tb_text
 
     except ImportError:
@@ -78,7 +86,15 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
             info = (type(exc), exc, exc.__traceback__)
             return cgitb.html(info)
 
-        def format_exc_info(info: ExcInfo, as_html: bool, color=None) -> str:
+        def format_exc_info(
+            info: ExcInfo, as_html: bool, reduced_array_fmt: bool, color=None
+        ) -> str:
+            if reduced_array_fmt:
+                # avoids printing the array data
+                np.set_string_function(
+                    lambda arr: f'{type(arr)} {arr.shape} {arr.dtype}'
+                )
+
             if as_html:
                 html = "\n".join(cgitb_chain(info[1]))
                 # cgitb has a lot of hardcoded colors that don't work for us
@@ -106,10 +122,15 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
                     + html
                     + "</span>"
                 )
-                return html
+                tb_text = html
             else:
                 # if we don't need HTML, just use traceback
-                return ''.join(traceback.format_exception(*info))
+                tb_text = ''.join(traceback.format_exception(*info))
+
+            if reduced_array_fmt:
+                # resets to default behavior
+                np.set_string_function(None)
+            return tb_text
 
     return format_exc_info
 
