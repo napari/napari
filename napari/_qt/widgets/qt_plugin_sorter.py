@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins import plugin_manager as napari_plugin_manager
-from ...utils.settings import SETTINGS
+from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..utils import drag_with_pixmap
 from ..widgets.qt_eliding_label import ElidingLabel
@@ -362,7 +362,8 @@ class QtPluginSorter(QWidget):
 
     def _change_settings_plugins(self):
         """Update settings if plugin call order changes."""
-        SETTINGS.plugins.call_order = self.plugin_manager.call_order()
+        settings = get_settings()
+        settings.plugins.call_order = self.plugin_manager.call_order()
 
     def set_hookname(self, hook: str):
         """Change the hook specification shown in the list widget.

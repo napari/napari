@@ -25,7 +25,7 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
 )
 from ..utils.layer_utils import dataframe_to_properties
-from ..utils.text import TextManager
+from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
     BACKSPACE,
@@ -148,7 +148,7 @@ class Shapes(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -1393,7 +1393,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'text': self.text._get_state(),
+                'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1433,7 +1433,7 @@ class Shapes(Layer):
         Returns
         -------
         text_coords : (N x D) np.ndarray
-            Array of coordindates for the N text elements in view
+            Array of coordinates for the N text elements in view
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -1805,7 +1805,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1825,7 +1825,7 @@ class Shapes(Layer):
             otherwise the same value will be used for all shapes.
         z_index : int | list
             Specifier of z order priority. Shapes with higher z order are
-            displayed ontop of others. If a list is supplied it must be the
+            displayed on top of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
@@ -2487,7 +2487,7 @@ class Shapes(Layer):
                 )
 
             if len(self._clipboard['text']) > 0:
-                self.text._values = np.concatenate(
+                self.text.values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
 

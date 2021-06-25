@@ -26,7 +26,6 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -61,7 +60,7 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData
+    from ..types import FullLayerData, LayerData, PathOrPaths
 
 
 __all__ = ['ViewerModel', 'valid_add_kwargs']

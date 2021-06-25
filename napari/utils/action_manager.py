@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections import defaultdict
 from dataclasses import dataclass
 from inspect import signature
@@ -345,9 +346,9 @@ class ActionManager:
         self._update_shortcut_bindings(name)
         self._update_gui_elements(name)
 
-    def unbind_shortcut(self, name: str):
+    def unbind_shortcut(self, name: str) -> Union[Set[str], None]:
         """
-        unbind shortcut for action name
+        Unbind all shortcuts for a given action name.
 
         Parameters
         ----------
@@ -356,23 +357,43 @@ class ActionManager:
 
         Returns
         -------
+        shortcuts: set of str | None
+            Previously bound shortcuts or None if not such shortcuts was bound,
+            or no such action exists.
 
-        shortcut: str | None
-            previously bound shortcut.
+        Warns
+        -----
+        UserWarning:
+            When trying to unbind an action unknown form the action manager,
+            this warning will be emitted.
+
         """
-        action = self._actions[name]
+        action = self._actions.get(name, None)
+        if action is None:
+            warnings.warn(
+                trans._(
+                    "Attempting to unbind an action which does not exists ({name}), "
+                    "this may have no effects. This can happen if your settings are out of "
+                    "date, if you upgraded napari, upgraded or deactivated a plugin, or made "
+                    "a typo in in your custom keybinding.",
+                    name=name,
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
+
         shortcuts = self._shortcuts.get(name)
         if shortcuts:
-            if hasattr(action.keymapprovider, 'bind_key'):
+            if action and hasattr(action.keymapprovider, 'bind_key'):
                 for shortcut in shortcuts:
                     action.keymapprovider.bind_key(shortcut)(None)
             del self._shortcuts[name]
         self._update_gui_elements(name)
-        return shortcut
+        return shortcuts
 
     def _get_layer_shortcuts(self, layers):
         """
-        Get shortcuts filterd by the given layers.
+        Get shortcuts filtered by the given layers.
 
         Parameters
         ----------
@@ -394,6 +415,28 @@ class ActionManager:
                     layer_shortcuts[layer][str(shortcut)] = action.description
 
         return layer_shortcuts
+
+    def _get_layer_actions(self, layer):
+        """
+        Get actions filtered by the given layers.
+
+        Parameters
+        ----------
+        layer : Layer
+            Layer to use for actions filtering.
+
+        Returns
+        -------
+        layer_actions: dict
+            Dictionary of names of actions with action values for a layer.
+
+        """
+        layer_actions = {}
+        for name, action in self._actions.items():
+            if action and layer == action.keymapprovider:
+                layer_actions[name] = action
+
+        return layer_actions
 
     def _get_active_shortcuts(self, active_keymap):
         """

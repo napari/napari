@@ -49,87 +49,85 @@ def hold_to_lock_aspect_ratio(layer):
         _move(layer, layer._moving_coordinates)
 
 
-def register_shapes_action(description, shortcuts=()):
-    return register_layer_action(Shapes, description, shortcuts)
+def register_shapes_action(description):
+    return register_layer_action(Shapes, description)
 
 
-@register_shapes_action(trans._('Add rectangles'), "R")
+@register_shapes_action(trans._('Add rectangles'))
 def activate_add_rectangle_mode(layer):
     """Activate add rectangle tool."""
     layer.mode = Mode.ADD_RECTANGLE
 
 
-@register_shapes_action(trans._('Add ellipses'), "E")
+@register_shapes_action(trans._('Add ellipses'))
 def activate_add_ellipse_mode(layer):
     """Activate add ellipse tool."""
     layer.mode = Mode.ADD_ELLIPSE
 
 
-@register_shapes_action(trans._('Add lines'), "L")
+@register_shapes_action(trans._('Add lines'))
 def activate_add_line_mode(layer):
     """Activate add line tool."""
     layer.mode = Mode.ADD_LINE
 
 
-@register_shapes_action(trans._('Add path'), "T")
+@register_shapes_action(trans._('Add path'))
 def activate_add_path_mode(layer):
     """Activate add path tool."""
     layer.mode = Mode.ADD_PATH
 
 
-@register_shapes_action(trans._('Add polygons'), "P")
+@register_shapes_action(trans._('Add polygons'))
 def activate_add_polygon_mode(layer):
     """Activate add polygon tool."""
     layer.mode = Mode.ADD_POLYGON
 
 
-@register_shapes_action(trans._('Select vertices'), "D")
+@register_shapes_action(trans._('Select vertices'))
 def activate_direct_mode(layer):
     """Activate vertex selection tool."""
     layer.mode = Mode.DIRECT
 
 
-@register_shapes_action(trans._('Select shapes'), "S")
+@register_shapes_action(trans._('Select shapes'))
 def activate_select_mode(layer):
     """Activate shape selection tool."""
     layer.mode = Mode.SELECT
 
 
-@register_shapes_action(trans._('Pan/Zoom'), "Z")
+@register_shapes_action(trans._('Pan/Zoom'))
 def activate_shape_pan_zoom_mode(layer):
     """Activate pan and zoom mode."""
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_shapes_action(trans._('Insert vertex'), "I")
+@register_shapes_action(trans._('Insert vertex'))
 def activate_vertex_insert_mode(layer):
     """Activate vertex insertion tool."""
     layer.mode = Mode.VERTEX_INSERT
 
 
-@register_shapes_action(trans._('Remove vertex'), "X")
+@register_shapes_action(trans._('Remove vertex'))
 def activate_vertex_remove_mode(layer):
     """Activate vertex deletion tool."""
     layer.mode = Mode.VERTEX_REMOVE
 
 
-@register_shapes_action(trans._('Copy any selected shapes'), "Control-C")
+@register_shapes_action(trans._('Copy any selected shapes'))
 def copy_selected_shapes(layer):
     """Copy any selected shapes."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
         layer._copy_data()
 
 
-@register_shapes_action(trans._('Paste any copied shapes'), "Control-V")
+@register_shapes_action(trans._('Paste any copied shapes'))
 def paste_shape(layer):
     """Paste any copied shapes."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
         layer._paste_data()
 
 
-@register_shapes_action(
-    trans._('Select all shapes in the current view slice'), "A"
-)
+@register_shapes_action(trans._('Select all shapes in the current view slice'))
 def select_all_shapes(layer):
     """Select all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
@@ -137,9 +135,7 @@ def select_all_shapes(layer):
         layer._set_highlight()
 
 
-@register_shapes_action(
-    trans._('Delete any selected shapes'), ("Backspace", "Delete")
-)
+@register_shapes_action(trans._('Delete any selected shapes'))
 def delete_selected_shapes(layer):
     """."""
     layer.remove_selected()
@@ -159,7 +155,6 @@ def move_shapes_selection_to_back(layer):
     trans._(
         'Finish any drawing, for example when using the path or polygon tool.'
     ),
-    "Escape",
 )
 def finish_drawing_shape(layer):
     """Finish any drawing, for example when using the path or polygon tool."""
