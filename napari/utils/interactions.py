@@ -223,6 +223,7 @@ KEY_SYMBOLS = {
     'Return': '⏎',
     'Enter': '↵',
     'Space': '␣',
+    'Ctrl': 'Ctrl',
 }
 
 
@@ -256,12 +257,14 @@ class Shortcut:
             shortcut to format in the form of dash separated keys to press
 
         """
-        self._values = re.split('-(?=.+)', shortcut)
+        self._values = re.split('[-(?=.+)]', shortcut)
         for shortcut_key in self._values:
             if (
                 len(shortcut_key) > 1
                 and shortcut_key not in KEY_SYMBOLS.keys()
+                and shortcut_key not in KEY_SYMBOLS.values()
             ):
+
                 warnings.warn(
                     trans._(
                         "{shortcut_key} does not seem to be a valid shortcut Key.",
