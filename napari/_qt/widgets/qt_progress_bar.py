@@ -11,6 +11,8 @@ from qtpy.QtWidgets import (
 
 
 class ProgressBar(QWidget):
+    closed = QtCore.Signal()
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -49,6 +51,10 @@ class ProgressBar(QWidget):
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
 
+    def close(self):
+        self.closed.emit()
+        super().close()
+
 
 class ProgressBarGroup(QWidget):
     def __init__(self, pbar, parent=None) -> None:
@@ -65,66 +71,3 @@ class ProgressBarGroup(QWidget):
         pbr_group_layout.addWidget(line)
 
         self.setLayout(pbr_group_layout)
-
-
-def get_pbar(nest_under=None, **kwargs):
-    """Adds ProgressBar to viewer Activity Dock and returns it.
-    If nest_under is valid ProgressBar, nests new bar underneath
-    parent in a ProgressBarGroup
-
-    Parameters
-    ----------
-    nest_under : Optional[ProgressBar]
-        parent ProgressBar to nest under, by default None
-
-    Returns
-    -------
-    ProgressBar
-        progress bar to associate with iterable
-    """
-    from ..qt_main_window import _QtMainWindow
-
-    current_window = _QtMainWindow.current()
-    if current_window is None:
-        return
-    viewer_instance = current_window.qt_viewer
-    pbar = ProgressBar(**kwargs)
-    pbr_layout = viewer_instance.window()._activity_dialog.activity_layout
-
-    if nest_under is None:
-        pbr_layout.addWidget(pbar)
-    else:
-        # this is going to be nested, remove separators
-        # as the group will have its own
-        parent_pbar = nest_under._pbar
-        current_pbars = [parent_pbar, pbar]
-        remove_separators(current_pbars)
-
-        parent_widg = parent_pbar.parent()
-        if isinstance(parent_widg, ProgressBarGroup):
-            nested_layout = parent_widg.layout()
-        else:
-            new_group = ProgressBarGroup(nest_under._pbar)
-            nested_layout = new_group.layout()
-            pbr_layout.addWidget(new_group)
-        new_pbar_index = nested_layout.count() - 1
-        nested_layout.insertWidget(new_pbar_index, pbar)
-
-    return pbar
-
-
-def remove_separators(current_pbars):
-    """Remove any existing line separators from current_pbars
-    as they will get a separator from the group
-
-    Parameters
-    ----------
-    current_pbars : List[ProgressBar]
-        parent and new progress bar to remove separators from
-    """
-    for current_pbar in current_pbars:
-        line_widg = current_pbar.findChild(QFrame, "QtCustomTitleBarLine")
-        if line_widg:
-            current_pbar.layout().removeWidget(line_widg)
-            line_widg.hide()
-            line_widg.deleteLater()

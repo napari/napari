@@ -1,4 +1,7 @@
-from qtpy.QtCore import QPoint, QSize, Qt, Signal
+from pathlib import Path
+
+from qtpy.QtCore import QPoint, QSize, Qt
+from qtpy.QtGui import QMovie
 from qtpy.QtWidgets import (
     QDialog,
     QFrame,
@@ -7,22 +10,55 @@ from qtpy.QtWidgets import (
     QLabel,
     QScrollArea,
     QSizePolicy,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
+
+import napari.resources
+
+from ...utils.translations import trans
+from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
 MIN_WIDTH = 250
 MIN_HEIGHT = 140
 
 
+class ActivityToggleItem(QWidget):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent=parent)
+        self.setLayout(QHBoxLayout())
+
+        self._activity_btn = QToolButton()
+        self._activity_btn.setObjectName("QtActivityButton")
+        self._activity_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self._activity_btn.setArrowType(Qt.UpArrow)
+        self._activity_btn.setText(trans._('activity'))
+        self._activity_btn.setCheckable(True)
+
+        self.in_progress_indicator = QLabel(trans._("in progress..."), self)
+        sp = self.in_progress_indicator.sizePolicy()
+        sp.setRetainSizeWhenHidden(True)
+        self.in_progress_indicator.setSizePolicy(sp)
+        load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
+        mov = QMovie(load_gif)
+        mov.setScaledSize(QSize(18, 18))
+        self.in_progress_indicator.setMovie(mov)
+        mov.start()
+        self.in_progress_indicator.hide()
+
+        self.layout().addWidget(self.in_progress_indicator)
+        self.layout().addWidget(self._activity_btn)
+        self.layout().setContentsMargins(0, 0, 0, 0)
+
+
 class ActivityDialog(QDialog):
     """Activity Dialog for Napari progress bars."""
 
-    resized = Signal(QSize)
-    closed = Signal()
-
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, toggle_button=None):
         super().__init__(parent)
+        self.toggle_button = toggle_button
+
         self.setObjectName('Activity')
         self.setMinimumWidth(MIN_WIDTH)
         self.setMinimumHeight(MIN_HEIGHT)
@@ -69,9 +105,84 @@ class ActivityDialog(QDialog):
         self.base_layout.addWidget(self.scroll)
         self.setLayout(self.base_layout)
 
+    def add_progress_bar(self, pbar, nest_under):
+        if nest_under is None:
+            self.activity_layout.addWidget(pbar)
+        else:
+            # this is going to be nested, remove separators
+            # as the group will have its own
+            parent_pbar = nest_under._pbar
+            current_pbars = [parent_pbar, pbar]
+            remove_separators(current_pbars)
+
+            parent_widg = parent_pbar.parent()
+            if isinstance(parent_widg, ProgressBarGroup):
+                nested_layout = parent_widg.layout()
+            else:
+                new_group = ProgressBarGroup(nest_under._pbar)
+                nested_layout = new_group.layout()
+                self.activity_layout.addWidget(new_group)
+            new_pbar_index = nested_layout.count() - 1
+            nested_layout.insertWidget(new_pbar_index, pbar)
+        # show progress indicator
+        self.toggle_button.in_progress_indicator.show()
+        pbar.closed.connect(self.maybe_hide_progress_indicator)
+
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""
         if not self.parent():
             return
         sz = self.parent().size() - self.size() - QSize(*offset)
         self.move(QPoint(sz.width(), sz.height()))
+
+    def maybe_hide_progress_indicator(self):
+        if not self.activity_layout.findChildren(
+            ProgressBar
+        ) and not self.activity_layout.findChildren(ProgressBarGroup):
+            self.toggle_button.in_progress_indicator.hide()
+
+
+def get_pbar(nest_under=None, **kwargs):
+    """Adds ProgressBar to viewer Activity Dock and returns it.
+    If nest_under is valid ProgressBar, nests new bar underneath
+    parent in a ProgressBarGroup
+
+    Parameters
+    ----------
+    nest_under : Optional[ProgressBar]
+        parent ProgressBar to nest under, by default None
+
+    Returns
+    -------
+    ProgressBar
+        progress bar to associate with iterable
+    """
+    from ..qt_main_window import _QtMainWindow
+
+    current_window = _QtMainWindow.current()
+    if current_window is None:
+        return
+    viewer_instance = current_window.qt_viewer
+    activity_dialog = viewer_instance.window()._activity_dialog
+
+    pbar = ProgressBar(**kwargs)
+    activity_dialog.add_progress_bar(pbar, nest_under)
+
+    return pbar
+
+
+def remove_separators(current_pbars):
+    """Remove any existing line separators from current_pbars
+    as they will get a separator from the group
+
+    Parameters
+    ----------
+    current_pbars : List[ProgressBar]
+        parent and new progress bar to remove separators from
+    """
+    for current_pbar in current_pbars:
+        line_widg = current_pbar.findChild(QFrame, "QtCustomTitleBarLine")
+        if line_widg:
+            current_pbar.layout().removeWidget(line_widg)
+            line_widg.hide()
+            line_widg.deleteLater()

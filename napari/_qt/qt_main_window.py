@@ -20,7 +20,6 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QMenu,
     QShortcut,
-    QToolButton,
     QWidget,
 )
 
@@ -33,7 +32,7 @@ from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
 from ..utils.translations import trans
-from .dialogs.activity_dialog import ActivityDialog
+from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_notification import NapariQtNotification
@@ -390,13 +389,11 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self._activity_btn = QToolButton()
-        self._activity_btn.setObjectName("QtActivityButton")
-        self._activity_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self._activity_btn.setArrowType(Qt.UpArrow)
-        self._activity_btn.setText(trans._('activity'))
-        self._activity_btn.setCheckable(True)
-        self._activity_btn.clicked.connect(self._toggle_activity_dock)
+        self._activity_item = ActivityToggleItem()
+        self._activity_item._activity_btn.clicked.connect(
+            self._toggle_activity_dock
+        )
+        self._qt_window._activity_dialog.toggle_button = self._activity_item
 
         canvas_widg = self.qt_viewer._canvas_overlay
         self._qt_window._activity_dialog.setParent(canvas_widg)
@@ -405,7 +402,7 @@ class Window:
         )
         self._qt_window._activity_dialog.move_to_bottom_right()
         self._qt_window._activity_dialog.hide()
-        self._status_bar.addPermanentWidget(self._activity_btn)
+        self._status_bar.addPermanentWidget(self._activity_item)
 
         self.qt_viewer.viewer.theme = settings.appearance.theme
         self._update_theme()
@@ -920,11 +917,11 @@ class Window:
 
     def _toggle_activity_dock(self, state):
         if state:
-            self._activity_btn.setArrowType(Qt.DownArrow)
+            self._activity_item._activity_btn.setArrowType(Qt.DownArrow)
             self._qt_window._activity_dialog.show()
             self._qt_window._activity_dialog.raise_()
         else:
-            self._activity_btn.setArrowType(Qt.UpArrow)
+            self._activity_item._activity_btn.setArrowType(Qt.UpArrow)
             self._qt_window._activity_dialog.hide()
 
     def _toggle_scale_bar_visible(self, state):

@@ -75,7 +75,7 @@ class progress(tqdm):
 
         # get progress bar added to viewer
         try:
-            from .widgets.qt_progress_bar import get_pbar  # noqa
+            from .dialogs.activity_dialog import get_pbar
 
             pbar = get_pbar(nest_under=nest_under, **pbar_kwargs)
         except ImportError:
