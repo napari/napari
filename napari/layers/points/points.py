@@ -532,6 +532,8 @@ class Points(Layer):
         self._properties, self._property_choices = self._prepare_properties(
             properties, self._property_choices
         )
+        # Updating current_properties can modify properties, so block to avoid
+        # infinite recursion when explicitly setting the properties.
         with self.block_update_properties():
             self._update_current_properties()
         self._update_color_manager(
@@ -961,7 +963,7 @@ class Points(Layer):
             it should be one of: 'direct', 'cycle', or 'colormap'
         attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
+            Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
         """
         color_mode = ColorMode(color_mode)
         color_manager = getattr(self, f'_{attribute}')

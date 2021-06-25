@@ -1608,6 +1608,8 @@ def test_set_face_color_mode_after_set_properties():
         'cont': rng.random(num_points),
     }
 
+    # Initially the color_mode is DIRECT, which means that the face ColorManager
+    # has no color_properties, so the first property is used with a warning.
     with pytest.warns(UserWarning):
         points.face_color_mode = 'cycle'
 
