@@ -6,7 +6,6 @@ from napari_plugin_engine import standard_metadata
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDialog,
     QHBoxLayout,
@@ -38,9 +37,6 @@ class QtPluginErrReporter(QDialog):
         The text area where traceback information will be shown.
     plugin_combo : qtpy.QtWidgets.QComboBox
         The dropdown menu used to select the current plugin
-    array_format_checkbox: qtpy.QtWidgets.QCheckBox
-        A checkbox that indicates if the traceback should print the array data
-        content or not.
     github_button : qtpy.QtWidgets.QPushButton
         A button that, when pressed, will open an issue at the current plugin's
         github issue tracker, prepopulated with a formatted traceback.  Button
@@ -85,17 +81,6 @@ class QtPluginErrReporter(QDialog):
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
-        # Create checkbox that indicates reduced array format
-        self.array_format_checkbox = QCheckBox(
-            trans._('Reduced array formatting')
-        )
-        self.array_format_checkbox.setToolTip(
-            trans._(
-                "Indicates if the array data content should be printed or only its shape and dtype."
-            )
-        )
-        self.array_format_checkbox.setChecked(True)
-
         # create github button (gets connected in self.set_plugin)
         self.github_button = QPushButton(trans._('Open issue on GitHub'), self)
         self.github_button.setToolTip(
@@ -130,7 +115,6 @@ class QtPluginErrReporter(QDialog):
         row_2_layout = QHBoxLayout()
         row_2_layout.setContentsMargins(11, 5, 10, 0)
         row_2_layout.addWidget(self.plugin_combo)
-        row_2_layout.addWidget(self.array_format_checkbox)
         row_2_layout.addStretch(1)
         row_2_layout.addWidget(self.github_button)
         row_2_layout.addWidget(self.clipboard_button)
@@ -175,11 +159,7 @@ class QtPluginErrReporter(QDialog):
 
         self.plugin_combo.setCurrentText(plugin)
 
-        err_string = format_exceptions(
-            plugin,
-            as_html=True,
-            reduced_array_fmt=self.array_format_checkbox.isChecked(),
-        )
+        err_string = format_exceptions(plugin, as_html=True)
         self.text_area.setHtml(err_string)
         self.clipboard_button.show()
 
