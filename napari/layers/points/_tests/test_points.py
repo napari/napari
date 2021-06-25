@@ -1599,13 +1599,13 @@ def test_prepare_properties():
 def test_set_face_color_mode_after_set_properties():
     # See GitHub issue for more details:
     # https://github.com/napari/napari/issues/2755
-    rng = np.random.default_rng(0)
+    np.random.seed(0)
     num_points = 3
-    points = Points(rng.random((num_points, 2)))
+    points = Points(np.random.random((num_points, 2)))
 
     points.properties = {
-        'cat': rng.integers(low=0, high=num_points, size=num_points),
-        'cont': rng.random(num_points),
+        'cat': np.random.randint(low=0, high=num_points, size=num_points),
+        'cont': np.random.random(num_points),
     }
 
     # Initially the color_mode is DIRECT, which means that the face ColorManager
