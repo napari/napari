@@ -52,8 +52,8 @@ class ProgressBar(QWidget):
         self.eta_label.setText(eta)
 
     def close(self):
-        self.closed.emit()
         super().close()
+        self.closed.emit()
 
 
 class ProgressBarGroup(QWidget):

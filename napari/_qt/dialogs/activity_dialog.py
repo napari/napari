@@ -20,9 +20,6 @@ import napari.resources
 from ...utils.translations import trans
 from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
-MIN_WIDTH = 250
-MIN_HEIGHT = 140
-
 
 class ActivityToggleItem(QWidget):
     def __init__(self, parent=None) -> None:
@@ -55,17 +52,18 @@ class ActivityToggleItem(QWidget):
 class ActivityDialog(QDialog):
     """Activity Dialog for Napari progress bars."""
 
+    MIN_WIDTH = 250
+    MIN_HEIGHT = 140
+
     def __init__(self, parent=None, toggle_button=None):
         super().__init__(parent)
         self.toggle_button = toggle_button
 
         self.setObjectName('Activity')
-        self.setMinimumWidth(MIN_WIDTH)
-        self.setMinimumHeight(MIN_HEIGHT)
-        self.setMaximumHeight(MIN_HEIGHT)
-        self.setSizePolicy(
-            QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
-        )
+        self.setMinimumWidth(self.MIN_WIDTH)
+        self.setMinimumHeight(self.MIN_HEIGHT)
+        self.setMaximumHeight(self.MIN_HEIGHT)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
         self.setWindowFlags(Qt.SubWindow | Qt.WindowStaysOnTopHint)
         self.setModal(False)
 
@@ -136,9 +134,13 @@ class ActivityDialog(QDialog):
         self.move(QPoint(sz.width(), sz.height()))
 
     def maybe_hide_progress_indicator(self):
-        if not self.activity_layout.findChildren(
-            ProgressBar
-        ) and not self.activity_layout.findChildren(ProgressBarGroup):
+        pbars = self.baseWidget.findChildren(ProgressBar)
+        pbar_groups = self.baseWidget.findChildren(ProgressBarGroup)
+        progress_visible = any([pbar.isVisible() for pbar in pbars])
+        progress_group_visible = any(
+            [pbar_group.isVisible() for pbar_group in pbar_groups]
+        )
+        if not progress_visible and not progress_group_visible:
             self.toggle_button.in_progress_indicator.hide()
 
 
