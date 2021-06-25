@@ -338,16 +338,17 @@ CONTEXT_KEYS = {
     'all_layers_linked': lambda s: all(layer_is_linked(x) for x in s),
     'linked_layers_unselected': lambda s: len(get_linked_layers(*s) - s),
     'active_is_rgb': lambda s: getattr(s.active, 'rgb', False),
-    'only_images_selected': lambda s: (
-        s and all(isinstance(x, Image) for x in s)
+    'only_images_selected': (
+        lambda s: s and all(isinstance(x, Image) for x in s)
     ),
-    'only_labels_selected': lambda s: (
-        s and all(isinstance(x, Labels) for x in s)
+    'only_labels_selected': (
+        lambda s: s and all(isinstance(x, Labels) for x in s)
     ),
     'image_active': lambda s: isinstance(s.active, Image),
-    'active_shape': lambda s: (
-        s.active and getattr(s.active.data, 'shape', None)
+    'active_shape': (
+        lambda s: s.active and getattr(s.active.data, 'shape', None)
     ),
-    'same_shape': lambda s: len({getattr(x.data, 'shape', ()) for x in s})
-    == 1,
+    'same_shape': (
+        lambda s: len({getattr(x.data, 'shape', ()) for x in s}) == 1
+    ),
 }

@@ -9,7 +9,6 @@ from typing_extensions import TypedDict
 from napari.experimental import link_layers, unlink_layers
 from napari.layers.utils._link_layers import get_linked_layers
 
-from . import Layer
 from .utils import stack_utils
 
 if TYPE_CHECKING:
@@ -43,6 +42,8 @@ def _split_stack(ll: LayerList, axis: int = 0):
 
 
 def _convert(ll: LayerList, type_: str):
+    from .base.base import Layer
+
     for lay in list(ll.selection):
         idx = ll.index(lay)
         data = lay.data.astype(int) if type_ == 'labels' else lay.data
@@ -77,6 +78,7 @@ LAYER_ACTIONS = {
         'action': partial(_convert, type_='image'),
         'when': 'only_labels_selected',
     },
+    'sep0': {},
     'napari:split_stack': {
         'description': 'Split Stack',
         'action': _split_stack,
@@ -99,6 +101,7 @@ LAYER_ACTIONS = {
     #     'action': partial(merge_stack, rgb=True),
     #     'when': 'only_images_selected and same_shape',
     # },
+    'sep1': {},
     'napari:link_selected_layers': {
         'description': 'Link Layers',
         'action': lambda ll: link_layers(ll.selection),
