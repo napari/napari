@@ -1,6 +1,7 @@
 """Test the translations API."""
 
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -414,3 +415,15 @@ def test_translation_string_exceptions():
 def test_bundle_exceptions(trans):
     with pytest.raises(ValueError):
         trans._dnpgettext()
+
+
+def test_deepcopy():
+    """see https://github.com/napari/napari/issues/2911
+
+    Object containing translation strings can't bee deep-copied.
+    """
+
+    t = TranslationString(msgid='huhu')
+    u = deepcopy(t)
+    assert t is not u
+    assert t == u

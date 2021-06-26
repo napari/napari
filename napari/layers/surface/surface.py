@@ -69,7 +69,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         {'opaque', 'translucent', and 'additive'}.
     shading: str, Shading
         One of a list of preset shading modes that determine the lighting model
-        using when rendering the surface.
+        using when rendering the surface in 3D.
             * Shading.NONE
                 Corresponds to shading='none'.
             * Shading.FLAT

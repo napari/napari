@@ -163,10 +163,7 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
 
     def configure(self):
         self.hook_list.order_changed.connect(self.on_changed.emit)
-        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity)
-        self.opacity.setOpacity(1)
-
+        
     def setDescription(self, description: str):
         self.description = description
 

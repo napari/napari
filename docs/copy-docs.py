@@ -45,7 +45,6 @@ SRC = osp.dirname(__file__)
 DOC_EXTS = ['.md', '.rst', '.ipynb']
 
 TOC_IGNORE = [
-    'release',
     'api/stable',
     'images',
     '_templates',
