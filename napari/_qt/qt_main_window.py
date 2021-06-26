@@ -390,10 +390,10 @@ class Window:
         self._status_bar.addPermanentWidget(self._help)
 
         self._activity_item = ActivityToggleItem()
-        self._activity_item._activity_btn.clicked.connect(
+        self._activity_item._activityBtn.clicked.connect(
             self._toggle_activity_dock
         )
-        self._qt_window._activity_dialog.toggle_button = self._activity_item
+        self._qt_window._activity_dialog._toggleButton = self._activity_item
 
         canvas_widg = self.qt_viewer._canvas_overlay
         self._qt_window._activity_dialog.setParent(canvas_widg)
@@ -917,11 +917,11 @@ class Window:
 
     def _toggle_activity_dock(self, state):
         if state:
-            self._activity_item._activity_btn.setArrowType(Qt.DownArrow)
+            self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
             self._qt_window._activity_dialog.show()
             self._qt_window._activity_dialog.raise_()
         else:
-            self._activity_item._activity_btn.setArrowType(Qt.UpArrow)
+            self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
             self._qt_window._activity_dialog.hide()
 
     def _toggle_scale_bar_visible(self, state):

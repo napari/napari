@@ -25,7 +25,7 @@ def iterable():
 def iterable_w_context():
     """using progress with a context manager
     """
-    my_stacked_volume = np.random.random((5, 4, 500, 500))    
+    my_stacked_volume = np.random.random((5, 4, 500, 500))
     # progress provides a context manager we can use for automatic
     # teardown of our widget once iteration is complete. Wherever
     # possible, we should *always* use progress within a context

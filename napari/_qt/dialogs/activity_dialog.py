@@ -26,26 +26,26 @@ class ActivityToggleItem(QWidget):
         super().__init__(parent=parent)
         self.setLayout(QHBoxLayout())
 
-        self._activity_btn = QToolButton()
-        self._activity_btn.setObjectName("QtActivityButton")
-        self._activity_btn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self._activity_btn.setArrowType(Qt.UpArrow)
-        self._activity_btn.setText(trans._('activity'))
-        self._activity_btn.setCheckable(True)
+        self._activityBtn = QToolButton()
+        self._activityBtn.setObjectName("QtActivityButton")
+        self._activityBtn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self._activityBtn.setArrowType(Qt.UpArrow)
+        self._activityBtn.setText(trans._('activity'))
+        self._activityBtn.setCheckable(True)
 
-        self.in_progress_indicator = QLabel(trans._("in progress..."), self)
-        sp = self.in_progress_indicator.sizePolicy()
+        self._inProgressIndicator = QLabel(trans._("in progress..."), self)
+        sp = self._inProgressIndicator.sizePolicy()
         sp.setRetainSizeWhenHidden(True)
-        self.in_progress_indicator.setSizePolicy(sp)
+        self._inProgressIndicator.setSizePolicy(sp)
         load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
-        self.in_progress_indicator.setMovie(mov)
+        self._inProgressIndicator.setMovie(mov)
         mov.start()
-        self.in_progress_indicator.hide()
+        self._inProgressIndicator.hide()
 
-        self.layout().addWidget(self.in_progress_indicator)
-        self.layout().addWidget(self._activity_btn)
+        self.layout().addWidget(self._inProgressIndicator)
+        self.layout().addWidget(self._activityBtn)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
 
@@ -57,7 +57,7 @@ class ActivityDialog(QDialog):
 
     def __init__(self, parent=None, toggle_button=None):
         super().__init__(parent)
-        self.toggle_button = toggle_button
+        self._toggleButton = toggle_button
 
         self.setObjectName('Activity')
         self.setMinimumWidth(self.MIN_WIDTH)
@@ -67,21 +67,22 @@ class ActivityDialog(QDialog):
         self.setWindowFlags(Qt.SubWindow | Qt.WindowStaysOnTopHint)
         self.setModal(False)
 
-        opacity_effect = QGraphicsOpacityEffect(self)
-        opacity_effect.setOpacity(0.8)
-        self.setGraphicsEffect(opacity_effect)
+        opacityEffect = QGraphicsOpacityEffect(self)
+        opacityEffect.setOpacity(0.8)
+        self.setGraphicsEffect(opacityEffect)
 
-        self.baseWidget = QWidget()
+        self._baseWidget = QWidget()
 
-        self.activity_layout = QVBoxLayout()
-        self.activity_layout.addStretch()
-        self.baseWidget.setLayout(self.activity_layout)
+        self._activityLayout = QVBoxLayout()
+        self._activityLayout.addStretch()
+        self._baseWidget.setLayout(self._activityLayout)
+        self._baseWidget.layout().setContentsMargins(0, 0, 0, 0)
 
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.baseWidget)
+        self._scrollArea = QScrollArea()
+        self._scrollArea.setWidgetResizable(True)
+        self._scrollArea.setWidget(self._baseWidget)
 
-        self.title_bar = QLabel()
+        self._titleBar = QLabel()
 
         title = QLabel('activity', self)
         title.setObjectName('QtCustomTitleLabel')
@@ -90,22 +91,22 @@ class ActivityDialog(QDialog):
         )
         line = QFrame(self)
         line.setObjectName("QtCustomTitleBarLine")
-        title_layout = QHBoxLayout()
-        title_layout.setSpacing(4)
-        title_layout.setContentsMargins(8, 1, 8, 0)
+        titleLayout = QHBoxLayout()
+        titleLayout.setSpacing(4)
+        titleLayout.setContentsMargins(8, 1, 8, 0)
         line.setFixedHeight(1)
-        title_layout.addWidget(line)
-        title_layout.addWidget(title)
-        self.title_bar.setLayout(title_layout)
+        titleLayout.addWidget(line)
+        titleLayout.addWidget(title)
+        self._titleBar.setLayout(titleLayout)
 
-        self.base_layout = QVBoxLayout()
-        self.base_layout.addWidget(self.title_bar)
-        self.base_layout.addWidget(self.scroll)
-        self.setLayout(self.base_layout)
+        self._baseLayout = QVBoxLayout()
+        self._baseLayout.addWidget(self._titleBar)
+        self._baseLayout.addWidget(self._scrollArea)
+        self.setLayout(self._baseLayout)
 
     def add_progress_bar(self, pbar, nest_under):
         if nest_under is None:
-            self.activity_layout.addWidget(pbar)
+            self._activityLayout.addWidget(pbar)
         else:
             # this is going to be nested, remove separators
             # as the group will have its own
@@ -119,11 +120,11 @@ class ActivityDialog(QDialog):
             else:
                 new_group = ProgressBarGroup(nest_under._pbar)
                 nested_layout = new_group.layout()
-                self.activity_layout.addWidget(new_group)
+                self._activityLayout.addWidget(new_group)
             new_pbar_index = nested_layout.count() - 1
             nested_layout.insertWidget(new_pbar_index, pbar)
         # show progress indicator
-        self.toggle_button.in_progress_indicator.show()
+        self._toggleButton._inProgressIndicator.show()
         pbar.closed.connect(self.maybe_hide_progress_indicator)
 
     def move_to_bottom_right(self, offset=(8, 8)):
@@ -134,14 +135,14 @@ class ActivityDialog(QDialog):
         self.move(QPoint(sz.width(), sz.height()))
 
     def maybe_hide_progress_indicator(self):
-        pbars = self.baseWidget.findChildren(ProgressBar)
-        pbar_groups = self.baseWidget.findChildren(ProgressBarGroup)
+        pbars = self._baseWidget.findChildren(ProgressBar)
+        pbar_groups = self._baseWidget.findChildren(ProgressBarGroup)
         progress_visible = any([pbar.isVisible() for pbar in pbars])
         progress_group_visible = any(
             [pbar_group.isVisible() for pbar_group in pbar_groups]
         )
         if not progress_visible and not progress_group_visible:
-            self.toggle_button.in_progress_indicator.hide()
+            self._toggleButton._inProgressIndicator.hide()
 
 
 def get_pbar(nest_under=None, **kwargs):

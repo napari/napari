@@ -29,7 +29,7 @@ def qt_viewer_has_pbar(qt_viewer):
 
 
 def activity_button_shows_indicator(activity_dialog):
-    return activity_dialog.toggle_button.in_progress_indicator.isVisible()
+    return activity_dialog._toggleButton._inProgressIndicator.isVisible()
 
 
 @contextmanager
