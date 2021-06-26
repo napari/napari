@@ -7,7 +7,7 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton, QSlider
-from qtrangeslider import QDoubleRangeSlider
+from superqt import QDoubleRangeSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
@@ -39,7 +39,7 @@ class QtBaseImageControls(QtLayerControls):
         Label text of colorbar widget.
     colormapComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget for selecting the layer colormap.
-    contrastLimitsSlider : qtrangeslider.QRangeSlider
+    contrastLimitsSlider : superqt.QRangeSlider
         Contrast range slider widget.
     gammaSlider : qtpy.QtWidgets.QSlider
         Gamma adjustment slider widget.

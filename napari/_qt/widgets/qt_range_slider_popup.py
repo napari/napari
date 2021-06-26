@@ -1,6 +1,6 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QApplication, QHBoxLayout
-from qtrangeslider import QLabeledDoubleRangeSlider
+from superqt import QLabeledDoubleRangeSlider
 
 from ..dialogs.qt_modal import QtPopup
 

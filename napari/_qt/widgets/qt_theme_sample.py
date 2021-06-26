@@ -39,7 +39,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qtrangeslider import QRangeSlider
+from superqt import QRangeSlider
 
 from ...utils.io import imsave
 from ..qt_resources import get_stylesheet
