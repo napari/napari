@@ -3,7 +3,7 @@ from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
-from qtrangeslider import QLabeledSlider as QSlider
+from superqt import QLabeledSlider as QSlider
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager

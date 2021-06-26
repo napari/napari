@@ -5,7 +5,7 @@ import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton
-from qtrangeslider import QLabeledDoubleSlider as QSlider
+from superqt import QLabeledDoubleSlider as QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
