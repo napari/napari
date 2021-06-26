@@ -77,4 +77,7 @@ pbar_widget = QWidget()
 pbar_widget.setLayout(button_layout)
 viewer.window.add_dock_widget(pbar_widget, allowed_areas=["right"])
 
+# showing the activity dock so we can see the progress bars
+viewer.window._toggle_activity_dock(True)
+
 napari.run()

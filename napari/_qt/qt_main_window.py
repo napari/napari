@@ -915,14 +915,15 @@ class Window:
         )
         self.help_menu.addAction(about_key_bindings)
 
-    def _toggle_activity_dock(self, state):
-        if state:
-            self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
+    def _toggle_activity_dock(self, _):
+        is_currently_visible = self._qt_window._activity_dialog.isVisible()
+        if not is_currently_visible:
             self._qt_window._activity_dialog.show()
             self._qt_window._activity_dialog.raise_()
+            self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
         else:
-            self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
             self._qt_window._activity_dialog.hide()
+            self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
 
     def _toggle_scale_bar_visible(self, state):
         self.qt_viewer.viewer.scale_bar.visible = state
