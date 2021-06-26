@@ -1,7 +1,7 @@
 import re
 from collections import OrderedDict
 
-from qtpy.QtCore import QPoint, Qt, Signal
+from qtpy.QtCore import QEvent, QPoint, Qt, Signal
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QComboBox,
@@ -114,6 +114,23 @@ class ShortcutEditor(QDialog):
 
         self.setLayout(layout)
 
+    def event(self, event):
+        """Qt method override."""
+        # We reroute all ShortcutOverride events to our keyPressEvent and block
+        # any KeyPress and Shortcut event. This allows to register default
+        # Qt shortcuts for which no key press event are emitted.
+        # See spyder-ide/spyder/issues/10786.
+        # spyder code
+        if event.type() == QEvent.ShortcutOverride:
+            print('check 1')
+            self.keyPressEvent(event)
+            return True
+        elif event.type() in [QEvent.KeyPress, QEvent.Shortcut]:
+            print('check 2')
+            return True
+        else:
+            return super().event(event)
+
     def keyPressEvent(self, event):
         """Qt method override."""
 
@@ -123,12 +140,24 @@ class ShortcutEditor(QDialog):
         if len(self._qsequences) == 4:
             # QKeySequence accepts a maximum of 3 different sequences.
             return
-        # if event_key in [Qt.Key_Control, Qt.Key_Shift,
-        #                  Qt.Key_Alt, Qt.Key_Meta]:
+        if event_key in [
+            Qt.Key_Control,
+            Qt.Key_Shift,
+            Qt.Key_Alt,
+            Qt.Key_Meta,
+            Qt.Key_Return,
+            Qt.Key_Tab,
+        ]:
+            # do we want to be able to set these?
+            return
 
         translator = ShortcutTranslator()
         event_keyseq = translator.keyevent_to_keyseq(event)
+        # print('event_keyseq', event_keyseq)
+        # print('event to string', event_keyseq.toString())
         event_keystr = event_keyseq.toString(QKeySequence.PortableText)
+        # print(len(event_keystr))
+        # print('event_keystr', event_keystr)
 
         self._qsequences.append(event_keystr)
 
@@ -145,7 +174,10 @@ class ShortcutEditor(QDialog):
 
             keys = '-'.join(keys)
             self._new_keys = keys
+            print('setting key')
             item1.setText(Shortcut(keys).platform)
+            print('done setting')
+            return
 
     def restore_defaults(self):
         """Launches dialog to confirm restore choice."""
@@ -255,6 +287,13 @@ class ShortcutEditor(QDialog):
             # event is the index of the event.
             current_layer_text = self.layer_combo_box.currentText()
             layer_actions = self.key_bindings_strs[current_layer_text]
+            actions_all = layer_actions.copy()
+            if current_layer_text is not self.ALL_ACTIVE_KEYBINDINGS:
+                viewer_actions = self.key_bindings_strs[
+                    self.ALL_ACTIVE_KEYBINDINGS
+                ]
+
+                actions_all.update(viewer_actions)
 
             # get the current item from shortcuts column
             item1 = self._table.currentItem()
@@ -265,9 +304,7 @@ class ShortcutEditor(QDialog):
             current_action = self._table.item(row, self._action_col).text()
 
             replace = True
-            for row1, (action_name, action) in enumerate(
-                layer_actions.items()
-            ):
+            for row1, (action_name, action) in enumerate(actions_all.items()):
                 shortcuts = action_manager._shortcuts.get(action_name, [])
 
                 # shortcuts = [kb.lower() for kb in shortcuts]
@@ -312,7 +349,6 @@ class ShortcutEditor(QDialog):
                         self._warn_dialog._message.resize(
                             200, self._warn_dialog._message.sizeHint().height()
                         )
-                        # self._warn_dialog.setSizeHint()
 
                         self.warning_indicator = QLabel(self)
                         self.warning_indicator.setObjectName("error_label")
@@ -326,19 +362,21 @@ class ShortcutEditor(QDialog):
                         self._table.setCellWidget(
                             row1, self._icon_col, self.warning_indicator2
                         )
-                        # self._table.setItem(row, self._icon_col, item_icon1)
-                        # self._table.setItem(row1, self._icon_col, item_icon2)
+
                         self._warn_dialog.exec_()
 
                         # get the original shortcut
                         current_shortcuts = list(
                             action_manager._shortcuts.get(current_action, {})
                         )
-
+                        print('current', current_shortcuts)
+                        print(len(current_shortcuts))
                         if len(current_shortcuts) > 0:
+                            print('check 3', current_shortcuts[0])
                             item1.setText(current_shortcuts[0])
 
                         else:
+
                             item1.setText("")
 
                         self._table.setCellWidget(
@@ -347,8 +385,6 @@ class ShortcutEditor(QDialog):
                         self._table.setCellWidget(
                             row1, self._icon_col, QLabel("")
                         )
-                        # self._table.takeItem(row, self._icon_col)
-                        # self._table.takeItem(row1, self._icon_col)
 
                         break
                     else:
@@ -501,8 +537,10 @@ class ShortcutTranslator(QKeySequenceEdit):
 
     def keyevent_to_keyseq(self, event):
         """Return a QKeySequence representation of the provided QKeyEvent."""
+        print(event)
         self.keyPressEvent(event)
         event.accept()
+        print('keyseq!!!!', self.keySequence().toString())
         return self.keySequence()
 
     def keyReleaseEvent(self, event):
