@@ -1,6 +1,9 @@
+import warnings
+
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 
+from ..utils.translations import trans
 from .mesh import Mesh
 from .vispy_base_layer import VispyBaseLayer
 
@@ -27,7 +30,6 @@ class VispySurfaceLayer(VispyBaseLayer):
 
         self.reset()
         self._on_data_change()
-        self._on_shading_change()
 
     def _on_data_change(self, event=None):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
@@ -36,7 +38,10 @@ class VispySurfaceLayer(VispyBaseLayer):
             vertex_values = np.array([0])
         else:
             # Offsetting so pixels now centered
-            vertices = self.layer._data_view[:, ::-1]
+            # coerce to float to solve vispy/vispy#2007
+            vertices = np.asarray(
+                self.layer._data_view[:, ::-1], dtype=np.float32
+            )
             faces = self.layer._view_faces
             vertex_values = self.layer._view_vertex_values
 
@@ -46,6 +51,8 @@ class VispySurfaceLayer(VispyBaseLayer):
             and self.layer.ndim == 2
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
+
+        self._on_shading_change()
         self.node.set_data(
             vertices=vertices, faces=faces, vertex_values=vertex_values
         )
@@ -78,6 +85,17 @@ class VispySurfaceLayer(VispyBaseLayer):
     def _on_shading_change(self, event=None):
         if self.layer.shading == 'none':
             self.node.shading = None
+            if self.node.shading_filter is not None:
+                self.node.shading_filter._attached = False
+        elif self.layer._ndisplay < 3:
+            warnings.warn(
+                trans._(
+                    "Alternative shading modes are only available in 3D, defaulting to none"
+                )
+            )
+            self.node.shading = None
+            if self.node.shading_filter is not None:
+                self.node.shading_filter._attached = False
         else:
             self.node.shading = self.layer.shading
         self.node.mesh_data_changed()

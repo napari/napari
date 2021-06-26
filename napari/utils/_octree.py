@@ -8,10 +8,10 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
+from ..utils.translations import trans
 
 LOGGER = logging.getLogger("napari.loader")
-
 DEFAULT_OCTREE_CONFIG = {
     "loader_defaults": {
         "log_path": None,
@@ -42,14 +42,19 @@ def _get_async_config() -> Optional[dict]:
         The async config to use or None if async not specified.
     """
 
-    async_var = SETTINGS.experimental.async_
+    async_var = get_settings().experimental.async_
 
     if async_var in [True, False]:
         async_var = str(int(async_var))
 
     # NAPARI_ASYNC can now only be "0" or "1".
     if async_var not in [None, "0", "1"]:
-        raise ValueError('NAPARI_ASYNC can only be "0" or "1"')
+        raise ValueError(
+            trans._(
+                'NAPARI_ASYNC can only be "0" or "1"',
+                deferred=True,
+            )
+        )
 
     # If NAPARI_ASYNC is "1" use defaults but with octree disabled.
     if async_var == "1":
@@ -69,8 +74,8 @@ def get_octree_config() -> dict:
     dict
         The config data we should use.
     """
-
-    octree_var = SETTINGS.experimental.octree
+    settings = get_settings()
+    octree_var = settings.experimental.octree
 
     if octree_var in [True, False]:
         octree_var = str(int(octree_var))
@@ -90,6 +95,6 @@ def get_octree_config() -> dict:
         json_config = json.load(infile)
 
     # Need to set this for the preferences dialog to build.
-    SETTINGS.experimental.octree = True
+    settings.experimental.octree = True
 
     return json_config

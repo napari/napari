@@ -34,7 +34,7 @@ class QtSurfaceControls(QtBaseImageControls):
         for display_name, shading in SHADING_TRANSLATION.items():
             shading_comboBox.addItem(display_name, shading)
         index = shading_comboBox.findData(
-            SHADING_TRANSLATION[self.layer._shading]
+            SHADING_TRANSLATION[self.layer.shading]
         )
         shading_comboBox.setCurrentIndex(index)
         shading_comboBox.activated[str].connect(self.changeShading)
