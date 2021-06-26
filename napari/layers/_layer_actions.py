@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 class ContextAction(TypedDict):
     description: str
     action: Callable
-    when: str
-    hide_when: Optional[str]
+    enable_when: str
+    show_when: Optional[str]
 
 
 def _duplicate_layer(ll: LayerList):
@@ -66,59 +66,59 @@ LAYER_ACTIONS = {
     'napari:duplicate_layer': {
         'description': 'Duplicate Layer',
         'action': _duplicate_layer,
-        'when': 'True',
+        'enable_when': 'True',
     },
     'napari:convert_to_labels': {
         'description': 'Convert to Labels',
         'action': partial(_convert, type_='labels'),
-        'when': 'only_images_selected',
+        'enable_when': 'only_images_selected',
     },
     'napari:convert_to_image': {
         'description': 'Convert to Image',
         'action': partial(_convert, type_='image'),
-        'when': 'only_labels_selected',
+        'enable_when': 'only_labels_selected',
     },
     'sep0': {},
     'napari:split_stack': {
         'description': 'Split Stack',
         'action': _split_stack,
-        'when': 'image_active and active_shape[0] < 10',
-        'hide_when': 'active_is_rgb',
+        'enable_when': 'image_active and active_shape[0] < 10',
+        'show_when': 'not active_is_rgb',
     },
     'napari:split_rgb': {
         'description': 'Split RGB',
         'action': _split_stack,
-        'when': 'active_is_rgb',
-        'hide_when': 'not active_is_rgb',
+        'enable_when': 'active_is_rgb',
+        'show_when': 'active_is_rgb',
     },
     'napari:merge_stack': {
         'description': 'Merge to Stack',
         'action': _merge_stack,
-        'when': 'only_images_selected and same_shape',
+        'enable_when': 'only_images_selected and same_shape',
     },
     # 'napari:merge_to_rgb': {
     #     'description': 'Merge to RGB',
     #     'action': partial(merge_stack, rgb=True),
-    #     'when': 'only_images_selected and same_shape',
+    #     'enable_when': 'only_images_selected and same_shape',
     # },
     'sep1': {},
     'napari:link_selected_layers': {
         'description': 'Link Layers',
         'action': lambda ll: link_layers(ll.selection),
-        'when': 'selection_count > 1 and not all_layers_linked',
-        'hide_when': 'all_layers_linked',
+        'enable_when': 'selection_count > 1 and not all_layers_linked',
+        'show_when': 'not all_layers_linked',
     },
     'napari:unlink_selected_layers': {
         'description': 'Unlink Layers',
         'action': lambda ll: unlink_layers(ll.selection),
-        'when': 'all_layers_linked',
-        'hide_when': 'not all_layers_linked',
+        'enable_when': 'all_layers_linked',
+        'show_when': 'all_layers_linked',
     },
     'napari:select_linked_layers': {
         'description': 'Select Linked Layers',
         'action': lambda ll: (
             ll.selection.update(get_linked_layers(*ll.selection))
         ),
-        'when': 'linked_layers_unselected',
+        'enable_when': 'linked_layers_unselected',
     },
 }
