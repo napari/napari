@@ -187,9 +187,9 @@ class PluginListItem(QFrame):
             self.plugin_name.sizePolicy().hasHeightForWidth()
         )
         self.plugin_name.setSizePolicy(sizePolicy)
-        font16 = QFont()
-        font16.setPointSize(16)
-        self.plugin_name.setFont(font16)
+        font15 = QFont()
+        font15.setPointSize(15)
+        self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
@@ -253,11 +253,15 @@ class QPluginList(QListWidget):
         self, project_info: ProjectInfo, plugin_name=None, enabled=True
     ):
         # don't add duplicates
-        if self.findItems(project_info.name, Qt.MatchFixedString):
-            if not plugin_name:
-                return
+        if (
+            self.findItems(project_info.name, Qt.MatchFixedString)
+            and not plugin_name
+        ):
+            return
 
-        item = QListWidgetItem(project_info.name, parent=self)
+        # including summary here for sake of filtering below.
+        searchable_text = project_info.name + " " + project_info.summary
+        item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
 
@@ -295,6 +299,13 @@ class QPluginList(QListWidget):
                 lambda: self.installer.install([item.text()])
             )
             widg.row1.insertWidget(3, update_btn)
+
+    def filter(self, text: str):
+        """Filter items to those containing `text`."""
+        shown = self.findItems(text, Qt.MatchContains)
+        for i in range(self.count()):
+            item = self.item(i)
+            item.setHidden(item not in shown)
 
 
 class QtPluginDialog(QDialog):
@@ -393,8 +404,17 @@ class QtPluginDialog(QDialog):
         lay = QVBoxLayout(uninstalled)
         lay.setContentsMargins(0, 2, 0, 2)
         self.avail_label = QLabel(trans._("Available Plugins"))
-        lay.addWidget(self.avail_label)
+        self.filter = QLineEdit()
+        self.filter.setPlaceholderText("search...")
+        self.filter.setMaximumWidth(300)
+        self.filter.setClearButtonEnabled(True)
+        mid_layout = QHBoxLayout()
+        mid_layout.addWidget(self.avail_label)
+        mid_layout.addWidget(self.filter)
+        mid_layout.addStretch()
+        lay.addLayout(mid_layout)
         self.available_list = QPluginList(uninstalled, self.installer)
+        self.filter.textChanged.connect(self.available_list.filter)
         lay.addWidget(self.available_list)
 
         self.stdout_text = QTextEdit(self.v_splitter)
