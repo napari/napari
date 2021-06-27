@@ -526,10 +526,14 @@ class QtViewer(QSplitter):
         hist = get_save_history()
         dlg.setHistory(hist)
 
+        default_directory = '.'
+        if len(hist) > 0:
+            default_directory = hist[0] # home dir by default
+        
         filename, _ = dlg.getSaveFileName(
             parent=self,
             caption=trans._('Save {msg} layers', msg=msg),
-            directory=hist[0],  # home dir by default,
+            directory=default_directory,  
             filter=ext_str,
         )
 
