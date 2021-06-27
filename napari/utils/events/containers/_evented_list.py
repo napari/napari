@@ -183,10 +183,9 @@ class EventedList(TypedMutableSequence[_T]):
         """An item in the list emitted an event.  Re-emit with index"""
         if not hasattr(event, 'index'):
             try:
-                idx = self.index(event.source)
+                setattr(event, 'index', self.index(event.source))
             except ValueError:
-                idx = None
-            setattr(event, 'index', idx)
+                pass
         # reemit with this object's EventEmitter of the same type if present
         # otherwise just emit with the EmitterGroup itself
         getattr(self.events, event.type, self.events)(event)
