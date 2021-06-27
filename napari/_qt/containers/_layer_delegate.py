@@ -42,7 +42,7 @@ from qtpy.QtCore import QPoint, QSize, Qt, QTimer
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QStyledItemDelegate
 
-from ...layers._layer_actions import LAYER_ACTIONS
+from ...layers._layer_actions import _LAYER_ACTIONS
 from ..qt_resources import QColoredSVGIcon
 from ..widgets.qt_action_context_menu import QtActionContextMenu
 from ._base_item_model import ItemRole
@@ -172,14 +172,17 @@ class LayerDelegate(QStyledItemDelegate):
         # refer all other events to the QStyledItemDelegate
         return super().editorEvent(event, model, option, index)
 
-    def show_context_menu(
-        self, index: QtCore.QModelIndex, model, pos: QPoint, parent: QWidget
-    ):
+    def show_context_menu(self, index, model, pos: QPoint, parent):
+        """Show the layerlist context menu.
+
+        To add a new item to the menu, update the _LAYER_ACTIONS dict.
+        """
         if not hasattr(self, '_context_menu'):
-            self._context_menu = QtActionContextMenu(LAYER_ACTIONS)
+            self._context_menu = QtActionContextMenu(_LAYER_ACTIONS)
 
         layer_list: LayerList = model.sourceModel()._root
-        self._context_menu.update_from_context(layer_list.selection_context())
+        self._context_menu.update_from_context(layer_list._selection_context())
         action = self._context_menu.exec_(pos)
         if action is not None:
+            # action.data will be a callable that accepts a layer_list instance
             QTimer.singleShot(0, partial(action.data(), layer_list))

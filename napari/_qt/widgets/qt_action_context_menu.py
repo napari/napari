@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QMenu
 if TYPE_CHECKING:
     from qtpy.QtWidgets import QAction
 
-    from ...layers._layer_actions import ContextAction
+    from ...layers._layer_actions import ActionOrSeparator
 
 
 class QtActionContextMenu(QMenu):
@@ -73,7 +73,7 @@ class QtActionContextMenu(QMenu):
     False
     """
 
-    def __init__(self, actions: Dict[str, ContextAction], parent=None):
+    def __init__(self, actions: Dict[str, ActionOrSeparator], parent=None):
         super().__init__(parent)
         self._actions = actions
         self._menu_actions: Dict[str, QAction] = {}

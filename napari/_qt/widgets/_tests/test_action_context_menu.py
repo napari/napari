@@ -3,7 +3,7 @@ import numpy as np
 from napari._qt.widgets.qt_action_context_menu import QtActionContextMenu
 from napari.components.layerlist import LayerList
 from napari.layers import Image, Labels
-from napari.layers._layer_actions import LAYER_ACTIONS
+from napari.layers._layer_actions import _LAYER_ACTIONS
 from napari.layers.utils._link_layers import link_layers
 
 
@@ -33,28 +33,28 @@ def test_action_menu(qapp):
 
 def test_layer_action_menu(qapp):
     """Test the actions in LAYER_ACTIONS."""
-    menu = QtActionContextMenu(LAYER_ACTIONS)
+    menu = QtActionContextMenu(_LAYER_ACTIONS)
     layer_list = LayerList([])
-    menu.update_from_context(layer_list.selection_context())
+    menu.update_from_context(layer_list._selection_context())
     assert not menu._menu_actions['napari:convert_to_image'].isEnabled()
 
     layer_list.append(Labels(np.zeros((8, 8), int)))
-    menu.update_from_context(layer_list.selection_context())
+    menu.update_from_context(layer_list._selection_context())
     assert menu._menu_actions['napari:convert_to_image'].isEnabled()
     assert not menu._menu_actions['napari:convert_to_labels'].isEnabled()
 
     layer_list.append(Image(np.zeros((8, 8))))
-    menu.update_from_context(layer_list.selection_context())
+    menu.update_from_context(layer_list._selection_context())
     assert not menu._menu_actions['napari:convert_to_image'].isEnabled()
     assert menu._menu_actions['napari:convert_to_labels'].isEnabled()
     assert not menu._menu_actions['napari:link_selected_layers'].isEnabled()
 
     layer_list.select_all()
-    menu.update_from_context(layer_list.selection_context())
+    menu.update_from_context(layer_list._selection_context())
     assert menu._menu_actions['napari:link_selected_layers'].isEnabled()
     assert not menu._menu_actions['napari:unlink_selected_layers'].isEnabled()
 
     link_layers(layer_list)
-    menu.update_from_context(layer_list.selection_context())
+    menu.update_from_context(layer_list._selection_context())
     assert not menu._menu_actions['napari:link_selected_layers'].isEnabled()
     assert menu._menu_actions['napari:unlink_selected_layers'].isEnabled()

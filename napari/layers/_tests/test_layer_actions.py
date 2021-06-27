@@ -1,7 +1,7 @@
 import ast
 
-from napari.components.layerlist import CONTEXT_KEYS
-from napari.layers._layer_actions import LAYER_ACTIONS, ContextAction
+from napari.components.layerlist import _CONTEXT_KEYS
+from napari.layers._layer_actions import _LAYER_ACTIONS, ContextAction
 
 
 class assert_expression_variables(ast.NodeVisitor):
@@ -19,10 +19,12 @@ def test_layer_actions():
     """Test that all variables used in layer actions expressions are
     keys in CONTEXT_KEYS.
     """
-    names = set(CONTEXT_KEYS.keys())
+    names = set(_CONTEXT_KEYS.keys())
     valid_keys = set(ContextAction.__annotations__)
-    for action in LAYER_ACTIONS.values():
-        assert all(k in valid_keys for k in action)
+    for action in _LAYER_ACTIONS.values():
+        if action == {}:  # empty separator
+            continue
+        assert set(action) == set(valid_keys)
         expr = action.get('enable_when', None)
         if expr:
             assert_expression_variables(expr, names)

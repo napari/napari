@@ -5,15 +5,13 @@ on a layer in the LayerList.
 """
 from __future__ import annotations
 
-from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, Optional
-
-from typing_extensions import TypedDict
+from typing import TYPE_CHECKING, Callable, Dict, NewType, TypedDict, Union
 
 from napari.experimental import link_layers, unlink_layers
 from napari.layers.utils._link_layers import get_linked_layers
 
+from ..utils.translations import trans
 from .utils import stack_utils
 
 if TYPE_CHECKING:
@@ -21,6 +19,8 @@ if TYPE_CHECKING:
 
 
 def _duplicate_layer(ll: LayerList):
+    from copy import deepcopy
+
     for lay in list(ll.selection):
         new = deepcopy(lay)
         new.name += ' copy'
@@ -50,19 +50,23 @@ def _convert(ll: LayerList, type_: str):
         ll.insert(idx, Layer.create(data, {'name': lay.name}, type_))
 
 
-def _merge_stack(layer_list, rgb=False):
-    selection = list(layer_list.selection)
+def _merge_stack(ll: LayerList, rgb=False):
+    selection = list(ll.selection)
     for layer in selection:
-        layer_list.remove(layer)
+        ll.remove(layer)
     if rgb:
         new = stack_utils.merge_rgb(selection)
     else:
         new = stack_utils.images_to_stack(selection)
-    layer_list.append(new)
+    ll.append(new)
+
+
+def _select_linked_layers(ll: LayerList):
+    ll.selection.update(get_linked_layers(*ll.selection))
 
 
 class ContextAction(TypedDict):
-    """A dict that encapsulates a QAction in a QtActionContextMenu.
+    """An object that encapsulates a QAction in a QtActionContextMenu.
 
     Parameters
     ----------
@@ -81,7 +85,7 @@ class ContextAction(TypedDict):
     description: str
     action: Callable
     enable_when: str
-    show_when: Optional[str]
+    show_when: str
 
 
 # Each item in LAYER_ACTIONS will be added to the `QtActionContextMenu` created
@@ -94,59 +98,74 @@ class ContextAction(TypedDict):
 #
 # `action` must be a callable that accepts a single argument, an instance of
 # `LayerList`.
+#
+# Please don't abuse "show_when".  For best UI, the menu should be roughly the
+# same length all the time (just with various grayed out options).  `show_when`
+# works best when there two adjacent actions with opposite `show_when`
+# expressions.  See, e.g., 'link_selected_layers' and 'unlink_selected_layers'
 
-LAYER_ACTIONS: Dict[str, ContextAction] = {
+# To add a separator, add any key with a value of _SEPARATOR
+Separator = NewType('Separator', dict)
+_SEPARATOR = Separator({})
+ActionOrSeparator = Union[ContextAction, Separator]
+
+_LAYER_ACTIONS: Dict[str, ActionOrSeparator] = {
     'napari:duplicate_layer': {
-        'description': 'Duplicate Layer',
+        'description': trans._('Duplicate Layer'),
         'action': _duplicate_layer,
         'enable_when': 'True',
+        'show_when': 'True',
     },
     'napari:convert_to_labels': {
-        'description': 'Convert to Labels',
+        'description': trans._('Convert to Labels'),
         'action': partial(_convert, type_='labels'),
         'enable_when': 'only_images_selected',
+        'show_when': 'True',
     },
     'napari:convert_to_image': {
-        'description': 'Convert to Image',
+        'description': trans._('Convert to Image'),
         'action': partial(_convert, type_='image'),
         'enable_when': 'only_labels_selected',
+        'show_when': 'True',
     },
-    'sep0': {},
+    'sep0': _SEPARATOR,
     'napari:split_stack': {
-        'description': 'Split Stack',
+        'description': trans._('Split Stack'),
         'action': _split_stack,
-        'enable_when': 'image_active and active_shape[0] < 10',
+        'enable_when': 'image_active and active_layer_shape[0] < 10',
         'show_when': 'not active_is_rgb',
     },
     'napari:split_rgb': {
-        'description': 'Split RGB',
+        'description': trans._('Split RGB'),
         'action': _split_stack,
         'enable_when': 'active_is_rgb',
         'show_when': 'active_is_rgb',
     },
     'napari:merge_stack': {
-        'description': 'Merge to Stack',
+        'description': trans._('Merge to Stack'),
         'action': _merge_stack,
-        'enable_when': 'only_images_selected and same_shape',
+        'enable_when': (
+            'selection_count > 1 and only_images_selected and same_shape'
+        ),
+        'show_when': 'True',
     },
-    'sep1': {},
+    'sep1': _SEPARATOR,
     'napari:link_selected_layers': {
-        'description': 'Link Layers',
+        'description': trans._('Link Layers'),
         'action': lambda ll: link_layers(ll.selection),
         'enable_when': 'selection_count > 1 and not all_layers_linked',
         'show_when': 'not all_layers_linked',
     },
     'napari:unlink_selected_layers': {
-        'description': 'Unlink Layers',
+        'description': trans._('Unlink Layers'),
         'action': lambda ll: unlink_layers(ll.selection),
         'enable_when': 'all_layers_linked',
         'show_when': 'all_layers_linked',
     },
     'napari:select_linked_layers': {
-        'description': 'Select Linked Layers',
-        'action': lambda ll: (
-            ll.selection.update(get_linked_layers(*ll.selection))
-        ),
+        'description': trans._('Select Linked Layers'),
+        'action': _select_linked_layers,
         'enable_when': 'linked_layers_unselected',
+        'show_when': 'True',
     },
 }
