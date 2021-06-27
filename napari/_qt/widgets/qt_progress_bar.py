@@ -57,6 +57,8 @@ class ProgressBar(QWidget):
 
 
 class ProgressBarGroup(QWidget):
+    closed = QtCore.Signal()
+
     def __init__(self, pbar, parent=None) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -71,3 +73,7 @@ class ProgressBarGroup(QWidget):
         pbr_group_layout.addWidget(line)
 
         self.setLayout(pbr_group_layout)
+
+    def close(self):
+        super().close()
+        self.closed.emit()
