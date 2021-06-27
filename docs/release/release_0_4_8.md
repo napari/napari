@@ -188,7 +188,7 @@ and
   been reduced. (#2552)
 - The ipy interactive setting has been removed from the preferences panel.
   (#2605) You can still turn it off from the API with
-  `napari.utils.settings.SETTINGS.ipy_interactive = False`, but this is not
+  `napari.utils.settings.get_settings().ipy_interactive = False`, but this is not
   recommended.
 - The `n-dimensional` tick box in the Labels layer controls has been removed.
   (#2609) Use "n edit dims" instead.

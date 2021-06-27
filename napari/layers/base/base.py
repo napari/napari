@@ -18,6 +18,7 @@ from ...utils.transforms import Affine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
+    coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
 )
@@ -51,9 +52,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        AffineTransform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -105,9 +106,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then translate, scale, rotate, and
-        shear values are ignored.
+        the final column is a length N translation vector and a 1 or a napari
+        AffineTransform object. Applied as an extra transform on top of the
+        provided scale, rotate, and shear values.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
@@ -195,53 +196,36 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._ndisplay = 2
         self._dims_order = list(range(ndim))
 
-        # Create a transform chain consisting of three transforms:
-        # 1. `tile2data`: An initial transform only needed displaying tiles
+        # Create a transform chain consisting of four transforms:
+        # 1. `tile2data`: An initial transform only needed to display tiles
         #   of an image. It maps pixels of the tile into the coordinate space
         #   of the full resolution data and can usually be represented by a
         #   scale factor and a translation. A common use case is viewing part
         #   of lower resolution level of a multiscale image, another is using a
         #   downsampled version of an image when the full image size is larger
         #   than the maximum allowed texture size of your graphics card.
-        # 2. `data2world`: The main transform mapping data to a world-like
-        #   coordinate.
-        # 3. `world2grid`: An additional transform mapping world-coordinates
+        # 2. `data2physical`: The main transform mapping data to a world-like
+        #   physical coordinate that may also encode acquisition parameters or
+        #   sample spacing.
+        # 3. `physical2world`: An extra transform applied in world-coordinates that
+        #   typically aligns this layer with another.
+        # 4. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
-
-        # First create the `data2world` transform from the input parameters
-        if affine is None:
-            if scale is None:
-                scale = [1] * ndim
-            if translate is None:
-                translate = [0] * ndim
-            data2world_transform = Affine(
-                scale,
-                translate,
-                rotate=rotate,
-                shear=shear,
-                name='data2world',
-            )
-        elif isinstance(affine, np.ndarray) or isinstance(affine, list):
-            data2world_transform = Affine(
-                affine_matrix=np.array(affine),
-                name='data2world',
-            )
-        elif isinstance(affine, Affine):
-            affine.name = 'data2world'
-            data2world_transform = affine
-        else:
-            raise TypeError(
-                trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine, ndarray, or None. Got {dtype}',
-                    deferred=True,
-                    dtype=type(affine),
-                )
-            )
-
+        if scale is None:
+            scale = [1] * ndim
+        if translate is None:
+            translate = [0] * ndim
         self._transforms = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
-                data2world_transform,
+                Affine(
+                    scale,
+                    translate,
+                    rotate=rotate,
+                    shear=shear,
+                    name='data2physical',
+                ),
+                coerce_affine(affine, ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -410,67 +394,57 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
-        return self._transforms['data2world'].scale
+        return self._transforms['data2physical'].scale
 
     @scale.setter
     def scale(self, scale):
-        self._transforms['data2world'].scale = np.array(scale)
+        self._transforms['data2physical'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
 
     @property
     def translate(self):
         """list: Factors to shift the layer by in units of world coordinates."""
-        return self._transforms['data2world'].translate
+        return self._transforms['data2physical'].translate
 
     @translate.setter
     def translate(self, translate):
-        self._transforms['data2world'].translate = np.array(translate)
+        self._transforms['data2physical'].translate = np.array(translate)
         self._update_dims()
         self.events.translate()
 
     @property
     def rotate(self):
         """array: Rotation matrix in world coordinates."""
-        return self._transforms['data2world'].rotate
+        return self._transforms['data2physical'].rotate
 
     @rotate.setter
     def rotate(self, rotate):
-        self._transforms['data2world'].rotate = rotate
+        self._transforms['data2physical'].rotate = rotate
         self._update_dims()
         self.events.rotate()
 
     @property
     def shear(self):
-        """array: Sheer matrix in world coordinates."""
-        return self._transforms['data2world'].shear
+        """array: Shear matrix in world coordinates."""
+        return self._transforms['data2physical'].shear
 
     @shear.setter
     def shear(self, shear):
-        self._transforms['data2world'].shear = shear
+        self._transforms['data2physical'].shear = shear
         self._update_dims()
         self.events.shear()
 
     @property
     def affine(self):
-        """napari.utils.transforms.Affine: Affine transform."""
-        return self._transforms['data2world']
+        """napari.utils.transforms.Affine: Extra affine transform to go from physical to world coordinates."""
+        return self._transforms['physical2world']
 
     @affine.setter
     def affine(self, affine):
-        if isinstance(affine, np.ndarray) or isinstance(affine, list):
-            self._transforms['data2world'].affine_matrix = np.array(affine)
-        elif isinstance(affine, Affine):
-            affine.name = 'data2world'
-            self._transforms['data2world'] = affine
-        else:
-            raise TypeError(
-                trans._(
-                    'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
-                    deferred=True,
-                    dtype=type(affine),
-                )
-            )
+        self._transforms['physical2world'] = coerce_affine(
+            affine, self.ndim, name='physical2world'
+        )
         self._update_dims()
         self.events.affine()
 
@@ -613,7 +587,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
             -1, D
         )
-        full_world_extent = self._transforms['data2world'](full_data_extent)
+        full_world_extent = self._data_to_world(full_data_extent)
         world_extent = np.array(
             [
                 np.min(full_world_extent, axis=0),
@@ -629,13 +603,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return Extent(
             data=data,
             world=self._get_extent_world(data),
-            step=abs(self.scale),
+            step=abs(self._data_to_world.scale),
         )
 
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        inv_transform = self._transforms['data2world'].inverse
+        inv_transform = self._data_to_world.inverse
 
         if self.ndim > self._ndisplay:
             # Subspace spanned by non displayed dimensions
@@ -994,7 +968,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Parameters
         ----------
         position : tuple, list, 1D array
-            Position in world coorindates. If longer then the
+            Position in world coordinates. If longer then the
             number of dimensions of the layer, the later
             dimensions will be used.
 
@@ -1010,9 +984,20 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(self._transforms[1:].simplified.inverse(coords))
 
+    @property
+    def _data_to_world(self) -> Affine:
+        """The transform from data to world coordinates.
+
+        This affine transform is composed from the affine property and the
+        other transform properties in the following order:
+
+        affine * (rotate * shear * scale + translate)
+        """
+        return self._transforms[1:3].simplified
+
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
-        For layer multiscale determing if a new resolution level or tile is
+        For layer multiscale determining if a new resolution level or tile is
         required.
         Parameters
         ----------
@@ -1077,7 +1062,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return [coordinates[i] for i in self._dims_displayed]
 
     def get_status(self, position, *, world=False):
-        """Status message of the data at a coordinate position.
+        """
+        Status message of the data at a coordinate position.
 
         Parameters
         ----------
@@ -1094,6 +1080,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         value = self.get_value(position, world=world)
         return generate_layer_status(self.name, position, value)
+
+    def _get_tooltip_text(self, position, *, world=False):
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return ""
 
     def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.

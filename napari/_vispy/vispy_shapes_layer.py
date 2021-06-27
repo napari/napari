@@ -2,7 +2,7 @@ import numpy as np
 from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
 
 from ..utils.events import disconnect_events
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ._text_utils import update_text
 from .vispy_base_layer import VispyBaseLayer
 
@@ -59,8 +59,8 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_highlight_change(self, event=None):
-
-        self.layer._highlight_width = SETTINGS.appearance.highlight_thickness
+        settings = get_settings()
+        self.layer._highlight_width = settings.appearance.highlight_thickness
 
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
@@ -85,7 +85,7 @@ class VispyShapesLayer(VispyBaseLayer):
             width,
         ) = self.layer._compute_vertices_and_box()
 
-        width = SETTINGS.appearance.highlight_thickness
+        width = settings.appearance.highlight_thickness
 
         if vertices is None or len(vertices) == 0:
             vertices = np.zeros((1, self.layer._ndisplay))
@@ -156,7 +156,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node.set_gl_state(self.layer.blending)
 
         text_node = self._get_text_node()
-        text_node.set_gl_state(self.layer.text.blending)
+        text_node.set_gl_state(str(self.layer.text.blending))
         self.node.update()
 
     def close(self):

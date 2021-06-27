@@ -435,6 +435,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     _known_arrays = {
         'numpy.ndarray': np.array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
+        'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
         'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
     }

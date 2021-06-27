@@ -4,6 +4,7 @@ docs:
 	rm -rf docs/_build/
 	find docs/api ! -name 'index.rst' -type f -exec rm -f {} +
 	pip install -qr docs/requirements.txt
+	python docs/update_docs.py
 	jb build docs
 
 typestubs:

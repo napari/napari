@@ -33,7 +33,9 @@ class Labels(_ImageBase):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or multiscale. Must be integer type or bools
+        Labels data as an array or multiscale. Must be integer type or bools.
+        Please note multiscale rendering is only supported in 2D. In 3D, only
+        the lowest resolution scale is displayed.
     num_colors : int
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)} or DataFrame
@@ -81,18 +83,24 @@ class Labels(_ImageBase):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
 
     Attributes
     ----------
-    data : array
-        Integer label data. Can be N dimensional. Every pixel contains
-        an integer ID corresponding to the region it belongs to. The label 0 is
-        rendered as transparent.
+    data : array or list of array
+        Integer label data as an array or multiscale. Can be N dimensional.
+        Every pixel contains an integer ID corresponding to the region it
+        belongs to. The label 0 is rendered as transparent. Please note
+        multiscale rendering is only supported in 2D. In 3D, only
+        the lowest resolution scale is displayed.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     metadata : dict
         Labels metadata.
     num_colors : int
@@ -323,13 +331,15 @@ class Labels(_ImageBase):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
+        self.cursor_size = self._calculate_cursor_size()
+        self.events.brush_size()
+
+    def _calculate_cursor_size(self):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
-        data2world_scale = np.mean(
-            [self.scale[d] for d in self._dims_displayed]
-        )
-        self.cursor_size = abs(self.brush_size * data2world_scale)
-        self.events.brush_size()
+        scale = self._data_to_world.scale
+        average_scale = np.mean([scale[d] for d in self._dims_displayed])
+        return abs(self.brush_size * average_scale)
 
     @property
     def seed(self):
@@ -400,7 +410,9 @@ class Labels(_ImageBase):
         index: dict
             index mapping dictionary
         """
-        if properties is None or not properties:
+        if properties is None or (
+            isinstance(properties, dict) and not len(properties)
+        ):
             # None or empty dict properties
             return {}, {}
         if isinstance(properties, dict):
@@ -675,12 +687,7 @@ class Labels(_ImageBase):
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor = str(self._brush_shape)
-            # Convert from brush size in data coordinates to
-            # cursor size in world coordinates
-            data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims_displayed]
-            )
-            self.cursor_size = abs(self.brush_size * data2world_scale)
+            self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
@@ -695,12 +702,7 @@ class Labels(_ImageBase):
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor = str(self._brush_shape)
-            # Convert from brush size in data coordinates to
-            # cursor size in world coordinates
-            data2world_scale = np.mean(
-                [self.scale[d] for d in self._dims_displayed]
-            )
-            self.cursor_size = abs(self.brush_size * data2world_scale)
+            self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, drag to erase a label'
@@ -1045,7 +1047,7 @@ class Labels(_ImageBase):
             return
 
         # If requested new label doesn't change old label then return
-        old_label = self.data[int_coord]
+        old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label or (
             self.preserve_labels and old_label != self._background_label
         ):
@@ -1056,7 +1058,7 @@ class Labels(_ImageBase):
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
         data_slice = tuple(data_slice_list)
-        labels = self.data[data_slice]
+        labels = np.asarray(self.data[data_slice])
         slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
         matches = labels == old_label
@@ -1201,7 +1203,7 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position=None, world=False):
+    def get_status(self, position=None, *, world=False):
         """Status message of the data at a coordinate position.
 
         Parameters
@@ -1220,22 +1222,53 @@ class Labels(_ImageBase):
         msg = super().get_status(position, world=world)
 
         # if this labels layer has properties
-        if self._label_index and self._properties:
-            value = self.get_value(position, world=world)
-            # if the cursor is not outside the image or on the background
-            if value is not None and value != 0:
-                label_value = value[1] if self.multiscale else value
-                if label_value in self._label_index:
-                    idx = self._label_index[label_value]
-                    for k, v in self._properties.items():
-                        if k != 'index':
-                            try:
-                                msg += f', {k}: {v[idx]}'
-                            except IndexError:
-                                pass
-                else:
-                    msg += ' ' + trans._('[No Properties]')
+        properties = self._get_properties(position, world)
+        if properties:
+            msg += "; " + ", ".join(properties)
+
         return msg
+
+    def _get_tooltip_text(self, position, *, world=False):
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return "\n".join(self._get_properties(position, world))
+
+    def _get_properties(self, position, world) -> list:
+        if not (self._label_index and self._properties):
+            return []
+
+        value = self.get_value(position, world=world)
+        # if the cursor is not outside the image or on the background
+        if value is None:
+            return []
+
+        label_value = value[1] if self.multiscale else value
+        if label_value not in self._label_index:
+            return [trans._('[No Properties]')]
+
+        idx = self._label_index[label_value]
+        return [
+            f'{k}: {v[idx]}'
+            for k, v in self._properties.items()
+            if k != 'index'
+            and len(v) > idx
+            and v[idx] is not None
+            and not (isinstance(v[idx], float) and np.isnan(v[idx]))
+        ]
 
 
 if config.async_octree:

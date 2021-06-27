@@ -3,6 +3,8 @@ from typing import Iterable, Optional
 
 from tqdm import tqdm
 
+from napari._qt.widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
+
 from ..utils.translations import trans
 
 _tqdm_kwargs = {
@@ -63,18 +65,19 @@ class progress(tqdm):
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
+        nest_under: Optional[ProgressBar] = None,
         *args,
         **kwargs,
     ) -> None:
         kwargs = kwargs.copy()
         pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
+        self._group_token = None
 
         # get progress bar added to viewer
         try:
             from .widgets.qt_progress_bar import get_pbar  # noqa
 
-            pbar = get_pbar(**pbar_kwargs)
-        # if no qt we revert to standard tqdm
+            pbar = get_pbar(nest_under=nest_under, **pbar_kwargs)
         except ImportError:
             pbar = None
 
@@ -109,6 +112,15 @@ class progress(tqdm):
             self._pbar._set_value(self.n)
             self._pbar._set_eta(etas)
 
+    def increment_with_overflow(self):
+        """Update if not exceeding total, else set indeterminate range."""
+        if self.n == self.total:
+            self.total = 0
+            if self.has_viewer:
+                self._pbar.setRange(0, 0)
+        else:
+            self.update(1)
+
     def set_description(self, desc):
         """Update progress bar description"""
         super().set_description(desc, refresh=True)
@@ -120,8 +132,17 @@ class progress(tqdm):
         if self.disable:
             return
         if self.has_viewer:
+            parent_widget = self._pbar.parent()
             self._pbar.close()
             self._pbar.deleteLater()
+            if isinstance(parent_widget, ProgressBarGroup):
+                pbar_children = [
+                    child
+                    for child in parent_widget.children()
+                    if isinstance(child, ProgressBar)
+                ]
+                if not any(child.isVisible() for child in pbar_children):
+                    parent_widget.close()
         super().close()
 
 
