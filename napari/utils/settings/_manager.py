@@ -179,11 +179,9 @@ class SettingsManager(_SettingsMixin):
                     )
                 )
 
-            _section_defaults = {}
-            for option, option_data in setting.schema()["properties"].items():
-                _section_defaults[option] = option_data.get("default", None)
-
-            self._defaults[section] = setting(**_section_defaults)
+            self._defaults[section] = setting(
+                **{k: v.get_default() for k, v in setting.__fields__.items()}
+            )
             model = setting()
             model.events.connect(lambda x: self._save())
             self._settings[section] = model
