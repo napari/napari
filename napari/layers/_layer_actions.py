@@ -6,7 +6,9 @@ on a layer in the LayerList.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, NewType, TypedDict, Union
+from typing import TYPE_CHECKING, Callable, Dict, NewType, Union
+
+from typing_extensions import TypedDict
 
 from napari.experimental import link_layers, unlink_layers
 from napari.layers.utils._link_layers import get_linked_layers
