@@ -12,7 +12,8 @@ def get_text_anchors(
     ndisplay: int,
     anchor: Anchor = Anchor.CENTER,
 ) -> np.ndarray:
-    text_anchor_func = TEXT_ANCHOR_CALCULATION[anchor]
+    # Explicitly convert to an Anchor so that string values can be used.
+    text_anchor_func = TEXT_ANCHOR_CALCULATION[Anchor(anchor)]
     text_coords, anchor_x, anchor_y = text_anchor_func(view_data, ndisplay)
     return text_coords, anchor_x, anchor_y
 
@@ -155,7 +156,9 @@ TEXT_ANCHOR_CALCULATION = {
 }
 
 
-def format_text_properties(text: str, n_text: int, properties: dict = {}):
+def format_text_properties(text: str, n_text: int, properties: dict = None):
+    if properties is None:
+        properties = {}
 
     # If the text value is a property key, the text is the property values
     if text in properties:

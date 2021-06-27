@@ -202,4 +202,4 @@ def test_magicgui_imports(tmp_path):
     """
     script_path = tmp_path / 'script.py'
     script_path.write_text(dedent(script))
-    subprocess.run([sys.executable, script_path], check=True)
+    subprocess.run([sys.executable, str(script_path)], check=True)

@@ -18,7 +18,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import dataframe_to_properties
-from ..utils.text import TextManager
+from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
 from ._points_utils import create_box, fix_data_points, points_to_squares
@@ -1048,7 +1048,7 @@ class Points(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
                 'property_choices': self._property_choices,
-                'text': self.text._get_state(),
+                'text': self.text.dict(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'ndim': self.ndim,
@@ -1562,7 +1562,7 @@ class Points(Layer):
             )
 
             if len(self._clipboard['text']) > 0:
-                self.text._values = np.concatenate(
+                self.text.values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
 
