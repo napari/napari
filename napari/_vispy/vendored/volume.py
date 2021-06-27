@@ -280,7 +280,7 @@ void main() {{
 MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
-        int maxi = 0;  // Where the maximum value was encountered
+        int maxi = -1;  // Where the maximum value was encountered
         """,
     in_loop="""
         if( val > maxval ) {
@@ -290,12 +290,14 @@ MIP_SNIPPETS = dict(
         """,
     after_loop="""
         // Refine search for max value
-        loc = start_loc + step * (float(maxi) - 0.5);
-        for (int i=0; i<10; i++) {
-            maxval = max(maxval, $sample(u_volumetex, loc).g);
-            loc += step * 0.1;
-        }
-        gl_FragColor = applyColormap(maxval);
+        if ( maxi > -1 ) {{
+            loc = start_loc + step * (float(maxi) - 0.5);
+            for (int i=0; i<10; i++) {
+                maxval = max(maxval, $sample(u_volumetex, loc).g);
+                loc += step * 0.1;
+            }
+            gl_FragColor = applyColormap(maxval);
+        }}
         """,
 )
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)

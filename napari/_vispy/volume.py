@@ -35,7 +35,7 @@ frag_dict['attenuated_mip'] = ATTENUATED_MIP_FRAG_SHADER
 MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
-        int mini = 0;  // Where the minimum value was encountered
+        int mini = -1;  // Where the minimum value was encountered
         """,
     in_loop="""
         if( val < minval ) {
@@ -44,13 +44,15 @@ MINIP_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        // Refine search for min value
-        loc = start_loc + step * (float(mini) - 0.5);
-        for (int i=0; i<10; i++) {
-            minval = min(minval, $sample(u_volumetex, loc).g);
-            loc += step * 0.1;
-        }
-        gl_FragColor = applyColormap(minval);
+        if (mini > -1) {{
+            // Refine search for min value
+            loc = start_loc + step * (float(mini) - 0.5);
+            for (int i=0; i<10; i++) {
+                minval = min(minval, $sample(u_volumetex, loc).g);
+                loc += step * 0.1;
+            }
+            gl_FragColor = applyColormap(minval);
+        }}
         """,
 )
 
