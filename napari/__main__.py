@@ -4,25 +4,20 @@ napari command line viewer.
 import argparse
 import logging
 import os
-import platform
 import runpy
 import sys
 import warnings
 from ast import literal_eval
-from distutils.version import StrictVersion
 from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
-
-from napari import Viewer, __version__, layers, run, view_path
-from napari.components.viewer_model import valid_add_kwargs
-from napari.utils import citation_text, sys_info
-from napari.utils.settings import SETTINGS
 
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --info"
+        from napari.utils import sys_info
+
         logging.basicConfig(level=logging.WARNING)
         print(sys_info())
         from .plugins import plugin_manager
@@ -71,6 +66,8 @@ class PluginInfoAction(argparse.Action):
 class CitationAction(argparse.Action):
     def __call__(self, *args, **kwargs):
         # prevent unrelated INFO logs when doing "napari --citation"
+        from napari.utils import citation_text
+
         logging.basicConfig(level=logging.WARNING)
         print(citation_text)
         sys.exit()
@@ -93,6 +90,8 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
         {key: val} dict suitable for the viewer.add_* methods where ``val``
         is a ``literal_eval`` result, or string.
     """
+
+    from napari.components.viewer_model import valid_add_kwargs
 
     out: Dict[str, Any] = dict()
     valid = set.union(*valid_add_kwargs().values())
@@ -127,6 +126,10 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
 def parse_sys_argv():
     """Parse command line arguments."""
+
+    from napari import __version__, layers
+    from napari.components.viewer_model import valid_add_kwargs
+
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
@@ -206,6 +209,11 @@ def parse_sys_argv():
         action='store_true',
         help='reset settings to default values.',
     )
+    parser.add_argument(
+        '--settings-path',
+        type=Path,
+        help='use specific path to store and load settings.',
+    )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -219,6 +227,9 @@ def parse_sys_argv():
 
 
 def _run():
+    from napari import run, view_path
+    from napari.utils.settings import get_settings
+
     """Main program."""
     args, kwargs = parse_sys_argv()
 
@@ -231,8 +242,9 @@ def _run():
         datefmt='%H:%M:%S',
     )
 
+    settings = get_settings(path=args.settings_path)
     if args.reset:
-        SETTINGS.reset()
+        settings.reset()
         sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:
@@ -310,6 +322,7 @@ def _run():
 
 def _run_plugin_module(mod, plugin_name):
     """Register `mod` as a plugin, find/create viewer, and run napari."""
+    from napari import Viewer, run
     from napari.plugins import plugin_manager
 
     plugin_manager.register(mod, name=plugin_name)
@@ -370,6 +383,9 @@ def main():
     # See https://github.com/napari/napari/pull/1554 and
     # https://github.com/napari/napari/issues/380#issuecomment-659656775
     # and https://github.com/ContinuumIO/anaconda-issues/issues/199
+    import platform
+    from distutils.version import StrictVersion
+
     _MACOS_AT_LEAST_CATALINA = sys.platform == "darwin" and StrictVersion(
         platform.release()
     ) > StrictVersion('19.0.0')

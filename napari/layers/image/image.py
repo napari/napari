@@ -1,7 +1,10 @@
 """Image class.
 """
+from __future__ import annotations
+
 import types
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -9,6 +12,7 @@ from scipy import ndimage as ndi
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -17,13 +21,8 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-# Use special ChunkedSlideData for async.
-if config.async_loading:
-    from .experimental._chunked_slice_data import ChunkedSliceData
-
-    SliceDataClass = ChunkedSliceData
-else:
-    SliceDataClass = ImageSliceData
+if TYPE_CHECKING:
+    from ...components.experimental.chunk import ChunkRequest
 
 
 # It is important to contain at least one abstractmethod to properly exclude this class
@@ -35,10 +34,12 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     Parameters
     ----------
     data : array or list of array
-        Image data. Can be N dimensional. If the last dimension has length
+        Image data. Can be N >= 2 dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        a multiscale image.
+        a multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -86,7 +87,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -102,7 +103,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
 
     Attributes
     ----------
@@ -110,7 +113,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreasing in shape then the data is treated as a
-        multiscale image.
+        multiscale image. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -121,7 +126,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
@@ -185,6 +192,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
+
+        if getattr(data, 'ndim', 2) < 2:
+            raise ValueError(
+                trans._('Image data must have at least 2 dimensions.')
+            )
 
         # Determine if data is a multiscale
         if multiscale is None:
@@ -521,8 +533,15 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._empty = False
 
         if self.multiscale:
-            # If 3d redering just show lowest level of multiscale
             if self._ndisplay == 3:
+                # If 3d redering just show lowest level of multiscale
+                warnings.warn(
+                    trans._(
+                        'Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed',
+                        deferred=True,
+                    ),
+                    category=UserWarning,
+                )
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
@@ -586,10 +605,21 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             thumbnail_source = None
 
         # Load our images, might be sync or async.
-        data = SliceDataClass(self, image_indices, image, thumbnail_source)
+        data = self._SliceDataClass(
+            self, image_indices, image, thumbnail_source
+        )
         self._load_slice(data)
 
-    def _load_slice(self, data: SliceDataClass):
+    @property
+    def _SliceDataClass(self):
+        # Use special ChunkedSlideData for async.
+        if config.async_loading:
+            from .experimental._chunked_slice_data import ChunkedSliceData
+
+            return ChunkedSliceData
+        return ImageSliceData
+
+    def _load_slice(self, data: ImageSliceData):
         """Load the image and maybe thumbnail source.
 
         Parameters
@@ -604,7 +634,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # property is now false, since the load is in progress.
             self.events.loaded()
 
-    def _on_data_loaded(self, data: SliceDataClass, sync: bool) -> None:
+    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.
 
         This routine is called synchronously from _load_async() above, or
@@ -749,7 +779,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     # For async we add an on_chunk_loaded() method.
     if config.async_loading:
-        from ...components.experimental.chunk import ChunkRequest
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:
             """An asynchronous ChunkRequest was loaded.
@@ -760,7 +789,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
                 This request was loaded.
             """
             # Convert the ChunkRequest to SliceData and use it.
-            data = SliceDataClass.from_request(self, request)
+            data = self._SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
 
 

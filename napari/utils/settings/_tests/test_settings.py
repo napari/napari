@@ -3,8 +3,14 @@
 
 import pydantic
 import pytest
+from yaml import safe_dump, safe_load
 
-from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
+import napari.utils.settings._manager as _manager
+from napari.utils.settings._manager import (
+    CORE_SETTINGS,
+    SettingsManager,
+    _SettingsProxy,
+)
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -15,22 +21,14 @@ def settings(tmp_path):
 
 def test_settings_file(tmp_path):
     SettingsManager(tmp_path, save_to_disk=True)
-    fpath = tmp_path / "settings.yaml"
+    fpath = tmp_path / SettingsManager._FILENAME
     assert fpath.exists()
 
 
 def test_settings_file_not_created(tmp_path):
     SettingsManager(tmp_path, save_to_disk=False)
-    fpath = tmp_path / "settings.yaml"
+    fpath = tmp_path / SettingsManager._FILENAME
     assert not fpath.exists()
-
-
-def test_settings_get_section_name():
-    class SomeSectionSettings:
-        pass
-
-    section = SettingsManager._get_section_name(SomeSectionSettings)
-    assert section == "somesection"
 
 
 def test_settings_loads(tmp_path):
@@ -162,3 +160,77 @@ def test_model_fields_are_annotated():
 
     if errors:
         raise ValueError("\n\n".join(errors))
+
+
+def test_settings_env_variables(tmp_path, monkeypatch):
+    value = 'light'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    assert CORE_SETTINGS[0]().theme == value
+    assert settings.appearance.theme == value
+
+
+def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
+    data = """
+appearance:
+  theme: light
+"""
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(data)
+
+    value = 'dark'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    settings._save()
+    with open(tmp_path / SettingsManager._FILENAME) as fh:
+        saved_data = fh.read()
+
+    model_values = settings._to_dict(safe=True)
+    saved_values = safe_load(saved_data)
+
+    assert model_values["appearance"]["theme"] == value
+    assert saved_values.get("appearance", {}).get("theme", "") == ""
+
+
+def test_settings_env_variables_fails(tmp_path, monkeypatch):
+    value = 'FOOBAR'
+    monkeypatch.setenv('NAPARI_THEME', value)
+    with pytest.raises(pydantic.error_wrappers.ValidationError):
+        SettingsManager(tmp_path, save_to_disk=True)
+
+
+def test_core_settings_are_class_variables_in_settings_manager():
+    for setting in CORE_SETTINGS:
+        schema = setting.schema()
+        section = schema["section"]
+        assert section in SettingsManager.__annotations__
+        assert setting == SettingsManager.__annotations__[section]
+
+
+def test_settings_only_saves_non_default_values(tmp_path):
+    settings = SettingsManager(tmp_path, save_to_disk=False)
+    all_data = settings._to_dict(safe=True)
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(safe_dump(all_data))
+
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    settings._save()
+
+    with open(tmp_path / SettingsManager._FILENAME) as fh:
+        data = safe_load(fh.read())
+
+    assert all_data.keys() == data.keys()
+    assert all_data != data
+
+
+def test_get_settings(monkeypatch, tmp_path):
+    monkeypatch.setattr(_manager, "SETTINGS", _SettingsProxy())
+    settings = _manager.get_settings(tmp_path)
+    assert settings._config_path == tmp_path
+
+
+def test_get_settings_fails(monkeypatch, tmp_path):
+    monkeypatch.setattr(_manager, "SETTINGS", _SettingsProxy())
+    _manager.get_settings(tmp_path)
+    with pytest.raises(Exception):
+        _manager.get_settings(tmp_path)

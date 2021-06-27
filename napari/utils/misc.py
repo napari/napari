@@ -435,6 +435,7 @@ def pick_equality_operator(obj) -> Callable[[Any, Any], bool]:
     _known_arrays = {
         'numpy.ndarray': np.array_equal,  # numpy.ndarray
         'dask.Array': operator.is_,  # dask.array.core.Array
+        'dask.Delayed': operator.is_,  # dask.delayed.Delayed
         'zarr.Array': operator.is_,  # zarr.core.Array
         'xarray.DataArray': np.array_equal,  # xarray.core.dataarray.DataArray
     }
@@ -477,3 +478,35 @@ def dir_hash(path: Union[str, Path], include_paths=True, ignore_hidden=True):
                 _hash.update(''.join(fparts).encode())
 
     return _hash.hexdigest()
+
+
+def _combine_signatures(
+    *objects: Callable, return_annotation=inspect.Signature.empty, exclude=()
+) -> inspect.Signature:
+    """Create combined Signature from objects, excluding names in `exclude`.
+
+    Parameters
+    ----------
+    *objects : Callable
+        callables whose signatures should be combined
+    return_annotation : [type], optional
+        The return annotation to use for combined signature, by default
+        inspect.Signature.empty (as it's ambiguous)
+    exclude : tuple, optional
+        Parameter names to exclude from the combined signature (such as
+        'self'), by default ()
+
+    Returns
+    -------
+    inspect.Signature
+        Signature object with the combined signature. Reminder, str(signature)
+        provides a very nice repr for code generation.
+    """
+    params = itertools.chain(
+        *(inspect.signature(o).parameters.values() for o in objects)
+    )
+    new_params = sorted(
+        (p for p in params if p.name not in exclude),
+        key=lambda p: p.kind,
+    )
+    return inspect.Signature(new_params, return_annotation=return_annotation)

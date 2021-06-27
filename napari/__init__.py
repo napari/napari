@@ -1,61 +1,54 @@
+import os
+
 try:
     from ._version import version as __version__
 except ImportError:
     __version__ = "not-installed"
 
-
-from .viewer import Viewer  # isort:skip
-
-# this unused import is here to fix a very strange bug.
-# there is some mysterious magical goodness in scipy stats that needs
-# to be imported early.
-# see: https://github.com/napari/napari/issues/925
-# see: https://github.com/napari/napari/issues/1347
-from scipy import stats  # noqa: F401
-
-# register napari object types with magicgui if it is installed
-from .utils import _magicgui, sys_info
-from .utils.notifications import notification_manager
-
-# This must come before .plugins
-_magicgui.register_types_with_magicgui()
-
-from ._event_loop import gui_qt, run
-from .plugins.io import save_layers
-from .view_layers import (  # type: ignore
-    view_image,
-    view_labels,
-    view_path,
-    view_points,
-    view_shapes,
-    view_surface,
-    view_tracks,
-    view_vectors,
-)
-
-del _magicgui
-
-
-del stats
-
-
-import os
-
+# Allows us to use pydata/sparse arrays as layer data
 os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
+del os
 
-
-__all__ = [
-    'Viewer',
-    'save_layers',
-    'sys_info',
-    'view_image',
-    'view_labels',
-    'view_path',
-    'view_points',
-    'view_shapes',
-    'view_surface',
-    'view_tracks',
-    'view_vectors',
-    'gui_qt',
-    'run',
+# Add everything that needs to be accessible from the napari namespace here.
+_proto_all_ = [
+    '__version__',
+    'components',
+    'experimental',
+    'layers',
+    'qt',
+    'utils',
 ]
+
+_submod_attrs = {
+    '_event_loop': ['gui_qt', 'run'],
+    'plugins.io': ['save_layers'],
+    'utils': ['sys_info'],
+    'utils.notifications': ['notification_manager'],
+    'view_layers': [
+        'view_image',
+        'view_labels',
+        'view_path',
+        'view_points',
+        'view_shapes',
+        'view_surface',
+        'view_tracks',
+        'view_vectors',
+    ],
+    'viewer': ['Viewer'],
+}
+
+# All imports in __init__ are hidden inside of `__getattr__` to prevent
+# importing the full chain of packages required when calling `import napari`.
+#
+# This has the biggest implications for running `napari` on the command line
+# (or running `python -m napari`) since `napari.__init__` gets imported
+# on the way to `napari.__main__`. Importing everything here has the
+# potential to take a second or more, so we definitely don't want to import it
+# just to access the CLI (which may not actually need any of the imports)
+
+from ._lazy import install_lazy
+
+__getattr__, __dir__, __all__ = install_lazy(
+    __name__, _proto_all_, _submod_attrs
+)
+del install_lazy

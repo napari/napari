@@ -26,7 +26,6 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
-from ..types import PathOrPaths
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -34,6 +33,7 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
+from ..utils.settings import SETTINGS
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll
@@ -45,6 +45,7 @@ from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 from .text_overlay import TextOverlay
+from .tooltip import Tooltip
 
 DEFAULT_THEME = 'dark'
 EXCLUDE_DICT = {
@@ -59,7 +60,10 @@ EXCLUDE_DICT = {
 EXCLUDE_JSON = EXCLUDE_DICT.union({'layers', 'active_layer'})
 
 if TYPE_CHECKING:
-    from ..types import FullLayerData, LayerData
+    from ..types import FullLayerData, LayerData, PathOrPaths
+
+
+__all__ = ['ViewerModel', 'valid_add_kwargs']
 
 
 # KeymapProvider & MousemapProvider should eventually be moved off the ViewerModel
@@ -107,6 +111,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
 
     help: str = ''
     status: str = 'Ready'
+    tooltip: Tooltip = Field(default_factory=Tooltip, allow_mutation=False)
     theme: str = DEFAULT_THEME
     title: str = 'napari'
 
@@ -125,6 +130,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             },
         )
         self.__config__.extra = Extra.ignore
+        self.tooltip.visible = SETTINGS.appearance.layer_tooltip_visibility
+        SETTINGS.appearance.events.layer_tooltip_visibility.connect(
+            self._tooltip_visible_update
+        )
 
         # Add extra events - ideally these will be removed too!
         self.events.add(layers_change=Event, reset_view=Event)
@@ -157,6 +166,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
                 type='active_layer',
             )
         )
+
+    def _tooltip_visible_update(self, event):
+        self.tooltip.visible = event.value
 
     @validator('theme')
     def _valid_theme(cls, v):
@@ -239,8 +251,8 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
-            self.camera.zoom = (
-                0.95 * np.min(self._canvas_size) / np.max(size[-2:])
+            self.camera.zoom = 0.95 * np.min(
+                np.array(self._canvas_size) / np.array(size[-2:])
             )
         self.camera.angles = (0, 0, 90)
 
@@ -365,6 +377,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         if active is not None:
             self.status = active.get_status(self.cursor.position, world=True)
             self.help = active.help
+            if self.tooltip.visible:
+                self.tooltip.text = active._get_tooltip_text(
+                    self.cursor.position, world=True
+                )
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
@@ -507,10 +523,12 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         Parameters
         ----------
         data : array or list of array
-            Image data. Can be N dimensional. If the last dimension has length
+            Image data. Can be N >= 2 dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
-            a multiscale image.
+            a multiscale image. Please note multiscale rendering is only
+            supported in 2D. In 3D, only the lowest resolution scale is
+            displayed.
         channel_axis : int, optional
             Axis to expand image along.  If provided, each channel in the data
             will be added as an individual image layer.  In channel_axis mode,
@@ -605,7 +623,9 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
             represented by a list of array like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be multiscale. The first image in the list
-            should be the largest.
+            should be the largest. Please note multiscale rendering is only
+            supported in 2D. In 3D, only the lowest resolution scale is
+            displayed.
 
         Returns
         -------
@@ -910,7 +930,10 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         return added
 
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: Optional[str] = None
+        self,
+        data,
+        meta: Dict[str, Any] = None,
+        layer_type: Optional[str] = None,
     ) -> List[Layer]:
         """Add arbitrary layer data to the viewer.
 

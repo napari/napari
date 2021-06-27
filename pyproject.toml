@@ -60,6 +60,7 @@ ignore = [
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
+  "mypy.ini",
   "napari/_version.py",  # added during build by setuptools_scm
   "tools/minreq.py",
   "tox.ini",
@@ -90,7 +91,8 @@ filterwarnings = [
   "ignore:data shape .* exceeds GL_MAX_TEXTURE_SIZE:UserWarning",
   "ignore:For best performance with Dask arrays in napari:UserWarning:",
   "ignore:numpy.ufunc size changed:RuntimeWarning",
-
+  "ignore:Multiscale rendering is only supported in 2D. In 3D, only the lowest resolution scale is displayed",
+  "ignore:Alternative shading modes are only available in 3D, defaulting to none",
 ]
 markers = [
     "sync_only: Test should only be run synchronously",

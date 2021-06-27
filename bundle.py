@@ -20,6 +20,7 @@ APP = 'napari'
 # python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
 
 EXTRA_REQS = [
+    "imagecodecs",
     "pip",
     "PySide2==5.15.2",
     "scikit-image",

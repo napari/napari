@@ -1,8 +1,12 @@
 import itertools
+from tempfile import TemporaryDirectory
 
 import numpy as np
+import pandas as pd
 import pytest
+import tensorstore as ts
 import xarray as xr
+import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
@@ -270,6 +274,11 @@ def test_properties():
     assert isinstance(layer.properties, dict)
     assert layer.properties == properties
     assert layer._label_index == label_index
+    layer = Labels(data)
+    layer.properties = properties
+    assert isinstance(layer.properties, dict)
+    assert layer.properties == properties
+    assert layer._label_index == label_index
 
     current_label = layer.get_value((0, 0))
     layer_message = layer.get_status((0, 0))
@@ -283,6 +292,18 @@ def test_properties():
     properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
     label_index = {0: 0, 12: 1}
     layer = Labels(data, properties=properties)
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+    layer = Labels(data)
+    layer.properties = properties
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+    layer = Labels(data)
+    layer.properties = pd.DataFrame(properties)
     layer_message = layer.get_status((0, 0))
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
@@ -878,3 +899,62 @@ def test_switching_display_func():
     label_data = np.random.randint(0, 5, size=(50, 50))
     layer = Labels(label_data)
     assert layer._color_lookup_func == layer._lookup_with_index
+
+
+def test_cursor_size_with_negative_scale():
+    layer = Labels(np.zeros((5, 5), dtype=int), scale=[-1, -1])
+    layer.mode = 'paint'
+    assert layer.cursor_size > 0
+
+
+def test_switching_display_func_during_slicing():
+    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
+    label_array[0, :, :] = [[0, 1], [2, 3]]
+    layer = Labels(label_array)
+    layer._dims_point = (1, 0, 0)
+    layer._set_view_slice()
+    assert layer._color_lookup_func == layer._lookup_with_low_discrepancy_image
+    assert layer._all_vals.size < 1026
+
+
+def test_add_large_colors():
+    label_array = (5e6 * np.ones((2, 2, 2))).astype(np.uint64)
+    label_array[0, :, :] = [[0, 1], [2, 3]]
+    layer = Labels(label_array)
+    assert len(layer._all_vals) == layer.num_colors
+
+    layer.show_selected_label = True
+    layer.selected_label = int(5e6)
+    assert layer._all_vals.size < 1026
+
+
+def test_fill_tensorstore():
+    labels = np.zeros((5, 7, 8, 9), dtype=int)
+    labels[1, 2:4, 4:6, 4:6] = 1
+    labels[1, 3:5, 5:7, 6:8] = 2
+    labels[2, 3:5, 5:7, 6:8] = 3
+    with TemporaryDirectory(suffix='.zarr') as fout:
+        labels_temp = zarr.open(
+            fout,
+            mode='w',
+            shape=labels.shape,
+            dtype=np.uint32,
+            chunks=(1, 1, 8, 9),
+        )
+        labels_temp[:] = labels
+        labels_ts_spec = {
+            'driver': 'zarr',
+            'kvstore': {'driver': 'file', 'path': fout},
+            'path': '',
+            'metadata': {
+                'dtype': labels_temp.dtype.str,
+                'order': labels_temp.order,
+                'shape': labels.shape,
+            },
+        }
+        data = ts.open(labels_ts_spec, create=False, open=True).result()
+        layer = Labels(data)
+        layer.n_edit_dimensions = 3
+        layer.fill((1, 4, 6, 7), 4)
+        modified_labels = np.where(labels == 2, 4, labels)
+        np.testing.assert_array_equal(modified_labels, np.asarray(data))

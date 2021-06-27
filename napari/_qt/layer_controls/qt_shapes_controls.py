@@ -11,6 +11,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers.shapes._shapes_constants import Mode
+from ...utils.action_manager import action_manager
 from ...utils.events import disconnect_events
 from ...utils.interactions import Shortcut
 from ...utils.translations import trans
@@ -109,57 +110,106 @@ class QtShapesControls(QtLayerControls):
         sld.valueChanged.connect(self.changeWidth)
         self.widthSlider = sld
 
-        self.select_button = QtModeRadioButton(
-            layer, 'select', Mode.SELECT, tooltip=trans._('Select shapes (S)')
+        def _radio_button(
+            parent,
+            btn_name,
+            mode,
+            action_name,
+            extra_tooltip_text='',
+            **kwargs,
+        ):
+            """
+            Convenience local function to create a RadioButton and bind it to
+            an action at the same time.
+
+            Parameters
+            ----------
+            parent : Any
+                Parent of the generated QtModeRadioButton
+            btn_name : str
+                name fo the button
+            mode : Enum
+                Value Associated to current button
+            action_name : str
+                Action triggered when button pressed
+            extra_tooltip_text : str
+                Text you want added after the automatic tooltip set by the
+                action manager
+            **kwargs:
+                Passed to QtModeRadioButton
+
+            Returns
+            -------
+            button: QtModeRadioButton
+                button bound (or that will be bound to) to action `action_name`
+
+            Notes
+            -----
+            When shortcuts are modifed/added/removed via the action manager, the
+            tooltip will be updated to reflect the new shortcut.
+            """
+            action_name = 'napari:' + action_name
+            btn = QtModeRadioButton(parent, btn_name, mode, **kwargs)
+            action_manager.bind_button(
+                action_name,
+                btn,
+                extra_tooltip_text='',
+            )
+            return btn
+
+        self.select_button = _radio_button(
+            layer, 'select', Mode.SELECT, "activate_select_mode"
         )
-        self.direct_button = QtModeRadioButton(
-            layer,
-            'direct',
-            Mode.DIRECT,
-            tooltip=trans._('Select vertices (D)'),
+
+        self.direct_button = _radio_button(
+            layer, 'direct', Mode.DIRECT, "activate_direct_mode"
         )
-        self.panzoom_button = QtModeRadioButton(
+
+        self.panzoom_button = _radio_button(
             layer,
             'zoom',
             Mode.PAN_ZOOM,
-            tooltip=trans._('Pan/zoom (Space)'),
+            "napari:activate_shape_pan_zoom_mode",
+            extra_tooltip_text=trans._('(or hold Space)'),
             checked=True,
         )
-        self.rectangle_button = QtModeRadioButton(
+
+        self.rectangle_button = _radio_button(
             layer,
             'rectangle',
             Mode.ADD_RECTANGLE,
-            tooltip=trans._('Add rectangles (R)'),
+            "activate_add_rectangle_mode",
         )
-        self.ellipse_button = QtModeRadioButton(
+        self.ellipse_button = _radio_button(
             layer,
             'ellipse',
             Mode.ADD_ELLIPSE,
-            tooltip=trans._('Add ellipses (E)'),
+            "activate_add_ellipse_mode",
         )
-        self.line_button = QtModeRadioButton(
-            layer, 'line', Mode.ADD_LINE, tooltip=trans._('Add lines (L)')
+
+        self.line_button = _radio_button(
+            layer, 'line', Mode.ADD_LINE, "activate_add_line_mode"
         )
-        self.path_button = QtModeRadioButton(
-            layer, 'path', Mode.ADD_PATH, tooltip=trans._('Add paths (T)')
+        self.path_button = _radio_button(
+            layer, 'path', Mode.ADD_PATH, "activate_add_path_mode"
         )
-        self.polygon_button = QtModeRadioButton(
+        self.polygon_button = _radio_button(
             layer,
             'polygon',
             Mode.ADD_POLYGON,
-            tooltip=trans._('Add polygons (P)'),
+            "activate_add_polygon_mode",
         )
-        self.vertex_insert_button = QtModeRadioButton(
+        self.vertex_insert_button = _radio_button(
             layer,
             'vertex_insert',
             Mode.VERTEX_INSERT,
-            tooltip=trans._('Insert vertex (I)'),
+            "activate_vertex_insert_mode",
         )
-        self.vertex_remove_button = QtModeRadioButton(
+        self.vertex_remove_button = _radio_button(
             layer,
             'vertex_remove',
             Mode.VERTEX_REMOVE,
-            tooltip=trans._('Remove vertex (X)'),
+            "activate_vertex_remove_mode",
         )
 
         self.move_front_button = QtModePushButton(
@@ -168,12 +218,21 @@ class QtShapesControls(QtLayerControls):
             slot=self.layer.move_to_front,
             tooltip=trans._('Move to front'),
         )
+
+        action_manager.bind_button(
+            'napari:move_shapes_selection_to_front', self.move_front_button
+        )
+
         self.move_back_button = QtModePushButton(
             layer,
             'move_back',
             slot=self.layer.move_to_back,
             tooltip=trans._('Move to back'),
         )
+        action_manager.bind_button(
+            'napari:move_shapes_selection_to_back', self.move_back_button
+        )
+
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',

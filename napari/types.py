@@ -18,6 +18,8 @@ from typing import (
 import numpy as np
 from typing_extensions import TypedDict
 
+from .utils._magicgui import register_types_with_magicgui
+
 if TYPE_CHECKING:
     import dask.array
     import zarr
@@ -120,3 +122,6 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
+
+
+register_types_with_magicgui()

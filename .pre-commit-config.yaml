@@ -23,3 +23,10 @@ repos:
     - id: pyupgrade
       args: ["--py37-plus", "--keep-runtime-typing"]
       exclude: _vendor|vendored|examples
+-   repo: https://github.com/seddonym/import-linter
+    rev: v1.2.1
+    hooks:
+    - id: import-linter
+      stages: [manual]
+
+
