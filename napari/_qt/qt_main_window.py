@@ -798,6 +798,15 @@ class Window:
         )
         self.view_menu.addAction(self.tooltip_menu)
 
+        self.view_activity_menu = QAction(
+            trans._('Activity Dock'),
+            parent=self._qt_window,
+            checkable=True,
+            checked=self._qt_window._activity_dialog.isVisible(),
+        )
+        self.view_activity_menu.triggered.connect(self._toggle_activity_dock)
+        self.view_menu.addAction(self.view_activity_menu)
+
         self.view_menu.addSeparator()
 
     def _tooltip_visibility_toggle(self, value):
@@ -921,9 +930,11 @@ class Window:
             self._qt_window._activity_dialog.show()
             self._qt_window._activity_dialog.raise_()
             self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
+            self.view_activity_menu.setChecked(True)
         else:
             self._qt_window._activity_dialog.hide()
             self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
+            self.view_activity_menu.setChecked(False)
 
     def _toggle_scale_bar_visible(self, state):
         self.qt_viewer.viewer.scale_bar.visible = state
