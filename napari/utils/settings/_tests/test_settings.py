@@ -241,10 +241,12 @@ def test_default_factory(monkeypatch):
     from napari.utils.settings._defaults import BaseNapariSettings
 
     class MockSettings(BaseNapariSettings):
-        test: list = Field(default_factory=list)
+        test_field: list = Field(default_factory=list)
 
         class Config:
-            schema_extra = {"section": "test"}
+            schema_extra = {"section": "test_section"}
 
     monkeypatch.setattr(_manager, "CORE_SETTINGS", (MockSettings,))
-    _manager.SettingsManager()
+    mng = _manager.SettingsManager()
+    assert mng.test_section.test_field == []
+    assert mng._defaults['test_section'].test_field == []
