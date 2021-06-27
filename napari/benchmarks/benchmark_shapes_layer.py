@@ -2,8 +2,21 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
+import collections
+
 import numpy as np
+
 from napari.layers import Shapes
+from napari.utils.interactions import (
+    ReadOnlyWrapper,
+    mouse_move_callbacks,
+    mouse_press_callbacks,
+    mouse_release_callbacks,
+)
+
+Event = collections.namedtuple(
+    'Event', field_names=['type', 'is_dragging', 'modifiers', 'position']
+)
 
 
 class Shapes2DSuite:
@@ -34,7 +47,7 @@ class Shapes2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 2)
 
     def mem_layer(self, n):
         """Memory used by layer."""
@@ -73,7 +86,7 @@ class Shapes3DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 3)
 
     def mem_layer(self, n):
         """Memory used by layer."""
@@ -82,3 +95,132 @@ class Shapes3DSuite:
     def mem_data(self, n):
         """Memory used by raw data."""
         return self.data
+
+
+class ShapesInteractionSuite:
+    """Benchmarks for interacting with the Shapes layer with 2D data"""
+
+    params = [2 ** i for i in range(4, 9)]
+
+    def setup(self, n):
+        np.random.seed(0)
+        self.data = [50 * np.random.random((6, 2)) for i in range(n)]
+        self.layer = Shapes(self.data, shape_type='polygon')
+        self.layer.mode = 'select'
+
+        # initialize the position and select a shape
+        position = tuple(np.mean(self.layer.data[0], axis=0))
+
+        # create events
+        click_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_press',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+        # Simulate click
+        mouse_press_callbacks(self.layer, click_event)
+
+        release_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_release',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+
+        # Simulate release
+        mouse_release_callbacks(self.layer, release_event)
+
+    def time_drag_shape(self, n):
+        """Time to process 5 shape drag events"""
+        # initialize the position and select a shape
+        position = tuple(np.mean(self.layer.data[0], axis=0))
+
+        # create events
+        click_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_press',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+
+        # Simulate click
+        mouse_press_callbacks(self.layer, click_event)
+
+        # create events
+        drag_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_press',
+                is_dragging=True,
+                modifiers=[],
+                position=position,
+            )
+        )
+
+        # start drag event
+        mouse_move_callbacks(self.layer, drag_event)
+
+        # simulate 5 drag events
+        for _ in range(5):
+            position = tuple(np.add(position, [10, 5]))
+            drag_event = ReadOnlyWrapper(
+                Event(
+                    type='mouse_press',
+                    is_dragging=True,
+                    modifiers=[],
+                    position=position,
+                )
+            )
+
+            # Simulate move, click, and release
+            mouse_move_callbacks(self.layer, drag_event)
+
+        release_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_release',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+
+        # Simulate release
+        mouse_release_callbacks(self.layer, release_event)
+
+    time_drag_shape.param_names = ['n_shapes']
+
+    def time_select_shape(self, n):
+        """Time to process shape selection events"""
+        position = tuple(np.mean(self.layer.data[1], axis=0))
+
+        # create events
+        click_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_press',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+        # Simulate click
+        mouse_press_callbacks(self.layer, click_event)
+
+        release_event = ReadOnlyWrapper(
+            Event(
+                type='mouse_release',
+                is_dragging=False,
+                modifiers=[],
+                position=position,
+            )
+        )
+
+        # Simulate release
+        mouse_release_callbacks(self.layer, release_event)
+
+    time_select_shape.param_names = ['n_shapes']

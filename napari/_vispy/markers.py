@@ -2,7 +2,7 @@ from vispy.scene.visuals import Markers as BaseMarkers
 
 
 # Custom markers class is needed for entering 3D rendering mode when a points
-# layer is invisble and the self._data property is None
+# layer is invisible and the self._data property is None
 class Markers(BaseMarkers):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

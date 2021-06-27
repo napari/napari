@@ -1,11 +1,12 @@
 from collections.abc import Collection, Generator
 
+from .translations import trans
+
 
 def validate_n_seq(n: int, dtype=None):
     """Creates a function to validate a sequence of len == N and type == dtype.
 
     Currently does **not** validate generators (will always validate true).
-
 
     Parameters
     ----------
@@ -20,13 +21,12 @@ def validate_n_seq(n: int, dtype=None):
         Function that can be called on an object to validate that is a sequence
         of len `n` and (optionally) each item in the sequence has type `dtype`
 
-    Example
-    -------
-
-    validate = validate_N_seq(2)
-    validate(8)  # raises TypeError
-    validate([1, 2, 3])  # raises ValueError
-    validate([4, 5])  # just fine, thank you very much
+    Examples
+    --------
+    >>> validate = validate_N_seq(2)
+    >>> validate(8)  # raises TypeError
+    >>> validate([1, 2, 3])  # raises ValueError
+    >>> validate([4, 5])  # just fine, thank you very much
     """
 
     def func(obj):
@@ -52,17 +52,33 @@ def validate_n_seq(n: int, dtype=None):
             return
         if not (isinstance(obj, Collection) and hasattr(obj, '__getitem__')):
             raise TypeError(
-                f"object '{obj}' is not an indexable collection "
-                f"(list, tuple, or np.array), of length {n}"
+                trans._(
+                    "object '{obj}' is not an indexable collection (list, tuple, or np.array), of length {number}",
+                    deferred=True,
+                    obj=obj,
+                    number=n,
+                )
             )
         if not len(obj) == n:
-            raise ValueError(f"object must have length {n}, got {len(obj)}")
+            raise ValueError(
+                trans._(
+                    "object must have length {number}, got {obj_len}",
+                    deferred=True,
+                    number=n,
+                    obj_len=len(obj),
+                )
+            )
         if dtype is not None:
             for item in obj:
                 if not isinstance(item, dtype):
                     raise TypeError(
-                        f"Every item in the sequence must be of type {dtype}, "
-                        f"but {item} is of type {type(item)}"
+                        trans._(
+                            "Every item in the sequence must be of type {dtype}, but {item} is of type {item_type}",
+                            deferred=True,
+                            dtype=dtype,
+                            item=item,
+                            item_type=type(item),
+                        )
                     )
 
     return func

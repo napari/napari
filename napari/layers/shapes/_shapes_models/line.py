@@ -1,7 +1,8 @@
 import numpy as np
-from xml.etree.ElementTree import Element
-from .shape import Shape
+
+from ....utils.translations import trans
 from .._shapes_utils import create_box
+from .shape import Shape
 
 
 class Line(Shape):
@@ -13,16 +14,6 @@ class Line(Shape):
         Line vertices.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    opacity : float
-        Opacity of the shape, must be between 0 and 1.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
@@ -35,9 +26,6 @@ class Line(Shape):
         data,
         *,
         edge_width=1,
-        edge_color='black',
-        face_color='white',
-        opacity=1,
         z_index=0,
         dims_order=None,
         ndisplay=2,
@@ -45,9 +33,6 @@ class Line(Shape):
 
         super().__init__(
             edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
             ndisplay=ndisplay,
@@ -58,8 +43,7 @@ class Line(Shape):
 
     @property
     def data(self):
-        """(2, D) array: line vertices.
-        """
+        """(2, D) array: line vertices."""
         return self._data
 
     @data.setter
@@ -71,9 +55,11 @@ class Line(Shape):
 
         if len(data) != 2:
             raise ValueError(
-                f"""Data shape does not match a line. A
-                             line expects two end vertices,
-                             {len(data)} provided."""
+                trans._(
+                    "Data shape does not match a line. A line expects two end vertices, {number} provided.",
+                    deferred=True,
+                    number=len(data),
+                )
             )
 
         self._data = data
@@ -92,22 +78,3 @@ class Line(Shape):
                 np.max(data_not_displayed, axis=0),
             ]
         ).astype('int')
-
-    def to_xml(self):
-        """Generates an xml element that defintes the shape according to the
-        svg specification.
-
-        Returns
-        ----------
-        element : xml.etree.ElementTree.Element
-            xml element specifying the shape according to svg.
-        """
-        data = self.data[:, self.dims_displayed]
-        x1 = str(data[0, 0])
-        y1 = str(data[0, 1])
-        x2 = str(data[1, 0])
-        y2 = str(data[1, 1])
-
-        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
-
-        return element

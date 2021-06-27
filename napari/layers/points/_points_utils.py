@@ -1,7 +1,8 @@
-from typing import Dict, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
-from vispy.color.colormap import Colormap
+
+from ...utils.translations import trans
 
 
 def create_box(data):
@@ -81,57 +82,44 @@ def points_in_box(corners, points, sizes):
     return list(inside)
 
 
-def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
-    """Convert a dataframe to Points.properties formatted dictionary.
+def fix_data_points(
+    points: Optional[np.ndarray], ndim: Optional[int]
+) -> Tuple[np.ndarray, int]:
+    """
+    Ensure that points array is 2d and have second dimension of size ndim (default 2 for empty arrays)
 
     Parameters
     ----------
-    dataframe : DataFrame
-        The dataframe object to be converted to a properties dictionary
+    points : (N, M) array or None
+        Points to be checked
+    ndim : int or None
+        number of expected dimensions
 
     Returns
     -------
-    dict[str, np.ndarray]
-        A properties dictionary where the key is the property name and the value
-        is an ndarray with the property value for each point.
+    points : (N, M) array
+        Points array
+    ndim : int
+        number of dimensions
+
+    Raises
+    ------
+    ValueError
+        if ndim does not match with second dimensions of points
     """
-
-    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
-    return properties
-
-
-def guess_continuous(property: np.ndarray) -> bool:
-    """Guess if the property is continuous (return True) or categorical (return False)"""
-    # if the property is a floating type, guess continuous
-    if issubclass(property.dtype.type, np.floating) and len(property < 16):
-        return True
+    if points is None or len(points) == 0:
+        if ndim is None:
+            ndim = 2
+        points = np.empty((0, ndim))
     else:
-        return False
-
-
-def map_property(
-    prop: np.ndarray,
-    colormap: Colormap,
-    contrast_limits: Union[None, Tuple[float, float]] = None,
-) -> Tuple[np.ndarray, Tuple[float, float]]:
-    """Apply a colormap to a property
-
-    Parameters
-    ----------
-    prop : np.ndarray
-        The property to be colormapped
-    colormap : vispy.color.Colormap
-        The vispy colormap object to apply to the property
-    contrast_limits: Union[None, Tuple[float, float]]
-        The contrast limits for applying the colormap to the property.
-        If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
-        If None is provided, the contrast limits will be set to (property.min(), property.max()).
-        Default value is None.
-    """
-
-    if contrast_limits is None:
-        contrast_limits = (prop.min(), prop.max())
-    normalized_properties = np.interp(prop, contrast_limits, (0, 1))
-    mapped_properties = colormap.map(normalized_properties)
-
-    return mapped_properties, contrast_limits
+        points = np.atleast_2d(points)
+        data_ndim = points.shape[1]
+        if ndim is not None and ndim != data_ndim:
+            raise ValueError(
+                trans._(
+                    "Points dimensions must be equal to ndim",
+                    deferred=True,
+                )
+            )
+        ndim = data_ndim
+    return points, ndim

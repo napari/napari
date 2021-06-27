@@ -128,7 +128,6 @@ def register_cmap(name=None, cmap=None, data=None, lut=None):
     In the second case, the three arguments are passed to
     the :class:`~matplotlib.colors.LinearSegmentedColormap` initializer,
     and the resulting colormap is registered.
-
     """
     if name is None:
         try:
@@ -190,7 +189,6 @@ class ScalarMappable(object):
     """
     def __init__(self, norm=None, cmap=None):
         r"""
-
         Parameters
         ----------
         norm : :class:`matplotlib.colors.Normalize` instance

@@ -1,12 +1,11 @@
-from os.path import dirname, join
+from typing import TYPE_CHECKING
 
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
-
-from ._qt.qt_update_ui import QtUpdateUI
-from ._qt.qt_main_window import Window
-from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+from .utils import config
+
+if TYPE_CHECKING:
+    # helpful for IDE support
+    from ._qt.qt_main_window import Window
 
 
 class Viewer(ViewerModel):
@@ -28,44 +27,34 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
+    # Create private variable for window
+    _window: 'Window'
+
     def __init__(
         self,
+        *,
         title='napari',
         ndisplay=2,
-        order=None,
-        axis_labels=None,
+        order=(),
+        axis_labels=(),
         show=True,
     ):
-        # instance() returns the singleton instance if it exists, or None
-        app = QApplication.instance()
-        # if None, raise a RuntimeError with the appropriate message
-        if app is None:
-            message = (
-                "napari requires a Qt event loop to run. To create one, "
-                "try one of the following: \n"
-                "  - use the `napari.gui_qt()` context manager. See "
-                "https://github.com/napari/napari/tree/master/examples for"
-                " usage examples.\n"
-                "  - In IPython or a local Jupyter instance, use the "
-                "`%gui qt` magic command.\n"
-                "  - Launch IPython with the option `--gui=qt`.\n"
-                "  - (recommended) in your IPython configuration file, add"
-                " or uncomment the line `c.TerminalIPythonApp.gui = 'qt'`."
-                " Then, restart IPython."
-            )
-            raise RuntimeError(message)
-
-        logopath = join(dirname(__file__), 'resources', 'logo.png')
-        app.setWindowIcon(QIcon(logopath))
-
         super().__init__(
             title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
         )
-        qt_viewer = QtViewer(self)
-        self.window = Window(qt_viewer, show=show)
+        # having this import here makes all of Qt imported lazily, upon
+        # instantiating the first Viewer.
+        from .window import Window
+
+        self._window = Window(self, show=show)
+
+    # Expose private window publically. This is needed to keep window off pydantic model
+    @property
+    def window(self) -> 'Window':
+        return self._window
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
@@ -85,16 +74,21 @@ class Viewer(ViewerModel):
         else:
             self.window.qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, with_viewer=False):
+    def screenshot(self, path=None, *, canvas_only=True, flash: bool = True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
-        with_viewer : bool
-            If True includes the napari viewer, otherwise just includes the
-            canvas.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
+        flash : bool
+            Flag to indicate whether flash animation should be shown after
+            the screenshot was captured.
+            By default, True.
 
         Returns
         -------
@@ -102,21 +96,29 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if with_viewer:
-            image = self.window.screenshot(path=path)
+        if canvas_only:
+            image = self.window.qt_viewer.screenshot(path=path, flash=flash)
         else:
-            image = self.window.qt_viewer.screenshot(path=path)
+            image = self.window.screenshot(path=path, flash=flash)
         return image
 
-    def update(self, func, *args, **kwargs):
-        t = QtUpdateUI(func, *args, **kwargs)
-        self.window.qt_viewer.pool.start(t)
-        return self.window.qt_viewer.pool  # returns threadpool object
-
-    def show(self):
+    def show(self, *, block=False):
         """Resize, show, and raise the viewer window."""
-        self.window.show()
+        self.window.show(block=block)
 
     def close(self):
         """Close the viewer window."""
+        # Remove all the layers from the viewer
+        self.layers.clear()
+        # Close the main window
         self.window.close()
+
+        if config.async_loading:
+            from .components.experimental.chunk import chunk_loader
+
+            # TODO_ASYNC: Find a cleaner way to do this? This fixes some
+            # tests. We are telling the ChunkLoader that this layer is
+            # going away:
+            # https://github.com/napari/napari/issues/1500
+            for layer in self.layers:
+                chunk_loader.on_layer_deleted(layer)

@@ -3,11 +3,11 @@ import inspect
 import sys
 
 from napari.utils.naming import (
-    numbered_patt,
     inc_name_count,
+    magic_name,
+    numbered_patt,
     sep,
     start,
-    magic_name,
 )
 
 
@@ -116,3 +116,25 @@ def test_path_prefix():
 
     if walrus:
         assert eval_with_filename('foo(i:=33)', 'rye.py') == 'i'
+
+
+def test_empty_path_prefix():
+    """Test an empty path prefix that matches the entire stack"""
+    # Repeat tests with an empty path_prefix
+    mname = functools.partial(magic_name, path_prefix="")
+
+    def foo(x):
+        def bar(y):
+            return mname(y)
+
+        return bar(x)
+
+    # Test are all None because the path_prefix matches everything
+    # magic_name reads through until the end of the stack
+    assert eval_with_filename('foo(42)', 'hi.py') is None
+
+    r = 8  # noqa
+    assert eval_with_filename('foo(r)', 'bye.py') is None
+
+    if walrus:
+        assert eval_with_filename('foo(i:=33)', 'rye.py') is None

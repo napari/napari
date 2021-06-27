@@ -1,52 +1,61 @@
-import inspect
+import sys
+from inspect import Parameter, getdoc, signature
 
-from .misc import camel_to_snake, callsignature
+from .misc import camel_to_snake
+from .translations import trans
 
-
-template = """def {name}(self, {signature}):
-    layer = {cls_name}({call_args})
-    self.add_layer(layer)
+template = """def {name}{signature}:
+    kwargs = locals()
+    kwargs.pop('self', None)
+    layer = {cls_name}(**kwargs)
+    self.layers.append(layer)
     return layer
 """
 
 
 def create_func(cls, name=None, doc=None):
-    module = inspect.getmodule(cls)
-
-    module_name = module.__name__
     cls_name = cls.__name__
-    sig = inspect.signature(cls)
-    call_args = callsignature(cls)
 
     if name is None:
         name = camel_to_snake(cls_name)
 
     if 'layer' in name:
-        raise ValueError(f"name {name} should not include 'layer'")
+        raise ValueError(
+            trans._(
+                "name {name} should not include 'layer'",
+                deferred=True,
+                name=name,
+            )
+        )
 
     name = 'add_' + name
 
     if doc is None:
-        doc = inspect.getdoc(cls)
+        doc = getdoc(cls)
         cutoff = doc.find('\n\nParameters\n----------\n')
         if cutoff > 0:
             doc = doc[cutoff:]
 
         n = 'n' if cls_name[0].lower() in 'aeiou' else ''
-        doc = f'Adds a{n} {cls_name} layer to the viewer. ' + doc
+        doc = f'Add a{n} {cls_name} layer to the layer list. ' + doc
         doc += '\n\nReturns\n-------\n'
-        doc += f'layer : {module_name}.{cls_name}'
-        doc += '\n\tAdded layer.'
+        doc += f'layer : :class:`napari.layers.{cls_name}`'
+        doc += f'\n\tThe newly-created {cls_name.lower()} layer.'
         doc = doc.expandtabs(4)
 
+    sig = signature(cls)
+    new_sig = sig.replace(
+        parameters=[Parameter('self', Parameter.POSITIONAL_OR_KEYWORD)]
+        + list(sig.parameters.values()),
+        return_annotation=cls,
+    )
     src = template.format(
         name=name,
-        signature=str(sig)[1:-1],
+        signature=new_sig,
         cls_name=cls_name,
-        call_args=str(call_args)[1:-1],
     )
 
-    execdict = {cls_name: cls}
+    execdict = {cls_name: cls, 'napari': sys.modules.get('napari')}
     exec(src, execdict)
     func = execdict[name]
 

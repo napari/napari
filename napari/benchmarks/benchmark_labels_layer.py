@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
+
 from napari.layers import Labels
 
 
@@ -34,25 +35,27 @@ class Labels2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
-
-    def time_save_history(self, n):
-        """Time to save history."""
-        self.layer._save_history()
+        self.layer.get_value((0,) * 2)
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
 
-    def time_paint(self, n):
-        """Time to paint."""
-        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+    def time_paint_square(self, n):
+        """Time to paint square."""
+        self.layer.brush_shape = 'square'
+        self.layer.paint((0,) * 2, self.layer.selected_label)
+
+    def time_paint_circle(self, n):
+        """Time to paint circle."""
+        self.layer.brush_shape = 'circle'
+        self.layer.paint((0,) * 2, self.layer.selected_label)
 
     def time_fill(self, n):
         """Time to fill."""
         self.layer.fill(
-            self.layer.coordinates,
-            self.layer._value,
+            (0,) * 2,
+            1,
             self.layer.selected_label,
         )
 
@@ -93,25 +96,27 @@ class Labels3DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
-
-    def time_save_history(self, n):
-        """Time to save history."""
-        self.layer._save_history()
+        self.layer.get_value((0,) * 3)
 
     def time_raw_to_displayed(self, n):
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
 
-    def time_paint(self, n):
-        """Time to paint."""
-        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+    def time_paint_square(self, n):
+        """Time to paint square."""
+        self.layer.brush_shape = 'square'
+        self.layer.paint((0,) * 3, self.layer.selected_label)
+
+    def time_paint_circle(self, n):
+        """Time to paint circle."""
+        self.layer.brush_shape = 'circle'
+        self.layer.paint((0,) * 3, self.layer.selected_label)
 
     def time_fill(self, n):
         """Time to fill."""
         self.layer.fill(
-            self.layer.coordinates,
-            self.layer._value,
+            (0,) * 3,
+            1,
             self.layer.selected_label,
         )
 

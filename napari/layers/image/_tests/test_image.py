@@ -1,11 +1,11 @@
-import numpy as np
-from xml.etree.ElementTree import Element
 import dask.array as da
+import numpy as np
+import pytest
 import xarray as xr
 
-import pytest
-from vispy.color import Colormap
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.utils import Colormap
 
 
 def test_random_image():
@@ -16,11 +16,9 @@ def test_random_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
-    assert layer.is_pyramid is False
-    assert layer._data_pyramid is None
+    assert layer.multiscale is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -33,8 +31,7 @@ def test_negative_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -43,8 +40,7 @@ def test_negative_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -56,7 +52,7 @@ def test_all_zeros_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -69,7 +65,7 @@ def test_integer_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -81,7 +77,7 @@ def test_bool_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -94,7 +90,7 @@ def test_3D_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -107,7 +103,7 @@ def test_3D_image_shape_1():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -120,7 +116,7 @@ def test_4D_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -133,7 +129,7 @@ def test_5D_image_shape_1():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -146,7 +142,7 @@ def test_rgb_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
-    assert layer.shape == shape[:-1]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape[:-1])
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -159,7 +155,7 @@ def test_rgba_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
-    assert layer.shape == shape[:-1]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape[:-1])
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -173,7 +169,7 @@ def test_negative_rgba_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
-    assert layer.shape == shape[:-1]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape[:-1])
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -182,7 +178,7 @@ def test_negative_rgba_image():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape) - 1
-    assert layer.shape == shape[:-1]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape[:-1])
     assert layer.rgb is True
     assert layer._data_view.shape == shape[-3:]
 
@@ -195,7 +191,7 @@ def test_non_rgb_image():
     layer = Image(data, rgb=False)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -222,8 +218,7 @@ def test_changing_image():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
-    assert layer.dims.range == [(0, m, 1) for m in shape_b]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -241,8 +236,7 @@ def test_changing_image_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
-    assert layer.dims.range == [(0, m, 1) for m in shape_b]
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -262,7 +256,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
@@ -331,36 +325,36 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.colormap[0] == 'gray'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'gray'
+    assert isinstance(layer.colormap, Colormap)
 
     layer.colormap = 'magma'
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer.colormap = 'custom', cmap
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer.colormap = {'new': cmap}
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
     layer = Image(data, colormap='magma')
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer = Image(data, colormap=('custom', cmap))
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer = Image(data, colormap={'new': cmap})
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
 
 def test_contrast_limits():
@@ -488,10 +482,10 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.5
+    assert layer.attenuation == 0.05
 
-    # Change iso_threshold property
-    attenuation = 0.7
+    # Change attenuation property
+    attenuation = 0.07
     layer.attenuation = attenuation
     assert layer.attenuation == attenuation
 
@@ -516,8 +510,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    value = layer.get_value()
-    assert layer.coordinates == (0, 0)
+    value = layer.get_value((0,) * 2)
     assert value == data[0, 0]
 
 
@@ -526,7 +519,7 @@ def test_message():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    msg = layer.get_message()
+    msg = layer.get_status((0,) * 2)
     assert type(msg) == str
 
 
@@ -553,17 +546,6 @@ def test_narrow_thumbnail():
     assert np.all(thumbnail[: middle_row - 1] == 0)
     assert np.all(thumbnail[middle_row + 1 :] == 0)
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    np.random.seed(0)
-    data = np.random.random((15, 30))
-    layer = Image(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == 1
-    assert type(xml[0]) == Element
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64])
@@ -614,3 +596,53 @@ def test_image_translate(translate):
     np.random.seed(0)
     data = np.random.random((10, 15))
     Image(data, translate=translate)
+
+
+def test_image_scale_broadcast():
+    """Test scale is broadcast."""
+    data = np.random.random((5, 10, 15))
+    layer = Image(data, scale=(2, 2))
+    np.testing.assert_almost_equal(layer.scale, (1, 2, 2))
+
+
+def test_image_translate_broadcast():
+    """Test translate is broadcast."""
+    data = np.random.random((5, 10, 15))
+    layer = Image(data, translate=(2, 2))
+    np.testing.assert_almost_equal(layer.translate, (0, 2, 2))
+
+
+def test_grid_translate():
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    translate = np.array([15, 15])
+    layer.translate_grid = translate
+    np.testing.assert_allclose(layer.translate_grid, translate)
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.random(shape)
+    layer = Image(data)
+    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_data_to_world_2d_scale_translate_affine_composed():
+    data = np.ones((4, 3))
+    scale = (3, 2)
+    translate = (-4, 8)
+    affine = [[4, 0, 0], [0, 1.5, 0], [0, 0, 1]]
+
+    image = Image(data, scale=scale, translate=translate, affine=affine)
+
+    np.testing.assert_array_equal(image.scale, scale)
+    np.testing.assert_array_equal(image.translate, translate)
+    np.testing.assert_array_equal(image.affine, affine)
+    np.testing.assert_almost_equal(
+        image._data_to_world.affine_matrix,
+        ((12, 0, -16), (0, 3, 12), (0, 0, 1)),
+    )

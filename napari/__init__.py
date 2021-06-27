@@ -1,80 +1,54 @@
-from ._version import get_versions
-
-__version__ = get_versions()['version']
-del get_versions
-
 import os
-from distutils.version import StrictVersion
-from pathlib import Path
-from qtpy import API_NAME
-from ._version import get_versions
 
-# putting up higher due to circular imports if plugin exceptions are raised
-# on startup (we need to be able to show the napari version in the traceback.)
-__version__ = get_versions()['version']
-del get_versions
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "not-installed"
 
+# Allows us to use pydata/sparse arrays as layer data
+os.environ.setdefault('SPARSE_AUTO_DENSIFY', '1')
+del os
 
-if API_NAME == 'PySide2':
-    # Set plugin path appropriately if using PySide2. This is a bug fix
-    # for when both PyQt5 and Pyside2 are installed
-    import PySide2
+# Add everything that needs to be accessible from the napari namespace here.
+_proto_all_ = [
+    '__version__',
+    'components',
+    'experimental',
+    'layers',
+    'qt',
+    'utils',
+]
 
-    os.environ['QT_PLUGIN_PATH'] = str(
-        Path(PySide2.__file__).parent / 'Qt' / 'plugins'
-    )
+_submod_attrs = {
+    '_event_loop': ['gui_qt', 'run'],
+    'plugins.io': ['save_layers'],
+    'utils': ['sys_info'],
+    'utils.notifications': ['notification_manager'],
+    'view_layers': [
+        'view_image',
+        'view_labels',
+        'view_path',
+        'view_points',
+        'view_shapes',
+        'view_surface',
+        'view_tracks',
+        'view_vectors',
+    ],
+    'viewer': ['Viewer'],
+}
 
-from qtpy import QtCore
+# All imports in __init__ are hidden inside of `__getattr__` to prevent
+# importing the full chain of packages required when calling `import napari`.
+#
+# This has the biggest implications for running `napari` on the command line
+# (or running `python -m napari`) since `napari.__init__` gets imported
+# on the way to `napari.__main__`. Importing everything here has the
+# potential to take a second or more, so we definitely don't want to import it
+# just to access the CLI (which may not actually need any of the imports)
 
-# When QT is not the specific version, we raise a warning:
-from warnings import warn
+from ._lazy import install_lazy
 
-if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
-    warn_message = f"""
-    napari was tested with QT library `>=5.12.3`.
-    The version installed is {QtCore.__version__}. Please report any issues with this
-    specific QT version at https://github.com/Napari/napari/issues.
-    """
-    warn(message=warn_message)
-
-from vispy import app
-import logging
-
-# set vispy application to the appropriate qt backend
-app.use_app(API_NAME)
-del app
-# set vispy logger to show warning and errors only
-vispy_logger = logging.getLogger('vispy')
-vispy_logger.setLevel(logging.WARNING)
-
-from .viewer import Viewer
-
-# Note that importing _viewer_key_bindings is needed as the Viewer gets
-# decorated with keybindings during that process, but it is not directly needed
-# by our users and so is deleted below
-from . import _viewer_key_bindings  # noqa: F401
-from .view_layers import (
-    view_path,
-    view_image,
-    view_labels,
-    view_surface,
-    view_shapes,
-    view_points,
-    view_vectors,
+__getattr__, __dir__, __all__ = install_lazy(
+    __name__, _proto_all_, _submod_attrs
 )
-from ._qt import gui_qt
-from .utils import sys_info, _magicgui
-
-# register napari object types with magicgui if it is installed
-_magicgui.register_types_with_magicgui()
-
-
-# this unused import is here to fix a very strange bug.
-# there is some mysterious magical goodness in scipy stats that needs
-# to be imported early.
-# see: https://github.com/napari/napari/issues/925
-from scipy import stats  # noqa: F401
-
-del _magicgui
-del stats
-del _viewer_key_bindings
+del install_lazy

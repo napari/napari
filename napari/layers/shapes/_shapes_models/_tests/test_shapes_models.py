@@ -1,10 +1,11 @@
 import numpy as np
+
 from napari.layers.shapes._shapes_models import (
-    Rectangle,
-    Polygon,
-    Path,
-    Line,
     Ellipse,
+    Line,
+    Path,
+    Polygon,
+    Rectangle,
 )
 
 

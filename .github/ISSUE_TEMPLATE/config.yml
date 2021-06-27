@@ -1,0 +1,10 @@
+# Ref: https://help.github.com/en/github/building-a-strong-community/configuring-issue-templates-for-your-repository#configuring-the-template-chooser
+blank_issues_enabled: true  # default
+contact_links:
+- name: 🤷💻 napari forum
+  url: https://forum.image.sc/tag/napari
+  about: |
+    Please ask general "how do I ... ?" questions over at image.sc
+- name: '💬 napari @ zulip'
+  url: https://napari.zulipchat.com/
+  about: Chat with devs

@@ -1,25 +1,14 @@
-import sys
+from ..utils.settings import get_settings
+from ._plugin_manager import NapariPluginManager
 
-from pluggy import HookimplMarker
+__all__ = ["plugin_manager", "menu_item_template"]
 
-from ._hook_callers import execute_hook
-from .exceptions import PluginError, PluginImportError, PluginRegistrationError
-from .manager import PluginManager
-
-# Marker to be imported and used in plugins (and for own implementations)
-# Note: plugins may also just import pluggy directly and make their own
-# napari_hook_implementation.
-napari_hook_implementation = HookimplMarker("napari")
 
 # the main plugin manager instance for the `napari` plugin namespace.
-plugin_manager = PluginManager()
+plugin_manager = NapariPluginManager()
+plugin_manager._initialize()
+# Disable plugins listed as disabled in settings.
+plugin_manager._blocked.update(get_settings().plugins.disabled_plugins)
 
-__all__ = [
-    "napari_hook_implementation",
-    "PluginManager",
-    "plugin_manager",
-    "PluginError",
-    "PluginImportError",
-    "PluginRegistrationError",
-    "execute_hook",
-]
+#: Template to use for namespacing a plugin item in the menu bar
+menu_item_template = '{}: {}'

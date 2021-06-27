@@ -1,15 +1,32 @@
 repos:
+-   repo: https://github.com/pycqa/isort
+    rev: 5.8.0
+    hooks:
+    - id: isort
+      exclude: _vendor|vendored|examples
 -   repo: https://github.com/python/black
-    rev: stable
+    rev: 21.5b1
     hooks:
     - id: black
-      # force black to run on whole repo & keep settings from pyproject.toml
-      pass_filenames: false
-      args: [.]
+      pass_filenames: true
+      exclude: _vendor|vendored|examples
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.9.2
     hooks:
     - id: flake8
       pass_filenames: true
       # this seems to need to be here in addition to setup.cfg
-      exclude: vendored|__init__.py|examples
+      exclude: _vendor|vendored|__init__.py|examples
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.16.0
+    hooks:
+    - id: pyupgrade
+      args: ["--py37-plus", "--keep-runtime-typing"]
+      exclude: _vendor|vendored|examples
+-   repo: https://github.com/seddonym/import-linter
+    rev: v1.2.1
+    hooks:
+    - id: import-linter
+      stages: [manual]
+
+

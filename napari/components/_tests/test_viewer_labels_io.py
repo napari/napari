@@ -1,9 +1,11 @@
-import pytest
 import numpy as np
-from skimage.data import binary_blobs
+import pytest
 from imageio import imwrite
 from scipy import ndimage as ndi
+from skimage.data import binary_blobs
+
 from napari.components import ViewerModel
+from napari.layers import Labels
 from napari.utils.temporary_file import temporary_file
 
 
@@ -14,6 +16,7 @@ def test_open_labels(suffix):
     labeled = ndi.label(blobs)[0].astype(np.uint8)
     with temporary_file(suffix) as fout:
         imwrite(fout, labeled, format=suffix)
-        viewer.add_labels(path=fout)
+        viewer.open(fout, layer_type='labels', plugin='builtins')
         assert len(viewer.layers) == 1
         assert np.all(labeled == viewer.layers[0].data)
+        assert isinstance(viewer.layers[0], Labels)

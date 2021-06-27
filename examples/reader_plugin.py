@@ -1,9 +1,9 @@
 """Barebones reader plugin example, using imageio.imread"""
-from pluggy import HookimplMarker
+from napari_plugin_engine import napari_hook_implementation
 from imageio import formats, imread
 
-napari_hook_implementation = HookimplMarker("napari")
-readable_extensions = tuple(set(x for f in formats for x in f.extensions))
+
+readable_extensions = tuple({x for f in formats for x in f.extensions})
 
 
 @napari_hook_implementation

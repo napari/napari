@@ -1,66 +1,71 @@
 from enum import auto
+from os.path import abspath, expanduser, sep
+from pathlib import Path
 
 import pytest
-from napari.utils.misc import callsignature, StringEnum
+
+from napari.utils.misc import (
+    StringEnum,
+    abspath_or_url,
+    ensure_iterable,
+    ensure_sequence_of_iterables,
+    pick_equality_operator,
+)
+
+ITERABLE = (0, 1, 2)
+NESTED_ITERABLE = [ITERABLE, ITERABLE, ITERABLE]
+DICT = {'a': 1, 'b': 3, 'c': 5}
+LIST_OF_DICTS = [DICT, DICT, DICT]
 
 
-def test_callsignature():
-    # no arguments
-    assert str(callsignature(lambda: None)) == '()'
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        [ITERABLE, NESTED_ITERABLE],
+        [NESTED_ITERABLE, NESTED_ITERABLE],
+        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
+        [DICT, LIST_OF_DICTS],
+        [LIST_OF_DICTS, LIST_OF_DICTS],
+        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
+        [None, (None, None, None)],
+        # BEWARE: only the first element of a nested sequence is checked.
+        [((0, 1), None, None), ((0, 1), None, None)],
+    ],
+)
+def test_sequence_of_iterables(input, expected):
+    """Test ensure_sequence_of_iterables returns a sequence of iterables."""
+    zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
+    for i, result, expectation in zipped:
+        assert result == expectation
 
-    # one arg
-    assert str(callsignature(lambda a: None)) == '(a)'
 
-    # multiple args
-    assert str(callsignature(lambda a, b: None)) == '(a, b)'
+def test_sequence_of_iterables_raises():
+    with pytest.raises(ValueError):
+        # the length argument asserts a specific length
+        ensure_sequence_of_iterables(((0, 1),), length=4)
 
-    # arbitrary args
-    assert str(callsignature(lambda *args: None)) == '(*args)'
+    # BEWARE: only the first element of a nested sequence is checked.
+    with pytest.raises(AssertionError):
+        iterable = (None, (0, 1), (0, 2))
+        result = iter(ensure_sequence_of_iterables(iterable))
+        assert next(result) is None
 
-    # arg + arbitrary args
-    assert str(callsignature(lambda a, *az: None)) == '(a, *az)'
 
-    # default arg
-    assert str(callsignature(lambda a=42: None)) == '(a=a)'
-
-    # multiple default args
-    assert str(callsignature(lambda a=0, b=1: None)) == '(a=a, b=b)'
-
-    # arg + default arg
-    assert str(callsignature(lambda a, b=42: None)) == '(a, b=b)'
-
-    # arbitrary kwargs
-    assert str(callsignature(lambda **kwargs: None)) == '(**kwargs)'
-
-    # default arg + arbitrary kwargs
-    assert str(callsignature(lambda a=42, **kwargs: None)) == '(a=a, **kwargs)'
-
-    # arg + default arg + arbitrary kwargs
-    assert str(callsignature(lambda a, b=42, **kw: None)) == '(a, b=b, **kw)'
-
-    # arbitary args + arbitrary kwargs
-    assert str(callsignature(lambda *args, **kw: None)) == '(*args, **kw)'
-
-    # arg + default arg + arbitrary kwargs
-    assert (
-        str(callsignature(lambda a, b=42, *args, **kwargs: None))
-        == '(a, b=b, *args, **kwargs)'
-    )
-
-    # kwonly arg
-    assert str(callsignature(lambda *, a: None)) == '(a=a)'
-
-    # arg + kwonly arg
-    assert str(callsignature(lambda a, *, b: None)) == '(a, b=b)'
-
-    # default arg + kwonly arg
-    assert str(callsignature(lambda a=42, *, b: None)) == '(a=a, b=b)'
-
-    # kwonly args + everything
-    assert (
-        str(callsignature(lambda a, b=42, *, c, d=5, **kwargs: None))
-        == '(a, b=b, c=c, d=d, **kwargs)'
-    )
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        [ITERABLE, ITERABLE],
+        [DICT, DICT],
+        [1, [1, 1, 1]],
+        ['foo', ['foo', 'foo', 'foo']],
+        [None, [None, None, None]],
+    ],
+)
+def test_ensure_iterable(input, expected):
+    """Test test_ensure_iterable returns an iterable."""
+    zipped = zip(range(3), ensure_iterable(input), expected)
+    for i, result, expectation in zipped:
+        assert result == expectation
 
 
 def test_string_enum():
@@ -105,3 +110,42 @@ def test_string_enum():
     #  test setting by instance of a different StringEnum is an error
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
+
+
+def test_abspath_or_url():
+    relpath = "~" + sep + "something"
+    assert abspath_or_url(relpath) == expanduser(relpath)
+    assert abspath_or_url('something') == abspath('something')
+    assert abspath_or_url(sep + 'something') == abspath(sep + 'something')
+    assert abspath_or_url('https://something') == 'https://something'
+    assert abspath_or_url('http://something') == 'http://something'
+    assert abspath_or_url('ftp://something') == 'ftp://something'
+    assert abspath_or_url('s3://something') == 's3://something'
+    assert abspath_or_url('file://something') == 'file://something'
+    assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
+    assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
+
+    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
+
+    with pytest.raises(TypeError):
+        abspath_or_url({'a', '~'})
+
+
+def test_equality_operator():
+    import operator
+
+    import dask.array as da
+    import numpy as np
+    import xarray as xr
+    import zarr
+
+    class MyNPArray(np.ndarray):
+        pass
+
+    assert pick_equality_operator(np.ones((1, 1))) == np.array_equal
+    assert pick_equality_operator(MyNPArray([1, 1])) == np.array_equal
+    assert pick_equality_operator(da.ones((1, 1))) == operator.is_
+    assert pick_equality_operator(zarr.ones((1, 1))) == operator.is_
+    assert (
+        pick_equality_operator(xr.DataArray(np.ones((1, 1)))) == np.array_equal
+    )

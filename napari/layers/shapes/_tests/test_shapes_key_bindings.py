@@ -1,4 +1,5 @@
 import numpy as np
+
 from napari.layers import Shapes
 from napari.layers.shapes import _shapes_key_bindings as key_bindings
 
@@ -57,7 +58,7 @@ def test_activate_modes():
     assert layer.mode == 'direct'
     key_bindings.activate_select_mode(layer)
     assert layer.mode == 'select'
-    key_bindings.activate_pan_zoom_mode(layer)
+    key_bindings.activate_shape_pan_zoom_mode(layer)
     assert layer.mode == 'pan_zoom'
     key_bindings.activate_vertex_insert_mode(layer)
     assert layer.mode == 'vertex_insert'
@@ -72,15 +73,15 @@ def test_copy_paste():
 
     assert len(layer.data) == 3
     assert layer._clipboard == {}
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
 
-    key_bindings.copy(layer)
+    key_bindings.copy_selected_shapes(layer)
     assert len(layer.data) == 3
-    assert len(layer._clipboard) == 2
+    assert len(layer._clipboard) == 6
 
-    key_bindings.paste(layer)
+    key_bindings.paste_shape(layer)
     assert len(layer.data) == 5
-    assert len(layer._clipboard) == 2
+    assert len(layer._clipboard) == 6
 
 
 def test_select_all():
@@ -91,7 +92,7 @@ def test_select_all():
     assert len(layer.data) == 3
     assert len(layer.selected_data) == 0
 
-    key_bindings.select_all(layer)
+    key_bindings.select_all_shapes(layer)
     assert len(layer.selected_data) == 3
 
 
@@ -101,13 +102,13 @@ def test_delete():
     layer.mode = 'direct'
 
     assert len(layer.data) == 3
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
 
-    key_bindings.delete_selected(layer)
+    key_bindings.delete_selected_shapes(layer)
     assert len(layer.data) == 1
 
 
 def test_finish():
     # Test on three four corner rectangle
     layer = Shapes(20 * np.random.random((3, 4, 2)))
-    key_bindings.finish_drawing(layer)
+    key_bindings.finish_drawing_shape(layer)

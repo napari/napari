@@ -39,6 +39,7 @@ from collections import ChainMap
 
 from vispy.util import keys
 
+from ..utils.translations import trans
 
 SPECIAL_KEYS = [
     keys.SHIFT,
@@ -171,11 +172,23 @@ def normalize_key_combo(key_combo):
     key, modifiers = parse_key_combo(key_combo)
 
     if len(key) != 1 and key not in SPECIAL_KEYS:
-        raise TypeError(f'invalid key {key}')
+        raise TypeError(
+            trans._(
+                'invalid key {key}',
+                deferred=True,
+                key=key,
+            )
+        )
 
     for modifier in modifiers:
         if modifier not in MODIFIER_KEYS:
-            raise TypeError(f'invalid modifier key {modifier}')
+            raise TypeError(
+                trans._(
+                    'invalid modifier key {modifier}',
+                    deferred=True,
+                    modifier=modifier,
+                )
+            )
 
     return components_to_key_combo(key, modifiers)
 
@@ -256,15 +269,23 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
 
     if func is not None and key in keymap and not overwrite:
         raise ValueError(
-            f'key combination {key} already used! '
-            "specify 'overwrite=True' to bypass this check"
+            trans._(
+                'key combination {key} already used! specify \'overwrite=True\' to bypass this check',
+                deferred=True,
+                key=key,
+            )
         )
 
     unbound = keymap.pop(key, None)
 
     if func is not None:
         if func is not Ellipsis and not callable(func):
-            raise TypeError("'func' must be a callable")
+            raise TypeError(
+                trans._(
+                    "'func' must be a callable",
+                    deferred=True,
+                )
+            )
         keymap[key] = func
 
     return unbound
@@ -304,8 +325,8 @@ class KeymapProvider:
         Instance keymap.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.keymap = {}
 
     def __init_subclass__(cls, **kwargs):
@@ -341,7 +362,7 @@ def _bind_keymap(keymap, instance):
 
 
 class KeymapHandler:
-    """Mix-in to add key handling functionality.
+    """Handle key mapping and calling functionality.
 
     Attributes
     ----------
@@ -361,7 +382,10 @@ class KeymapHandler:
 
         for parent in self.keymap_providers:
             maps.append(_bind_keymap(parent.keymap, parent))
-            maps.append(_bind_keymap(parent.class_keymap, parent))
+            # For parent and superclasses add inherited keybindings
+            for cls in parent.__class__.__mro__:
+                if hasattr(cls, 'class_keymap'):
+                    maps.append(_bind_keymap(cls.class_keymap, parent))
 
         return ChainMap(*maps)
 
@@ -405,7 +429,13 @@ class KeymapHandler:
         if func is Ellipsis:  # blocker
             return
         elif not callable(func):
-            raise TypeError(f"expected {func} to be callable")
+            raise TypeError(
+                trans._(
+                    "expected {func} to be callable",
+                    deferred=True,
+                    func=func,
+                )
+            )
 
         gen = func()
 
@@ -431,3 +461,41 @@ class KeymapHandler:
             next(self._key_release_generators[key])  # call function
         except (KeyError, StopIteration):
             pass
+
+    def on_key_press(self, event):
+        """Callback that whenever key pressed in canvas.
+
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key press event that triggered this method.
+        """
+        if (
+            event.native is not None
+            and event.native.isAutoRepeat()
+            and event.key.name not in ['Up', 'Down', 'Left', 'Right']
+        ) or event.key is None:
+            # pass if no key is present or if key is held down, unless the
+            # key being held down is one of the navigation keys
+            # this helps for scrolling, etc.
+            return
+
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.press_key(combo)
+
+    def on_key_release(self, event):
+        """Called whenever key released in canvas.
+
+        Parameters
+        ----------
+        event : vispy.util.event.Event
+            The vispy key release event that triggered this method.
+        """
+        if event.key is None or (
+            # on linux press down is treated as multiple press and release
+            event.native is not None
+            and event.native.isAutoRepeat()
+        ):
+            return
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.release_key(combo)

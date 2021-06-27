@@ -1,0 +1,282 @@
+# French (France) translations for PROJECT.
+# Copyright (C) 2013 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-03-22 16:30+0200\n"
+"PO-Revision-Date: 2015-03-25 21:08+0100\n"
+"Last-Translator: Martin van Wingerden\n"
+"Language-Team: nl_NL\n"
+"Language: nl_NL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 0.9.6\n"
+"X-Generator: Poedit 1.7.5\n"
+
+#: src/humanize/number.py:22
+msgctxt "0"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:23
+msgctxt "1"
+msgid "st"
+msgstr "ste"
+
+#: src/humanize/number.py:24
+msgctxt "2"
+msgid "nd"
+msgstr "de"
+
+#: src/humanize/number.py:25
+msgctxt "3"
+msgid "rd"
+msgstr "de"
+
+#: src/humanize/number.py:26
+msgctxt "4"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:27
+msgctxt "5"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:28
+msgctxt "6"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:29
+msgctxt "7"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:30
+msgctxt "8"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:31
+msgctxt "9"
+msgid "th"
+msgstr "de"
+
+#: src/humanize/number.py:73
+msgid "million"
+msgstr "miljoen"
+
+#: src/humanize/number.py:74
+msgid "billion"
+msgstr "miljard"
+
+#: src/humanize/number.py:75
+msgid "trillion"
+msgstr "biljoen"
+
+#: src/humanize/number.py:76
+msgid "quadrillion"
+msgstr "biljard"
+
+#: src/humanize/number.py:77
+msgid "quintillion"
+msgstr "triljoen"
+
+#: src/humanize/number.py:78
+msgid "sextillion"
+msgstr "triljard"
+
+#: src/humanize/number.py:79
+msgid "septillion"
+msgstr "quadriljoen"
+
+#: src/humanize/number.py:80
+msgid "octillion"
+msgstr "quadriljard"
+
+#: src/humanize/number.py:81
+msgid "nonillion"
+msgstr "quintiljoen"
+
+#: src/humanize/number.py:82
+msgid "decillion"
+msgstr "quintiljard"
+
+#: src/humanize/number.py:83
+msgid "googol"
+msgstr "googol"
+
+#: src/humanize/number.py:138
+msgid "zero"
+msgstr "nul"
+
+#: src/humanize/number.py:139
+msgid "one"
+msgstr "één"
+
+#: src/humanize/number.py:140
+msgid "two"
+msgstr "twee"
+
+#: src/humanize/number.py:141
+msgid "three"
+msgstr "drie"
+
+#: src/humanize/number.py:142
+msgid "four"
+msgstr "vier"
+
+#: src/humanize/number.py:143
+msgid "five"
+msgstr "vijf"
+
+#: src/humanize/number.py:144
+msgid "six"
+msgstr "zes"
+
+#: src/humanize/number.py:145
+msgid "seven"
+msgstr "zeven"
+
+#: src/humanize/number.py:146
+msgid "eight"
+msgstr "acht"
+
+#: src/humanize/number.py:147
+msgid "nine"
+msgstr "negen"
+
+#: src/humanize/time.py:87
+#, fuzzy, python-format
+msgid "%d microsecond"
+msgid_plural "%d microseconds"
+msgstr[0] "%d microseconde"
+msgstr[1] "%d microseconden"
+
+#: src/humanize/time.py:93
+#, fuzzy, python-format
+msgid "%d millisecond"
+msgid_plural "%d milliseconds"
+msgstr[0] "%d milliseconde"
+msgstr[1] "%d milliseconden"
+
+#: src/humanize/time.py:96 src/humanize/time.py:170
+msgid "a moment"
+msgstr "een moment"
+
+#: src/humanize/time.py:98
+msgid "a second"
+msgstr "een seconde"
+
+#: src/humanize/time.py:100
+#, python-format
+msgid "%d second"
+msgid_plural "%d seconds"
+msgstr[0] "%d seconde"
+msgstr[1] "%d seconden"
+
+#: src/humanize/time.py:102
+msgid "a minute"
+msgstr "een minuut"
+
+#: src/humanize/time.py:105
+#, python-format
+msgid "%d minute"
+msgid_plural "%d minutes"
+msgstr[0] "%d minuut"
+msgstr[1] "%d minuten"
+
+#: src/humanize/time.py:107
+msgid "an hour"
+msgstr "een uur"
+
+#: src/humanize/time.py:110
+#, python-format
+msgid "%d hour"
+msgid_plural "%d hours"
+msgstr[0] "%d uur"
+msgstr[1] "%d uren"
+
+#: src/humanize/time.py:113
+msgid "a day"
+msgstr "een dag"
+
+#: src/humanize/time.py:115 src/humanize/time.py:118
+#, python-format
+msgid "%d day"
+msgid_plural "%d days"
+msgstr[0] "%d dag"
+msgstr[1] "%d dagen"
+
+#: src/humanize/time.py:120
+msgid "a month"
+msgstr "een maand"
+
+#: src/humanize/time.py:122
+#, python-format
+msgid "%d month"
+msgid_plural "%d months"
+msgstr[0] "%d maand"
+msgstr[1] "%d maanden"
+
+#: src/humanize/time.py:125
+msgid "a year"
+msgstr "een jaar"
+
+#: src/humanize/time.py:127 src/humanize/time.py:136
+#, python-format
+msgid "1 year, %d day"
+msgid_plural "1 year, %d days"
+msgstr[0] "1 jaar, %d dag"
+msgstr[1] "1 jaar, %d dagen"
+
+#: src/humanize/time.py:130
+msgid "1 year, 1 month"
+msgstr "1 jaar, 1 maand"
+
+#: src/humanize/time.py:133
+#, python-format
+msgid "1 year, %d month"
+msgid_plural "1 year, %d months"
+msgstr[0] "1 jaar, %d maand"
+msgstr[1] "1 jaar, %d maanden"
+
+#: src/humanize/time.py:138
+#, python-format
+msgid "%d year"
+msgid_plural "%d years"
+msgstr[0] "%d jaar"
+msgstr[1] "%d jaar"
+
+#: src/humanize/time.py:167
+#, python-format
+msgid "%s from now"
+msgstr "over %s"
+
+#: src/humanize/time.py:167
+#, python-format
+msgid "%s ago"
+msgstr "%s geleden"
+
+#: src/humanize/time.py:171
+msgid "now"
+msgstr "nu"
+
+#: src/humanize/time.py:190
+msgid "today"
+msgstr "vandaag"
+
+#: src/humanize/time.py:192
+msgid "tomorrow"
+msgstr "morgen"
+
+#: src/humanize/time.py:194
+msgid "yesterday"
+msgstr "gisteren"

@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
+
 from napari.layers import Points
 
 
@@ -34,7 +35,7 @@ class Points2DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 2)
 
     def mem_layer(self, n):
         """Memory used by layer."""
@@ -73,7 +74,7 @@ class Points3DSuite:
 
     def time_get_value(self, n):
         """Time to get current value."""
-        self.layer.get_value()
+        self.layer.get_value((0,) * 3)
 
     def mem_layer(self, n):
         """Memory used by layer."""
@@ -82,3 +83,21 @@ class Points3DSuite:
     def mem_data(self, n):
         """Memory used by raw data."""
         return self.data
+
+
+class PointsSlicingSuite:
+    """Benchmarks for slicing the Points layer with 3D data."""
+
+    params = [True, False]
+
+    def setup(self, flatten_slice_axis):
+        np.random.seed(0)
+        self.data = np.random.uniform(size=(20_000_000, 3), low=0, high=500)
+        if flatten_slice_axis:
+            self.data[:, 0] = np.round(self.data[:, 0])
+        self.layer = Points(self.data)
+        self.slice = np.s_[249, :, :]
+
+    def time_slice_points(self, flatten_slice_axis):
+        """Time to take one slice of points"""
+        self.layer._slice_data(self.slice)

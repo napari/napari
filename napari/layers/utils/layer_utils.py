@@ -1,34 +1,72 @@
+from __future__ import annotations
+
+from typing import Dict, Optional, Tuple
+
+import dask
 import numpy as np
 
+from ...utils.action_manager import action_manager
+from ...utils.transforms import Affine
+from ...utils.translations import trans
 
-def increment_unnamed_colormap(name, names):
-    """Increment name for unnamed colormap.
+
+def register_layer_action(keymapprovider, description: str, shortcuts=None):
+    """
+    Convenient decorator to register an action with the current Layers
+
+    It will use the function name as the action name. We force the description
+    to be given instead of function docstring for translation purpose.
+
 
     Parameters
     ----------
-    name : str
-        Name of colormap to be incremented.
-    names : List[str]
-        Names of existing colormaps.
+
+    keymapprovider : KeymapProvider
+        class on which to register the keybindings – this will typically be
+        the instance in focus that will handle the keyboard shortcut.
+    description : str
+        The description of the action, this will typically be translated and
+        will be what will be used in tooltips.
+    shortcuts : str | List[str]
+        Shortcut to bind by default to the action we are registering.
 
     Returns
     -------
-    name : str
-        Name of colormap after incrementing.
+    function:
+        Actual decorator to apply to a function. Given decorator returns the
+        function unmodified to allow decorator stacking.
+
     """
-    if name == '[unnamed colormap]':
-        past_names = [n for n in names if n.startswith('[unnamed colormap')]
-        name = f'[unnamed colormap {len(past_names)}]'
-    return name
+
+    def _inner(func):
+        nonlocal shortcuts
+        name = 'napari:' + func.__name__
+        action_manager.register_action(
+            name=name,
+            command=func,
+            description=description,
+            keymapprovider=keymapprovider,
+        )
+        if shortcuts:
+            if isinstance(shortcuts, str):
+                shortcuts = [shortcuts]
+
+            for shortcut in shortcuts:
+                action_manager.bind_shortcut(name, shortcut)
+        return func
+
+    return _inner
 
 
-def calc_data_range(data):
+def calc_data_range(data, rgb=False):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
-    -------
+    ----------
     data : array
         Data to calculate range of values over.
+    rgb : bool
+        Flag if data is rgb.
 
     Returns
     -------
@@ -42,17 +80,34 @@ def calc_data_range(data):
     """
     if data.dtype == np.uint8:
         return [0, 255]
-    if np.prod(data.shape) > 1e6:
+    if np.prod(data.shape) > 1e7:
         # If data is very large take the average of the top, bottom, and
         # middle slices
-        bottom_plane_idx = (0,) * (data.ndim - 2)
-        middle_plane_idx = tuple(s // 2 for s in data.shape[:-2])
-        top_plane_idx = tuple(s - 1 for s in data.shape[:-2])
+        offset = 2 + int(rgb)
+        bottom_plane_idx = (0,) * (data.ndim - offset)
+        middle_plane_idx = tuple(s // 2 for s in data.shape[:-offset])
+        top_plane_idx = tuple(s - 1 for s in data.shape[:-offset])
         idxs = [bottom_plane_idx, middle_plane_idx, top_plane_idx]
-        reduced_data = [
-            [np.max(data[idx]) for idx in idxs],
-            [np.min(data[idx]) for idx in idxs],
-        ]
+        # If each plane is also very large, look only at a subset of the image
+        if (
+            np.prod(data.shape[-offset:]) > 1e7
+            and data.shape[-offset] > 64
+            and data.shape[-offset + 1] > 64
+        ):
+            # Find a centeral patch of the image to take
+            center = [int(s // 2) for s in data.shape[-offset:]]
+            cental_slice = tuple(slice(c - 31, c + 31) for c in center[:2])
+            reduced_data = [
+                [np.max(data[idx + cental_slice]) for idx in idxs],
+                [np.min(data[idx + cental_slice]) for idx in idxs],
+            ]
+        else:
+            reduced_data = [
+                [np.max(data[idx]) for idx in idxs],
+                [np.min(data[idx]) for idx in idxs],
+            ]
+        # compute everything in one go
+        reduced_data = dask.compute(*reduced_data)
     else:
         reduced_data = data
 
@@ -105,3 +160,192 @@ def segment_normal(a, b, p=(0, 0, 1)):
     unit_norm = normal / norm
 
     return unit_norm
+
+
+def convert_to_uint8(data: np.ndarray) -> np.ndarray:
+    """
+    Convert array content to uint8.
+
+    If all negative values are changed on 0.
+
+    If values are integer and bellow 256 it is simple casting otherwise maximum value for this data type is picked
+    and values are scaled by 255/maximum type value.
+
+    Binary images ar converted to [0,255] images.
+
+    float images are multiply by 255 and then casted to uint8.
+
+    Based on skimage.util.dtype.convert but limited to output type uint8
+    """
+    out_dtype = np.dtype(np.uint8)
+    out_max = np.iinfo(out_dtype).max
+    if data.dtype == out_dtype:
+        return data
+    in_kind = data.dtype.kind
+    if in_kind == "b":
+        return data.astype(out_dtype) * 255
+    if in_kind == "f":
+        image_out = np.multiply(data, out_max, dtype=data.dtype)
+        np.rint(image_out, out=image_out)
+        np.clip(image_out, 0, out_max, out=image_out)
+        return image_out.astype(out_dtype)
+
+    if in_kind in "ui":
+        if in_kind == "u":
+            if data.max() < out_max:
+                return data.astype(out_dtype)
+            return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
+                out_dtype
+            )
+        else:
+            np.maximum(data, 0, out=data, dtype=data.dtype)
+            if data.dtype == np.int8:
+                return (data * 2).astype(np.uint8)
+            if data.max() < out_max:
+                return data.astype(out_dtype)
+            return np.right_shift(
+                data, (data.dtype.itemsize - 1) * 8 - 1
+            ).astype(out_dtype)
+
+
+def dataframe_to_properties(
+    dataframe,
+) -> Tuple[Dict[str, np.ndarray], Optional[Dict[int, int]]]:
+    """Convert a dataframe to Points.properties formatted dictionary.
+
+    Parameters
+    ----------
+    dataframe : DataFrame
+        The dataframe object to be converted to a properties dictionary
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        A properties dictionary where the key is the property name and the value
+        is an ndarray with the property value for each point.
+    Optional[dict[int, int]]
+        mapping from label number to position (row) in properties
+    """
+
+    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
+    index = None
+    if 'index' in properties:
+        index = {i: k for k, i in enumerate(properties['index'])}
+    return properties, index
+
+
+def compute_multiscale_level(
+    requested_shape, shape_threshold, downsample_factors
+):
+    """Computed desired level of the multiscale given requested field of view.
+
+    The level of the multiscale should be the lowest resolution such that
+    the requested shape is above the shape threshold. By passing a shape
+    threshold corresponding to the shape of the canvas on the screen this
+    ensures that we have at least one data pixel per screen pixel, but no
+    more than we need.
+
+    Parameters
+    ----------
+    requested_shape : tuple
+        Requested shape of field of view in data coordinates
+    shape_threshold : tuple
+        Maximum size of a displayed tile in pixels.
+    downsample_factors : list of tuple
+        Downsampling factors for each level of the multiscale. Must be increasing
+        for each level of the multiscale.
+
+    Returns
+    -------
+    level : int
+        Level of the multiscale to be viewing.
+    """
+    # Scale shape by downsample factors
+    scaled_shape = requested_shape / downsample_factors
+
+    # Find the highest resolution level allowed
+    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
+    if len(locations) > 0:
+        level = locations[-1][0]
+    else:
+        level = 0
+    return level
+
+
+def compute_multiscale_level_and_corners(
+    corner_pixels, shape_threshold, downsample_factors
+):
+    """Computed desired level and corners of a multiscale view.
+
+    The level of the multiscale should be the lowest resolution such that
+    the requested shape is above the shape threshold. By passing a shape
+    threshold corresponding to the shape of the canvas on the screen this
+    ensures that we have at least one data pixel per screen pixel, but no
+    more than we need.
+
+    Parameters
+    ----------
+    corner_pixels : array (2, D)
+        Requested corner pixels at full resolution.
+    shape_threshold : tuple
+        Maximum size of a displayed tile in pixels.
+    downsample_factors : list of tuple
+        Downsampling factors for each level of the multiscale. Must be increasing
+        for each level of the multiscale.
+
+    Returns
+    -------
+    level : int
+        Level of the multiscale to be viewing.
+    corners : array (2, D)
+        Needed corner pixels at target resolution.
+    """
+    requested_shape = corner_pixels[1] - corner_pixels[0]
+    level = compute_multiscale_level(
+        requested_shape, shape_threshold, downsample_factors
+    )
+
+    corners = corner_pixels / downsample_factors[level]
+    corners = np.array([np.floor(corners[0]), np.ceil(corners[1])]).astype(int)
+
+    return level, corners
+
+
+def coerce_affine(affine, ndim, name=None):
+    """Coerce a user input into an affine transform object.
+
+    If the input is already an affine transform object, that same object is returned
+    with a name change if the given name is not None. If the input is None, an identity
+    affine transform object of the given dimensionality is returned.
+
+     Parameters
+    ----------
+    affine : array-like or napari.utils.transforms.Affine
+        An existing affine transform object or an array-like that is its transform matrix.
+    ndim : int
+        The desired dimensionality of the transform. Ignored if implied by affine.
+    name : str
+        The desired name of the transform.
+
+    Returns
+    -------
+    napari.utils.transforms.Affine
+        The input coerced into an affine transform object.
+    """
+    if affine is None:
+        affine = Affine(affine_matrix=np.eye(ndim + 1))
+    elif isinstance(affine, np.ndarray):
+        affine = Affine(affine_matrix=affine)
+    elif isinstance(affine, list):
+        affine = Affine(affine_matrix=np.array(affine))
+    elif not isinstance(affine, Affine):
+        raise TypeError(
+            trans._(
+                'affine input not recognized. must be either napari.utils.transforms.Affine or ndarray. Got {dtype}',
+                deferred=True,
+                dtype=type(affine),
+            )
+        )
+    if name is not None:
+        affine.name = name
+    return affine

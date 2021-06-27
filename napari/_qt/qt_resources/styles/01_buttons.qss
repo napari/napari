@@ -1,0 +1,238 @@
+
+/* ----------------- Buttons -------------------- */
+
+QtDeleteButton {
+   image: url(":/themes/{{ folder }}/delete.svg");
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   padding: 0px;
+}
+
+QtViewerPushButton{
+   min-width : 28px;
+   max-width : 28px;
+   min-height : 28px;
+   max-height : 28px;
+   padding: 0px;
+   
+}
+
+QtViewerPushButton[mode="new_points"] {
+  image: url(":/themes/{{ folder }}/new_points.svg");
+}
+
+QtViewerPushButton[mode="new_shapes"] {
+  image: url(":/themes/{{ folder }}/new_shapes.svg");
+}
+
+QtViewerPushButton[mode="warning"] {
+  image: url(":/themes/{{ folder }}/warning.svg");
+}
+
+QtViewerPushButton[mode="new_labels"] {
+  image: url(":/themes/{{ folder }}/new_labels.svg");
+}
+
+QtViewerPushButton[mode="console"] {
+  image: url(":/themes/{{ folder }}/console.svg");
+}
+
+QtViewerPushButton[mode="roll"] {
+  image: url(":/themes/{{ folder }}/roll.svg");
+}
+
+QtViewerPushButton[mode="transpose"] {
+  image: url(":/themes/{{ folder }}/transpose.svg");
+}
+
+QtViewerPushButton[mode="home"] {
+  image: url(":/themes/{{ folder }}/home.svg");
+}
+
+QtStateButton[mode="ndisplay_button"]:checked {
+  image: url(":/themes/{{ folder }}/3D.svg");
+}
+
+QtStateButton[mode="ndisplay_button"] {
+  image: url(":/themes/{{ folder }}/2D.svg");
+}
+
+QtStateButton[mode="grid_view_button"]:checked {
+  image: url(":/themes/{{ folder }}/square.svg");
+}
+
+QtStateButton[mode="grid_view_button"] {
+  image: url(":/themes/{{ folder }}/grid.svg");
+}
+
+QtModeRadioButton {
+  min-height : 28px;
+  padding: 0px;
+}
+
+QtModeRadioButton::indicator:unchecked {
+  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background-color: {{ primary }};
+}
+
+QtModeRadioButton::indicator:checked {
+  border-radius: 3px;
+  height: 28px;
+  width: 28px;
+  padding: 0;
+  background-color: {{ current }};
+}
+
+
+QtModeRadioButton::indicator:disabled {
+  background-color: {{ darken(foreground, 20) }}
+}
+
+QtModeRadioButton::indicator:unchecked:hover {
+  background-color: {{ highlight }};
+}
+
+QtModeRadioButton[mode="zoom"]::indicator {
+  image: url(":/themes/{{ folder }}/zoom.svg");
+}
+
+QtModeRadioButton[mode="select"]::indicator {
+  image: url(":/themes/{{ folder }}/select.svg");
+}
+
+QtModeRadioButton[mode="direct"]::indicator {
+  image: url(":/themes/{{ folder }}/direct.svg");
+}
+
+QtModeRadioButton[mode="rectangle"]::indicator {
+  image: url(":/themes/{{ folder }}/rectangle.svg");
+}
+
+QtModeRadioButton[mode="ellipse"]::indicator {
+  image: url(":/themes/{{ folder }}/ellipse.svg");
+  color: red;
+}
+
+QtModeRadioButton[mode="line"]::indicator {
+  image: url(":/themes/{{ folder }}/line.svg");
+}
+
+QtModeRadioButton[mode="path"]::indicator {
+  image: url(":/themes/{{ folder }}/path.svg");
+}
+
+QtModeRadioButton[mode="polygon"]::indicator {
+  image: url(":/themes/{{ folder }}/polygon.svg");
+}
+
+QtModeRadioButton[mode="vertex_insert"]::indicator {
+  image: url(":/themes/{{ folder }}/vertex_insert.svg");
+}
+
+QtModeRadioButton[mode="vertex_remove"]::indicator {
+  image: url(":/themes/{{ folder }}/vertex_remove.svg");
+}
+
+QtModeRadioButton[mode="paint"]::indicator {
+  image: url(":/themes/{{ folder }}/paint.svg");
+}
+
+QtModeRadioButton[mode="fill"]::indicator {
+  image: url(":/themes/{{ folder }}/fill.svg");
+}
+
+QtModeRadioButton[mode="picker"]::indicator {
+  image: url(":/themes/{{ folder }}/picker.svg");
+}
+
+QtModeRadioButton[mode="erase"]::indicator {
+    image: url(":/themes/{{ folder }}/erase.svg");
+}
+
+QtModeRadioButton[mode="pan_zoom"]::indicator {
+    image: url(":/themes/{{ folder }}/zoom.svg");
+}
+
+QtModeRadioButton[mode="select_points"]::indicator {
+    image: url(":/themes/{{ folder }}/select.svg");
+}
+
+QtModeRadioButton[mode="add_points"]::indicator {
+    image: url(":/themes/{{ folder }}/add.svg");
+}
+
+QtModePushButton[mode="shuffle"] {
+   image: url(":/themes/{{ folder }}/shuffle.svg");
+}
+
+QtModePushButton[mode="move_back"] {
+   image: url(":/themes/{{ folder }}/move_back.svg");
+}
+
+QtModePushButton[mode="move_front"] {
+   image: url(":/themes/{{ folder }}/move_front.svg");
+}
+
+QtModePushButton[mode="delete_shape"] {
+   image: url(":/themes/{{ folder }}/delete_shape.svg");
+}
+
+QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
+  background-color: {{ warning }};
+}
+
+
+QtCopyToClipboardButton {
+   background-color: {{ background }};
+   margin: 0px;
+   padding: 1px 1px 3px 2px;
+   border: 0px;
+   min-width: 18px;
+   max-width: 18px;
+   min-height: 18px;
+   max-height: 18px;
+   border-radius: 3px;
+}
+
+#QtCopyToClipboardButton {
+  image: url(":/themes/{{ folder }}/copy_to_clipboard.svg");
+}
+
+QtPlayButton {
+  border-radius: 2px;
+  height: 11px;
+  width: 11px;
+  margin: 0px 2px;
+  padding: 2px;
+  border: 0px;
+}
+
+QtPlayButton[reverse=True] {
+    image: url(":/themes/{{ folder }}/left_arrow.svg");
+}
+
+QtPlayButton[reverse=False] {
+  background: {{ foreground }};
+  image: url(":/themes/{{ folder }}/right_arrow.svg");
+}
+
+QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
+  background: {{ primary }};
+}
+
+QtPlayButton[playing=True]:hover {
+  background-color: {{ lighten(warning, 10) }};
+}
+
+QtPlayButton[playing=True] {
+    image: url(":/themes/{{ folder }}/square.svg");
+    background-color: {{ warning }};
+    height: 12px;
+    width: 12px;
+    padding: 2px;
+}

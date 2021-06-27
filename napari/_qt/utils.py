@@ -1,12 +1,72 @@
 from contextlib import contextmanager
-from functools import lru_cache
-from typing import Type
+from functools import lru_cache, partial
+from typing import Sequence, Union
 
 import numpy as np
-from qtpy import API_NAME
-from qtpy.QtCore import QObject, QSize, Qt, QThread
-from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
-from qtpy.QtWidgets import QGraphicsOpacityEffect, QListWidget
+import qtpy
+from qtpy.QtCore import QByteArray, QPropertyAnimation, QSize, Qt
+from qtpy.QtGui import QColor, QCursor, QDrag, QImage, QPainter, QPixmap
+from qtpy.QtWidgets import (
+    QApplication,
+    QGraphicsColorizeEffect,
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QListWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from ..utils.colormaps.standardize_color import transform_color
+from ..utils.events.custom_types import Array
+from ..utils.misc import is_sequence
+from ..utils.translations import trans
+
+QBYTE_FLAG = "!QBYTE_"
+
+
+def is_qbyte(string: str) -> bool:
+    """Check if a string is a QByteArray string.
+
+    Parameters
+    ----------
+    string : bool
+        State string.
+    """
+    return isinstance(string, str) and string.startswith(QBYTE_FLAG)
+
+
+def qbytearray_to_str(qbyte: QByteArray) -> str:
+    """Convert a window state to a string.
+
+    Used for restoring the state of the main window.
+
+    Parameters
+    ----------
+    qbyte : QByteArray
+        State array.
+    """
+    return QBYTE_FLAG + qbyte.toBase64().data().decode()
+
+
+def str_to_qbytearray(string: str) -> QByteArray:
+    """Convert a string to a QbyteArray.
+
+    Used for restoring the state of the main window.
+
+    Parameters
+    ----------
+    string : str
+        State string.
+    """
+    if len(string) < len(QBYTE_FLAG) or not is_qbyte(string):
+        raise ValueError(
+            trans._(
+                "Invalid QByte string. QByte strings start with '{QBYTE_FLAG}'",
+                QBYTE_FLAG=QBYTE_FLAG,
+            )
+        )
+
+    return QByteArray.fromBase64(string[len(QBYTE_FLAG) :].encode())
 
 
 def QImg2array(img):
@@ -32,7 +92,7 @@ def QImg2array(img):
     # As vispy doesn't use qtpy we need to reconcile the differences
     # between the `QImage` API for `PySide2` and `PyQt5` on how to convert
     # a QImage to a numpy array.
-    if API_NAME == 'PySide2':
+    if qtpy.API_NAME == 'PySide2':
         arr = np.array(b).reshape(h, w, c)
     else:
         b.setsize(h * w * c)
@@ -44,92 +104,26 @@ def QImg2array(img):
     return arr
 
 
-def new_worker_qthread(
-    Worker: Type[QObject], *args, start=False, connections=None, **kwargs
-):
-    """This is a convenience method to start a worker in a Qthread
-
-    It follows the pattern described here:
-    https://www.qt.io/blog/2010/06/17/youre-doing-it-wrong
-    and
-    https://doc.qt.io/qt-5/qthread.html#details
-
-    all *args, **kwargs will be passed to the Worker class on instantiation.
-
-    Parameters
-    ----------
-    Worker : QObject
-        QObject type that implements a work() method.  The Worker should also
-        emit a finished signal when the work is done.
-    start : bool
-        If True, worker will be started immediately, otherwise, you must
-        manually start the worker.
-    connections: dict, optional
-        Optional dictionary of {signal: function} to connect to the new worker.
-        for instance:  connections = {'incremented': myfunc} will result in:
-        worker.incremented.connect(myfunc)
-
-    Examples
-    --------
-    Create some QObject that has a long-running work method:
-
-    >>> class Worker(QObject):
-    ...
-    ...     finished = Signal()
-    ...     increment = Signal(int)
-    ...
-    ...     def __init__(self, argument):
-    ...         super().__init__()
-    ...         self.argument = argument
-    ...
-    ...     @Slot()
-    ...     def work(self):
-    ...         # some long running task...
-    ...         import time
-    ...         for i in range(10):
-    ...             time.sleep(1)
-    ...             self.increment.emit(i)
-    ...         self.finished.emit()
-    ...
-    >>> worker, thread = new_worker_qthread(
-    ...     Worker,
-    ...     'argument',
-    ...     start=True,
-    ...     connections={'increment': print},
-    ... )
-
-
-
-    >>> print([i for i in example_generator(4)])
-    [0, 1, 2, 3]
-
-    """
-
-    if not isinstance(connections, (dict, type(None))):
-        raise TypeError('connections parameter must be a dict')
-
-    thread = QThread()
-    worker = Worker(*args, **kwargs)
-    worker.moveToThread(thread)
-    thread.started.connect(worker.work)
-    worker.finished.connect(thread.quit)
-    worker.finished.connect(worker.deleteLater)
-    thread.finished.connect(thread.deleteLater)
-
-    if connections:
-        [getattr(worker, key).connect(val) for key, val in connections.items()]
-
-    if start:
-        thread.start()  # sometimes need to connect stuff before starting
-    return worker, thread
-
-
 @contextmanager
 def qt_signals_blocked(obj):
     """Context manager to temporarily block signals from `obj`"""
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+@contextmanager
+def event_hook_removed():
+    """Context manager to temporarily remove the PyQt5 input hook"""
+    from qtpy import QtCore
+
+    if hasattr(QtCore, 'pyqtRemoveInputHook'):
+        QtCore.pyqtRemoveInputHook()
+    try:
+        yield
+    finally:
+        if hasattr(QtCore, 'pyqtRestoreInputHook'):
+            QtCore.pyqtRestoreInputHook()
 
 
 def disable_with_opacity(obj, widget_list, disabled):
@@ -145,6 +139,7 @@ def disable_with_opacity(obj, widget_list, disabled):
 @lru_cache(maxsize=64)
 def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
@@ -152,6 +147,21 @@ def square_pixmap(size):
     painter.drawRect(0, 0, size - 1, size - 1)
     painter.setPen(Qt.black)
     painter.drawRect(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
+
+
+@lru_cache(maxsize=64)
+def circle_pixmap(size: int):
+    """Create a white/black hollow circle pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setPen(Qt.white)
+    painter.drawEllipse(0, 0, size - 1, size - 1)
+    painter.setPen(Qt.black)
+    painter.drawEllipse(1, 1, size - 3, size - 3)
     painter.end()
     return pixmap
 
@@ -175,8 +185,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     QDrag
         A QDrag instance with a pixmap of the currently selected item.
 
-    Example
-    -------
+    Examples
+    --------
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)
@@ -196,3 +206,120 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     drag.setPixmap(pixmap)
     drag.setHotSpot(list_widget.viewport().mapFromGlobal(QCursor.pos()))
     return drag
+
+
+def combine_widgets(
+    widgets: Union[QWidget, Sequence[QWidget]], vertical: bool = False
+) -> QWidget:
+    """Combine a list of widgets into a single QWidget with Layout.
+
+    Parameters
+    ----------
+    widgets : QWidget or sequence of QWidget
+        A widget or a list of widgets to combine.
+    vertical : bool, optional
+        Whether the layout should be QVBoxLayout or not, by default
+        QHBoxLayout is used
+
+    Returns
+    -------
+    QWidget
+        If ``widgets`` is a sequence, returns combined QWidget with `.layout`
+        property, otherwise returns the original widget.
+
+    Raises
+    ------
+    TypeError
+        If ``widgets`` is neither a ``QWidget`` or a sequence of ``QWidgets``.
+    """
+    if isinstance(getattr(widgets, 'native', None), QWidget):
+        # compatibility with magicgui v0.2.0 which no longer uses QWidgets
+        # directly. Like vispy, the backend widget is at widget.native
+        return widgets.native  # type: ignore
+    elif isinstance(widgets, QWidget):
+        return widgets
+    elif is_sequence(widgets):
+        # the same as above, compatibility with magicgui v0.2.0
+        widgets = [
+            i.native if isinstance(getattr(i, 'native', None), QWidget) else i
+            for i in widgets
+        ]
+        if all(isinstance(i, QWidget) for i in widgets):
+            container = QWidget()
+            container.setLayout(QVBoxLayout() if vertical else QHBoxLayout())
+            for widget in widgets:
+                container.layout().addWidget(widget)
+            return container
+    raise TypeError(
+        trans._('"widget" must be a QWidget or a sequence of QWidgets')
+    )
+
+
+def add_flash_animation(
+    widget: QWidget, duration: int = 300, color: Array = (0.5, 0.5, 0.5, 0.5)
+):
+    """Add flash animation to widget to highlight certain action (e.g. taking a screenshot).
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    duration : int
+        Duration of the flash animation.
+    color : Array
+        Color of the flash animation. By default, we use light gray.
+    """
+    color = transform_color(color)[0]
+    color = (255 * color).astype("int")
+
+    effect = QGraphicsColorizeEffect(widget)
+    widget.setGraphicsEffect(effect)
+
+    widget._flash_animation = QPropertyAnimation(effect, b"color")
+    widget._flash_animation.setStartValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setEndValue(QColor(0, 0, 0, 0))
+    widget._flash_animation.setLoopCount(1)
+
+    # let's make sure to remove the animation from the widget because
+    # if we don't, the widget will actually be black and white.
+    widget._flash_animation.finished.connect(
+        partial(remove_flash_animation, widget)
+    )
+
+    widget._flash_animation.start()
+
+    # now  set an actual time for the flashing and an intermediate color
+    widget._flash_animation.setDuration(duration)
+    widget._flash_animation.setKeyValueAt(0.5, QColor(*color))
+
+
+def remove_flash_animation(widget: QWidget):
+    """Remove flash animation from widget.
+
+    Parameters
+    ----------
+    widget : QWidget
+        Any Qt widget.
+    """
+    widget.setGraphicsEffect(None)
+    del widget._flash_animation
+
+
+def delete_qapp(app):
+    """Delete a QApplication
+
+    Parameters
+    ----------
+    app : qtpy.QApplication
+    """
+    try:
+        # Pyside2
+        from shiboken2 import delete
+    except ImportError:
+        # PyQt5
+        from sip import delete
+
+    delete(app)
+    # calling a second time is necessary on PySide2...
+    # see: https://bugreports.qt.io/browse/PYSIDE-1470
+    QApplication.instance()

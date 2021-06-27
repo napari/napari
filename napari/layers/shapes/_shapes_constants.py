@@ -1,8 +1,8 @@
-from enum import auto
 import sys
+from enum import auto
 
 from ...utils.misc import StringEnum
-from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 
 
 class Mode(StringEnum):
@@ -35,9 +35,24 @@ class Mode(StringEnum):
     VERTEX_REMOVE = auto()
 
 
-class Box:
-    """Box: Constants associated with the vertices of the interaction box
+class ColorMode(StringEnum):
     """
+    ColorMode: Color setting mode.
+
+    DIRECT (default mode) allows each shape to be set arbitrarily
+
+    CYCLE allows the color to be set via a color cycle over an attribute
+
+    COLORMAP allows color to be set via a color map over an attribute
+    """
+
+    DIRECT = auto()
+    CYCLE = auto()
+    COLORMAP = auto()
+
+
+class Box:
+    """Box: Constants associated with the vertices of the interaction box"""
 
     WITH_HANDLE = [0, 1, 2, 3, 4, 5, 6, 7, 9]
     LINE_HANDLE = [7, 6, 4, 2, 0, 7, 8]

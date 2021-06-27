@@ -1,14 +1,9 @@
-import warnings
-
 import numpy as np
-from vispy.color import Colormap
 
-from ..utils.colormaps import make_colorbar
-from ..utils.event import Event
+from ..utils.colormaps import ensure_colormap
+from ..utils.events import Event
 from ..utils.status_messages import format_float
 from ..utils.validators import validate_n_seq
-from .utils.layer_utils import increment_unnamed_colormap
-
 
 validate_2_tuple = validate_n_seq(2)
 
@@ -50,32 +45,12 @@ class IntensityVisualizationMixin:
 
     @property
     def colormap(self):
-        """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
-        """
-        return self._colormap_name, self._cmap
+        """napari.utils.Colormap: colormap for luminance images."""
+        return self._colormap
 
     @colormap.setter
     def colormap(self, colormap):
-        name = '[unnamed colormap]'
-        if isinstance(colormap, str):
-            name = colormap
-        elif isinstance(colormap, tuple):
-            name, cmap = colormap
-            self._colormaps[name] = cmap
-        elif isinstance(colormap, dict):
-            self._colormaps.update(colormap)
-            name = list(colormap)[0]  # first key in dict
-        elif isinstance(colormap, Colormap):
-            name = increment_unnamed_colormap(
-                name, list(self._colormaps.keys())
-            )
-            self._colormaps[name] = colormap
-        else:
-            warnings.warn(f'invalid value for colormap: {colormap}')
-            name = self._colormap_name
-        self._colormap_name = name
-        self._cmap = self._colormaps[name]
-        self._colorbar = make_colorbar(self._cmap)
+        self._colormap = ensure_colormap(colormap)
         self._update_thumbnail()
         self.events.colormap()
 
@@ -97,7 +72,6 @@ class IntensityVisualizationMixin:
             + ', '
             + format_float(contrast_limits[1])
         )
-        self.status = self._contrast_limits_msg
         self._contrast_limits = contrast_limits
         # make sure range slider is big enough to fit range
         newrange = list(self.contrast_limits_range)
@@ -142,7 +116,6 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
         self.events.gamma()

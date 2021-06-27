@@ -1,7 +1,11 @@
+from typing import Tuple
+
 import numpy as np
-from ..utils.layer_utils import segment_normal
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
+
+from ...utils.translations import trans
+from ..utils.layer_utils import segment_normal
 
 
 def inside_triangles(triangles):
@@ -15,7 +19,7 @@ def inside_triangles(triangles):
     Returns
     -------
     inside : (N,) array of bool
-        Array with `True` values for trinagles containg the origin
+        Array with `True` values for trinagles containing the origin
     """
 
     AB = triangles[:, 1, :] - triangles[:, 0, :]
@@ -158,7 +162,7 @@ def lines_intersect(p1, q1, p2, q2):
     """Determines if line segment p1q1 intersects line segment p2q2
 
     Parameters
-    -------
+    ----------
     p1 : (2,) array
         Array of first point of first line segment
     q1 : (2,) array
@@ -208,7 +212,7 @@ def on_segment(p, q, r):
     """Checks if q is on the segment from p to r
 
     Parameters
-    -------
+    ----------
     p : (2,) array
         Array of first point of segment
     q : (2,) array
@@ -238,7 +242,7 @@ def orientation(p, q, r):
     """Determines oritentation of ordered triplet (p, q, r)
 
     Parameters
-    -------
+    ----------
     p : (2,) array
         Array of first point of triplet
     q : (2,) array
@@ -262,7 +266,7 @@ def is_collinear(points):
     """Determines if a list of 2D points are collinear.
 
     Parameters
-    -------
+    ----------
     points : (N, 2) array
         Points to be tested for collinearity
 
@@ -396,8 +400,10 @@ def rectangle_to_box(data):
     """
     if not data.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, D]`
-                         shape specifying corners for the rectangle"""
+            trans._(
+                "Data shape does not match expected `[4, D]` shape specifying corners for the rectangle",
+                deferred=True,
+            )
         )
     box = np.array(
         [
@@ -416,7 +422,7 @@ def rectangle_to_box(data):
 
 
 def find_corners(data):
-    """Finds the four corners of the interaction box definied by an array of
+    """Finds the four corners of the interaction box defined by an array of
     points
 
     Parameters
@@ -461,7 +467,7 @@ def center_radii_to_corners(center, radii):
 
 def triangulate_ellipse(corners, num_segments=100):
     """Determines the triangulation of a path. The resulting `offsets` can
-    mulitplied by a `width` scalar and be added to the resulting `centers`
+    multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
@@ -489,8 +495,10 @@ def triangulate_ellipse(corners, num_segments=100):
     """
     if not corners.shape[0] == 4:
         raise ValueError(
-            """Data shape does not match expected `[4, D]`
-                         shape specifying corners for the ellipse"""
+            trans._(
+                "Data shape does not match expected `[4, D]` shape specifying corners for the ellipse",
+                deferred=True,
+            )
         )
 
     center = corners.mean(axis=0)
@@ -560,7 +568,7 @@ def triangulate_face(data):
 
 def triangulate_edge(path, closed=False):
     """Determines the triangulation of a path. The resulting `offsets` can
-    mulitplied by a `width` scalar and be added to the resulting `centers`
+    multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
@@ -613,7 +621,7 @@ def triangulate_edge(path, closed=False):
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """Determines the triangulation of a path in 2D. The resulting `offsets`
-    can be mulitplied by a `width` scalar and be added to the resulting
+    can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
     i.e. `vertices = centers + width*offsets`. Using the `centers` and
     `offsets` representation thus allows for the computed triangulation to be
@@ -794,7 +802,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         tube's cross section.
 
     Returns
-    ----------
+    -------
     centers : (M, 3) array
         Vertices of all triangles for the lines
     offsets : (M, D) array
@@ -820,7 +828,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         binormal = binormals[i]
 
         # Add a vertex for each point on the circle
-        v = np.arange(tube_points, dtype=np.float) / tube_points * 2 * np.pi
+        v = np.arange(tube_points, dtype=float) / tube_points * 2 * np.pi
         cx = -1.0 * np.cos(v)
         cy = np.sin(v)
         grid[i] = pos
@@ -860,7 +868,7 @@ def path_to_mask(mask_shape, vertices):
         Vertices of the path.
 
     Returns
-    ----------
+    -------
     mask : np.ndarray
         Boolean array with `True` for points along the path
     """
@@ -892,7 +900,7 @@ def poly_to_mask(mask_shape, vertices):
         Nx2 array of the vertices of the polygon.
 
     Returns
-    ----------
+    -------
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
@@ -920,7 +928,7 @@ def grid_points_in_poly(shape, vertices):
         Nx2 array of the vertices of the polygon.
 
     Returns
-    ----------
+    -------
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
@@ -943,7 +951,7 @@ def points_in_poly(points, vertices):
         Nx2 array of the vertices of the polygon.
 
     Returns
-    ----------
+    -------
     inside : np.ndarray
         Length M boolean array with `True` for points inside the polygon
     """
@@ -976,3 +984,103 @@ def points_in_poly(points, vertices):
     # if the number of crossings is odd then the point is inside the polygon
 
     return inside
+
+
+def extract_shape_type(data, shape_type=None):
+    """Separates shape_type from data if present, and returns both.
+
+    Parameters
+    ----------
+    data : Array | Tuple(Array,str) | List[Array | Tuple(Array, str)] | Tuple(List[Array], str)
+        list or array of vertices belonging to each shape, optionally containing shape type strings
+    shape_type : str | None
+        metadata shape type string, or None if none was passed
+
+    Returns
+    -------
+    data : Array | List[Array]
+        list or array of vertices belonging to each shape
+    shape_type : List[str] | None
+        type of each shape in data, or None if none was passed
+    """
+    # Tuple for one shape or list of shapes with shape_type
+    if isinstance(data, Tuple):
+        shape_type = data[1]
+        data = data[0]
+    # List of (vertices, shape_type) tuples
+    elif len(data) != 0 and all(isinstance(datum, Tuple) for datum in data):
+        shape_type = [datum[1] for datum in data]
+        data = [datum[0] for datum in data]
+    return data, shape_type
+
+
+def get_default_shape_type(current_type):
+    """Returns current shape type if current_type is one shape, else "polygon".
+
+    Parameters
+    ----------
+    current_type : list of str
+        list of current shape types
+
+    Returns
+    ----------
+    default_type : str
+        default shape type
+    """
+    first_type = current_type[0]
+    if all(shape_type == first_type for shape_type in current_type):
+        return first_type
+    return "rectangle"
+
+
+def get_shape_ndim(data):
+    """Checks whether data is a list of the same type of shape, one shape, or
+    a list of different shapes and returns the dimensionality of the shape/s.
+
+    Parameters
+    ----------
+    data : (N, ) list of array
+        List of shape data, where each element is an (N, D) array of the
+        N vertices of a shape in D dimensions.
+
+    Returns
+    -------
+    ndim : int
+        Dimensionality of the shape/s in data
+    """
+    # list of all the same shapes
+    if np.array(data, dtype=object).ndim == 3:
+        ndim = np.array(data).shape[2]
+    # just one shape
+    elif np.array(data[0]).ndim == 1:
+        ndim = np.array(data).shape[1]
+    # list of different shapes
+    else:
+        ndim = np.array(data[0]).shape[1]
+    return ndim
+
+
+def number_of_shapes(data):
+    """Determine number of shapes in the data.
+
+    Parameters
+    ----------
+    data : list or np.ndarray
+        Can either be no shapes, if empty, a
+        single shape or a list of shapes.
+
+    Returns
+    -------
+    n_shapes : int
+        Number of new shapes
+    """
+    if len(data) == 0:
+        # If no new shapes
+        n_shapes = 0
+    elif np.array(data[0]).ndim == 1:
+        # If a single array for a shape
+        n_shapes = 1
+    else:
+        n_shapes = len(data)
+
+    return n_shapes

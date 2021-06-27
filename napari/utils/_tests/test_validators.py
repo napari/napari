@@ -1,5 +1,6 @@
-from .. import validators
 import pytest
+
+from .. import validators
 
 
 def test_sequence_validator():
