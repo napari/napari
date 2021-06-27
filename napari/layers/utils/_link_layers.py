@@ -33,6 +33,8 @@ def get_linked_layers(*layers: Layer) -> Set[Layer]:
     layer that is linked to any one of the input layers.  They may not all be
     directly linked to each other.  This is useful for context menu generation.
     """
+    if not layers:
+        return {}
     refs = set.union(*(_LINKED_LAYERS.get(ref(x), set()) for x in layers))
     return {x() for x in refs if x() is not None}
 

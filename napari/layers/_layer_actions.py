@@ -1,8 +1,13 @@
+"""This module contains actions (functions) that operate on layers.
+
+Among other potential uses, these will populate the menu when you right-click
+on a layer in the LayerList.
+"""
 from __future__ import annotations
 
 from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Optional
+from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from typing_extensions import TypedDict
 
@@ -15,15 +20,7 @@ if TYPE_CHECKING:
     from napari.components import LayerList
 
 
-class ContextAction(TypedDict):
-    description: str
-    action: Callable
-    enable_when: str
-    show_when: Optional[str]
-
-
 def _duplicate_layer(ll: LayerList):
-
     for lay in list(ll.selection):
         new = deepcopy(lay)
         new.name += ' copy'
@@ -32,13 +29,15 @@ def _duplicate_layer(ll: LayerList):
 
 def _split_stack(ll: LayerList, axis: int = 0):
     layer = ll.selection.active
+    if not layer:
+        return
     if layer.rgb:
         images = stack_utils.split_rgb(layer)
     else:
         images = stack_utils.stack_to_images(layer, axis)
     ll.remove(layer)
     ll.extend(images)
-    ll.selection = set(images)
+    ll.selection = set(images)  # type: ignore
 
 
 def _convert(ll: LayerList, type_: str):
@@ -62,7 +61,41 @@ def _merge_stack(layer_list, rgb=False):
     layer_list.append(new)
 
 
-LAYER_ACTIONS = {
+class ContextAction(TypedDict):
+    """A dict that encapsulates a QAction in a QtActionContextMenu.
+
+    Parameters
+    ----------
+    description : str
+        The words that appear in the menu
+    action : callable
+        A function that may be called if the item is selected in the menu
+    enable_when : str
+        An expression that evaluates to a boolean (in namespace of some
+        context) and controls whether the menu item is enabled.
+    show_when : str
+        An expression that evaluates to a boolean (in namespace of some
+        context) and controls whether the menu item is visible.
+    """
+
+    description: str
+    action: Callable
+    enable_when: str
+    show_when: Optional[str]
+
+
+# Each item in LAYER_ACTIONS will be added to the `QtActionContextMenu` created
+# in _qt.containers._layer_delegate.LayerDelegate (i.e. they are options in the
+# menu when you right-click on a layer in the layerlist.)
+#
+# variable names used in the `enable_when` and `show_when` expressions must be
+# keys in the napari.components.layerlist.CONTEXT_KEYS dict.  If you need a new
+# context paramameter, add a key key:value pair to the CONTEXT_KEYS dict.
+#
+# `action` must be a callable that accepts a single argument, an instance of
+# `LayerList`.
+
+LAYER_ACTIONS: Dict[str, ContextAction] = {
     'napari:duplicate_layer': {
         'description': 'Duplicate Layer',
         'action': _duplicate_layer,
@@ -96,11 +129,6 @@ LAYER_ACTIONS = {
         'action': _merge_stack,
         'enable_when': 'only_images_selected and same_shape',
     },
-    # 'napari:merge_to_rgb': {
-    #     'description': 'Merge to RGB',
-    #     'action': partial(merge_stack, rgb=True),
-    #     'enable_when': 'only_images_selected and same_shape',
-    # },
     'sep1': {},
     'napari:link_selected_layers': {
         'description': 'Link Layers',

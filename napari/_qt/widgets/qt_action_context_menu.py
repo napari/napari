@@ -41,7 +41,7 @@ class QtActionContextMenu(QMenu):
     ...     'add_one': {
     ...         'description': 'Add one',
     ...         'action': lambda x: x.append(1),
-    ...         'enable_when': 'count < 1 and is_ready',
+    ...         'enable_when': 'count == 0 and is_ready',
     ...     },
     ... }
     >>> menu = QtActionContextMenu(ACTIONS)
@@ -65,10 +65,10 @@ class QtActionContextMenu(QMenu):
     >>> ctx
     {'count': 1, 'is_ready': True}
 
-    Use the context dict to update the menu
+    Use the context dict to update the menu.  Here, because count != 0,
+    `add_one` becomes disabled
 
     >>> menu.update_from_context(ctx)
-    >>> # because count > 1, `add_one` becomes disabled
     >>> menu._menu_actions['add_one'].isEnabled()
     False
     """
