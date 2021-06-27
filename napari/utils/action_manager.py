@@ -181,7 +181,11 @@ class ActionManager:
             )
 
     def register_action(
-        self, name, command, description, keymapprovider: KeymapProvider
+        self,
+        name: str,
+        command: callable,
+        description: str,
+        keymapprovider: KeymapProvider,
     ):
         """
         Register an action for future usage
@@ -202,8 +206,8 @@ class ActionManager:
             unique name/id of the command that can be used to refer to this
             command
         command : callable
-            take 0, or 1 parameter; is `instance` is not None, will be called
-            `instance` as first parameter.
+            take 0, or 1 parameter; if `keymapprovider` is not None, will be
+            called with `keymapprovider` as first parameter.
         description : str
             Long string to describe what the command does, will be used in
             tooltips.

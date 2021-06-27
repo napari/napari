@@ -80,7 +80,7 @@ jobs:
         working-directory: main
         env:
           DISPLAY: ":99.0"
-        - name: Build Docs
+      - name: Build Docs
         run: jupyter-book build docs
         working-directory: main
         env:
