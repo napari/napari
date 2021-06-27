@@ -88,6 +88,9 @@ uniform float u_threshold;
 uniform float u_attenuation; // todo add to vispy from napari
 uniform float u_relative_step_size;
 
+// clipping planes
+#clipping_planes_setup
+
 //varyings
 // varying vec3 v_texcoord;
 varying vec3 v_position;
@@ -248,12 +251,17 @@ void main() {{
     while (iter < nsteps) {{
         for (iter=iter; iter<nsteps; iter++)
         {{
-            // Get sample color
-            vec4 color = $sample(u_volumetex, loc);
-            float val = color.g;
+            // clipping planes
+            float is_shown = 1.0;
+            #clipping_planes_apply
+            if (is_shown >= 0)
+            {{
+                // Get sample color
+                vec4 color = $sample(u_volumetex, loc);
+                float val = color.g;
 
-            {in_loop}
-
+                {in_loop}
+            }}
             // Advance location deeper into the volume
             loc += step;
         }}
@@ -387,9 +395,22 @@ frag_dict = {
 }
 
 
+CLIPPING_PLANES_SETUP_SNIPPET = """
+    uniform vec3 clipping_plane_pos{idx};
+    uniform vec3 clipping_plane_norm{idx};
+    """
+
+
+CLIPPING_PLANES_APPLY_SNIPPET = """
+    vec3 relative_vec{idx} = loc - clipping_plane_pos{idx};
+    float is_shown{idx} = dot(relative_vec{idx}, clipping_plane_norm{idx});
+    is_shown = min(is_shown{idx}, is_shown);
+    """
+
+
 class VolumeVisual(Visual):
     """ Displays a 3D Volume
-    
+
     Parameters
     ----------
     vol : ndarray
@@ -441,6 +462,7 @@ class VolumeVisual(Visual):
         clim_range_threshold=0.2,
         emulate_texture=False,
         interpolation='linear',
+        clipping_planes=(),
     ):
 
         tex_cls = TextureEmulated3D if emulate_texture else Texture3D
@@ -498,7 +520,9 @@ class VolumeVisual(Visual):
         self.set_data(vol, clim)
 
         # Set params
+        self._clipping_planes = clipping_planes
         self.method = method
+        self.clipping_planes = clipping_planes # TODO: ugly
         self.relative_step_size = relative_step_size
         self.threshold = threshold if (threshold is not None) else vol.mean()
         self.freeze()
@@ -701,6 +725,64 @@ class VolumeVisual(Visual):
             self.update()
 
     @property
+    def clipping_planes(self):
+        return self._clipping_planes
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        old_value = self._clipping_planes
+        self._clipping_planes = value
+        if len(value) != len(old_value):
+            frag = self.get_frag(self.method)
+            frag = self.inject_clipping_planes(frag)
+            self.set_frag(frag)
+        for idx, plane in enumerate(self._clipping_planes):
+            self.shared_program[f'clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'clipping_plane_norm{idx}'] = tuple(plane[1])
+        self.update()
+
+    def inject_clipping_planes(self, frag):
+        clip_setup = []
+        clip_apply = []
+        for idx in range(len(self.clipping_planes)):
+            setup_code = CLIPPING_PLANES_SETUP_SNIPPET.format(idx=idx)
+            clip_setup.append(setup_code)
+            apply_code = CLIPPING_PLANES_APPLY_SNIPPET.format(idx=idx)
+            clip_apply.append(apply_code)
+        clip_setup = '\n'.join(clip_setup)
+        clip_apply = '\n'.join(clip_apply)
+
+        frag = frag.replace('#clipping_planes_setup', clip_setup)
+        frag = frag.replace('#clipping_planes_apply', clip_apply)
+        return frag
+
+    def get_frag(self, method):
+        known_methods = list(frag_dict.keys())
+        if method not in known_methods:
+            raise ValueError(
+                'Volume render method should be in %r, not %r'
+                % (known_methods, method)
+            )
+
+        return frag_dict[method]
+
+    def set_frag(self, frag):
+        # Get rid of specific variables - they may become invalid
+        if 'u_threshold' in self.shared_program:
+            self.shared_program['u_threshold'] = None
+
+        self.shared_program.frag = frag
+        self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
+        self.shared_program.frag['sample'] = self._tex.glsl_sample
+        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
+        self.shared_program['texture2D_LUT'] = (
+            self.cmap.texture_lut()
+            if (hasattr(self.cmap, 'texture_lut'))
+            else None
+        )
+        self.update()
+
+    @property
     def method(self):
         """The render method to use
 
@@ -720,28 +802,11 @@ class VolumeVisual(Visual):
 
     @method.setter
     def method(self, method):
-        # Check and save
-        known_methods = list(frag_dict.keys())
-        if method not in known_methods:
-            raise ValueError(
-                'Volume render method should be in %r, not %r'
-                % (known_methods, method)
-            )
+        frag = self.get_frag(method)
         self._method = method
-        # Get rid of specific variables - they may become invalid
-        if 'u_threshold' in self.shared_program:
-            self.shared_program['u_threshold'] = None
 
-        self.shared_program.frag = frag_dict[method]
-        self.shared_program.frag['sampler_type'] = self._tex.glsl_sampler_type
-        self.shared_program.frag['sample'] = self._tex.glsl_sample
-        self.shared_program.frag['cmap'] = Function(self._cmap.glsl_map)
-        self.shared_program['texture2D_LUT'] = (
-            self.cmap.texture_lut()
-            if (hasattr(self.cmap, 'texture_lut'))
-            else None
-        )
-        self.update()
+        frag = self.inject_clipping_planes(frag)
+        self.set_frag(frag)
 
     @property
     def threshold(self):
