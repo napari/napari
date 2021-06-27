@@ -51,6 +51,9 @@ class NotificationSeverity(StringEnum):
     def __ge__(self, other):
         return name2num[str(self)] >= name2num[str(other)]
 
+    def __eq__(self, other):
+        return str(self) == str(other)
+
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
