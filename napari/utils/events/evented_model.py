@@ -60,6 +60,16 @@ def no_class_attributes():
         main.ClassAttribute = utils.ClassAttribute
 
 
+def get_defaults(obj: BaseModel):
+    dflt = {}
+    for k, v in obj.__fields__.items():
+        d = v.get_default()
+        if d is None and isinstance(v.type_, main.ModelMetaclass):
+            d = get_defaults(v.type_)
+        dflt[k] = d
+    return dflt
+
+
 class EventedMetaclass(main.ModelMetaclass):
     """pydantic ModelMetaclass that preps "equality checking" operations.
 
@@ -158,6 +168,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     @property
     def events(self):
         return self._events
+
+    @property
+    def defaults(self):
+        return type(self)(**get_defaults(self))
 
     def asdict(self):
         """Convert a model to a dictionary."""

@@ -86,7 +86,9 @@ class _QtMainWindow(QMainWindow):
         self._status_bar = self.statusBar()
 
         settings = get_settings()
-        settings._defaults['plugins'].call_order = plugin_manager.call_order()
+
+        # TODO:
+        # settings.plugins.defaults.call_order = plugin_manager.call_order()
 
         # set the values in plugins to match the ones saved in settings
         if settings.plugins.call_order is not None:
