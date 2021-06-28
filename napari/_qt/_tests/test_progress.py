@@ -84,10 +84,11 @@ def test_progress_with_total(make_napari_viewer):
 def test_progress_with_context(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
 
-    with assert_pbar_added_to(viewer):
-        with progress(range(100)) as pbr:
-            assert pbr.n == 0
-            assert pbr._pbar.pbar.maximum() == pbr.total == 100
+    assert not qt_viewer_has_pbar(viewer)
+    with progress(range(100)) as pbr:
+        assert qt_viewer_has_pbar(viewer)
+        assert pbr.n == 0
+        assert pbr._pbar.pbar.maximum() == pbr.total == 100
 
 
 def test_progress_no_viewer():
@@ -106,14 +107,15 @@ def test_progress_no_viewer():
 def test_progress_nested(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
 
-    with assert_pbar_added_to(viewer):
-        with progress(range(10)) as pbr:
-            pbr2 = progress(range(2), nest_under=pbr)
-            prog_groups = get_progress_groups(viewer.window.qt_viewer)
-            assert len(prog_groups) == 1
-            # two progress bars + separator
-            assert prog_groups[0].layout().count() == 3
-            pbr2.close()
+    assert not qt_viewer_has_pbar(viewer)
+    with progress(range(10)) as pbr:
+        assert qt_viewer_has_pbar(viewer)
+        pbr2 = progress(range(2), nest_under=pbr)
+        prog_groups = get_progress_groups(viewer.window.qt_viewer)
+        assert len(prog_groups) == 1
+        # two progress bars + separator
+        assert prog_groups[0].layout().count() == 3
+        pbr2.close()
 
 
 def test_progress_update(make_napari_viewer):
