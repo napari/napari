@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
+from .._base import _DEFAULT_CONFIG_PATH
 from ..events import EmitterGroup
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
@@ -22,15 +22,11 @@ class NapariSettings(BaseNapariSettings):
 
     class Config:
         env_prefix = 'napari_'
-        load_from = [os.getenv('NAPARI_CONFIG', '')]
-        save_to = 'S.yaml'
+        load_from = [os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)]
+        save_to = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
-    def __init__(
-        self,
-        config_path: Optional[Union[str, Path]] = None,
-        save_to_disk: bool = True,
-        **values: Any,
-    ) -> None:
+    # TODO: use config_path from init
+    def __init__(self, config_path=None, **values: Any) -> None:
         super().__init__(**values)
 
         # look for eventedModel subfields and connect to self.save
@@ -44,8 +40,11 @@ class NapariSettings(BaseNapariSettings):
         if self._save_on_change:
             self.save()
 
-    def __repr__(self):
+    def __str__(self):
         out = 'NapariSettings (defaults excluded)\n'
         out += '----------------------------------\n'
         out += self.yaml(exclude_defaults=True)
         return out
+
+    def __repr__(self):
+        return str(self)

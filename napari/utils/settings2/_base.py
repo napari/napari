@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import warnings
 from collections.abc import Mapping
 from pathlib import Path
@@ -8,6 +9,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Optional,
     Sequence,
     Tuple,
     Union,
@@ -41,19 +43,25 @@ class BaseNapariSettings(BaseSettings, EventedModel):
             env_settings: SettingsSourceCallable,
             file_secret_settings: SettingsSourceCallable,
         ) -> Tuple[SettingsSourceCallable, ...]:
-            cls._env_settings = env_settings
+            nested_eset = nested_env_settings(env_settings)
+
+            cls._env_settings = nested_eset
             return (
                 init_settings,
-                env_settings,
+                nested_eset,
                 config_file_settings_source,
                 file_secret_settings,
             )
 
     @root_validator(pre=True)
-    def check(cls, values):
-        # allow all fields to be declared without default_factory
-        for name in cls.__fields__:
-            values.setdefault(name, {})
+    def _fill_optional_fields(cls, values):
+        # allow BaseModel subfields to be declared without default_factory
+        # if they have no required fields
+        for name, field in cls.__fields__.items():
+            if isinstance(field.type_, type(BaseModel)) and not any(
+                sf.required for sf in field.type_.__fields__.values()
+            ):
+                values.setdefault(name, {})
         return values
 
     def dict(  # type: ignore
@@ -129,7 +137,6 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         dump = _get_io_func_for_path(path, 'dump')
         with open(path, 'w') as target:
             dump(data, target)
-            print("saved to", path)
 
     @property
     def _defaults(self):
@@ -141,6 +148,42 @@ class BaseNapariSettings(BaseSettings, EventedModel):
 
 
 # Utility functions
+
+
+def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
+    """Wraps the pydantic EnvSettingsSource to support nested env vars.
+
+    for example:
+    `NAPARI_APPEARANCE_THEME=light`
+    will parse to:
+    {'appearance': {'theme': 'light'}}
+
+    currently only supports one level of nesting
+    """
+
+    def _inner(settings: BaseSettings) -> Dict[str, Any]:
+        d = super_eset(settings)
+
+        if settings.__config__.case_sensitive:
+            env_vars: Mapping[str, Optional[str]] = os.environ
+        else:
+            env_vars = {k.lower(): v for k, v in os.environ.items()}
+
+        for name, field in settings.__fields__.items():
+            if not isinstance(field.type_, type(BaseModel)):
+                continue
+            for env_name in field.field_info.extra['env_names']:
+                for sf in field.type_.__fields__:
+                    env_val = env_vars.get(f'{env_name}_{sf.lower()}')
+                    if env_val is not None:
+                        break
+                if env_val is not None:
+                    if field.alias not in d:
+                        d[field.alias] = {}
+                    d[field.alias][sf] = env_val
+        return d
+
+    return _inner
 
 
 def config_file_settings_source(settings: BaseSettings) -> dict:
