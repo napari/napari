@@ -54,6 +54,9 @@ class NotificationSeverity(StringEnum):
     def __eq__(self, other):
         return str(self) == str(other)
 
+    def __hash__(self):
+        return hash(self.value)
+
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 

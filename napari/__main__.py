@@ -242,9 +242,10 @@ def _run():
         datefmt='%H:%M:%S',
     )
 
-    settings = get_settings(path=args.settings_path)
     if args.reset:
+        settings = get_settings(path=args.settings_path)
         settings.reset()
+        settings.save()
         sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:

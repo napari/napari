@@ -4,24 +4,16 @@ import os
 import warnings
 from collections.abc import Mapping
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Any,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 from pydantic import BaseModel, BaseSettings, root_validator
-from pydantic.main import ModelMetaclass
 
-from ...utils.events import EventedModel
+from ...utils.events import EmitterGroup, EventedModel
 from ...utils.translations import trans
 
 if TYPE_CHECKING:
+    from typing import AbstractSet, Any, Union
+
     from pydantic.env_settings import SettingsSourceCallable
 
     IntStr = Union[int, str]
@@ -31,27 +23,31 @@ if TYPE_CHECKING:
 
 
 class BaseNapariSettings(BaseSettings, EventedModel):
-    class Config:
-        load_from: Sequence[str] = []
-        save_to: str = ''
-        _env_settings: SettingsSourceCallable
+    _config_path: Optional[Path] = None
+    _save_on_change: bool = True
 
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings: SettingsSourceCallable,
-            env_settings: SettingsSourceCallable,
-            file_secret_settings: SettingsSourceCallable,
-        ) -> Tuple[SettingsSourceCallable, ...]:
-            nested_eset = nested_env_settings(env_settings)
+    def __init__(self, config_path=None, **values: Any) -> None:
+        _cfg = (
+            config_path
+            or self.__private_attributes__['_config_path'].get_default()
+        )
+        # this line is here for usage in the `customise_sources` hook.  It
+        # will be overwritten in __init__ by BaseModel._init_private_attributes
+        # so we set it again after __init__.
+        self._config_path = _cfg
+        super().__init__(**values)
+        self._config_path = _cfg
 
-            cls._env_settings = nested_eset
-            return (
-                init_settings,
-                nested_eset,
-                config_file_settings_source,
-                file_secret_settings,
-            )
+        # look for eventedModel subfields and connect to self.save
+        for name in self.__fields__:
+            attr = getattr(self, name)
+            if isinstance(getattr(attr, 'events', None), EmitterGroup):
+                attr.events.connect(self._on_sub_event)
+
+    def _on_sub_event(self, event):
+        # TODO: re-emit event so listeners can watch just this.
+        if self._save_on_change:
+            self.save()
 
     @root_validator(pre=True)
     def _fill_optional_fields(cls, values):
@@ -88,7 +84,7 @@ class BaseNapariSettings(BaseSettings, EventedModel):
             if callable(eset):
                 env_data = eset(type(self))
                 if env_data:
-                    nested_del(data, env_data)
+                    _nested_del(data, env_data)
         return data
 
     def yaml(
@@ -116,7 +112,7 @@ class BaseNapariSettings(BaseSettings, EventedModel):
             exclude_none=exclude_none,
             exclude_env=exclude_env,
         )
-        remove_empty_dicts(data)
+        _remove_empty_dicts(data)
 
         # We roundtrip to keep custom string objects (like SchemaVersion)
         # yaml representable
@@ -124,27 +120,50 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         _json = self.__config__.json_dumps(data, default=self.__json_encoder__)
         return yaml.safe_dump(json.loads(_json), **dumps_kwargs)
 
+    @property
+    def config_path(self):
+        return self._config_path
+
     def save(self, path=None, **dict_kwargs):
-        path = path or getattr(self.__config__, 'save_to', None)
+        path = path or self.config_path
         if not path:
             raise ValueError("No path provided in config or save argument.")
+        path = Path(path).expanduser().resolve()
 
         dict_kwargs.setdefault('exclude_defaults', True)
         dict_kwargs.setdefault('exclude_env', True)
         data = self.dict(**dict_kwargs)
-        remove_empty_dicts(data)
+        _remove_empty_dicts(data)
 
         dump = _get_io_func_for_path(path, 'dump')
-        with open(path, 'w') as target:
-            dump(data, target)
-
-    @property
-    def _defaults(self):
-        return get_defaults(self)
+        if dump is not None:
+            with open(path, 'w') as target:
+                dump(data, target)
 
     def reset(self):
         for name, value in self._defaults.items():
             setattr(self, name, value)
+
+    class Config:
+        sources: Sequence[str] = []
+        _env_settings: SettingsSourceCallable
+
+        @classmethod
+        def customise_sources(
+            cls,
+            init_settings: SettingsSourceCallable,
+            env_settings: SettingsSourceCallable,
+            file_secret_settings: SettingsSourceCallable,
+        ) -> Tuple[SettingsSourceCallable, ...]:
+            nested_eset = nested_env_settings(env_settings)
+
+            cls._env_settings = nested_eset
+            return (
+                init_settings,
+                nested_eset,
+                config_file_settings_source,
+                file_secret_settings,
+            )
 
 
 # Utility functions
@@ -188,16 +207,28 @@ def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
 
 def config_file_settings_source(settings: BaseSettings) -> dict:
     """Read config files"""
+    _path = getattr(settings, '_config_path', None)
+    sources = list(getattr(settings.__config__, 'sources', []))
+    if _path:
+        sources.append(_path)
+    if not sources:
+        return {}
+
     data: dict = {}
-    for path in getattr(settings.__config__, 'load_from', []):
-        _path = Path(path)
+    for path in sources:
+        _path = Path(path).expanduser().resolve()
         if not _path.is_file():
+            warnings.warn(
+                trans._(
+                    "Requested config path is not a file: {path}",
+                    deferred=True,
+                    path=_path,
+                )
+            )
             continue
 
-        try:
-            load = _get_io_func_for_path(_path, 'load')
-        except ValueError as e:
-            warnings.warn(str(e))
+        load = _get_io_func_for_path(_path, 'load')
+        if load is None:
             continue
 
         try:
@@ -212,52 +243,52 @@ def config_file_settings_source(settings: BaseSettings) -> dict:
             )
             continue
 
-        nested_merge(data, new_data, copy=False)
+        _nested_merge(data, new_data, copy=False)
     return data
 
 
-def nested_merge(dct: dict, merge_dct: dict, copy=True):
+def _nested_merge(dct: dict, merge_dct: dict, copy=True):
+    """merge nested dict keys"""
     _dct = dct.copy() if copy else dct
     for k, v in merge_dct.items():
         if k in _dct and isinstance(dct[k], dict) and isinstance(v, dict):
-            nested_merge(_dct[k], v, copy=False)
+            _nested_merge(_dct[k], v, copy=False)
         else:
             _dct[k] = v
     return _dct
 
 
-def nested_del(dct: dict, del_dct: dict):
+def _nested_del(dct: dict, del_dct: dict):
+    """delete nested dict keys"""
     for k, v in del_dct.items():
         if dct.get(k) == v:
             del dct[k]
         elif isinstance(v, dict):
-            nested_del(dct[k], v)
+            _nested_del(dct[k], v)
     return dct
 
 
-def _get_io_func_for_path(path: Union[str, Path], mode='dump'):
-    assert mode in {'dump', 'load'}
-    if str(path).endswith(('.yaml', '.yml')):
-        return getattr(__import__('yaml'), f'safe_{mode}')
-    if str(path).endswith(".json"):
-        return getattr(__import__('json'), mode)
-    raise ValueError(f"Unrecognized file extension: {path}")
-
-
-def remove_empty_dicts(dct: dict, recurse=True):
+def _remove_empty_dicts(dct: dict, recurse=True):
+    """Remove all (nested) keys with empty dict values from `dct`"""
     for k, v in list(dct.items()):
         if isinstance(v, Mapping) and recurse:
-            remove_empty_dicts(dct[k])
+            _remove_empty_dicts(dct[k])
         if v == {}:
             del dct[k]
     return dct
 
 
-def get_defaults(obj: BaseModel):
-    dflt = {}
-    for k, v in obj.__fields__.items():
-        d = v.get_default()
-        if d is None and isinstance(v.type_, ModelMetaclass):
-            d = get_defaults(v.type_)
-        dflt[k] = d
-    return dflt
+def _get_io_func_for_path(path: Union[str, Path], mode='dump'):
+    """get json/yaml [safe_]load/[safe_]dump for `path`"""
+    assert mode in {'dump', 'load'}
+    if str(path).endswith(('.yaml', '.yml')):
+        return getattr(__import__('yaml'), f'safe_{mode}')
+    if str(path).endswith(".json"):
+        return getattr(__import__('json'), mode)
+
+    warnings.warn(
+        trans._(
+            "Unrecognized file extension for config_path: {path}", path=path
+        )
+    )
+    return None

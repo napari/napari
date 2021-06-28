@@ -4,6 +4,8 @@ from typing import Any, Optional, Union
 from ...utils.translations import trans
 from ._napari_settings import NapariSettings
 
+__all__ = ['NapariSettings', 'get_settings']
+
 
 class _SettingsProxy:
     """Backwards compatibility layer."""
