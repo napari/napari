@@ -332,3 +332,28 @@ def pytest_collection_modifyitems(session, config, items):
             at_end.append(items.pop(i))
 
     items.extend([x for _, x in sorted(zip(put_at_end, at_end))])
+
+
+@pytest.fixture(autouse=True)
+def fresh_settings(monkeypatch):
+    from napari.utils import settings
+
+    # this will prevent a the developer's config file from being used
+    cp = settings.NapariSettings.__private_attributes__['_config_path']
+    monkeypatch.setattr(cp, 'default', None)
+
+    # this makes sure that we start with fresh settings for every test.
+    settings._SETTINGS.set(None)
+    yield
+
+
+@pytest.fixture
+def test_settings(tmp_path):
+    """A fixture that can be used to test and save settings"""
+    from napari.utils.settings import NapariSettings
+
+    class TestSettings(NapariSettings):
+        class Config:
+            env_prefix = 'testnapari_'
+
+    return TestSettings(tmp_path / 'test_settings.yml')

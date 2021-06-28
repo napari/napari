@@ -1,42 +1,31 @@
-"""Tests for the settings manager.
-"""
+"""Tests for the settings manager."""
 
 from pathlib import Path
 
 import pydantic
 import pytest
 
-from napari.utils import settings as settings_module
-from napari.utils.settings import NapariSettings, _SettingsProxy
+from napari.utils.settings import NapariSettings
 from napari.utils.theme import get_theme, register_theme
 
 
-@pytest.fixture
-def settings(tmp_path):
-    class TestSettings(NapariSettings):
-        class Config:
-            env_prefix = 'testnapari_'
-
-    return TestSettings(tmp_path / 'test_settings.yml')
+def test_settings_file(test_settings):
+    assert not Path(test_settings.config_path).exists()
+    test_settings.save()
+    assert Path(test_settings.config_path).exists()
 
 
-def test_settings_file(settings):
-    assert not Path(settings.config_path).exists()
-    settings.save()
-    assert Path(settings.config_path).exists()
+def test_settings_autosave(test_settings):
+    assert not Path(test_settings.config_path).exists()
+    test_settings.appearance.theme = 'light'
+    assert Path(test_settings.config_path).exists()
 
 
-def test_settings_autosave(settings):
-    assert not Path(settings.config_path).exists()
-    settings.appearance.theme = 'light'
-    assert Path(settings.config_path).exists()
-
-
-def test_settings_file_not_created(settings):
-    assert not Path(settings.config_path).exists()
-    settings._save_on_change = False
-    settings.appearance.theme = 'light'
-    assert not Path(settings.config_path).exists()
+def test_settings_file_not_created(test_settings):
+    assert not Path(test_settings.config_path).exists()
+    test_settings._save_on_change = False
+    test_settings.appearance.theme = 'light'
+    assert not Path(test_settings.config_path).exists()
 
 
 def test_settings_loads(tmp_path):
@@ -88,46 +77,46 @@ def test_settings_load_invalid_content(tmp_path):
 #     assert getattr(settings, "non_existing_section") is None
 
 
-def test_settings_to_dict(settings):
-    data_dict = settings.dict()
+def test_settings_to_dict(test_settings):
+    data_dict = test_settings.dict()
     assert isinstance(data_dict, dict) and data_dict.get("application")
 
-    data_dict = settings.dict(exclude_defaults=True)
+    data_dict = test_settings.dict(exclude_defaults=True)
     assert not data_dict.get("application")
 
 
-def test_settings_reset(settings):
-    settings.reset()
-    assert settings.appearance.theme == "dark"
-    settings.appearance.theme = "light"
-    assert settings.appearance.theme == "light"
-    settings.reset()
-    assert settings.appearance.theme == "dark"
+def test_settings_reset(test_settings):
+    test_settings.reset()
+    assert test_settings.appearance.theme == "dark"
+    test_settings.appearance.theme = "light"
+    assert test_settings.appearance.theme == "light"
+    test_settings.reset()
+    assert test_settings.appearance.theme == "dark"
 
 
-def test_settings_schemas(settings):
-    for _, data in settings.schemas().items():
+def test_settings_schemas(test_settings):
+    for _, data in test_settings.schemas().items():
         assert "json_schema" in data
         assert "model" in data
 
 
-def test_settings_model(settings):
+def test_settings_model(test_settings):
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be string
-        settings.appearance.theme = 1
+        test_settings.appearance.theme = 1
 
     with pytest.raises(pydantic.error_wrappers.ValidationError):
         # Should be a valid string
-        settings.appearance.theme = "vaporwave"
+        test_settings.appearance.theme = "vaporwave"
 
 
-def test_custom_theme_settings(settings):
+def test_custom_theme_settings(test_settings):
     # See: https://github.com/napari/napari/issues/2340
     custom_theme_name = "_test_blue_"
 
     # No theme registered yet, this should fail
     with pytest.raises(pydantic.error_wrappers.ValidationError):
-        settings.appearance.theme = custom_theme_name
+        test_settings.appearance.theme = custom_theme_name
 
     blue_theme = get_theme('dark')
     blue_theme.update(
@@ -139,16 +128,16 @@ def test_custom_theme_settings(settings):
     register_theme(custom_theme_name, custom_theme_name)
 
     # Theme registered, should pass validation
-    settings.appearance.theme = custom_theme_name
+    test_settings.appearance.theme = custom_theme_name
 
 
 # def test_settings_string(settings):
 #     assert 'application:\n' in str(settings)
 
 
-def test_model_fields_are_annotated(settings):
+def test_model_fields_are_annotated(test_settings):
     errors = []
-    for field in settings.__fields__.values():
+    for field in test_settings.__fields__.values():
         model = field.type_
         difference = set(model.__fields__) - set(model.__annotations__)
         if difference:
@@ -162,16 +151,16 @@ def test_model_fields_are_annotated(settings):
 
 
 def test_settings_env_variables(monkeypatch):
-    assert NapariSettings().appearance.theme == 'dark'
+    assert NapariSettings(None).appearance.theme == 'dark'
     # NOTE: this was previously tested as NAPARI_THEME
     monkeypatch.setenv('NAPARI_APPEARANCE_THEME', 'light')
-    assert NapariSettings().appearance.theme == 'light'
+    assert NapariSettings(None).appearance.theme == 'light'
 
     # can also use json
-    assert NapariSettings().application.first_time is True
+    assert NapariSettings(None).application.first_time is True
     # NOTE: this was previously tested as NAPARI_THEME
     monkeypatch.setenv('NAPARI_APPLICATION', '{"first_time": "false"}')
-    assert NapariSettings().application.first_time is False
+    assert NapariSettings(None).application.first_time is False
 
 
 def test_settings_env_variables_fails(monkeypatch):
@@ -218,16 +207,23 @@ def test_settings_only_saves_non_default_values(tmp_path):
     assert not safe_load(fake_path.read_text())
 
 
-def test_get_settings(monkeypatch, tmp_path):
-    monkeypatch.setattr(settings_module, "SETTINGS", _SettingsProxy())
-    settings = settings_module.get_settings(tmp_path)
-    assert settings._config_path == tmp_path
+def test_get_settings(tmp_path):
+    from napari.utils import settings
+
+    s = settings.get_settings(tmp_path)
+    assert s.config_path == tmp_path
 
 
 def test_get_settings_fails(monkeypatch, tmp_path):
-    monkeypatch.setattr(settings_module, "SETTINGS", _SettingsProxy())
-    settings_module.get_settings(tmp_path)
+    from napari.utils import settings
+
+    settings.get_settings(tmp_path)
     with pytest.raises(Exception) as e:
-        settings_module.get_settings(tmp_path)
+        settings.get_settings(tmp_path)
 
     assert 'The path can only be set once per session' in str(e)
+
+
+def test_first_time():
+    """This test just confirms that we don't load an existing file (locally)"""
+    assert NapariSettings().application.first_time is True

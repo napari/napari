@@ -16,7 +16,7 @@ def test_open_history():
         assert str(Path.home()) in open_history
 
 
-def test_update_open_history(monkeypatch, tmpdir):
+def test_update_open_history(tmpdir):
     with settings.set(application__open_history=[]):
         new_folder = Path(tmpdir) / "some-file.svg"
         update_open_history(new_folder)

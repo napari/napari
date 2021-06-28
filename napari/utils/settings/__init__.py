@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, List, Optional, Union, cast
 
 from ...utils.translations import trans
+from ._base import _NOT_SET
 from ._napari_settings import NapariSettings
 
 __all__ = ['NapariSettings', 'get_settings']
@@ -33,11 +34,11 @@ _SETTINGS: ContextVar[Optional[NapariSettings]] = ContextVar(
 )
 
 
-def get_settings(path: Optional[Union[Path, str]] = None) -> NapariSettings:
+def get_settings(path=_NOT_SET) -> NapariSettings:
 
     if _SETTINGS.get() is None:
         _SETTINGS.set(NapariSettings(path))
-    elif path is not None:
+    elif path is not _NOT_SET:
         import inspect
 
         curframe = inspect.currentframe()

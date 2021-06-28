@@ -21,15 +21,19 @@ if TYPE_CHECKING:
     DictStrAny = Dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
 
+_NOT_SET = object()
+
 
 class BaseNapariSettings(BaseSettings, EventedModel):
     _config_path: Optional[Path] = None
     _save_on_change: bool = True
 
-    def __init__(self, config_path=None, **values: Any) -> None:
+    # provide config_path=None to prevent reading from disk.
+    def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
         _cfg = (
             config_path
-            or self.__private_attributes__['_config_path'].get_default()
+            if config_path is not _NOT_SET
+            else self.__private_attributes__['_config_path'].get_default()
         )
         # this line is here for usage in the `customise_sources` hook.  It
         # will be overwritten in __init__ by BaseModel._init_private_attributes
