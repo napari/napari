@@ -139,7 +139,7 @@ def test_can_accept_colormap_dict():
 
 
 def test_can_degrade_gracefully():
-    """Test that we can degrade gracefully is given something not recognized."""
+    """Test that we can degrade gracefully if given something not recognized."""
     with pytest.warns(UserWarning):
         cmap = ensure_colormap(object)
     assert isinstance(cmap, Colormap)
