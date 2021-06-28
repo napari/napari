@@ -163,6 +163,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
     def _defaults(self):
         return get_defaults(self)
 
+    def reset(self):
+        for name, value in self._defaults.items():
+            setattr(self, name, value)
+
     def asdict(self):
         """Convert a model to a dictionary."""
         warnings.warn(

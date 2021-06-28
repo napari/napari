@@ -2,12 +2,12 @@ from typing import Tuple, Union
 
 from pydantic import Field
 
-from ..events.evented_model import EventedModel
 from ..translations import trans
+from ._base import EventedSettings
 from ._fields import SchemaVersion
 
 
-class ExperimentalSettings(EventedModel):
+class ExperimentalSettings(EventedSettings):
     # 1. If you want to *change* the default value of a current option, you need to
     #    do a MINOR update in config version, e.g. from 3.0.0 to 3.1.0
     # 2. If you want to *remove* options that are no longer needed in the codebase,

@@ -3,10 +3,11 @@ from __future__ import annotations
 import os
 import warnings
 from collections.abc import Mapping
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
-from pydantic import BaseModel, BaseSettings, root_validator
+from pydantic import BaseModel, BaseSettings
 
 from ...utils.events import EmitterGroup, EventedModel
 from ...utils.translations import trans
@@ -16,6 +17,8 @@ if TYPE_CHECKING:
 
     from pydantic.env_settings import SettingsSourceCallable
 
+    from ...utils.events import Event
+
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = Dict[str, Any]
@@ -24,7 +27,40 @@ if TYPE_CHECKING:
 _NOT_SET = object()
 
 
-class BaseNapariSettings(BaseSettings, EventedModel):
+class EventedSettings(BaseSettings, EventedModel):
+    """A variant of EventedModel designed for settings.
+
+    Pydantic's BaseSettings model will attempt to determine the values of any
+    fields not passed as keyword arguments by reading from the environment.
+    """
+
+    # provide config_path=None to prevent reading from disk.
+    def __init__(self, **values: Any) -> None:
+        super().__init__(**values)
+        self.events.add(changed=None)
+
+        # re-emit subfield
+        for name in self.__fields__:
+            attr = getattr(self, name)
+            if isinstance(getattr(attr, 'events', None), EmitterGroup):
+                attr.events.connect(partial(self._on_sub_event, field=name))
+
+    def _on_sub_event(self, event: Event, field=None):
+        """emit the field.attr name and new value"""
+        if field:
+            field += "."
+        value = getattr(event, 'value', None)
+        self.events.changed(key=f'{field}{event._type}', value=value)
+
+
+class EventedConfigFileSettings(EventedSettings):
+    """This adds config read/write and yaml support to EventedSettings.
+
+    If your settings class *only* needs to read variables from the environment,
+    such as environment variables (but not a config file), then subclass from
+    EventedSettings.
+    """
+
     _config_path: Optional[Path] = None
     _save_on_change: bool = True
 
@@ -42,27 +78,14 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         super().__init__(**values)
         self._config_path = _cfg
 
-        # look for eventedModel subfields and connect to self.save
-        for name in self.__fields__:
-            attr = getattr(self, name)
-            if isinstance(getattr(attr, 'events', None), EmitterGroup):
-                attr.events.connect(self._on_sub_event)
-
-    def _on_sub_event(self, event):
-        # TODO: re-emit event so listeners can watch just this.
+    def _on_sub_event(self, event, field=None):
+        super()._on_sub_event(event, field)
         if self._save_on_change:
             self.save()
 
-    @root_validator(pre=True)
-    def _fill_optional_fields(cls, values):
-        # allow BaseModel subfields to be declared without default_factory
-        # if they have no required fields
-        for name, field in cls.__fields__.items():
-            if isinstance(field.type_, type(BaseModel)) and not any(
-                sf.required for sf in field.type_.__fields__.values()
-            ):
-                values.setdefault(name, {})
-        return values
+    @property
+    def config_path(self):
+        return self._config_path
 
     def dict(  # type: ignore
         self,
@@ -124,14 +147,11 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         _json = self.__config__.json_dumps(data, default=self.__json_encoder__)
         return yaml.safe_dump(json.loads(_json), **dumps_kwargs)
 
-    @property
-    def config_path(self):
-        return self._config_path
-
     def save(self, path=None, **dict_kwargs):
         path = path or self.config_path
         if not path:
             raise ValueError("No path provided in config or save argument.")
+
         path = Path(path).expanduser().resolve()
         path.parent.mkdir(exist_ok=True, parents=True)
 
@@ -145,10 +165,6 @@ class BaseNapariSettings(BaseSettings, EventedModel):
             with open(path, 'w') as target:
                 dump(data, target)
 
-    def reset(self):
-        for name, value in self._defaults.items():
-            setattr(self, name, value)
-
     class Config:
         sources: Sequence[str] = []
         _env_settings: SettingsSourceCallable
@@ -160,8 +176,19 @@ class BaseNapariSettings(BaseSettings, EventedModel):
             env_settings: SettingsSourceCallable,
             file_secret_settings: SettingsSourceCallable,
         ) -> Tuple[SettingsSourceCallable, ...]:
-            nested_eset = nested_env_settings(env_settings)
+            """customise the way data is loaded.
 
+            This does 2 things:
+            1) adds the `config_file_settings_source` to the sources, which
+               will load data from `settings._config_path` if it exists.
+            2) adds support for nested env_vars, such that if a model with an
+               env_prefix of "foo_" has a field named `bar`, then you can use
+               `FOO_BAR_X=1` to set the x attribute in `foo.bar`.
+
+            Priority is given to sources earlier in the list.  You can resort
+            the return list to change the priority of sources.
+            """
+            nested_eset = nested_env_settings(env_settings)
             cls._env_settings = nested_eset
             return (
                 init_settings,
