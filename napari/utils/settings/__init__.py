@@ -1,6 +1,6 @@
 from contextvars import ContextVar
 from pathlib import Path
-from typing import Any, Optional, Union, cast
+from typing import Any, List, Optional, Union, cast
 
 from ...utils.translations import trans
 from ._napari_settings import NapariSettings
@@ -127,9 +127,14 @@ class set:
     napari.utils.settings.get
     """
 
-    def __init__(self, arg: Optional[dict] = None):
+    def __init__(self, arg: Optional[dict] = None, **kwargs):
         self.settings = get_settings().copy(deep=True)
-        self.settings.update(arg or {})
+        _kwargs = arg or {}
+        for key, value in kwargs.items():
+            keys = key.replace("__", ".").split(".")
+            self._assign(keys, value, _kwargs)
+
+        self.settings.update(_kwargs)
         self.token = _SETTINGS.set(self.settings)
 
     def __enter__(self):
@@ -137,3 +142,12 @@ class set:
 
     def __exit__(self, type, value, traceback):
         _SETTINGS.reset(self.token)
+
+    def _assign(self, keys: List[str], value: Any, d: dict, path=()):
+        key0, *rest = keys
+        if not rest:
+            d[key0] = value
+        else:
+            if key0 not in d:
+                d[key0] = {}
+            self._assign(rest, value, d[key0], path + (key0,))
