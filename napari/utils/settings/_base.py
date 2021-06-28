@@ -218,13 +218,13 @@ def config_file_settings_source(settings: BaseSettings) -> dict:
     for path in sources:
         _path = Path(path).expanduser().resolve()
         if not _path.is_file():
-            warnings.warn(
-                trans._(
-                    "Requested config path is not a file: {path}",
-                    deferred=True,
-                    path=_path,
-                )
-            )
+            # warnings.warn(
+            #     trans._(
+            #         "Requested config path is not a file: {path}",
+            #         deferred=True,
+            #         path=_path,
+            #     )
+            # )
             continue
 
         load = _get_io_func_for_path(_path, 'load')
@@ -242,7 +242,7 @@ def config_file_settings_source(settings: BaseSettings) -> dict:
                 )
             )
             continue
-
+        assert isinstance(new_data, dict), _path.read_text()
         _nested_merge(data, new_data, copy=False)
     return data
 

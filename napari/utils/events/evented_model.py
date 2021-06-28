@@ -161,7 +161,7 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
 
     @property
     def _defaults(self):
-        return type(self)(**get_defaults(self))
+        return get_defaults(self)
 
     def asdict(self):
         """Convert a model to a dictionary."""
