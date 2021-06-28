@@ -189,6 +189,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        clipping_planes=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -239,6 +240,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
+            clipping_planes=Event,
         )
 
         # Set data
@@ -285,6 +287,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
+        self.clipping_planes = clipping_planes
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -416,6 +419,22 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
+
+    @property
+    def clipping_planes(self):
+        return self._clipping_planes
+
+    @clipping_planes.setter
+    def clipping_planes(self, value):
+        if value is not None:
+            value = np.array(value)
+            if value.ndim != 3 and value.shape[-2:] != (2, 3):
+                raise ValueError(
+                    f'clipping planes must have shape (n, 2, 3), not {value.shape}'
+                )
+        self._clipping_planes = value
+        self.events.clipping_planes()
+        self._update_thumbnail()
 
     @property
     def interpolation(self):
@@ -813,6 +832,7 @@ class Image(_ImageBase):
                 'rendering': self.rendering,
                 'iso_threshold': self.iso_threshold,
                 'attenuation': self.attenuation,
+                'clipping_planes': self.clipping_planes,
                 'gamma': self.gamma,
                 'data': self.data,
             }
