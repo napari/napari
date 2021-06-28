@@ -1,19 +1,24 @@
-from contextlib import suppress
+from __future__ import annotations
+
 from functools import partial
+from typing import TYPE_CHECKING
 
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QPushButton
+from superqt import QDoubleRangeSlider
 from superqt import QLabeledDoubleSlider as QSlider
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.translations import trans
 from ..utils import qt_signals_blocked
-from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
 from .qt_colormap_combobox import QtColormapComboBox
 from .qt_layer_controls_base import QtLayerControls
+
+if TYPE_CHECKING:
+    from napari.layers import Image
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -29,13 +34,13 @@ class QtBaseImageControls(QtLayerControls):
 
     Attributes
     ----------
-    clim_pop : napari._qt.qt_range_slider_popup.QRangeSliderPopup
+    clim_popup : napari._qt.qt_range_slider_popup.QRangeSliderPopup
         Popup widget launching the contrast range slider.
     colorbarLabel : qtpy.QtWidgets.QLabel
         Label text of colorbar widget.
     colormapComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget for selecting the layer colormap.
-    contrastLimitsSlider : qtpy.QtWidgets.QHRangeSlider
+    contrastLimitsSlider : superqt.QRangeSlider
         Contrast range slider widget.
     gammaSlider : qtpy.QtWidgets.QSlider
         Gamma adjustment slider widget.
@@ -44,7 +49,7 @@ class QtBaseImageControls(QtLayerControls):
 
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer: Image):
         super().__init__(layer)
 
         self.layer.events.colormap.connect(self._on_colormap_change)
@@ -65,16 +70,23 @@ class QtBaseImageControls(QtLayerControls):
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
-        self.contrastLimitsSlider = QHRangeSlider(
-            self.layer.contrast_limits,
-            self.layer.contrast_limits_range,
-            parent=self,
+        self.contrastLimitsSlider = QDoubleRangeSlider(Qt.Horizontal, self)
+        self.contrastLimitsSlider.setSingleStep(0.01)
+        self.contrastLimitsSlider.setRange(*self.layer.contrast_limits_range)
+        self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
+        self.contrastLimitsSlider.setToolTip(
+            trans._('Right click for detailed slider popup.')
         )
+
+        self.clim_popup = None
+
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
         set_clim = partial(setattr, self.layer, 'contrast_limits')
-        set_climrange = partial(setattr, self.layer, 'contrast_limits_range')
-        self.contrastLimitsSlider.valuesChanged.connect(set_clim)
-        self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
+
+        self.contrastLimitsSlider.valueChanged.connect(set_clim)
+        self.contrastLimitsSlider.rangeChanged.connect(
+            lambda *a: setattr(self.layer, 'contrast_limits_range', a)
+        )
 
         # gamma slider
         sld = QSlider(Qt.Horizontal, parent=self)
@@ -113,18 +125,9 @@ class QtBaseImageControls(QtLayerControls):
             The napari event that triggered this method.
         """
         if event.button() == Qt.RightButton:
-            self.clim_pop = create_range_popup(
-                self.layer, 'contrast_limits', parent=self
-            )
-            self.clim_pop.finished.connect(self.clim_pop.deleteLater)
-            reset, fullrange = create_clim_reset_buttons(self.layer)
-            self.clim_pop.layout.addWidget(reset)
-            if fullrange is not None:
-                self.clim_pop.layout.addWidget(fullrange)
-            self.clim_pop.move_to('top', min_length=650)
-            self.clim_pop.show()
+            self.show_clim_popupup()
         else:
-            return QHRangeSlider.mousePressEvent(
+            QDoubleRangeSlider.mousePressEvent(
                 self.contrastLimitsSlider, event
             )
 
@@ -138,19 +141,14 @@ class QtBaseImageControls(QtLayerControls):
         """
         with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setRange(
-                self.layer.contrast_limits_range
+                *self.layer.contrast_limits_range
             )
-            self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
+            self.contrastLimitsSlider.setValue(self.layer.contrast_limits)
 
-        # clim_popup will throw an AttributeError if not yet created
-        # and a RuntimeError if it has already been cleaned up.
-        # we only want to update the slider if it's active
-        with suppress(AttributeError, RuntimeError):
-            self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
-            with qt_signals_blocked(self.clim_pop.slider):
-                clims = self.layer.contrast_limits
-                self.clim_pop.slider.setValues(clims)
-                self.clim_pop._on_values_change(clims)
+        if self.clim_popup:
+            self.clim_popup.slider.setRange(*self.layer.contrast_limits_range)
+            with qt_signals_blocked(self.clim_popup.slider):
+                self.clim_popup.slider.setValue(self.layer.contrast_limits)
 
     def _on_colormap_change(self, event=None):
         """Receive layer model colormap change event and update dropdown menu.
@@ -196,108 +194,60 @@ class QtBaseImageControls(QtLayerControls):
         self.deleteLater()
         event.accept()
 
+    def show_clim_popupup(self):
+        self.clim_popup = QContrastLimitsPopup(self.layer, self)
+        self.clim_popup.setParent(self)
+        self.clim_popup.move_to('top', min_length=650)
+        self.clim_popup.show()
 
-def create_range_popup(layer, attr, parent=None):
-    """Create a QRangeSliderPopup linked to a specific layer attribute.
 
-    This assumes the layer has an attribute named both `attr` and `attr`_range.
+class QContrastLimitsPopup(QRangeSliderPopup):
+    def __init__(self, layer: Image, parent=None):
+        super().__init__(parent)
 
-    Parameters
-    ----------
-    layer : napari.layers.Layer
-        probably an instance of Image or Surface layer
-    attr : str
-        the attribute to control with the slider.
-    parent : QWidget
-        probably an instance of QtLayerControls. important for styling.
-
-    Returns
-    -------
-    QRangeSliderPopup
-
-    Raises
-    ------
-    AttributeError
-        if `layer` does not have an attribute named `{attr}_range`
-    """
-    range_attr = f'{attr}_range'
-    if not hasattr(layer, range_attr):
-        raise AttributeError(
-            trans._(
-                'Layer {layer} must have attribute {range_attr} to use "create_range_popup"',
-                deferred=True,
-                layer=layer,
-                range_attr=range_attr,
-            )
-        )
-    is_integer_type = np.issubdtype(layer.dtype, np.integer)
-
-    d_range = getattr(layer, range_attr)
-    popup = QRangeSliderPopup(
-        initial_values=getattr(layer, attr),
-        data_range=d_range,
-        collapsible=False,
-        precision=(
-            0
-            if is_integer_type
+        if np.issubdtype(layer.dtype, np.integer):
+            decimals = 0
+        else:
             # scale precision with the log of the data range order of magnitude
             # eg.   0 - 1   (0 order of mag)  -> 3 decimal places
             #       0 - 10  (1 order of mag)  -> 2 decimals
             #       0 - 100 (2 orders of mag) -> 1 decimal
             #       ≥ 3 orders of mag -> no decimals
-            else int(max(3 - np.log10(max(d_range[1] - d_range[0], 0.01)), 0))
-        ),
-        parent=parent,
-    )
+            # no more than 6 decimals
+            d_range = np.subtract(*layer.contrast_limits_range[::-1])
+            decimals = min(6, max(int(3 - np.log10(d_range)), 0))
 
-    set_values = partial(setattr, layer, attr)
-    set_range = partial(setattr, layer, range_attr)
-    popup.slider.valuesChanged.connect(set_values)
-    popup.slider.rangeChanged.connect(set_range)
-    return popup
+        self.slider.setRange(*layer.contrast_limits_range)
+        self.slider.setDecimals(decimals)
+        self.slider.setSingleStep(10 ** -decimals)
+        self.slider.setValue(layer.contrast_limits)
 
+        set_values = partial(setattr, layer, 'contrast_limits')
+        self.slider.valueChanged.connect(set_values)
+        self.slider.rangeChanged.connect(
+            lambda *a: setattr(layer, 'contrast_limits_range', a)
+        )
 
-def create_clim_reset_buttons(layer):
-    """Create contrast limits reset and full range buttons.
+        def reset():
+            layer.reset_contrast_limits()
+            layer.contrast_limits_range = layer.contrast_limits
 
-    Important: consumers of this function should check whether range_btn is
-    not None before adding the widget to a layout.  Adding None to a layout
-    can cause a segmentation fault.
+        reset_btn = QPushButton("reset")
+        reset_btn.setObjectName("reset_clims_button")
+        reset_btn.setToolTip(trans._("autoscale contrast to data range"))
+        reset_btn.setFixedWidth(40)
+        reset_btn.clicked.connect(reset)
+        self._layout.addWidget(reset_btn, alignment=Qt.AlignBottom)
 
-    Parameters
-    ----------
-    layer : napari.layers.Layer
-        Image or Surface Layer
-
-    Returns
-    -------
-    2-tuple
-        If layer data type is integer type, returns (reset_btn, range_btn).
-        Else, returns (reset_btn, None)
-    """
-
-    def reset():
-        layer.reset_contrast_limits()
-        layer.contrast_limits_range = layer.contrast_limits
-
-    def reset_range():
-        layer.reset_contrast_limits_range()
-
-    reset_btn = QPushButton("reset")
-    reset_btn.setObjectName("reset_clims_button")
-    reset_btn.setToolTip(trans._("autoscale contrast to data range"))
-    reset_btn.setFixedWidth(40)
-    reset_btn.clicked.connect(reset)
-
-    range_btn = None
-    # the "full range" button doesn't do anything if it's not an
-    # unsigned integer type (it's unclear what range should be set)
-    # so we don't show create it at all.
-    if np.issubdtype(layer.dtype, np.integer):
-        range_btn = QPushButton("full range")
-        range_btn.setObjectName("full_clim_range_button")
-        range_btn.setToolTip(trans._("set contrast range to full bit-depth"))
-        range_btn.setFixedWidth(65)
-        range_btn.clicked.connect(reset_range)
-
-    return reset_btn, range_btn
+        # the "full range" button doesn't do anything if it's not an
+        # unsigned integer type (it's unclear what range should be set)
+        # so we don't show create it at all.
+        if np.issubdtype(layer.dtype, np.integer):
+            range_btn = QPushButton("full range")
+            range_btn.setObjectName("full_clim_range_button")
+            range_btn.setToolTip(
+                trans._("set contrast range to full bit-depth")
+            )
+            range_btn.setFixedWidth(65)
+            range_btn.clicked.connect(layer.reset_contrast_limits_range)
+            self._layout.addWidget(range_btn, alignment=Qt.AlignBottom)

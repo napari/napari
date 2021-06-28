@@ -290,6 +290,10 @@ QtLayerControls > QLabel, QtLayerControls > QLabeledSlider > QAbstractSpinBox {
   color: {{ text }};
 }
 
+QLabeledRangeSlider > QAbstractSpinBox {
+  font-size: 12pt;
+  color: {{ secondary }};
+}
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {

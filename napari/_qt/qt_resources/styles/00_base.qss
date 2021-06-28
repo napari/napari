@@ -232,6 +232,10 @@ QAbstractSpinBox::down-arrow {
    image: url(":/themes/{{ folder }}/minus_50.svg");
 }
 
+QLabeledRangeSlider > QAbstractSpinBox {
+  min-width: 5px;
+}
+
 /* ----------------- QCheckBox ------------------ */
 
 QCheckBox {
@@ -387,20 +391,12 @@ QWidget[emphasized="true"] QSlider::handle:hover {
 }
 
 
-
 QRangeSlider {
   qproperty-barColor: {{ primary }};
-  qproperty-backgroundColor: {{ foreground }};
-  qproperty-handleColor: {{ highlight }};
-  qproperty-handleBorderColor: {{ highlight }};
-  min-height: 18px;
 }
 
 QWidget[emphasized="true"] QRangeSlider {
   qproperty-barColor: {{ highlight }};
-  qproperty-backgroundColor: {{ primary }};
-  qproperty-handleColor: {{ secondary }};
-  qproperty-handleBorderColor: {{ secondary }};
 }
 
 /* ----------------- QScrollBar ------------------ */
