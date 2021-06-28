@@ -7,7 +7,7 @@ from ..dialogs.qt_modal import QtPopup
 
 class QRangeSliderPopup(QtPopup):
     def __init__(self, parent=None):
-        """A popup window that contains a labeld range slider and buttons.
+        """A popup window that contains a labeled range slider and buttons.
 
         Parameters
         ----------
