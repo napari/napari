@@ -169,6 +169,20 @@ def test_settings_env_variables_fails(monkeypatch):
         NapariSettings()
 
 
+def test_subfield_env_field(monkeypatch):
+    """test that setting Field(env=) works for subfields"""
+    from napari.utils.settings._base import EventedSettings
+
+    class Sub(EventedSettings):
+        x: int = pydantic.Field(1, env='varname')
+
+    class T(NapariSettings):
+        sub: Sub
+
+    monkeypatch.setenv("VARNAME", '42')
+    assert T().sub.x == 42
+
+
 # # Failing because dark is actually the default...
 # def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
 
