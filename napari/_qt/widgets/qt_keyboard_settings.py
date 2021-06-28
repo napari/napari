@@ -49,6 +49,10 @@ class ShortcutEditor(QDialog):
         self._qsequences = list()
         self._new_keys = ''
 
+        print('ShortcutOverride', QEvent.ShortcutOverride)
+        print('keypress', QEvent.KeyPress)
+        print('shortcut', QEvent.Shortcut)
+
         layers = [
             Image,
             Labels,
@@ -114,22 +118,24 @@ class ShortcutEditor(QDialog):
 
         self.setLayout(layout)
 
-    def event(self, event):
-        """Qt method override."""
-        # We reroute all ShortcutOverride events to our keyPressEvent and block
-        # any KeyPress and Shortcut event. This allows to register default
-        # Qt shortcuts for which no key press event are emitted.
-        # See spyder-ide/spyder/issues/10786.
-        # spyder code
-        if event.type() == QEvent.ShortcutOverride:
-            print('check 1')
-            self.keyPressEvent(event)
-            return True
-        elif event.type() in [QEvent.KeyPress, QEvent.Shortcut]:
-            print('check 2')
-            return True
-        else:
-            return super().event(event)
+    # def event(self, event):
+    #     """Qt method override."""
+    #     # We reroute all ShortcutOverride events to our keyPressEvent and block
+    #     # any KeyPress and Shortcut event. This allows to register default
+    #     # Qt shortcuts for which no key press event are emitted.
+    #     # See spyder-ide/spyder/issues/10786.
+    #     # spyder code
+
+    #     if event.type() == QEvent.ShortcutOverride:
+    #         print('check 1')
+    #         self.keyPressEvent(event)
+    #         return True
+    #     elif event.type() in [QEvent.KeyPress, QEvent.Shortcut]:
+    #         print('check 2', event.key())
+    #         return True
+    #     else:
+    #         print('check 2b')
+    #         return super().event(event)
 
     def keyPressEvent(self, event):
         """Qt method override."""
