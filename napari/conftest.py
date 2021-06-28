@@ -338,9 +338,20 @@ def pytest_collection_modifyitems(session, config, items):
 def fresh_settings(monkeypatch):
     from napari.utils import settings
 
-    # this will prevent a the developer's config file from being used
+    # prevent the developer's config file from being used if it exists
     cp = settings.NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
+
+    # calling save() with no config path is normally an error
+    # here we just have save() return if called without a valid path
+    original_save = settings.NapariSettings.save
+
+    def _mock_save(self, path=None, **dict_kwargs):
+        if not (path or self.config_path):
+            return
+        original_save(self, path, **dict_kwargs)
+
+    monkeypatch.setattr(settings.NapariSettings, 'save', _mock_save)
 
     # this makes sure that we start with fresh settings for every test.
     settings._SETTINGS.set(None)
