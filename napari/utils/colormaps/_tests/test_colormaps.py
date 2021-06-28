@@ -138,10 +138,10 @@ def test_can_accept_colormap_dict():
     assert cmap.name == 'special_name'
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_can_degrade_gracefully():
     """Test that we can degrade gracefully is given something not recognized."""
-    cmap = ensure_colormap(object)
+    with pytest.warns(UserWarning):
+        cmap = ensure_colormap(object)
     assert isinstance(cmap, Colormap)
     assert cmap.name == 'gray'
 
