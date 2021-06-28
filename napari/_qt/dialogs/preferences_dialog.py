@@ -251,33 +251,32 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-        settings = get_settings()
         builder = WidgetBuilder()
         form = builder.create_form(schema, self.ui_schema)
 
-        # Disable widgets that loaded settings from environment variables
-        section = schema["section"]
-        form_layout = form.widget.layout()
-        for row in range(form.widget.layout().rowCount()):
-            widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
-            name = widget._name
-            disable = bool(
-                settings._env_settings.get(section, {}).get(name, None)
-            )
-            widget.setDisabled(disable)
-            try:
-                widget.opacity.setOpacity(0.3 if disable else 1)
-            except AttributeError:
-                # some widgets may not have opacity (such as the QtPluginSorter)
-                pass
+        # # Disable widgets that loaded settings from environment variables
+        # settings = get_settings()
+        # section = schema["section"]
+        # form_layout = form.widget.layout()
+        # for row in range(form.widget.layout().rowCount()):
+        #     widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
+        #     name = widget._name
+        #     disable = bool(
+        #         settings._env_settings.get(section, {}).get(name, None)
+        #     )
+        #     widget.setDisabled(disable)
+        #     try:
+        #         widget.opacity.setOpacity(0.3 if disable else 1)
+        #     except AttributeError:
+        #         # some widgets may not have opacity (such as the QtPluginSorter)
+        #         pass
 
         # set state values for widget
         form.widget.state = values
 
-        if section == 'experimental':
-            # need to disable async if octree is enabled.
-            if values['octree'] is True:
-                form = self._disable_async(form, values)
+        # need to disable async if octree is enabled.
+        if schema["section"] == 'experimental' and values['octree'] is True:
+            form = self._disable_async(form, values)
 
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
@@ -290,14 +289,16 @@ class PreferencesDialog(QDialog):
 
     def _disable_async(self, form, values, disable=True, state=True):
         """Disable async if octree is True."""
-        settings = get_settings()
         # need to make sure that if async_ is an environment setting, that we don't
         # enable it here.
-        if (
-            settings._env_settings['experimental'].get('async_', None)
-            is not None
-        ):
-            disable = True
+
+        # TODO:
+        # settings = get_settings()
+        # if (
+        #     settings._env_settings['experimental'].get('async_', None)
+        #     is not None
+        # ):
+        #     disable = True
 
         idx = list(values.keys()).index('async_')
         form_layout = form.widget.layout()
@@ -322,10 +323,7 @@ class PreferencesDialog(QDialog):
         for setting_name, value in new_dict.items():
             if value != old_dict[setting_name]:
                 self._setting_changed_dict[page][setting_name] = value
-            elif (
-                value == old_dict[setting_name]
-                and setting_name in self._setting_changed_dict[page]
-            ):
+            elif setting_name in self._setting_changed_dict[page]:
                 self._setting_changed_dict[page].pop(setting_name)
 
     def set_current_index(self, index: int):
@@ -368,7 +366,7 @@ class PreferencesDialog(QDialog):
 
                             # disable/enable async checkbox
                             widget = self._stack.currentWidget()
-                            cstate = True if value is True else False
+                            cstate = value is True
                             self._disable_async(
                                 widget, new_dict, disable=cstate
                             )
