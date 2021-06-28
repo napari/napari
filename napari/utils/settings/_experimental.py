@@ -6,6 +6,9 @@ from ..translations import trans
 from ._base import EventedSettings
 from ._fields import SchemaVersion
 
+# this class inherits from EventedSettings instead of EventedModel because
+# it uses Field(env=...) for one of its attributes
+
 
 class ExperimentalSettings(EventedSettings):
     # 1. If you want to *change* the default value of a current option, you need to
@@ -26,6 +29,7 @@ class ExperimentalSettings(EventedSettings):
 
     async_: bool = Field(
         False,
+        alias='async',
         title=trans._("Render Images Asynchronously"),
         description=trans._(
             "Asynchronous loading of image data. \nThis setting partially loads data while viewing. \nYou must restart napari for changes of this setting to apply."
