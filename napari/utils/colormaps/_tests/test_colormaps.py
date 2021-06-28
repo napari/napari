@@ -138,6 +138,14 @@ def test_can_accept_colormap_dict():
     assert cmap.name == 'special_name'
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_can_degrade_gracefully():
+    """Test that we can degrade gracefully is given something not recognized."""
+    cmap = ensure_colormap(object)
+    assert isinstance(cmap, Colormap)
+    assert cmap.name == 'gray'
+
+
 def test_vispy_colormap_amount():
     """
     Test that the amount of localized vispy colormap names matches available colormaps.
