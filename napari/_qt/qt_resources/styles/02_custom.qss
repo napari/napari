@@ -285,7 +285,7 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
-QtLayerControls > QLabel {
+QtLayerControls > QLabel, QtLayerControls > QLabeledSlider > QAbstractSpinBox {
   font-size: 11pt;
   color: {{ text }};
 }
