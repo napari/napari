@@ -84,8 +84,8 @@ class progress(tqdm):
         if pbar is not None:
             kwargs['gui'] = True
 
-        super().__init__(iterable, desc, total, *args, **kwargs)
         self._pbar = pbar
+        super().__init__(iterable, desc, total, *args, **kwargs)
         if not self._pbar:
             return
 
