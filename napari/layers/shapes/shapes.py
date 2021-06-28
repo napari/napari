@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from vispy.color import get_color_names
@@ -24,7 +24,10 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import (
+    prepare_properties_and_choices,
+    validate_properties,
+)
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -375,25 +378,10 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        # Save the properties
-        if properties is None:
-            self._properties = {}
-            self._property_choices = {}
-        elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
-            self._properties = self._validate_properties(properties, len(data))
-            self._property_choices = {
-                k: np.unique(v) for k, v in properties.items()
-            }
-        elif len(data) == 0:
-            self._property_choices = {
-                k: np.asarray(v) for k, v in properties.items()
-            }
-            empty_properties = {
-                k: np.empty(0, dtype=v.dtype)
-                for k, v in self._property_choices.items()
-            }
-            self._properties = empty_properties
+        (
+            self._properties,
+            self._property_choices,
+        ) = prepare_properties_and_choices(properties, None, len(data))
 
         # make the text
         if text is None or isinstance(text, (list, np.ndarray, str)):
@@ -619,9 +607,9 @@ class Shapes(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
+        self._properties = validate_properties(
+            properties, expected_len=len(self.data)
+        )
         if self._face_color_property and (
             self._face_color_property not in self._properties
         ):
@@ -1904,26 +1892,6 @@ class Shapes(Layer):
             # Add shape
             data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
         data_view._update_z_order()
-
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        if n_shapes is None:
-            n_shapes = len(self.data)
-        for k, v in properties.items():
-            if len(v) != n_shapes:
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of shapes',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
 
     @property
     def text(self) -> TextManager:

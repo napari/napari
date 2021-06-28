@@ -18,7 +18,7 @@ from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import dataframe_to_properties, validate_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -413,22 +413,27 @@ class Labels(_ImageBase):
         if properties is None or (
             isinstance(properties, dict) and not len(properties)
         ):
-            # None or empty dict properties
             return {}, {}
-        if isinstance(properties, dict):
-            properties = cls._validate_properties(properties)
-            label_index = properties.get("index", None)
-            if label_index is not None:
-                # got array of indexes
-                label_index = {v: i for i, v in enumerate(label_index)}
-        else:
-            # assume that properties is a DataFrame.
-            properties, label_index = dataframe_to_properties(properties)
-            properties = cls._validate_properties(properties)
-        if label_index is None:
-            label_index = cls._map_index(properties)
 
+        if not isinstance(properties, dict):
+            properties = dataframe_to_properties(properties)
+
+        properties = validate_properties(properties)
+        label_index = cls._get_index_from_properties(properties)
         return properties, label_index
+
+    @staticmethod
+    def _get_index_from_properties(
+        properties: Dict[str, np.ndarray]
+    ) -> Dict[int, int]:
+        """Get the mapping from label value to index in a property array."""
+        index = {}
+        if 'index' in properties:
+            index = {i: k for k, i in enumerate(properties['index'])}
+        elif len(properties) > 0:
+            max_len = max(len(x) for x in properties.values())
+            index = {i: i for i in range(max_len)}
+        return index
 
     @property
     def color(self):
@@ -482,34 +487,6 @@ class Labels(_ImageBase):
         if not looks_multiscale:
             data = data[0]
         return data
-
-    @staticmethod
-    def _validate_properties(
-        properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validate the type and size of properties."""
-        lens = []
-        for k, v in properties.items():
-            lens.append(len(v))
-            if not isinstance(v, np.ndarray):
-                properties[k] = np.asarray(v)
-
-        if any(v != lens[0] for v in lens):
-            raise ValueError(
-                trans._(
-                    "the number of items must be equal for all properties",
-                    deferred=True,
-                )
-            )
-        return properties
-
-    @staticmethod
-    def _map_index(properties: Dict[str, np.ndarray]) -> Dict[int, int]:
-        """Map rows in given properties to label indices"""
-        if not properties:
-            return {}
-        max_len = max(len(x) for x in properties.values())
-        return {i: i for i in range(max_len)}
 
     def _get_state(self):
         """Get dictionary of layer state.

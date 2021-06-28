@@ -17,7 +17,11 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import (
+    dataframe_to_properties,
+    prepare_properties_and_choices,
+    validate_properties,
+)
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -315,8 +319,15 @@ class Points(Layer):
             )
             property_choices = properties
             properties = {}
-        self._properties, self._property_choices = self._prepare_properties(
-            properties, property_choices, save_choices=True
+        # self._properties, self._property_choices = self._prepare_properties(
+        #    properties, property_choices, save_choices=True
+        # )
+
+        (
+            self._properties,
+            self._property_choices,
+        ) = prepare_properties_and_choices(
+            properties, property_choices, len(self.data)
         )
 
         # make the text
@@ -527,8 +538,14 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
     ):
-        self._properties, self._property_choices = self._prepare_properties(
-            properties, self._property_choices
+        # self._properties, self._property_choices = self._prepare_properties(
+        #    properties, self._property_choices
+        # )
+        (
+            self._properties,
+            self._property_choices,
+        ) = prepare_properties_and_choices(
+            properties, self.property_choices, len(self.data)
         )
         self._update_color_manager(
             self._face,
@@ -576,7 +593,7 @@ class Points(Layer):
         if properties is None:
             properties = {}
         if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
+            properties = dataframe_to_properties(properties)
 
         new_choices = {
             k: np.unique(np.concatenate((v, property_choices.get(k, []))))
@@ -601,7 +618,10 @@ class Points(Layer):
                 if k not in new_choices:
                     new_choices[k] = np.unique(v)
                     properties[k] = [None] * self._data.shape[0]
-        return self._validate_properties(properties), new_choices
+        return (
+            validate_properties(properties, expected_len=len(self.data)),
+            new_choices,
+        )
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
@@ -625,24 +645,6 @@ class Points(Layer):
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
-
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        for k, v in properties.items():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of points',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
 
     @property
     def text(self) -> TextManager:

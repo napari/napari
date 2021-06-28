@@ -11,7 +11,11 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import (
+    dataframe_to_properties,
+    prepare_properties_and_choices,
+    validate_properties,
+)
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -199,26 +203,10 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        # Save the properties
-        if properties is None:
-            properties = {}
-            self._properties = properties
-            self._property_choices = properties
-        elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
-            self._properties = self._validate_properties(properties)
-            self._property_choices = {
-                k: np.unique(v) for k, v in properties.items()
-            }
-        elif len(self.data) == 0:
-            self._property_choices = {
-                k: np.asarray(v) for k, v in properties.items()
-            }
-            empty_properties = {
-                k: np.empty(0, dtype=v.dtype)
-                for k, v in self._property_choices.items()
-            }
-            self._properties = empty_properties
+        (
+            self._properties,
+            self._property_choices,
+        ) = prepare_properties_and_choices(properties, None, len(self.data))
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),
@@ -303,8 +291,10 @@ class Vectors(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
+            properties = dataframe_to_properties(properties)
+        self._properties = validate_properties(
+            properties, expected_len=len(self.data)
+        )
 
         if self._edge.color_properties is not None:
             if self._edge.color_properties.name not in self._properties:
@@ -325,21 +315,6 @@ class Vectors(Layer):
                     'current_value': self._properties[edge_color_name][-1],
                 }
         self.events.properties()
-
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        for v in properties.values():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of points',
-                        deferred=True,
-                    )
-                )
-
-        return properties
 
     def _get_state(self):
         """Get dictionary of layer state.

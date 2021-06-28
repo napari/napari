@@ -101,5 +101,5 @@ def test_segment_normal_3d():
 def test_dataframe_to_properties():
     properties = {'point_type': np.array(['A', 'B'] * 5)}
     properties_df = pd.DataFrame(properties)
-    converted_properties, _ = dataframe_to_properties(properties_df)
+    converted_properties = dataframe_to_properties(properties_df)
     np.testing.assert_equal(converted_properties, properties)

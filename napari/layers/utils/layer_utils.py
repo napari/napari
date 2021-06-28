@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 import dask
 import numpy as np
@@ -208,9 +208,30 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
+def prepare_properties_and_choices(properties, property_choices, num_data):
+    expected_len = num_data if num_data > 0 else None
+    properties = validate_properties(properties, expected_len=expected_len)
+    property_choices = validate_property_choices(property_choices)
+
+    new_choices = {k: np.array(v) for k, v in property_choices.items()}
+    for k, v in properties.items():
+        new_choices[k] = np.unique(np.concatenate((v, new_choices.get(k, []))))
+
+    if len(properties) == 0 and len(new_choices) > 0:
+        properties = _get_properties_from_choices(new_choices, num_data)
+
+    return properties, new_choices
+
+
+def _get_properties_from_choices(choices, num_data):
+    if num_data > 0:
+        return {k: np.array([None] * num_data) for k in choices}
+    return {k: np.empty(0, v.dtype) for k, v in choices.items()}
+
+
 def dataframe_to_properties(
     dataframe,
-) -> Tuple[Dict[str, np.ndarray], Optional[Dict[int, int]]]:
+) -> Dict[str, np.ndarray]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
     Parameters
@@ -223,15 +244,39 @@ def dataframe_to_properties(
     dict[str, np.ndarray]
         A properties dictionary where the key is the property name and the value
         is an ndarray with the property value for each point.
-    Optional[dict[int, int]]
-        mapping from label number to position (row) in properties
     """
+    return {col: np.asarray(dataframe[col]) for col in dataframe}
 
-    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
-    index = None
-    if 'index' in properties:
-        index = {i: k for k, i in enumerate(properties['index'])}
-    return properties, index
+
+def validate_properties(
+    properties: Dict[str, np.ndarray],
+    expected_len: Optional[int] = None,
+) -> Dict[str, np.ndarray]:
+    """Validate the type and size of properties."""
+    if properties is None or len(properties) == 0:
+        return {}
+
+    if not isinstance(properties, dict):
+        properties = dataframe_to_properties(properties)
+
+    lens = [len(v) for v in properties.values()]
+    if expected_len is None:
+        expected_len = lens[0]
+    if any(v != expected_len for v in lens):
+        raise ValueError(
+            trans._(
+                "the number of items must be equal for all properties",
+                deferred=True,
+            )
+        )
+
+    return {k: np.asarray(v) for k, v in properties.items()}
+
+
+def validate_property_choices(property_choices):
+    if property_choices is None:
+        return {}
+    return {k: np.unique(v) for k, v in property_choices.items()}
 
 
 def compute_multiscale_level(

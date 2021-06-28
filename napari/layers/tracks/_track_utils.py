@@ -155,7 +155,7 @@ class TrackManager:
         properties = properties.copy()
 
         if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
+            properties = dataframe_to_properties(properties)
 
         if 'track_id' not in properties:
             properties['track_id'] = self.track_ids

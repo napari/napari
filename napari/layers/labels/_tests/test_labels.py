@@ -268,7 +268,9 @@ def test_properties():
     assert isinstance(layer.properties, dict)
     assert len(layer.properties) == 0
 
-    properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    properties = {
+        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
+    }
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
@@ -332,7 +334,9 @@ def test_multiscale_properties():
     assert isinstance(layer.properties, dict)
     assert len(layer.properties) == 0
 
-    properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    properties = {
+        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
+    }
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
