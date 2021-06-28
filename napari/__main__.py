@@ -243,7 +243,10 @@ def _run():
     )
 
     if args.reset:
-        settings = get_settings(path=args.settings_path)
+        if args.settings_path:
+            settings = get_settings(path=args.settings_path)
+        else:
+            settings = get_settings()
         settings.reset()
         settings.save()
         sys.exit("Resetting settings to default values.\n")

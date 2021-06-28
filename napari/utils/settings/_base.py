@@ -133,6 +133,7 @@ class BaseNapariSettings(BaseSettings, EventedModel):
         if not path:
             raise ValueError("No path provided in config or save argument.")
         path = Path(path).expanduser().resolve()
+        path.parent.mkdir(exist_ok=True, parents=True)
 
         dict_kwargs.setdefault('exclude_defaults', True)
         dict_kwargs.setdefault('exclude_env', True)
