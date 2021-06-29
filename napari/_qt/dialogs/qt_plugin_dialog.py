@@ -40,14 +40,16 @@ from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
+
 # TODO: add error icon and handle pip install errors
 # TODO: add queue to handle clicks when already processing
 class Installer:
-
     def __init__(self, output_widget: QTextEdit = None):
         from ...plugins import plugin_manager
 
-        self._use_conda = True
+        # To be used when conda is fully supported
+        # self._use_conda = _is_installed_with_conda()
+        self._use_conda = False
         self._conda_env_path = None
 
         if self._use_conda and (Path(sys.prefix) / "conda-meta").is_dir():
@@ -57,8 +59,9 @@ class Installer:
         self._output_widget = None
         self.process = QProcess()
         if self._use_conda:
-            self.process.setProgram("conda")
-            self.process.setProgram("mamba")
+            self.process.setProgram(
+                "conda"
+            )  # This could be set to mamba as well
         else:
             self.process.setProgram(sys.executable)
 
@@ -91,11 +94,22 @@ class Installer:
 
     def install(self, pkg_list: Sequence[str]):
         if self._use_conda:
-            cmd = ['install', '-c', 'conda-forge', '-y', '--prefix', self._conda_env_path]
+            cmd = [
+                'install',
+                '-c',
+                'conda-forge',
+                '-y',
+                '--prefix',
+                self._conda_env_path,
+            ]
         else:
             cmd = ['-m', 'pip', 'install', '--upgrade']
 
-        if running_as_bundled_app() and sys.platform.startswith('linux') and not self._use_conda:
+        if (
+            running_as_bundled_app()
+            and sys.platform.startswith('linux')
+            and not self._use_conda
+        ):
             cmd += [
                 '--no-warn-script-location',
                 '--prefix',
@@ -109,11 +123,17 @@ class Installer:
 
     def uninstall(self, pkg_list: Sequence[str]):
         if self._use_conda:
-            args = ['remove', '-y', '--prefix', self._conda_env_path, '-c', 'conda-forge']
+            args = [
+                'remove',
+                '-y',
+                '--prefix',
+                self._conda_env_path,
+                '-c',
+                'conda-forge',
+            ]
         else:
             args = ['-m', 'pip', 'uninstall', '-y']
 
-        print(' '.join(args + list(pkg_list)))
         self.process.setArguments(args + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
@@ -124,24 +144,31 @@ class Installer:
             plugin_manager.unregister(pkg)
 
     @staticmethod
-    def _installed_with_conda():
-        from ..._version import version_tuple
+    def _is_installed_with_conda():
+        """
+        Check if conda was used to install qt and napari.
+        """
         from qtpy import QT_VERSION
+
+        from ..._version import version_tuple
 
         parts = [str(part) for part in version_tuple[:3]]
         napari_version_string = f"napari-{'.'.join(parts)}-"
         qt_version_string = f"qt-{QT_VERSION}-"
-        for file in (Path(sys.prefix) / "conda-meta").iterdir():
-            fname = file.parts[-1]
-            if fname.startswith(napari_version_string) and fname.endswith(".json"):
-                return True
-            elif fname.startswith(qt_version_string) and fname.endswith(".json"):
-                return True
-        else:
-            return False
-
-
-print(Installer._installed_with_conda())
+        conda_meta_path = Path(sys.prefix) / "conda-meta"
+        if conda_meta_path.is_dir():
+            for file in conda_meta_path.iterdir():
+                fname = file.parts[-1]
+                if fname.startswith(napari_version_string) and fname.endswith(
+                    ".json"
+                ):
+                    return True
+                elif fname.startswith(qt_version_string) and fname.endswith(
+                    ".json"
+                ):
+                    return True
+            else:
+                return False
 
 
 class PluginListItem(QFrame):
