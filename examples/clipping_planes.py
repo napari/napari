@@ -12,9 +12,9 @@ blobs = data.binary_blobs(length=64, volume_fraction=0.1, n_dim=3).astype(
 )
 viewer = napari.Viewer(ndisplay=3)
 # add the volume
-layer = viewer.add_image(blobs, scale=[3, 1, 1])
+layer = viewer.add_image(blobs)
 
 
-layer.clipping_planes = np.random.rand(1, 2, 3)
+layer.clipping_planes = np.tile(0.5, (1, 2, 3))
 
 napari.run()
