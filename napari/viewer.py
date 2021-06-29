@@ -1,6 +1,7 @@
+from importlib import import_module as _imp
 from typing import TYPE_CHECKING
 
-from .components import ViewerModel
+from .components.viewer_model import ViewerModel
 from .utils import config
 
 if TYPE_CHECKING:
@@ -122,3 +123,6 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
+
+
+_imp('napari.utils._magicgui').register_viewer_with_magicgui()

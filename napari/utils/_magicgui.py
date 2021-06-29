@@ -9,37 +9,67 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
+from __future__ import annotations
+
 import weakref
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
-from .. import layers, types
-from ..layers._source import Source, layer_source
-from ..utils.misc import ensure_list_of_layer_data_tuple
-from ..utils.translations import trans
-from ..viewer import Viewer
-
-try:
-    from magicgui import register_type
-except ImportError:
-
-    def register_type(*args, **kwargs):
-        pass
-
+from magicgui import register_type, widgets
 
 if TYPE_CHECKING:
     from magicgui.widgets._bases import CategoricalWidget
 
+    from ..layers import Layer
+    from ..viewer import Viewer
 
-def register_types_with_magicgui():
-    """Register napari types with magicgui.
+
+@lru_cache(maxsize=1)  # only run this function once
+def register_layers_with_magicgui():
+    """Register napari.layers with magicgui.
 
     Parameter Annotations -> Widgets:
         napari.layers.Layer, will be rendered as a ComboBox.
             if a parameter is annotated as a subclass Layer type, then the
             combobox options will be limited to that layer type.
+
+    Return Annotations -> Widgets:
+        napari.layers.Layer will add a new layer to the Viewer.
+            if a return is annotated as a subclass of Layer, then the
+            corresponding layer type will be added.  As of 0.4.3, the user
+            must return an actual layer instance
+            see `add_layer_to_viewer` for detail
+    """
+    from .. import layers
+    from ..layers._source import Source
+
+    # the widget field in `_source.py` was defined with a forward reference
+    # to avoid having to import magicgui when we define the layer `Source` obj.
+    # Now that we know we have imported magicgui, we update that forward ref
+    # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
+    Source.update_forward_refs(FunctionGui=widgets.FunctionGui)
+
+    register_type(
+        layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
+    )
+
+
+@lru_cache(maxsize=1)  # only run this function once
+def register_viewer_with_magicgui():
+    """Register napari.viewer with magicgui.
+
+    Parameter Annotations -> Widgets:
         napari.Viewer, will be rendered as a ComboBox, with the current viewer
             as the only choice.
+    """
+    from ..viewer import Viewer
+
+    register_type(Viewer, bind=find_viewer_ancestor)
+
+
+@lru_cache(maxsize=1)  # only run this function once
+def register_types_with_magicgui():
+    """Register napari.types with magicgui.
 
     Return Annotations -> Widgets:
         napari.layers.Layer will add a new layer to the Viewer.
@@ -53,25 +83,9 @@ def register_types_with_magicgui():
             and expects the user to return a single layer data tuple
         List[napari.types.LayerDataTuple] will add multiple new layer to the
             Viewer. And expects the user to return a list of layer data tuples.
-
     """
-    # only run this function once
-    if getattr(register_types_with_magicgui, '_called', False):
-        return
-    register_types_with_magicgui._called = True
+    from .. import layers, types
 
-    from magicgui.widgets import FunctionGui
-
-    # the widget field in `_source.py` was defined with a forward reference
-    # to avoid having to import magicgui when we define the layer `Source` obj.
-    # Now that we know we have imported magicgui, we update that forward ref
-    # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
-    Source.update_forward_refs(FunctionGui=FunctionGui)
-
-    register_type(
-        layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
-    )
-    register_type(Viewer, bind=find_viewer_ancestor)
     register_type(
         types.LayerDataTuple,
         return_callback=add_layer_data_tuples_to_viewer,
@@ -117,6 +131,7 @@ def add_layer_data_to_viewer(gui, result, return_type):
     ...     return np.random.rand(256, 256)
 
     """
+    from ..layers._source import layer_source
 
     if result is None:
         return
@@ -166,13 +181,15 @@ def add_layer_data_tuples_to_viewer(gui, result, return_type):
     ...     return [(np.ones((10,10)), {'name': 'hi'})]
 
     """
-
     if result is None:
         return
-
     viewer = find_viewer_ancestor(gui)
     if not viewer:
         return
+
+    from ..layers._source import layer_source
+    from ..utils.misc import ensure_list_of_layer_data_tuple
+    from ..utils.translations import trans
 
     result = result if isinstance(result, list) else [result]
     try:
@@ -233,7 +250,7 @@ def find_viewer_ancestor(widget) -> Optional[Viewer]:
     return None
 
 
-def get_layers(gui: 'CategoricalWidget') -> List[layers.Layer]:
+def get_layers(gui: CategoricalWidget) -> List[Layer]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     Parameters
@@ -259,11 +276,11 @@ def get_layers(gui: 'CategoricalWidget') -> List[layers.Layer]:
     """
     viewer = find_viewer_ancestor(gui.native)
     if not viewer:
-        return ()
+        return []
     return [x for x in viewer.layers if isinstance(x, gui.annotation)]
 
 
-def get_layers_data(gui: 'CategoricalWidget') -> List[Tuple[str, Any]]:
+def get_layers_data(gui: CategoricalWidget) -> List[Tuple[str, Any]]:
     """Retrieve layers matching gui.annotation, from the Viewer the gui is in.
 
     As opposed to `get_layers`, this function returns just `layer.data` rather
@@ -291,6 +308,7 @@ def get_layers_data(gui: 'CategoricalWidget') -> List[Tuple[str, Any]]:
     ...     return data.mean()
 
     """
+    from .. import layers
 
     viewer = find_viewer_ancestor(gui.native)
     if not viewer:
@@ -308,7 +326,7 @@ def get_layers_data(gui: 'CategoricalWidget') -> List[Tuple[str, Any]]:
 
 
 @lru_cache(maxsize=None)
-def _make_choice_data_setter(gui: 'CategoricalWidget', choice_name: str):
+def _make_choice_data_setter(gui: CategoricalWidget, choice_name: str):
     """Return a function that sets the ``data`` for ``choice_name`` in ``gui``.
 
     Note, using lru_cache here so that the **same** function object is returned
@@ -327,9 +345,7 @@ def _make_choice_data_setter(gui: 'CategoricalWidget', choice_name: str):
     return setter
 
 
-def add_layer_to_viewer(
-    gui, result: Any, return_type: Type[layers.Layer]
-) -> None:
+def add_layer_to_viewer(gui, result: Any, return_type: Type[Layer]) -> None:
     """Show a magicgui result in the viewer.
 
     Parameters
