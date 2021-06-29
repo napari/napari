@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import dask
 import numpy as np
@@ -8,6 +8,9 @@ import numpy as np
 from ...utils.action_manager import action_manager
 from ...utils.transforms import Affine
 from ...utils.translations import trans
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 
 def register_layer_action(keymapprovider, description: str, shortcuts=None):
@@ -208,8 +211,33 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 
 
 def prepare_properties(
-    properties, choices=None, num_data=0, save_choices=False
-):
+    properties: Optional[Union[Dict[str, np.ndarray], DataFrame]],
+    choices: Optional[Dict[str, np.ndarray]] = None,
+    num_data: int = 0,
+    save_choices: bool = False,
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
+    """Prepare properties and choices into standard forms.
+
+    Parameters
+    ----------
+    properties : dict[str, Array] or DataFrame
+        The property values.
+    choices: dict[str, Array]
+        The property value choices.
+    num_data: int
+        The length of data that the properties represent (e.g. number of points).
+    save_choices: bool
+        If true,
+
+    Returns
+    -------
+    properties: dict[str, np.ndarray]
+        A dictionary where the key is the property name and the value
+        is an ndarray of property values.
+    choices: dict[str, np.ndarray]
+        A dictionary where the key is the property name and the value
+        is an ndarray of unique property value choices.
+    """
     # If there is no data, we expect any non-empty properties to actually represent choices.
     if num_data == 0 and properties:
         choices = properties
@@ -217,7 +245,7 @@ def prepare_properties(
 
     expected_len = num_data if num_data > 0 else None
     properties = validate_properties(properties, expected_len=expected_len)
-    choices = validate_property_choices(choices)
+    choices = _validate_property_choices(choices)
 
     # Populate the new choices by using the property keys and merging the
     # corresponding unique property and choices values.
@@ -250,9 +278,9 @@ def prepare_properties(
 
 
 def dataframe_to_properties(
-    dataframe,
+    dataframe: DataFrame,
 ) -> Dict[str, np.ndarray]:
-    """Convert a dataframe to Points.properties formatted dictionary.
+    """Convert a dataframe to a properties dictionary.
 
     Parameters
     ----------
@@ -269,10 +297,10 @@ def dataframe_to_properties(
 
 
 def validate_properties(
-    properties: Dict[str, np.ndarray],
+    properties: Optional[Union[Dict[str, np.ndarray], DataFrame]],
     expected_len: Optional[int] = None,
 ) -> Dict[str, np.ndarray]:
-    """Validate the type and size of properties."""
+    """Validate the type and size of properties and coerce values to numpy arrays."""
     if properties is None or len(properties) == 0:
         return {}
 
@@ -293,7 +321,7 @@ def validate_properties(
     return {k: np.asarray(v) for k, v in properties.items()}
 
 
-def validate_property_choices(property_choices):
+def _validate_property_choices(property_choices):
     if property_choices is None:
         property_choices = {}
     return {k: np.unique(v) for k, v in property_choices.items()}

@@ -260,14 +260,14 @@ class Shapes(Layer):
         coordinates that are remaining fixed during the move. `None` otherwise.
     _fixed_index : int
         If a scaling or rotation is in progress then the index of the vertex of
-        the boudning box that is remaining fixed during the move. `None`
+        the bounding box that is remaining fixed during the move. `None`
         otherwise.
     _update_properties : bool
         Bool indicating if properties are to allowed to update the selected
         shapes when they are changed. Blocking this prevents circular loops
         when shapes are selected and the properties are changed based on that
         selection
-    _allow_thumnail_update : bool
+    _allow_thumbnail_update : bool
         Flag set to true to allow the thumbnail to be updated. Blocking the thumbnail
         can be advantageous where responsiveness is critical.
     _clipboard : dict
@@ -278,12 +278,12 @@ class Shapes(Layer):
         Size of the vertices of the shapes and bounding box in Canvas
         coordinates.
     _rotation_handle_length : float
-        Length of the rotation handle of the boudning box in Canvas
+        Length of the rotation handle of the bounding box in Canvas
         coordinates.
     _input_ndim : int
         Dimensions of shape data.
     _thumbnail_update_thresh : int
-        If there are more than this number of shapes, the thumnail
+        If there are more than this number of shapes, the thumbnail
         won't update during interactive events
     """
 
