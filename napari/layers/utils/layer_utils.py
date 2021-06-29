@@ -6,6 +6,7 @@ import dask
 import numpy as np
 
 from ...utils.action_manager import action_manager
+from ...utils.events.custom_types import Array
 from ...utils.transforms import Affine
 from ...utils.translations import trans
 
@@ -211,8 +212,8 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 
 
 def prepare_properties(
-    properties: Optional[Union[Dict[str, np.ndarray], DataFrame]],
-    choices: Optional[Dict[str, np.ndarray]] = None,
+    properties: Optional[Union[Dict[str, Array], DataFrame]],
+    choices: Optional[Dict[str, Array]] = None,
     num_data: int = 0,
     save_choices: bool = False,
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
@@ -297,10 +298,23 @@ def dataframe_to_properties(
 
 
 def validate_properties(
-    properties: Optional[Union[Dict[str, np.ndarray], DataFrame]],
+    properties: Optional[Union[Dict[str, Array], DataFrame]],
     expected_len: Optional[int] = None,
 ) -> Dict[str, np.ndarray]:
-    """Validate the type and size of properties and coerce values to numpy arrays."""
+    """Validate the type and size of properties and coerce values to numpy arrays.
+
+    Parameters
+    ----------
+    properties : dict[str, Array] or DataFrame
+        The property values.
+    expected_len : int
+        The expected length of each property value array.
+
+    Returns
+    -------
+    Dict[str, np.ndarray]
+        The property values.
+    """
     if properties is None or len(properties) == 0:
         return {}
 
