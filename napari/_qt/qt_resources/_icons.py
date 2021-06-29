@@ -37,6 +37,8 @@ from typing import Dict, Iterable, Iterator, Optional, Tuple, Union
 
 import qtpy
 
+from ...utils.translations import trans
+
 __all__ = [
     '_register_napari_resources',
     'compile_qt_svgs',
@@ -318,7 +320,18 @@ def _compile_napari_resources(
     with _temporary_qrc_file(svgs, prefix='themes') as qrc:
         output = compile_qrc(qrc)
         if save_path:
-            Path(save_path).write_bytes(output)
+            try:
+                Path(save_path).write_bytes(output)
+            except OSError as e:
+                import warnings
+
+                msg = trans._(
+                    "Unable to save qt-resources: {err}",
+                    err=str(e),
+                    deferred=True,
+                )
+                warnings.warn(msg)
+
         return output.decode()
 
 
