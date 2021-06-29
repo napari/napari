@@ -4,6 +4,7 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..utils.layer_utils import validate_properties
 
@@ -143,15 +144,11 @@ class TrackManager:
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         """set track properties"""
-
         properties = validate_properties(properties, len(self.data))
-
         if 'track_id' not in properties:
             properties['track_id'] = self.track_ids
-
-        # Order each property value array.
         self._properties = {k: v[self._order] for k, v in properties.items()}
 
     @property
