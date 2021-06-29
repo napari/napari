@@ -41,17 +41,27 @@ from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
 # TODO: add error icon and handle pip install errors
-
-
 # TODO: add queue to handle clicks when already processing
 class Installer:
+
     def __init__(self, output_widget: QTextEdit = None):
         from ...plugins import plugin_manager
+
+        self._use_conda = True
+        self._conda_env_path = None
+
+        if self._use_conda and (Path(sys.prefix) / "conda-meta").is_dir():
+            self._conda_env_path = sys.prefix
 
         # create install process
         self._output_widget = None
         self.process = QProcess()
-        self.process.setProgram(sys.executable)
+        if self._use_conda:
+            self.process.setProgram("conda")
+            self.process.setProgram("mamba")
+        else:
+            self.process.setProgram(sys.executable)
+
         self.process.setProcessChannelMode(QProcess.MergedChannels)
         self.process.readyReadStandardOutput.connect(self._on_stdout_ready)
         # setup process path
@@ -80,27 +90,58 @@ class Installer:
             self._output_widget.append(text)
 
     def install(self, pkg_list: Sequence[str]):
-        cmd = ['-m', 'pip', 'install', '--upgrade']
-        if running_as_bundled_app() and sys.platform.startswith('linux'):
+        if self._use_conda:
+            cmd = ['install', '-c', 'conda-forge', '-y', '--prefix', self._conda_env_path]
+        else:
+            cmd = ['-m', 'pip', 'install', '--upgrade']
+
+        if running_as_bundled_app() and sys.platform.startswith('linux') and not self._use_conda:
             cmd += [
                 '--no-warn-script-location',
                 '--prefix',
                 user_plugin_dir(),
             ]
+        print(' '.join(cmd + list(pkg_list)))
         self.process.setArguments(cmd + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
         self.process.start()
 
     def uninstall(self, pkg_list: Sequence[str]):
-        args = ['-m', 'pip', 'uninstall', '-y']
+        if self._use_conda:
+            args = ['remove', '-y', '--prefix', self._conda_env_path, '-c', 'conda-forge']
+        else:
+            args = ['-m', 'pip', 'uninstall', '-y']
+
+        print(' '.join(args + list(pkg_list)))
         self.process.setArguments(args + list(pkg_list))
         if self._output_widget:
             self._output_widget.clear()
+
         self.process.start()
 
         for pkg in pkg_list:
             plugin_manager.unregister(pkg)
+
+    @staticmethod
+    def _installed_with_conda():
+        from ..._version import version_tuple
+        from qtpy import QT_VERSION
+
+        parts = [str(part) for part in version_tuple[:3]]
+        napari_version_string = f"napari-{'.'.join(parts)}-"
+        qt_version_string = f"qt-{QT_VERSION}-"
+        for file in (Path(sys.prefix) / "conda-meta").iterdir():
+            fname = file.parts[-1]
+            if fname.startswith(napari_version_string) and fname.endswith(".json"):
+                return True
+            elif fname.startswith(qt_version_string) and fname.endswith(".json"):
+                return True
+        else:
+            return False
+
+
+print(Installer._installed_with_conda())
 
 
 class PluginListItem(QFrame):
