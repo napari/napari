@@ -73,6 +73,8 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     text : str, dict
         Text to be displayed with the shapes. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -286,6 +288,8 @@ class Shapes(Layer):
     _thumbnail_update_thresh : int
         If there are more than this number of shapes, the thumbnail
         won't update during interactive events
+    _property_choices : dict {str: array (N,)}
+        Possible values for the properties in Shapes.properties.
     """
 
     _colors = get_color_names()
@@ -304,6 +308,7 @@ class Shapes(Layer):
         *,
         ndim=None,
         properties=None,
+        property_choices=None,
         text=None,
         shape_type='rectangle',
         edge_width=1,
@@ -377,7 +382,7 @@ class Shapes(Layer):
         self._ndisplay_stored = self._ndisplay
 
         self._properties, self._property_choices = prepare_properties(
-            properties, num_data=len(data)
+            properties, property_choices, num_data=len(data)
         )
 
         # make the text
@@ -605,7 +610,7 @@ class Shapes(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self._properties, self._property_choices = prepare_properties(
-            properties, num_data=len(self.data)
+            properties, self._property_choices, num_data=len(self.data)
         )
         if self._face_color_property and (
             self._face_color_property not in self._properties

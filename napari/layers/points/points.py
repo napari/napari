@@ -44,6 +44,8 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     text : str, dict
         Text to be displayed with the points. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -119,8 +121,6 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
 
     Attributes
     ----------
@@ -209,7 +209,6 @@ class Points(Layer):
     -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
-        If properties is not provided, it will be {} (empty dictionary).
     _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
@@ -306,16 +305,6 @@ class Points(Layer):
         self._data = np.asarray(data)
 
         # Save the properties
-        if self.data.size == 0 and properties:
-            warnings.warn(
-                trans._(
-                    "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            property_choices = properties
-            properties = {}
         self._properties, self._property_choices = prepare_properties(
             properties, property_choices, len(self.data), save_choices=True
         )

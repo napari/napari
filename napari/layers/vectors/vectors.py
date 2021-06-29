@@ -31,6 +31,8 @@ class Vectors(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     edge_width : float
         Width for all vectors in pixels.
     length : float
@@ -119,7 +121,6 @@ class Vectors(Layer):
         Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
-        If properties is not provided, it will be {} (empty dictionary).
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
         rectangle in the slice that it starts in.
@@ -141,6 +142,7 @@ class Vectors(Layer):
         data,
         *,
         properties=None,
+        property_choices=None,
         edge_width=1,
         edge_color='red',
         edge_color_cycle=None,
@@ -201,7 +203,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self._dims_displayed)
 
         self._properties, self._property_choices = prepare_properties(
-            properties, num_data=len(self.data)
+            properties, property_choices, num_data=len(self.data)
         )
 
         self._edge = ColorManager._from_layer_kwargs(
@@ -210,7 +212,9 @@ class Vectors(Layer):
             continuous_colormap=edge_colormap,
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
-            properties=properties,
+            properties=self._properties
+            if self._data.size
+            else self._property_choices,
         )
 
         # Data containing vectors in the currently viewed slice
@@ -287,7 +291,7 @@ class Vectors(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, Array]):
         self._properties, self._property_choices = prepare_properties(
-            properties, num_data=len(self.data)
+            properties, self._property_choices, num_data=len(self.data)
         )
 
         if self._edge.color_properties is not None:

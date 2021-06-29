@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import dask
@@ -239,8 +240,15 @@ def prepare_properties(
         A dictionary where the key is the property name and the value
         is an ndarray of unique property value choices.
     """
-    # If there is no data, we expect any non-empty properties to actually represent choices.
+    # If there is no data, non-empty properties represent choices as a deprecated behavior.
     if num_data == 0 and properties:
+        warnings.warn(
+            trans._(
+                "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
+            ),
+            DeprecationWarning,
+            stacklevel=2,
+        )
         choices = properties
         properties = {}
 
