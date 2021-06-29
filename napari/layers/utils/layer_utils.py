@@ -210,27 +210,36 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
 def prepare_properties(
     properties, choices=None, num_data=0, save_choices=False
 ):
+    # If there is no data, we expect any non-empty properties to actually represent choices.
     if num_data == 0 and properties:
         choices = properties
         properties = {}
+
     expected_len = num_data if num_data > 0 else None
     properties = validate_properties(properties, expected_len=expected_len)
     choices = validate_property_choices(choices)
 
+    # Populate the new choices by using the property keys and merging the
+    # corresponding unique property and choices values.
     new_choices = {
         k: np.unique(np.concatenate((v, choices.get(k, []))))
         for k, v in properties.items()
     }
+
+    # If there are no properties, and thus no new choices, populate new choices
+    # from the input choices, and initialize property array values as missing or empty.
     if len(new_choices) == 0:
-        # case of set empty properties when have available choices list
         new_choices = {k: np.unique(v) for k, v in choices.items()}
+        if len(new_choices) > 0:
+            if num_data > 0:
+                properties = {k: np.array([None] * num_data) for k in choices}
+            else:
+                properties = {
+                    k: np.empty(0, v.dtype) for k, v in choices.items()
+                }
 
-    if len(properties) == 0 and len(new_choices) > 0:
-        if num_data > 0:
-            properties = {k: np.array([None] * num_data) for k in choices}
-        else:
-            properties = {k: np.empty(0, v.dtype) for k, v in choices.items()}
-
+    # For keys that are in the input choices, but not in the new choices,
+    # maybe add appropriate array values to new choices and properties.
     if save_choices:
         for k, v in choices.items():
             if k not in new_choices:
