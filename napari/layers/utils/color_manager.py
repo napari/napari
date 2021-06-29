@@ -458,8 +458,6 @@ class ColorManager(EventedModel):
         function to coerce possible inputs into ColorManager kwargs
 
         """
-        if properties is None:
-            properties = {}
         properties = {k: np.asarray(v) for k, v in properties.items()}
         if isinstance(colors, dict):
             # if the kwargs are passed as a dictionary, unpack them
