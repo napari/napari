@@ -392,7 +392,7 @@ class TrackManager:
 
     @property
     def graph_times(self) -> np.ndarray:
-        """time points assocaite with each graph vertex"""
+        """time points associated with each graph vertex"""
         if self.graph_vertices is not None:
             return self.graph_vertices[:, 0]
         return None

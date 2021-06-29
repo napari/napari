@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -13,6 +13,7 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
@@ -388,28 +389,16 @@ class Labels(_ImageBase):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         self._properties, self._label_index = self._prepare_properties(
             properties
         )
         self.events.properties()
 
     @classmethod
-    def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
-        """Convert an input properties value to a standard dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : dict or DataFrame
-            properties to be transformed
-
-        Returns
-        -------
-        properties : dict
-            properties dictionary
-        index: dict
-            index mapping dictionary
-        """
+    def _prepare_properties(
+        cls, properties: Optional[Dict[str, Array]]
+    ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
         properties = validate_properties(properties)
         label_index = cls._get_index_from_properties(properties)
         return properties, label_index
@@ -418,7 +407,6 @@ class Labels(_ImageBase):
     def _get_index_from_properties(
         properties: Dict[str, np.ndarray]
     ) -> Dict[int, int]:
-        """Get the mapping from label value to index in a property array."""
         index = {}
         if 'index' in properties:
             index = {i: k for k, i in enumerate(properties['index'])}

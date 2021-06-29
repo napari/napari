@@ -14,6 +14,7 @@ from ...utils.colormaps.standardize_color import (
     transform_color,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.misc import ensure_iterable
 from ...utils.translations import trans
 from ..base import Layer
@@ -602,7 +603,7 @@ class Shapes(Layer):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         self._properties, self._property_choices = prepare_properties(
             properties, num_data=len(self.data)
         )

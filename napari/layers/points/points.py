@@ -12,6 +12,7 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
@@ -527,7 +528,7 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
+        self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
         self._properties, self._property_choices = prepare_properties(
             properties, self.property_choices, len(self.data)

@@ -6,6 +6,7 @@ import numpy as np
 
 from ...utils.colormaps import Colormap, ValidColormapArg
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
@@ -284,7 +285,7 @@ class Vectors(Layer):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         self._properties, self._property_choices = prepare_properties(
             properties, num_data=len(self.data)
         )
