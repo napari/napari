@@ -531,7 +531,7 @@ class Points(Layer):
         self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
         self._properties, self._property_choices = prepare_properties(
-            properties, self.property_choices, len(self.data)
+            properties, self._property_choices, len(self.data)
         )
         # Updating current_properties can modify properties, so block to avoid
         # infinite recursion when explicitly setting the properties.
