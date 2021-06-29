@@ -7,7 +7,7 @@ import napari
 import numpy as np
 
 
-blobs = data.binary_blobs(length=64, volume_fraction=0.1, n_dim=3).astype(
+blobs = data.binary_blobs(length=64, volume_fraction=0.1, n_dim=4).astype(
     float
 )
 viewer = napari.Viewer(ndisplay=3)
@@ -15,6 +15,6 @@ viewer = napari.Viewer(ndisplay=3)
 layer = viewer.add_image(blobs)
 
 
-layer.clipping_planes = np.tile(0.5, (1, 2, 3))
+layer.clipping_planes = np.tile(0.5, (1, 2, 4))
 
 napari.run()

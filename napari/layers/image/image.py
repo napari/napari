@@ -422,15 +422,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
     @property
     def clipping_planes(self):
-        return self._clipping_planes
+        # slice according to displayed dims
+        return self._clipping_planes[..., self._dims_displayed]
 
     @clipping_planes.setter
     def clipping_planes(self, value):
         if value is not None:
             value = np.array(value)
-            if value.ndim != 3 and value.shape[-2:] != (2, 3):
+            if value.ndim != 3 and value.shape[-2:] != (2, self.data.ndim):
                 raise ValueError(
-                    f'clipping planes must have shape (n, 2, 3), not {value.shape}'
+                    f'clipping planes for a {self.data.ndim}D image must have '
+                    f'shape (n, 2, {self.data.ndim}), not {value.shape}'
                 )
         self._clipping_planes = value
         self.events.clipping_planes()
