@@ -244,8 +244,7 @@ def prepare_properties(
         choices = properties
         properties = {}
 
-    expected_len = num_data if num_data > 0 else None
-    properties = validate_properties(properties, expected_len=expected_len)
+    properties = validate_properties(properties, expected_len=num_data)
     choices = _validate_property_choices(choices)
 
     # Populate the new choices by using the property keys and merging the
@@ -256,19 +255,21 @@ def prepare_properties(
     }
 
     # If there are no properties, and thus no new choices, populate new choices
-    # from the input choices, and initialize property array values as missing or empty.
+    # from the input choices, and initialize property values as missing or empty.
     if len(new_choices) == 0:
         new_choices = {k: np.unique(v) for k, v in choices.items()}
         if len(new_choices) > 0:
             if num_data > 0:
-                properties = {k: np.array([None] * num_data) for k in choices}
+                properties = {
+                    k: np.array([None] * num_data) for k in new_choices
+                }
             else:
                 properties = {
-                    k: np.empty(0, v.dtype) for k, v in choices.items()
+                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
                 }
 
     # For keys that are in the input choices, but not in the new choices,
-    # maybe add appropriate array values to new choices and properties.
+    # sometimes add appropriate array values to new choices and properties.
     if save_choices:
         for k, v in choices.items():
             if k not in new_choices:

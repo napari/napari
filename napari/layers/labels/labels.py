@@ -400,20 +400,13 @@ class Labels(_ImageBase):
         cls, properties: Optional[Dict[str, Array]]
     ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
         properties = validate_properties(properties)
-        label_index = cls._get_index_from_properties(properties)
-        return properties, label_index
-
-    @staticmethod
-    def _get_index_from_properties(
-        properties: Dict[str, np.ndarray]
-    ) -> Dict[int, int]:
-        index = {}
+        label_index = {}
         if 'index' in properties:
-            index = {i: k for k, i in enumerate(properties['index'])}
+            label_index = {i: k for k, i in enumerate(properties['index'])}
         elif len(properties) > 0:
             max_len = max(len(x) for x in properties.values())
-            index = {i: i for i in range(max_len)}
-        return index
+            label_index = {i: i for i in range(max_len)}
+        return properties, label_index
 
     @property
     def color(self):
