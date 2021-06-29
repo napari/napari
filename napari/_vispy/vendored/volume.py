@@ -7,19 +7,19 @@ About this technique
 --------------------
 
 In Python, we define the six faces of a cuboid to draw, as well as
-texture cooridnates corresponding with the vertices of the cuboid. 
+texture cooridnates corresponding with the vertices of the cuboid.
 The back faces of the cuboid are drawn (and front faces are culled)
-because only the back faces are visible when the camera is inside the 
+because only the back faces are visible when the camera is inside the
 volume.
 
-In the vertex shader, we intersect the view ray with the near and far 
+In the vertex shader, we intersect the view ray with the near and far
 clipping planes. In the fragment shader, we use these two points to
 compute the ray direction and then compute the position of the front
 cuboid surface (or near clipping plane) along the view ray.
 
 Next we calculate the number of steps to walk from the front surface
 to the back surface and iterate over these positions in a for-loop.
-At each iteration, the fragment color or other voxel information is 
+At each iteration, the fragment color or other voxel information is
 updated depending on the selected rendering method.
 
 It is important for the texture interpolation is 'linear' for most volumes,
@@ -396,14 +396,14 @@ frag_dict = {
 
 
 CLIPPING_PLANES_SETUP_SNIPPET = """
-    uniform vec3 clipping_plane_pos{idx};
-    uniform vec3 clipping_plane_norm{idx};
+    uniform vec3 u_clipping_plane_pos{idx};
+    uniform vec3 u_clipping_plane_norm{idx};
     """
 
 
 CLIPPING_PLANES_APPLY_SNIPPET = """
-    vec3 relative_vec{idx} = loc - clipping_plane_pos{idx};
-    float is_shown{idx} = dot(relative_vec{idx}, clipping_plane_norm{idx});
+    vec3 relative_vec{idx} = loc - u_clipping_plane_pos{idx};
+    float is_shown{idx} = dot(relative_vec{idx}, u_clipping_plane_norm{idx});
     is_shown = min(is_shown{idx}, is_shown);
     """
 
@@ -737,8 +737,8 @@ class VolumeVisual(Visual):
             frag = self.inject_clipping_planes(frag)
             self.set_frag(frag)
         for idx, plane in enumerate(self._clipping_planes):
-            self.shared_program[f'clipping_plane_pos{idx}'] = tuple(plane[0])
-            self.shared_program[f'clipping_plane_norm{idx}'] = tuple(plane[1])
+            self.shared_program[f'u_clipping_plane_pos{idx}'] = tuple(plane[0])
+            self.shared_program[f'u_clipping_plane_norm{idx}'] = tuple(plane[1])
         self.update()
 
     def inject_clipping_planes(self, frag):
