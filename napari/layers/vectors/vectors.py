@@ -11,10 +11,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import (
-    prepare_properties_and_choices,
-    validate_properties,
-)
+from ..utils.layer_utils import prepare_properties, validate_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -202,10 +199,9 @@ class Vectors(Layer):
         self._mesh_triangles = triangles
         self._displayed_stored = copy(self._dims_displayed)
 
-        (
-            self._properties,
-            self._property_choices,
-        ) = prepare_properties_and_choices(properties, None, len(self.data))
+        self._properties, self._property_choices = prepare_properties(
+            properties, num_data=len(self.data)
+        )
 
         self._edge = ColorManager._from_layer_kwargs(
             n_colors=len(self.data),

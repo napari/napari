@@ -24,10 +24,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import (
-    prepare_properties_and_choices,
-    validate_properties,
-)
+from ..utils.layer_utils import prepare_properties, validate_properties
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -378,10 +375,9 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        (
-            self._properties,
-            self._property_choices,
-        ) = prepare_properties_and_choices(properties, None, len(data))
+        self._properties, self._property_choices = prepare_properties(
+            properties, num_data=len(data)
+        )
 
         # make the text
         if text is None or isinstance(text, (list, np.ndarray, str)):

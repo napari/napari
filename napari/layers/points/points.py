@@ -17,7 +17,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import prepare_properties_and_choices
+from ..utils.layer_utils import prepare_properties
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -315,10 +315,7 @@ class Points(Layer):
             )
             property_choices = properties
             properties = {}
-        (
-            self._properties,
-            self._property_choices,
-        ) = prepare_properties_and_choices(
+        self._properties, self._property_choices = prepare_properties(
             properties, property_choices, len(self.data), save_choices=True
         )
 
@@ -532,10 +529,7 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
     ):
-        (
-            self._properties,
-            self._property_choices,
-        ) = prepare_properties_and_choices(
+        self._properties, self._property_choices = prepare_properties(
             properties, self.property_choices, len(self.data)
         )
         # Updating current_properties can modify properties, so block to avoid
@@ -558,34 +552,6 @@ class Points(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
-
-    def _prepare_properties(
-        self,
-        properties: Union[
-            Dict[str, Union[np.ndarray, list]], 'DataFrame', None
-        ],
-        property_choices: Dict[str, Union[np.ndarray, list]] = None,
-        save_choices: bool = False,
-    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-        """Return properties in a normalized dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : Union[dict, DataFrame]
-            properties to be transformed
-        property_choices : Dict[str, np.ndarray]
-            previous choices
-        save_choices : bool
-            preserve property choices that are not available in input columns.
-
-        Returns
-        -------
-        properties (dict):
-            properties dictionary
-        """
-        return prepare_properties_and_choices(
-            properties, property_choices, len(self.data), save_choices
-        )
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:

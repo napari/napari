@@ -20,7 +20,6 @@ def register_layer_action(keymapprovider, description: str, shortcuts=None):
 
     Parameters
     ----------
-
     keymapprovider : KeymapProvider
         class on which to register the keybindings – this will typically be
         the instance in focus that will handle the keyboard shortcut.
@@ -208,36 +207,32 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
-def prepare_properties_and_choices(
-    properties, property_choices=None, num_data=0, save_choices=False
+def prepare_properties(
+    properties, choices=None, num_data=0, save_choices=False
 ):
     if num_data == 0 and properties:
-        property_choices = properties
+        choices = properties
         properties = {}
     expected_len = num_data if num_data > 0 else None
     properties = validate_properties(properties, expected_len=expected_len)
-    property_choices = validate_property_choices(property_choices)
+    choices = validate_property_choices(choices)
 
     new_choices = {
-        k: np.unique(np.concatenate((v, property_choices.get(k, []))))
+        k: np.unique(np.concatenate((v, choices.get(k, []))))
         for k, v in properties.items()
     }
     if len(new_choices) == 0:
         # case of set empty properties when have available choices list
-        new_choices = {k: np.unique(v) for k, v in property_choices.items()}
+        new_choices = {k: np.unique(v) for k, v in choices.items()}
 
     if len(properties) == 0 and len(new_choices) > 0:
         if num_data > 0:
-            properties = {
-                k: np.array([None] * num_data) for k in property_choices
-            }
+            properties = {k: np.array([None] * num_data) for k in choices}
         else:
-            properties = {
-                k: np.empty(0, v.dtype) for k, v in property_choices.items()
-            }
+            properties = {k: np.empty(0, v.dtype) for k, v in choices.items()}
 
     if save_choices:
-        for k, v in property_choices.items():
+        for k, v in choices.items():
             if k not in new_choices:
                 new_choices[k] = np.unique(v)
                 properties[k] = np.array([None] * num_data)
