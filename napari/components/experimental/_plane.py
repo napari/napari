@@ -14,10 +14,9 @@ class Plane(EventedModel):
     Attributes
     ----------
     position : 3-tuple
-        A position on the plane
+        A position on the plane.
     normal : 3-tuple
-        A normal vector which defines the orientation of the plane
-
+        A normal vector which defines the orientation of the plane.
     """
 
     position: Tuple[float, float, float]
