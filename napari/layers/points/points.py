@@ -18,7 +18,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import prepare_properties
+from ..utils.layer_utils import get_current_properties, prepare_properties
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -369,7 +369,7 @@ class Points(Layer):
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
         self._face = ColorManager._from_layer_kwargs(
@@ -379,29 +379,18 @@ class Points(Layer):
             contrast_limits=face_contrast_limits,
             categorical_colormap=face_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
 
         self.size = size
 
-        self._update_current_properties()
+        self.current_properties = get_current_properties(
+            self._properties, self._property_choices, len(self.data)
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-
-    def _update_current_properties(self):
-        if len(self._data) > 0:
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
-        elif len(self._data) == 0 and self.properties:
-            self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self._property_choices.items()
-            }
-        else:
-            self.current_properties = {}
 
     @property
     def data(self) -> np.ndarray:
@@ -525,7 +514,9 @@ class Points(Layer):
         # Updating current_properties can modify properties, so block to avoid
         # infinite recursion when explicitly setting the properties.
         with self.block_update_properties():
-            self._update_current_properties()
+            self.current_properties = get_current_properties(
+                self._properties, self._property_choices, len(self.data)
+            )
         self._update_color_manager(
             self._face,
             self._properties,

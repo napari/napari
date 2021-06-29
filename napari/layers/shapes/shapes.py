@@ -25,7 +25,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import prepare_properties
+from ..utils.layer_utils import get_current_properties, prepare_properties
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -461,14 +461,7 @@ class Shapes(Layer):
         if len(data) > 0:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
-        elif len(data) == 0 and self.properties:
-            self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self._property_choices.items()
-            }
+        elif len(data) == 0 and len(self.properties) > 0:
             self._initialize_current_color_for_empty_layer(edge_color, 'edge')
             self._initialize_current_color_for_empty_layer(face_color, 'face')
         elif len(data) == 0 and len(self.properties) == 0:
@@ -484,7 +477,9 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
-            self.current_properties = {}
+        self.current_properties = get_current_properties(
+            self._properties, self._property_choices, len(data)
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()

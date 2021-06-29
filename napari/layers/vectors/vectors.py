@@ -12,7 +12,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import prepare_properties
+from ..utils.layer_utils import get_current_properties, prepare_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -213,7 +213,7 @@ class Vectors(Layer):
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
 
@@ -409,9 +409,9 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: ColorType):
-        # since Vectors doesn't have "current properties", we have to make them
-        current_properties = {k: v[-1] for k, v in self.properties.items()}
-
+        current_properties = get_current_properties(
+            self._properties, self._property_choices, len(self.data)
+        )
         self._edge._set_color(
             color=edge_color,
             n_colors=len(self.data),
@@ -462,10 +462,11 @@ class Vectors(Layer):
             if color_property == '':
                 if self.properties:
                     color_property = next(iter(self.properties))
-                    # vectors doesn't have current properties, so we have to make it
-                    current_properties = {
-                        k: v[-1] for k, v in self.properties.items()
-                    }
+                    current_properties = get_current_properties(
+                        self._properties,
+                        self._property_choices,
+                        len(self.data),
+                    )
                     self._edge.color_properties = {
                         'name': color_property,
                         'values': self.properties[color_property],

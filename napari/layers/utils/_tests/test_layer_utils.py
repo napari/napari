@@ -6,6 +6,7 @@ from dask import array as da
 from napari.layers.utils.layer_utils import (
     calc_data_range,
     dataframe_to_properties,
+    get_current_properties,
     prepare_properties,
     segment_normal,
 )
@@ -169,3 +170,37 @@ def test_prepare_properties_with_properties_and_choices_and_save_choices():
     assert list(choices.keys()) == ["aa", "bb"]
     assert np.array_equal(choices["aa"], [1, 2, 3])
     assert np.array_equal(choices["bb"], [6, 7])
+
+
+def test_get_current_properties_with_properties_then_last_values():
+    properties = {
+        "face_color": np.array(["cyan", "red", "red"]),
+        "angle": np.array([0.5, 1.5, 1.5]),
+    }
+
+    current_properties = get_current_properties(properties, {}, 3)
+
+    assert current_properties == {
+        "face_color": "red",
+        "angle": 1.5,
+    }
+
+
+def test_get_current_properties_with_property_choices_then_first_values():
+    properties = {
+        "face_color": np.empty(0, dtype=str),
+        "angle": np.empty(0, dtype=float),
+    }
+    property_choices = {
+        "face_color": np.array(["cyan", "red"]),
+        "angle": np.array([0.5, 1.5]),
+    }
+
+    current_properties = get_current_properties(
+        properties, property_choices, 0
+    )
+
+    assert current_properties == {
+        "face_color": "cyan",
+        "angle": 0.5,
+    }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
 
 import dask
 import numpy as np
@@ -229,7 +229,7 @@ def prepare_properties(
     num_data: int
         The length of data that the properties represent (e.g. number of points).
     save_choices: bool
-        If true,
+        If true, always return all of the properties in choices.
 
     Returns
     -------
@@ -285,6 +285,40 @@ def prepare_properties(
                 properties[k] = np.array([None] * num_data)
 
     return properties, new_choices
+
+
+def get_current_properties(
+    properties: Dict[str, np.ndarray],
+    choices: Dict[str, np.ndarray],
+    num_data: int = 0,
+) -> Dict[str, Any]:
+    """Get the current property values from the properties or choices.
+
+    Parameters
+    ----------
+    properties : dict[str, np.ndarray]
+        The property values.
+    choices: dict[str, np.ndarray]
+        The property value choices.
+    num_data: int
+        The length of data that the properties represent (e.g. number of points).
+
+    Returns
+    -------
+    dict[str, Any]
+        A dictionary where the key is the property name and the value is the current
+        value of that property.
+    """
+    current_properties = {}
+    if num_data > 0:
+        current_properties = {
+            k: np.asarray([v[-1]]) for k, v in properties.items()
+        }
+    elif num_data == 0 and len(choices) > 0:
+        current_properties = {
+            k: np.asarray([v[0]]) for k, v in choices.items()
+        }
+    return current_properties
 
 
 def dataframe_to_properties(
