@@ -286,7 +286,7 @@ def validate_properties(
 
 def validate_property_choices(property_choices):
     if property_choices is None:
-        return {}
+        property_choices = {}
     return {k: np.unique(v) for k, v in property_choices.items()}
 
 

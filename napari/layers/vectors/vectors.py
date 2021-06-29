@@ -11,7 +11,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import prepare_properties, validate_properties
+from ..utils.layer_utils import prepare_properties
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
 
 
@@ -285,8 +285,8 @@ class Vectors(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        self._properties = validate_properties(
-            properties, expected_len=len(self.data)
+        self._properties, self._property_choices = prepare_properties(
+            properties, num_data=len(self.data)
         )
 
         if self._edge.color_properties is not None:

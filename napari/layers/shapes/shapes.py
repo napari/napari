@@ -24,7 +24,7 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import prepare_properties, validate_properties
+from ..utils.layer_utils import prepare_properties
 from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
@@ -603,8 +603,8 @@ class Shapes(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        self._properties = validate_properties(
-            properties, expected_len=len(self.data)
+        self._properties, self._property_choices = prepare_properties(
+            properties, num_data=len(self.data)
         )
         if self._face_color_property and (
             self._face_color_property not in self._properties
