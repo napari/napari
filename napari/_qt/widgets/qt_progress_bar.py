@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
 
 
 class ProgressBar(QWidget):
-    closed = QtCore.Signal()
+    # closed = QtCore.Signal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -53,11 +53,11 @@ class ProgressBar(QWidget):
 
     def close(self):
         super().close()
-        self.closed.emit()
+        # self.closed.emit()
 
 
 class ProgressBarGroup(QWidget):
-    closed = QtCore.Signal()
+    # closed = QtCore.Signal()
 
     def __init__(self, pbar, parent=None) -> None:
         super().__init__(parent)
@@ -76,4 +76,4 @@ class ProgressBarGroup(QWidget):
 
     def close(self):
         super().close()
-        self.closed.emit()
+        # self.closed.emit()
