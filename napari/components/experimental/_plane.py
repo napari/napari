@@ -2,7 +2,7 @@ from typing import Tuple
 
 from pydantic import validator
 
-from napari.utils.events import EventedModel
+from napari.utils.events import EventedModel, SelectableEventedList
 from napari.utils.misc import ensure_n_tuple
 
 
@@ -27,6 +27,9 @@ class Plane(EventedModel):
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
 
+    def __hash__(self):
+        return id(self)
+
 
 class Slice(EventedModel):
     """Slice object modelling a plane with a defined thickness in 3D.
@@ -42,3 +45,13 @@ class Slice(EventedModel):
 
     plane: Plane
     thickness: float
+
+    def __hash__(self):
+        return id(self)
+
+
+class PlaneList(SelectableEventedList[Plane]):
+    """A selectable evented list of planes"""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs, basetype=Plane)
