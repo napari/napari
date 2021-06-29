@@ -314,6 +314,10 @@ class Vectors(Layer):
                 }
         self.events.properties()
 
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -333,6 +337,7 @@ class Vectors(Layer):
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
+                'property_choices': self._property_choices,
             }
         )
         return state

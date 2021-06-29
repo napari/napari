@@ -635,6 +635,10 @@ class Shapes(Layer):
             self.refresh_text()
         self.events.properties()
 
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
+
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
         if self.nshapes == 0:
@@ -1378,6 +1382,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
+                'property_choices': self._property_choices,
                 'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
