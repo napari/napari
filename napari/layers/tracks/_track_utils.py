@@ -5,7 +5,7 @@ from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
 from ...utils.translations import trans
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import validate_properties
 
 
 def connex(vertices: np.ndarray) -> list:
@@ -59,11 +59,6 @@ class TrackManager:
         Timestamp for each vertex in graph_vertices.
     track_ids : array (N,)
         Track ID for each vertex in track_vertices.
-
-    Methods
-    -------
-
-
     """
 
     def __init__(self):
@@ -144,30 +139,20 @@ class TrackManager:
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Properties for each track."""
+        """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._properties
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """set track properties"""
 
-        # make copy so as not to mutate original
-        properties = properties.copy()
-
-        if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
+        properties = validate_properties(properties, len(self.data))
 
         if 'track_id' not in properties:
             properties['track_id'] = self.track_ids
 
-        # order properties dict
-        for prop in properties.keys():
-            arr = np.array(properties[prop])
-            arr = arr[self._order]
-            properties[prop] = arr
-
-        # check the formatting of incoming properties data
-        self._properties = self._validate_track_properties(properties)
+        # Order each property value array.
+        self._properties = {k: v[self._order] for k, v in properties.items()}
 
     @property
     def graph(self) -> Dict[int, Union[int, List[int]]]:
