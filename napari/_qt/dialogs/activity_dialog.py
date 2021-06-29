@@ -1,7 +1,6 @@
-from pathlib import Path
+# from pathlib import Path
 
 from qtpy.QtCore import QPoint, QSize, Qt
-from qtpy.QtGui import QMovie
 from qtpy.QtWidgets import (
     QDialog,
     QFrame,
@@ -15,10 +14,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-import napari.resources
-
 from ...utils.translations import trans
 from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
+
+# from qtpy.QtGui import QMovie
+
+
+# import napari.resources
 
 
 class ActivityToggleItem(QWidget):
@@ -33,18 +35,18 @@ class ActivityToggleItem(QWidget):
         self._activityBtn.setText(trans._('activity'))
         self._activityBtn.setCheckable(True)
 
-        self._inProgressIndicator = QLabel(trans._("in progress..."), self)
-        sp = self._inProgressIndicator.sizePolicy()
-        sp.setRetainSizeWhenHidden(True)
-        self._inProgressIndicator.setSizePolicy(sp)
-        load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
-        mov = QMovie(load_gif)
-        mov.setScaledSize(QSize(18, 18))
-        self._inProgressIndicator.setMovie(mov)
-        mov.start()
-        self._inProgressIndicator.hide()
+        # self._inProgressIndicator = QLabel(trans._("in progress..."), self)
+        # sp = self._inProgressIndicator.sizePolicy()
+        # sp.setRetainSizeWhenHidden(True)
+        # self._inProgressIndicator.setSizePolicy(sp)
+        # load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
+        # mov = QMovie(load_gif)
+        # mov.setScaledSize(QSize(18, 18))
+        # self._inProgressIndicator.setMovie(mov)
+        # mov.start()
+        # self._inProgressIndicator.hide()
 
-        self.layout().addWidget(self._inProgressIndicator)
+        # self.layout().addWidget(self._inProgressIndicator)
         self.layout().addWidget(self._activityBtn)
         self.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -125,8 +127,8 @@ class ActivityDialog(QDialog):
             new_pbar_index = nested_layout.count() - 1
             nested_layout.insertWidget(new_pbar_index, pbar)
         # show progress indicator
-        self._toggleButton._inProgressIndicator.show()
-        pbar.closed.connect(self.maybe_hide_progress_indicator)
+        # self._toggleButton._inProgressIndicator.show()
+        # pbar.closed.connect(self.maybe_hide_progress_indicator)
 
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""
@@ -135,15 +137,15 @@ class ActivityDialog(QDialog):
         sz = self.parent().size() - self.size() - QSize(*offset)
         self.move(QPoint(sz.width(), sz.height()))
 
-    def maybe_hide_progress_indicator(self):
-        pbars = self._baseWidget.findChildren(ProgressBar)
-        pbar_groups = self._baseWidget.findChildren(ProgressBarGroup)
-        progress_visible = any([pbar.isVisible() for pbar in pbars])
-        progress_group_visible = any(
-            [pbar_group.isVisible() for pbar_group in pbar_groups]
-        )
-        if not progress_visible and not progress_group_visible:
-            self._toggleButton._inProgressIndicator.hide()
+    # def maybe_hide_progress_indicator(self):
+    #     pbars = self._baseWidget.findChildren(ProgressBar)
+    #     pbar_groups = self._baseWidget.findChildren(ProgressBarGroup)
+    #     progress_visible = any([pbar.isVisible() for pbar in pbars])
+    #     progress_group_visible = any(
+    #         [pbar_group.isVisible() for pbar_group in pbar_groups]
+    #     )
+    #     if not progress_visible and not progress_group_visible:
+    #         self._toggleButton._inProgressIndicator.hide()
 
 
 def get_pbar(nest_under=None, **kwargs):

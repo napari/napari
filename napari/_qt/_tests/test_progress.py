@@ -28,8 +28,8 @@ def qt_viewer_has_pbar(qt_viewer):
     )
 
 
-def activity_button_shows_indicator(activity_dialog):
-    return activity_dialog._toggleButton._inProgressIndicator.isVisible()
+# def activity_button_shows_indicator(activity_dialog):
+#     return activity_dialog._toggleButton._inProgressIndicator.isVisible()
 
 
 @contextmanager
@@ -139,14 +139,14 @@ def test_progress_update(make_napari_viewer):
     pbr.close()
 
 
-def test_progress_indicator(make_napari_viewer):
-    viewer = make_napari_viewer(show=SHOW)
-    activity_dialog = viewer.window.qt_viewer.window()._activity_dialog
+# def test_progress_indicator(make_napari_viewer):
+#     viewer = make_napari_viewer(show=SHOW)
+#     activity_dialog = viewer.window.qt_viewer.window()._activity_dialog
 
-    with assert_pbar_added_to(viewer):
-        with progress(range(10)):
-            assert activity_button_shows_indicator(activity_dialog)
-    assert not activity_button_shows_indicator(activity_dialog)
+#     with assert_pbar_added_to(viewer):
+#         with progress(range(10)):
+#             assert activity_button_shows_indicator(activity_dialog)
+#     assert not activity_button_shows_indicator(activity_dialog)
 
 
 @pytest.mark.skipif(
