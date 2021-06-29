@@ -17,11 +17,7 @@ from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import (
-    dataframe_to_properties,
-    prepare_properties_and_choices,
-    validate_properties,
-)
+from ..utils.layer_utils import prepare_properties_and_choices
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -319,15 +315,11 @@ class Points(Layer):
             )
             property_choices = properties
             properties = {}
-        # self._properties, self._property_choices = self._prepare_properties(
-        #    properties, property_choices, save_choices=True
-        # )
-
         (
             self._properties,
             self._property_choices,
         ) = prepare_properties_and_choices(
-            properties, property_choices, len(self.data)
+            properties, property_choices, len(self.data), save_choices=True
         )
 
         # make the text
@@ -540,9 +532,6 @@ class Points(Layer):
     def properties(
         self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
     ):
-        # self._properties, self._property_choices = self._prepare_properties(
-        #    properties, self._property_choices
-        # )
         (
             self._properties,
             self._property_choices,
@@ -594,39 +583,8 @@ class Points(Layer):
         properties (dict):
             properties dictionary
         """
-        if property_choices is None:
-            property_choices = {}
-        if properties is None:
-            properties = {}
-        if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
-
-        new_choices = {
-            k: np.unique(np.concatenate((v, property_choices.get(k, []))))
-            for k, v in properties.items()
-        }
-        if not new_choices:
-            # case of set empty properties when have available choices list
-            new_choices = {
-                k: np.unique(v) for k, v in property_choices.items()
-            }
-        if not properties and new_choices:
-            if self._data.size:
-                properties = {
-                    k: [None] * self._data.shape[0] for k in new_choices
-                }
-            else:
-                properties = {
-                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
-                }
-        if save_choices:
-            for k, v in property_choices.items():
-                if k not in new_choices:
-                    new_choices[k] = np.unique(v)
-                    properties[k] = [None] * self._data.shape[0]
-        return (
-            validate_properties(properties, expected_len=len(self.data)),
-            new_choices,
+        return prepare_properties_and_choices(
+            properties, property_choices, len(self.data), save_choices
         )
 
     @property

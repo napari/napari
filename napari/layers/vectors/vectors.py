@@ -12,7 +12,6 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import (
-    dataframe_to_properties,
     prepare_properties_and_choices,
     validate_properties,
 )
@@ -290,8 +289,6 @@ class Vectors(Layer):
 
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
         self._properties = validate_properties(
             properties, expected_len=len(self.data)
         )

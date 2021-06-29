@@ -18,7 +18,7 @@ from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import dataframe_to_properties, validate_properties
+from ..utils.layer_utils import validate_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -410,14 +410,6 @@ class Labels(_ImageBase):
         index: dict
             index mapping dictionary
         """
-        if properties is None or (
-            isinstance(properties, dict) and not len(properties)
-        ):
-            return {}, {}
-
-        if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
-
         properties = validate_properties(properties)
         label_index = cls._get_index_from_properties(properties)
         return properties, label_index
