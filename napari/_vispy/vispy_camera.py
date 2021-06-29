@@ -108,7 +108,6 @@ class VispyCamera:
             )
             if np.allclose(scale, [0, 0]):  # fix for #2875
                 scale = [1, 1]
-        print(canvas_size, scale)
         zoom = np.min(canvas_size / scale)
         return zoom
 
