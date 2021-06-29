@@ -121,7 +121,7 @@ class ActivityDialog(QDialog):
                 nested_layout = parent_widg.layout()
             else:
                 new_group = ProgressBarGroup(nest_under._pbar)
-                new_group.closed.connect(self.maybe_hide_progress_indicator)
+                # new_group.closed.connect(self.maybe_hide_progress_indicator)
                 nested_layout = new_group.layout()
                 self._activityLayout.addWidget(new_group)
             new_pbar_index = nested_layout.count() - 1
