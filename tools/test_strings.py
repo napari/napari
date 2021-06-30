@@ -8,6 +8,7 @@ TODO:
 
 import ast
 import os
+import sys
 import tokenize
 from pathlib import Path
 from types import ModuleType
@@ -416,6 +417,9 @@ def find_issues(
 # ----------------------------------------------------------------------------
 @pytest.fixture(scope="module")
 def checks():
+    if sys.version_info[:2] < (3, 8):
+        raise Exception("The strings check must use python 3.8 or higher!")
+
     paths = find_files(NAPARI_MODULE, SKIP_FOLDERS, SKIP_FILES)
     issues, outdated_strings, trans_errors = find_issues(paths, SKIP_WORDS)
     return issues, outdated_strings, trans_errors
@@ -432,10 +436,29 @@ def test_missing_translations(checks):
     )
     for fpath, values in issues.items():
         print(f"{fpath}\n{'*' * len(fpath)}")
+        unique_values = set()
         for line, value in values:
+            unique_values.add(value)
             print(f"{line}:\t{repr(value)}")
 
-        print("")
+        print("\n")
+
+        if fpath in SKIP_WORDS:
+            print(
+                "List below can be copied directly to `tools/strings_list.py` file inside the '{fpath}' key:\n"
+            )
+            for value in sorted(unique_values):
+                print(f"        {repr(value)},")
+        else:
+            print(
+                "List below can be copied directly to `tools/strings_list.py` file:\n"
+            )
+            print(f"    {repr(fpath)}: [")
+            for value in sorted(unique_values):
+                print(f"        {repr(value)},")
+            print("    ],")
+
+        print("\n")
 
     no_issues = not issues
     assert no_issues

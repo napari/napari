@@ -9,6 +9,7 @@ from vispy.color import get_colormap
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
+from napari.layers.utils.color_manager import ColorProperties
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -45,7 +46,7 @@ def test_empty_points_with_properties():
         'label': np.array(['label1', 'label2']),
         'cont_prop': np.array([0], dtype=float),
     }
-    pts = Points(properties=properties)
+    pts = Points(property_choices=properties)
     current_props = {k: v[0] for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
@@ -69,7 +70,7 @@ def test_empty_points_with_properties_list():
     See: https://github.com/napari/napari/pull/1069
     """
     properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
-    pts = Points(properties=properties)
+    pts = Points(property_choices=properties)
     current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
@@ -89,7 +90,7 @@ def test_empty_layer_with_face_colormap():
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         face_color='point_type',
         face_colormap='gray',
     )
@@ -107,7 +108,7 @@ def test_empty_layer_with_edge_colormap():
     """
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         edge_color='point_type',
         edge_colormap='gray',
     )
@@ -124,10 +125,10 @@ def test_empty_layer_with_text_properties():
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     text_kwargs = {'text': 'point_type', 'color': 'red'}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         text=text_kwargs,
     )
-    np.testing.assert_equal(layer.text.values, np.empty(0))
+    assert layer.text.values.size == 0
     np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
 
     # add a point and check that the appropriate text value was added
@@ -140,10 +141,10 @@ def test_empty_layer_with_text_formatted():
     """Test initializing an empty layer with text defined"""
     default_properties = {'point_type': np.array([1.5], dtype=float)}
     layer = Points(
-        properties=default_properties,
+        property_choices=default_properties,
         text='point_type: {point_type:.2f}',
     )
-    np.testing.assert_equal(layer.text.values, np.empty(0))
+    assert layer.text.values.size == 0
 
     # add a point and check that the appropriate text value was added
     layer.add([1, 1])
@@ -1008,7 +1009,7 @@ def test_add_color_cycle_to_empty_layer(attribute):
     default_properties = {'point_type': np.array(['A'])}
     color_cycle = ['red', 'blue']
     points_kwargs = {
-        'properties': default_properties,
+        'property_choices': default_properties,
         f'{attribute}_color': 'point_type',
         f'{attribute}_color_cycle': color_cycle,
     }
@@ -1549,3 +1550,75 @@ def test_update_none():
     layer.data = [(1, 2, 3), (1, 3, 2)]
     assert layer.ndim == 3
     assert layer.data.size == 6
+
+
+def test_prepare_properties():
+    layer = Points([(1, 2, 3), (1, 3, 2)])
+    properties, choices = layer._prepare_properties({"aa": [1, 2]})
+    assert list(properties.keys()) == ["aa"]
+    assert np.array_equal(properties["aa"], [1, 2])
+    assert list(choices.keys()) == ["aa"]
+    assert np.array_equal(choices["aa"], [1, 2])
+    assert layer._prepare_properties({}) == ({}, {})
+    assert layer._prepare_properties({}, {}) == ({}, {})
+    properties, choices = layer._prepare_properties({}, {"aa": [1, 2]})
+    assert list(properties.keys()) == ["aa"]
+    assert np.array_equal(properties["aa"], [None, None])
+    assert list(choices.keys()) == ["aa"]
+    assert np.array_equal(choices["aa"], [1, 2])
+    properties, choices = layer._prepare_properties(
+        {"aa": [1, 3]}, {"aa": [1, 2]}
+    )
+    assert list(properties.keys()) == ["aa"]
+    assert np.array_equal(properties["aa"], [1, 3])
+    assert list(choices.keys()) == ["aa"]
+    assert np.array_equal(choices["aa"], [1, 2, 3])
+    properties, choices = layer._prepare_properties(
+        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}
+    )
+    assert list(properties.keys()) == ["aa"]
+    assert np.array_equal(properties["aa"], [1, 3])
+    assert list(choices.keys()) == ["aa"]
+    assert np.array_equal(choices["aa"], [1, 2, 3])
+    properties, choices = layer._prepare_properties(
+        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}, save_choices=True
+    )
+    assert list(properties.keys()) == ["aa", "bb"]
+    assert np.array_equal(properties["aa"], [1, 3])
+    assert np.array_equal(properties["bb"], [None, None])
+    assert list(choices.keys()) == ["aa", "bb"]
+    assert np.array_equal(choices["aa"], [1, 2, 3])
+    assert np.array_equal(choices["bb"], [6, 7])
+
+    layer = Points([(1, 2, 3), (1, 3, 2), (1, 3, 3)])
+    properties, choices = layer._prepare_properties({"aa": [1, 2, 1]})
+    assert np.array_equal(properties["aa"], [1, 2, 1])
+    assert np.array_equal(choices["aa"], [1, 2])
+
+
+def test_set_face_color_mode_after_set_properties():
+    # See GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2755
+    np.random.seed(0)
+    num_points = 3
+    points = Points(np.random.random((num_points, 2)))
+
+    points.properties = {
+        'cat': np.random.randint(low=0, high=num_points, size=num_points),
+        'cont': np.random.random(num_points),
+    }
+
+    # Initially the color_mode is DIRECT, which means that the face ColorManager
+    # has no color_properties, so the first property is used with a warning.
+    with pytest.warns(UserWarning):
+        points.face_color_mode = 'cycle'
+
+    first_property_key, first_property_values = next(
+        iter(points.properties.items())
+    )
+    expected_properties = ColorProperties(
+        name=first_property_key,
+        values=first_property_values,
+        current_value=first_property_values[-1],
+    )
+    assert points._face.color_properties == expected_properties

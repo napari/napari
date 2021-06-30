@@ -3,8 +3,7 @@ from napari_plugin_engine import napari_hook_implementation
 from qtpy.QtWidgets import QWidget
 
 import napari
-from napari import Viewer, plugins
-from napari.plugins import hook_specifications
+from napari import Viewer
 
 
 class Widg1(QWidget):
@@ -38,71 +37,68 @@ dwidget_args = {
 }
 
 
-# test_plugin_manager and add_implementation fixtures are
-#     provided by napari_plugin_engine._testsupport
+# napari_plugin_manager from _testsupport.py
 # monkeypatch, request, recwarn fixtures are from pytest
 @pytest.mark.parametrize('arg', dwidget_args.values(), ids=dwidget_args.keys())
 def test_dock_widget_registration(
-    arg, test_plugin_manager, monkeypatch, request, recwarn
+    arg, napari_plugin_manager, request, recwarn
 ):
     """Test that dock widgets get validated and registerd correctly."""
-    test_plugin_manager.project_name = 'napari'
-    test_plugin_manager.add_hookspecs(hook_specifications)
-    hook = test_plugin_manager.hook.napari_experimental_provide_dock_widget
 
-    with monkeypatch.context() as m:
-        registered = {}
-        m.setattr(plugins, "dock_widgets", registered)
+    class Plugin:
+        @napari_hook_implementation
+        def napari_experimental_provide_dock_widget():
+            return arg
 
-        class Plugin:
-            @napari_hook_implementation
-            def napari_experimental_provide_dock_widget():
-                return arg
+    napari_plugin_manager.register(Plugin, name='Plugin')
+    napari_plugin_manager.discover_widgets()
+    widgets = napari_plugin_manager._dock_widgets
 
-        test_plugin_manager.register(Plugin)
-
-        hook.call_historic(
-            result_callback=plugins.register_dock_widget, with_impl=True
-        )
-        if '[bad_' in request.node.name:
-            assert len(recwarn) == 1
-            assert not registered
-        else:
-            assert len(recwarn) == 0
-            assert registered['Plugin']['Widg1'][0] == Widg1
-            if 'tuple_list' in request.node.name:
-                assert registered['Plugin']['Widg2'][0] == Widg2
+    if '[bad_' in request.node.name:
+        assert len(recwarn) == 1
+        assert not widgets
+    else:
+        assert len(recwarn) == 0
+        assert widgets['Plugin']['Widg1'][0] == Widg1
+        if 'tuple_list' in request.node.name:
+            assert widgets['Plugin']['Widg2'][0] == Widg2
 
 
 @pytest.fixture
-def test_plugin_widgets(monkeypatch):
+def test_plugin_widgets(monkeypatch, napari_plugin_manager):
     """A smattering of example registered dock widgets and function widgets."""
-    with monkeypatch.context() as m:
-        dock_widgets = {
-            "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
-            "TestP2": {"Widg3": (Widg3, {})},
-        }
-        m.setattr(plugins, "dock_widgets", dock_widgets)
+    tnpm = napari_plugin_manager
+    dock_widgets = {
+        "TestP1": {"Widg1": (Widg1, {}), "Widg2": (Widg2, {})},
+        "TestP2": {"Widg3": (Widg3, {})},
+    }
+    monkeypatch.setattr(tnpm, "_dock_widgets", dock_widgets)
 
-        function_widgets = {'TestP3': {'magic': magicfunc}}
-        m.setattr(plugins, "function_widgets", function_widgets)
-        yield
+    function_widgets = {'TestP3': {'magic': magicfunc}}
+    monkeypatch.setattr(tnpm, "_function_widgets", function_widgets)
+    yield
 
 
 def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
     """Test the plugin widgets get added to the window menu correctly."""
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
     assert len(actions) == 3
     expected_text = ['TestP1', 'TestP2: Widg3', 'TestP3: magic']
     assert [a.text() for a in actions] == expected_text
 
-    # the first item in the menu is a submenu (for "Test plugin1")
+    # the first item of the plugins is a submenu (for "Test plugin1")
     assert actions[0].menu()
     subnames = ['Widg1', 'Widg2']
     assert [a.text() for a in actions[0].menu().actions()] == subnames
 
-    # the other items in the menu are not submenus
+    # the other items for the plugins are not submenus
     assert not actions[1].menu()
     assert not actions[2].menu()
 
@@ -110,7 +106,13 @@ def test_plugin_widgets_menus(test_plugin_widgets, make_napari_viewer):
 def test_making_plugin_dock_widgets(test_plugin_widgets, make_napari_viewer):
     """Test that we can create dock widgets, and they get the viewer."""
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
 
     # trigger the 'TestP2: Widg3' action
     actions[1].trigger()
@@ -142,7 +144,13 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
     import magicgui
 
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
 
     # trigger the 'TestP3: magic' action
     actions[2].trigger()
@@ -167,7 +175,13 @@ def test_making_function_dock_widgets(test_plugin_widgets, make_napari_viewer):
 def test_clear_all_plugin_widgets(test_plugin_widgets, make_napari_viewer):
     """Test the the 'Remove Dock Widgets' menu item clears added widgets."""
     viewer = make_napari_viewer()
-    actions = viewer.window._plugin_dock_widget_menu.actions()
+    # only take the plugin actions
+    actions = viewer.window.plugins_menu.actions()
+    for cnt, action in enumerate(actions):
+        if action.text() == "":
+            # this is the separator
+            break
+    actions = actions[cnt + 1 :]
     actions[1].trigger()
     actions[0].menu().actions()[1].trigger()
     assert len(viewer.window._dock_widgets) == 2

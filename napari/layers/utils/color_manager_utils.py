@@ -32,7 +32,7 @@ def guess_continuous(property: np.ndarray) -> bool:
 
 
 def is_color_mapped(color, properties):
-    """ determines if the new color argument is for directly setting or cycle/colormap"""
+    """determines if the new color argument is for directly setting or cycle/colormap"""
     if isinstance(color, str):
         if color in properties:
             return True

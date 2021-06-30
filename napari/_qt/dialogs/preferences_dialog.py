@@ -3,6 +3,7 @@ import json
 from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -13,12 +14,14 @@ from qtpy.QtWidgets import (
 )
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-from ...utils.settings import SETTINGS
+from ...utils.settings import get_settings
 from ...utils.translations import trans
 
 
 class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
+
+    valueChanged = Signal()
 
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
@@ -72,6 +75,26 @@ class PreferencesDialog(QDialog):
         self.make_dialog()
         self._list.setCurrentRow(0)
 
+    def _restart_dialog(self, event=None, extra_str=""):
+        """Displays the dialog informing user a restart is required.
+
+        Paramters
+        ---------
+        event : Event
+        extra_str : str
+            Extra information to add to the message about needing a restart.
+        """
+
+        text_str = trans._(
+            "napari requires a restart for image rendering changes to apply."
+        )
+
+        widget = ResetNapariInfoDialog(
+            parent=self,
+            text=text_str,
+        )
+        widget.exec_()
+
     def closeEvent(self, event):
         """Override to emit signal."""
         self.closed.emit()
@@ -89,16 +112,15 @@ class PreferencesDialog(QDialog):
 
     def make_dialog(self):
         """Removes settings not to be exposed to user and creates dialog pages."""
-
+        settings = get_settings()
         # Because there are multiple pages, need to keep a dictionary of values dicts.
         # One set of keywords are for each page, then in each entry for a page, there are dicts
         # of setting and its value.
-
         self._values_orig_dict = {}
         self._values_dict = {}
         self._setting_changed_dict = {}
 
-        for page, setting in SETTINGS.schemas().items():
+        for page, setting in settings.schemas().items():
             schema, values, properties = self.get_page_dict(setting)
 
             self._setting_changed_dict[page] = {}
@@ -128,8 +150,20 @@ class PreferencesDialog(QDialog):
             Dictionary of properties within the json schema.
 
         """
-
         schema = json.loads(setting['json_schema'])
+
+        # Resolve allOf references
+        definitions = schema.get("definitions", {})
+        if definitions:
+            for key, data in schema["properties"].items():
+                if "allOf" in data:
+                    allof = data["allOf"]
+                    allof = [d["$ref"].rsplit("/")[-1] for d in allof]
+                    for definition in allof:
+                        local_def = definitions[definition]
+                        schema["properties"][key]["enum"] = local_def["enum"]
+                        schema["properties"][key]["type"] = "string"
+
         # Need to remove certain properties that will not be displayed on the GUI
         properties = schema.pop('properties')
         model = setting['model']
@@ -146,17 +180,17 @@ class PreferencesDialog(QDialog):
 
     def restore_defaults(self):
         """Launches dialog to confirm restore settings choice."""
-
-        widget = ConfirmDialog(
+        self._reset_dialog = ConfirmDialog(
             parent=self,
             text=trans._("Are you sure you want to restore default settings?"),
         )
-        widget.valueChanged.connect(self._reset_widgets)
-        widget.exec_()
+        self._reset_dialog.valueChanged.connect(self._reset_widgets)
+        self._reset_dialog.exec_()
 
     def _reset_widgets(self):
         """Deletes the widgets and rebuilds with defaults."""
         self.close()
+        self.valueChanged.emit()
         self._list.clear()
 
         for n in range(self._stack.count()):
@@ -168,12 +202,13 @@ class PreferencesDialog(QDialog):
         self.show()
 
     def on_click_ok(self):
-        """Keeps the selected preferences saved to SETTINGS."""
+        """Keeps the selected preferences saved to settings."""
         self.close()
 
     def on_click_cancel(self):
         """Restores the settings in place when dialog was launched."""
         # Need to check differences for each page.
+        settings = get_settings()
         for n in range(self._stack.count()):
             # Must set the current row so that the proper list is updated
             # in check differences.
@@ -183,7 +218,7 @@ class PreferencesDialog(QDialog):
             # of preference dialog session, change them back.
             # Using the settings value seems to be the best way to get the checkboxes right
             # on the plugin call order widget.
-            setting = SETTINGS.schemas()[page]
+            setting = settings.schemas()[page]
             schema, new_values, properties = self.get_page_dict(setting)
             self.check_differences(self._values_orig_dict[page], new_values)
 
@@ -216,17 +251,59 @@ class PreferencesDialog(QDialog):
         values : dict
             Dictionary of current values set in preferences.
         """
-
+        settings = get_settings()
         builder = WidgetBuilder()
         form = builder.create_form(schema, self.ui_schema)
+
+        # Disable widgets that loaded settings from environment variables
+        section = schema["section"]
+        form_layout = form.widget.layout()
+        for row in range(form.widget.layout().rowCount()):
+            widget = form_layout.itemAt(row, form_layout.FieldRole).widget()
+            name = widget._name
+            disable = bool(
+                settings._env_settings.get(section, {}).get(name, None)
+            )
+            widget.setDisabled(disable)
+            try:
+                widget.opacity.setOpacity(0.3 if disable else 1)
+            except AttributeError:
+                # some widgets may not have opacity (such as the QtPluginSorter)
+                pass
+
         # set state values for widget
         form.widget.state = values
+
+        if section == 'experimental':
+            # need to disable async if octree is enabled.
+            if values['octree'] is True:
+                form = self._disable_async(form, values)
+
         form.widget.on_changed.connect(
             lambda d: self.check_differences(
                 d,
                 self._values_dict[schema["title"].lower()],
             )
         )
+
+        return form
+
+    def _disable_async(self, form, values, disable=True, state=True):
+        """Disable async if octree is True."""
+        settings = get_settings()
+        # need to make sure that if async_ is an environment setting, that we don't
+        # enable it here.
+        if (
+            settings._env_settings['experimental'].get('async_', None)
+            is not None
+        ):
+            disable = True
+
+        idx = list(values.keys()).index('async_')
+        form_layout = form.widget.layout()
+        widget = form_layout.itemAt(idx, form_layout.FieldRole).widget()
+        widget.opacity.setOpacity(0.3 if disable else 1)
+        widget.setDisabled(disable)
 
         return form
 
@@ -251,6 +328,17 @@ class PreferencesDialog(QDialog):
             ):
                 self._setting_changed_dict[page].pop(setting_name)
 
+    def set_current_index(self, index: int):
+        """
+        Set the current page on the preferences by index.
+
+        Parameters
+        ----------
+        index : int
+            Index of page to set as current one.
+        """
+        self._list.setCurrentRow(index)
+
     def check_differences(self, new_dict, old_dict):
         """Changes settings in settings manager with changes from dialog.
 
@@ -262,16 +350,36 @@ class PreferencesDialog(QDialog):
         old_dict : dict
             Dict wtih values set at the beginning of the preferences dialog session.
         """
+        settings = get_settings()
         page = self._list.currentItem().text().split(" ")[0].lower()
         self._values_changed(page, new_dict, old_dict)
         different_values = self._setting_changed_dict[page]
 
         if len(different_values) > 0:
-            # change the values in SETTINGS
+            # change the values in settings
             for setting_name, value in different_values.items():
                 try:
-                    setattr(SETTINGS._settings[page], setting_name, value)
+                    setattr(settings._settings[page], setting_name, value)
                     self._values_dict[page] = new_dict
+
+                    if page == 'experimental':
+
+                        if setting_name == 'octree':
+
+                            # disable/enable async checkbox
+                            widget = self._stack.currentWidget()
+                            cstate = True if value is True else False
+                            self._disable_async(
+                                widget, new_dict, disable=cstate
+                            )
+
+                            # need to inform user that napari restart needed.
+                            self._restart_dialog()
+
+                        elif setting_name == 'async_':
+                            # need to inform user that napari restart needed.
+                            self._restart_dialog()
+
                 except:  # noqa: E722
                     continue
 
@@ -279,7 +387,7 @@ class PreferencesDialog(QDialog):
 class ConfirmDialog(QDialog):
     """Dialog to confirms a user's choice to restore default settings."""
 
-    valueChanged = Signal(bool)
+    valueChanged = Signal()
 
     def __init__(
         self,
@@ -317,6 +425,43 @@ class ConfirmDialog(QDialog):
 
     def on_click_restore(self):
         """Restore defaults and close window."""
-        SETTINGS.reset()
-        self.valueChanged.emit(True)
+        get_settings().reset()
+        self.valueChanged.emit()
+        self.close()
+
+
+class ResetNapariInfoDialog(QDialog):
+    """Dialog to inform the user that restart of Napari is necessary to enable setting."""
+
+    valueChanged = Signal()
+
+    def __init__(
+        self,
+        parent: QWidget = None,
+        text: str = "",
+    ):
+        super().__init__(parent)
+        # Set up components
+        self._info_str = QLabel(self)
+        self._button_ok = QPushButton(trans._("OK"))
+        # Widget set up
+        self._info_str.setText(text)
+
+        # Layout
+        button_layout = QGridLayout()
+        button_layout.addWidget(self._button_ok, 0, 1)
+        button_layout.setColumnStretch(0, 1)
+        button_layout.setColumnStretch(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(self._info_str)
+        main_layout.addLayout(button_layout)
+
+        self.setLayout(main_layout)
+
+        # Signals
+        self._button_ok.clicked.connect(self._close_dialog)
+
+    def _close_dialog(self):
+        """Close window."""
         self.close()

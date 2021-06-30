@@ -1,5 +1,7 @@
 import inspect
+import re
 import sys
+import warnings
 
 import wrapt
 from numpydoc.docscrape import FunctionDoc
@@ -215,10 +217,12 @@ KEY_SYMBOLS = {
     'Up': '↑',
     'Down': '↓',
     'Backspace': '⌫',
+    'Delete': '⌦',
     'Tab': '↹',
     'Escape': 'Esc',
     'Return': '⏎',
     'Enter': '↵',
+    'Space': '␣',
 }
 
 
@@ -252,10 +256,20 @@ class Shortcut:
             shortcut to format in the form of dash separated keys to press
 
         """
-        self._values = shortcut.split('-')
-        for v in self._values:
-            if len(v) > 1:
-                assert v in KEY_SYMBOLS.keys()
+        self._values = re.split('-(?=.+)', shortcut)
+        for shortcut_key in self._values:
+            if (
+                len(shortcut_key) > 1
+                and shortcut_key not in KEY_SYMBOLS.keys()
+            ):
+                warnings.warn(
+                    trans._(
+                        "{shortcut_key} does not seem to be a valid shortcut Key.",
+                        shortcut_key=shortcut_key,
+                    ),
+                    UserWarning,
+                    stacklevel=2,
+                )
 
     @property
     def qt(self) -> str:
@@ -294,23 +308,23 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
 
     Returns
     -------
-    key_bindings_str : str
+    str
         String with summary of all key_bindings and their functions.
     """
-    key_bindings_str = '<table border="0" width="100%">'
+    key_bindings_strs = ['<table border="0" width="100%">']
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
         keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
-        key_bindings_str += (
+        key_bindings_strs.append(
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
-            f"{get_function_summary(keymap[key])}</td></tr>"
+            f"{keymap[key]}</td></tr>"
         )
-    key_bindings_str += '</table>'
-    return key_bindings_str
+    key_bindings_strs.append('</table>')
+    return ''.join(key_bindings_strs)
 
 
 def get_function_summary(func):

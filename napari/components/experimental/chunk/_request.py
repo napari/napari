@@ -1,17 +1,21 @@
 """LayerRef, ChunkLocation and ChunkRequest classes.
 """
+from __future__ import annotations
+
 import contextlib
 import logging
 import time
 import weakref
-from typing import NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....types import ArrayLike, Dict
 from ....utils.perf import PerfEvent, block_timer
 
 LOGGER = logging.getLogger("napari.loader")
+
+if TYPE_CHECKING:
+    from ....types import ArrayLike
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
@@ -60,6 +64,52 @@ class ChunkLocation:
     @classmethod
     def from_layer(cls, layer):
         return cls(LayerRef.from_layer(layer))
+
+
+class OctreeLocation(ChunkLocation):
+    """Location of one chunk within the octree.
+
+    Parameters
+    ----------
+    layer_ref : LayerRef
+        Referen to the layer this location is in.
+    slice_id : int
+        The id of the OctreeSlice we are in.
+    level_index : int
+        The octree level index.
+    row : int
+        The chunk row.
+    col : int
+        The chunk col.
+    """
+
+    def __init__(
+        self,
+        layer_ref: LayerRef,
+        slice_id: int,
+        level_index: int,
+        row: int,
+        col: int,
+    ):
+        super().__init__(layer_ref)
+        self.slice_id: int = slice_id
+        self.level_index: int = level_index
+        self.row: int = row
+        self.col: int = col
+
+    def __str__(self):
+        return f"location=({self.level_index}, {self.row}, {self.col}) "
+
+    def __eq__(self, other) -> bool:
+        return (
+            self.slice_id == other.slice_id
+            and self.level_index == other.level_index
+            and self.row == other.row
+            and self.col == other.col
+        )
+
+    def __hash__(self) -> int:
+        return hash((self.slice_id, self.level_index, self.row, self.col))
 
 
 class ChunkRequest:

@@ -17,9 +17,12 @@ from ..utils.notifications import (
     show_console_notification,
 )
 from ..utils.perf import perf_config
-from ..utils.settings import SETTINGS
+from ..utils.settings import get_settings
 from ..utils.translations import trans
-from .dialogs.qt_notification import NapariQtNotification
+from .dialogs.qt_notification import (
+    NapariQtNotification,
+    NotificationDispatcher,
+)
 from .qt_resources import _register_napari_resources
 from .qthreading import wait_for_workers_to_quit
 
@@ -150,6 +153,7 @@ def get_app(
         app.setOrganizationDomain(kwargs.get('org_domain'))
         set_app_id(kwargs.get('app_id'))
 
+    if not _ipython_has_eventloop():
         notification_manager.notification_ready.connect(
             NapariQtNotification.show_notification
         )
@@ -161,7 +165,7 @@ def get_app(
         app.setWindowIcon(QIcon(kwargs.get('icon')))
 
     if ipy_interactive is None:
-        ipy_interactive = SETTINGS.application.ipy_interactive
+        ipy_interactive = get_settings().application.ipy_interactive
     _try_enable_ipython_gui('qt' if ipy_interactive else None)
 
     if perf_config and not perf_config.patched:
@@ -178,6 +182,13 @@ def get_app(
         _register_napari_resources()
 
     _app_ref = app  # prevent garbage collection
+
+    # Add the dispatcher attribute to the application to be able to dispatch
+    # notifications coming from threads
+    dispatcher = getattr(app, "_dispatcher", None)
+    if dispatcher is None:
+        app._dispatcher = NotificationDispatcher()
+
     return app
 
 
@@ -282,6 +293,18 @@ def _ipython_has_eventloop() -> bool:
     return shell.active_eventloop == 'qt'
 
 
+def _pycharm_has_eventloop(app: QApplication) -> bool:
+    """Return true if running in PyCharm and eventloop is active.
+
+    Explicit checking is necessary because PyCharm runs a custom interactive
+    shell which overrides `InteractiveShell.enable_gui()`, breaking some
+    superclass behaviour.
+    """
+    in_pycharm = 'PYCHARM_HOSTED' in os.environ
+    in_event_loop = getattr(app, '_in_event_loop', False)
+    return in_pycharm and in_event_loop
+
+
 def _try_enable_ipython_gui(gui='qt'):
     """Start %gui qt the eventloop."""
     ipy_module = sys.modules.get("IPython")
@@ -330,6 +353,10 @@ def run(
         return
 
     app = QApplication.instance()
+    if _pycharm_has_eventloop(app):
+        # explicit check for PyCharm pydev console
+        return
+
     if not app:
         raise RuntimeError(
             trans._(

@@ -184,6 +184,8 @@ class ColorManager(EventedModel):
         elif color_mode == ColorMode.DIRECT:
             colors = values['colors']
 
+        # FIXME Local variable 'colors' might be referenced before assignment
+
         # set the current color to the last color/property value
         # if it wasn't already set
         if values['current_color'] is None and len(colors) > 0:

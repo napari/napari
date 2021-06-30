@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
 
 import napari.resources
 
+from ...plugins import plugin_manager
 from ...plugins.pypi import (
     ProjectInfo,
     iter_napari_plugin_info,
@@ -98,6 +99,9 @@ class Installer:
             self._output_widget.clear()
         self.process.start()
 
+        for pkg in pkg_list:
+            plugin_manager.unregister(pkg)
+
 
 class PluginListItem(QFrame):
     def __init__(
@@ -114,13 +118,13 @@ class PluginListItem(QFrame):
         enabled: bool = True,
     ):
         super().__init__(parent)
-        self.setup_ui()
+        self.setup_ui(enabled)
         if plugin_name:
             self.plugin_name.setText(plugin_name)
             self.package_name.setText(f"{package_name} {version}")
             self.summary.setText(summary)
             self.package_author.setText(author)
-            self.action_button.setText(trans._("remove"))
+            self.action_button.setText(trans._("uninstall"))
             self.action_button.setObjectName("remove_button")
             self.enabled_checkbox.setChecked(enabled)
             if PluginError.get(plugin_name=plugin_name):
@@ -155,15 +159,15 @@ class PluginListItem(QFrame):
             p = p.parent()
         return p
 
-    def setup_ui(self):
+    def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
-        self.v_lay.setContentsMargins(-1, 8, -1, 8)
+        self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
-        self.row1.setSpacing(8)
+        self.row1.setSpacing(6)
         self.enabled_checkbox = QCheckBox(self)
-        self.enabled_checkbox.setChecked(True)
-        self.enabled_checkbox.setDisabled(True)
+        self.enabled_checkbox.setChecked(enabled)
+        self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
         self.enabled_checkbox.setToolTip(trans._("enable/disable"))
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -183,9 +187,9 @@ class PluginListItem(QFrame):
             self.plugin_name.sizePolicy().hasHeightForWidth()
         )
         self.plugin_name.setSizePolicy(sizePolicy)
-        font16 = QFont()
-        font16.setPointSize(16)
-        self.plugin_name.setFont(font16)
+        font15 = QFont()
+        font15.setPointSize(15)
+        self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
@@ -233,6 +237,10 @@ class PluginListItem(QFrame):
         self.row2.addWidget(self.package_author)
         self.v_lay.addLayout(self.row2)
 
+    def _on_enabled_checkbox(self, state: int):
+        """Called with `state` when checkbox is clicked."""
+        plugin_manager.set_blocked(self.plugin_name.text(), not state)
+
 
 class QPluginList(QListWidget):
     def __init__(self, parent: QWidget, installer: Installer):
@@ -245,11 +253,15 @@ class QPluginList(QListWidget):
         self, project_info: ProjectInfo, plugin_name=None, enabled=True
     ):
         # don't add duplicates
-        if self.findItems(project_info.name, Qt.MatchFixedString):
-            if not plugin_name:
-                return
+        if (
+            self.findItems(project_info.name, Qt.MatchFixedString)
+            and not plugin_name
+        ):
+            return
 
-        item = QListWidgetItem(project_info.name, parent=self)
+        # including summary here for sake of filtering below.
+        searchable_text = project_info.name + " " + project_info.summary
+        item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
 
@@ -287,6 +299,13 @@ class QPluginList(QListWidget):
                 lambda: self.installer.install([item.text()])
             )
             widg.row1.insertWidget(3, update_btn)
+
+    def filter(self, text: str):
+        """Filter items to those containing `text`."""
+        shown = self.findItems(text, Qt.MatchContains)
+        for i in range(self.count()):
+            item = self.item(i)
+            item.setHidden(item not in shown)
 
 
 class QtPluginDialog(QDialog):
@@ -377,16 +396,36 @@ class QtPluginDialog(QDialog):
         installed = QWidget(self.v_splitter)
         lay = QVBoxLayout(installed)
         lay.setContentsMargins(0, 2, 0, 2)
-        lay.addWidget(QLabel(trans._("Installed Plugins")))
+        self.installed_label = QLabel(trans._("Installed Plugins"))
+        self.installed_filter = QLineEdit()
+        self.installed_filter.setPlaceholderText("search...")
+        self.installed_filter.setMaximumWidth(350)
+        self.installed_filter.setClearButtonEnabled(True)
+        mid_layout = QHBoxLayout()
+        mid_layout.addWidget(self.installed_label)
+        mid_layout.addWidget(self.installed_filter)
+        mid_layout.addStretch()
+        lay.addLayout(mid_layout)
+
         self.installed_list = QPluginList(installed, self.installer)
+        self.installed_filter.textChanged.connect(self.installed_list.filter)
         lay.addWidget(self.installed_list)
 
         uninstalled = QWidget(self.v_splitter)
         lay = QVBoxLayout(uninstalled)
         lay.setContentsMargins(0, 2, 0, 2)
         self.avail_label = QLabel(trans._("Available Plugins"))
-        lay.addWidget(self.avail_label)
+        self.avail_filter = QLineEdit()
+        self.avail_filter.setPlaceholderText("search...")
+        self.avail_filter.setMaximumWidth(350)
+        self.avail_filter.setClearButtonEnabled(True)
+        mid_layout = QHBoxLayout()
+        mid_layout.addWidget(self.avail_label)
+        mid_layout.addWidget(self.avail_filter)
+        mid_layout.addStretch()
+        lay.addLayout(mid_layout)
         self.available_list = QPluginList(uninstalled, self.installer)
+        self.avail_filter.textChanged.connect(self.available_list.filter)
         lay.addWidget(self.available_list)
 
         self.stdout_text = QTextEdit(self.v_splitter)
@@ -420,7 +459,7 @@ class QtPluginDialog(QDialog):
         self.show_status_btn.setFixedWidth(100)
         self.show_sorter_btn = QPushButton(trans._("<< Show Sorter"), self)
         self.close_btn = QPushButton(trans._("Close"), self)
-        self.close_btn.clicked.connect(self.reject)
+        self.close_btn.clicked.connect(self.accept)
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
         buttonBox.addWidget(self.direct_entry_edit)
@@ -442,6 +481,8 @@ class QtPluginDialog(QDialog):
 
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
+
+        self.avail_filter.setFocus()
 
     def _update_count_in_label(self):
         count = self.available_list.count()

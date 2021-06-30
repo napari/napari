@@ -1,4 +1,8 @@
+import os
+import sys
+
 import numpy as np
+import pytest
 
 from napari import Viewer
 from napari.layers import (
@@ -10,6 +14,17 @@ from napari.layers import (
     Tracks,
     Vectors,
 )
+
+skip_on_win_ci = pytest.mark.skipif(
+    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
+    reason='Screenshot tests are not supported on windows CI.',
+)
+
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
+
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
@@ -156,8 +171,8 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
 
     Parameters
     ----------
-    layer : napar.layers.Layer
-        Layet to be tested.
+    layer : napari.layers.Layer
+        Layer to be tested.
     extent : array, shape (2, D)
         Extent of data in layer.
     scale : array, shape (D,)

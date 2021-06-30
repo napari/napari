@@ -1,14 +1,43 @@
+from __future__ import annotations
+
 import itertools
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import numpy as np
 
 from ...layers import Image
 from ...layers.image._image_utils import guess_multiscale
-from ...types import FullLayerData
 from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from ...utils.translations import trans
+
+if TYPE_CHECKING:
+    from ...types import FullLayerData
+
+
+def slice_from_axis(array, *, axis, element):
+    """Take a single index slice from array using slicing.
+
+    Equivalent to :func:`np.take`, but using slicing, which ensures that the
+    output is a view of the original array.
+
+    Parameters
+    ----------
+    array : NumPy or other array
+        Input array to be sliced.
+    axis : int
+        The axis along which to slice.
+    element : int
+        The element along that axis to grab.
+
+    Returns
+    -------
+    sliced : NumPy or other array
+        The sliced output array, which has one less dimension than the input.
+    """
+    slices = [slice(None) for i in range(array.ndim)]
+    slices[axis] = element
+    return array[tuple(slices)]
 
 
 def split_channels(
@@ -88,11 +117,11 @@ def split_channels(
     for i in range(n_channels):
         if multiscale:
             image = [
-                np.take(data[j], i, axis=channel_axis)
+                slice_from_axis(data[j], axis=channel_axis, element=i)
                 for j in range(len(data))
             ]
         else:
-            image = np.take(data, i, axis=channel_axis)
+            image = slice_from_axis(data, axis=channel_axis, element=i)
         i_kwargs = {}
         for key, val in kwargs.items():
             try:

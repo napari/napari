@@ -25,7 +25,7 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
 )
 from ..utils.layer_utils import dataframe_to_properties
-from ..utils.text import TextManager
+from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
     BACKSPACE,
@@ -49,6 +49,7 @@ from ._shapes_mouse_bindings import (
 from ._shapes_utils import (
     create_box,
     extract_shape_type,
+    get_default_shape_type,
     get_shape_ndim,
     number_of_shapes,
 )
@@ -147,7 +148,7 @@ class Shapes(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -573,7 +574,10 @@ class Shapes(Layer):
         # more shapes, add attributes
         elif self.nshapes < n_new_shapes:
             n_shapes_difference = n_new_shapes - self.nshapes
-            shape_type = shape_type + ["rectangle"] * n_shapes_difference
+            shape_type = (
+                shape_type
+                + [get_default_shape_type(shape_type)] * n_shapes_difference
+            )
             edge_widths = edge_widths + [1] * n_shapes_difference
             z_indices = z_indices + [0] * n_shapes_difference
             edge_color = np.concatenate(
@@ -987,10 +991,58 @@ class Shapes(Layer):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
 
+    @edge_width.setter
+    def edge_width(self, width):
+        """Set edge width of shapes using float or list of float.
+
+        If list of float, must be of equal length to n shapes
+
+        Parameters
+        ----------
+        width : float or list of float
+            width of all shapes, or each shape if list
+        """
+        if isinstance(width, list):
+            if not len(width) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                widths = width
+        else:
+            widths = [width for _ in range(self.nshapes)]
+
+        for i, width in enumerate(widths):
+            self._data_view.update_edge_width(i, width)
+
     @property
     def z_index(self):
         """list of int: z_index for each shape."""
         return self._data_view.z_indices
+
+    @z_index.setter
+    def z_index(self, z_index):
+        """Set z_index of shape using either int or list of int.
+
+        When list of int is provided, must be of equal length to n shapes.
+
+        Parameters
+        ----------
+        z_index : int or list of int
+            z-index of shapes
+        """
+        if isinstance(z_index, list):
+            if not len(z_index) == self.nshapes:
+                raise ValueError(
+                    trans._('Length of list does not match number of shapes')
+                )
+            else:
+                z_indices = z_index
+        else:
+            z_indices = [z_index for _ in range(self.nshapes)]
+
+        for i, z_idx in enumerate(z_indices):
+            self._data_view.update_z_index(i, z_idx)
 
     @property
     def selected_data(self):
@@ -1312,7 +1364,7 @@ class Shapes(Layer):
         return new_colors
 
     def _is_color_mapped(self, color):
-        """ determines if the new color argument is for directly setting or cycle/colormap"""
+        """determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
                 return True
@@ -1341,7 +1393,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'text': self.text._get_state(),
+                'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1381,7 +1433,7 @@ class Shapes(Layer):
         Returns
         -------
         text_coords : (N x D) np.ndarray
-            Array of coordindates for the N text elements in view
+            Array of coordinates for the N text elements in view
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -1753,7 +1805,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1773,7 +1825,7 @@ class Shapes(Layer):
             otherwise the same value will be used for all shapes.
         z_index : int | list
             Specifier of z order priority. Shapes with higher z order are
-            displayed ontop of others. If a list is supplied it must be the
+            displayed on top of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
@@ -2277,7 +2329,7 @@ class Shapes(Layer):
                 "expand_shape is deprecated and will be removed in version 0.4.9. It should no longer be used as layers should will soon not know which dimensions are displayed. Instead you should work with full nD shape data as much as possible.",
                 deferred=True,
             ),
-            category=DeprecationWarning,
+            category=FutureWarning,
             stacklevel=2,
         )
 
@@ -2435,7 +2487,7 @@ class Shapes(Layer):
                 )
 
             if len(self._clipboard['text']) > 0:
-                self.text._values = np.concatenate(
+                self.text.values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
 

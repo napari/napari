@@ -1,13 +1,22 @@
 import inspect
 import time
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 
 import toolz as tz
-from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
+from qtpy.QtCore import (
+    QObject,
+    QRunnable,
+    QThread,
+    QThreadPool,
+    QTimer,
+    Signal,
+    Slot,
+)
 
 from ..utils.translations import trans
+from .qprogress import progress
 
 
 def as_generator_function(func: Callable) -> Callable:
@@ -27,6 +36,7 @@ class WorkerBaseSignals(QObject):
     finished = Signal()  # emitted when the work is finished
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
+    warned = Signal(tuple)  # emitted with showwarning args on warning
 
 
 class WorkerBase(QRunnable):
@@ -56,6 +66,19 @@ class WorkerBase(QRunnable):
         self._abort_requested = False
         self._running = False
         self.signals = SignalsClass()
+
+        self.signals.errored.connect(self._relay_error)
+        self.signals.warned.connect(self._relay_warning)
+
+    def _relay_error(self, exc):
+        from ..utils.notifications import notification_manager
+
+        notification_manager.receive_error(type(exc), exc, exc.__traceback__)
+
+    def _relay_warning(self, show_warn_args):
+        from ..utils.notifications import notification_manager
+
+        notification_manager.receive_warning(*show_warn_args)
 
     def __getattr__(self, name):
         """Pass through attr requests to signals to simplify connection API.
@@ -124,7 +147,10 @@ class WorkerBase(QRunnable):
         self.started.emit()
         self._running = True
         try:
-            result = self.work()
+            with warnings.catch_warnings():
+                warnings.filterwarnings("always")
+                warnings.showwarning = lambda *w: self.warned.emit(w)
+                result = self.work()
             if isinstance(result, Exception):
                 if isinstance(result, RuntimeError):
                     # The Worker object has likely been deleted.
@@ -141,7 +167,8 @@ class WorkerBase(QRunnable):
                     return
                 else:
                     raise result
-            self.returned.emit(result)
+            if not self.abort_requested:
+                self.returned.emit(result)
         except Exception as exc:
             self.errored.emit(exc)
         self._running = False
@@ -208,7 +235,8 @@ class WorkerBase(QRunnable):
 
         WorkerBase._worker_set.add(self)
         self.finished.connect(lambda: WorkerBase._worker_set.discard(self))
-        QThreadPool.globalInstance().start(self)
+        start_ = partial(QThreadPool.globalInstance().start, self)
+        QTimer.singleShot(10, start_)
 
 
 class FunctionWorker(WorkerBase):
@@ -307,6 +335,7 @@ class GeneratorWorker(WorkerBase):
         self._paused = False
         # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
+        self.pbar = None
 
     def work(self):
         """Core event loop that calls the original function.
@@ -471,6 +500,7 @@ def create_worker(
     *args,
     _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    _progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -493,6 +523,14 @@ def create_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
+    _progress : Union[bool, Dict[str, Union[int, bool, str]]], optional
+        Can be True, to provide indeterminate progress bar, or dictionary.
+        If dict, requires mapping of 'total' to number of expected yields.
+        If total is not provided, progress bar will be indeterminate. Will connect
+        progress bar update to yields and display this progress in the viewer.
+        Can also take a mapping of 'desc' to the progress bar description.
+        Progress bar will become indeterminate when number of yields exceeds 'total'.
+        By default None.
     _worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -517,6 +555,8 @@ def create_worker(
         If a worker_class is provided that is not a subclass of WorkerBase.
     TypeError
         If _connect is provided and is not a dict of ``{str: callable}``
+    TypeError
+        If _progress is provided and function is not a generator
 
     Examples
     --------
@@ -574,6 +614,31 @@ def create_worker(
                     )
                 getattr(worker, key).connect(v)
 
+    # either True or a non-empty dictionary
+    if _progress:
+        if isinstance(_progress, bool):
+            _progress = {}
+
+        desc = _progress.get('desc', None)
+        total = _progress.get('total', 0)
+
+        if isinstance(worker, FunctionWorker) and total != 0:
+            warnings.warn(
+                trans._(
+                    "_progress total != 0 but worker is FunctionWorker and will not yield. Returning indeterminate progress bar...",
+                    deferred=True,
+                ),
+                RuntimeWarning,
+            )
+            total = 0
+
+        pbar = progress(total=total, desc=desc)
+        worker.finished.connect(pbar.close)
+        if total != 0 and isinstance(worker, GeneratorWorker):
+            worker.yielded.connect(pbar.increment_with_overflow)
+
+        worker.pbar = pbar
+
     # if the user has not provided a default connection for the "errored"
     # signal... and they have not explicitly set ``ignore_errors=True``
     # Then rereaise any errors from the thread.
@@ -594,6 +659,7 @@ def thread_worker(
     function: Callable,
     start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
+    progress: Optional[Union[bool, Dict[str, Union[int, bool, str]]]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
@@ -642,6 +708,14 @@ def thread_worker(
         A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
         callback functions to connect to the various signals offered by the
         worker class. by default None
+    progress : Union[bool, Dict[str, Union[int, bool, str]]], optional
+        Can be True, to provide indeterminate progress bar, or dictionary.
+        If dict, requires mapping of 'total' to number of expected yields.
+        If total is not provided, progress bar will be indeterminate. Will connect
+        progress bar update to yields and display this progress in the viewer.
+        Can also take a mapping of 'desc' to the progress bar description.
+        Progress bar will become indeterminate when number of yields exceeds 'total'.
+        By default None. Must be used in conjunction with a generator function.
     worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -685,6 +759,7 @@ def thread_worker(
         # underscore-prefixed version of the kwarg.
         kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
         kwargs['_connect'] = kwargs.get('_connect', connect)
+        kwargs['_progress'] = kwargs.get('_progress', progress)
         kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
         kwargs['_ignore_errors'] = kwargs.get('_ignore_errors', ignore_errors)
         return create_worker(

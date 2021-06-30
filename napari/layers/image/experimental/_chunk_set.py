@@ -2,9 +2,13 @@
 
 Used by the OctreeLoader.
 """
-from typing import Dict, List, Set
+from __future__ import annotations
 
-from .octree_chunk import OctreeChunk, OctreeLocation
+from typing import TYPE_CHECKING, Dict, List, Set
+
+if TYPE_CHECKING:
+    from ....components.experimental.chunk._request import OctreeLocation
+    from .octree_chunk import OctreeChunk
 
 
 class ChunkSet:
