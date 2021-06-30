@@ -143,7 +143,8 @@ class ActivityDialog(QDialog):
         #     [pbar_group.isVisible() for pbar_group in pbar_groups]
         # )
         # if not progress_visible and not progress_group_visible:
-        self._toggleButton._inProgressIndicator.hide()
+        if not self._toggleButton._inProgressIndicator.isVisible():
+            self._toggleButton._inProgressIndicator.hide()
 
 
 def get_pbar(nest_under=None, **kwargs):
