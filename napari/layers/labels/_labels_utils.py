@@ -56,7 +56,7 @@ def sphere_indices(radius, scale):
     scale_normalized = np.asarray(scale, dtype=float) / np.min(scale)
     # Create multi-dimensional grid to check for
     # circle/membership around center
-    r_normalized = (radius + 0.5) / scale_normalized
+    r_normalized = radius / scale_normalized + 0.5
     slices = [
         slice(-int(np.ceil(r)), int(np.floor(r)) + 1) for r in r_normalized
     ]
