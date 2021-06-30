@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from magicgui import magicgui
 
-from napari import Viewer, types
+from napari import Viewer, layers, types
 from napari._tests.utils import layer_test_data
 from napari.layers import Image, Labels, Layer
 from napari.utils.misc import all_subclasses
@@ -184,22 +184,32 @@ def test_magicgui_get_viewer(make_napari_viewer):
     assert not func.v.visible
 
 
-def test_magicgui_imports(tmp_path):
-    """Test that magicgui is registered in time"""
+MGUI_EXPORTS = ['napari.layers.Layer', 'napari.Viewer']
+MGUI_EXPORTS += [f'napari.types.{nm.title()}Data' for nm in layers.NAMES]
+
+
+@pytest.mark.parametrize('name', MGUI_EXPORTS)
+def test_mgui_forward_refs(tmp_path, name):
+    """Test magicgui forward ref annotations
+
+    In a 'fresh' process, make sure that calling
+    `magicgui.type_map.pick_widget_type` with the string version of a napari
+    object triggers the appropriate imports to resolve the class in time.
+    """
     import subprocess
-    import sys
-    from textwrap import dedent
+    import textwrap
 
     script = """
-    from napari.types import ImageData
-    from magicgui import magicgui
-
-    @magicgui()
-    def filter_widget(image: ImageData) -> ImageData:
-        return None
-
-    filter_widget()
+    import magicgui
+    assert magicgui.type_map._TYPE_DEFS == {{}}
+    name = {0!r}
+    wdg, options = magicgui.type_map.pick_widget_type(annotation=name)
+    if name == 'napari.Viewer':
+        assert wdg == magicgui.widgets.EmptyWidget and 'bind' in options
+    else:
+        assert wdg == magicgui.widgets.Combobox
     """
+
     script_path = tmp_path / 'script.py'
-    script_path.write_text(dedent(script))
+    script_path.write_text(textwrap.dedent(script.format(name)))
     subprocess.run([sys.executable, str(script_path)], check=True)

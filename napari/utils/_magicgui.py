@@ -15,7 +15,7 @@ import weakref
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Type
 
-from magicgui import register_type, widgets
+import toolz as tz
 
 if TYPE_CHECKING:
     from magicgui.widgets._bases import CategoricalWidget
@@ -24,83 +24,14 @@ if TYPE_CHECKING:
     from ..viewer import Viewer
 
 
-@lru_cache(maxsize=1)  # only run this function once
-def register_layers_with_magicgui():
-    """Register napari.layers with magicgui.
+# TODO: make register_type a better decorator upstream
+@tz.curry
+def register_type(type_: type, **kwargs) -> type:
+    """Decorator to register a type with magicgui."""
+    import magicgui
 
-    Parameter Annotations -> Widgets:
-        napari.layers.Layer, will be rendered as a ComboBox.
-            if a parameter is annotated as a subclass Layer type, then the
-            combobox options will be limited to that layer type.
-
-    Return Annotations -> Widgets:
-        napari.layers.Layer will add a new layer to the Viewer.
-            if a return is annotated as a subclass of Layer, then the
-            corresponding layer type will be added.  As of 0.4.3, the user
-            must return an actual layer instance
-            see `add_layer_to_viewer` for detail
-    """
-    from .. import layers
-    from ..layers._source import Source
-
-    # the widget field in `_source.py` was defined with a forward reference
-    # to avoid having to import magicgui when we define the layer `Source` obj.
-    # Now that we know we have imported magicgui, we update that forward ref
-    # https://pydantic-docs.helpmanual.io/usage/postponed_annotations/
-    Source.update_forward_refs(FunctionGui=widgets.FunctionGui)
-
-    register_type(
-        layers.Layer, choices=get_layers, return_callback=add_layer_to_viewer
-    )
-
-
-@lru_cache(maxsize=1)  # only run this function once
-def register_viewer_with_magicgui():
-    """Register napari.viewer with magicgui.
-
-    Parameter Annotations -> Widgets:
-        napari.Viewer, will be rendered as a ComboBox, with the current viewer
-            as the only choice.
-    """
-    from ..viewer import Viewer
-
-    register_type(Viewer, bind=find_viewer_ancestor)
-
-
-@lru_cache(maxsize=1)  # only run this function once
-def register_types_with_magicgui():
-    """Register napari.types with magicgui.
-
-    Return Annotations -> Widgets:
-        napari.layers.Layer will add a new layer to the Viewer.
-            if a return is annotated as a subclass of Layer, then the
-            corresponding layer type will be added.  As of 0.4.3, the user
-            must return an actual layer instance
-            see `add_layer_to_viewer` for detail
-        napari.types.<layer_type>Data will add a new layer to the Viewer.
-            using a bare data array (e.g. numpy array) as a return value.
-        napari.types.LayerDataTuple will add a new layer to the Viewer.
-            and expects the user to return a single layer data tuple
-        List[napari.types.LayerDataTuple] will add multiple new layer to the
-            Viewer. And expects the user to return a list of layer data tuples.
-    """
-    from .. import layers, types
-
-    register_type(
-        types.LayerDataTuple,
-        return_callback=add_layer_data_tuples_to_viewer,
-    )
-    register_type(
-        List[types.LayerDataTuple],
-        return_callback=add_layer_data_tuples_to_viewer,
-    )
-    for layer_name in layers.NAMES:
-        data_type = getattr(types, f'{layer_name.title()}Data')
-        register_type(
-            data_type,
-            choices=get_layers_data,
-            return_callback=add_layer_data_to_viewer,
-        )
+    magicgui.register_type(type_, **kwargs)
+    return type_
 
 
 def add_layer_data_to_viewer(gui, result, return_type):

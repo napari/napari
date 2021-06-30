@@ -35,5 +35,3 @@ __all__ = [
     'Vectors',
     'NAMES',
 ]
-
-_imp('napari.utils._magicgui').register_layers_with_magicgui()

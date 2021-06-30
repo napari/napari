@@ -1,14 +1,14 @@
-from importlib import import_module as _imp
 from typing import TYPE_CHECKING
 
 from .components.viewer_model import ViewerModel
-from .utils import config
+from .utils import _magicgui, config
 
 if TYPE_CHECKING:
     # helpful for IDE support
     from ._qt.qt_main_window import Window
 
 
+@_magicgui.register_type(bind=_magicgui.find_viewer_ancestor)
 class Viewer(ViewerModel):
     """Napari ndarray viewer.
 
@@ -123,6 +123,3 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
-
-
-_imp('napari.utils._magicgui').register_viewer_with_magicgui()

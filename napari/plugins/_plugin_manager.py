@@ -1,7 +1,6 @@
 import importlib
 import sys
 from functools import partial
-from importlib import import_module as _imp
 from pathlib import Path
 from types import FunctionType
 from typing import (
@@ -83,8 +82,6 @@ class NapariPluginManager(PluginManager):
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
-
-        _imp('napari.utils._magicgui').register_types_with_magicgui()
 
     def _initialize(self):
         with self.discovery_blocked():
