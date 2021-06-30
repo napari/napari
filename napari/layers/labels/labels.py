@@ -1114,6 +1114,9 @@ class Labels(_ImageBase):
         shape = self.data.shape
         dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
         dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
+        paint_scale = np.array(
+            [self.scale[i] for i in dims_to_paint], dtype=float
+        )
         if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if self.n_edit_dimensions < self.ndim:
@@ -1145,11 +1148,10 @@ class Labels(_ImageBase):
             else:
                 coord_paint = coord
 
-            sphere_dims = len(coord_paint)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
             radius = np.floor(self.brush_size / 2) + 0.5
-            mask_indices = sphere_indices(radius, sphere_dims)
+            mask_indices = sphere_indices(radius, tuple(paint_scale))
 
             mask_indices = mask_indices + np.round(
                 np.array(coord_paint)
