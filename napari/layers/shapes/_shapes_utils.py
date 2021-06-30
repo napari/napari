@@ -1016,7 +1016,7 @@ def extract_shape_type(data, shape_type=None):
 
 def get_default_shape_type(current_type):
     """If all shapes in current_type are of identical shape type,
-       return this shape type, else "polygon" as lowest common 
+       return this shape type, else "polygon" as lowest common
        denominator type.
 
     Parameters
