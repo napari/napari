@@ -223,7 +223,6 @@ KEY_SYMBOLS = {
     'Return': '⏎',
     'Enter': '↵',
     'Space': '␣',
-    'Ctrl': 'Ctrl',
 }
 
 
