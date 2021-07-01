@@ -9,6 +9,7 @@ from pydantic import BaseSettings, Field, ValidationError
 from pydantic.env_settings import SettingsSourceCallable
 from typing_extensions import TypedDict
 
+from ...utils.settings._constants import LoopMode
 from ...utils.shortcuts import default_shortcuts
 from .._base import _DEFAULT_LOCALE
 from ..events.evented_model import EventedModel
@@ -401,6 +402,18 @@ class ApplicationSettings(BaseNapariSettings):
         ),
     )
 
+    playback_fps: int = Field(
+        10,
+        title=trans._("Frames per second"),
+        description=trans._("Playback speed in frames per second."),
+    )
+
+    playback_mode: LoopMode = Field(
+        LoopMode.LOOP,
+        title=trans._("Loop mode"),
+        description=trans._("Loop mode for playback."),
+    )
+
     class Config:
         # Pydantic specific configuration
         schema_extra = {
@@ -424,6 +437,8 @@ class ApplicationSettings(BaseNapariSettings):
             "open_history",
             "save_history",
             "ipy_interactive",
+            "playback_fps",
+            "playback_mode",
         ]
 
 

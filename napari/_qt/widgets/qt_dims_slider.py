@@ -18,8 +18,9 @@ from qtpy.QtWidgets import (
 )
 
 from ...utils.events import Event
+from ...utils.settings import get_settings
+from ...utils.settings._constants import LoopMode
 from ...utils.translations import trans
-from .._constants import LoopMode
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
 from .qt_scrollbar import ModifiedScrollBar
@@ -70,10 +71,21 @@ class QtDimSliderWidget(QWidget):
         sep.setFixedSize(1, 14)
         sep.setObjectName('slice_label_sep')
 
-        self._fps = 10
+        settings = get_settings()
+
+        # For whatever reason, using settings.application.playback_mode by itself
+        # does not work. But setting the mode this way seems to work.
+        if settings.application.playback_mode == 'loop':
+            loop_mode = LoopMode.LOOP
+        elif settings.application.playback_mode == 'back_and_forth':
+            loop_mode = LoopMode.BACK_AND_FORTH
+        else:
+            loop_mode = LoopMode.ONCE
+
+        self._fps = settings.application.playback_fps
         self._minframe = None
         self._maxframe = None
-        self._loop_mode = LoopMode.LOOP
+        self._loop_mode = loop_mode
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()
@@ -156,7 +168,12 @@ class QtDimSliderWidget(QWidget):
 
     def _create_play_button_widget(self):
         """Creates the actual play button, which has the modal popup."""
-        self.play_button = QtPlayButton(self.qt_dims, self.axis)
+        self.play_button = QtPlayButton(
+            self.qt_dims, self.axis, fps=self._fps, mode=self._loop_mode
+        )
+        self.play_button.setToolTip(
+            trans._('Right click on button for playback setting options.')
+        )
         self.play_button.mode_combo.activated[str].connect(
             lambda x: self.__class__.loop_mode.fset(
                 self, LoopMode(x.replace(' ', '_'))
@@ -514,7 +531,7 @@ class QtPlayButton(QPushButton):
         form_layout.insertRow(
             2, QLabel(trans._('play mode:'), parent=self.popup), mode_combo
         )
-        mode_combo.setCurrentText(str(self.mode))
+        mode_combo.setCurrentText(str(self.mode).replace('_', ' '))
         self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):
