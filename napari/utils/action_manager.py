@@ -395,15 +395,6 @@ class ActionManager:
         self._update_gui_elements(name)
         return shortcuts
 
-    def _get_layer_actions(self, layer):
-        """ """
-        layer_actions = {}
-        for name, action in self._actions.items():
-            if action and layer == action.keymapprovider:
-                layer_actions[name] = action
-
-        return layer_actions
-
     def _get_layer_shortcuts(self, layers):
         """
         Get shortcuts filtered by the given layers.
