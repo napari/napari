@@ -22,6 +22,10 @@ from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
 
 class ActivityToggleItem(QWidget):
+    """Toggle button for Activity Dialog with progress indicator displayed
+    when there are progress bars present.
+    """
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setLayout(QHBoxLayout())

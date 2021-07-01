@@ -11,6 +11,8 @@ from qtpy.QtWidgets import (
 
 
 class ProgressBar(QWidget):
+    """QProgressBar with QLabels for description and ETA."""
+
     closed = QtCore.Signal()
 
     def __init__(self, parent=None) -> None:
@@ -57,6 +59,8 @@ class ProgressBar(QWidget):
 
 
 class ProgressBarGroup(QWidget):
+    """One or more QProgressBars with a QFrame line separator at the bottom"""
+
     closed = QtCore.Signal()
 
     def __init__(self, pbar, parent=None) -> None:
