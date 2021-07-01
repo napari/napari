@@ -446,7 +446,6 @@ class Labels(_ImageBase):
             None: transform_color('black')[0],
             self._background_label: transform_color('transparent')[0],
         }
-        print(color)
 
         for key, value in color.items():
             default_value = default_color.get(key)
