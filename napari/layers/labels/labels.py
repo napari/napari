@@ -338,8 +338,8 @@ class Labels(_ImageBase):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
-        average_scale = np.mean([scale[d] for d in self._dims_displayed])
-        return abs(self.brush_size * average_scale)
+        min_scale = np.min([scale[d] for d in self._dims_displayed])
+        return abs(self.brush_size * min_scale)
 
     @property
     def seed(self):
