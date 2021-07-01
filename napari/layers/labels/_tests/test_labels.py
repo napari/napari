@@ -978,3 +978,9 @@ def test_paint_3d_negative_scale(scale):
     np.testing.assert_array_equal(
         np.sum(labels_layer.data, axis=(1, 2, 3)), [0, 95, 0]
     )
+
+
+def test_is_default_color():
+    data = np.random.randint(20, size=(30, 30))
+    layer = Labels(data)
+    assert layer._is_default_color(layer.color)
