@@ -1427,7 +1427,7 @@ class Shapes(Layer):
         return self.text.view_text(self._indices_view)
 
     @property
-    def _view_text_coords(self) -> np.ndarray:
+    def _view_text_coords(self) -> Tuple[np.ndarray, str, str]:
         """Get the coordinates of the text elements in view
 
         Returns
@@ -1449,6 +1449,10 @@ class Shapes(Layer):
         return self.text.compute_text_coords(
             sliced_in_view_coords, self._ndisplay
         )
+
+    @property
+    def _view_text_colors(self) -> np.ndarray:
+        return self.text.view_colors(self._indices_view)
 
     @property
     def mode(self):

@@ -36,7 +36,7 @@ class VispyShapesLayer(VispyBaseLayer):
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
 
-        # Note that the indices of the vertices need to be resversed to
+        # Note that the indices of the vertices need to be reversed to
         # go from numpy style to xyz
         if vertices is not None:
             vertices = vertices[:, ::-1]
@@ -138,7 +138,7 @@ class VispyShapesLayer(VispyBaseLayer):
             coords=text_coords,
             anchor=(anchor_x, anchor_y),
             rotation=self.layer._text.rotation,
-            color=self.layer._text.color,
+            color=self.layer._view_text_colors,
             size=self.layer._text.size,
             ndisplay=ndisplay,
             text_node=text_node,

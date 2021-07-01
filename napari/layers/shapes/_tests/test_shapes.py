@@ -8,6 +8,7 @@ import pytest
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
 from napari.layers.utils._text_constants import TextMode
+from napari.layers.utils.color_manager import ColorManager
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -170,12 +171,12 @@ def test_empty_layer_with_text_properties():
     )
     assert layer.text._mode == TextMode.PROPERTY
     assert layer.text.values.size == 0
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.colors, [[1, 0, 0, 1]])
 
     # add a shape and check that the appropriate text value was added
     layer.add(np.random.random((1, 4, 2)))
     np.testing.assert_equal(layer.text.values, ['1.5'])
-    np.testing.assert_allclose(layer.text.color, [1, 0, 0, 1])
+    np.testing.assert_allclose(layer.text.color.colors, [[1, 0, 0, 1]])
 
 
 def test_empty_layer_with_text_formatted():
@@ -241,7 +242,7 @@ def test_text_from_property_fstring(properties):
 def test_set_text_with_kwarg_dict(properties):
     text_kwargs = {
         'text': 'type: {shape_type}',
-        'color': [0, 0, 0, 1],
+        'color': ColorManager(colors=[0, 0, 0, 1]),
         'rotation': 10,
         'translation': [5, 5],
         'anchor': 'upper_left',

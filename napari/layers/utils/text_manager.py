@@ -4,13 +4,13 @@ from typing import Optional, Tuple, Union
 import numpy as np
 from pydantic import PositiveInt, validator
 
-from ...utils.colormaps.standardize_color import transform_color
 from ...utils.events import EventedModel
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base._base_constants import Blending
 from ._text_constants import Anchor, TextMode
 from ._text_utils import format_text_properties, get_text_anchors
+from .color_manager import ColorManager
 
 
 class TextManager(EventedModel):
@@ -56,7 +56,7 @@ class TextManager(EventedModel):
     values: Array[str] = []
     visible: bool = True
     size: PositiveInt = 12
-    color: Array[float, (4,)] = 'cyan'
+    color: ColorManager = ColorManager(colors='cyan')
     blending: Blending = Blending.TRANSLUCENT
     anchor: Anchor = Anchor.CENTER
     # Use a scalar default translation to broadcast to any dimensionality.
@@ -188,12 +188,24 @@ class TextManager(EventedModel):
             TextMode.PROPERTY,
         ]:
             return self.values[indices_view]
-        # if no points in this slice send dummy data
+        # if no elements in this slice send dummy data
         return np.array([''])
+
+    def view_colors(self, indices_view: np.ndarray) -> np.ndarray:
+        if len(indices_view) > 0 and self._mode in [
+            TextMode.FORMATTED,
+            TextMode.PROPERTY,
+        ]:
+            colors = np.resize(self.color.colors, (len(self.values), 4))
+            return colors[indices_view, :]
+        # if no elements in this slice send dummy data
+        return np.array(self.color.current_color)
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
-        return transform_color(color)[0]
+        if not isinstance(color, ColorManager):
+            color = ColorManager(colors=color)
+        return color
 
     @validator('blending', pre=True, always=True)
     def _check_blending_mode(cls, blending):

@@ -326,3 +326,79 @@ def test_add_points_with_multi_color_text(make_napari_viewer):
 
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
     np.testing.assert_array_equal(visual._get_text_node().color.rgb, color)
+
+
+def test_add_points_with_one_color(make_napari_viewer):
+    viewer = make_napari_viewer()
+    data = np.array([[100, 100], [200, 300], [333, 111]])
+    color = [[1, 0, 0]]
+    properties = {'number': [1, 2, 3]}
+    text = {
+        'text': '{number}',
+        'color': color,
+    }
+
+    layer = viewer.add_points(
+        data,
+        properties=properties,
+        text=text,
+    )
+
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    np.testing.assert_array_equal(
+        visual._get_text_node().color.rgb, np.tile(color, (3, 1))
+    )
+
+
+def test_add_points_with_two_colors(make_napari_viewer):
+    viewer = make_napari_viewer()
+    data = np.array([[100, 100], [200, 300], [333, 111]])
+    color = [
+        [1, 0, 0],
+        [0, 1, 0],
+    ]
+    properties = {'number': [1, 2, 3]}
+    text = {
+        'text': '{number}',
+        'color': color,
+    }
+
+    layer = viewer.add_points(
+        data,
+        properties=properties,
+        text=text,
+    )
+
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    np.testing.assert_array_equal(
+        visual._get_text_node().color.rgb, color + [color[0]]
+    )
+
+
+def test_add_points_with_multi_color_text_subselection(make_napari_viewer):
+    viewer = make_napari_viewer()
+    data = np.array([[100, 100], [200, 300], [333, 111]])
+    color = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+    ]
+    properties = {'number': [1, 2, 3]}
+    text = {
+        'text': '{number}',
+        'color': color,
+    }
+
+    layer = viewer.add_points(
+        data,
+        properties=properties,
+        text=text,
+    )
+    # TODO: find usage through public to cause these state changes.
+    layer._indices_view = np.array([0, 2])
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    visual._on_text_change(None)
+
+    np.testing.assert_array_equal(
+        visual._get_text_node().color.rgb, [color[0], color[2]]
+    )
