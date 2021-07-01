@@ -256,7 +256,7 @@ class Shortcut:
             shortcut to format in the form of dash separated keys to press
 
         """
-        self._values = re.split('[-(?=.+)]', shortcut)
+        self._values = re.split('-(?=.+)', shortcut)
         for shortcut_key in self._values:
             if (
                 len(shortcut_key) > 1
