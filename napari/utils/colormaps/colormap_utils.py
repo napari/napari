@@ -610,13 +610,18 @@ def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
                         )
                     )
         else:
-            raise TypeError(
+            import warnings
+
+            warnings.warn(
                 trans._(
-                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}',
+                    'invalid type for colormap: {cm_type}. Must be a {{str, tuple, dict, napari.utils.Colormap, vispy.colors.Colormap}}. Reverting to default',
                     deferred=True,
                     cm_type=type(colormap),
                 )
             )
+
+            # Use default colormap
+            name = 'gray'
 
     return AVAILABLE_COLORMAPS[name]
 
