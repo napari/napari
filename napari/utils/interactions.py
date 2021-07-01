@@ -261,7 +261,6 @@ class Shortcut:
             if (
                 len(shortcut_key) > 1
                 and shortcut_key not in KEY_SYMBOLS.keys()
-                and shortcut_key not in KEY_SYMBOLS.values()
             ):
 
                 warnings.warn(
