@@ -47,13 +47,8 @@ class ShortcutEditor(QWidget):
 
         super().__init__(parent=parent)
 
-        self._qsequences = list()
-        self._new_keys = ''
+        # flag to not set keybinding after changing to symbols
         self._skip = False
-
-        print('ShortcutOverride', QEvent.ShortcutOverride)
-        print('keypress', QEvent.KeyPress)
-        print('shortcut', QEvent.Shortcut)
 
         layers = [
             Image,
@@ -90,6 +85,7 @@ class ShortcutEditor(QWidget):
                 for name, action in actions.items():
                     all_actions.pop(name)
             self.key_bindings_strs[f"{layer.__name__} layer"] = actions
+
         # left over actions can go here.
         self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = all_actions
 
@@ -260,62 +256,17 @@ class ShortcutEditor(QWidget):
             for row1, (action_name, action) in enumerate(actions_all.items()):
                 shortcuts = action_manager._shortcuts.get(action_name, [])
 
-                if self._new_keys != '':
-                    new_shortcut = self._new_keys
-                    self._new_keys = ''
-
                 if new_shortcut in shortcuts:
                     # shortcut is here (either same action or not), don't replace in settings.
                     replace = False
                     if action_name != current_action:
-                        # the shortcut is saved to a different action, show message.
-                        # pop up window for warning.
-                        message = trans._(
-                            "The keybinding <b>{new_shortcut}</b>  "
-                            + "is already assigned to <b>{action_description}</b>; change or clear "
-                            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
-                            new_shortcut=new_shortcut,
-                            action_description=action.description,
-                        )
+                        # the shortcut is saved to a different action
 
-                        delta_y = 105
-                        delta_x = 10
-                        global_point = self.mapToGlobal(
-                            QPoint(
-                                self._table.columnViewportPosition(col)
-                                + delta_x,
-                                self._table.rowViewportPosition(row) + delta_y,
-                            )
-                        )
+                        # show warning symbols
+                        self._show_warning_icons([row, row1])
 
-                        self._warn_dialog = KeyBindWarnPopup(
-                            text=message,
-                        )
-                        self._warn_dialog.move(global_point)
-
-                        self._warn_dialog.resize(
-                            250, self._warn_dialog.sizeHint().height()
-                        )
-
-                        self._warn_dialog._message.resize(
-                            200, self._warn_dialog._message.sizeHint().height()
-                        )
-
-                        self.warning_indicator = QLabel(self)
-                        self.warning_indicator.setObjectName("error_label")
-
-                        self.warning_indicator2 = QLabel(self)
-                        self.warning_indicator2.setObjectName("error_label")
-
-                        self._table.setCellWidget(
-                            row, self._icon_col, self.warning_indicator
-                        )
-
-                        self._table.setCellWidget(
-                            row1, self._icon_col, self.warning_indicator2
-                        )
-
-                        self._warn_dialog.exec_()
+                        # show warning message
+                        self._show_warning(new_shortcut, action, row)
 
                         # get the original shortcut
                         current_shortcuts = list(
@@ -325,24 +276,21 @@ class ShortcutEditor(QWidget):
                         print(len(current_shortcuts))
                         if len(current_shortcuts) > 0:
                             print('check 3', current_shortcuts[0])
-                            item1.setText(current_shortcuts[0])
+                            self._skip = True
+                            item1.setText(
+                                Shortcut(current_shortcuts[0]).platform
+                            )
 
                         else:
 
                             item1.setText("")
 
-                        self._table.setCellWidget(
-                            row, self._icon_col, QLabel("")
-                        )
-                        self._table.setCellWidget(
-                            row1, self._icon_col, QLabel("")
-                        )
+                        self._cleanup_warning_icons([row, row1])
 
                         break
                     else:
                         # this one was here, need to re-format in case its not done
                         csc = Shortcut(new_shortcut).platform
-                        self._new_keys = new_shortcut
                         item1.setText(csc)
 
             if replace is True:
@@ -379,6 +327,54 @@ class ShortcutEditor(QWidget):
 
                     self.setChangedValue(new_value_dict)
                     self.valueChanged.emit(new_value_dict)
+
+    def _show_warning_icons(self, rows):
+
+        for row in rows:
+
+            self.warning_indicator = QLabel(self)
+            self.warning_indicator.setObjectName("error_label")
+
+            self._table.setCellWidget(
+                row, self._icon_col, self.warning_indicator
+            )
+
+    def _cleanup_warning_icons(self, rows):
+
+        for row in rows:
+            self._table.setCellWidget(row, self._icon_col, QLabel(""))
+
+    def _show_warning(self, new_shortcut='', action=None, row=0):
+        message = trans._(
+            "The keybinding <b>{new_shortcut}</b>  "
+            + "is already assigned to <b>{action_description}</b>; change or clear "
+            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+            new_shortcut=new_shortcut,
+            action_description=action.description,
+        )
+
+        delta_y = 105
+        delta_x = 10
+        global_point = self.mapToGlobal(
+            QPoint(
+                self._table.columnViewportPosition(self._shortcut_col)
+                + delta_x,
+                self._table.rowViewportPosition(row) + delta_y,
+            )
+        )
+
+        self._warn_dialog = KeyBindWarnPopup(
+            text=message,
+        )
+        self._warn_dialog.move(global_point)
+
+        self._warn_dialog.resize(250, self._warn_dialog.sizeHint().height())
+
+        self._warn_dialog._message.resize(
+            200, self._warn_dialog._message.sizeHint().height()
+        )
+
+        self._warn_dialog.exec_()
 
     def setChangedValue(self, value):
         self._changed_value = value
@@ -471,7 +467,6 @@ class EditorWidget(QLineEdit):
             print('check 2', event.key())
             return True
         else:
-            print('check 2b')
             return super().event(event)
 
     def keyPressEvent(self, event):
@@ -488,7 +483,6 @@ class EditorWidget(QLineEdit):
             Qt.Key_Return,
             Qt.Key_Tab,
         ]:
-            # do we want to be able to set these?
             return
 
         translator = ShortcutTranslator()
@@ -510,10 +504,8 @@ class EditorWidget(QLineEdit):
                 keys.append(val)
 
         keys = '-'.join(keys)
-        self._new_keys = keys
         print('setting key', keys)
         self.setText(keys)
-        # self.setText(Shortcut(keys).platform)
         print('done setting')
 
         # super().keyPressEvent(event)
