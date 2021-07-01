@@ -95,7 +95,7 @@ def parse_key_combo(key_combo):
     modifiers : set of str
         Modifier keys of the combination.
     """
-    parsed = re.split('[-(?=.+)]', key_combo)
+    parsed = re.split('-(?=.+)', key_combo)
     *modifiers, key = parsed
 
     return key, set(modifiers)
