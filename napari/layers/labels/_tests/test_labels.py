@@ -958,3 +958,19 @@ def test_fill_tensorstore():
         layer.fill((1, 4, 6, 7), 4)
         modified_labels = np.where(labels == 2, 4, labels)
         np.testing.assert_array_equal(modified_labels, np.asarray(data))
+
+
+@pytest.mark.parametrize(
+    'scale', itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5])
+)
+def test_paint_3d_negative_scale(scale):
+    labels = np.zeros((3, 5, 11, 11), dtype=int)
+    labels_layer = Labels(
+        labels, scale=(1,) + scale, translate=(-200, 100, 100)
+    )
+    labels_layer.n_edit_dimensions = 3
+    labels_layer.brush_size = 8
+    labels_layer.paint((1, 2, 5, 5), 1)
+    np.testing.assert_array_equal(
+        np.sum(labels_layer.data, axis=(1, 2, 3)), [0, 95, 0]
+    )
