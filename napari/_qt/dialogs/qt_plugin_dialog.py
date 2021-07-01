@@ -161,10 +161,10 @@ class PluginListItem(QFrame):
 
     def setup_ui(self, enabled=True):
         self.v_lay = QVBoxLayout(self)
-        self.v_lay.setContentsMargins(-1, 8, -1, 8)
+        self.v_lay.setContentsMargins(-1, 6, -1, 6)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
-        self.row1.setSpacing(8)
+        self.row1.setSpacing(6)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setChecked(enabled)
         self.enabled_checkbox.stateChanged.connect(self._on_enabled_checkbox)
@@ -187,9 +187,9 @@ class PluginListItem(QFrame):
             self.plugin_name.sizePolicy().hasHeightForWidth()
         )
         self.plugin_name.setSizePolicy(sizePolicy)
-        font16 = QFont()
-        font16.setPointSize(16)
-        self.plugin_name.setFont(font16)
+        font15 = QFont()
+        font15.setPointSize(15)
+        self.plugin_name.setFont(font15)
         self.row1.addWidget(self.plugin_name)
         self.package_name = QLabel(self)
         self.package_name.setAlignment(
@@ -253,11 +253,15 @@ class QPluginList(QListWidget):
         self, project_info: ProjectInfo, plugin_name=None, enabled=True
     ):
         # don't add duplicates
-        if self.findItems(project_info.name, Qt.MatchFixedString):
-            if not plugin_name:
-                return
+        if (
+            self.findItems(project_info.name, Qt.MatchFixedString)
+            and not plugin_name
+        ):
+            return
 
-        item = QListWidgetItem(project_info.name, parent=self)
+        # including summary here for sake of filtering below.
+        searchable_text = project_info.name + " " + project_info.summary
+        item = QListWidgetItem(searchable_text, parent=self)
         item.version = project_info.version
         super().addItem(item)
 
@@ -295,6 +299,13 @@ class QPluginList(QListWidget):
                 lambda: self.installer.install([item.text()])
             )
             widg.row1.insertWidget(3, update_btn)
+
+    def filter(self, text: str):
+        """Filter items to those containing `text`."""
+        shown = self.findItems(text, Qt.MatchContains)
+        for i in range(self.count()):
+            item = self.item(i)
+            item.setHidden(item not in shown)
 
 
 class QtPluginDialog(QDialog):
@@ -385,16 +396,36 @@ class QtPluginDialog(QDialog):
         installed = QWidget(self.v_splitter)
         lay = QVBoxLayout(installed)
         lay.setContentsMargins(0, 2, 0, 2)
-        lay.addWidget(QLabel(trans._("Installed Plugins")))
+        self.installed_label = QLabel(trans._("Installed Plugins"))
+        self.installed_filter = QLineEdit()
+        self.installed_filter.setPlaceholderText("search...")
+        self.installed_filter.setMaximumWidth(350)
+        self.installed_filter.setClearButtonEnabled(True)
+        mid_layout = QHBoxLayout()
+        mid_layout.addWidget(self.installed_label)
+        mid_layout.addWidget(self.installed_filter)
+        mid_layout.addStretch()
+        lay.addLayout(mid_layout)
+
         self.installed_list = QPluginList(installed, self.installer)
+        self.installed_filter.textChanged.connect(self.installed_list.filter)
         lay.addWidget(self.installed_list)
 
         uninstalled = QWidget(self.v_splitter)
         lay = QVBoxLayout(uninstalled)
         lay.setContentsMargins(0, 2, 0, 2)
         self.avail_label = QLabel(trans._("Available Plugins"))
-        lay.addWidget(self.avail_label)
+        self.avail_filter = QLineEdit()
+        self.avail_filter.setPlaceholderText("search...")
+        self.avail_filter.setMaximumWidth(350)
+        self.avail_filter.setClearButtonEnabled(True)
+        mid_layout = QHBoxLayout()
+        mid_layout.addWidget(self.avail_label)
+        mid_layout.addWidget(self.avail_filter)
+        mid_layout.addStretch()
+        lay.addLayout(mid_layout)
         self.available_list = QPluginList(uninstalled, self.installer)
+        self.avail_filter.textChanged.connect(self.available_list.filter)
         lay.addWidget(self.available_list)
 
         self.stdout_text = QTextEdit(self.v_splitter)
@@ -450,6 +481,8 @@ class QtPluginDialog(QDialog):
 
         self.v_splitter.setStretchFactor(1, 2)
         self.h_splitter.setStretchFactor(0, 2)
+
+        self.avail_filter.setFocus()
 
     def _update_count_in_label(self):
         count = self.available_list.count()
