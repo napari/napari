@@ -41,7 +41,7 @@ class ActivityToggleItem(QWidget):
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
         self._inProgressIndicator.setMovie(mov)
-        mov.start()
+        # mov.start()
         self._inProgressIndicator.hide()
 
         self.layout().addWidget(self._inProgressIndicator)
