@@ -247,7 +247,6 @@ class ShortcutEditor(QWidget):
             item1 = self._table.currentItem()
             new_shortcut = item1.text()
             new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
-            print('right after get item', new_shortcut)
 
             # get the action name
             current_action = self._table.item(row, self._action_col).text()
@@ -272,10 +271,7 @@ class ShortcutEditor(QWidget):
                         current_shortcuts = list(
                             action_manager._shortcuts.get(current_action, {})
                         )
-                        print('current', current_shortcuts)
-                        print(len(current_shortcuts))
                         if len(current_shortcuts) > 0:
-                            print('check 3', current_shortcuts[0])
                             self._skip = True
                             item1.setText(
                                 Shortcut(current_shortcuts[0]).platform
@@ -291,6 +287,7 @@ class ShortcutEditor(QWidget):
                     else:
                         # this one was here, need to re-format in case its not done
                         csc = Shortcut(new_shortcut).platform
+                        self._skip = True
                         item1.setText(csc)
 
             if replace is True:
@@ -300,11 +297,9 @@ class ShortcutEditor(QWidget):
                 # all the other widgets.
 
                 #  Bind new shortcut to the action manager
-                print('current action', current_action)
                 action_manager.unbind_shortcut(current_action)
 
                 if new_shortcut != "":
-                    print(new_shortcut)
                     # look for special symbols
 
                     action_manager.bind_shortcut(current_action, new_shortcut)
@@ -460,11 +455,9 @@ class EditorWidget(QLineEdit):
     def event(self, event):
         """Qt method override."""
         if event.type() == QEvent.ShortcutOverride:
-            print('check 1')
             self.keyPressEvent(event)
             return True
         elif event.type() in [QEvent.KeyPress, QEvent.Shortcut]:
-            print('check 2', event.key())
             return True
         else:
             return super().event(event)
@@ -487,11 +480,7 @@ class EditorWidget(QLineEdit):
 
         translator = ShortcutTranslator()
         event_keyseq = translator.keyevent_to_keyseq(event)
-        # print('event_keyseq', event_keyseq)
-        # print('event to string', event_keyseq.toString())
         event_keystr = event_keyseq.toString(QKeySequence.PortableText)
-        # print(len(event_keystr))
-        # print('event_keystr', event_keystr)
 
         self._shortcut = event_keystr
 
@@ -504,9 +493,7 @@ class EditorWidget(QLineEdit):
                 keys.append(val)
 
         keys = '-'.join(keys)
-        print('setting key', keys)
         self.setText(keys)
-        print('done setting')
 
         # super().keyPressEvent(event)
 
@@ -527,10 +514,8 @@ class ShortcutTranslator(QKeySequenceEdit):
 
     def keyevent_to_keyseq(self, event):
         """Return a QKeySequence representation of the provided QKeyEvent."""
-        print(event)
         self.keyPressEvent(event)
         event.accept()
-        print('keyseq!!!!', self.keySequence().toString())
         return self.keySequence()
 
     def keyReleaseEvent(self, event):

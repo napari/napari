@@ -226,6 +226,10 @@ class PreferencesDialog(QDialog):
             schema, new_values, properties = self.get_page_dict(setting)
             self.check_differences(self._values_orig_dict[page], new_values)
 
+        # need to reset plugin_manager to defaults and change keybindings in action_manager.
+        # Emit signal to do this in main window.
+        self.valueChanged.emit()
+
         self._list.setCurrentRow(0)
         self.close()
 
