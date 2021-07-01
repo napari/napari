@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
-from ...utils.settings import SETTINGS
+from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..dialogs.qt_message_dialogs import ConfirmDialog
 from ..qt_resources import get_stylesheet
@@ -47,7 +47,9 @@ class ShortcutEditor(QWidget):
 
         super().__init__(parent=parent)
 
-        # flag to not set keybinding after changing to symbols
+        # Flag to not run _set_keybinding method after setting special symbols.
+        # When changing line edit to special symbols, the _set_keybinding
+        # method will be called again (and breaks) and is not needed.
         self._skip = False
 
         layers = [
@@ -131,8 +133,11 @@ class ShortcutEditor(QWidget):
     def _reset_shortcuts(self, event=None):
         # event is True if the user confirmed reset shortcuts
         if event is True:
-            SETTINGS.reset(sections=['shortcuts'])
-            for action, shortcuts in SETTINGS.shortcuts.shortcuts.items():
+            get_settings().reset(sections=['shortcuts'])
+            for (
+                action,
+                shortcuts,
+            ) in get_settings().shortcuts.shortcuts.items():
                 action_manager.unbind_shortcut(action)
                 for shortcut in shortcuts:
                     action_manager.bind_shortcut(action, shortcut)
@@ -224,7 +229,6 @@ class ShortcutEditor(QWidget):
             self._table.setItem(0, 0, item)
 
     def _set_keybinding(self, row, col):
-
         if self._skip is True:
             # this will skip everything if the text is setting to a symbol.
             # Its already been handled.
@@ -272,10 +276,15 @@ class ShortcutEditor(QWidget):
                             action_manager._shortcuts.get(current_action, {})
                         )
                         if len(current_shortcuts) > 0:
-                            self._skip = True
-                            item1.setText(
-                                Shortcut(current_shortcuts[0]).platform
-                            )
+                            format_shortcut = Shortcut(
+                                current_shortcuts[0]
+                            ).platform
+
+                            if format_shortcut != current_shortcuts[0]:
+                                # only skip the next round if there are special symbols
+                                self._skip = True
+
+                            item1.setText(format_shortcut)
 
                         else:
 
@@ -286,9 +295,12 @@ class ShortcutEditor(QWidget):
                         break
                     else:
                         # this one was here, need to re-format in case its not done
-                        csc = Shortcut(new_shortcut).platform
-                        self._skip = True
-                        item1.setText(csc)
+                        format_shortcut = Shortcut(new_shortcut).platform
+                        if format_shortcut != new_shortcut:
+                            # only skip the next round if there are different symbols
+                            self._skip = True
+
+                        item1.setText(format_shortcut)
 
             if replace is True:
                 # this shortcut is not taken, can set it and save in settings
@@ -306,12 +318,12 @@ class ShortcutEditor(QWidget):
 
                     new_value_dict = {current_action: [new_shortcut]}
 
-                    # skip this method when setting the symbol
-                    self._skip = True
-
+                    format_shortcut = Shortcut(new_shortcut).platform
+                    if format_shortcut != new_shortcut:
+                        # only skip the next round if there are special symbols
+                        self._skip = True
                     # update the symbols in the text
-                    sc = Shortcut(new_shortcut).platform
-                    item1.setText(sc)
+                    item1.setText(format_shortcut)
 
                 else:
 
@@ -421,7 +433,7 @@ class KeyBindWarnPopup(QDialog):
 
         self.setLayout(main_layout)
 
-        self.setStyleSheet(get_stylesheet(SETTINGS.appearance.theme))
+        self.setStyleSheet(get_stylesheet(get_settings().appearance.theme))
 
         # self.setWindowFlags(Qt.FramelessWindowHint)
 
