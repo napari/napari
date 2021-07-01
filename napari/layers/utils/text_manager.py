@@ -196,6 +196,8 @@ class TextManager(EventedModel):
             TextMode.FORMATTED,
             TextMode.PROPERTY,
         ]:
+            # Resize the colors to match the number of text values, truncating
+            # or repeating colors as needed, then index them.
             colors = np.resize(self.color.colors, (len(self.values), 4))
             return colors[indices_view, :]
         # if no elements in this slice send dummy data
