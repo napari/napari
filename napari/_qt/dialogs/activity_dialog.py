@@ -125,7 +125,8 @@ class ActivityDialog(QDialog):
             new_pbar_index = nested_layout.count() - 1
             nested_layout.insertWidget(new_pbar_index, pbar)
         # show progress indicator
-        # self._toggleButton._inProgressIndicator.show()
+        self._toggleButton._inProgressIndicator.movie().start()
+        self._toggleButton._inProgressIndicator.show()
         pbar.closed.connect(self.maybe_hide_progress_indicator)
 
     def move_to_bottom_right(self, offset=(8, 8)):
@@ -144,6 +145,7 @@ class ActivityDialog(QDialog):
         # )
         # if not progress_visible and not progress_group_visible:
         if self._toggleButton._inProgressIndicator.isVisible():
+            self._toggleButton._inProgressIndicator.movie().stop()
             self._toggleButton._inProgressIndicator.hide()
 
 
