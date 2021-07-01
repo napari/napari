@@ -187,8 +187,18 @@ class PreferencesDialog(QDialog):
         self._reset_dialog.exec_()
 
     def _reset_widgets(self, event=None):
-        """Deletes the widgets and rebuilds with defaults."""
+        """Deletes the widgets and rebuilds with defaults.
 
+        Parameter
+        ---------
+        event: bool
+            Indicates whether to restore the defaults.  When a user clicks "Restore", the signal
+            event emitted will be True.  If "Cancel" is selected, event will be False and nothing
+            is done.
+
+        """
+
+        print(event)
         if event is True:
             get_settings().reset()
             self.close()

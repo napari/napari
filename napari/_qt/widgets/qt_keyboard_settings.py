@@ -27,6 +27,10 @@ from ...utils.translations import trans
 from ..dialogs.qt_message_dialogs import ConfirmDialog
 from ..qt_resources import get_stylesheet
 
+# Dict used to format strings returned from converted key press events.
+# For example, the ShortcutTranslator returns 'Ctrl' instead of 'Control'.
+# In order to be consistent with the code base, the values in KEY_SUBS will
+# be subsituted.
 KEY_SUBS = {'Ctrl': 'Control'}
 
 
