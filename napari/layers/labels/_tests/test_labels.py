@@ -961,7 +961,7 @@ def test_fill_tensorstore():
 
 
 @pytest.mark.parametrize(
-    'scale', itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5])
+    'scale', list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
 )
 def test_paint_3d_negative_scale(scale):
     labels = np.zeros((3, 5, 11, 11), dtype=int)
