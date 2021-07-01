@@ -91,6 +91,16 @@ def test_progress_with_context(make_napari_viewer):
         assert pbr._pbar.pbar.maximum() == pbr.total == 100
 
 
+def test_closing_viewer_no_error(make_napari_viewer):
+    """Closing viewer with active progress doesn't cause RuntimeError"""
+    viewer = make_napari_viewer(show=SHOW)
+
+    assert not qt_viewer_has_pbar(viewer)
+    with progress(range(100)):
+        assert qt_viewer_has_pbar(viewer)
+        viewer.close()
+
+
 def test_progress_no_viewer():
     assert list(progress(range(10))) == list(range(10))
 
