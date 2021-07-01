@@ -18,7 +18,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         # Create a compound visual with the following four subvisuals:
         # Lines: The lines of the interaction box used for highlights.
-        # Markers: The the outlines for each point used for highlights.
+        # Markers: The outlines for each point used for highlights.
         # Markers: The actual markers of each point.
         node = Compound([Markers(), Markers(), Line(), Text()])
 
@@ -49,7 +49,7 @@ class VispyPointsLayer(VispyBaseLayer):
 
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
-        # and the rows / columns need to be switch for vispys x / y ordering
+        # and the rows / columns need to be switch for vispy's x / y ordering
         if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer._ndisplay))
             size = [0]

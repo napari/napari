@@ -302,3 +302,27 @@ def test_custom_layer(make_napari_viewer):
     # Make a viewer and add the custom layer
     viewer = make_napari_viewer(show=True)
     viewer.add_layer(NewLabels(np.zeros((10, 10, 10), dtype=np.uint8)))
+
+
+def test_add_points_with_multi_color_text(make_napari_viewer):
+    viewer = make_napari_viewer()
+    data = np.array([[100, 100], [200, 300], [333, 111]])
+    color = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+    ]
+    properties = {'number': [1, 2, 3]}
+    text = {
+        'text': '{number}',
+        'color': color,
+    }
+
+    layer = viewer.add_points(
+        data,
+        properties=properties,
+        text=text,
+    )
+
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
+    np.testing.assert_array_equal(visual._get_text_node().color.rgb, color)
