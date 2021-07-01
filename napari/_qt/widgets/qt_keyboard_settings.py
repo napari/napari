@@ -295,6 +295,11 @@ class ShortcutEditor(QWidget):
             # get the action name
             current_action = self._table.item(row, self._action_col).text()
 
+            # get the original shortcutS
+            current_shortcuts = list(
+                action_manager._shortcuts.get(current_action, {})
+            )
+
             # Flag to indicate whether to set the new shortcut.
             replace = True
             # Go through all layer actions to determine if the new shortcut is already here.
@@ -311,12 +316,15 @@ class ShortcutEditor(QWidget):
                         self._show_warning_icons([row, row1])
 
                         # show warning message
-                        self._show_warning(new_shortcut, action, row)
-
-                        # get the original shortcut
-                        current_shortcuts = list(
-                            action_manager._shortcuts.get(current_action, {})
+                        message = trans._(
+                            "The keybinding <b>{new_shortcut}</b>  "
+                            + "is already assigned to <b>{action_description}</b>; change or clear "
+                            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
+                            new_shortcut=new_shortcut,
+                            action_description=action.description,
                         )
+                        self._show_warning(new_shortcut, action, row, message)
+
                         if len(current_shortcuts) > 0:
                             # If there was a shortcut set, then format it and reset the text.
                             format_shortcut = Shortcut(
@@ -354,7 +362,37 @@ class ShortcutEditor(QWidget):
 
                 if new_shortcut != "":
                     # Bind the new shortcut.
-                    action_manager.bind_shortcut(current_action, new_shortcut)
+                    try:
+                        action_manager.bind_shortcut(
+                            current_action, new_shortcut
+                        )
+                    except TypeError:
+                        action_manager._shortcuts[current_action] = set()
+                        # need to rebind the old shortcut
+                        action_manager.unbind_shortcut(current_action)
+                        action_manager.bind_shortcut(
+                            current_action, current_shortcuts[0]
+                        )
+
+                        self._show_warning_icons([row])
+                        message = trans._(
+                            "<b>{new_shortcut}</b> is not a valid keybinding.",
+                            new_shortcut=new_shortcut,
+                        )
+                        self._show_warning(new_shortcut, action, row, message)
+
+                        self._cleanup_warning_icons([row])
+
+                        format_shortcut = Shortcut(
+                            current_shortcuts[0]
+                        ).platform
+                        if format_shortcut != current_shortcuts[0]:
+                            # Skip the next round if there are special symbols.
+                            self._skip = True
+
+                        # Update text to formated shortcut.
+                        current_item.setText(format_shortcut)
+                        return
 
                     # Keep track of what changed.
                     new_value_dict = {current_action: [new_shortcut]}
@@ -406,7 +444,7 @@ class ShortcutEditor(QWidget):
         for row in rows:
             self._table.setCellWidget(row, self._icon_col, QLabel(""))
 
-    def _show_warning(self, new_shortcut='', action=None, row=0):
+    def _show_warning(self, new_shortcut='', action=None, row=0, message=''):
         """Creates and displays warning message when shortcut is already assigned.
 
         Parameters
@@ -418,13 +456,6 @@ class ShortcutEditor(QWidget):
         row: int
             Row in table where the shortcut is attempting to be set.
         """
-        message = trans._(
-            "The keybinding <b>{new_shortcut}</b>  "
-            + "is already assigned to <b>{action_description}</b>; change or clear "
-            + "that shortcut before assigning <b>{new_shortcut}</b> to this one.",
-            new_shortcut=new_shortcut,
-            action_description=action.description,
-        )
 
         # Determine placement of warning message.
         delta_y = 105
@@ -556,6 +587,7 @@ class EditorWidget(QLineEdit):
             Qt.Key_Meta,
             Qt.Key_Return,
             Qt.Key_Tab,
+            Qt.Key_CapsLock,
         ]:
             # Do not allow user to set these keys as shortcut.
             return

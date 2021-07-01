@@ -198,7 +198,6 @@ class PreferencesDialog(QDialog):
 
         """
 
-        print(event)
         if event is True:
             get_settings().reset()
             self.close()
