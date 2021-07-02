@@ -139,7 +139,7 @@ class ActivityDialog(QDialog):
             # create ProgressBarGroup for this pbar
             else:
                 new_group = ProgressBarGroup(nest_under._pbar)
-                new_group.closed.connect(self.maybe_hide_progress_indicator)
+                new_group.destroyed.connect(self.maybe_hide_progress_indicator)
                 nested_layout = new_group.layout()
                 self._activityLayout.addWidget(new_group)
             new_pbar_index = nested_layout.count() - 1
@@ -148,7 +148,7 @@ class ActivityDialog(QDialog):
         # show progress indicator and start gif
         self._toggleButton._inProgressIndicator.movie().start()
         self._toggleButton._inProgressIndicator.show()
-        pbar.closed.connect(self.maybe_hide_progress_indicator)
+        pbar.destroyed.connect(self.maybe_hide_progress_indicator)
 
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""

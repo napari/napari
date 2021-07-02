@@ -13,8 +13,6 @@ from qtpy.QtWidgets import (
 class ProgressBar(QWidget):
     """QProgressBar with QLabels for description and ETA."""
 
-    closed = QtCore.Signal()
-
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
@@ -53,15 +51,9 @@ class ProgressBar(QWidget):
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
 
-    def close(self):
-        super().close()
-        self.closed.emit()
-
 
 class ProgressBarGroup(QWidget):
     """One or more QProgressBars with a QFrame line separator at the bottom"""
-
-    closed = QtCore.Signal()
 
     def __init__(self, pbar, parent=None) -> None:
         super().__init__(parent)
@@ -77,7 +69,3 @@ class ProgressBarGroup(QWidget):
         pbr_group_layout.addWidget(line)
 
         self.setLayout(pbr_group_layout)
-
-    def close(self):
-        super().close()
-        self.closed.emit()

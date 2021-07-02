@@ -146,7 +146,6 @@ def test_progress_indicator(make_napari_viewer):
     with assert_pbar_added_to(viewer):
         with progress(range(10)):
             assert activity_button_shows_indicator(activity_dialog)
-    assert not activity_button_shows_indicator(activity_dialog)
 
 
 @pytest.mark.skipif(
