@@ -275,7 +275,7 @@ class ShortcutEditor(QWidget):
 
         if col == self._shortcut_col:
             # Get all layer actions and viewer actions in order to determine
-            # the new shortcut is not already set.
+            # the new shortcut is not already set to an action.
 
             current_layer_text = self.layer_combo_box.currentText()
             layer_actions = self.key_bindings_strs[current_layer_text]
@@ -292,7 +292,7 @@ class ShortcutEditor(QWidget):
             new_shortcut = current_item.text()
             new_shortcut = new_shortcut[0].upper() + new_shortcut[1:]
 
-            # get the action name
+            # get the current action name
             current_action = self._table.item(row, self._action_col).text()
 
             # get the original shortcutS
@@ -326,7 +326,7 @@ class ShortcutEditor(QWidget):
                         self._show_warning(new_shortcut, action, row, message)
 
                         if len(current_shortcuts) > 0:
-                            # If there was a shortcut set, then format it and reset the text.
+                            # If there was a shortcut set originally, then format it and reset the text.
                             format_shortcut = Shortcut(
                                 current_shortcuts[0]
                             ).platform
@@ -355,7 +355,7 @@ class ShortcutEditor(QWidget):
                         current_item.setText(format_shortcut)
 
             if replace is True:
-                # This shortcut is not taken, so can be set in settings.
+                # This shortcut is not taken.
 
                 #  Unbind current action from shortcuts in action manager.
                 action_manager.unbind_shortcut(current_action)
@@ -367,6 +367,7 @@ class ShortcutEditor(QWidget):
                             current_action, new_shortcut
                         )
                     except TypeError:
+                        # Shortcut is not valid.
                         action_manager._shortcuts[current_action] = set()
                         # need to rebind the old shortcut
                         action_manager.unbind_shortcut(current_action)
@@ -374,7 +375,9 @@ class ShortcutEditor(QWidget):
                             current_action, current_shortcuts[0]
                         )
 
+                        # Show warning message to let user know this shortcut is invalid.
                         self._show_warning_icons([row])
+
                         message = trans._(
                             "<b>{new_shortcut}</b> is not a valid keybinding.",
                             new_shortcut=new_shortcut,
@@ -394,13 +397,15 @@ class ShortcutEditor(QWidget):
                         current_item.setText(format_shortcut)
                         return
 
+                    # The new shortcut is valid and can be displayed in widget.
+
                     # Keep track of what changed.
                     new_value_dict = {current_action: [new_shortcut]}
 
-                    # Format shortcut before setting.
+                    # Format new shortcut.
                     format_shortcut = Shortcut(new_shortcut).platform
                     if format_shortcut != new_shortcut:
-                        # Skip the next round if there are special symbols.
+                        # Skip the next round because there are special symbols.
                         self._skip = True
 
                     # Update text to formated shortcut.
@@ -455,6 +460,8 @@ class ShortcutEditor(QWidget):
             Action that is already assigned with the shortcut.
         row: int
             Row in table where the shortcut is attempting to be set.
+        message: str
+            Message to be displayed in warning pop up.
         """
 
         # Determine placement of warning message.
