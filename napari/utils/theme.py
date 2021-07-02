@@ -13,6 +13,7 @@ except Exception:
     use_gradients = False
 
 from ..utils.translations import trans
+from .events.containers._evented_dict import EventedDict
 
 
 def __getattr__(attr):
@@ -29,38 +30,41 @@ def __getattr__(attr):
     raise AttributeError
 
 
-_themes = {
-    'dark': {
-        'folder': 'dark',
-        'background': 'rgb(38, 41, 48)',
-        'foreground': 'rgb(65, 72, 81)',
-        'primary': 'rgb(90, 98, 108)',
-        'secondary': 'rgb(134, 142, 147)',
-        'highlight': 'rgb(106, 115, 128)',
-        'text': 'rgb(240, 241, 242)',
-        'icon': 'rgb(209, 210, 212)',
-        'warning': 'rgb(153, 18, 31)',
-        'current': 'rgb(0, 122, 204)',
-        'syntax_style': 'native',
-        'console': 'rgb(0, 0, 0)',
-        'canvas': 'black',
-    },
-    'light': {
-        'folder': 'light',
-        'background': 'rgb(239, 235, 233)',
-        'foreground': 'rgb(214, 208, 206)',
-        'primary': 'rgb(188, 184, 181)',
-        'secondary': 'rgb(150, 146, 144)',
-        'highlight': 'rgb(163, 158, 156)',
-        'text': 'rgb(59, 58, 57)',
-        'icon': 'rgb(107, 105, 103)',
-        'warning': 'rgb(255, 18, 31)',
-        'current': 'rgb(253, 240, 148)',
-        'syntax_style': 'default',
-        'console': 'rgb(255, 255, 255)',
-        'canvas': 'white',
-    },
-}
+_themes = EventedDict(
+    {
+        'dark': {
+            'folder': 'dark',
+            'background': 'rgb(38, 41, 48)',
+            'foreground': 'rgb(65, 72, 81)',
+            'primary': 'rgb(90, 98, 108)',
+            'secondary': 'rgb(134, 142, 147)',
+            'highlight': 'rgb(106, 115, 128)',
+            'text': 'rgb(240, 241, 242)',
+            'icon': 'rgb(209, 210, 212)',
+            'warning': 'rgb(153, 18, 31)',
+            'current': 'rgb(0, 122, 204)',
+            'syntax_style': 'native',
+            'console': 'rgb(0, 0, 0)',
+            'canvas': 'black',
+        },
+        'light': {
+            'folder': 'light',
+            'background': 'rgb(239, 235, 233)',
+            'foreground': 'rgb(214, 208, 206)',
+            'primary': 'rgb(188, 184, 181)',
+            'secondary': 'rgb(150, 146, 144)',
+            'highlight': 'rgb(163, 158, 156)',
+            'text': 'rgb(59, 58, 57)',
+            'icon': 'rgb(107, 105, 103)',
+            'warning': 'rgb(255, 18, 31)',
+            'current': 'rgb(253, 240, 148)',
+            'syntax_style': 'default',
+            'console': 'rgb(255, 255, 255)',
+            'canvas': 'white',
+        },
+    }
+)
+
 
 gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')

@@ -11,6 +11,122 @@ from . import plugin_manager
 logger = getLogger(__name__)
 
 
+def get_qss_from_plugins(plugin: Optional[str] = None) -> List[str]:
+    """Iterate through hooks and return stylesheet(s))."""
+    hook_caller = plugin_manager.hook.napari_experimental_provide_qss
+    if plugin:
+        if plugin not in plugin_manager.plugins:
+            if plugin not in plugin_manager.plugins:
+                names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+                raise ValueError(
+                    trans._(
+                        "There is no registered plugin named '{plugin}'."
+                        "\nNames of plugins offering readers are: {names}",
+                        deferred=True,
+                        plugin=plugin,
+                        names=names,
+                    )
+                )
+            theme_caller = hook_caller._call_plugin(plugin)
+            if not callable(theme_caller):
+                raise ValueError(
+                    trans._(
+                        'Plugin {plugin!r} is not callable.',
+                        deferred=True,
+                        plugin=plugin,
+                    )
+                )
+            qss_files = theme_caller()
+            return qss_files
+
+    errors: List[PluginCallError] = []
+    skip_impls: List[HookImplementation] = []
+    qss_files = []
+    while True:
+        result = hook_caller.call_with_result_obj(_skip_impls=skip_impls)
+        theme_caller = result.result  # will raise exceptions if any occurred
+        if not theme_caller:
+            # we're all out of theme plugins
+            break
+        try:
+            _qss_files = theme_caller()
+            if _qss_files:
+                qss_files.extend(_qss_files)
+        except Exception as exc:
+            # collect the error and log it, but don't raise it.
+            err = PluginCallError(result.implementation, cause=exc)
+            err.log(logger=logger)
+            errors.append(err)
+        # don't try this impl again
+        skip_impls.append(result.implementation)
+
+    if errors:
+        names = {repr(e.plugin_name) for e in errors}
+        err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
+        err_msg += f"occurred in plugins: {', '.join(names)}. "
+        err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
+        logger.error(err_msg)
+    return qss_files
+
+
+def get_icons_from_plugins(plugin: Optional[str] = None) -> List[str]:
+    """Iterate through hooks and return stylesheet(s))."""
+    hook_caller = plugin_manager.hook.napari_experimental_provide_icons
+    if plugin:
+        if plugin not in plugin_manager.plugins:
+            if plugin not in plugin_manager.plugins:
+                names = {i.plugin_name for i in hook_caller.get_hookimpls()}
+                raise ValueError(
+                    trans._(
+                        "There is no registered plugin named '{plugin}'."
+                        "\nNames of plugins offering readers are: {names}",
+                        deferred=True,
+                        plugin=plugin,
+                        names=names,
+                    )
+                )
+            theme_caller = hook_caller._call_plugin(plugin)
+            if not callable(theme_caller):
+                raise ValueError(
+                    trans._(
+                        'Plugin {plugin!r} is not callable.',
+                        deferred=True,
+                        plugin=plugin,
+                    )
+                )
+            svg_paths = theme_caller()
+            return svg_paths
+
+    errors: List[PluginCallError] = []
+    skip_impls: List[HookImplementation] = []
+    svg_paths = []
+    while True:
+        result = hook_caller.call_with_result_obj(_skip_impls=skip_impls)
+        theme_caller = result.result  # will raise exceptions if any occurred
+        if not theme_caller:
+            # we're all out of theme plugins
+            break
+        try:
+            _svg_paths = theme_caller()
+            if _svg_paths:
+                svg_paths.extend(_svg_paths)
+        except Exception as exc:
+            # collect the error and log it, but don't raise it.
+            err = PluginCallError(result.implementation, cause=exc)
+            err.log(logger=logger)
+            errors.append(err)
+        # don't try this impl again
+        skip_impls.append(result.implementation)
+
+    if errors:
+        names = {repr(e.plugin_name) for e in errors}
+        err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
+        err_msg += f"occurred in plugins: {', '.join(names)}. "
+        err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
+        logger.error(err_msg)
+    return svg_paths
+
+
 def get_stylesheet_from_plugins(
     plugin: Optional[str] = None,
 ) -> Tuple[List[str], List[str], Dict[str, Dict[str, str]]]:
@@ -119,16 +235,18 @@ def register_plugin_themes(plugin: Optional[str] = None):
     from .._qt.qt_resources import _register_napari_resources
 
     # get data from each plugin (or single specified plugin)
-    qss_files, svg_paths, theme_colors = get_stylesheet_from_plugins(plugin)
+    qss_files = get_qss_from_plugins(plugin)
+    svg_paths = get_icons_from_plugins(plugin)
+    # qss_files, svg_paths, theme_colors = get_stylesheet_from_plugins(plugin)
 
     force_rebuild = False
-    # register new themes
-    if theme_colors:
-        from ..utils.theme import register_theme
-
-        for name, theme in theme_colors.items():
-            register_theme(name, theme)
-        force_rebuild = True
+    # # register new themes
+    # if theme_colors:
+    #     from ..utils.theme import register_theme
+    #
+    #     for name, theme in theme_colors.items():
+    #         register_theme(name, theme)
+    #     force_rebuild = True
 
     # register icons
     if svg_paths:
