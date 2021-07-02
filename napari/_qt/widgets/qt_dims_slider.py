@@ -73,12 +73,10 @@ class QtDimSliderWidget(QWidget):
 
         settings = get_settings()
 
-        LoopMode(settings.application.playback_mode)
-
         self._fps = settings.application.playback_fps
         self._minframe = None
         self._maxframe = None
-        self._loop_mode = loop_mode
+        self._loop_mode = LoopMode(settings.application.playback_mode)
 
         layout = QHBoxLayout()
         self._create_axis_label_widget()
@@ -295,7 +293,9 @@ class QtDimSliderWidget(QWidget):
                 has been reached.
         """
         self._loop_mode = value
-        self.play_button.mode_combo.setCurrentText(str(value))
+        self.play_button.mode_combo.setCurrentText(
+            str(value).replace('_', ' ')
+        )
         self.mode_changed.emit(str(value))
 
     @property

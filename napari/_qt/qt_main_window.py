@@ -31,6 +31,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
+from ..utils.settings._constants import LoopMode
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -638,10 +639,25 @@ class Window:
 
             self._qt_window._preferences_dialog = win
             win.valueChanged.connect(self._reset_preference_states)
+            win.updatedValues.connect(self._update_player_settings)
             win.closed.connect(self._on_preferences_closed)
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
+
+    
+    def _update_player_settings(self):
+        """Keep player settings up to date with settings values."""
+
+        settings = get_settings()
+
+        for widget in self.qt_viewer.dims.slider_widgets:
+            widget.__class__.fps.fset(
+                widget, settings.application.playback_fps
+            )
+            widget.__class__.loop_mode.fset(
+                widget, LoopMode(settings.application.playback_mode)
+            )
 
     def _reset_preference_states(self):
         # resetting plugin states in plugin manager

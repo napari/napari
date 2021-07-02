@@ -404,13 +404,13 @@ class ApplicationSettings(BaseNapariSettings):
 
     playback_fps: int = Field(
         10,
-        title=trans._("Frames per second"),
+        title=trans._("Playback frames per second"),
         description=trans._("Playback speed in frames per second."),
     )
 
     playback_mode: LoopMode = Field(
         LoopMode.LOOP,
-        title=trans._("Loop mode"),
+        title=trans._("Playback loop mode"),
         description=trans._("Loop mode for playback."),
     )
 
@@ -437,8 +437,6 @@ class ApplicationSettings(BaseNapariSettings):
             "open_history",
             "save_history",
             "ipy_interactive",
-            "playback_fps",
-            "playback_mode",
         ]
 
 

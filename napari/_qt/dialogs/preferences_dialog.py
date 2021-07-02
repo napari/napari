@@ -20,6 +20,7 @@ class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
     valueChanged = Signal()
+    updatedValues = Signal()
 
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
@@ -223,6 +224,7 @@ class PreferencesDialog(QDialog):
 
     def on_click_ok(self):
         """Keeps the selected preferences saved to settings."""
+        self.updatedValues.emit()
         self.accept()
 
     def on_click_cancel(self):
