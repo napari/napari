@@ -34,6 +34,7 @@ class ActivityToggleItem(QWidget):
         self._activityBtn.setObjectName("QtActivityButton")
         self._activityBtn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self._activityBtn.setArrowType(Qt.UpArrow)
+        self._activityBtn.setIconSize(QSize(11, 11))
         self._activityBtn.setText(trans._('activity'))
         self._activityBtn.setCheckable(True)
 
@@ -45,7 +46,6 @@ class ActivityToggleItem(QWidget):
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
         self._inProgressIndicator.setMovie(mov)
-        # mov.start()
         self._inProgressIndicator.hide()
 
         self.layout().addWidget(self._inProgressIndicator)
