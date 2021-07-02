@@ -73,14 +73,7 @@ class QtDimSliderWidget(QWidget):
 
         settings = get_settings()
 
-        # For whatever reason, using settings.application.playback_mode by itself
-        # does not work. But setting the mode this way seems to work.
-        if settings.application.playback_mode == 'loop':
-            loop_mode = LoopMode.LOOP
-        elif settings.application.playback_mode == 'back_and_forth':
-            loop_mode = LoopMode.BACK_AND_FORTH
-        else:
-            loop_mode = LoopMode.ONCE
+        LoopMode(settings.application.playback_mode)
 
         self._fps = settings.application.playback_fps
         self._minframe = None
