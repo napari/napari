@@ -53,8 +53,7 @@ class ConfirmDialog(QDialog):
         self.close()
 
     def on_click_restore(self):
-        """Restore defaults and close window."""
-        # get_settings().reset()
+        """Emit signal to restore defaults and close window."""
         self.valueChanged.emit(True)
         self.close()
 
