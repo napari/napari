@@ -387,7 +387,7 @@ class ViewerModel(KeymapProvider, MousemapProvider, EventedModel):
         extent = self._sliced_extent_world
         n_layers = len(self.layers)
         for i, layer in enumerate(self.layers):
-            i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
+            i_row, i_column = self.grid.position(i, n_layers)
             self._subplot(layer, (i_row, i_column), extent)
 
     def _subplot(self, layer, position, extent):
