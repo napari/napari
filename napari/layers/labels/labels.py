@@ -238,7 +238,13 @@ class Labels(_ImageBase):
             n_edit_dimensions=Event,
             contiguous=Event,
             brush_size=Event,
-            selected_label=Event,
+            active_label=Event,
+            selected_label=WarningEmitter(
+                trans._(
+                    "'Labels.events.selected_label is deprecated. Use Labels.events.active_label instead.",
+                    deferred=True,
+                ),
+            ),
             color_mode=Event,
             brush_shape=Event,
             contour=Event,
@@ -248,8 +254,8 @@ class Labels(_ImageBase):
         self._contiguous = True
         self._brush_size = 10
 
-        self._selected_label = 1
-        self._selected_color = self.get_color(self._selected_label)
+        self._active_label = 1
+        self._active_color = self.get_color(self._active_label)
         self.color = color
 
         self._mode = Mode.PAN_ZOOM
@@ -350,7 +356,7 @@ class Labels(_ImageBase):
     @seed.setter
     def seed(self, seed):
         self._seed = seed
-        self._selected_color = self.get_color(self.selected_label)
+        self._active_color = self.get_color(self.active_label)
         # invalidate _all_vals to trigger re-generation
         # in _raw_to_displayed
         self._all_vals = np.array([])
@@ -367,7 +373,7 @@ class Labels(_ImageBase):
         self._num_colors = num_colors
         self.colormap = label_colormap(num_colors)
         self.refresh()
-        self._selected_color = self.get_color(self.selected_label)
+        self._active_color = self.get_color(self.active_label)
         self.events.selected_label()
 
     @property
@@ -485,22 +491,44 @@ class Labels(_ImageBase):
     @property
     def selected_label(self):
         """int: Index of selected label."""
-        return self._selected_label
+        warnings.warn(
+            trans._(
+                'Labels.selected_label is deprecated. Use Labels.active_label instead.',
+                deferred=True,
+            ),
+            category=FutureWarning,
+        )
+        return self._active_label
 
     @selected_label.setter
     def selected_label(self, selected_label):
-        if selected_label < 0:
+        warnings.warn(
+            trans._(
+                'Labels.selected_label is deprecated. Use Labels.active_label instead.',
+                deferred=True,
+            ),
+            category=FutureWarning,
+        )
+        self.active_label = selected_label
+
+    @property
+    def active_label(self):
+        return self._active_label
+
+    @active_label.setter
+    def active_label(self, label):
+        if label < 0:
             raise ValueError(trans._('cannot reduce selected label below 0'))
-        if selected_label == self.selected_label:
+        if label == self.label:
             return
 
-        self._selected_label = selected_label
-        self._selected_color = self.get_color(selected_label)
-        self.events.selected_label()
+        self._active_label = label
+        self._selected_color = self.get_color(label)
+        self.events.active_label()
 
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
-        if self.show_selected_label:
+        if self.show_label:
             self.refresh()
 
     @property
@@ -531,7 +559,7 @@ class Labels(_ImageBase):
             raise ValueError(trans._("Unsupported Color Mode"))
 
         self._color_mode = color_mode
-        self._selected_color = self.get_color(self.selected_label)
+        self._selected_color = self.get_color(self.active_label)
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
@@ -1141,7 +1169,7 @@ class Labels(_ImageBase):
         # current label
         if self.preserve_labels:
             if new_label == self._background_label:
-                keep_coords = self.data[slice_coord] == self.selected_label
+                keep_coords = self.data[slice_coord] == self.active_label
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
             slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
