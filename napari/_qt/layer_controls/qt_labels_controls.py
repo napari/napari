@@ -552,7 +552,7 @@ class QtColorBox(QWidget):
             Event from the Qt context.
         """
         painter = QPainter(self)
-        if self.layer._selected_color is None:
+        if self.layer._active_color is None:
             for i in range(self._height // 4):
                 for j in range(self._height // 4):
                     if (i % 2 == 0 and j % 2 == 0) or (
@@ -565,7 +565,7 @@ class QtColorBox(QWidget):
                         painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
-            color = np.multiply(self.layer._selected_color, self.layer.opacity)
+            color = np.multiply(self.layer._active_color, self.layer.opacity)
             color = np.round(255 * color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))

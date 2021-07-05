@@ -525,6 +525,7 @@ class Labels(_ImageBase):
         else:
             self._selected_labels = set(elements)
         self.events.selection(value=self._selected_labels)
+        self.refresh()
 
     @property
     def active_label(self):
@@ -534,7 +535,7 @@ class Labels(_ImageBase):
     def active_label(self, label):
         if label < 0:
             raise ValueError(trans._('cannot reduce selected label below 0'))
-        if label == self.label:
+        if label == self._active_label:
             return
 
         self._active_label = label
@@ -543,7 +544,7 @@ class Labels(_ImageBase):
 
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
-        if self.show_label:
+        if self.show_selected_label:
             self.refresh()
 
     @property
@@ -735,53 +736,56 @@ class Labels(_ImageBase):
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
-    def _lookup_with_low_discrepancy_image(self, im, active_label=None):
+    def _lookup_with_low_discrepancy_image(self, im, selection=None):
         """Returns display version of im using low_discrepancy_image.
 
         Passes the image through low_discrepancy_image, only coloring
-        active_label if it's not None.
+        selection if it's not None.
 
         Parameters
         ----------
         im : array or int
             Raw integer input image.
-        active_label : int, optional
-            Value of selected label to color, by default None
+        selection : set of int, optional
+            Value of selected labels to color, by default None
         """
-        if active_label:
-            image = np.where(
-                im == active_label,
-                low_discrepancy_image(active_label, self._seed),
-                0,
+        if selection is not None:
+            selection_arr = np.asarray(list(selection))
+            selected_pixels = np.isin(im, selection_arr)
+            color_pixels = low_discrepancy_image(
+                im[selected_pixels], self._seed
             )
+            image = np.where(selected_pixels, color_pixels, 0)
         else:
             image = np.where(im > 0, low_discrepancy_image(im, self._seed), 0)
         return image
 
-    def _lookup_with_index(self, im, selected_label=None):
+    def _lookup_with_index(self, im, selection=None):
         """Returns display version of im using color lookup array by index
 
         Parameters
         ----------
         im : array or int
             Raw integer input image.
-        selected_label : int, optional
-            Value of selected label to color, by default None
+        selection : set of int, optional
+            Value of selected labels to color, by default None
         """
-        if selected_label:
-            if selected_label > len(self._all_vals):
+        if selection is not None:
+            selection_arr = np.asarray(list(selection))
+            max_selected = np.max(selection_arr)
+            if max_selected > len(self._all_vals):
                 self._color_lookup_func = self._get_color_lookup_func(
-                    im, max(np.max(im), selected_label)
+                    im, max(np.max(im), max_selected)
                 )
             if (
                 self._color_lookup_func
                 == self._lookup_with_low_discrepancy_image
             ):
-                image = self._color_lookup_func(im, selected_label)
+                image = self._color_lookup_func(im, selection)
             else:
                 colors = np.zeros_like(self._all_vals)
-                colors[selected_label] = low_discrepancy_image(
-                    selected_label, self._seed
+                colors[selection_arr] = low_discrepancy_image(
+                    selection_arr, self._seed
                 )
                 image = colors[im]
         else:
@@ -797,7 +801,7 @@ class Labels(_ImageBase):
                 ):
                     # revert to "classic" mode converting all pixels since we
                     # encountered a large value in the raw labels image
-                    image = self._color_lookup_func(im, selected_label)
+                    image = self._color_lookup_func(im, selection)
                 else:
                     image = self._all_vals[im]
         return image
@@ -880,7 +884,7 @@ class Labels(_ImageBase):
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._color_lookup_func(raw, self._active_label)
+            image = self._color_lookup_func(raw, self.selection)
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
