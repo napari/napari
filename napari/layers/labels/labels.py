@@ -239,6 +239,7 @@ class Labels(_ImageBase):
             contiguous=Event,
             brush_size=Event,
             active_label=Event,
+            selection=Event,
             selected_label=WarningEmitter(
                 trans._(
                     "'Labels.events.selected_label is deprecated. Use Labels.events.active_label instead.",
@@ -257,6 +258,8 @@ class Labels(_ImageBase):
         self._active_label = 1
         self._active_color = self.get_color(self._active_label)
         self.color = color
+
+        self._selected_labels = set()
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -512,6 +515,18 @@ class Labels(_ImageBase):
         self.active_label = selected_label
 
     @property
+    def selection(self):
+        return self._selected_labels
+
+    @selection.setter
+    def selection(self, elements, hold=False):
+        if hold:
+            self._selected_labels.update(elements)
+        else:
+            self._selected_labels = set(elements)
+        self.events.selection(value=self._selected_labels)
+
+    @property
     def active_label(self):
         return self._active_label
 
@@ -562,7 +577,7 @@ class Labels(_ImageBase):
         self._active_color = self.get_color(self.active_label)
         self.events.color_mode()
         self.events.colormap()
-        self.events.selected_label()
+        self.events.active_label()
         self.refresh()
 
     @property
@@ -720,23 +735,23 @@ class Labels(_ImageBase):
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
 
-    def _lookup_with_low_discrepancy_image(self, im, selected_label=None):
+    def _lookup_with_low_discrepancy_image(self, im, active_label=None):
         """Returns display version of im using low_discrepancy_image.
 
         Passes the image through low_discrepancy_image, only coloring
-        selected_label if it's not None.
+        active_label if it's not None.
 
         Parameters
         ----------
         im : array or int
             Raw integer input image.
-        selected_label : int, optional
+        active_label : int, optional
             Value of selected label to color, by default None
         """
-        if selected_label:
+        if active_label:
             image = np.where(
-                im == selected_label,
-                low_discrepancy_image(selected_label, self._seed),
+                im == active_label,
+                low_discrepancy_image(active_label, self._seed),
                 0,
             )
         else:
