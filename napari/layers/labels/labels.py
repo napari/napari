@@ -126,8 +126,8 @@ class Labels(_ImageBase):
         with a thickness equal to its value.
     brush_size : float
         Size of the paint brush in data coordinates.
-    selected_label : int
-        Index of selected label. Can be greater than the current maximum label.
+    active_label : int
+        Index of active label. Can be greater than the current maximum label.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -364,7 +364,7 @@ class Labels(_ImageBase):
         # in _raw_to_displayed
         self._all_vals = np.array([])
         self.refresh()
-        self.events.selected_label()
+        self.events.active_label()
 
     @property
     def num_colors(self):
@@ -534,7 +534,7 @@ class Labels(_ImageBase):
     @active_label.setter
     def active_label(self, label):
         if label < 0:
-            raise ValueError(trans._('cannot reduce selected label below 0'))
+            raise ValueError(trans._('cannot reduce active label below 0'))
         if label == self._active_label:
             return
 
