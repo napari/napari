@@ -77,9 +77,7 @@ class QtLabelsControls(QtLayerControls):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self._on_mode_change)
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
+        self.layer.events.active_label.connect(self._on_active_label_change)
         self.layer.events.brush_size.connect(self._on_brush_size_change)
         self.layer.events.contiguous.connect(self._on_contiguous_change)
         self.layer.events.n_edit_dimensions.connect(
@@ -99,7 +97,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
-        self._on_selected_label_change()
+        self._on_active_label_change()
 
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
@@ -316,7 +314,7 @@ class QtLabelsControls(QtLayerControls):
         value : int
             Index of label to select.
         """
-        self.layer.selected_label = value
+        self.layer.active_label = value
         self.selectionSpinBox.clearFocus()
         self.setFocus()
 
@@ -409,7 +407,7 @@ class QtLabelsControls(QtLayerControls):
             value = self.layer.contour
             self.contourSpinBox.setValue(value)
 
-    def _on_selected_label_change(self, event=None):
+    def _on_active_label_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
         Parameters
@@ -417,8 +415,8 @@ class QtLabelsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method.
         """
-        with self.layer.events.selected_label.blocker():
-            value = self.layer.selected_label
+        with self.layer.events.active_label.blocker():
+            value = self.layer.active_label
             self.selectionSpinBox.setValue(value)
 
     def _on_brush_size_change(self, event=None):
@@ -511,9 +509,7 @@ class QtColorBox(QWidget):
         super().__init__()
 
         self.layer = layer
-        self.layer.events.selected_label.connect(
-            self._on_selected_label_change
-        )
+        self.layer.events.active_label.connect(self._on_active_label_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
 
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -523,7 +519,7 @@ class QtColorBox(QWidget):
         self.setFixedHeight(self._height)
         self.setToolTip(trans._('Selected label color'))
 
-    def _on_selected_label_change(self, event):
+    def _on_active_label_change(self, event):
         """Receive layer model label selection change event & update colorbox.
 
         Parameters
