@@ -539,8 +539,8 @@ class Labels(_ImageBase):
             return
 
         self._active_label = label
-        self._active_color = self.get_color(label)
         self.selection = {label}
+        self._active_color = self.get_color(label)
         self.events.active_label()
 
         # note: self.color_mode returns a string and this comparison fails,
