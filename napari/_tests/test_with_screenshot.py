@@ -274,6 +274,7 @@ def test_grid_mode(make_napari_viewer):
         [255, 255, 0, 255],
         [0, 255, 255, 255],
     ]
+    color = color[::-1]
     for c, p in zip(color, pos):
         coord = tuple(
             np.round(np.multiply(screenshot.shape[:2], p)).astype(int)

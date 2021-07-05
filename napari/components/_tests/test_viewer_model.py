@@ -380,14 +380,14 @@ def test_grid():
     assert viewer.grid.stride == -2
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
-        [0, 0],
-        [0, 0],
-        [0, 15],
-        [0, 15],
         [15, 0],
         [15, 0],
+        [0, 15],
+        [0, 15],
+        [0, 0],
+        [0, 0],
     ]
-    np.testing.assert_allclose(translations, expected_translations)
+    np.testing.assert_allclose(translations, expected_translations[::-1])
 
 
 def test_add_remove_layer_dims_change():
