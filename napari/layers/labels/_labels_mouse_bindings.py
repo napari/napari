@@ -3,21 +3,21 @@ from ._labels_utils import interpolate_coordinates
 
 
 def draw(layer, event):
-    """Draw with the currently selected label to a coordinate.
+    """Draw with the current active label to a coordinate.
 
     This method have different behavior when draw is called
     with different labeling layer mode.
 
     In PAINT mode the cursor functions like a paint brush changing any
     pixels it brushes over to the current label. If the background label
-    `0` is selected than any pixels will be changed to background and this
+    `0` is active than any pixels will be changed to background and this
     tool functions like an eraser. The size and shape of the cursor can be
     adjusted in the properties widget.
 
     In FILL mode the cursor functions like a fill bucket replacing pixels
     of the label clicked on with the current label. It can either replace
     all pixels of that label or just those that are contiguous with the
-    clicked on pixel. If the background label `0` is selected than any
+    clicked on pixel. If the background label `0` is active than any
     pixels will be changed to background and this tool functions like an
     eraser
     """
@@ -26,7 +26,7 @@ def draw(layer, event):
     if layer._mode == Mode.ERASE:
         new_label = layer._background_label
     else:
-        new_label = layer.selected_label
+        new_label = layer.active_label
 
     if layer._mode in [Mode.PAINT, Mode.ERASE]:
         layer.paint(coordinates, new_label)
@@ -57,6 +57,8 @@ def draw(layer, event):
 
 
 def pick(layer, event):
-    """Change the selected label to the same as the region clicked."""
+    """
+    Change the active label to the same as the region clicked.
+    """
     # on press
-    layer.selected_label = layer.get_value(event.position, world=True) or 0
+    layer.active_label = layer.get_value(event.position, world=True) or 0
