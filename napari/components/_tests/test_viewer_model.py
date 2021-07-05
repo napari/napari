@@ -387,7 +387,7 @@ def test_grid():
         [0, 0],
         [0, 0],
     ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
+    np.testing.assert_allclose(translations, expected_translations)
 
 
 def test_add_remove_layer_dims_change():
