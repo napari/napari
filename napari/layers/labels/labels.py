@@ -524,6 +524,10 @@ class Labels(_ImageBase):
             self._selected_labels.update(elements)
         else:
             self._selected_labels = set(elements)
+        # self.active_label should always be in self.selection
+        if self._active_label not in self._selected_labels:
+            self._active_label = np.min(list(self._selected_labels) or 0)
+            self.events.active_label()
         self.events.selection(value=self._selected_labels)
         self.refresh()
 
@@ -539,7 +543,8 @@ class Labels(_ImageBase):
             return
 
         self._active_label = label
-        self.selection = {label}
+        if label not in self.selection:
+            self.selection = {label}
         self._active_color = self.get_color(label)
         self.events.active_label()
 
@@ -750,7 +755,7 @@ class Labels(_ImageBase):
         selection : set of int, optional
             Value of selected labels to color, by default None
         """
-        if selection is not None:
+        if selection:
             selection_arr = np.asarray(list(selection))
             selected_pixels = np.isin(im, selection_arr)
             color_pixels = low_discrepancy_image(
@@ -771,7 +776,7 @@ class Labels(_ImageBase):
         selection : set of int, optional
             Value of selected labels to color, by default None
         """
-        if selection is not None:
+        if selection:
             selection_arr = np.asarray(list(selection))
             max_selected = np.max(selection_arr)
             if max_selected > len(self._all_vals):
