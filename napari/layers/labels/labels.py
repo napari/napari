@@ -156,8 +156,8 @@ class Labels(_ImageBase):
     -----
     _data_raw : array (N, M)
         2D labels data for the currently viewed slice.
-    _selected_color : 4-tuple or None
-        RGBA tuple of the color of the selected label, or None if the
+    _active_color : 4-tuple or None
+        RGBA tuple of the color of the active label, or None if the
         background label `0` is selected.
     """
 
@@ -523,7 +523,7 @@ class Labels(_ImageBase):
             return
 
         self._active_label = label
-        self._selected_color = self.get_color(label)
+        self._active_color = self.get_color(label)
         self.events.active_label()
 
         # note: self.color_mode returns a string and this comparison fails,
@@ -559,7 +559,7 @@ class Labels(_ImageBase):
             raise ValueError(trans._("Unsupported Color Mode"))
 
         self._color_mode = color_mode
-        self._selected_color = self.get_color(self.active_label)
+        self._active_color = self.get_color(self.active_label)
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
@@ -865,12 +865,12 @@ class Labels(_ImageBase):
             self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
-            image = self._color_lookup_func(raw, self._selected_label)
+            image = self._color_lookup_func(raw, self._active_label)
         elif (
             self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
-            selected = self._selected_label
+            selected = self._active_label
             if selected not in self._label_color_index:
                 selected = None
             index = self._label_color_index
