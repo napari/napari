@@ -361,7 +361,7 @@ def test_grid():
         [15, 15],
         [15, 30],
     ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
+    np.testing.assert_allclose(translations, expected_translations)
 
     # return to stack view
     viewer.grid.enabled = False
