@@ -377,7 +377,7 @@ class Labels(_ImageBase):
         self.colormap = label_colormap(num_colors)
         self.refresh()
         self._active_color = self.get_color(self.active_label)
-        self.events.selected_label()
+        self.events.active_label()
 
     @property
     def data(self):
