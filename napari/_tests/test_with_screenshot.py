@@ -252,7 +252,7 @@ def test_grid_mode(make_napari_viewer):
         [15, 15],
         [15, 30],
     ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
+    np.testing.assert_allclose(translations, expected_translations)
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True, flash=False)
