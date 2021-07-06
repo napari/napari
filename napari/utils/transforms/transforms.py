@@ -539,8 +539,8 @@ class CompositeAffine(Transform):
 
     def __init__(
         self,
-        translate=(0, 0),
         scale=(1, 1),
+        translate=(0, 0),
         rotate=None,
         shear=None,
         ndim=None,
