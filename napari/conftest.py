@@ -336,35 +336,24 @@ def pytest_collection_modifyitems(session, config, items):
 
 @pytest.fixture(autouse=True)
 def fresh_settings(monkeypatch):
-    from napari.utils import settings
+    from napari import settings
+    from napari.settings import NapariSettings
 
     # prevent the developer's config file from being used if it exists
-    cp = settings.NapariSettings.__private_attributes__['_config_path']
+    cp = NapariSettings.__private_attributes__['_config_path']
     monkeypatch.setattr(cp, 'default', None)
 
     # calling save() with no config path is normally an error
     # here we just have save() return if called without a valid path
-    original_save = settings.NapariSettings.save
+    NapariSettings.__original_save__ = NapariSettings.save
 
     def _mock_save(self, path=None, **dict_kwargs):
         if not (path or self.config_path):
             return
-        original_save(self, path, **dict_kwargs)
+        NapariSettings.__original_save__(self, path, **dict_kwargs)
 
-    monkeypatch.setattr(settings.NapariSettings, 'save', _mock_save)
+    monkeypatch.setattr(NapariSettings, 'save', _mock_save)
 
     # this makes sure that we start with fresh settings for every test.
-    settings._SETTINGS.set(None)
+    settings._SETTINGS = None
     yield
-
-
-@pytest.fixture
-def test_settings(tmp_path):
-    """A fixture that can be used to test and save settings"""
-    from napari.utils.settings import NapariSettings
-
-    class TestSettings(NapariSettings):
-        class Config:
-            env_prefix = 'testnapari_'
-
-    return TestSettings(tmp_path / 'test_settings.yml')

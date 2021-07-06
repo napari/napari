@@ -25,12 +25,12 @@ from qtpy.QtWidgets import (
 
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
+from ..settings import get_settings
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
-from ..utils.settings import get_settings
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout

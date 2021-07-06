@@ -228,7 +228,7 @@ def parse_sys_argv():
 
 def _run():
     from napari import run, view_path
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     """Main program."""
     args, kwargs = parse_sys_argv()

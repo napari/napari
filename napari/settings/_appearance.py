@@ -2,8 +2,8 @@ from typing import Tuple, Union
 
 from pydantic import Field
 
-from ..events.evented_model import EventedModel
-from ..translations import trans
+from ..utils.events.evented_model import EventedModel
+from ..utils.translations import trans
 from ._fields import SchemaVersion, Theme
 
 

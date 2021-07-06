@@ -3,8 +3,8 @@ from typing import Dict, List, Set, Tuple, Union
 from pydantic import Field
 from typing_extensions import TypedDict
 
-from ..events.evented_model import EventedModel
-from ..translations import trans
+from ..utils.events.evented_model import EventedModel
+from ..utils.translations import trans
 from ._fields import SchemaVersion
 
 

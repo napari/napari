@@ -20,12 +20,12 @@ from napari_plugin_engine import HookImplementation
 from napari_plugin_engine import PluginManager as PluginManager
 from typing_extensions import TypedDict
 
+from ..settings import get_settings
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
 from ..utils import _magicgui
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
-from ..utils.settings import get_settings
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 

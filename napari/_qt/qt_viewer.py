@@ -53,8 +53,8 @@ from .._vispy import (  # isort:skip
 if TYPE_CHECKING:
     from ..viewer import Viewer
 
+from ..settings import get_settings
 from ..utils.io import imsave_extensions
-from ..utils.settings import get_settings
 
 
 class QtViewer(QSplitter):

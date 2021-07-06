@@ -4,10 +4,10 @@ from typing import List, Tuple, Union
 
 from pydantic import Field
 
-from .._base import _DEFAULT_LOCALE
-from ..events.evented_model import EventedModel
-from ..notifications import NotificationSeverity
-from ..translations import trans
+from ..utils._base import _DEFAULT_LOCALE
+from ..utils.events.evented_model import EventedModel
+from ..utils.notifications import NotificationSeverity
+from ..utils.translations import trans
 from ._fields import Language, SchemaVersion
 
 
@@ -68,14 +68,14 @@ class ApplicationSettings(EventedModel):
         ),
     )
     window_maximized: bool = Field(
-        None,
+        False,
         title=trans._("Window maximized state"),
         description=trans._(
             "Last saved maximized state for the main window. This setting is managed by the application."
         ),
     )
     window_fullscreen: bool = Field(
-        None,
+        False,
         title=trans._("Window fullscreen"),
         description=trans._(
             "Last saved fullscreen state for the main window. This setting is managed by the application."

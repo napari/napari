@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
-from ...utils.settings import get_settings
+from ...settings import get_settings
 from ...utils.translations import trans
 
 
@@ -357,7 +357,7 @@ class PreferencesDialog(QDialog):
             # change the values in settings
             for setting_name, value in different_values.items():
                 try:
-                    setattr(settings._settings[page], setting_name, value)
+                    setattr(getattr(settings, page), setting_name, value)
                     self._values_dict[page] = new_dict
 
                     if page == 'experimental':

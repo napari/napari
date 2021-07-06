@@ -2,9 +2,9 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseModel, root_validator
+from pydantic import Field
 
-from .._base import _DEFAULT_CONFIG_PATH
+from ..utils._base import _DEFAULT_CONFIG_PATH
 from ._appearance import AppearanceSettings
 from ._application import ApplicationSettings
 from ._base import EventedConfigFileSettings
@@ -16,11 +16,15 @@ _CFG_PATH = os.getenv('NAPARI_CONFIG', _DEFAULT_CONFIG_PATH)
 
 
 class NapariSettings(EventedConfigFileSettings):
-    application: ApplicationSettings
-    appearance: AppearanceSettings
-    plugins: PluginsSettings
-    shortcuts: ShortcutsSettings
-    experimental: ExperimentalSettings
+    application: ApplicationSettings = Field(
+        default_factory=ApplicationSettings
+    )
+    appearance: AppearanceSettings = Field(default_factory=AppearanceSettings)
+    plugins: PluginsSettings = Field(default_factory=PluginsSettings)
+    shortcuts: ShortcutsSettings = Field(default_factory=ShortcutsSettings)
+    experimental: ExperimentalSettings = Field(
+        default_factory=ExperimentalSettings
+    )
 
     # private attributes and ClassVars will not appear in the schema
     _config_path: Optional[Path] = Path(_CFG_PATH)
@@ -47,14 +51,3 @@ class NapariSettings(EventedConfigFileSettings):
             }
             for name, field in self.__fields__.items()
         }
-
-    @root_validator(pre=True)
-    def _fill_optional_fields(cls, values):
-        # sallow subfields to be declared without default_factory
-        # if they have no required fields
-        for name, field in cls.__fields__.items():
-            if isinstance(field.type_, type(BaseModel)) and not any(
-                sf.required for sf in field.type_.__fields__.values()
-            ):
-                values.setdefault(name, {})
-        return values

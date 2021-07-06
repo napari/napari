@@ -2,9 +2,9 @@ from typing import Dict, List, Tuple, Union
 
 from pydantic import Field
 
-from ...utils.shortcuts import default_shortcuts
-from ..events.evented_model import EventedModel
-from ..translations import trans
+from ..utils.events.evented_model import EventedModel
+from ..utils.shortcuts import default_shortcuts
+from ..utils.translations import trans
 from ._fields import SchemaVersion
 
 

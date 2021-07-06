@@ -1,7 +1,7 @@
 from enum import Enum
 
-from ...utils.translations import trans
-from ..translations import _load_language, get_language_packs
+from ..utils.theme import available_themes
+from ..utils.translations import _load_language, get_language_packs, trans
 
 
 class Theme(str):
@@ -17,8 +17,6 @@ class Theme(str):
 
     @classmethod
     def __modify_schema__(cls, field_schema):
-        from ..theme import available_themes
-
         # TODO: Provide a way to handle keys so we can display human readable
         # option in the preferences dropdown
         field_schema.update(enum=available_themes())
@@ -27,7 +25,6 @@ class Theme(str):
     def validate(cls, v):
         if not isinstance(v, str):
             raise ValueError(trans._('must be a string', deferred=True))
-        from ..theme import available_themes
 
         value = v.lower()
         themes = available_themes()

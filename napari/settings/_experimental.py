@@ -2,7 +2,7 @@ from typing import Tuple, Union
 
 from pydantic import Field
 
-from ..translations import trans
+from ..utils.translations import trans
 from ._base import EventedSettings
 from ._fields import SchemaVersion
 
@@ -29,7 +29,6 @@ class ExperimentalSettings(EventedSettings):
 
     async_: bool = Field(
         False,
-        alias='async',
         title=trans._("Render Images Asynchronously"),
         description=trans._(
             "Asynchronous loading of image data. \nThis setting partially loads data while viewing. \nYou must restart napari for changes of this setting to apply."

@@ -26,6 +26,7 @@ from ..layers import Image, Layer
 from ..layers._source import layer_source
 from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
+from ..settings import get_settings
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.events import Event, EventedModel, disconnect_events
@@ -33,7 +34,6 @@ from ..utils.events.event import WarningEmitter
 from ..utils.key_bindings import KeymapProvider
 from ..utils.misc import is_sequence
 from ..utils.mouse_bindings import MousemapProvider
-from ..utils.settings import get_settings
 from ..utils.theme import available_themes
 from ..utils.translations import trans
 from ._viewer_mouse_bindings import dims_scroll

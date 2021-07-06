@@ -1,30 +1,33 @@
 from __future__ import annotations
 
+import logging
 import os
 import warnings
 from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Sequence, Tuple
 
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic.error_wrappers import display_errors
 
-from ...utils.events import EmitterGroup, EventedModel
-from ...utils.translations import trans
+from ..utils.events import EmitterGroup, EventedModel
+from ..utils.misc import deep_update
+from ..utils.translations import trans
+
+_logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing import AbstractSet, Any, Union
 
     from pydantic.env_settings import SettingsSourceCallable
 
-    from ...utils.events import Event
+    from ..utils.events import Event
 
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]
     DictStrAny = Dict[str, Any]
     MappingIntStrAny = Mapping[IntStr, Any]
-
-_NOT_SET = object()
 
 
 class EventedSettings(BaseSettings, EventedModel):
@@ -53,6 +56,9 @@ class EventedSettings(BaseSettings, EventedModel):
         self.events.changed(key=f'{field}{event._type}', value=value)
 
 
+_NOT_SET = object()
+
+
 class EventedConfigFileSettings(EventedSettings):
     """This adds config read/write and yaml support to EventedSettings.
 
@@ -63,6 +69,7 @@ class EventedConfigFileSettings(EventedSettings):
 
     _config_path: Optional[Path] = None
     _save_on_change: bool = True
+    _config_file_settings: dict
 
     # provide config_path=None to prevent reading from disk.
     def __init__(self, config_path=_NOT_SET, **values: Any) -> None:
@@ -80,7 +87,7 @@ class EventedConfigFileSettings(EventedSettings):
 
     def _on_sub_event(self, event, field=None):
         super()._on_sub_event(event, field)
-        if self._save_on_change:
+        if self._save_on_change and self.config_path:
             self.save()
 
     @property
@@ -109,9 +116,10 @@ class EventedConfigFileSettings(EventedSettings):
         if exclude_env:
             eset = getattr(self.__config__, '_env_settings', None)
             if callable(eset):
-                env_data = eset(type(self))
+                env_data: dict = eset(type(self))
                 if env_data:
-                    _nested_del(data, env_data)
+                    cfg_data = getattr(self, '_config_file_settings', {})
+                    _restore_config_data(data, env_data, cfg_data)
         return data
 
     def yaml(
@@ -166,6 +174,9 @@ class EventedConfigFileSettings(EventedSettings):
                 dump(data, target)
 
     class Config:
+        # If True: validation errors in a config file will raise an exception
+        # otherwise they will warn to the loggerÏ
+        strict_config_check: bool = False
         sources: Sequence[str] = []
         _env_settings: SettingsSourceCallable
 
@@ -222,7 +233,7 @@ def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
 
         for name, field in settings.__fields__.items():
             if not isinstance(field.type_, type(BaseModel)):
-                continue
+                continue  # pragma: no cover
             for env_name in field.field_info.extra['env_names']:
                 for sf in field.type_.__fields__:
                     env_val = env_vars.get(f'{env_name}_{sf.lower()}')
@@ -237,26 +248,45 @@ def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
     return _inner
 
 
-def config_file_settings_source(settings: BaseSettings) -> dict:
-    """Read config files"""
-    _path = getattr(settings, '_config_path', None)
+def config_file_settings_source(settings: EventedConfigFileSettings) -> dict:
+    """Read config files during init of an EventedConfigFileSettings obj.
+
+    The two important values are the `settings._config_path`
+    attribute, which is the main config file (if present), and
+    `settings.__config__.source`, which is an optional list of additional files
+    to read. (files later in the list take precedence and `_config_path` takes
+    precedence over all)
+
+    Parameters
+    ----------
+    settings : EventedConfigFileSettings
+        The new model instance (not fully instantiated)
+
+    Returns
+    -------
+    dict
+        *validated* values for the model.
+    """
+    # config path is the primary config file (the one to save to)
+    config_path = getattr(settings, '_config_path', None)
+    # if the config has a `sources` list, read those too and merge.
     sources = list(getattr(settings.__config__, 'sources', []))
-    if _path:
-        sources.append(_path)
+    if config_path:
+        sources.append(config_path)
     if not sources:
         return {}
 
     data: dict = {}
     for path in sources:
+        if not path:
+            continue  # pragma: no cover
         _path = Path(path).expanduser().resolve()
         if not _path.is_file():
-            # warnings.warn(
-            #     trans._(
-            #         "Requested config path is not a file: {path}",
-            #         deferred=True,
-            #         path=_path,
-            #     )
-            # )
+            _logger.warning(
+                trans._(
+                    "Requested config path is not a file: {path}", path=_path
+                )
+            )
             continue
 
         load = _get_io_func_for_path(_path, 'load')
@@ -266,7 +296,7 @@ def config_file_settings_source(settings: BaseSettings) -> dict:
         try:
             new_data = load(_path.read_text()) or {}
         except Exception as err:
-            warnings.warn(
+            _logger.warning(
                 trans._(
                     "The content of the napari settings file could not be read\n\nThe default settings will be used and the content of the file will be replaced the next time settings are changed.\n\nError:\n{err}",
                     deferred=True,
@@ -275,32 +305,85 @@ def config_file_settings_source(settings: BaseSettings) -> dict:
             )
             continue
         assert isinstance(new_data, dict), _path.read_text()
-        _nested_merge(data, new_data, copy=False)
+        deep_update(data, new_data, copy=False)
+
+    try:
+        type(settings)(config_path=None, **data)
+    except ValidationError as err:
+        if getattr(settings.__config__, 'strict_config_check', False):
+            raise
+        errors = err.errors()
+        msg = (
+            "Validation errors in config file(s).\n"
+            "The following fields have been reset to the default value:\n\n"
+            + display_errors(errors)
+            + "\n"
+        )
+        _logger.warning(msg)
+        try:
+            _remove_bad_keys(data, [e.get('loc', ()) for e in errors])
+        except KeyError:  # pragma: no cover
+            _logger.warning(
+                trans._(
+                    'Failed to remove validation errors from config file. Using defaults.'
+                )
+            )
+            data = {}
+    settings._config_file_settings = data
     return data
 
 
-def _nested_merge(dct: dict, merge_dct: dict, copy=True):
-    """merge nested dict keys"""
-    _dct = dct.copy() if copy else dct
-    for k, v in merge_dct.items():
-        if k in _dct and isinstance(dct[k], dict) and isinstance(v, dict):
-            _nested_merge(_dct[k], v, copy=False)
-        else:
-            _dct[k] = v
-    return _dct
+def _remove_bad_keys(data: dict, keys: List[Tuple[str, ...]]):
+    """Remove list of keys (as string tuples) from dict (in place).
+
+    Parameters
+    ----------
+    data : dict
+        dict to modify (will be modified inplace)
+    keys : List[Tuple[str, ...]]
+        list of possibly nested keys
+
+    Examples
+    --------
+
+    >>> data = {'a': 1, 'b' : {'c': 2, 'd': 3}, 'e': 4}
+    >>> keys = [('b', 'd'), ('e',)]
+    >>> _remove_bad_keys(data, keys)
+    >>> data
+    {'a': 1, 'b': {'c': 2}}
+
+    """
+    for key in keys:
+        if not key:
+            continue  # pragma: no cover
+        d = data
+        while True:
+            base, *key = key
+            if not key:
+                break
+            d = d[base]
+        del d[base]
 
 
-def _nested_del(dct: dict, del_dct: dict):
-    """delete nested dict keys"""
-    for k, v in del_dct.items():
-        if dct.get(k) == v:
-            del dct[k]
+def _restore_config_data(dct: dict, delete: dict, defaults: dict) -> dict:
+    """delete nested dict keys, restore from defaults."""
+    for k, v in delete.items():
+        # restore from defaults if present, or just delete the key
+        if k in dct:
+            if k in defaults:
+                dct[k] = defaults[k]
+            else:
+                del dct[k]
+        # recurse
         elif isinstance(v, dict):
-            _nested_del(dct[k], v)
+            dflt = defaults.get(k)
+            if not isinstance(dflt, dict):
+                dflt = {}
+            _restore_config_data(dct[k], v, dflt)
     return dct
 
 
-def _remove_empty_dicts(dct: dict, recurse=True):
+def _remove_empty_dicts(dct: dict, recurse=True) -> dict:
     """Remove all (nested) keys with empty dict values from `dct`"""
     for k, v in list(dct.items()):
         if isinstance(v, Mapping) and recurse:

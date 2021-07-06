@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from napari.utils import settings
+from napari import settings
 from napari.utils.history import (
     get_open_history,
     get_save_history,

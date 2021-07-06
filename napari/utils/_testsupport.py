@@ -100,7 +100,7 @@ def make_napari_viewer(
     from qtpy.QtWidgets import QApplication
 
     from napari import Viewer
-    from napari.utils.settings import get_settings
+    from napari.settings import get_settings
 
     settings = get_settings()
     settings.reset()
