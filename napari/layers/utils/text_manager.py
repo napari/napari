@@ -205,7 +205,9 @@ class TextManager(EventedModel):
 
     @validator('color', pre=True, always=True)
     def _check_color(cls, color):
-        if not isinstance(color, ColorManager):
+        if isinstance(color, dict):
+            color = ColorManager(**color)
+        elif not isinstance(color, ColorManager):
             color = ColorManager(colors=color)
         return color
 
