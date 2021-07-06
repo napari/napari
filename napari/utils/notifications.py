@@ -286,7 +286,7 @@ def show_info(message: str):
 
 
 def show_console_notification(notification: Notification):
-    from .settings import get_settings
+    from ..settings import get_settings
 
     if (
         notification.severity
