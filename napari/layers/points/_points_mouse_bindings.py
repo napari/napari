@@ -59,8 +59,13 @@ def select(layer, event):
             layer._set_highlight()
         yield
 
+    # only emit data once dragging has finished
+    if layer._is_moving:
+        layer.events.data(value=layer.data)
+
     # on release
     layer._drag_start = None
+    layer._is_moving = False
     if layer._is_selecting:
         layer._is_selecting = False
         if len(layer._view_data) > 0:

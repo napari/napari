@@ -1674,6 +1674,7 @@ class Shapes(Layer):
                 face_color=face_color,
                 z_index=z_index,
             )
+            self.events.data(value=self.data)
 
     def _init_shapes(
         self,
@@ -2218,6 +2219,7 @@ class Shapes(Layer):
             )
         self.selected_data = set()
         self._finish_drawing()
+        self.events.data(value=self.data)
 
     def _rotate_box(self, angle, center=[0, 0]):
         """Perform a rotation on the selected box.

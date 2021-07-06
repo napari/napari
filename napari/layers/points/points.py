@@ -225,6 +225,8 @@ class Points(Layer):
     _drag_start : list or None
         Coordinates of first cursor click during a drag action. Gets reset to
         None after dragging is done.
+    _is_moving : bool
+        Bool indicating if any points are currently being moved.
     """
 
     # TODO  write better documentation for edge_color and face_color
@@ -359,6 +361,7 @@ class Points(Layer):
         self._drag_box = None
         self._drag_box_stored = None
         self._is_selecting = False
+        self._is_moving = False
         self._clipboard = {}
         self._round_index = False
 
@@ -1424,6 +1427,7 @@ class Points(Layer):
             Coordinates to move points to
         """
         if len(index) > 0:
+            self._is_moving = True
             index = list(index)
             disp = list(self._dims_displayed)
             if self._drag_start is None:
