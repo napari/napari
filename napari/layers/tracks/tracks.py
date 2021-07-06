@@ -368,7 +368,7 @@ class Tracks(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Properties for each track."""
+        """dict {str: np.ndarray (N,)}: Properties for each track."""
         return self._manager.properties
 
     @property
@@ -554,7 +554,7 @@ class Tracks(Layer):
 
     @property
     def graph_times(self) -> np.ndarray:
-        """time points assocaite with each graph vertex"""
+        """time points associated with each graph vertex"""
         return self._manager.graph_times
 
     @property

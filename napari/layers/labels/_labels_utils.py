@@ -37,28 +37,33 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
 
 
 @lru_cache(maxsize=64)
-def sphere_indices(radius, sphere_dims):
-    """Generate centered indices within circle or n-dim sphere.
+def sphere_indices(radius, scale):
+    """Generate centered indices within circle or n-dim ellipsoid.
 
     Parameters
     -------
     radius : float
         Radius of circle/sphere
-    sphere_dims : int
-        Number of circle/sphere dimensions
+    scale : tuple of float
+        The scaling to apply to the sphere along each axis
 
     Returns
     -------
     mask_indices : array
         Centered indices within circle/sphere
     """
+    ndim = len(scale)
+    abs_scale = np.abs(scale)
+    scale_normalized = np.asarray(abs_scale, dtype=float) / np.min(abs_scale)
     # Create multi-dimensional grid to check for
     # circle/membership around center
-    vol_radius = radius + 0.5
+    r_normalized = radius / scale_normalized + 0.5
+    slices = [
+        slice(-int(np.ceil(r)), int(np.floor(r)) + 1) for r in r_normalized
+    ]
 
-    indices_slice = [slice(-vol_radius, vol_radius + 1)] * sphere_dims
-    indices = np.mgrid[indices_slice].T.reshape(-1, sphere_dims)
-    distances_sq = np.sum(indices ** 2, axis=1)
+    indices = np.mgrid[slices].T.reshape(-1, ndim)
+    distances_sq = np.sum((indices * scale_normalized) ** 2, axis=1)
     # Use distances within desired radius to mask indices in grid
     mask_indices = indices[distances_sq <= radius ** 2].astype(int)
 

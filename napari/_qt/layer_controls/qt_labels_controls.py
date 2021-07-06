@@ -7,10 +7,10 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QSlider,
     QSpinBox,
     QWidget,
 )
+from superqt import QLabeledSlider as QSlider
 
 from ...layers.labels._labels_constants import (
     LABEL_COLOR_MODE_TRANSLATIONS,
