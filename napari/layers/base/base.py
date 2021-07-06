@@ -395,17 +395,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events.editable()
 
     @property
-    def data2world_transform(self) -> Affine:
-        """Transform: the transform from data coordinates to world coordinates.
-
-        This generates an affine transform by composing the affine property with
-        the other transform properties in the following order:
-
-        affine * (rotate * shear * scale + translate).
-        """
-        return self._transforms[1:3].simplified
-
-    @property
     def scale(self):
         """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2physical'].scale
