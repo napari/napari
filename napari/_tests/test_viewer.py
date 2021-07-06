@@ -12,16 +12,22 @@ from napari._tests.utils import (
     skip_local_popups,
 )
 from napari.utils._tests.test_naming import eval_with_filename
+from napari.utils.action_manager import action_manager
 
 
 def _get_all_keybinding_methods(type_):
     obj_methods = set(super(type_, type_).class_keymap.values())
     obj_methods.update(type_.class_keymap.values())
+
+    # need to get methods in action_manager
+    am_methods = action_manager._get_layer_actions(type_)
+    for name, action in am_methods.items():
+        obj_methods.add(action.command)
     return obj_methods
 
 
 viewer_methods = _get_all_keybinding_methods(Viewer)
-EXPECTED_NUMBER_OF_VIEWER_METHODS = 19
+EXPECTED_NUMBER_OF_VIEWER_METHODS = 12
 
 
 def test_len_methods_viewer(make_napari_viewer):
@@ -85,7 +91,7 @@ EXPECTED_NUMBER_OF_LAYER_METHODS = {
     'Tracks': 0,
     'Points': 8,
     'Labels': 14,
-    'Shapes': 17,
+    'Shapes': 19,
 }
 
 

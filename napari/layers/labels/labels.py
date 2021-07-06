@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -13,12 +13,13 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import validate_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -33,7 +34,9 @@ class Labels(_ImageBase):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or multiscale. Must be integer type or bools
+        Labels data as an array or multiscale. Must be integer type or bools.
+        Please note multiscale rendering is only supported in 2D. In 3D, only
+        the lowest resolution scale is displayed.
     num_colors : int
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)} or DataFrame
@@ -81,18 +84,24 @@ class Labels(_ImageBase):
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
-        should be the largest.
+        should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
 
     Attributes
     ----------
-    data : array
-        Integer label data. Can be N dimensional. Every pixel contains
-        an integer ID corresponding to the region it belongs to. The label 0 is
-        rendered as transparent.
+    data : array or list of array
+        Integer label data as an array or multiscale. Can be N dimensional.
+        Every pixel contains an integer ID corresponding to the region it
+        belongs to. The label 0 is rendered as transparent. Please note
+        multiscale rendering is only supported in 2D. In 3D, only
+        the lowest resolution scale is displayed.
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
-        list should be the largest.
+        list should be the largest. Please note multiscale rendering is only
+        supported in 2D. In 3D, only the lowest resolution scale is
+        displayed.
     metadata : dict
         Labels metadata.
     num_colors : int
@@ -323,13 +332,15 @@ class Labels(_ImageBase):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
+        self.cursor_size = self._calculate_cursor_size()
+        self.events.brush_size()
+
+    def _calculate_cursor_size(self):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
-        data2world_scale = np.mean(
-            [self.data2world_transform.scale[d] for d in self._dims_displayed]
-        )
-        self.cursor_size = abs(self.brush_size * data2world_scale)
-        self.events.brush_size()
+        scale = self._data_to_world.scale
+        min_scale = np.min([abs(scale[d]) for d in self._dims_displayed])
+        return abs(self.brush_size * min_scale)
 
     @property
     def seed(self):
@@ -378,44 +389,23 @@ class Labels(_ImageBase):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         self._properties, self._label_index = self._prepare_properties(
             properties
         )
         self.events.properties()
 
     @classmethod
-    def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
-        """Convert an input properties value to a standard dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : dict or DataFrame
-            properties to be transformed
-
-        Returns
-        -------
-        properties : dict
-            properties dictionary
-        index: dict
-            index mapping dictionary
-        """
-        if properties is None or not properties:
-            # None or empty dict properties
-            return {}, {}
-        if isinstance(properties, dict):
-            properties = cls._validate_properties(properties)
-            label_index = properties.get("index", None)
-            if label_index is not None:
-                # got array of indexes
-                label_index = {v: i for i, v in enumerate(label_index)}
-        else:
-            # assume that properties is a DataFrame.
-            properties, label_index = dataframe_to_properties(properties)
-            properties = cls._validate_properties(properties)
-        if label_index is None:
-            label_index = cls._map_index(properties)
-
+    def _prepare_properties(
+        cls, properties: Optional[Dict[str, Array]]
+    ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
+        properties = validate_properties(properties)
+        label_index = {}
+        if 'index' in properties:
+            label_index = {i: k for k, i in enumerate(properties['index'])}
+        elif len(properties) > 0:
+            max_len = max(len(x) for x in properties.values())
+            label_index = {i: i for i in range(max_len)}
         return properties, label_index
 
     @property
@@ -470,34 +460,6 @@ class Labels(_ImageBase):
         if not looks_multiscale:
             data = data[0]
         return data
-
-    @staticmethod
-    def _validate_properties(
-        properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validate the type and size of properties."""
-        lens = []
-        for k, v in properties.items():
-            lens.append(len(v))
-            if not isinstance(v, np.ndarray):
-                properties[k] = np.asarray(v)
-
-        if any(v != lens[0] for v in lens):
-            raise ValueError(
-                trans._(
-                    "the number of items must be equal for all properties",
-                    deferred=True,
-                )
-            )
-        return properties
-
-    @staticmethod
-    def _map_index(properties: Dict[str, np.ndarray]) -> Dict[int, int]:
-        """Map rows in given properties to label indices"""
-        if not properties:
-            return {}
-        max_len = max(len(x) for x in properties.values())
-        return {i: i for i in range(max_len)}
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -675,15 +637,7 @@ class Labels(_ImageBase):
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor = str(self._brush_shape)
-            # Convert from brush size in data coordinates to
-            # cursor size in world coordinates
-            data2world_scale = np.mean(
-                [
-                    self.data2world_transform.scale[d]
-                    for d in self._dims_displayed
-                ]
-            )
-            self.cursor_size = abs(self.brush_size * data2world_scale)
+            self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
@@ -698,15 +652,7 @@ class Labels(_ImageBase):
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor = str(self._brush_shape)
-            # Convert from brush size in data coordinates to
-            # cursor size in world coordinates
-            data2world_scale = np.mean(
-                [
-                    self.data2world_transform.scale[d]
-                    for d in self._dims_displayed
-                ]
-            )
-            self.cursor_size = abs(self.brush_size * data2world_scale)
+            self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
                 'hold <space> to pan/zoom, drag to erase a label'
@@ -1051,7 +997,7 @@ class Labels(_ImageBase):
             return
 
         # If requested new label doesn't change old label then return
-        old_label = self.data[int_coord]
+        old_label = np.asarray(self.data[int_coord]).item()
         if old_label == new_label or (
             self.preserve_labels and old_label != self._background_label
         ):
@@ -1062,7 +1008,7 @@ class Labels(_ImageBase):
         for dim in dims_to_fill:
             data_slice_list[dim] = slice(None)
         data_slice = tuple(data_slice_list)
-        labels = self.data[data_slice]
+        labels = np.asarray(self.data[data_slice])
         slice_coord = tuple(int_coord[d] for d in dims_to_fill)
 
         matches = labels == old_label
@@ -1118,6 +1064,9 @@ class Labels(_ImageBase):
         shape = self.data.shape
         dims_to_paint = self._dims_order[-self.n_edit_dimensions :]
         dims_not_painted = self._dims_order[: -self.n_edit_dimensions]
+        paint_scale = np.array(
+            [self.scale[i] for i in dims_to_paint], dtype=float
+        )
         if str(self._brush_shape) == "square":
             brush_size_dims = [self.brush_size] * self.ndim
             if self.n_edit_dimensions < self.ndim:
@@ -1149,11 +1098,10 @@ class Labels(_ImageBase):
             else:
                 coord_paint = coord
 
-            sphere_dims = len(coord_paint)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
             radius = np.floor(self.brush_size / 2) + 0.5
-            mask_indices = sphere_indices(radius, sphere_dims)
+            mask_indices = sphere_indices(radius, tuple(paint_scale))
 
             mask_indices = mask_indices + np.round(
                 np.array(coord_paint)
@@ -1207,7 +1155,7 @@ class Labels(_ImageBase):
         if refresh is True:
             self.refresh()
 
-    def get_status(self, position=None, world=False):
+    def get_status(self, position=None, *, world=False):
         """Status message of the data at a coordinate position.
 
         Parameters
@@ -1226,22 +1174,53 @@ class Labels(_ImageBase):
         msg = super().get_status(position, world=world)
 
         # if this labels layer has properties
-        if self._label_index and self._properties:
-            value = self.get_value(position, world=world)
-            # if the cursor is not outside the image or on the background
-            if value is not None and value != 0:
-                label_value = value[1] if self.multiscale else value
-                if label_value in self._label_index:
-                    idx = self._label_index[label_value]
-                    for k, v in self._properties.items():
-                        if k != 'index':
-                            try:
-                                msg += f', {k}: {v[idx]}'
-                            except IndexError:
-                                pass
-                else:
-                    msg += ' ' + trans._('[No Properties]')
+        properties = self._get_properties(position, world)
+        if properties:
+            msg += "; " + ", ".join(properties)
+
         return msg
+
+    def _get_tooltip_text(self, position, *, world=False):
+        """
+        tooltip message of the data at a coordinate position.
+
+        Parameters
+        ----------
+        position : tuple
+            Position in either data or world coordinates.
+        world : bool
+            If True the position is taken to be in world coordinates
+            and converted into data coordinates. False by default.
+
+        Returns
+        -------
+        msg : string
+            String containing a message that can be used as a tooltip.
+        """
+        return "\n".join(self._get_properties(position, world))
+
+    def _get_properties(self, position, world) -> list:
+        if not (self._label_index and self._properties):
+            return []
+
+        value = self.get_value(position, world=world)
+        # if the cursor is not outside the image or on the background
+        if value is None:
+            return []
+
+        label_value = value[1] if self.multiscale else value
+        if label_value not in self._label_index:
+            return [trans._('[No Properties]')]
+
+        idx = self._label_index[label_value]
+        return [
+            f'{k}: {v[idx]}'
+            for k, v in self._properties.items()
+            if k != 'index'
+            and len(v) > idx
+            and v[idx] is not None
+            and not (isinstance(v[idx], float) and np.isnan(v[idx]))
+        ]
 
 
 if config.async_octree:

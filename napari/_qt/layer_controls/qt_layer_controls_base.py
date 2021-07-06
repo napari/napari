@@ -1,5 +1,6 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout, QSlider
+from qtpy.QtWidgets import QComboBox, QFrame, QGridLayout
+from superqt import QLabeledSlider as QSlider
 
 from ...layers.base._base_constants import BLENDING_TRANSLATIONS
 from ...utils.events import disconnect_events

@@ -39,11 +39,11 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from superqt import QRangeSlider
 
 from ...utils.io import imsave
 from ..qt_resources import get_stylesheet
 from ..utils import QImg2array
-from .qt_range_slider import QHRangeSlider
 
 blurb = """
 <h3>Heading</h3>
@@ -120,7 +120,7 @@ class SampleWidget(QWidget):
         scroll = QScrollBar(Qt.Horizontal)
         scroll.setValue(50)
         lay.addWidget(scroll)
-        lay.addWidget(QHRangeSlider(parent=self))
+        lay.addWidget(QRangeSlider(Qt.Horizontal, self))
         text = QTextEdit()
         text.setMaximumHeight(100)
         text.setHtml(blurb)

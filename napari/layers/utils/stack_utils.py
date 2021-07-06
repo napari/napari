@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import itertools
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
 import numpy as np
 
 from ...layers import Image
 from ...layers.image._image_utils import guess_multiscale
-from ...types import FullLayerData
 from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from ...utils.translations import trans
+
+if TYPE_CHECKING:
+    from ...types import FullLayerData
 
 
 def slice_from_axis(array, *, axis, element):

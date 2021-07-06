@@ -264,6 +264,12 @@ class AppearanceSettings(BaseNapariSettings):
         le=10,
     )
 
+    layer_tooltip_visibility: bool = Field(
+        False,
+        title=trans._("Show layer tooltips"),
+        description=trans._("Toggle to display a tooltip on mouse hover."),
+    )
+
     class Config:
         # Pydantic specific configuration
         schema_extra = {
@@ -316,8 +322,8 @@ class ApplicationSettings(BaseNapariSettings):
     )
     save_window_state: bool = Field(
         True,
-        title=trans._("Save Window State"),
-        description=trans._("Save window state of dock widgets."),
+        title=trans._("Save window state"),
+        description=trans._("Toggle saving the main window state of widgets."),
     )
     window_position: Tuple[int, int] = Field(
         None,
@@ -476,7 +482,13 @@ class PluginsSettings(BaseNapariSettings):
         ),
     )
 
-    disabled_plugins: Set[str] = set()
+    disabled_plugins: Set[str] = Field(
+        set(),
+        title=trans._("Disabled plugins"),
+        description=trans._(
+            "Plugins to disable on application start.",
+        ),
+    )
 
     class Config:
         # Pydantic specific configuration

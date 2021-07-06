@@ -2,7 +2,7 @@ import warnings
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from vispy.color import get_color_names
@@ -14,6 +14,7 @@ from ...utils.colormaps.standardize_color import (
     transform_color,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.misc import ensure_iterable
 from ...utils.translations import trans
 from ..base import Layer
@@ -24,8 +25,8 @@ from ..utils.color_transformations import (
     transform_color_cycle,
     transform_color_with_defaults,
 )
-from ..utils.layer_utils import dataframe_to_properties
-from ..utils.text import TextManager
+from ..utils.layer_utils import get_current_properties, prepare_properties
+from ..utils.text_manager import TextManager
 from ._shape_list import ShapeList
 from ._shapes_constants import (
     BACKSPACE,
@@ -72,6 +73,8 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     text : str, dict
         Text to be displayed with the shapes. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -148,7 +151,7 @@ class Shapes(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -260,14 +263,14 @@ class Shapes(Layer):
         coordinates that are remaining fixed during the move. `None` otherwise.
     _fixed_index : int
         If a scaling or rotation is in progress then the index of the vertex of
-        the boudning box that is remaining fixed during the move. `None`
+        the bounding box that is remaining fixed during the move. `None`
         otherwise.
     _update_properties : bool
         Bool indicating if properties are to allowed to update the selected
         shapes when they are changed. Blocking this prevents circular loops
         when shapes are selected and the properties are changed based on that
         selection
-    _allow_thumnail_update : bool
+    _allow_thumbnail_update : bool
         Flag set to true to allow the thumbnail to be updated. Blocking the thumbnail
         can be advantageous where responsiveness is critical.
     _clipboard : dict
@@ -278,13 +281,15 @@ class Shapes(Layer):
         Size of the vertices of the shapes and bounding box in Canvas
         coordinates.
     _rotation_handle_length : float
-        Length of the rotation handle of the boudning box in Canvas
+        Length of the rotation handle of the bounding box in Canvas
         coordinates.
     _input_ndim : int
         Dimensions of shape data.
     _thumbnail_update_thresh : int
-        If there are more than this number of shapes, the thumnail
+        If there are more than this number of shapes, the thumbnail
         won't update during interactive events
+    _property_choices : dict {str: array (N,)}
+        Possible values for the properties in Shapes.properties.
     """
 
     _colors = get_color_names()
@@ -303,6 +308,7 @@ class Shapes(Layer):
         *,
         ndim=None,
         properties=None,
+        property_choices=None,
         text=None,
         shape_type='rectangle',
         edge_width=1,
@@ -375,25 +381,9 @@ class Shapes(Layer):
         self._display_order_stored = []
         self._ndisplay_stored = self._ndisplay
 
-        # Save the properties
-        if properties is None:
-            self._properties = {}
-            self._property_choices = {}
-        elif len(data) > 0:
-            properties, _ = dataframe_to_properties(properties)
-            self._properties = self._validate_properties(properties, len(data))
-            self._property_choices = {
-                k: np.unique(v) for k, v in properties.items()
-            }
-        elif len(data) == 0:
-            self._property_choices = {
-                k: np.asarray(v) for k, v in properties.items()
-            }
-            empty_properties = {
-                k: np.empty(0, dtype=v.dtype)
-                for k, v in self._property_choices.items()
-            }
-            self._properties = empty_properties
+        self._properties, self._property_choices = prepare_properties(
+            properties, property_choices, num_data=len(data)
+        )
 
         # make the text
         if text is None or isinstance(text, (list, np.ndarray, str)):
@@ -471,14 +461,7 @@ class Shapes(Layer):
         if len(data) > 0:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
-        elif len(data) == 0 and self.properties:
-            self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self._property_choices.items()
-            }
+        elif len(data) == 0 and len(self.properties) > 0:
             self._initialize_current_color_for_empty_layer(edge_color, 'edge')
             self._initialize_current_color_for_empty_layer(face_color, 'face')
         elif len(data) == 0 and len(self.properties) == 0:
@@ -494,7 +477,9 @@ class Shapes(Layer):
                 elem_name="face_color",
                 default="black",
             )
-            self.current_properties = {}
+        self.current_properties = get_current_properties(
+            self._properties, self._property_choices, len(data)
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -618,10 +603,10 @@ class Shapes(Layer):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
+    def properties(self, properties: Dict[str, Array]):
+        self._properties, self._property_choices = prepare_properties(
+            properties, self._property_choices, num_data=len(self.data)
+        )
         if self._face_color_property and (
             self._face_color_property not in self._properties
         ):
@@ -649,6 +634,10 @@ class Shapes(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
+
+    @property
+    def property_choices(self) -> Dict[str, np.ndarray]:
+        return self._property_choices
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -1393,7 +1382,8 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'text': self.text._get_state(),
+                'property_choices': self._property_choices,
+                'text': self.text.dict(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1433,7 +1423,7 @@ class Shapes(Layer):
         Returns
         -------
         text_coords : (N x D) np.ndarray
-            Array of coordindates for the N text elements in view
+            Array of coordinates for the N text elements in view
         """
         # get the coordinates of the vertices for the shapes in view
         in_view_shapes_coords = [
@@ -1805,7 +1795,7 @@ class Shapes(Layer):
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
             the same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
-            shapes. Overriden by data shape_type, if present.
+            shapes. Overridden by data shape_type, if present.
         edge_width : float | list
             thickness of lines and edges. If a list is supplied it must be the
             same length as the length of `data` and each element will be
@@ -1825,7 +1815,7 @@ class Shapes(Layer):
             otherwise the same value will be used for all shapes.
         z_index : int | list
             Specifier of z order priority. Shapes with higher z order are
-            displayed ontop of others. If a list is supplied it must be the
+            displayed on top of others. If a list is supplied it must be the
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
@@ -1904,26 +1894,6 @@ class Shapes(Layer):
             # Add shape
             data_view.add(shape, edge_color=ec, face_color=fc, z_refresh=False)
         data_view._update_z_order()
-
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        if n_shapes is None:
-            n_shapes = len(self.data)
-        for k, v in properties.items():
-            if len(v) != n_shapes:
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of shapes',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
 
     @property
     def text(self) -> TextManager:
@@ -2487,7 +2457,7 @@ class Shapes(Layer):
                 )
 
             if len(self._clipboard['text']) > 0:
-                self.text._values = np.concatenate(
+                self.text.values = np.concatenate(
                     (self.text.values, self._clipboard['text']), axis=0
                 )
 

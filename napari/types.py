@@ -120,3 +120,27 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
+
+
+def _register_types_with_magicgui():
+    """Register napari.types objects with magicgui."""
+    from . import layers
+    from .utils import _magicgui as _mgui
+
+    _mgui.register_type(
+        LayerDataTuple,
+        return_callback=_mgui.add_layer_data_tuples_to_viewer,
+    )
+    _mgui.register_type(
+        List[LayerDataTuple],
+        return_callback=_mgui.add_layer_data_tuples_to_viewer,
+    )
+    for layer_name in layers.NAMES:
+        _mgui.register_type(
+            globals().get(f'{layer_name.title()}Data'),
+            choices=_mgui.get_layers_data,
+            return_callback=_mgui.add_layer_data_to_viewer,
+        )
+
+
+_register_types_with_magicgui()

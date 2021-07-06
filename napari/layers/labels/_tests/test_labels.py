@@ -1,8 +1,12 @@
 import itertools
+from tempfile import TemporaryDirectory
 
 import numpy as np
+import pandas as pd
 import pytest
+import tensorstore as ts
 import xarray as xr
+import zarr
 from numpy.core.numerictypes import issubdtype
 from numpy.testing import assert_array_almost_equal, assert_raises
 from skimage import data
@@ -264,7 +268,9 @@ def test_properties():
     assert isinstance(layer.properties, dict)
     assert len(layer.properties) == 0
 
-    properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    properties = {
+        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
+    }
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
@@ -298,6 +304,12 @@ def test_properties():
     assert layer._label_index == label_index
     assert layer_message.endswith('Class 12')
 
+    layer = Labels(data)
+    layer.properties = pd.DataFrame(properties)
+    layer_message = layer.get_status((0, 0))
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
 
 def test_default_properties_assignment():
     """Test that the default properties value can be assigned to properties
@@ -322,7 +334,9 @@ def test_multiscale_properties():
     assert isinstance(layer.properties, dict)
     assert len(layer.properties) == 0
 
-    properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    properties = {
+        'class': np.array(['Background'] + [f'Class {i}' for i in range(20)])
+    }
     label_index = {i: i for i in range(len(properties['class']))}
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
@@ -916,3 +930,51 @@ def test_add_large_colors():
     layer.show_selected_label = True
     layer.selected_label = int(5e6)
     assert layer._all_vals.size < 1026
+
+
+def test_fill_tensorstore():
+    labels = np.zeros((5, 7, 8, 9), dtype=int)
+    labels[1, 2:4, 4:6, 4:6] = 1
+    labels[1, 3:5, 5:7, 6:8] = 2
+    labels[2, 3:5, 5:7, 6:8] = 3
+    with TemporaryDirectory(suffix='.zarr') as fout:
+        labels_temp = zarr.open(
+            fout,
+            mode='w',
+            shape=labels.shape,
+            dtype=np.uint32,
+            chunks=(1, 1, 8, 9),
+        )
+        labels_temp[:] = labels
+        labels_ts_spec = {
+            'driver': 'zarr',
+            'kvstore': {'driver': 'file', 'path': fout},
+            'path': '',
+            'metadata': {
+                'dtype': labels_temp.dtype.str,
+                'order': labels_temp.order,
+                'shape': labels.shape,
+            },
+        }
+        data = ts.open(labels_ts_spec, create=False, open=True).result()
+        layer = Labels(data)
+        layer.n_edit_dimensions = 3
+        layer.fill((1, 4, 6, 7), 4)
+        modified_labels = np.where(labels == 2, 4, labels)
+        np.testing.assert_array_equal(modified_labels, np.asarray(data))
+
+
+@pytest.mark.parametrize(
+    'scale', list(itertools.product([-2, 2], [-0.5, 0.5], [-0.5, 0.5]))
+)
+def test_paint_3d_negative_scale(scale):
+    labels = np.zeros((3, 5, 11, 11), dtype=int)
+    labels_layer = Labels(
+        labels, scale=(1,) + scale, translate=(-200, 100, 100)
+    )
+    labels_layer.n_edit_dimensions = 3
+    labels_layer.brush_size = 8
+    labels_layer.paint((1, 2, 5, 5), 1)
+    np.testing.assert_array_equal(
+        np.sum(labels_layer.data, axis=(1, 2, 3)), [0, 95, 0]
+    )

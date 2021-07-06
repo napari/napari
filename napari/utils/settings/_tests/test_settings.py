@@ -3,9 +3,15 @@
 
 import pydantic
 import pytest
-from yaml import safe_load
+from pydantic.fields import Field
+from yaml import safe_dump, safe_load
 
-from napari.utils.settings._manager import CORE_SETTINGS, SettingsManager
+import napari.utils.settings._manager as _manager
+from napari.utils.settings._manager import (
+    CORE_SETTINGS,
+    SettingsManager,
+    _SettingsProxy,
+)
 from napari.utils.theme import get_theme, register_theme
 
 
@@ -168,16 +174,15 @@ def test_settings_env_variables(tmp_path, monkeypatch):
 def test_settings_env_variables_do_not_write_to_disk(tmp_path, monkeypatch):
     data = """
 appearance:
-  theme: dark
+  theme: light
 """
     with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
         fh.write(data)
 
-    value = 'light'
+    value = 'dark'
     monkeypatch.setenv('NAPARI_THEME', value)
     settings = SettingsManager(tmp_path, save_to_disk=True)
     settings._save()
-
     with open(tmp_path / SettingsManager._FILENAME) as fh:
         saved_data = fh.read()
 
@@ -185,11 +190,7 @@ appearance:
     saved_values = safe_load(saved_data)
 
     assert model_values["appearance"]["theme"] == value
-    assert saved_values["appearance"]["theme"] == "dark"
-
-    model_values["appearance"].pop("theme")
-    saved_values["appearance"].pop("theme")
-    assert model_values == saved_values
+    assert saved_values.get("appearance", {}).get("theme", "") == ""
 
 
 def test_settings_env_variables_fails(tmp_path, monkeypatch):
@@ -205,3 +206,47 @@ def test_core_settings_are_class_variables_in_settings_manager():
         section = schema["section"]
         assert section in SettingsManager.__annotations__
         assert setting == SettingsManager.__annotations__[section]
+
+
+def test_settings_only_saves_non_default_values(tmp_path):
+    settings = SettingsManager(tmp_path, save_to_disk=False)
+    all_data = settings._to_dict(safe=True)
+    with open(tmp_path / SettingsManager._FILENAME, "w") as fh:
+        fh.write(safe_dump(all_data))
+
+    settings = SettingsManager(tmp_path, save_to_disk=True)
+    settings._save()
+
+    with open(tmp_path / SettingsManager._FILENAME) as fh:
+        data = safe_load(fh.read())
+
+    assert all_data.keys() == data.keys()
+    assert all_data != data
+
+
+def test_get_settings(monkeypatch, tmp_path):
+    monkeypatch.setattr(_manager, "SETTINGS", _SettingsProxy())
+    settings = _manager.get_settings(tmp_path)
+    assert settings._config_path == tmp_path
+
+
+def test_get_settings_fails(monkeypatch, tmp_path):
+    monkeypatch.setattr(_manager, "SETTINGS", _SettingsProxy())
+    _manager.get_settings(tmp_path)
+    with pytest.raises(Exception):
+        _manager.get_settings(tmp_path)
+
+
+def test_default_factory(monkeypatch):
+    from napari.utils.settings._defaults import BaseNapariSettings
+
+    class MockSettings(BaseNapariSettings):
+        test_field: list = Field(default_factory=list)
+
+        class Config:
+            schema_extra = {"section": "test_section"}
+
+    monkeypatch.setattr(_manager, "CORE_SETTINGS", (MockSettings,))
+    mng = _manager.SettingsManager()
+    assert mng.test_section.test_field == []
+    assert mng._defaults['test_section'].test_field == []

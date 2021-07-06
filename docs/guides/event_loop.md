@@ -29,9 +29,9 @@ If you would prefer that napari did *not* start the interactive
 event loop for you in IPython, then you can disable it with:
 
 ```python
-from napari.utils import SETTINGS
+from napari.utils import get_settings
 
-SETTINGS.application.ipy_interactive = False
+get_settings().application.ipy_interactive = False
 ```
 
 ... but then you will have to start the program yourself as described [below](#in-a-script).

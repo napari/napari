@@ -209,6 +209,11 @@ def parse_sys_argv():
         action='store_true',
         help='reset settings to default values.',
     )
+    parser.add_argument(
+        '--settings-path',
+        type=Path,
+        help='use specific path to store and load settings.',
+    )
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
@@ -223,7 +228,7 @@ def parse_sys_argv():
 
 def _run():
     from napari import run, view_path
-    from napari.utils.settings import SETTINGS
+    from napari.utils.settings import get_settings
 
     """Main program."""
     args, kwargs = parse_sys_argv()
@@ -237,8 +242,9 @@ def _run():
         datefmt='%H:%M:%S',
     )
 
+    settings = get_settings(path=args.settings_path)
     if args.reset:
-        SETTINGS.reset()
+        settings.reset()
         sys.exit("Resetting settings to default values.\n")
 
     if args.plugin:

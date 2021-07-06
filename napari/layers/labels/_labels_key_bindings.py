@@ -18,32 +18,32 @@ def hold_to_pan_zoom(layer):
         layer.mode = prev_mode
 
 
-def register_label_action(description, shortcuts):
-    return register_layer_action(Labels, description, shortcuts)
+def register_label_action(description):
+    return register_layer_action(Labels, description)
 
 
-@register_label_action(trans._("Activate the paint brush"), 'P')
+@register_label_action(trans._("Activate the paint brush"))
 def activate_paint_mode(layer):
     layer.mode = Mode.PAINT
 
 
-@register_label_action(trans._("Activate the fill bucket"), 'F')
+@register_label_action(trans._("Activate the fill bucket"))
 def activate_fill_mode(layer):
     layer.mode = Mode.FILL
 
 
-@register_label_action(trans._('Pan/zoom mode'), 'Z')
+@register_label_action(trans._('Pan/zoom mode'))
 def activate_label_pan_zoom_mode(layer):
     layer.mode = Mode.PAN_ZOOM
 
 
-@register_label_action(trans._('Pick mode'), 'L')
+@register_label_action(trans._('Pick mode'))
 def activate_label_picker_mode(layer):
     """Activate the label picker."""
     layer.mode = Mode.PICK
 
 
-@register_label_action(trans._("Activate the label eraser"), 'E')
+@register_label_action(trans._("Activate the label eraser"))
 def activate_label_erase_mode(layer):
     layer.mode = Mode.ERASE
 
@@ -52,7 +52,6 @@ def activate_label_erase_mode(layer):
     trans._(
         "Set the currently selected label to the largest used label plus one."
     ),
-    'M',
 )
 def new_label(layer):
     """Set the currently selected label to the largest used label plus one."""
@@ -60,14 +59,14 @@ def new_label(layer):
 
 
 @register_label_action(
-    trans._("Decrease the currently selected label by one."), 'D'
+    trans._("Decrease the currently selected label by one."),
 )
 def decrease_label_id(layer):
     layer.selected_label -= 1
 
 
 @register_label_action(
-    trans._("Increase the currently selected label by one."), 'I'
+    trans._("Increase the currently selected label by one."),
 )
 def increase_label_id(layer):
     layer.selected_label += 1

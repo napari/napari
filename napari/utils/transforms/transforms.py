@@ -265,7 +265,7 @@ class Affine(Transform):
     transformation matrix in homogeneous coordinates [1]_, an n
     dimensional matrix and a length n translation vector, or be
     composed and decomposed from scale, rotate, and shear
-    transformations in the following order:
+    transformations defined in the following order:
 
     rotate * shear * scale + translate
 

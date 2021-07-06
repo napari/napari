@@ -2,13 +2,8 @@ from collections.abc import Iterable
 
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QCheckBox,
-    QGridLayout,
-    QLabel,
-    QSlider,
-)
+from qtpy.QtWidgets import QButtonGroup, QCheckBox, QGridLayout, QLabel
+from superqt import QLabeledSlider as QSlider
 
 from ...layers.shapes._shapes_constants import Mode
 from ...utils.action_manager import action_manager
@@ -218,12 +213,21 @@ class QtShapesControls(QtLayerControls):
             slot=self.layer.move_to_front,
             tooltip=trans._('Move to front'),
         )
+
+        action_manager.bind_button(
+            'napari:move_shapes_selection_to_front', self.move_front_button
+        )
+
         self.move_back_button = QtModePushButton(
             layer,
             'move_back',
             slot=self.layer.move_to_back,
             tooltip=trans._('Move to back'),
         )
+        action_manager.bind_button(
+            'napari:move_shapes_selection_to_back', self.move_back_button
+        )
+
         self.delete_button = QtModePushButton(
             layer,
             'delete_shape',
