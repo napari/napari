@@ -2,10 +2,12 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from napari.utils.transforms import Affine, ScaleTranslate
+from napari.utils.transforms import Affine, CompositeAffine, ScaleTranslate
+
+transform_types = [Affine, CompositeAffine, ScaleTranslate]
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
@@ -15,7 +17,7 @@ def test_scale_translate(Transform):
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_broadcast_scale(Transform):
     coord = [1, 10, 13]
     transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
@@ -27,7 +29,7 @@ def test_scale_translate_broadcast_scale(Transform):
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_broadcast_translate(Transform):
     coord = [1, 10, 13]
     transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
@@ -39,7 +41,7 @@ def test_scale_translate_broadcast_translate(Transform):
     npt.assert_allclose(new_coord, target_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_inverse(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5])
@@ -51,7 +53,7 @@ def test_scale_translate_inverse(Transform):
     npt.assert_allclose(inverted_new_coord, coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_compose(Transform):
     coord = [10, 13]
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
@@ -63,7 +65,7 @@ def test_scale_translate_compose(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_slice(Transform):
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
     transform_b = Transform(scale=[2, 1, 3], translate=[8, 3, -5], name='st')
@@ -74,7 +76,7 @@ def test_scale_translate_slice(Transform):
     assert transform_b.set_slice([0, 2]).name == 'st'
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_expand_dims(Transform):
     transform_a = Transform(scale=[2, 3], translate=[8, -5], name='st')
     transform_b = Transform(scale=[2, 1, 3], translate=[8, 0, -5])
@@ -85,7 +87,7 @@ def test_scale_translate_expand_dims(Transform):
     assert transform_a.expand_dims([1]).name == 'st'
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_scale_translate_identity_default(Transform):
     coord = [10, 13]
     transform = Transform()
@@ -280,3 +282,24 @@ def test_repeat_shear_setting():
     transform.shear = mat.copy()
     # Check shear still decomposed into lower triangular
     np.testing.assert_almost_equal(mat, transform.shear)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_composite_affine_equiv_to_affine(dimensionality):
+    np.random.seed(0)
+    translate = np.random.randn(dimensionality)
+    scale = np.random.randn(dimensionality)
+    rotate, shear = np.linalg.qr(
+        np.random.randn(dimensionality, dimensionality)
+    )
+
+    composite = CompositeAffine(
+        translate=translate, scale=scale, rotate=rotate, shear=shear
+    )
+    affine = Affine(
+        translate=translate, scale=scale, rotate=rotate, shear=shear
+    )
+
+    np.testing.assert_almost_equal(
+        composite.affine_matrix, affine.affine_matrix
+    )
