@@ -39,6 +39,20 @@ def test_decompose_linear_matrix(upper_triangular):
     np.testing.assert_almost_equal(B, C)
 
 
+@pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
+def test_decompose_linear_matrix_with_pure_rotation(angle_degrees):
+    # See the GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2984
+    angle_radians = np.deg2rad(angle_degrees)
+    cos_angle = np.cos(angle_radians)
+    sin_angle = np.sin(angle_radians)
+    input_matrix = np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]])
+
+    rotate_output, scale, shear = decompose_linear_matrix(input_matrix)
+
+    np.testing.assert_almost_equal(input_matrix, rotate_output)
+
+
 def test_composition_order():
     """Test composition order."""
     # Order is rotate, shear, scale
