@@ -43,21 +43,22 @@ def test_decompose_linear_matrix(upper_triangular):
 def test_decompose_linear_matrix_with_pure_rotation(angle_degrees):
     # See the GitHub issue for more details:
     # https://github.com/napari/napari/issues/2984
-    input_matrix = _make_2d_rotate_matrix(angle_degrees)
-    rotate_output, scale, shear = decompose_linear_matrix(input_matrix)
-    np.testing.assert_almost_equal(input_matrix, rotate_output)
+    matrix_input = _make_2d_rotate_matrix(angle_degrees)
+    rotate_output, _, _ = decompose_linear_matrix(matrix_input)
+    np.testing.assert_almost_equal(matrix_input, rotate_output)
 
 
 def test_decompose_linear_matrix_with_rotation_and_reflection():
     # See the GitHub issue for more details:
     # https://github.com/napari/napari/issues/2984
-    scale = [-1, 1]
-    rotate = _make_2d_rotate_matrix(30)
-    input_matrix = rotate * scale
+    scale_input = [-1, 1]
+    rotate_input = _make_2d_rotate_matrix(30)
+    matrix_input = rotate_input * scale_input
 
-    rotate_output, scale, shear = decompose_linear_matrix(input_matrix)
+    rotate_output, scale_output, _ = decompose_linear_matrix(matrix_input)
 
-    np.testing.assert_almost_equal(input_matrix, rotate_output)
+    np.testing.assert_almost_equal(rotate_input, rotate_output)
+    np.testing.assert_almost_equal(scale_input, scale_output)
 
 
 def _make_2d_rotate_matrix(angle_degrees):
