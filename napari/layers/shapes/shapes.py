@@ -507,10 +507,9 @@ class Shapes(Layer):
         self._is_creating = False
         self._clipboard = {}
 
-        self._mode = Mode.PAN_ZOOM
+        self.mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
-        self._help = trans._('enter a selection mode to edit shape properties')
 
         self._init_shapes(
             data,
@@ -1549,10 +1548,14 @@ class Shapes(Layer):
         old_mode = self._mode
         self._mode = mode
 
-        self.mouse_drag_callbacks.remove(self._drag_modes[old_mode])
-        self.mouse_drag_callbacks.append(self._drag_modes[mode])
-        self.mouse_move_callbacks.remove(self._move_modes[old_mode])
-        self.mouse_move_callbacks.append(self._move_modes[mode])
+        for callback_list, mode_dict in [
+            (self.mouse_drag_callbacks, self._drag_modes),
+            (self.mouse_move_callbacks, self._move_modes),
+            (self.mouse_double_click_callbacks, self._double_click_modes),
+        ]:
+            if mode_dict[old_mode] in callback_list:
+                callback_list.remove(mode_dict[old_mode])
+            callback_list.append(mode_dict[mode])
 
         self.cursor = self._cursor_modes[mode]
 
