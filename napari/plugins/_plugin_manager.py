@@ -26,6 +26,7 @@ from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.settings import get_settings
+from ..utils.theme import THEME_KEYS
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -302,20 +303,6 @@ class NapariPluginManager(PluginManager):
 
         Each key in `data` is a `theme_name` and the value is dictionary of values.
         """
-        keys = [
-            "folder",
-            "background",
-            "foreground",
-            "primary",
-            "highlight",
-            "text",
-            "icon",
-            "warning",
-            "current",
-            "syntax_style",
-            "console",
-            "canvas",
-        ]
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_experimental_provide_theme`'
         if not isinstance(data, dict):
@@ -331,18 +318,22 @@ class NapariPluginManager(PluginManager):
         _data = {}
         for name, theme_colors in list(data.items()):
             if isinstance(theme_colors, dict):
-                if not all(key in theme_colors for key in keys):
-                    _keys = ", ".join(keys)
+                if not all(key in theme_colors for key in THEME_KEYS):
                     warn_message = trans._(
-                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that does not have required keys: {keys!r}. Ignoring',
+                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that'
+                        ' does not have required keys: {keys!r}. Missing keys: {missing!r}. Ignoring',
                         deferred=True,
                         hook_name=hook_name,
                         plugin_name=plugin_name,
                         name=name,
-                        keys=_keys,
+                        keys=", ".join(THEME_KEYS),
+                        missing=", ".join(
+                            set(THEME_KEYS) - set(theme_colors.keys())
+                        ),
                     )
                     warn(message=warn_message)
                     continue
+                _data[name] = theme_colors
 
         if plugin_name not in self._theme_data:
             self._theme_data[plugin_name] = {}
@@ -353,6 +344,11 @@ class NapariPluginManager(PluginManager):
         return tuple(
             (p, s) for p in self._theme_data for s in self._theme_data[p]
         )
+
+    def iter_themes(self) -> Iterator[Tuple[str, Dict[str, str]]]:
+        """Return theme_name : theme_colors mapping."""
+        for plugin_name in self._theme_data:
+            yield from self._theme_data[plugin_name].items()
 
     def discover_themes(self):
         """Trigger discovery of theme plugins.

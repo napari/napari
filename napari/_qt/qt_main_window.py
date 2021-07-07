@@ -383,7 +383,9 @@ class Window:
         self._add_plugins_menu()
         self._add_help_menu()
 
+        # discover any themes provided by plugins
         plugin_manager.discover_themes()
+        self._add_plugins_theme(None)
 
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
@@ -406,17 +408,20 @@ class Window:
 
         plugin_manager.events.disabled.connect(self._rebuild_plugins_menu)
         plugin_manager.events.disabled.connect(self._rebuild_samples_menu)
+        plugin_manager.events.disabled.connect(self._remove_plugins_theme)
         plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
+        plugin_manager.events.registered.connect(self._add_plugins_theme)
         plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
+        plugin_manager.events.unregistered.connect(self._remove_plugins_theme)
 
         viewer.events.status.connect(self._status_changed)
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
 
-        _themes.events.changed.connect(self._rebuild_theme)
+        _themes.events.changed.connect(self._theme_changed)
         _themes.events.added.connect(self._rebuild_theme)
         _themes.events.removed.connect(self._rebuild_theme)
 
@@ -429,6 +434,58 @@ class Window:
 
         if show:
             self.show()
+
+    def _add_plugins_theme(self, event=None):
+        """Update stylesheet/icon/theme."""
+        from ..utils.theme import register_theme
+
+        # clear out all data to make sure it's up to date (e.g. after
+        # plugin was disabled or unregistered)
+        plugin_manager._theme_data.clear()
+        plugin_manager.discover_themes()
+        for theme_name, theme_data in plugin_manager.iter_themes():
+            register_theme(theme_name, theme_data)
+        self._rebuild_theme()
+
+    def _remove_plugins_theme(self, event=None):
+        """Remove plugin."""
+        from ..utils.theme import unregister_theme
+
+        plugin_name = event.value
+
+        # since its possible that disabled/removed plugin was providing the
+        # current theme, we check for this explicitly and if this the case,
+        # theme is automatically changed to default `dark` theme
+        settings = get_settings()
+        current_theme = settings.appearance.theme
+        if (
+            settings.appearance.theme
+            in plugin_manager._theme_data[plugin_name]
+        ):
+            self.qt_viewer.viewer.theme = "dark"
+            warnings.warn(
+                message=trans._(
+                    "The current theme {current_theme!r} was provided by the plugin {plugin_name!r} which was "
+                    "disabled or removed. Switched theme to the default",
+                    deferred=True,
+                    plugin_name=plugin_name,
+                    current_theme=current_theme,
+                )
+            )
+
+        for theme_name in plugin_manager._theme_data[plugin_name].keys():
+            unregister_theme(theme_name)
+
+        self._rebuild_theme()
+
+    def _rebuild_theme(self, event=None):
+        """Update theme information in settings.
+
+        Here we simply update the settings to reflect current list of available
+        themes.
+        """
+        settings = get_settings()
+        settings.appearance.refresh_themes()
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -1394,10 +1451,12 @@ class Window:
             # wrapped C/C++ object may have been deleted
             pass
 
-    def _rebuild_theme(self, event=None):
+    def _theme_changed(self, event=None):
         """Trigger rebuild of theme and all resources."""
+        from napari._qt.qt_resources import _register_napari_resources
 
-        # _register_napari_resources(False, force_rebuild=True)
+        if event.key == "icon":
+            _register_napari_resources(False, force_rebuild=True)
         self._update_theme()
 
     def _status_changed(self, event):

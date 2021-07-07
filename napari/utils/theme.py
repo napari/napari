@@ -15,12 +15,28 @@ except Exception:
 from ..utils.translations import trans
 from .events.containers._evented_dict import EventedDict
 
+THEME_KEYS = [
+    "folder",
+    "background",
+    "foreground",
+    "primary",
+    "highlight",
+    "text",
+    "icon",
+    "warning",
+    "current",
+    "syntax_style",
+    "console",
+    "canvas",
+]
+
 
 def __getattr__(attr):
     if attr == "palettes":
         warnings.warn(
             trans._(
-                "palette is deprecated and will be removed after version 0.4.6. Please use get_theme and register_theme instead",
+                "palette is deprecated and will be removed after version 0.4.6. "
+                "Please use get_theme and register_theme instead",
                 deferred=True,
             ),
             category=FutureWarning,
@@ -33,31 +49,17 @@ def __getattr__(attr):
 class ThemesDict(EventedDict):
     """Theme data."""
 
-    _required_keys = [
-        "folder",
-        "background",
-        "foreground",
-        "primary",
-        "highlight",
-        "text",
-        "icon",
-        "warning",
-        "current",
-        "syntax_style",
-        "console",
-        "canvas",
-    ]
-
     def __setitem__(self, name: str, value: EventedDict):
         """Set theme data while also validating that all key's are present."""
-        if not all(key in value for key in self._required_keys):
-            _keys = ", ".join(self._required_keys)
+        if not all(key in value for key in THEME_KEYS):
             raise ValueError(
                 trans._(
-                    'Invalid dict object for key {name!r} that does not have required keys: {keys!r}.',
+                    'Invalid dict object for key {name!r} that does not have required keys: {keys!r}.'
+                    'Missing keys: {missing!r}',
                     deferred=True,
                     name=name,
-                    keys=_keys,
+                    keys=", ".join(THEME_KEYS),
+                    missing=", ".join(set(THEME_KEYS) - set(value.keys())),
                 )
             )
         super().__setitem__(name, value)
@@ -211,7 +213,7 @@ def get_theme(name):
 
 
 def register_theme(name, theme):
-    """Get a theme based on its name
+    """Register a new or updated theme.
 
     Parameters
     ----------
@@ -220,11 +222,25 @@ def register_theme(name, theme):
     theme : dict of str: str
         Theme mapping elements to colors.
     """
+    if not isinstance(theme, EventedDict):
+        theme = EventedDict(theme)
     _themes[name] = theme
 
 
+def unregister_theme(name):
+    """Remove existing theme.
+
+    Parameters
+    ----------
+    name : str
+        Name of the theme to be removed.
+    """
+    if name in _themes:
+        _themes.pop(name)
+
+
 def available_themes():
-    """List available themes
+    """List available themes.
 
     Returns
     -------
