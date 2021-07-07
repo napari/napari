@@ -43,6 +43,7 @@ from ._shapes_mouse_bindings import (
     add_path_polygon_creating,
     add_rectangle,
     highlight,
+    no_op,
     select,
     vertex_insert,
     vertex_remove,
@@ -330,6 +331,7 @@ class Shapes(Layer):
     _max_shapes_thumbnail = 100
 
     _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
         Mode.SELECT: select,
         Mode.DIRECT: select,
         Mode.VERTEX_INSERT: vertex_insert,
@@ -342,10 +344,14 @@ class Shapes(Layer):
     }
 
     _move_modes = {
+        Mode.PAN_ZOOM: no_op,
         Mode.SELECT: highlight,
         Mode.DIRECT: highlight,
         Mode.VERTEX_INSERT: highlight,
         Mode.VERTEX_REMOVE: highlight,
+        Mode.ADD_RECTANGLE: no_op,
+        Mode.ADD_ELLIPSE: no_op,
+        Mode.ADD_LINE: no_op,
         Mode.ADD_PATH: add_path_polygon_creating,
         Mode.ADD_POLYGON: add_path_polygon_creating,
     }
@@ -1543,15 +1549,9 @@ class Shapes(Layer):
         old_mode = self._mode
         self._mode = mode
 
-        cb = self._drag_modes.get(old_mode, None)
-        if cb is not None:
-            self.mouse_drag_callbacks.remove(cb)
+        self.mouse_drag_callbacks.remove(self._drag_modes[old_mode])
         self.mouse_drag_callbacks.append(self._drag_modes[mode])
-
-        cb = self._move_modes.get(old_mode, None)
-        if cb is not None:
-            self.mouse_move_callbacks.remove(cb)
-
+        self.mouse_move_callbacks.remove(self._move_modes[old_mode])
         self.mouse_move_callbacks.append(self._move_modes[mode])
 
         self.cursor = self._cursor_modes[mode]
