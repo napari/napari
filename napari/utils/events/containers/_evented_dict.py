@@ -69,6 +69,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             self.events.adding(key=key)
             self._dict[key] = value
             self.events.added(key=key, value=value)
+            self._connect_child_emitters(value)
         else:
             super().__setitem__(key, value)
             self.events.changed(key=key, old_value=old, value=value)

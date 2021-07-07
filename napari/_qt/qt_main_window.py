@@ -31,6 +31,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
+from ..utils.theme import _themes
 from ..utils.translations import trans
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
@@ -382,6 +383,8 @@ class Window:
         self._add_plugins_menu()
         self._add_help_menu()
 
+        plugin_manager.discover_themes()
+
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
@@ -412,6 +415,10 @@ class Window:
         viewer.events.help.connect(self._help_changed)
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
+
+        _themes.events.changed.connect(self._rebuild_theme)
+        _themes.events.added.connect(self._rebuild_theme)
+        _themes.events.removed.connect(self._rebuild_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -1386,6 +1393,12 @@ class Window:
         except RuntimeError:
             # wrapped C/C++ object may have been deleted
             pass
+
+    def _rebuild_theme(self, event=None):
+        """Trigger rebuild of theme and all resources."""
+
+        # _register_napari_resources(False, force_rebuild=True)
+        self._update_theme()
 
     def _status_changed(self, event):
         """Update status bar.

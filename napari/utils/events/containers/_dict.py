@@ -49,6 +49,9 @@ class TypedMutableMapping(MutableMapping[_K, _T]):
     def __iter__(self) -> Iterator[_T]:
         return iter(self._dict)
 
+    def __repr__(self):
+        return str(self._dict)
+
     def _type_check(self, e: Any) -> _T:
         if self._basetypes and not any(
             isinstance(e, t) for t in self._basetypes

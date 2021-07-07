@@ -225,7 +225,7 @@ def get_stylesheet_from_plugins(
     return qss_files, svg_paths, theme_colors
 
 
-def register_plugin_themes(plugin: Optional[str] = None):
+def register_plugin_resources(plugin: Optional[str] = None):
     """Register plugin theme data.
 
     This function will load the theme data and update dictionary

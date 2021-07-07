@@ -11,7 +11,7 @@ from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
 from .. import __version__
-from ..plugins.theme import register_plugin_themes
+from ..plugins.theme import register_plugin_resources
 from ..utils import config, perf
 from ..utils.notifications import (
     notification_manager,
@@ -179,7 +179,7 @@ def get_app(
 
         # this will register all of our resources (icons) with Qt, so that they
         # can be used in qss files and elsewhere.
-        register_plugin_themes()
+        register_plugin_resources()
 
     _app_ref = app  # prevent garbage collection
 

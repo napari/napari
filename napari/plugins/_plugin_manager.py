@@ -317,7 +317,7 @@ class NapariPluginManager(PluginManager):
             "canvas",
         ]
         plugin_name = hookimpl.plugin_name
-        hook_name = 'napari_experimental_provide_theme'
+        hook_name = '`napari_experimental_provide_theme`'
         if not isinstance(data, dict):
             warn_message = trans._(
                 'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
@@ -361,11 +361,10 @@ class NapariPluginManager(PluginManager):
         (historic here means that even plugins that are discovered after this
         is called will be added.)
         """
-
         if self._theme_data:
             return
         self.hook.napari_experimental_provide_theme.call_historic(
-            partial(self.register_theme_colors), with_impl=True
+            result_callback=partial(self.register_theme_colors), with_impl=True
         )
 
     # FUNCTION & DOCK WIDGETS -----------------------
