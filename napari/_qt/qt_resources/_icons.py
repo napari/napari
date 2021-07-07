@@ -56,6 +56,8 @@ QRC_TEMPLATE = """
 ALIAS_T = '{color}/{svg_stem}{opacity}.svg'
 FILE_T = "<file alias='{alias}'>{path}</file>"
 
+_clear_resources = None
+
 
 @contextmanager
 def _temporary_qrc_file(
@@ -335,6 +337,17 @@ def _compile_napari_resources(
         return output.decode()
 
 
+def _get_resources_path() -> Tuple[str, Path]:
+    from ...resources._icons import ICON_PATH
+    from ...utils.misc import dir_hash
+
+    icon_hash = dir_hash(ICON_PATH)  # get hash of icons folder contents
+    key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
+    key = key.replace(".", "_")
+    save_path = Path(__file__).parent / f"{key}.py"
+    return key, save_path
+
+
 def _register_napari_resources(persist=True, force_rebuild=False):
     """Build, save, and register napari Qt icon resources.
 
@@ -353,21 +366,38 @@ def _register_napari_resources(persist=True, force_rebuild=False):
         exist.  Rebuild may also be forced using the environment variable
         "NAPARI_REBUILD_RESOURCES".
     """
-    from ...resources._icons import ICON_PATH
-    from ...utils.misc import dir_hash
+    # I hate to do this, but if we want to be able to dynamically change color
+    # of e.g. icons, we must clear unregister old resources using the
+    # `qCleanupResources` method which can be found in the `_qt_resources*.py`
+    # module. If the resources are not cleared, it's 100% going to segfault which
+    # is not desired. See: https://github.com/napari/napari/pull/2900
+    global _clear_resources
 
-    icon_hash = dir_hash(ICON_PATH)  # get hash of icons folder contents
-    key = f'_qt_resources_{qtpy.API_NAME}_{qtpy.QT_VERSION}_{icon_hash}'
-    key = key.replace(".", "_")
-    save_path = Path(__file__).parent / f"{key}.py"
-
+    key, save_path = _get_resources_path()
     force = force_rebuild or os.environ.get('NAPARI_REBUILD_RESOURCES')
 
     if not force and save_path.exists():
         from importlib import import_module
 
         modname = f'napari._qt.qt_resources.{key}'
-        import_module(modname)
+        mod = import_module(modname)
+        _clear_resources = getattr(mod, "qCleanupResources")
     else:
         resources = _compile_napari_resources(save_path=persist and save_path)
         exec(resources, globals())
+        _clear_resources = globals()["qCleanupResources"]
+
+
+def _unregister_napari_resources():
+    """Unregister resources."""
+    if _clear_resources is not None:
+        _clear_resources()
+    else:
+        from importlib import import_module
+
+        key, save_path = _get_resources_path()
+        if save_path.exists():
+            modname = f'napari._qt.qt_resources.{key}'
+            mod = import_module(modname)
+            qCleanupResources = getattr(mod, "qCleanupResources")
+            qCleanupResources()  # try cleaning up resources

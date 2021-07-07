@@ -1453,9 +1453,13 @@ class Window:
 
     def _theme_changed(self, event=None):
         """Trigger rebuild of theme and all resources."""
-        from napari._qt.qt_resources import _register_napari_resources
+        from napari._qt.qt_resources import (
+            _register_napari_resources,
+            _unregister_napari_resources,
+        )
 
         if event.key == "icon":
+            _unregister_napari_resources()
             _register_napari_resources(False, force_rebuild=True)
         self._update_theme()
 
