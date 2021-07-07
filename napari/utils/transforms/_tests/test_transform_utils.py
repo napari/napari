@@ -39,13 +39,6 @@ def test_decompose_linear_matrix(upper_triangular):
     np.testing.assert_almost_equal(B, C)
 
 
-def _make_2d_rotate_matrix(angle_degrees):
-    angle_radians = np.deg2rad(angle_degrees)
-    cos_angle = np.cos(angle_radians)
-    sin_angle = np.sin(angle_radians)
-    return np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]])
-
-
 def test_composition_order():
     """Test composition order."""
     # Order is rotate, shear, scale

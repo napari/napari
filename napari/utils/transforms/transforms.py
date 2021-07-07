@@ -700,11 +700,7 @@ class CompositeAffine(Transform):
 def _apply_affine_with_padding(coords, linear_matrix, translate):
     coords = np.atleast_2d(coords)
     coords_ndim = coords.shape[1]
-    linear_ndim = linear_matrix.shape[0]
-    padded_linear_matrix = linear_matrix
-    if coords_ndim != linear_ndim:
-        padded_linear_matrix = np.eye(coords_ndim)
-        padded_linear_matrix[-linear_ndim:, -linear_ndim:] = linear_matrix
+    padded_linear_matrix = embed_in_identity_matrix(linear_matrix, coords_ndim)
     translate = np.concatenate(
         ([0.0] * (coords_ndim - len(translate)), translate)
     )
