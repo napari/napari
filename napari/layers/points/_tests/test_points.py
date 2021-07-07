@@ -1552,50 +1552,6 @@ def test_update_none():
     assert layer.data.size == 6
 
 
-def test_prepare_properties():
-    layer = Points([(1, 2, 3), (1, 3, 2)])
-    properties, choices = layer._prepare_properties({"aa": [1, 2]})
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 2])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-    assert layer._prepare_properties({}) == ({}, {})
-    assert layer._prepare_properties({}, {}) == ({}, {})
-    properties, choices = layer._prepare_properties({}, {"aa": [1, 2]})
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [None, None])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2])
-    properties, choices = layer._prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2]}
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    properties, choices = layer._prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}
-    )
-    assert list(properties.keys()) == ["aa"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert list(choices.keys()) == ["aa"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    properties, choices = layer._prepare_properties(
-        {"aa": [1, 3]}, {"aa": [1, 2], "bb": [7, 6]}, save_choices=True
-    )
-    assert list(properties.keys()) == ["aa", "bb"]
-    assert np.array_equal(properties["aa"], [1, 3])
-    assert np.array_equal(properties["bb"], [None, None])
-    assert list(choices.keys()) == ["aa", "bb"]
-    assert np.array_equal(choices["aa"], [1, 2, 3])
-    assert np.array_equal(choices["bb"], [6, 7])
-
-    layer = Points([(1, 2, 3), (1, 3, 2), (1, 3, 3)])
-    properties, choices = layer._prepare_properties({"aa": [1, 2, 1]})
-    assert np.array_equal(properties["aa"], [1, 2, 1])
-    assert np.array_equal(choices["aa"], [1, 2])
-
-
 def test_set_face_color_mode_after_set_properties():
     # See GitHub issue for more details:
     # https://github.com/napari/napari/issues/2755
