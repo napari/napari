@@ -631,27 +631,17 @@ class CompositeAffine(Transform):
 
     @property
     def inverse(self) -> 'Affine':
-        """Return the inverse transform."""
         return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
 
     def compose(self, transform) -> 'Affine':
-        """Return the composition of this transform and the provided one."""
+        """Return the composition of this transform and the provided one.
+
+        The provided transform must have an affine_matrix property/attribute.
+        """
         affine_matrix = self.affine_matrix @ transform.affine_matrix
         return Affine(affine_matrix=affine_matrix)
 
     def set_slice(self, axes: Sequence[int]) -> 'CompositeAffine':
-        """Return a transform subset to the given dimensions.
-
-        Parameters
-        ----------
-        axes : Sequence[int]
-            Axes to subset the current transform with.
-
-        Returns
-        -------
-        Transform
-            Resulting transform.
-        """
         return CompositeAffine(
             scale=self._scale[axes],
             translate=self._translate[axes],
@@ -661,20 +651,6 @@ class CompositeAffine(Transform):
         )
 
     def expand_dims(self, axes: Sequence[int]) -> 'CompositeAffine':
-        """Return a transform with added axes for non-visible dimensions.
-
-        Parameters
-        ----------
-        axes : Sequence[int]
-            Location of axes to expand the current transform with. Passing a
-            list allows expansion to occur at specific locations and for
-            expand_dims to be like an inverse to the set_slice method.
-
-        Returns
-        -------
-        Transform
-            Resulting transform.
-        """
         n = len(axes) + len(self.scale)
         not_axes = [i for i in range(n) if i not in axes]
         rotate = np.eye(n)
