@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing as npt
 import pytest
+from scipy.stats import special_ortho_group
 
 from napari.utils.transforms import Affine, CompositeAffine, ScaleTranslate
 
@@ -289,9 +290,8 @@ def test_composite_affine_equiv_to_affine(dimensionality):
     np.random.seed(0)
     translate = np.random.randn(dimensionality)
     scale = np.random.randn(dimensionality)
-    rotate, shear = np.linalg.qr(
-        np.random.randn(dimensionality, dimensionality)
-    )
+    rotate = special_ortho_group.rvs(dimensionality)
+    shear = np.random.randn((dimensionality * (dimensionality - 1)) // 2)
 
     composite = CompositeAffine(
         translate=translate, scale=scale, rotate=rotate, shear=shear
