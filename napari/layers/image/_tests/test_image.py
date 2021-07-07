@@ -6,6 +6,7 @@ import xarray as xr
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
 from napari.utils import Colormap
+from napari.utils.transforms.transform_utils import coerce_rotate
 
 
 def test_random_image():
@@ -646,3 +647,17 @@ def test_data_to_world_2d_scale_translate_affine_composed():
         image._data_to_world.affine_matrix,
         ((12, 0, -16), (0, 3, 12), (0, 0, 1)),
     )
+
+
+@pytest.mark.parametrize('scale', ((1, 1), (-1, 1), (1, -1), (-1, -1)))
+@pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
+def test_rotate_with_reflections_in_scale(scale, angle_degrees):
+    # See the GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2984
+    data = np.ones((4, 3))
+    rotate = coerce_rotate(angle_degrees, 2)
+
+    image = Image(data, scale=scale, rotate=rotate)
+
+    np.testing.assert_array_equal(image.scale, scale)
+    np.testing.assert_array_equal(image.rotate, rotate)

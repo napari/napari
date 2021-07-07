@@ -39,28 +39,6 @@ def test_decompose_linear_matrix(upper_triangular):
     np.testing.assert_almost_equal(B, C)
 
 
-@pytest.mark.parametrize('angle_degrees', range(-180, 180, 30))
-def test_decompose_linear_matrix_with_pure_rotation(angle_degrees):
-    # See the GitHub issue for more details:
-    # https://github.com/napari/napari/issues/2984
-    matrix_input = _make_2d_rotate_matrix(angle_degrees)
-    rotate_output, _, _ = decompose_linear_matrix(matrix_input)
-    np.testing.assert_almost_equal(matrix_input, rotate_output)
-
-
-def test_decompose_linear_matrix_with_rotation_and_reflection():
-    # See the GitHub issue for more details:
-    # https://github.com/napari/napari/issues/2984
-    scale_input = [-1, 1]
-    rotate_input = _make_2d_rotate_matrix(30)
-    matrix_input = rotate_input * scale_input
-
-    rotate_output, scale_output, _ = decompose_linear_matrix(matrix_input)
-
-    np.testing.assert_almost_equal(rotate_input, rotate_output)
-    np.testing.assert_almost_equal(scale_input, scale_output)
-
-
 def _make_2d_rotate_matrix(angle_degrees):
     angle_radians = np.deg2rad(angle_degrees)
     cos_angle = np.cos(angle_radians)
