@@ -409,6 +409,14 @@ QtAbout > QTextEdit{
   padding: 2px;
 }
 
+/* ------------ Shortcut Editor ------------ */
+
+ShortcutEditor QHeaderView::section {
+  padding: 2px;
+  border: None;
+}
+
+
 /* ------------ Plugin Sorter ------------ */
 
 ImplementationListItem {

@@ -195,9 +195,20 @@ class SettingsManager(_SettingsMixin):
     def path(self):
         return self._config_path
 
-    def reset(self):
-        """Reset settings to default values."""
-        for section in self._settings:
+    def reset(self, sections=None):
+        """Reset settings to default values.
+
+        Parameters
+        ----------
+        sections: list[str]
+            List of settings sections to reset.
+            If None specified, will reset all.
+        """
+        if not sections:
+            # sections to reset are not specified, so reset all.
+            sections = self._settings.keys()
+
+        for section in sections:
             for key, default_value in self._defaults[section].dict().items():
                 setattr(self._settings[section], key, default_value)
 
