@@ -1551,7 +1551,6 @@ class Shapes(Layer):
         for callback_list, mode_dict in [
             (self.mouse_drag_callbacks, self._drag_modes),
             (self.mouse_move_callbacks, self._move_modes),
-            (self.mouse_double_click_callbacks, self._double_click_modes),
         ]:
             if mode_dict[old_mode] in callback_list:
                 callback_list.remove(mode_dict[old_mode])
