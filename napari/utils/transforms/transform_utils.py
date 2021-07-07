@@ -172,18 +172,18 @@ def _make_rotate_mat(rotate):
     return np.array(rotate)
 
 
-def _make_2d_rotation(theta_deg):
+def _make_2d_rotation(theta_degrees):
     """Makes a 2D rotation matrix from an angle in degrees."""
-    cos_theta, sin_theta = _cos_sin(theta_deg)
+    cos_theta, sin_theta = _cos_sin_degrees(theta_degrees)
     return np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
 
 
-def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
+def _make_3d_rotation(alpha_degrees, beta_degrees, gamma_degrees):
     """Makes a 3D rotation matrix from roll, pitch, and yaw in degrees.
 
     For more details, see: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
     """
-    cos_alpha, sin_alpha = _cos_sin(alpha_deg)
+    cos_alpha, sin_alpha = _cos_sin_degrees(alpha_degrees)
     R_alpha = np.array(
         [
             [cos_alpha, -sin_alpha, 0],
@@ -192,7 +192,7 @@ def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
         ]
     )
 
-    cos_beta, sin_beta = _cos_sin(beta_deg)
+    cos_beta, sin_beta = _cos_sin_degrees(beta_degrees)
     R_beta = np.array(
         [
             [cos_beta, 0, sin_beta],
@@ -201,7 +201,7 @@ def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
         ]
     )
 
-    cos_gamma, sin_gamma = _cos_sin(gamma_deg)
+    cos_gamma, sin_gamma = _cos_sin_degrees(gamma_degrees)
     R_gamma = np.array(
         [
             [1, 0, 0],
@@ -213,9 +213,9 @@ def _make_3d_rotation(alpha_deg, beta_deg, gamma_deg):
     return R_alpha @ R_beta @ R_gamma
 
 
-def _cos_sin(angle_deg):
-    angle_rad = np.deg2rad(angle_deg)
-    return np.cos(angle_rad), np.sin(angle_rad)
+def _cos_sin_degrees(angle_degrees):
+    angle_radians = np.deg2rad(angle_degrees)
+    return np.cos(angle_radians), np.sin(angle_radians)
 
 
 def coerce_shear(shear, ndim):
