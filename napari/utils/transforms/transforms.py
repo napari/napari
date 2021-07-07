@@ -677,9 +677,7 @@ def _apply_affine_with_padding(coords, linear_matrix, translate):
     coords = np.atleast_2d(coords)
     coords_ndim = coords.shape[1]
     padded_linear_matrix = embed_in_identity_matrix(linear_matrix, coords_ndim)
-    translate = np.concatenate(
-        ([0.0] * (coords_ndim - len(translate)), translate)
-    )
+    translate = coerce_translate(translate, coords_ndim)
     return np.atleast_1d(
         np.squeeze(coords @ padded_linear_matrix.T + translate)
     )
