@@ -507,6 +507,9 @@ class Shapes(Layer):
         self._is_creating = False
         self._clipboard = {}
 
+        # change mode once to trigger the
+        # Mode setting logic
+        self._mode = Mode.SELECT
         self.mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
