@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Tuple, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -13,12 +13,13 @@ from ...utils.colormaps import (
     low_discrepancy_image,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import validate_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -338,7 +339,7 @@ class Labels(_ImageBase):
         # Convert from brush size in data coordinates to
         # cursor size in world coordinates
         scale = self._data_to_world.scale
-        min_scale = np.min([scale[d] for d in self._dims_displayed])
+        min_scale = np.min([abs(scale[d]) for d in self._dims_displayed])
         return abs(self.brush_size * min_scale)
 
     @property
@@ -388,46 +389,23 @@ class Labels(_ImageBase):
         return self._properties
 
     @properties.setter
-    def properties(self, properties: Dict[str, np.ndarray]):
+    def properties(self, properties: Dict[str, Array]):
         self._properties, self._label_index = self._prepare_properties(
             properties
         )
         self.events.properties()
 
     @classmethod
-    def _prepare_properties(cls, properties) -> Tuple[dict, dict]:
-        """Convert an input properties value to a standard dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : dict or DataFrame
-            properties to be transformed
-
-        Returns
-        -------
-        properties : dict
-            properties dictionary
-        index: dict
-            index mapping dictionary
-        """
-        if properties is None or (
-            isinstance(properties, dict) and not len(properties)
-        ):
-            # None or empty dict properties
-            return {}, {}
-        if isinstance(properties, dict):
-            properties = cls._validate_properties(properties)
-            label_index = properties.get("index", None)
-            if label_index is not None:
-                # got array of indexes
-                label_index = {v: i for i, v in enumerate(label_index)}
-        else:
-            # assume that properties is a DataFrame.
-            properties, label_index = dataframe_to_properties(properties)
-            properties = cls._validate_properties(properties)
-        if label_index is None:
-            label_index = cls._map_index(properties)
-
+    def _prepare_properties(
+        cls, properties: Optional[Dict[str, Array]]
+    ) -> Tuple[Dict[str, np.ndarray], Dict[int, int]]:
+        properties = validate_properties(properties)
+        label_index = {}
+        if 'index' in properties:
+            label_index = {i: k for k, i in enumerate(properties['index'])}
+        elif len(properties) > 0:
+            max_len = max(len(x) for x in properties.values())
+            label_index = {i: i for i in range(max_len)}
         return properties, label_index
 
     @property
@@ -482,34 +460,6 @@ class Labels(_ImageBase):
         if not looks_multiscale:
             data = data[0]
         return data
-
-    @staticmethod
-    def _validate_properties(
-        properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validate the type and size of properties."""
-        lens = []
-        for k, v in properties.items():
-            lens.append(len(v))
-            if not isinstance(v, np.ndarray):
-                properties[k] = np.asarray(v)
-
-        if any(v != lens[0] for v in lens):
-            raise ValueError(
-                trans._(
-                    "the number of items must be equal for all properties",
-                    deferred=True,
-                )
-            )
-        return properties
-
-    @staticmethod
-    def _map_index(properties: Dict[str, np.ndarray]) -> Dict[int, int]:
-        """Map rows in given properties to label indices"""
-        if not properties:
-            return {}
-        max_len = max(len(x) for x in properties.values())
-        return {i: i for i in range(max_len)}
 
     def _get_state(self):
         """Get dictionary of layer state.
