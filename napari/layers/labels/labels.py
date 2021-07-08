@@ -416,7 +416,8 @@ class Labels(_ImageBase):
     @color.setter
     def color(self, color):
 
-        if not color or self._is_default_color(color):  # default check fixes #2479 and #2953 
+        # default check fixes #2479 and #2953
+        if not color or self._is_default_color(color):
             color = {}
             color_mode = LabelColorMode.AUTO
         else:
