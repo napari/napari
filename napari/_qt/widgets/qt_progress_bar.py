@@ -51,6 +51,16 @@ class ProgressBar(QWidget):
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
 
+    def _set_total(self, total):
+        if total > 0:
+            self.pbar.setMaximum(total)
+        else:
+            self.pbar.setRange(0, 0)
+
+    def close(self):
+        super().close()
+        self.closed.emit()
+
 
 class ProgressBarGroup(QWidget):
     """One or more QProgressBars with a QFrame line separator at the bottom"""

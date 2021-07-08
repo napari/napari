@@ -1,29 +1,17 @@
-import inspect
 from typing import Iterable, Optional
-
-from tqdm import tqdm
 
 from napari._qt.widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
 from ..utils.translations import trans
 
-_tqdm_kwargs = {
-    p.name
-    for p in inspect.signature(tqdm.__init__).parameters.values()
-    if p.kind is not inspect.Parameter.VAR_KEYWORD and p.name != "self"
-}
 
-
-class progress(tqdm):
-    """This class inherits from tqdm and provides an interface for
+class progress:
+    """This class provides an interface for
     progress bars in the napari viewer. Progress bars can be created
     directly by wrapping an iterable or by providing a total number
     of expected updates.
 
-    See tqdm.tqdm API for valid args and kwargs:
-    https://tqdm.github.io/docs/tqdm/
-
-    Also, any keyword arguments to the :class:`ProgressBar` `QWidget`
+    Any keyword arguments to the :class:`ProgressBar` `QWidget`
     are also accepted and will be passed to the ``ProgressBar``.
 
     Examples
@@ -58,61 +46,109 @@ class progress(tqdm):
 
     """
 
-    monitor_interval = 0  # set to 0 to disable the thread
-
     def __init__(
         self,
         iterable: Optional[Iterable] = None,
         desc: Optional[str] = None,
         total: Optional[int] = None,
+        step: Optional[int] = None,
         nest_under: Optional[ProgressBar] = None,
         *args,
         **kwargs,
     ) -> None:
         kwargs = kwargs.copy()
-        pbar_kwargs = {k: kwargs.pop(k) for k in set(kwargs) - _tqdm_kwargs}
-        self._group_token = None
+
+        self._iterable = iterable
+        self.n = 0
+
+        if iterable is not None:  # iterator takes priority over total
+            try:
+                self._total = len(iterable) - 1
+            except TypeError:  # generator (total needed)
+                self._total = total if total is not None else 0
+        else:
+            if total is not None:
+                self._total = total
+                # TODO: figure out the half open range thing...
+                self._step = step if step else 1
+                self._iterable = range(0, total + 1, self._step)
+            else:
+                self._total = 0
+                self._step = 0
 
         # get progress bar added to viewer
         try:
             from .dialogs.activity_dialog import get_pbar
 
-            pbar = get_pbar(self, nest_under=nest_under, **pbar_kwargs)
+            pbar = get_pbar(self, nest_under=nest_under, **kwargs)
         except ImportError:
             pbar = None
 
-        if pbar is not None:
-            kwargs['gui'] = True
-
         self._pbar = pbar
-        super().__init__(iterable, desc, total, *args, **kwargs)
-        if not self._pbar:
-            return
 
-        if self.total is not None:
-            self._pbar.setRange(self.n, self.total)
+        if self._total is not None:
+            self._pbar.setRange(self.n, self._total)
             self._pbar._set_value(self.n)
         else:
             self._pbar.setRange(0, 0)
-            self.total = 0
+            self._total = 0
 
         if desc:
             self.set_description(desc)
         else:
             self.set_description(trans._("progress"))
 
-    def display(self, msg: str = None, pos: int = None) -> None:
-        """Update the display."""
-        if not self._pbar:
-            return super().display(msg=msg, pos=pos)
+    def __iter__(self):
+        iterable = self._iterable
+        n = self.n
+        try:
+            for obj in iterable:
+                yield obj
 
-        if self.total != 0:
-            etas = str(self).split('|')[-1]
-            try:
-                self._pbar._set_value(self.n)
-                self._pbar._set_eta(etas)
-            except AttributeError:
-                pass
+                n += 1
+                self.update(n)
+        finally:
+            self.n = n
+            self.close()
+
+    def __len__(self):
+        if self._iterable is None:
+            return self._total
+        elif hasattr(self._iterable, 'shape'):
+            return self._iterable.shape[0]
+        elif hasattr(self._iterable, '__len__'):
+            return len(self._iterable)
+        else:
+            return None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def increment(self):
+        """Increment progress bar using current step"""
+        self._pbar._set_value(
+            min(self._total, self._pbar._get_value() + self._step)
+        )
+
+    def decrement(self):
+        """Decrement progress bar using current step"""
+        self._pbar._set_value(max(0, self._pbar._get_value() - self._step))
+
+    def update(self, val):
+        """Update progress bar with new value
+        Parameters
+        ----------
+        val : int
+            new value for progress bar
+        """
+        if val > self._total:
+            # exceeded total, become indeterminate
+            self._pbar._set_total(0)
+        else:
+            self._pbar._set_value(val)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
@@ -125,20 +161,16 @@ class progress(tqdm):
 
     def set_description(self, desc):
         """Update progress bar description"""
-        super().set_description(desc, refresh=True)
         if self._pbar:
-            self._pbar._set_description(self.desc)
+            self._pbar._set_description(desc)
 
     def close(self):
         """Closes and deletes the progress bar widget"""
-        if self.disable:
-            return
         if self._pbar:
             self.close_pbar()
-        super().close()
 
     def close_pbar(self):
-        if not self.disable and self._pbar:
+        if self._pbar:
             parent_widget = self._pbar.parent()
             self._pbar.close()
             self._pbar.deleteLater()
@@ -156,7 +188,7 @@ class progress(tqdm):
 def progrange(*args, **kwargs):
     """Shorthand for `progress(range(*args), **kwargs)`.
 
-    Adds tqdm based progress bar to napari viewer, if it
+    Adds progress bar to napari viewer, if it
     exists, and returns the wrapped range object.
 
     Returns

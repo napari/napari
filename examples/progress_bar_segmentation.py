@@ -1,5 +1,5 @@
 """
-Use napari's tqdm wrapper to display the progress of long-running operations
+Use napari's progress wrapper to display the progress of long-running operations
 in the viewer.  
 """
 import numpy as np
@@ -82,10 +82,7 @@ def segment_binarised_ims():
     segmented_nuclei = []
 
     # using the `with` keyword we can use `progress` inside a context manager
-    # `progress` inherits from tqdm and therefore provides the same API
-    # e.g. we can provide the miniters argument if we want to see the
-    # progress bar update with each iteration
-    with progress(binarised_data, miniters=0) as pbar:
+    with progress(binarised_data) as pbar:
         for i, binarised_cells in enumerate(pbar):
             # this allows us to manipulate the pbar object within the loop
             # e.g. setting the description. 
@@ -108,7 +105,7 @@ def segment_binarised_ims():
 
 
 # we can also manually control `progress` objects using their
-# `update` method (inherited from tqdm)
+# `update` method
 def process_ims():
     """
     First performs thresholding, then segmentation on our image.
