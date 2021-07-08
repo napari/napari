@@ -6,6 +6,8 @@ from typing import List, Optional
 
 import numpy as np
 
+from ...utils import _magicgui as _mgui
+from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
@@ -27,6 +29,7 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
+@_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
 

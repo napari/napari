@@ -179,11 +179,9 @@ class SettingsManager(_SettingsMixin):
                     )
                 )
 
-            _section_defaults = {}
-            for option, option_data in setting.schema()["properties"].items():
-                _section_defaults[option] = option_data.get("default", None)
-
-            self._defaults[section] = setting(**_section_defaults)
+            self._defaults[section] = setting(
+                **{k: v.get_default() for k, v in setting.__fields__.items()}
+            )
             model = setting()
             model.events.connect(lambda x: self._save())
             self._settings[section] = model
@@ -197,9 +195,20 @@ class SettingsManager(_SettingsMixin):
     def path(self):
         return self._config_path
 
-    def reset(self):
-        """Reset settings to default values."""
-        for section in self._settings:
+    def reset(self, sections=None):
+        """Reset settings to default values.
+
+        Parameters
+        ----------
+        sections: list[str]
+            List of settings sections to reset.
+            If None specified, will reset all.
+        """
+        if not sections:
+            # sections to reset are not specified, so reset all.
+            sections = self._settings.keys()
+
+        for section in sections:
             for key, default_value in self._defaults[section].dict().items():
                 setattr(self._settings[section], key, default_value)
 

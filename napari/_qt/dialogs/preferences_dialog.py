@@ -3,19 +3,17 @@ import json
 from qtpy.QtCore import QSize, Signal
 from qtpy.QtWidgets import (
     QDialog,
-    QGridLayout,
     QHBoxLayout,
-    QLabel,
     QListWidget,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
-    QWidget,
 )
 
 from ..._vendor.qt_json_builder.qt_jsonschema_form import WidgetBuilder
 from ...utils.settings import get_settings
 from ...utils.translations import trans
+from .qt_message_dialogs import ConfirmDialog, ResetNapariInfoDialog
 
 
 class PreferencesDialog(QDialog):
@@ -26,6 +24,7 @@ class PreferencesDialog(QDialog):
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
         "highlight_thickness": {"ui:widget": "highlight"},
+        "shortcuts": {"ui:widget": "shortcuts"},
     }
 
     resized = Signal(QSize)
@@ -187,19 +186,33 @@ class PreferencesDialog(QDialog):
         self._reset_dialog.valueChanged.connect(self._reset_widgets)
         self._reset_dialog.exec_()
 
-    def _reset_widgets(self):
-        """Deletes the widgets and rebuilds with defaults."""
-        self.close()
-        self.valueChanged.emit()
-        self._list.clear()
+    def _reset_widgets(self, event=None):
+        """Deletes the widgets and rebuilds with defaults.
 
-        for n in range(self._stack.count()):
-            widget = self._stack.removeWidget(self._stack.currentWidget())
-            del widget
+        Parameter
+        ---------
+        event: bool
+            Indicates whether to restore the defaults.  When a user clicks "Restore", the signal
+            event emitted will be True.  If "Cancel" is selected, event will be False and nothing
+            is done.
 
-        self.make_dialog()
-        self._list.setCurrentRow(0)
-        self.show()
+        """
+
+        if event is True:
+            get_settings().reset()
+            self.close()
+            self.valueChanged.emit()
+            self._list.clear()
+
+            for n in range(self._stack.count()):
+                widget = self._stack.removeWidget(  # noqa: F841
+                    self._stack.currentWidget()
+                )
+                del widget
+
+            self.make_dialog()
+            self._list.setCurrentRow(0)
+            self.show()
 
     def on_click_ok(self):
         """Keeps the selected preferences saved to settings."""
@@ -221,6 +234,10 @@ class PreferencesDialog(QDialog):
             setting = settings.schemas()[page]
             schema, new_values, properties = self.get_page_dict(setting)
             self.check_differences(self._values_orig_dict[page], new_values)
+
+        # need to reset plugin_manager to defaults and change keybindings in action_manager.
+        # Emit signal to do this in main window.
+        self.valueChanged.emit()
 
         self._list.setCurrentRow(0)
         self.close()
@@ -382,86 +399,3 @@ class PreferencesDialog(QDialog):
 
                 except:  # noqa: E722
                     continue
-
-
-class ConfirmDialog(QDialog):
-    """Dialog to confirms a user's choice to restore default settings."""
-
-    valueChanged = Signal()
-
-    def __init__(
-        self,
-        parent: QWidget = None,
-        text: str = "",
-    ):
-        super().__init__(parent)
-
-        # Set up components
-        self._question = QLabel(self)
-        self._button_restore = QPushButton(trans._("Restore"))
-        self._button_cancel = QPushButton(trans._("Cancel"))
-
-        # Widget set up
-        self._question.setText(text)
-
-        # Layout
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self._button_cancel)
-        button_layout.addWidget(self._button_restore)
-
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self._question)
-        main_layout.addLayout(button_layout)
-
-        self.setLayout(main_layout)
-
-        # Signals
-        self._button_cancel.clicked.connect(self.on_click_cancel)
-        self._button_restore.clicked.connect(self.on_click_restore)
-
-    def on_click_cancel(self):
-        """Do not restore defaults and close window."""
-        self.close()
-
-    def on_click_restore(self):
-        """Restore defaults and close window."""
-        get_settings().reset()
-        self.valueChanged.emit()
-        self.close()
-
-
-class ResetNapariInfoDialog(QDialog):
-    """Dialog to inform the user that restart of Napari is necessary to enable setting."""
-
-    valueChanged = Signal()
-
-    def __init__(
-        self,
-        parent: QWidget = None,
-        text: str = "",
-    ):
-        super().__init__(parent)
-        # Set up components
-        self._info_str = QLabel(self)
-        self._button_ok = QPushButton(trans._("OK"))
-        # Widget set up
-        self._info_str.setText(text)
-
-        # Layout
-        button_layout = QGridLayout()
-        button_layout.addWidget(self._button_ok, 0, 1)
-        button_layout.setColumnStretch(0, 1)
-        button_layout.setColumnStretch(1, 1)
-
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self._info_str)
-        main_layout.addLayout(button_layout)
-
-        self.setLayout(main_layout)
-
-        # Signals
-        self._button_ok.clicked.connect(self._close_dialog)
-
-    def _close_dialog(self):
-        """Close window."""
-        self.close()

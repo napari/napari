@@ -12,12 +12,13 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
 )
 from ...utils.events import Event
+from ...utils.events.custom_types import Array
 from ...utils.translations import trans
 from ..base import Layer
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
-from ..utils.layer_utils import dataframe_to_properties
+from ..utils.layer_utils import get_current_properties, prepare_properties
 from ..utils.text_manager import TextManager
 from ._points_constants import SYMBOL_ALIAS, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
@@ -43,6 +44,8 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    property_choices : dict {str: array (N,)}
+        possible values for each property.
     text : str, dict
         Text to be displayed with the points. If text is set to a key in properties,
         the value of that property will be displayed. Multiple properties can be
@@ -107,7 +110,7 @@ class Points(Layer):
     affine : n-D array or napari.utils.transforms.Affine
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
-        the final column is a lenght N translation vector and a 1 or a napari
+        the final column is a length N translation vector and a 1 or a napari
         AffineTransform object. If provided then translate, scale, rotate, and
         shear values are ignored.
     opacity : float
@@ -118,8 +121,6 @@ class Points(Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    property_choices : dict {str: array (N,)}
-        possible values for each property.
 
     Attributes
     ----------
@@ -208,7 +209,6 @@ class Points(Layer):
     -----
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Points.properties.
-        If properties is not provided, it will be {} (empty dictionary).
     _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
@@ -305,18 +305,8 @@ class Points(Layer):
         self._data = np.asarray(data)
 
         # Save the properties
-        if self.data.size == 0 and properties:
-            warnings.warn(
-                trans._(
-                    "Property choices should be passed as property_choices, not properties. This warning will become an error in version 0.4.11.",
-                ),
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            property_choices = properties
-            properties = {}
-        self._properties, self._property_choices = self._prepare_properties(
-            properties, property_choices, save_choices=True
+        self._properties, self._property_choices = prepare_properties(
+            properties, property_choices, len(self.data), save_choices=True
         )
 
         # make the text
@@ -379,7 +369,7 @@ class Points(Layer):
             contrast_limits=edge_contrast_limits,
             categorical_colormap=edge_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
         self._face = ColorManager._from_layer_kwargs(
@@ -389,24 +379,15 @@ class Points(Layer):
             contrast_limits=face_contrast_limits,
             categorical_colormap=face_color_cycle,
             properties=self._properties
-            if self._data.size
+            if self._data.size > 0
             else self._property_choices,
         )
 
         self.size = size
 
-        # set the current_properties
-        if len(data) > 0:
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
-        elif len(data) == 0 and self.properties:
-            self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self._property_choices.items()
-            }
-        else:
-            self.current_properties = {}
+        self.current_properties = get_current_properties(
+            self._properties, self._property_choices, len(self.data)
+        )
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -525,11 +506,17 @@ class Points(Layer):
 
     @properties.setter
     def properties(
-        self, properties: Union[Dict[str, np.ndarray], 'DataFrame', None]
+        self, properties: Union[Dict[str, Array], 'DataFrame', None]
     ):
-        self._properties, self._property_choices = self._prepare_properties(
-            properties, self._property_choices
+        self._properties, self._property_choices = prepare_properties(
+            properties, self._property_choices, len(self.data)
         )
+        # Updating current_properties can modify properties, so block to avoid
+        # infinite recursion when explicitly setting the properties.
+        with self.block_update_properties():
+            self.current_properties = get_current_properties(
+                self._properties, self._property_choices, len(self.data)
+            )
         self._update_color_manager(
             self._face,
             self._properties,
@@ -546,62 +533,6 @@ class Points(Layer):
         if self.text.values is not None:
             self.refresh_text()
         self.events.properties()
-
-    def _prepare_properties(
-        self,
-        properties: Union[
-            Dict[str, Union[np.ndarray, list]], 'DataFrame', None
-        ],
-        property_choices: Dict[str, Union[np.ndarray, list]] = None,
-        save_choices: bool = False,
-    ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-        """Return properties in a normalized dict-of-columns format.
-
-        Parameters
-        ----------
-        properties : Union[dict, DataFrame]
-            properties to be transformed
-        property_choices : Dict[str, np.ndarray]
-            previous choices
-        save_choices : bool
-            preserve property choices that are not available in input columns.
-
-        Returns
-        -------
-        properties (dict):
-            properties dictionary
-        """
-        if property_choices is None:
-            property_choices = {}
-        if properties is None:
-            properties = {}
-        if not isinstance(properties, dict):
-            properties, _ = dataframe_to_properties(properties)
-
-        new_choices = {
-            k: np.unique(np.concatenate((v, property_choices.get(k, []))))
-            for k, v in properties.items()
-        }
-        if not new_choices:
-            # case of set empty properties when have available choices list
-            new_choices = {
-                k: np.unique(v) for k, v in property_choices.items()
-            }
-        if not properties and new_choices:
-            if self._data.size:
-                properties = {
-                    k: [None] * self._data.shape[0] for k in new_choices
-                }
-            else:
-                properties = {
-                    k: np.empty(0, v.dtype) for k, v in new_choices.items()
-                }
-        if save_choices:
-            for k, v in property_choices.items():
-                if k not in new_choices:
-                    new_choices[k] = np.unique(v)
-                    properties[k] = [None] * self._data.shape[0]
-        return self._validate_properties(properties), new_choices
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
@@ -625,24 +556,6 @@ class Points(Layer):
         self._edge._update_current_properties(current_properties)
         self._face._update_current_properties(current_properties)
         self.events.current_properties()
-
-    def _validate_properties(
-        self, properties: Dict[str, np.ndarray]
-    ) -> Dict[str, np.ndarray]:
-        """Validates the type and size of the properties"""
-        for k, v in properties.items():
-            if len(v) != len(self.data):
-                raise ValueError(
-                    trans._(
-                        'the number of properties must equal the number of points',
-                        deferred=True,
-                    )
-                )
-            # ensure the property values are a numpy array
-            if type(v) != np.ndarray:
-                properties[k] = np.asarray(v)
-
-        return properties
 
     @property
     def text(self) -> TextManager:
@@ -957,7 +870,7 @@ class Points(Layer):
             it should be one of: 'direct', 'cycle', or 'colormap'
         attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
-            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
+            Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
         """
         color_mode = ColorMode(color_mode)
         color_manager = getattr(self, f'_{attribute}')
