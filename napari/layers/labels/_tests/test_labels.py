@@ -981,6 +981,9 @@ def test_paint_3d_negative_scale(scale):
 
 
 def test_is_default_color():
+    """Test that Labels._is_default_color() returns True for the default color 
+    value of the Labels layer.
+    """
     data = np.random.randint(20, size=(30, 30))
     layer = Labels(data)
     assert layer._is_default_color(layer.color)
