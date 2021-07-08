@@ -6,7 +6,7 @@ import xarray as xr
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
 from napari.utils import Colormap
-from napari.utils.transforms.transform_utils import coerce_rotate
+from napari.utils.transforms.transform_utils import rotate_to_matrix
 
 
 def test_random_image():
@@ -655,7 +655,7 @@ def test_rotate_with_reflections_in_scale(scale, angle_degrees):
     # See the GitHub issue for more details:
     # https://github.com/napari/napari/issues/2984
     data = np.ones((4, 3))
-    rotate = coerce_rotate(angle_degrees, 2)
+    rotate = rotate_to_matrix(angle_degrees, ndim=2)
 
     image = Image(data, scale=scale, rotate=rotate)
 

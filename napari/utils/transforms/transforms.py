@@ -6,16 +6,16 @@ import toolz as tz
 from ...utils.translations import trans
 from ..events import EventedList
 from .transform_utils import (
-    coerce_rotate,
-    coerce_scale,
-    coerce_shear,
-    coerce_translate,
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
     infer_ndim,
     is_matrix_triangular,
     is_matrix_upper_triangular,
+    rotate_to_matrix,
+    scale_to_vector,
+    shear_to_matrix,
+    translate_to_vector,
 )
 
 
@@ -549,10 +549,10 @@ class CompositeAffine(Transform):
         super().__init__(name=name)
         if ndim is None:
             ndim = infer_ndim(scale, translate, rotate, shear)
-        self._translate = coerce_translate(translate, ndim)
-        self._scale = coerce_scale(scale, ndim)
-        self._rotate = coerce_rotate(rotate, ndim)
-        self._shear = coerce_shear(shear, ndim)
+        self._translate = translate_to_vector(translate, ndim=ndim)
+        self._scale = scale_to_vector(scale, ndim=ndim)
+        self._rotate = rotate_to_matrix(rotate, ndim=ndim)
+        self._shear = shear_to_matrix(shear, ndim=ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     def __call__(self, coords):
@@ -577,7 +577,7 @@ class CompositeAffine(Transform):
     @translate.setter
     def translate(self, translate):
         """Set the translation of the transform."""
-        self._translate = coerce_translate(translate, self.ndim)
+        self._translate = translate_to_vector(translate, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -588,7 +588,7 @@ class CompositeAffine(Transform):
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        self._scale = coerce_scale(scale, self.ndim)
+        self._scale = scale_to_vector(scale, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -599,7 +599,7 @@ class CompositeAffine(Transform):
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        self._rotate = coerce_rotate(rotate, self.ndim)
+        self._rotate = rotate_to_matrix(rotate, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -612,7 +612,7 @@ class CompositeAffine(Transform):
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        self._shear = coerce_shear(shear, self.ndim)
+        self._shear = shear_to_matrix(shear, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
     @property
@@ -677,7 +677,7 @@ def _apply_affine_with_padding(coords, linear_matrix, translate):
     coords = np.atleast_2d(coords)
     coords_ndim = coords.shape[1]
     padded_linear_matrix = embed_in_identity_matrix(linear_matrix, coords_ndim)
-    translate = coerce_translate(translate, coords_ndim)
+    translate = translate_to_vector(translate, ndim=coords_ndim)
     return np.atleast_1d(
         np.squeeze(coords @ padded_linear_matrix.T + translate)
     )

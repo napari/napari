@@ -88,17 +88,16 @@ def infer_ndim(scale=None, translate=None, rotate=None, shear=None):
     return ndim
 
 
-def coerce_translate(translate, ndim):
-    """Coerce a translate input into an n-dimensional transform component.
+def translate_to_vector(translate, *, ndim):
+    """Convert a translate input into an n-dimensional transform component.
 
     Parameters
     ----------
     translate : 1-D array
-        A 1-D array of factors to shift each axis by. Translation is broadcast
-        to 0 in leading dimensions, so that, for example, a translation of
+        A 1-D array of factors to shift each axis by. Translation is padded
+        with 0 in leading dimensions, so that, for example, a translation of
         [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
-        without modification. An empty translation vector implies no
-        translation.
+        without modification. An empty vector implies no translation.
     ndim : int
         The desired dimensionality of the output transform component.
 
@@ -113,16 +112,16 @@ def coerce_translate(translate, ndim):
     return translate_arr
 
 
-def coerce_scale(scale, ndim):
-    """Coerce a scale input into an n-dimensional transform component.
+def scale_to_vector(scale, *, ndim):
+    """Convert a scale input into an n-dimensional transform component.
 
     Parameters
     ----------
     scale : 1-D array
-        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        A 1-D array of factors to scale each axis by. Scale is padded with 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
+        An empty vector implies no scaling.
     ndim : int
         The desired dimensionality of the output transform component.
 
@@ -137,8 +136,8 @@ def coerce_scale(scale, ndim):
     return scale_arr
 
 
-def coerce_rotate(rotate, ndim):
-    """Coerce a rotate input into an n-dimensional transform component.
+def rotate_to_matrix(rotate, *, ndim):
+    """Convert a rotate input into an n-dimensional transform component.
 
     Parameters
     ----------
@@ -218,8 +217,8 @@ def _cos_sin_degrees(angle_degrees):
     return np.cos(angle_radians), np.sin(angle_radians)
 
 
-def coerce_shear(shear, ndim):
-    """Coerce a shear input into an n-dimensional transform component.
+def shear_to_matrix(shear, *, ndim):
+    """Convert a shear input into an n-dimensional transform component.
 
     Parameters
     ----------
