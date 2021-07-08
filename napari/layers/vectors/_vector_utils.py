@@ -1,4 +1,5 @@
 from copy import copy
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -155,3 +156,58 @@ def generate_vector_meshes_2D(vectors, width, length, p=(0, 0, 1)):
     ).astype(np.uint32)
 
     return vertices, triangles
+
+
+def fix_data_vectors(
+    vectors: Optional[np.ndarray], ndim: Optional[int]
+) -> Tuple[np.ndarray, int]:
+    """
+    Ensure that vectors array is 3d and have second dimension of size 2
+    and third dimension of size ndim (default 2 for empty arrays)
+
+    Parameters
+    ----------
+    vectors : (N, 2, M) array or None
+        Vectors to be checked
+    ndim : int or None
+        number of expected dimensions
+
+    Returns
+    -------
+    vectors : (N, 2, M) array
+        Vectors array
+    ndim : int
+        number of dimensions
+
+    Raises
+    ------
+    ValueError
+        if ndim does not match with third dimensions of vectors
+    """
+    if vectors is None or len(vectors) == 0:
+        if ndim is None:
+            ndim = 2
+        vectors = np.empty((0, 2, ndim))
+    else:
+        vectors = np.asarray(vectors)
+        # np.atleast_3d does not reshape (2, 3) to (1, 2, 3) as one would expect
+        # when passing a single vector
+        if vectors.ndim == 2:
+            vectors = vectors[np.newaxis]
+        if vectors.ndim != 3 or vectors.shape[1] != 2:
+            raise ValueError(
+                trans._(
+                    f"could not reshape Vector data from {vectors.shape} to (N, 2, {ndim or 'M'})",
+                    deferred=True,
+                )
+            )
+        data_ndim = vectors.shape[2]
+        if ndim is not None and ndim != data_ndim:
+            raise ValueError(
+                trans._(
+                    "Vectors dimensions must be equal to ndim",
+                    deferred=True,
+                )
+            )
+        ndim = data_ndim
+    return vectors, ndim

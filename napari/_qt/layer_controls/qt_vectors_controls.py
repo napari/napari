@@ -276,7 +276,7 @@ class QtVectorsControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method, by default None.
         """
-        if self.layer._edge.color_mode == ColorMode.DIRECT:
+        if self.layer._edge.color_mode == ColorMode.DIRECT and self.layer.data:
             with qt_signals_blocked(self.edgeColorEdit):
                 self.edgeColorEdit.setColor(self.layer.edge_color[0])
         elif self.layer._edge.color_mode in (
