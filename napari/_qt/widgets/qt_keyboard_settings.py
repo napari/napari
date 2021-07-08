@@ -20,9 +20,9 @@ from qtpy.QtWidgets import (
 )
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ...settings import get_settings
 from ...utils.action_manager import action_manager
 from ...utils.interactions import Shortcut
-from ...utils.settings import get_settings
 from ...utils.translations import trans
 from ..dialogs.qt_message_dialogs import ConfirmDialog
 from ..qt_resources import get_stylesheet
@@ -139,7 +139,7 @@ class ShortcutEditor(QWidget):
 
         # event is True if the user confirmed reset shortcuts
         if event is True:
-            get_settings().reset(sections=['shortcuts'])
+            get_settings().shortcuts.reset()
             for (
                 action,
                 shortcuts,
