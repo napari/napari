@@ -32,9 +32,11 @@ class EventedDict(TypedMutableMapping[_K, _T]):
         emitted before ``key`` is removed from the dictionary
     removed (key: K, value: T)
         emitted after ``key`` was removed from the dictionary
-    refresh (key, K, value: T)
-        emitted after ``value`` of ``key`` was changed. Only implemented by subclasses to give them an option
-        to trigger some update after ``value`` was changed and this class did not register it.
+    updated (key, K, value: T)
+        emitted after ``value`` of ``key`` was changed. Only implemented by
+        subclasses to give them an option to trigger some update after ``value``
+        was changed and this class did not register it. This can be useful if
+        the ``basetype`` is not an evented object.
     """
 
     events: EmitterGroup
@@ -51,7 +53,7 @@ class EventedDict(TypedMutableMapping[_K, _T]):
             "added": None,
             "removing": None,
             "removed": None,
-            "refresh": None,
+            "updated": None,
         }
         # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, "events") and isinstance(self.events, EmitterGroup):
