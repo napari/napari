@@ -53,7 +53,8 @@ def sphere_indices(radius, scale):
         Centered indices within circle/sphere
     """
     ndim = len(scale)
-    scale_normalized = np.asarray(scale, dtype=float) / np.min(scale)
+    abs_scale = np.abs(scale)
+    scale_normalized = np.asarray(abs_scale, dtype=float) / np.min(abs_scale)
     # Create multi-dimensional grid to check for
     # circle/membership around center
     r_normalized = radius / scale_normalized + 0.5
