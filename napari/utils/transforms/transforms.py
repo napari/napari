@@ -627,12 +627,6 @@ class CompositeAffine(Transform):
         matrix[:-1, -1] = self._translate
         return matrix
 
-    @affine_matrix.setter
-    def affine_matrix(self, affine_matrix):
-        """Set the affine matrix for the transform."""
-        self._linear_matrix = affine_matrix[:-1, :-1]
-        self._translate = affine_matrix[:-1, -1]
-
     @property
     def inverse(self) -> 'Affine':
         return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
