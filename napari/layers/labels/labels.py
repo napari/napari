@@ -416,7 +416,7 @@ class Labels(_ImageBase):
     @color.setter
     def color(self, color):
 
-        if not color or self._is_default_color(color):
+        if not color or self._is_default_color(color):  # default check fixes #2479 and #2953 
             color = {}
             color_mode = LabelColorMode.AUTO
         else:
@@ -439,6 +439,7 @@ class Labels(_ImageBase):
     def _is_default_color(
         self, color: Dict[Optional[int], np.ndarray]
     ) -> bool:
+        """Checks whether a color is equal to the default color value of the layer."""
         if len(color) != 2:
             return False
 
