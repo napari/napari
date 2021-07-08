@@ -45,6 +45,7 @@ class PreferencesDialog(QDialog):
 
         # Setup
         self.setWindowTitle(trans._("Preferences"))
+        self._button_ok.setDefault(True)
 
         # Layout
         left_layout = QVBoxLayout()
@@ -68,6 +69,7 @@ class PreferencesDialog(QDialog):
         self._button_cancel.clicked.connect(self.on_click_cancel)
         self._button_ok.clicked.connect(self.on_click_ok)
         self._default_restore.clicked.connect(self.restore_defaults)
+        self.rejected.connect(self.on_click_cancel)
 
         # Make widget
 
