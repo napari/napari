@@ -13,11 +13,7 @@ from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
 from ..utils.layer_utils import get_current_properties, prepare_properties
-from ._vector_utils import (
-    fix_data_vectors,
-    generate_vector_meshes,
-    vectors_to_coordinates,
-)
+from ._vector_utils import fix_data_vectors, generate_vector_meshes
 
 
 class Vectors(Layer):
@@ -203,7 +199,7 @@ class Vectors(Layer):
         # length attribute
         self._length = length
 
-        self._data = vectors_to_coordinates(data)
+        self._data = data
 
         vertices, triangles = generate_vector_meshes(
             self._data[:, :, list(self._dims_displayed)],
@@ -249,8 +245,7 @@ class Vectors(Layer):
     def data(self, vectors: np.ndarray):
         previous_n_vectors = len(self.data)
 
-        vectors, _ = fix_data_vectors(vectors, self.ndim)
-        self._data = vectors_to_coordinates(vectors)
+        self._data, _ = fix_data_vectors(vectors, self.ndim)
         n_vectors = len(self.data)
 
         vertices, triangles = generate_vector_meshes(
