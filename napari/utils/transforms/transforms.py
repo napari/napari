@@ -55,9 +55,7 @@ class Transform:
 
     def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
-        raise ValueError(
-            trans._('Transform composition rule not provided', deferred=True)
-        )
+        return TransformChain([self, transform])
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
@@ -97,7 +95,9 @@ class Transform:
 
 
 class TransformChain(EventedList, Transform):
-    def __init__(self, transforms=[]):
+    def __init__(self, transforms=None):
+        if transforms is None:
+            transforms = []
         super().__init__(
             data=transforms,
             basetype=Transform,
@@ -211,8 +211,10 @@ class ScaleTranslate(Transform):
         """Return the inverse transform."""
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
 
-    def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
+    def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
+        if not isinstance(transform, ScaleTranslate):
+            super().compose(transform)
         scale = self.scale * transform.scale
         translate = self.translate + self.scale * transform.translate
         return ScaleTranslate(scale, translate)
@@ -451,8 +453,10 @@ class Affine(Transform):
         """Return the inverse transform."""
         return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
 
-    def compose(self, transform: 'Affine') -> 'Affine':
+    def compose(self, transform: 'Transform') -> 'Transform':
         """Return the composite of this transform and the provided one."""
+        if not isinstance(transform, (Affine, CompositeAffine)):
+            return super().compose(transform)
         affine_matrix = self.affine_matrix @ transform.affine_matrix
         return Affine(affine_matrix=affine_matrix)
 
@@ -633,11 +637,10 @@ class CompositeAffine(Transform):
     def inverse(self) -> 'Affine':
         return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
 
-    def compose(self, transform) -> 'Affine':
-        """Return the composition of this transform and the provided one.
-
-        The provided transform must have an affine_matrix property/attribute.
-        """
+    def compose(self, transform) -> 'Transform':
+        """Return the composition of this transform and the provided one."""
+        if not isinstance(transform, (Affine, CompositeAffine)):
+            return super().compose(transform)
         affine_matrix = self.affine_matrix @ transform.affine_matrix
         return Affine(affine_matrix=affine_matrix)
 
