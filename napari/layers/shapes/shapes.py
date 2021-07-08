@@ -80,6 +80,11 @@ _REV_SHAPE_HELP = {
     },
 }
 
+
+# This avoid duplicating the trans._ help messages above
+# as some modes have the same help.
+# while most tooling will recognise identical messages,
+# this can lead to human error.
 _FWD_SHAPE_HELP = {}
 for t, modes in _REV_SHAPE_HELP.items():
     for m in modes:
