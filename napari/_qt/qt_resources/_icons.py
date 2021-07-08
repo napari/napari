@@ -367,9 +367,9 @@ def _register_napari_resources(persist=True, force_rebuild=False):
         "NAPARI_REBUILD_RESOURCES".
     """
     # I hate to do this, but if we want to be able to dynamically change color
-    # of e.g. icons, we must clear unregister old resources using the
-    # `qCleanupResources` method which can be found in the `_qt_resources*.py`
-    # module. If the resources are not cleared, it's 100% going to segfault which
+    # of e.g. icons, we must unregister old resources using the `qCleanupResources`
+    # method which can be found in the `_qt_resources*.py` module.
+    # If the resources are not cleared, it's 100% going to segfault which
     # is not desired. See: https://github.com/napari/napari/pull/2900
     global _clear_resources
 
@@ -401,3 +401,9 @@ def _unregister_napari_resources():
             mod = import_module(modname)
             qCleanupResources = getattr(mod, "qCleanupResources")
             qCleanupResources()  # try cleaning up resources
+
+
+def register_napari_theme():
+    """Register theme."""
+    _unregister_napari_resources()
+    _register_napari_resources(False, force_rebuild=True)

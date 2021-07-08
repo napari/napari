@@ -237,16 +237,8 @@ def register_plugin_resources(plugin: Optional[str] = None):
     # get data from each plugin (or single specified plugin)
     qss_files = get_qss_from_plugins(plugin)
     svg_paths = get_icons_from_plugins(plugin)
-    # qss_files, svg_paths, theme_colors = get_stylesheet_from_plugins(plugin)
 
     force_rebuild = False
-    # # register new themes
-    # if theme_colors:
-    #     from ..utils.theme import register_theme
-    #
-    #     for name, theme in theme_colors.items():
-    #         register_theme(name, theme)
-    #     force_rebuild = True
 
     # register icons
     if svg_paths:
