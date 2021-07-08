@@ -20,7 +20,7 @@ class ShortcutsSettings(EventedModel):
         default_shortcuts,
         title=trans._("shortcuts"),
         description=trans._(
-            "Sort plugins for each action in the order to be called.",
+            "Set keyboard shortcuts for actions.",
         ),
     )
 
@@ -34,4 +34,4 @@ class ShortcutsSettings(EventedModel):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'shortcuts']
+        preferences_exclude = ['schema_version']

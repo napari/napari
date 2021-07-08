@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from napari.layers import Shapes
+from napari.layers.shapes.shapes import Mode
 from napari.utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -690,3 +691,15 @@ def test_selecting_no_shapes_with_drag(mode, create_known_shapes_layer, Event):
 
     # Check no shapes selected as drag box doesn't contain them
     assert len(layer.selected_data) == 0
+
+
+@pytest.mark.parametrize(
+    'attr', ('_move_modes', '_drag_modes', '_cursor_modes')
+)
+def test_all_modes_covered(attr):
+    """
+    Test that all dictionaries modes have all the keys, this simplify the handling logic
+    As we do not need to test whether a key is in a dict or not.
+    """
+    mode_dict = getattr(Shapes, attr)
+    assert {k.value for k in mode_dict.keys()} == set(Mode.keys())
