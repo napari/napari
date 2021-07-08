@@ -137,13 +137,11 @@ def test_progress_update(make_napari_viewer):
     assert pbr._pbar.pbar.value() == 0
 
     pbr.update(1)
-    pbr.refresh()  # not sure why this has to be called manually here
 
     assert pbr.n == 1
     assert pbr._pbar.pbar.value() == 1
 
     pbr.update(2)
-    pbr.refresh()
 
     assert pbr.n == 3
     assert pbr._pbar.pbar.value() == 3

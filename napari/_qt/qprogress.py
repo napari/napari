@@ -58,23 +58,22 @@ class progress:
     ) -> None:
         kwargs = kwargs.copy()
 
-        self._iterable = iterable
+        self.iterable = iterable
         self.n = 0
 
         if iterable is not None:  # iterator takes priority over total
             try:
-                self._total = len(iterable) - 1
+                self.total = len(iterable)
             except TypeError:  # generator (total needed)
-                self._total = total if total is not None else 0
+                self.total = total if total is not None else 0
         else:
             if total is not None:
-                self._total = total
-                # TODO: figure out the half open range thing...
-                self._step = step if step else 1
-                self._iterable = range(0, total + 1, self._step)
+                self.total = total
+                self.step = step if step else 1
+                self.iterable = range(0, total, self.step)
             else:
-                self._total = 0
-                self._step = 0
+                self.total = 0
+                self.step = 0
 
         # get progress bar added to viewer
         try:
@@ -85,13 +84,15 @@ class progress:
             pbar = None
 
         self._pbar = pbar
+        if not self._pbar:
+            return
 
-        if self._total is not None:
-            self._pbar.setRange(self.n, self._total)
+        if self.total is not None:
+            self._pbar.setRange(self.n, self.total)
             self._pbar._set_value(self.n)
         else:
             self._pbar.setRange(0, 0)
-            self._total = 0
+            self.total = 0
 
         if desc:
             self.set_description(desc)
@@ -99,25 +100,25 @@ class progress:
             self.set_description(trans._("progress"))
 
     def __iter__(self):
-        iterable = self._iterable
+        iterable = self.iterable
         n = self.n
         try:
             for obj in iterable:
                 yield obj
 
                 n += 1
-                self.update(n)
+                self.update(1)
         finally:
             self.n = n
             self.close()
 
     def __len__(self):
-        if self._iterable is None:
-            return self._total
-        elif hasattr(self._iterable, 'shape'):
-            return self._iterable.shape[0]
-        elif hasattr(self._iterable, '__len__'):
-            return len(self._iterable)
+        if self.iterable is None:
+            return self.total
+        elif hasattr(self.iterable, 'shape'):
+            return self.iterable.shape[0]
+        elif hasattr(self.iterable, '__len__'):
+            return len(self.iterable)
         else:
             return None
 
@@ -129,26 +130,31 @@ class progress:
 
     def increment(self):
         """Increment progress bar using current step"""
-        self._pbar._set_value(
-            min(self._total, self._pbar._get_value() + self._step)
-        )
+        if self._pbar:
+            self._pbar._set_value(
+                min(self.total, self._pbar._get_value() + self.step)
+            )
 
     def decrement(self):
         """Decrement progress bar using current step"""
-        self._pbar._set_value(max(0, self._pbar._get_value() - self._step))
+        if self._pbar:
+            self._pbar._set_value(max(0, self._pbar._get_value() - self.step))
 
-    def update(self, val):
+    def update(self, n):
         """Update progress bar with new value
         Parameters
         ----------
-        val : int
-            new value for progress bar
+        n : int
+            increment to add to internal iteration counter
         """
-        if val > self._total:
-            # exceeded total, become indeterminate
-            self._pbar._set_total(0)
-        else:
-            self._pbar._set_value(val)
+        self.n += n
+        if self._pbar:
+            if self.n > self.total:
+                # exceeded total, become indeterminate
+                self._pbar._set_total(0)
+                self.n = 0
+            else:
+                self._pbar._set_value(self.n)
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
@@ -157,7 +163,7 @@ class progress:
             if self._pbar:
                 self._pbar.setRange(0, 0)
         else:
-            self.update(1)
+            self.update(self.step)
 
     def set_description(self, desc):
         """Update progress bar description"""
