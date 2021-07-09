@@ -393,6 +393,7 @@ class Window:
 
         self.qt_viewer.viewer.theme = settings.appearance.theme
         self._update_theme()
+        self._setup_existing_themes()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole, tabify=False)
         self._add_viewer_dock_widget(
@@ -421,7 +422,6 @@ class Window:
         viewer.events.title.connect(self._title_changed)
         viewer.events.theme.connect(self._update_theme)
 
-        _themes.events.changed.connect(self._theme_changed)
         _themes.events.added.connect(self._add_theme)
         _themes.events.removed.connect(self._remove_theme)
 
@@ -478,8 +478,19 @@ class Window:
 
         self._rebuild_theme()
 
+    def _setup_existing_themes(self):
+        """This function is only executed once at the startup of napari
+        to connect events to themes that have not been connected yet."""
+        for theme in _themes.values():
+            self._add_connect_theme(theme)
+
     def _add_theme(self, event):
         theme = event.value
+        self._add_connect_theme(theme)
+
+    def _add_connect_theme(self, theme):
+        # connect events to update theme. Here, we don't want to pass the event
+        # since it won't have the right `value` attribute.
         theme.events.background.connect(lambda _: self._update_theme())
         theme.events.foreground.connect(lambda _: self._update_theme())
         theme.events.primary.connect(lambda _: self._update_theme())
@@ -489,7 +500,7 @@ class Window:
         theme.events.warning.connect(lambda _: self._update_theme())
         theme.events.current.connect(lambda _: self._update_theme())
         theme.events.icon.connect(self._theme_changed)
-        self._rebuild_theme(event)
+        self._rebuild_theme()
 
     def _remove_theme(self, event):
         theme = event.value
@@ -512,6 +523,17 @@ class Window:
         """
         settings = get_settings()
         settings.appearance.refresh_themes()
+
+    def _theme_changed(self, event=None):
+        """Trigger rebuild of theme and all resources."""
+        from .._qt.qt_resources import (
+            _register_napari_resources,
+            _unregister_napari_resources,
+        )
+
+        _unregister_napari_resources()
+        _register_napari_resources(False, force_rebuild=True)
+        self._update_theme()
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -1476,19 +1498,6 @@ class Window:
         except RuntimeError:
             # wrapped C/C++ object may have been deleted
             pass
-
-    def _theme_changed(self, event=None):
-        """Trigger rebuild of theme and all resources."""
-        from napari._qt.qt_resources import (
-            _register_napari_resources,
-            _unregister_napari_resources,
-        )
-
-        print(event, "theme changed")
-        if event.key == "icon":
-            _unregister_napari_resources()
-            _register_napari_resources(False, force_rebuild=True)
-        self._update_theme()
 
     def _status_changed(self, event):
         """Update status bar.
