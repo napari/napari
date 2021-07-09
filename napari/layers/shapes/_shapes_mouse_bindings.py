@@ -7,6 +7,16 @@ from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
 
+def no_op(layer, even):
+    """
+    A convenient no-op event for the shape mouse binding.
+
+    This makes it easier to handle many cases by inserting this as
+    as place holder
+    """
+    return None
+
+
 def highlight(layer, event):
     """Highlight hovered shapes."""
     layer._set_highlight()
