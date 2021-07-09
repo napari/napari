@@ -50,6 +50,7 @@ class ProgressBar(QWidget):
 
     def _set_eta(self, eta):
         self.eta_label.setText(eta)
+        QApplication.processEvents()
 
     def _set_total(self, total):
         if total > 0:

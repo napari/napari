@@ -1,3 +1,4 @@
+from time import time
 from typing import Iterable, Optional
 
 from napari._qt.widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
@@ -56,7 +57,6 @@ class progress:
         *args,
         **kwargs,
     ) -> None:
-        kwargs = kwargs.copy()
 
         self.iterable = iterable
         self.n = 0
@@ -105,6 +105,9 @@ class progress:
         else:
             self.desc = "progress"
             self.set_description(trans._(self.desc))
+
+        self.last_update_t = time()
+        self.start_t = self.last_update_t
 
     def __iter__(self):
         iterable = self.iterable
@@ -162,6 +165,15 @@ class progress:
                 self.n = 0
             else:
                 self._pbar._set_value(self.n)
+            if self.total != 0:
+                cur_t = time()
+                dt_total = cur_t - self.start_t
+                avg_dt_iter = dt_total / self.n
+                eta = (avg_dt_iter * self.total) - dt_total
+                self._pbar._set_eta(
+                    f"{self.n}/{self.total} [{eta:.2f}<{dt_total:.2f}, {avg_dt_iter:.2f}s/it]"
+                )
+                self.last_update_t = cur_t
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
