@@ -1011,7 +1011,8 @@ class Points(Layer):
 
         properties = {}
         for k, v in self.properties.items():
-            # only use axis argument if strictly necessary
+            # pandas uses `object` as dtype for strings by default, which
+            # combined with the axis argument breaks np.unique
             axis = 0 if v.ndim > 1 else None
             properties[k] = np.unique(v[index], axis=axis)
 
