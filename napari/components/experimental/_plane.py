@@ -30,12 +30,11 @@ class Plane(EventedModel):
         return id(self)
 
 
-class Slice(EventedModel):
-    """Slice object modelling a plane with a defined thickness in 3D.
+class OrientedSlab(EventedModel):
+    """OrientedSlab object modelling a plane with a defined thickness in 3D.
 
     Attributes
     ----------
-
     plane : Plane
         A plane in 3D.
     thickness : float
