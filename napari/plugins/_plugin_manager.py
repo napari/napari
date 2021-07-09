@@ -21,7 +21,6 @@ from napari_plugin_engine import PluginManager as PluginManager
 from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
-from ..utils import _magicgui
 from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
@@ -83,8 +82,6 @@ class NapariPluginManager(PluginManager):
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
-
-        _magicgui.register_types_with_magicgui()
 
     def _initialize(self):
         with self.discovery_blocked():

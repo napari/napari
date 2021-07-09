@@ -285,11 +285,15 @@ QtColorBox {
 
 /* ----------------- QtLayerControls -------------------- */
 
-QtLayerControls > QLabel {
+QtLayerControls > QLabel, QtLayerControls > QLabeledSlider > QAbstractSpinBox {
   font-size: 11pt;
-  font-color: {{ text}};
+  color: {{ text }};
 }
 
+QLabeledRangeSlider > QAbstractSpinBox {
+  font-size: 12pt;
+  color: {{ secondary }};
+}
 /* ------------- DimsSliders --------- */
 
 QtDimSliderWidget > QScrollBar::handle[last_used=false]:horizontal {
@@ -404,6 +408,14 @@ QtAbout > QTextEdit{
   border: 0px;
   padding: 2px;
 }
+
+/* ------------ Shortcut Editor ------------ */
+
+ShortcutEditor QHeaderView::section {
+  padding: 2px;
+  border: None;
+}
+
 
 /* ------------ Plugin Sorter ------------ */
 

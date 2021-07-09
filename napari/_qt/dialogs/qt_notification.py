@@ -76,6 +76,7 @@ class NapariQtNotification(QDialog):
     FADE_OUT_RATE = 120
     DISMISS_AFTER = 4000
     MIN_WIDTH = 400
+    MIN_EXPANSION = 18
 
     message: MultilineElidedLabel
     source_label: QLabel
@@ -178,6 +179,9 @@ class NapariQtNotification(QDialog):
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(curr)
         new_height = self.sizeHint().height()
+        if new_height < curr.height():
+            # new height would shift notification down, ensure some expansion
+            new_height = curr.height() + self.MIN_EXPANSION
         delta = new_height - curr.height()
         self.geom_anim.setEndValue(
             QRect(curr.x(), curr.y() - delta, curr.width(), new_height)

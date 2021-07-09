@@ -56,4 +56,3 @@ if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
 
 from .qt_event_loop import get_app, gui_qt, quit_app, run
 from .qt_main_window import Window
-from .widgets.qt_range_slider import QHRangeSlider, QVRangeSlider

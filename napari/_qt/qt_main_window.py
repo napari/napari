@@ -637,21 +637,29 @@ class Window:
                 win.resize(self._qt_window._preferences_dialog_size)
 
             self._qt_window._preferences_dialog = win
-            win.valueChanged.connect(self._reset_plugin_state)
+            win.valueChanged.connect(self._reset_preference_states)
             win.closed.connect(self._on_preferences_closed)
             win.show()
         else:
             self._qt_window._preferences_dialog.raise_()
 
-    def _reset_plugin_state(self):
+    def _reset_preference_states(self):
         # resetting plugin states in plugin manager
         plugin_manager._blocked.clear()
 
         plugin_manager.discover()
 
+        settings = get_settings()
         # need to reset call order to defaults
+        if settings.plugins.call_order is not None:
+            plugin_manager.set_call_order(get_settings().plugins.call_order)
+        else:
+            plugin_manager.set_call_order(
+                settings._defaults['plugins'].call_order
+            )
 
-        plugin_manager.set_call_order(get_settings().plugins.call_order)
+        # reset the keybindings in action manager
+        self.qt_viewer._bind_shortcuts()
 
     def _on_preferences_closed(self):
         """Reset preferences dialog variable."""

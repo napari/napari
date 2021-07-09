@@ -3,6 +3,7 @@
 
 import pydantic
 import pytest
+from pydantic.fields import Field
 from yaml import safe_dump, safe_load
 
 import napari.utils.settings._manager as _manager
@@ -234,3 +235,18 @@ def test_get_settings_fails(monkeypatch, tmp_path):
     _manager.get_settings(tmp_path)
     with pytest.raises(Exception):
         _manager.get_settings(tmp_path)
+
+
+def test_default_factory(monkeypatch):
+    from napari.utils.settings._defaults import BaseNapariSettings
+
+    class MockSettings(BaseNapariSettings):
+        test_field: list = Field(default_factory=list)
+
+        class Config:
+            schema_extra = {"section": "test_section"}
+
+    monkeypatch.setattr(_manager, "CORE_SETTINGS", (MockSettings,))
+    mng = _manager.SettingsManager()
+    assert mng.test_section.test_field == []
+    assert mng._defaults['test_section'].test_field == []
