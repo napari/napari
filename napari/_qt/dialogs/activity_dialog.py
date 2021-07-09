@@ -175,6 +175,7 @@ class ActivityDialog(QDialog):
 
 def get_pbar(nest_under=None, **kwargs):
     """Adds ProgressBar to viewer ActivityDialog and returns it.
+
     If nest_under is valid ProgressBar, nests new bar underneath
     parent in a ProgressBarGroup
 
