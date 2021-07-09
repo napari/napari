@@ -226,6 +226,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     translate,
                     rotate=rotate,
                     shear=shear,
+                    ndim=ndim,
                     name='data2physical',
                 ),
                 coerce_affine(affine, ndim, name='physical2world'),

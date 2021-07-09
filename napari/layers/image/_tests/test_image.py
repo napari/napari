@@ -661,3 +661,12 @@ def test_rotate_with_reflections_in_scale(scale, angle_degrees):
 
     np.testing.assert_array_equal(image.scale, scale)
     np.testing.assert_array_equal(image.rotate, rotate)
+
+
+def test_2d_image_with_channels_and_2d_scale_translate_then_scale_translate_padded():
+    # See the GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2973
+    image = Image(np.ones((20, 20, 2)), scale=(1, 1), translate=(3, 4))
+
+    np.testing.assert_array_equal(image.scale, (1, 1, 1))
+    np.testing.assert_array_equal(image.translate, (0, 3, 4))
