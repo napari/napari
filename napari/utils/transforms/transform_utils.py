@@ -41,7 +41,9 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     return full_rotate @ full_shear @ full_scale
 
 
-def infer_ndim(scale=None, translate=None, rotate=None, shear=None):
+def infer_ndim(
+    *, scale=None, translate=None, rotate=None, shear=None, linear_matrix=None
+):
     """Infer the dimensionality of a transformation from its input components.
 
     This is most useful when the dimensions of the inputs do not match, either
