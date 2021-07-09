@@ -23,7 +23,7 @@ from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
 class ActivityToggleItem(QWidget):
     """Toggle button for Activity Dialog.
-    
+
     A progress indicator is displayed when there are active progress
     bars.
     """
@@ -160,7 +160,7 @@ class ActivityDialog(QDialog):
         self.move(QPoint(sz.width(), sz.height()))
 
     def maybe_hide_progress_indicator(self):
-        """Hide progress indicator only if no progress bars are visible."""
+        """Hide progress indicator when all progress bars have finished."""
         pbars = self._baseWidget.findChildren(ProgressBar)
         pbar_groups = self._baseWidget.findChildren(ProgressBarGroup)
 
