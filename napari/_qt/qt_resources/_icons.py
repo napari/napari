@@ -160,7 +160,7 @@ def generate_colorized_svgs(
 
             clrkey, theme_key = color
             theme_key = theme_override.get(svg_stem, theme_key)
-            color = get_theme(clrkey)[theme_key]
+            color = getattr(get_theme(clrkey, False), theme_key)
 
         op_key = "" if op == 1 else f"_{op * 100:.0f}"
         alias = ALIAS_T.format(color=clrkey, svg_stem=svg_stem, opacity=op_key)

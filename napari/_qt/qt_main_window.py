@@ -422,8 +422,8 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
 
         _themes.events.changed.connect(self._theme_changed)
-        _themes.events.added.connect(self._rebuild_theme)
-        _themes.events.removed.connect(self._rebuild_theme)
+        _themes.events.added.connect(self._add_theme)
+        _themes.events.removed.connect(self._remove_theme)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -477,6 +477,32 @@ class Window:
             unregister_theme(theme_name)
 
         self._rebuild_theme()
+
+    def _add_theme(self, event):
+        theme = event.value
+        theme.events.background.connect(lambda _: self._update_theme())
+        theme.events.foreground.connect(lambda _: self._update_theme())
+        theme.events.primary.connect(lambda _: self._update_theme())
+        theme.events.secondary.connect(lambda _: self._update_theme())
+        theme.events.highlight.connect(lambda _: self._update_theme())
+        theme.events.text.connect(lambda _: self._update_theme())
+        theme.events.warning.connect(lambda _: self._update_theme())
+        theme.events.current.connect(lambda _: self._update_theme())
+        theme.events.icon.connect(self._theme_changed)
+        self._rebuild_theme(event)
+
+    def _remove_theme(self, event):
+        theme = event.value
+        theme.events.background.disconnect(lambda _: self._update_theme())
+        theme.events.foreground.disconnect(lambda _: self._update_theme())
+        theme.events.primary.disconnect(lambda _: self._update_theme())
+        theme.events.secondary.disconnect(lambda _: self._update_theme())
+        theme.events.highlight.disconnect(lambda _: self._update_theme())
+        theme.events.text.disconnect(lambda _: self._update_theme())
+        theme.events.warning.disconnect(lambda _: self._update_theme())
+        theme.events.current.disconnect(lambda _: self._update_theme())
+        theme.events.icon.disconnect(self._theme_changed)
+        self._rebuild_theme(event)
 
     def _rebuild_theme(self, event=None):
         """Update theme information in settings.
@@ -1458,6 +1484,7 @@ class Window:
             _unregister_napari_resources,
         )
 
+        print(event, "theme changed")
         if event.key == "icon":
             _unregister_napari_resources()
             _register_napari_resources(False, force_rebuild=True)

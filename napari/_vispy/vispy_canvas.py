@@ -57,7 +57,9 @@ class VispyCanvas(SceneCanvas):
         # store last requested theme color, in case we need to reuse it
         # when clearing the background_color_override, without needing to
         # keep track of the viewer.
-        self._last_theme_color = get_theme(event.value)['canvas']
+        self._last_theme_color = get_theme(
+            event.value, False
+        ).canvas.as_rgb_tuple()
         self.bgcolor = self._last_theme_color
 
     @property

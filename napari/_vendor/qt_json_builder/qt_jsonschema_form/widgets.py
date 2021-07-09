@@ -126,7 +126,6 @@ class CheckboxSchemaWidget(SchemaWidgetMixin, QtWidgets.QCheckBox):
         self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
-        
 
     def setDescription(self, description: str):
         self.description = description
@@ -163,7 +162,7 @@ class PluginWidget(SchemaWidgetMixin, QtPluginSorter):
 
     def configure(self):
         self.hook_list.order_changed.connect(self.on_changed.emit)
-        
+
     def setDescription(self, description: str):
         self.description = description
 
@@ -555,7 +554,9 @@ class ArraySchemaWidget(SchemaWidgetMixin, QtWidgets.QWidget):
         self.on_changed.emit(self.state)
 
 
-class HighlightSizePreviewWidget(SchemaWidgetMixin, QtHighlightSizePreviewWidget):
+class HighlightSizePreviewWidget(
+    SchemaWidgetMixin, QtHighlightSizePreviewWidget
+):
     @state_property
     def state(self) -> int:
         return self.value()
@@ -635,7 +636,7 @@ class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
 
             sub_ui_schema = ui_schema.get(name, {})
             widget = widget_builder.create_widget(
-                sub_schema, sub_ui_schema, description = description
+                sub_schema, sub_ui_schema, description=description
             )  # TODO onchanged
             widget._name = name
             widget.on_changed.connect(partial(self.widget_on_changed, name))
@@ -677,7 +678,6 @@ class EnumSchemaWidget(SchemaWidgetMixin, QtWidgets.QComboBox):
 
     def setDescription(self, description: str):
         self.description = description
-
 
 
 class FormWidget(QtWidgets.QWidget):

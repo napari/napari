@@ -3,6 +3,9 @@
 import re
 import warnings
 from ast import literal_eval
+from typing import Union
+
+from pydantic.color import Color
 
 try:
     from qtpy import QT_VERSION
@@ -13,6 +16,7 @@ except Exception:
     use_gradients = False
 
 from ..utils.translations import trans
+from .events import EventedModel
 from .events.containers._evented_dict import EventedDict
 
 THEME_KEYS = [
@@ -31,44 +35,35 @@ THEME_KEYS = [
 ]
 
 
-def __getattr__(attr):
-    if attr == "palettes":
-        warnings.warn(
-            trans._(
-                "palette is deprecated and will be removed after version 0.4.6. "
-                "Please use get_theme and register_theme instead",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-        return _themes
-    raise AttributeError
+class Theme(EventedModel):
+    """Theme model."""
+
+    folder: str
+    syntax_style: str
+    canvas: Color
+    background: Color
+    foreground: Color
+    primary: Color
+    secondary: Color
+    highlight: Color
+    text: Color
+    icon: Color
+    warning: Color
+    current: Color
+    console: Color
+
+    def __getitem__(self, item):
+        return getattr(self, item)
 
 
 class ThemesDict(EventedDict):
     """Theme data."""
 
-    def __setitem__(self, name: str, value: EventedDict):
-        """Set theme data while also validating that all key's are present."""
-        if not all(key in value for key in THEME_KEYS):
-            raise ValueError(
-                trans._(
-                    'Invalid dict object for key {name!r} that does not have required keys: {keys!r}.'
-                    'Missing keys: {missing!r}',
-                    deferred=True,
-                    name=name,
-                    keys=", ".join(THEME_KEYS),
-                    missing=", ".join(set(THEME_KEYS) - set(value.keys())),
-                )
-            )
-        super().__setitem__(name, value)
-
 
 _themes = ThemesDict(
     {
-        'dark': EventedDict(
-            {
+        'dark': Theme(
+            **{
                 'folder': 'dark',
                 'background': 'rgb(38, 41, 48)',
                 'foreground': 'rgb(65, 72, 81)',
@@ -84,8 +79,8 @@ _themes = ThemesDict(
                 'canvas': 'black',
             }
         ),
-        'light': EventedDict(
-            {
+        'light': Theme(
+            **{
                 'folder': 'light',
                 'background': 'rgb(239, 235, 233)',
                 'foreground': 'rgb(214, 208, 206)',
@@ -102,7 +97,7 @@ _themes = ThemesDict(
             }
         ),
     },
-    basetype=EventedDict,
+    basetype=Theme,
 )
 
 
@@ -112,9 +107,11 @@ lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 opacity_pattern = re.compile(r'{{\s?opacity\((\w+),?\s?([-\d]+)?\)\s?}}')
 
 
-def darken(color: str, percentage=10):
-    if color.startswith('rgb('):
+def darken(color: Union[str, Color], percentage=10):
+    if isinstance(color, str) and color.startswith('rgb('):
         color = literal_eval(color.lstrip('rgb(').rstrip(')'))
+    else:
+        color = color.as_rgb_tuple()
     ratio = 1 - float(percentage) / 100
     red, green, blue = color
     red = min(max(int(red * ratio), 0), 255)
@@ -123,9 +120,11 @@ def darken(color: str, percentage=10):
     return f'rgb({red}, {green}, {blue})'
 
 
-def lighten(color: str, percentage=10):
-    if color.startswith('rgb('):
+def lighten(color: Union[str, Color], percentage=10):
+    if isinstance(color, str) and color.startswith('rgb('):
         color = literal_eval(color.lstrip('rgb(').rstrip(')'))
+    else:
+        color = color.as_rgb_tuple()
     ratio = float(percentage) / 100
     red, green, blue = color
     red = min(max(int(red + (255 - red) * ratio), 0), 255)
@@ -134,9 +133,11 @@ def lighten(color: str, percentage=10):
     return f'rgb({red}, {green}, {blue})'
 
 
-def opacity(color: str, value=255):
-    if color.startswith('rgb('):
+def opacity(color: Union[str, Color], value=255):
+    if isinstance(color, str) and color.startswith('rgb('):
         color = literal_eval(color.lstrip('rgb(').rstrip(')'))
+    else:
+        color = color.as_rgb_tuple()
     red, green, blue = color
     return f'rgba({red}, {green}, {blue}, {max(min(int(value), 255), 0)})'
 
@@ -156,7 +157,7 @@ def gradient(stops, horizontal=True):
     return grad
 
 
-def template(css, **theme):
+def template(css: str, **theme):
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
         return darken(theme[color], percentage)
@@ -179,17 +180,22 @@ def template(css, **theme):
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
         css = opacity_pattern.sub(opacity_match, css)
+        if isinstance(v, Color):
+            v = v.as_rgb()
         css = css.replace('{{ %s }}' % k, v)
     return css
 
 
-def get_theme(name):
+def get_theme(name, as_dict=True):
     """Get a theme based on its name
 
     Parameters
     ----------
     name : str
         Name of requested theme.
+    as_dict : bool
+        Flag to indicate that the old-style dictionary
+        should be returned. This will emit deprecation warning.
 
     Returns
     -------
@@ -198,9 +204,30 @@ def get_theme(name):
         so that manipulating this theme can be done without
         side effects.
     """
+    if as_dict:
+        warnings.warn(
+            trans._(
+                "themes were recently updated to use evented model with Pydantic's"
+                " color type rather than the `rgb(XX, YY, ZZ)` value. You can get the"
+                " old style color by calling `color.as_rgb()`. Please update your"
+                " codebase to reflect this change.",
+                deferred=True,
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
     if name in _themes:
         theme = _themes[name]
-        return theme.copy()
+        _theme = theme.copy()
+        if as_dict:
+            _theme = _theme.dict()
+            _theme = {
+                k: v if not isinstance(v, Color) else v.as_rgb()
+                for (k, v) in _theme.items()
+            }
+            return _theme
+        return _theme
     else:
         raise ValueError(
             trans._(
@@ -222,8 +249,8 @@ def register_theme(name, theme):
     theme : dict of str: str
         Theme mapping elements to colors.
     """
-    if not isinstance(theme, EventedDict):
-        theme = EventedDict(theme)
+    if not isinstance(theme, Theme):
+        theme = Theme(**theme)
     _themes[name] = theme
 
 

@@ -99,7 +99,11 @@ class WidgetBuilder:
         return form
 
     def create_widget(
-        self, schema: dict, ui_schema: dict, state=None, description: str = "",
+        self,
+        schema: dict,
+        ui_schema: dict,
+        state=None,
+        description: str = "",
     ) -> widgets.SchemaWidgetMixin:
         schema_type = get_schema_type(schema)
 

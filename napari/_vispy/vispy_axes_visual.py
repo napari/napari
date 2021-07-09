@@ -260,7 +260,9 @@ class VispyAxesVisual:
                 for ra in reversed_axes
             ]
         else:
-            background_color = get_theme(self._viewer.theme)['canvas']
+            background_color = get_theme(
+                self._viewer.theme, False
+            ).canvas.as_rgb_tuple()
             background_color = transform_color(background_color)[0]
             color = np.subtract(1, background_color)
             color[-1] = background_color[-1]
