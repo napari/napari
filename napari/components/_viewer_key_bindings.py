@@ -111,10 +111,13 @@ def transpose_axes(viewer):
 @register_viewer_action(trans._("Toggle grid mode."))
 def toggle_grid(viewer):
     if not viewer.grid.enabled:
+        # activate grid view
         viewer.grid.enabled = True
     elif viewer.grid.enabled and viewer.grid.stride == 1:
+        # switch from right-left to left-right grid order
         viewer.grid.stride = -1
     elif viewer.grid.enabled and viewer.grid.stride == -1:
+        # turn grid of and reset grid order
         viewer.grid.enabled = False
         viewer.grid.stride = 1
 
