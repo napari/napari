@@ -110,8 +110,13 @@ def transpose_axes(viewer):
 
 @register_viewer_action(trans._("Toggle grid mode."))
 def toggle_grid(viewer):
-    viewer.grid.enabled = not viewer.grid.enabled
-
+    if not viewer.grid.enabled:
+        viewer.grid.enabled = True
+    elif viewer.grid.enabled and viewer.grid.stride == 1:
+        viewer.grid.stride = -1
+    elif viewer.grid.enabled and viewer.grid.stride == -1:
+        viewer.grid.enabled = False
+        viewer.grid.stride = 1
 
 @register_viewer_action(trans._("Toggle visibility of selected layers"))
 def toggle_selected_visibility(viewer):
