@@ -16,7 +16,12 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ._image_constants import Interpolation, Interpolation3D, Rendering
+from ._image_constants import (
+    Interpolation,
+    Interpolation3D,
+    RaycastingMode,
+    Rendering,
+)
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -176,6 +181,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
+        mode='volume',
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -189,6 +195,9 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        plane_position=None,
+        plane_thickness=10,
+        plane_angles=[0, 0],
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -239,6 +248,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
+            mode=Event,
+            plane_thickness=Event,
+            plane_position=Event,
+            plane_angles=Event,
         )
 
         # Set data
@@ -264,10 +277,14 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
 
         self._new_empty_slice()
 
-        # Set contrast_limits and colormaps
+        # Set contrast limits, colormaps and plane parameters
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
+        self._mode = mode
+        self._plane_thickness = 1
+        self._plane_position = np.zeros(3)
+        self._plane_angles = np.zeros(2)
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -285,6 +302,11 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
+        self.mode = mode
+        self.plane_thickness = plane_thickness
+        self.plane_position = np.array(self.data.shape) / 2
+        print(f'plane position: {self.plane_position}')
+        self.plane_angles = plane_angles
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -482,6 +504,55 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
+
+    @property
+    def mode(self):
+        """Return current raycasting mode.
+
+        Selects a preset raycasting mode in vispy that determines how rays are
+        cast during volume rendering. Options include:
+
+        * ``volume``: rays are cast through the entire volume.
+        * ``plane``: rays are cast perpendicular to an arbitrary plane
+          in the volume.
+        """
+        return str(self._mode)
+
+    @mode.setter
+    def mode(self, value: str):
+        if self._mode != value:
+            self._mode = RaycastingMode(value)
+            self.events.mode()
+
+    @property
+    def plane_thickness(self):
+        return self._plane_thickness
+
+    @plane_thickness.setter
+    def plane_thickness(self, value):
+        if self._plane_thickness != value:
+            self._plane_thickness = value
+            self.events.plane_thickness()
+
+    @property
+    def plane_position(self):
+        return self._plane_position
+
+    @plane_position.setter
+    def plane_position(self, value):
+        if np.all(self._plane_position != value):
+            self._plane_position = value
+            self.events.plane_position()
+
+    @property
+    def plane_angles(self):
+        return self._plane_angles
+
+    @plane_angles.setter
+    def plane_angles(self, value):
+        if np.all(self._plane_angles != value):
+            self._plane_angles = value
+            self.events.plane_angles()
 
     @property
     def loaded(self):

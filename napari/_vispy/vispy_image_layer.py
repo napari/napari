@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 from vispy.color import Colormap as VispyColormap
 from vispy.scene.node import Node
 
@@ -49,6 +50,14 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
+        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.plane_position.connect(
+            self._on_plane_position_change
+        )
+        self.layer.events.plane_thickness.connect(
+            self._on_plane_thickness_change
+        )
+        self.layer.events.plane_angles.connect(self._on_plane_angles_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -142,6 +151,26 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_attenuation_change(self, event=None):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
+
+    def _on_mode_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.mode = self.layer.mode
+
+    def _on_plane_thickness_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_thickness = self.layer.plane_thickness
+
+    def _on_plane_position_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.plane_position = self.layer.plane_position
+
+    def _on_plane_angles_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            initial_normal = np.array([1, 0, 0])
+            rot = Rotation.from_euler(
+                'yz', self.layer.plane_angles, degrees=True
+            ).as_matrix()
+            self.node.plane_normal = rot @ initial_normal
 
     def reset(self, event=None):
         self._reset_base()
