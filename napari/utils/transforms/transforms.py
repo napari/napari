@@ -582,7 +582,6 @@ class CompositeAffine(Transform):
     def translate(self, translate):
         """Set the translation of the transform."""
         self._translate = translate_to_vector(translate, ndim=self.ndim)
-        self._linear_matrix = self._make_linear_matrix()
 
     @property
     def scale(self) -> np.array:
