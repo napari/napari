@@ -145,9 +145,10 @@ def test_progress_indicator(make_napari_viewer):
     viewer = make_napari_viewer(show=SHOW)
     activity_dialog = viewer.window.qt_viewer.window()._activity_dialog
 
-    with assert_pbar_added_to(viewer):
-        with progress(range(10)):
-            assert activity_button_shows_indicator(activity_dialog)
+    assert not qt_viewer_has_pbar(viewer)
+    with progress(range(10)):
+        assert qt_viewer_has_pbar(viewer)
+        assert activity_button_shows_indicator(activity_dialog)
 
 
 def test_progress_set_description(make_napari_viewer):
