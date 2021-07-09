@@ -639,6 +639,26 @@ class CompositeAffine(Affine):
         self._shear = shear_to_matrix(shear, ndim=self.ndim)
         self._linear_matrix = self._make_linear_matrix()
 
+    @Affine.linear_matrix.setter
+    def linear_matrix(self, linear_matrix):
+        """Setting the linear matrix of a CompositeAffine transform is not supported."""
+        raise NotImplementedError(
+            trans._(
+                'linear_matrix cannot be set directly for a CompositeAffine transform',
+                deferred=True,
+            )
+        )
+
+    @Affine.affine_matrix.setter
+    def affine_matrix(self, affine_matrix):
+        """Setting the affine matrix of a CompositeAffine transform is not supported."""
+        raise NotImplementedError(
+            trans._(
+                'affine_matrix cannot be set directly for a CompositeAffine transform',
+                deferred=True,
+            )
+        )
+
     def set_slice(self, axes: Sequence[int]) -> 'CompositeAffine':
         return CompositeAffine(
             scale=self._scale[axes],
