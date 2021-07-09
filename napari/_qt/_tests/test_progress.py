@@ -101,17 +101,9 @@ def test_closing_viewer_no_error(make_napari_viewer):
         viewer.close()
 
 
-def test_progress_no_viewer():
-    assert list(progress(range(10))) == list(range(10))
-
-    with progress(total=5) as pbr:
-        # TODO: debug segfaults
-        if sys.platform != 'linux':
-            pbr.set_description('Test')
-            assert pbr.desc == "Test: "
-
-        pbr.update(3)
-        assert pbr.n == 3
+def test_progress_no_viewer_raises_error():
+    with pytest.raises(TypeError):
+        progress(range(10))
 
 
 def test_progress_nested(make_napari_viewer):
@@ -158,23 +150,21 @@ def test_progress_indicator(make_napari_viewer):
             assert activity_button_shows_indicator(activity_dialog)
 
 
-@pytest.mark.skipif(
-    bool(sys.platform == 'linux'),
-    reason='need to debug sefaults with set_description',
-)
 def test_progress_set_description(make_napari_viewer):
     make_napari_viewer(show=SHOW)
 
     pbr = progress(total=5)
     pbr.set_description("Test")
 
-    assert pbr.desc == "Test: "
-    assert pbr._pbar.description_label.text() == "Test: "
+    assert pbr.desc == "Test"
+    assert pbr._pbar.description_label.text() == "Test"
 
     pbr.close()
 
 
-def test_progrange():
+def test_progrange(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     with progrange(10) as pbr:
         with progress(range(10)) as pbr2:
             assert pbr.iterable == pbr2.iterable

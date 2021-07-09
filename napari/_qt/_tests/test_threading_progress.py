@@ -1,3 +1,6 @@
+import os
+import sys
+
 import pytest
 
 from napari._qt import qthreading
@@ -6,8 +9,12 @@ pytest.importorskip(
     'qtpy', reason='Cannot test threading progress without qtpy.'
 )
 
+SHOW = bool(sys.platform == 'linux' or os.getenv("CI"))
 
-def test_worker_with_progress(qtbot):
+
+def test_worker_with_progress(qtbot, make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     test_val = [0]
 
     def func():
@@ -29,7 +36,9 @@ def test_worker_with_progress(qtbot):
         assert worker.pbar.n == test_val[0]
 
 
-def test_function_worker_nonzero_total_warns():
+def test_function_worker_nonzero_total_warns(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     def not_a_generator():
         return
 
@@ -42,7 +51,9 @@ def test_function_worker_nonzero_total_warns():
         thread_func()
 
 
-def test_worker_may_exceed_total(qtbot):
+def test_worker_may_exceed_total(qtbot, make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     test_val = [0]
 
     def func():
@@ -67,7 +78,9 @@ def test_worker_may_exceed_total(qtbot):
             assert worker.pbar.total == 0
 
 
-def test_generator_worker_with_description():
+def test_generator_worker_with_description(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     def func():
         yield 1
 
@@ -80,7 +93,9 @@ def test_generator_worker_with_description():
     assert worker.pbar.desc == 'custom'
 
 
-def test_function_worker_with_description():
+def test_function_worker_with_description(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     def func():
         for _ in range(10):
             pass
@@ -94,7 +109,9 @@ def test_function_worker_with_description():
     assert worker.pbar.desc == 'custom'
 
 
-def test_generator_worker_with_no_total():
+def test_generator_worker_with_no_total(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     def func():
         yield 1
 
@@ -107,7 +124,9 @@ def test_generator_worker_with_no_total():
     assert worker.pbar.total == 0
 
 
-def test_function_worker_with_no_total():
+def test_function_worker_with_no_total(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     def func():
         for _ in range(10):
             pass
@@ -121,7 +140,9 @@ def test_function_worker_with_no_total():
     assert worker.pbar.total == 0
 
 
-def test_function_worker_0_total():
+def test_function_worker_0_total(make_napari_viewer):
+    make_napari_viewer(show=SHOW)
+
     def func():
         for _ in range(10):
             pass

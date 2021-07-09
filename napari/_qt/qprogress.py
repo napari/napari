@@ -85,7 +85,12 @@ class progress:
 
         self._pbar = pbar
         if not self._pbar:
-            return
+            raise TypeError(
+                trans._(
+                    "Cannot use progress object without an active napari viewer.",
+                    deferred=True,
+                )
+            )
 
         if self.total is not None:
             self._pbar.setRange(self.n, self.total)
@@ -95,9 +100,11 @@ class progress:
             self.total = 0
 
         if desc:
+            self.desc = desc
             self.set_description(desc)
         else:
-            self.set_description(trans._("progress"))
+            self.desc = "progress"
+            self.set_description(trans._(self.desc))
 
     def __iter__(self):
         iterable = self.iterable
@@ -168,6 +175,7 @@ class progress:
     def set_description(self, desc):
         """Update progress bar description"""
         if self._pbar:
+            self.desc = desc
             self._pbar._set_description(desc)
 
     def close(self):
