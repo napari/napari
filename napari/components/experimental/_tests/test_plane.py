@@ -1,4 +1,4 @@
-from .._plane import OrientedSlab, Plane, PlaneList
+from .._plane import Plane, PlaneList, ThickPlane
 
 
 def test_plane_instantiation():
@@ -11,6 +11,6 @@ def test_planelist_instantiation(plane):
     assert isinstance(planes, PlaneList)
 
 
-def test_slice_instantiation(plane):
-    slice = OrientedSlab(plane=plane, thickness=10)
-    assert isinstance(slice, OrientedSlab)
+def test_thick_plane_instantiation(plane):
+    slice = ThickPlane(plane=plane, thickness=10)
+    assert isinstance(slice, ThickPlane)
