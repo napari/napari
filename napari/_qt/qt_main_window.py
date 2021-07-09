@@ -924,7 +924,7 @@ class Window:
         )
         self.help_menu.addAction(about_key_bindings)
 
-    def _toggle_activity_dock(self, _):
+    def _toggle_activity_dock(self, event):
         is_currently_visible = self._qt_window._activity_dialog.isVisible()
         if not is_currently_visible:
             self._qt_window._activity_dialog.show()
