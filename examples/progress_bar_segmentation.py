@@ -49,7 +49,7 @@ def try_thresholds():
         thresholded_nuclei.append(binarised_im)
 
         # uncomment if processing is too fast
-        sleep(0.5)
+        # sleep(0.5)
 
     # working with a wrapped iterable, the progress bar will be closed
     # as soon as the iteration is complete
@@ -94,7 +94,7 @@ def segment_binarised_ims():
             segmented_nuclei.append(labelled_im)
 
             # uncomment if processing is too fast
-            sleep(0.5)
+            # sleep(0.5)
 
     # progress bar is still automatically closed
 
@@ -134,7 +134,7 @@ def process_ims():
         pbar.update(1)
 
         # uncomment this line to see the 100% progress bar
-        sleep(0.5)
+        # sleep(0.5)
 
 button_layout = QVBoxLayout()
 process_btn = QPushButton("Full Process")
