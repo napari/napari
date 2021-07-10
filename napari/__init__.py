@@ -16,6 +16,8 @@ _proto_all_ = [
     'experimental',
     'layers',
     'qt',
+    'types',
+    'viewer',
     'utils',
 ]
 
