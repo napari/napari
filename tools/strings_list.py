@@ -475,13 +475,6 @@ SKIP_WORDS = {
         'small_text',
         '~',
     ],
-    'napari/_qt/widgets/qt_range_slider.py': [
-        'HRange',
-        'bar',
-        'max',
-        'min',
-        'none',
-    ],
     'napari/_qt/widgets/qt_range_slider_popup.py': [
         '8',
         'display_max',

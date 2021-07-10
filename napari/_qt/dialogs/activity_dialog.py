@@ -22,6 +22,12 @@ from ..widgets.qt_progress_bar import ProgressBar, ProgressBarGroup
 
 
 class ActivityToggleItem(QWidget):
+    """Toggle button for Activity Dialog.
+
+    A progress indicator is displayed when there are active progress
+    bars.
+    """
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent=parent)
         self.setLayout(QHBoxLayout())
@@ -30,6 +36,7 @@ class ActivityToggleItem(QWidget):
         self._activityBtn.setObjectName("QtActivityButton")
         self._activityBtn.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self._activityBtn.setArrowType(Qt.UpArrow)
+        self._activityBtn.setIconSize(QSize(11, 11))
         self._activityBtn.setText(trans._('activity'))
         self._activityBtn.setCheckable(True)
 
@@ -41,7 +48,6 @@ class ActivityToggleItem(QWidget):
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
         self._inProgressIndicator.setMovie(mov)
-        # mov.start()
         self._inProgressIndicator.hide()
 
         self.layout().addWidget(self._inProgressIndicator)
@@ -135,7 +141,7 @@ class ActivityDialog(QDialog):
             # create ProgressBarGroup for this pbar
             else:
                 new_group = ProgressBarGroup(nest_under._pbar)
-                new_group.closed.connect(self.maybe_hide_progress_indicator)
+                new_group.destroyed.connect(self.maybe_hide_progress_indicator)
                 nested_layout = new_group.layout()
                 self._activityLayout.addWidget(new_group)
             new_pbar_index = nested_layout.count() - 1
@@ -144,7 +150,7 @@ class ActivityDialog(QDialog):
         # show progress indicator and start gif
         self._toggleButton._inProgressIndicator.movie().start()
         self._toggleButton._inProgressIndicator.show()
-        pbar.closed.connect(self.maybe_hide_progress_indicator)
+        pbar.destroyed.connect(self.maybe_hide_progress_indicator)
 
     def move_to_bottom_right(self, offset=(8, 8)):
         """Position widget at the bottom right edge of the parent."""
@@ -154,7 +160,7 @@ class ActivityDialog(QDialog):
         self.move(QPoint(sz.width(), sz.height()))
 
     def maybe_hide_progress_indicator(self):
-        """Hide progress indicator only if no progress bars are visible."""
+        """Hide progress indicator when all progress bars have finished."""
         pbars = self._baseWidget.findChildren(ProgressBar)
         pbar_groups = self._baseWidget.findChildren(ProgressBarGroup)
 
@@ -168,7 +174,8 @@ class ActivityDialog(QDialog):
 
 
 def get_pbar(prog, nest_under=None, **kwargs):
-    """Adds ProgressBar to viewer Activity Dock and returns it.
+    """Adds ProgressBar to viewer ActivityDialog and returns it.
+
     If nest_under is valid ProgressBar, nests new bar underneath
     parent in a ProgressBarGroup
 
