@@ -181,7 +181,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         self._source = current_source()
         self.dask_optimized_slicing = configure_dask(data)
-        self.metadata = metadata or {}
+        self._metadata = dict(metadata or {})
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
@@ -299,6 +299,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def name(self):
         """str: Unique name of the layer."""
         return self._name
+
+    @property
+    def metadata(self) -> dict:
+        """Key/value map for user-stored data."""
+        return self._metadata
 
     @property
     def source(self):
