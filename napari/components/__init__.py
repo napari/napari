@@ -26,4 +26,4 @@ from .viewer_model import ViewerModel  # isort:skip
 
 del _viewer_key_bindings
 
-__all__ = ['ViewerModel', 'Camera', 'Dims', 'LayerList']
+__all__ = ['Camera', 'Dims', 'LayerList', 'ViewerModel']
