@@ -1,7 +1,6 @@
 # syntax_style for the console must be one of the supported styles from
 # pygments - see here for examples https://help.farbox.com/pygments.html
 import re
-import warnings
 from ast import literal_eval
 from typing import Union
 
@@ -201,17 +200,18 @@ def get_theme(name, as_dict=True):
         theme = _themes[name]
         _theme = theme.copy()
         if as_dict:
-            warnings.warn(
-                trans._(
-                    "themes were recently updated to use evented model with Pydantic's"
-                    " color type rather than the `rgb(XX, YY, ZZ)` value. You can get the"
-                    " old style color by calling `color.as_rgb()`. Please update your"
-                    " codebase to reflect this change",
-                    deferred=True,
-                ),
-                category=FutureWarning,
-                stacklevel=2,
-            )
+            # warnings.warn(
+            #     trans._(
+            #         "themes were recently updated to use evented model with"
+            #         " Pydantic's" color type rather than the `rgb(XX, YY, ZZ)`"
+            #         " value. You can get the old style color by calling
+            #         " `color.as_rgb()`. Please update your codebase to reflect"
+            #         " this change",
+            #         deferred=True,
+            #     ),
+            #     category=FutureWarning,
+            #     stacklevel=2,
+            # )
             _theme = _theme.dict()
             _theme = {
                 k: v if not isinstance(v, Color) else v.as_rgb()

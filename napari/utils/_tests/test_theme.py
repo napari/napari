@@ -1,5 +1,3 @@
-import pytest
-
 from napari.utils.theme import (
     Theme,
     available_themes,
@@ -16,15 +14,13 @@ def test_default_themes():
 
 
 def test_get_theme():
-    with pytest.warns(FutureWarning):
-        theme = get_theme('dark')
+    theme = get_theme('dark')
     assert isinstance(theme, dict)
     assert theme['folder'] == 'dark'
 
     # get theme in the old-style dict format
-    with pytest.warns(FutureWarning):
-        theme = get_theme("dark")
-        assert isinstance(theme, dict)
+    theme = get_theme("dark")
+    assert isinstance(theme, dict)
 
     # get theme in the new model-based format
     theme = get_theme("dark", False)
@@ -37,8 +33,7 @@ def test_register_theme():
     assert 'test_blue' not in themes
 
     # Create new blue theme based on dark theme
-    with pytest.warns(FutureWarning):
-        blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark')
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
@@ -54,14 +49,12 @@ def test_register_theme():
     assert 'test_blue' in themes
 
     # Check that the dark theme has not been overwritten
-    with pytest.warns(FutureWarning):
-        dark_theme = get_theme('dark')
-        assert not dark_theme['background'] == blue_theme['background']
+    dark_theme = get_theme('dark')
+    assert not dark_theme['background'] == blue_theme['background']
 
     # Check that blue theme can be gotten from available themes
-    with pytest.warns(FutureWarning):
-        theme = get_theme('test_blue')
-        assert theme['background'] == blue_theme['background']
+    theme = get_theme('test_blue')
+    assert theme['background'] == blue_theme['background']
 
     theme = get_theme("test_blue", False)
     assert theme.background.as_rgb() == blue_theme["background"]
@@ -69,8 +62,7 @@ def test_register_theme():
 
 def test_unregister_theme():
     # Create new blue theme based on dark theme
-    with pytest.warns(FutureWarning):
-        blue_theme = get_theme('dark')
+    blue_theme = get_theme('dark')
     blue_theme.update(
         background='rgb(28, 31, 48)',
         foreground='rgb(45, 52, 71)',
