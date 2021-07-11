@@ -1,7 +1,5 @@
 """VispyCanvas class.
 """
-import warnings
-
 from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas
 
@@ -60,14 +58,14 @@ class VispyCanvas(SceneCanvas):
     def _set_theme_change(self, theme: str):
         from ..utils.theme import get_theme
 
-        # store last requested theme color, in case we need to reuse it
+        # Note 1. store last requested theme color, in case we need to reuse it
         # when clearing the background_color_override, without needing to
         # keep track of the viewer.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", UserWarning)
-            self._last_theme_color = transform_color(
-                get_theme(theme, False).canvas.as_rgb_tuple()
-            )[0]
+        # Note 2. the reason for using the `as_hex` here is to avoid
+        # `UserWarning` which is emitted when RGB values are above 1
+        self._last_theme_color = transform_color(
+            get_theme(theme, False).canvas.as_hex()
+        )[0]
         self.bgcolor = self._last_theme_color
 
     @property
