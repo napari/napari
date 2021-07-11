@@ -32,6 +32,7 @@ from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
 from ..utils.translations import trans
+from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_notification import NapariQtNotification
@@ -83,6 +84,8 @@ class _QtMainWindow(QMainWindow):
         self._maximized_flag = False
         self._preferences_dialog = None
         self._preferences_dialog_size = QSize()
+
+        self._activity_dialog = ActivityDialog()
         self._status_bar = self.statusBar()
 
         settings = get_settings()
@@ -386,6 +389,21 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
+        self._activity_item = ActivityToggleItem()
+        self._activity_item._activityBtn.clicked.connect(
+            self._toggle_activity_dock
+        )
+        self._qt_window._activity_dialog._toggleButton = self._activity_item
+
+        canvas_widg = self.qt_viewer._canvas_overlay
+        self._qt_window._activity_dialog.setParent(canvas_widg)
+        self.qt_viewer._canvas_overlay.resized.connect(
+            self._qt_window._activity_dialog.move_to_bottom_right
+        )
+        self._qt_window._activity_dialog.move_to_bottom_right()
+        self._qt_window._activity_dialog.hide()
+        self._status_bar.addPermanentWidget(self._activity_item)
+
         self.qt_viewer.viewer.theme = settings.appearance.theme
         self._update_theme()
 
@@ -396,7 +414,6 @@ class Window:
         self._add_viewer_dock_widget(
             self.qt_viewer.dockLayerList, tabify=False
         )
-        self._add_viewer_dock_widget(self.qt_viewer.activityDock, tabify=False)
         self.window_menu.addSeparator()
 
         settings.appearance.events.theme.connect(self._update_theme)
@@ -789,6 +806,15 @@ class Window:
         )
         self.view_menu.addAction(self.tooltip_menu)
 
+        self.view_activity_menu = QAction(
+            trans._('Activity Dock'),
+            parent=self._qt_window,
+            checkable=True,
+            checked=self._qt_window._activity_dialog.isVisible(),
+        )
+        self.view_activity_menu.triggered.connect(self._toggle_activity_dock)
+        self.view_menu.addAction(self.view_activity_menu)
+
         self.view_menu.addSeparator()
 
     def _tooltip_visibility_toggle(self, value):
@@ -905,6 +931,18 @@ class Window:
             self.qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
+
+    def _toggle_activity_dock(self, event):
+        is_currently_visible = self._qt_window._activity_dialog.isVisible()
+        if not is_currently_visible:
+            self._qt_window._activity_dialog.show()
+            self._qt_window._activity_dialog.raise_()
+            self._activity_item._activityBtn.setArrowType(Qt.DownArrow)
+            self.view_activity_menu.setChecked(True)
+        else:
+            self._qt_window._activity_dialog.hide()
+            self._activity_item._activityBtn.setArrowType(Qt.UpArrow)
+            self.view_activity_menu.setChecked(False)
 
     def _toggle_scale_bar_visible(self, state):
         self.qt_viewer.viewer.scale_bar.visible = state

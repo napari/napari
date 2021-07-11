@@ -64,8 +64,8 @@ def test_calc_data_fast_uint8():
     data = da.random.randint(
         0,
         100,
-        size=(100_000, 1000, 1000),
-        chunks=(1, 1000, 1000),
+        size=(1_000, 10, 10),
+        chunks=(1, 10, 10),
         dtype=np.uint8,
     )
     assert calc_data_range(data) == [0, 255]
