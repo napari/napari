@@ -1,16 +1,8 @@
-from .._plane import Plane, PlaneList, ThickPlane
+from .._plane import Plane3D
 
 
-def test_plane_instantiation():
-    plane = Plane(position=(64, 64, 64), normal=(1, 1, 1))
-    assert isinstance(plane, Plane)
-
-
-def test_planelist_instantiation(plane):
-    planes = PlaneList([plane for _ in range(5)])
-    assert isinstance(planes, PlaneList)
-
-
-def test_thick_plane_instantiation(plane):
-    slice = ThickPlane(plane=plane, thickness=10)
-    assert isinstance(slice, ThickPlane)
+def test_Plane3D_instantiation(plane):
+    slice = Plane3D(
+        position=(32, 32, 32), normal_vector=(1, 0, 0), thickness=10
+    )
+    assert isinstance(slice, Plane3D)

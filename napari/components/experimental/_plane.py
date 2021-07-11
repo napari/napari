@@ -2,54 +2,27 @@ from typing import Tuple
 
 from pydantic import validator
 
-from napari.utils.events import EventedModel, SelectableEventedList
+from napari.utils.events import EventedModel
 from napari.utils.misc import ensure_n_tuple
 
 
-class Plane(EventedModel):
-    """Plane object modelling a plane in 3D.
-
-    A plane is defined by a position and a normal vector.
+class Plane3D(EventedModel):
+    """Object modelling a plane in 3D with a defined thickness.
 
     Attributes
     ----------
     position : 3-tuple
-        A position on the plane.
-    normal : 3-tuple
-        A normal vector which defines the orientation of the plane.
-    """
-
-    position: Tuple[float, float, float]
-    normal: Tuple[float, float, float]
-
-    @validator('position', 'normal', pre=True)
-    def _ensure_3_tuple(cls, v):
-        return ensure_n_tuple(v, n=3)
-
-    def __hash__(self):
-        return id(self)
-
-
-class ThickPlane(EventedModel):
-    """ThickPlane object modelling a plane with a defined thickness in 3D.
-
-    Attributes
-    ----------
-    plane : Plane
-        A plane in 3D.
+        A position in 3D, defined in data coordinates.
+    normal_vector : 3-tuple
+        A normal vector in 3D, defined in data coordinates.
     thickness : float
         A thickness for the slice
     """
 
-    plane: Plane
-    thickness: float
+    position: Tuple[float, float, float] = (0, 0, 0)
+    normal_vector: Tuple[float, float, float] = (1, 0, 0)
+    thickness: float = 10.0
 
-    def __hash__(self):
-        return id(self)
-
-
-class PlaneList(SelectableEventedList[Plane]):
-    """A selectable evented list of planes"""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs, basetype=Plane)
+    @validator('position', 'normal_vector', pre=True)
+    def _ensure_3_tuple(cls, v):
+        return ensure_n_tuple(v, n=3)

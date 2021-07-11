@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...components.experimental._plane import Plane3D
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
@@ -195,9 +196,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
-        plane_position=None,
         plane_thickness=10,
-        plane_angles=[0, 0],
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -282,6 +281,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
         self._mode = mode
+        self._plane = Plane3D()
         self._plane_thickness = 1
         self._plane_position = np.zeros(3)
         self._plane_angles = np.zeros(2)
@@ -303,10 +303,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.interpolation = interpolation
         self.rendering = rendering
         self.mode = mode
-        self.plane_thickness = plane_thickness
-        self.plane_position = np.array(self.data.shape) / 2
-        print(f'plane position: {self.plane_position}')
-        self.plane_angles = plane_angles
+        self.plane.position = np.array(self.data.shape) / 2
+        self.plane.normal_vector = (1, 0, 0)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -525,34 +523,8 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             self.events.mode()
 
     @property
-    def plane_thickness(self):
-        return self._plane_thickness
-
-    @plane_thickness.setter
-    def plane_thickness(self, value):
-        if self._plane_thickness != value:
-            self._plane_thickness = value
-            self.events.plane_thickness()
-
-    @property
-    def plane_position(self):
-        return self._plane_position
-
-    @plane_position.setter
-    def plane_position(self, value):
-        if np.all(self._plane_position != value):
-            self._plane_position = value
-            self.events.plane_position()
-
-    @property
-    def plane_angles(self):
-        return self._plane_angles
-
-    @plane_angles.setter
-    def plane_angles(self, value):
-        if np.all(self._plane_angles != value):
-            self._plane_angles = value
-            self.events.plane_angles()
+    def plane(self):
+        return self._plane
 
     @property
     def loaded(self):
