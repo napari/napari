@@ -202,7 +202,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Shading mode
         self._shading = shading
 
-    def _calc_data_range(self):
+    def _calc_data_range(self, mode='data'):
         return calc_data_range(self.vertex_values)
 
     @property
