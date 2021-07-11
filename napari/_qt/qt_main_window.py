@@ -445,7 +445,7 @@ class Window:
         plugin_manager.discover_themes()
         for theme_name, theme_data in plugin_manager.iter_themes():
             register_theme(theme_name, theme_data)
-        self._rebuild_theme()
+        self._rebuild_theme_settings()
 
     def _remove_plugins_theme(self, event=None):
         """Remove plugin."""
@@ -465,18 +465,21 @@ class Window:
             self.qt_viewer.viewer.theme = "dark"
             warnings.warn(
                 message=trans._(
-                    "The current theme {current_theme!r} was provided by the plugin {plugin_name!r} which was "
-                    "disabled or removed. Switched theme to the default",
+                    "The current theme {current_theme!r} was provided by the"
+                    " plugin {plugin_name!r} which was disabled or removed."
+                    " Switched theme to the default",
                     deferred=True,
                     plugin_name=plugin_name,
                     current_theme=current_theme,
                 )
             )
 
+        # unregister all themes that were provided by the plugins
         for theme_name in plugin_manager._theme_data[plugin_name].keys():
             unregister_theme(theme_name)
 
-        self._rebuild_theme()
+        self._rebuild_theme_settings()
+        self._update_theme()
 
     def _setup_existing_themes(self):
         """This function is only executed once at the startup of napari
@@ -500,7 +503,7 @@ class Window:
         theme.events.warning.connect(lambda _: self._update_theme())
         theme.events.current.connect(lambda _: self._update_theme())
         theme.events.icon.connect(self._theme_changed)
-        self._rebuild_theme()
+        self._rebuild_theme_settings()
 
     def _remove_theme(self, event):
         theme = event.value
@@ -513,9 +516,10 @@ class Window:
         theme.events.warning.disconnect(lambda _: self._update_theme())
         theme.events.current.disconnect(lambda _: self._update_theme())
         theme.events.icon.disconnect(self._theme_changed)
-        self._rebuild_theme(event)
+        self._rebuild_theme_settings(event)
 
-    def _rebuild_theme(self, event=None):
+    @staticmethod
+    def _rebuild_theme_settings(event=None):
         """Update theme information in settings.
 
         Here we simply update the settings to reflect current list of available
@@ -525,7 +529,12 @@ class Window:
         settings.appearance.refresh_themes()
 
     def _theme_changed(self, event=None):
-        """Trigger rebuild of theme and all resources."""
+        """Trigger rebuild of theme and all resources.
+
+        This is really only required whenever there are changes to the `icon`
+        attribute on the `Theme` model. Most other attributes simply update
+        recompile the stylesheet.
+        """
         from .._qt.qt_resources import (
             _register_napari_resources,
             _unregister_napari_resources,

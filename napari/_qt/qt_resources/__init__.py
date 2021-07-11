@@ -1,4 +1,3 @@
-from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
@@ -21,7 +20,6 @@ STYLE_PATH = (Path(__file__).parent / 'styles').resolve()
 STYLES = {x.stem: str(x) for x in STYLE_PATH.iterdir() if x.suffix == '.qss'}
 
 
-# @lru_cache(maxsize=12)
 def get_stylesheet(
     theme: str = None, extra: Optional[List[str]] = None
 ) -> str:

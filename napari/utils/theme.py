@@ -41,6 +41,7 @@ class Theme(EventedModel):
     folder: str
     syntax_style: str
     canvas: Color
+    console: Color
     background: Color
     foreground: Color
     primary: Color
@@ -50,17 +51,12 @@ class Theme(EventedModel):
     icon: Color
     warning: Color
     current: Color
-    console: Color
 
     def __getitem__(self, item):
         return getattr(self, item)
 
 
-class ThemesDict(EventedDict):
-    """Theme data."""
-
-
-_themes = ThemesDict(
+_themes = EventedDict(
     {
         'dark': Theme(
             **{

@@ -2,11 +2,20 @@
 from napari_plugin_engine import napari_hook_implementation
 
 
-def custom_theme():
-    """Get custom theme."""
-    # list of qss files
+def custom_qss():
+    """Get list qss stylesheets."""
     qss_files = ["04_theme.qss"]
-    svg_icons = ["new_icon_for_X.svg"]
+    return qss_files
+
+
+def custom_icons():
+    """Get list of svg icons."""
+    svg_icons = ["delete.svg"]
+    return svg_icons
+
+
+def custom_theme():
+    """Get dictionary of color schemes."""
     themes = {
         "super_dark": {
             "folder": "super_dark",
@@ -24,10 +33,22 @@ def custom_theme():
             "canvas": "black",
         }
     }
-    return qss_files, svg_icons, themes
+    return themes
+
+
+@napari_hook_implementation
+def napari_experimental_provide_qss():
+    """A basic implementation of the `napari_experimental_provide_qss` hook specification."""
+    return custom_qss
+
+
+@napari_hook_implementation
+def napari_experimental_provide_icons():
+    """A basic implementation of the `napari_experimental_provide_icons` hook specification."""
+    return custom_icons
 
 
 @napari_hook_implementation
 def napari_experimental_provide_theme():
-    """A basic implementation of the napari_get_reader hook specification."""
-    return custom_theme
+    """A basic implementation of the `napari_experimental_provide_theme` hook specification."""
+    return custom_theme()
