@@ -1,5 +1,7 @@
 """VispyCanvas class.
 """
+import warnings
+
 from qtpy.QtCore import QSize
 from vispy.scene import SceneCanvas
 
@@ -61,9 +63,11 @@ class VispyCanvas(SceneCanvas):
         # store last requested theme color, in case we need to reuse it
         # when clearing the background_color_override, without needing to
         # keep track of the viewer.
-        self._last_theme_color = transform_color(
-            get_theme(theme, False).canvas.as_rgb_tuple()
-        )[0]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            self._last_theme_color = transform_color(
+                get_theme(theme, False).canvas.as_rgb_tuple()
+            )[0]
         self.bgcolor = self._last_theme_color
 
     @property
