@@ -325,11 +325,16 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         """Raw image for the current slice. (compatibility)"""
         return self._slice.image.raw
 
-    def _calc_data_range(self):
-        if self.multiscale:
-            input_data = self.data[-1]
+    def _calc_data_range(self, mode='data'):
+        if mode == 'data':
+            input_data = self.data[-1] if self.multiscale else self.data
+        elif mode == 'slice':
+            data = self._slice.image.view  # ugh
+            input_data = data[-1] if self.multiscale else data
         else:
-            input_data = self.data
+            raise ValueError(
+                f"mode must be either 'data' or 'slice', got {mode!r}"
+            )
         return calc_data_range(input_data, rgb=self.rgb)
 
     @property
@@ -670,7 +675,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             # call our _set_view_slice(). Do we need a "refresh without
             # set_view_slice()" method that we can call?
 
-            self.events.set_data()  # update vispy
+            self.events.set_data(value=self._slice)  # update vispy
             self._update_thumbnail()
 
     def _update_thumbnail(self):

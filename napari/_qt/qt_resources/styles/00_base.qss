@@ -98,6 +98,11 @@ QWidget[emphasized="true"] QPushButton:pressed {
   background-color: {{ secondary }};
 }
 
+
+QWidget[emphasized="true"] QPushButton:checked, QPushButton:checked {
+  background-color: {{ current }};
+}
+
 /* ----------------- QComboBox ------------------ */
 
 QComboBox {
