@@ -224,6 +224,9 @@ class AutoScaleButtons(QWidget):
         once_btn.clicked.connect(lambda: auto_btn.setChecked(False))
         once_btn.clicked.connect(layer.reset_contrast_limits)
         auto_btn.toggled.connect(lambda e: setattr(layer, 'keep_autoscale', e))
+        auto_btn.clicked.connect(
+            lambda e: layer.reset_contrast_limits() if e else None
+        )
 
         self.layout().addWidget(once_btn)
         self.layout().addWidget(auto_btn)
@@ -232,6 +235,7 @@ class AutoScaleButtons(QWidget):
         tb = QButtonGroup(self)
         for a in ['slice', 'data']:
             btn = QPushButton(a)
+            btn.setCheckable(True)
             if a == 'slice':
                 btn.setChecked(True)
             btn.clicked.connect(
@@ -239,7 +243,6 @@ class AutoScaleButtons(QWidget):
             )
             btn.clicked.connect(lambda e: layer.reset_contrast_limits())
             btn.setFocusPolicy(Qt.NoFocus)
-            btn.setCheckable(True)
             tb.addButton(btn)
             self.layout().addWidget(btn)
 
