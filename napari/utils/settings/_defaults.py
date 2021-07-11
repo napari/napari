@@ -515,7 +515,12 @@ class PluginsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'disabled_plugins']
+        preferences_exclude = [
+            'schema_version',
+            'disabled_plugins',
+            'extension2reader',
+            'extension2writer',
+        ]
 
 
 class ExperimentalSettings(BaseNapariSettings):
@@ -554,11 +559,7 @@ class ExperimentalSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = [
-            'schema_version',
-            'extension2reader',
-            'extension2writer',
-        ]
+        preferences_exclude = ['schema_version']
 
 
 SettingsType = Tuple[
