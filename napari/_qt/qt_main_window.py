@@ -502,13 +502,13 @@ class Window:
         """This function is only executed once at the startup of napari
         to connect events to themes that have not been connected yet."""
         for theme in _themes.values():
-            self._add_connect_theme(theme)
+            self._connect_theme(theme)
 
     def _add_theme(self, event):
         theme = event.value
-        self._add_connect_theme(theme)
+        self._connect_theme(theme)
 
-    def _add_connect_theme(self, theme):
+    def _connect_theme(self, theme):
         # connect events to update theme. Here, we don't want to pass the event
         # since it won't have the right `value` attribute.
         theme.events.background.connect(lambda _: self._update_theme())
@@ -520,6 +520,9 @@ class Window:
         theme.events.warning.connect(lambda _: self._update_theme())
         theme.events.current.connect(lambda _: self._update_theme())
         theme.events.icon.connect(self._theme_changed)
+        theme.events.canvas.connect(self._theme_canvas_changed)
+        theme.events.console.connect(self._theme_console_changed)
+        theme.events.syntax_style.connect(self._theme_console_changed)
         self._rebuild_theme_settings()
 
     def _remove_theme(self, event):
@@ -533,6 +536,9 @@ class Window:
         theme.events.warning.disconnect(lambda _: self._update_theme())
         theme.events.current.disconnect(lambda _: self._update_theme())
         theme.events.icon.disconnect(self._theme_changed)
+        theme.events.canvas.disconnect(self._theme_canvas_changed)
+        theme.events.console.disconnect(self._theme_console_changed)
+        theme.events.syntax_style.disconnect(self._theme_console_changed)
         self._rebuild_theme_settings(event)
 
     @staticmethod
@@ -544,6 +550,16 @@ class Window:
         """
         settings = get_settings()
         settings.appearance.refresh_themes()
+
+    def _theme_console_changed(self, event=None):
+        """Update console background color or syntax format."""
+        if self.qt_viewer.console:
+            self.qt_viewer.console._update_theme()
+
+    def _theme_canvas_changed(self, event=None):
+        """Update canvas color."""
+        settings = get_settings()
+        self.qt_viewer.canvas._set_theme_change(settings.appearance.theme)
 
     def _theme_changed(self, event=None):
         """Trigger rebuild of theme and all resources.

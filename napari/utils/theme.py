@@ -52,9 +52,6 @@ class Theme(EventedModel):
     warning: Color
     current: Color
 
-    def __getitem__(self, item):
-        return getattr(self, item)
-
 
 _themes = EventedDict(
     {
@@ -200,23 +197,21 @@ def get_theme(name, as_dict=True):
         so that manipulating this theme can be done without
         side effects.
     """
-    if as_dict:
-        warnings.warn(
-            trans._(
-                "themes were recently updated to use evented model with Pydantic's"
-                " color type rather than the `rgb(XX, YY, ZZ)` value. You can get the"
-                " old style color by calling `color.as_rgb()`. Please update your"
-                " codebase to reflect this change.",
-                deferred=True,
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
     if name in _themes:
         theme = _themes[name]
         _theme = theme.copy()
         if as_dict:
+            warnings.warn(
+                trans._(
+                    "themes were recently updated to use evented model with Pydantic's"
+                    " color type rather than the `rgb(XX, YY, ZZ)` value. You can get the"
+                    " old style color by calling `color.as_rgb()`. Please update your"
+                    " codebase to reflect this change",
+                    deferred=True,
+                ),
+                category=FutureWarning,
+                stacklevel=2,
+            )
             _theme = _theme.dict()
             _theme = {
                 k: v if not isinstance(v, Color) else v.as_rgb()
