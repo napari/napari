@@ -77,6 +77,8 @@ SPECIAL_KEYS = [
 
 MODIFIER_KEYS = [keys.CONTROL, keys.ALT, keys.SHIFT, keys.META]
 
+KEY_SUBS = {'Ctrl': 'Control'}
+
 
 def parse_key_combo(key_combo):
     """Parse a key combination into its components in a comparable format.
@@ -143,7 +145,6 @@ def components_to_key_combo(key, modifiers):
             lambda key: key in modifiers and cond(key), MODIFIER_KEYS
         )
     )
-
     return '-'.join(modifiers + (key,))
 
 
@@ -181,6 +182,11 @@ def normalize_key_combo(key_combo):
         )
 
     for modifier in modifiers:
+        if modifier in KEY_SUBS.keys():
+            modifiers.remove(modifier)
+            modifier = KEY_SUBS[modifier]
+
+            modifiers.add(modifier)
         if modifier not in MODIFIER_KEYS:
             raise TypeError(
                 trans._(

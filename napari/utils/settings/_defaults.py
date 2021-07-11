@@ -453,11 +453,12 @@ class ShortcutsSettings(BaseNapariSettings):
     #    version, e.g. from 3.0.0 to 4.0.0
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
+
     shortcuts: Dict[str, List[str]] = Field(
         default_shortcuts,
         title=trans._("shortcuts"),
         description=trans._(
-            "Sort plugins for each action in the order to be called.",
+            "Set keyboard shortcuts for actions.",
         ),
     )
 
@@ -471,7 +472,7 @@ class ShortcutsSettings(BaseNapariSettings):
 
     class NapariConfig:
         # Napari specific configuration
-        preferences_exclude = ['schema_version', 'shortcuts']
+        preferences_exclude = ['schema_version']
 
 
 class PluginsSettings(BaseNapariSettings):

@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple
 
 from qtpy import QtCore, QtGui, QtWidgets
 from ...._qt.widgets.qt_highlight_preview import QtHighlightSizePreviewWidget
+from ...._qt.widgets.qt_keyboard_settings import ShortcutEditor
 
 from .signal import Signal
 from .utils import is_concrete_schema, iter_layout_widgets, state_property
@@ -574,6 +575,25 @@ class HighlightSizePreviewWidget(
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
+
+class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
+    @state_property
+    def state(self) -> dict:
+        return self.value()
+
+    def setDescription(self, description: str):
+        self.description = description
+
+    @state.setter
+    def state(self, state: dict):
+        # self.setValue(state)
+        return None
+
+    def configure(self):
+        self.valueChanged.connect(self.on_changed.emit)
+        self.opacity = QtWidgets.QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity)
+        self.opacity.setOpacity(1)
 
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(

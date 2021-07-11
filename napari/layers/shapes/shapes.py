@@ -43,6 +43,7 @@ from ._shapes_mouse_bindings import (
     add_path_polygon_creating,
     add_rectangle,
     highlight,
+    no_op,
     select,
     vertex_insert,
     vertex_remove,
@@ -56,6 +57,38 @@ from ._shapes_utils import (
 )
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
+
+
+_REV_SHAPE_HELP = {
+    trans._('hold <space> to pan/zoom'): {
+        Mode.VERTEX_INSERT,
+        Mode.VERTEX_REMOVE,
+        Mode.ADD_RECTANGLE,
+        Mode.ADD_ELLIPSE,
+        Mode.ADD_LINE,
+    },
+    trans._('hold <space> to pan/zoom, press <esc> to finish drawing'): {
+        Mode.ADD_PATH,
+        Mode.ADD_POLYGON,
+    },
+    trans._(
+        'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
+        BACKSPACE=BACKSPACE,
+    ): {Mode.SELECT, Mode.DIRECT},
+    trans._('enter a selection mode to edit shape properties'): {
+        Mode.PAN_ZOOM
+    },
+}
+
+
+# This avoid duplicating the trans._ help messages above
+# as some modes have the same help.
+# while most tooling will recognise identical messages,
+# this can lead to human error.
+_FWD_SHAPE_HELP = {}
+for t, modes in _REV_SHAPE_HELP.items():
+    for m in modes:
+        _FWD_SHAPE_HELP[m] = t
 
 
 class Shapes(Layer):
@@ -222,8 +255,6 @@ class Shapes(Layer):
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList
         Object containing the currently viewed shape data.
-    _mode_history : Mode
-        Interactive mode captured on press of <space>.
     _selected_data_history : set
         Set of currently selected captured on press of <space>.
     _selected_data_stored : set
@@ -301,6 +332,48 @@ class Shapes(Layer):
     # If more shapes are present then they are randomly subsampled
     # in the thumbnail
     _max_shapes_thumbnail = 100
+
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.SELECT: select,
+        Mode.DIRECT: select,
+        Mode.VERTEX_INSERT: vertex_insert,
+        Mode.VERTEX_REMOVE: vertex_remove,
+        Mode.ADD_RECTANGLE: add_rectangle,
+        Mode.ADD_ELLIPSE: add_ellipse,
+        Mode.ADD_LINE: add_line,
+        Mode.ADD_PATH: add_path_polygon,
+        Mode.ADD_POLYGON: add_path_polygon,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.SELECT: highlight,
+        Mode.DIRECT: highlight,
+        Mode.VERTEX_INSERT: highlight,
+        Mode.VERTEX_REMOVE: highlight,
+        Mode.ADD_RECTANGLE: no_op,
+        Mode.ADD_ELLIPSE: no_op,
+        Mode.ADD_LINE: no_op,
+        Mode.ADD_PATH: add_path_polygon_creating,
+        Mode.ADD_POLYGON: add_path_polygon_creating,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.SELECT: 'pointing',
+        Mode.DIRECT: 'pointing',
+        Mode.VERTEX_INSERT: 'cross',
+        Mode.VERTEX_REMOVE: 'cross',
+        Mode.ADD_RECTANGLE: 'cross',
+        Mode.ADD_ELLIPSE: 'cross',
+        Mode.ADD_LINE: 'cross',
+        Mode.ADD_PATH: 'cross',
+        Mode.ADD_POLYGON: 'cross',
+    }
+
+    _interactive_modes = {
+        Mode.PAN_ZOOM,
+    }
 
     def __init__(
         self,
@@ -437,10 +510,11 @@ class Shapes(Layer):
         self._is_creating = False
         self._clipboard = {}
 
-        self._mode = Mode.PAN_ZOOM
-        self._mode_history = self._mode
+        # change mode once to trigger the
+        # Mode setting logic
+        self._mode = Mode.SELECT
+        self.mode = Mode.PAN_ZOOM
         self._status = self.mode
-        self._help = trans._('enter a selection mode to edit shape properties')
 
         self._init_shapes(
             data,
@@ -1469,85 +1543,39 @@ class Shapes(Layer):
 
         if mode == self._mode:
             return
-        old_mode = self._mode
-
-        if old_mode in [Mode.SELECT, Mode.DIRECT]:
-            self.mouse_drag_callbacks.remove(select)
-            self.mouse_move_callbacks.remove(highlight)
-        elif old_mode == Mode.VERTEX_INSERT:
-            self.mouse_drag_callbacks.remove(vertex_insert)
-            self.mouse_move_callbacks.remove(highlight)
-        elif old_mode == Mode.VERTEX_REMOVE:
-            self.mouse_drag_callbacks.remove(vertex_remove)
-            self.mouse_move_callbacks.remove(highlight)
-        elif old_mode == Mode.ADD_RECTANGLE:
-            self.mouse_drag_callbacks.remove(add_rectangle)
-        elif old_mode == Mode.ADD_ELLIPSE:
-            self.mouse_drag_callbacks.remove(add_ellipse)
-        elif old_mode == Mode.ADD_LINE:
-            self.mouse_drag_callbacks.remove(add_line)
-        elif old_mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
-            self.mouse_drag_callbacks.remove(add_path_polygon)
-            self.mouse_move_callbacks.remove(add_path_polygon_creating)
-
-        if mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
-            self.interactive = True
-            self.help = trans._(
-                'enter a selection mode to edit shape properties'
-            )
-        elif mode in [Mode.SELECT, Mode.DIRECT]:
-            self.cursor = 'pointing'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, press <{BACKSPACE}> to remove selected',
-                BACKSPACE=BACKSPACE,
-            )
-            self.mouse_drag_callbacks.append(select)
-            self.mouse_move_callbacks.append(highlight)
-        elif mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._('hold <space> to pan/zoom')
-            if mode == Mode.VERTEX_INSERT:
-                self.mouse_drag_callbacks.append(vertex_insert)
-            else:
-                self.mouse_drag_callbacks.append(vertex_remove)
-            self.mouse_move_callbacks.append(highlight)
-        elif mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._('hold <space> to pan/zoom')
-            if mode == Mode.ADD_RECTANGLE:
-                self.mouse_drag_callbacks.append(add_rectangle)
-            elif mode == Mode.ADD_ELLIPSE:
-                self.mouse_drag_callbacks.append(add_ellipse)
-            elif mode == Mode.ADD_LINE:
-                self.mouse_drag_callbacks.append(add_line)
-        elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, press <esc> to finish drawing'
-            )
-            self.mouse_drag_callbacks.append(add_path_polygon)
-            self.mouse_move_callbacks.append(add_path_polygon_creating)
-        else:
+        if mode.value not in Mode.keys():
             raise ValueError(
                 trans._(
-                    "Mode not recognized",
-                    deferred=True,
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
                 )
             )
 
+        old_mode = self._mode
         self._mode = mode
 
-        draw_modes = [
+        for callback_list, mode_dict in [
+            (self.mouse_drag_callbacks, self._drag_modes),
+            (self.mouse_move_callbacks, self._move_modes),
+        ]:
+            if mode_dict[old_mode] in callback_list:
+                callback_list.remove(mode_dict[old_mode])
+            callback_list.append(mode_dict[mode])
+
+        self.cursor = self._cursor_modes[mode]
+
+        if mode == Mode.PAN_ZOOM:
+            self.interactive = True
+        else:
+            self.interactive = False
+
+        self.help = _FWD_SHAPE_HELP[mode]
+
+        draw_modes = {
             Mode.SELECT,
             Mode.DIRECT,
             Mode.VERTEX_INSERT,
             Mode.VERTEX_REMOVE,
-        ]
+        }
 
         self.events.mode(mode=mode)
 
