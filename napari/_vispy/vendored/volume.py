@@ -218,7 +218,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
-int detectAdjacentBackground(float val, float val_neg, float val_pos)
+int detectAdjacentBackground(float val_neg, float val_pos)
 {{
     // determine if the adjacent voxels along an axis are both background
     int adjacent_bg = int( floatEqual(val_neg, u_threshold, u_equality_threshold) ) * int( floatEqual(val_pos, u_threshold, u_equality_threshold) );
@@ -246,21 +246,21 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
     N[0] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val0, val1, val2);
+    n_bg_borders += detectAdjacentBackground(val1, val2);
 
     color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );
     color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
     N[1] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val0, val1, val2);
+    n_bg_borders += detectAdjacentBackground(val1, val2);
 
     color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );
     color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
     N[2] = val1 - val2;
-    n_bg_borders += detectAdjacentBackground(val0, val1, val2);
+    n_bg_borders += detectAdjacentBackground(val1, val2);
      
     // Normalize and flip normal so it points towards viewer
     N = normalize(N);
