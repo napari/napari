@@ -56,7 +56,7 @@ class QtImageControls(QtBaseImageControls):
         self.interpLabel = QLabel(trans._('interpolation:'))
 
         renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in Rendering.view_image_subset()]
+        rendering_options = [i.value for i in Rendering.image_layer_subset()]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
