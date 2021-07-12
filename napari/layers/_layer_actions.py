@@ -6,14 +6,16 @@ on a layer in the LayerList.
 from __future__ import annotations
 
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Dict, NewType, Union
+from typing import TYPE_CHECKING, Callable, Dict, Sequence
 
+import numpy as np
 from typing_extensions import TypedDict
 
 from napari.experimental import link_layers, unlink_layers
 from napari.layers.utils._link_layers import get_linked_layers
 
 from ..utils.translations import trans
+from .base.base import Layer
 from .utils import stack_utils
 
 if TYPE_CHECKING:
@@ -42,8 +44,20 @@ def _split_stack(ll: LayerList, axis: int = 0):
     ll.selection = set(images)  # type: ignore
 
 
+def _project(ll: LayerList, axis: int = 0, mode='max'):
+    layer = ll.selection.active
+    if not layer:
+        return
+
+    new = Layer.create(
+        getattr(np, mode)(layer.data, axis=axis),
+        {'name': f'{layer} {mode}-proj'},
+        layer._type_string,
+    )
+    ll.append(new)
+
+
 def _convert(ll: LayerList, type_: str):
-    from .base.base import Layer
 
     for lay in list(ll.selection):
         idx = ll.index(lay)
@@ -107,67 +121,95 @@ class ContextAction(TypedDict):
 # expressions.  See, e.g., 'link_selected_layers' and 'unlink_selected_layers'
 
 # To add a separator, add any key with a value of _SEPARATOR
-Separator = NewType('Separator', dict)
-_SEPARATOR = Separator({})
-ActionOrSeparator = Union[ContextAction, Separator]
 
-_LAYER_ACTIONS: Dict[str, ActionOrSeparator] = {
-    'napari:duplicate_layer': {
-        'description': trans._('Duplicate Layer'),
-        'action': _duplicate_layer,
-        'enable_when': 'True',
+ActionDict = Dict[str, ContextAction]
+
+
+def _projdict(key):
+    return {
+        'description': key,
+        'action': partial(_project, mode=key),
+        'enable_when': 'ndim > 2',
         'show_when': 'True',
+    }
+
+
+_LAYER_ACTIONS: Sequence[ActionDict] = [
+    {
+        'napari:duplicate_layer': {
+            'description': trans._('Duplicate Layer'),
+            'action': _duplicate_layer,
+            'enable_when': 'True',
+            'show_when': 'True',
+        },
+        'napari:convert_to_labels': {
+            'description': trans._('Convert to Labels'),
+            'action': partial(_convert, type_='labels'),
+            'enable_when': 'only_images_selected',
+            'show_when': 'True',
+        },
+        'napari:convert_to_image': {
+            'description': trans._('Convert to Image'),
+            'action': partial(_convert, type_='image'),
+            'enable_when': 'only_labels_selected',
+            'show_when': 'True',
+        },
     },
-    'napari:convert_to_labels': {
-        'description': trans._('Convert to Labels'),
-        'action': partial(_convert, type_='labels'),
-        'enable_when': 'only_images_selected',
-        'show_when': 'True',
+    {
+        'napari:group:projections': {
+            'description': trans._('Make Projection'),
+            'enable_when': 'image_active and ndim > 2',
+            'show_when': 'True',
+            'action_group': {
+                'napari:max_projection': _projdict('max'),
+                'napari:min_projection': _projdict('min'),
+                'napari:std_projection': _projdict('std'),
+                'napari:sum_projection': _projdict('sum'),
+                'napari:mean_projection': _projdict('mean'),
+                'napari:median_projection': _projdict('median'),
+            },
+        }
     },
-    'napari:convert_to_image': {
-        'description': trans._('Convert to Image'),
-        'action': partial(_convert, type_='image'),
-        'enable_when': 'only_labels_selected',
-        'show_when': 'True',
+    {
+        'napari:split_stack': {
+            'description': trans._('Split Stack'),
+            'action': _split_stack,
+            'enable_when': 'image_active and active_layer_shape[0] < 10',
+            'show_when': 'not active_is_rgb',
+        },
+        'napari:split_rgb': {
+            'description': trans._('Split RGB'),
+            'action': _split_stack,
+            'enable_when': 'active_is_rgb',
+            'show_when': 'active_is_rgb',
+        },
+        'napari:merge_stack': {
+            'description': trans._('Merge to Stack'),
+            'action': _merge_stack,
+            'enable_when': (
+                'selection_count > 1 and only_images_selected and same_shape'
+            ),
+            'show_when': 'True',
+        },
     },
-    'sep0': _SEPARATOR,
-    'napari:split_stack': {
-        'description': trans._('Split Stack'),
-        'action': _split_stack,
-        'enable_when': 'image_active and active_layer_shape[0] < 10',
-        'show_when': 'not active_is_rgb',
+    {
+        'napari:link_selected_layers': {
+            'description': trans._('Link Layers'),
+            'action': lambda ll: link_layers(ll.selection),
+            'enable_when': 'selection_count > 1 and not all_layers_linked',
+            'show_when': 'not all_layers_linked',
+        },
+        'napari:unlink_selected_layers': {
+            'description': trans._('Unlink Layers'),
+            'action': lambda ll: unlink_layers(ll.selection),
+            'enable_when': 'all_layers_linked',
+            'show_when': 'all_layers_linked',
+        },
+        'napari:select_linked_layers': {
+            'description': trans._('Select Linked Layers'),
+            'action': _select_linked_layers,
+            'enable_when': 'linked_layers_unselected',
+            'show_when': 'True',
+        },
     },
-    'napari:split_rgb': {
-        'description': trans._('Split RGB'),
-        'action': _split_stack,
-        'enable_when': 'active_is_rgb',
-        'show_when': 'active_is_rgb',
-    },
-    'napari:merge_stack': {
-        'description': trans._('Merge to Stack'),
-        'action': _merge_stack,
-        'enable_when': (
-            'selection_count > 1 and only_images_selected and same_shape'
-        ),
-        'show_when': 'True',
-    },
-    'sep1': _SEPARATOR,
-    'napari:link_selected_layers': {
-        'description': trans._('Link Layers'),
-        'action': lambda ll: link_layers(ll.selection),
-        'enable_when': 'selection_count > 1 and not all_layers_linked',
-        'show_when': 'not all_layers_linked',
-    },
-    'napari:unlink_selected_layers': {
-        'description': trans._('Unlink Layers'),
-        'action': lambda ll: unlink_layers(ll.selection),
-        'enable_when': 'all_layers_linked',
-        'show_when': 'all_layers_linked',
-    },
-    'napari:select_linked_layers': {
-        'description': trans._('Select Linked Layers'),
-        'action': _select_linked_layers,
-        'enable_when': 'linked_layers_unselected',
-        'show_when': 'True',
-    },
-}
+]
