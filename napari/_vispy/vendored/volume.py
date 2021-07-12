@@ -201,6 +201,13 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     return final_color;
 }}
 
+int detectAdjacentBackground(float val, float val_neg, float val_pos)
+{{
+    // determine if the adjacent voxels along an axis are both background
+    int adjacent_bg = int(val_neg < val) * int(val_pos < val);
+    return adjacent_bg;
+}}
+
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {{   
     // Calculate color by incorporating lighting
@@ -210,7 +217,7 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     float val0 = colorToVal(color0);
     float val1 = 0;
     float val2 = 0;
-    int n_dark_axes = 0;
+    int n_bg_borders = 0;
     
     // View direction
     vec3 V = normalize(view_ray);
@@ -219,48 +226,27 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
     vec3 N; // normal
     color1 = $sample( u_volumetex, loc+vec3(-step[0],0.0,0.0) );
     color2 = $sample( u_volumetex, loc+vec3(step[0],0.0,0.0) );
-
-    N[0] = colorToVal(color1) - colorToVal(color2);
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
-    if (val1 < val0) {{
-        if (val2 < val0) {{
-            n_dark_axes = n_dark_axes + int(1);
-        }}
-        
-    }}
+    N[0] = val1 - val2;
+    n_bg_borders += detectAdjacentBackground(val0, val1, val2);
 
     color1 = $sample( u_volumetex, loc+vec3(0.0,-step[1],0.0) );
     color2 = $sample( u_volumetex, loc+vec3(0.0,step[1],0.0) );
-    N[1] = colorToVal(color1) - colorToVal(color2);
-    
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
-    if (val1 < val0) {{
-        if (val2 < val0) {{
-            n_dark_axes = n_dark_axes + int(1);
-        }}
-        
-    }}
+    N[1] = val1 - val2;
+    n_bg_borders += detectAdjacentBackground(val0, val1, val2);
 
     color1 = $sample( u_volumetex, loc+vec3(0.0,0.0,-step[2]) );
     color2 = $sample( u_volumetex, loc+vec3(0.0,0.0,step[2]) );
-    N[2] = colorToVal(color1) - colorToVal(color2);
-    
     val1 = colorToVal(color1);
     val2 = colorToVal(color2);
-    if (val1 < val0) {{
-        if (val2 < val0) {{
-            n_dark_axes = n_dark_axes + int(1);
-        }}
-        
-    }}
-
-    //betterColor = max(max(color1, color2),betterColor);
-    float gm = length(N); // gradient magnitude
+    N[2] = val1 - val2;
+    n_bg_borders += detectAdjacentBackground(val0, val1, val2);
+     
+    // Normalize and flip normal so it points towards viewer
     N = normalize(N);
-    
-    // Flip normal so it points towards viewer
     float Nselect = float(dot(N,V) > 0.0);
     N = (2.0*Nselect - 1.0) * N;  // ==  Nselect * N - (1.0-Nselect)*N;
     
@@ -280,7 +266,9 @@ vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
         
         // Calculate lighting properties
         float lambertTerm = clamp( dot(N,L), 0.0, 1.0 );
-        if (n_dark_axes > 0) {{
+        if (n_bg_borders > 0) {{
+            // to fix dim pixels due to poor normal estimation,
+            // we give a default lambda to pixels surrounded by background
             lambertTerm = 0.5;
         }}
         
@@ -479,7 +467,7 @@ ISO_SNIPPETS = dict(
 ISO_CATEGORICAL_SNIPPETS = dict(
     before_loop="""
         vec4 color3 = vec4(0.0);  // final color
-        vec3 dstep = 1.5 / u_shape;  // step to sample derivative
+        vec3 dstep = 1.5 / u_shape;  // step to sample derivative, set to match iso shader
         gl_FragColor = vec4(0.0);
     """,
     in_loop="""
@@ -490,6 +478,8 @@ ISO_CATEGORICAL_SNIPPETS = dict(
             for (int i=0; i<10; i++) {
                 color = $sample(u_volumetex, iloc);
                 if (color.g > 0) {
+                    // when the non-background value is reached
+                    // calculate the color (apply lighting effects)
                     color = applyColormap(color.g);
                     color = calculateCategoricalColor(color, iloc, dstep);
                     gl_FragColor = color;
