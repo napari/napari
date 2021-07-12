@@ -75,21 +75,20 @@ class progress(tqdm):
 
         # get progress bar added to viewer
         try:
-            from .widgets.qt_progress_bar import get_pbar  # noqa
+            from .dialogs.activity_dialog import get_pbar
 
-            pbar = get_pbar(nest_under=nest_under, **pbar_kwargs)
+            pbar = get_pbar(self, nest_under=nest_under, **pbar_kwargs)
         except ImportError:
             pbar = None
 
-        self.has_viewer = pbar is not None
-        if self.has_viewer:
+        if pbar is not None:
             kwargs['gui'] = True
 
+        self._pbar = pbar
         super().__init__(iterable, desc, total, *args, **kwargs)
-        if not self.has_viewer:
+        if not self._pbar:
             return
 
-        self._pbar = pbar
         if self.total is not None:
             self._pbar.setRange(self.n, self.total)
             self._pbar._set_value(self.n)
@@ -104,19 +103,22 @@ class progress(tqdm):
 
     def display(self, msg: str = None, pos: int = None) -> None:
         """Update the display."""
-        if not self.has_viewer:
+        if not self._pbar:
             return super().display(msg=msg, pos=pos)
 
         if self.total != 0:
             etas = str(self).split('|')[-1]
-            self._pbar._set_value(self.n)
-            self._pbar._set_eta(etas)
+            try:
+                self._pbar._set_value(self.n)
+                self._pbar._set_eta(etas)
+            except AttributeError:
+                pass
 
     def increment_with_overflow(self):
         """Update if not exceeding total, else set indeterminate range."""
         if self.n == self.total:
             self.total = 0
-            if self.has_viewer:
+            if self._pbar:
                 self._pbar.setRange(0, 0)
         else:
             self.update(1)
@@ -124,14 +126,19 @@ class progress(tqdm):
     def set_description(self, desc):
         """Update progress bar description"""
         super().set_description(desc, refresh=True)
-        if self.has_viewer:
+        if self._pbar:
             self._pbar._set_description(self.desc)
 
     def close(self):
         """Closes and deletes the progress bar widget"""
         if self.disable:
             return
-        if self.has_viewer:
+        if self._pbar:
+            self.close_pbar()
+        super().close()
+
+    def close_pbar(self):
+        if not self.disable and self._pbar:
             parent_widget = self._pbar.parent()
             self._pbar.close()
             self._pbar.deleteLater()
@@ -143,7 +150,7 @@ class progress(tqdm):
                 ]
                 if not any(child.isVisible() for child in pbar_children):
                     parent_widget.close()
-        super().close()
+            self._pbar = None
 
 
 def progrange(*args, **kwargs):
