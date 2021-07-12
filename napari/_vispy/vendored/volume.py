@@ -129,18 +129,18 @@ vec4 applyColormap(float data) {{
     return $cmap(pow(data, gamma));
 }}
 
-bool floatNotEqual(float val1, float val2, float equality_threshold)
+bool floatNotEqual(float val1, float val2, float equality_tolerance)
 {{
     // check if val1 and val2 are not equal
-    bool not_equal = abs(val1 - val2) > equality_threshold;
+    bool not_equal = abs(val1 - val2) > equality_tolerance;
 
     return not_equal;
 }}
 
-bool floatEqual(float val1, float val2, float equality_threshold)
+bool floatEqual(float val1, float val2, float equality_tolerance)
 {{
     // check if val1 and val2 are equal
-    bool equal = abs(val1 - val2) < equality_threshold;
+    bool equal = abs(val1 - val2) < equality_tolerance;
 
     return equal;
 }}
