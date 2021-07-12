@@ -1,4 +1,5 @@
 from enum import auto
+from typing import Tuple
 
 from ...utils.misc import StringEnum
 
@@ -81,3 +82,19 @@ class Rendering(StringEnum):
     MINIP = auto()
     ATTENUATED_MIP = auto()
     AVERAGE = auto()
+
+    @classmethod
+    def view_image_subset(cls) -> Tuple['Rendering']:
+        return (
+            cls.TRANSLUCENT,
+            cls.ADDITIVE,
+            cls.ISO,
+            cls.MIP,
+            cls.MINIP,
+            cls.ATTENUATED_MIP,
+            cls.AVERAGE,
+        )
+
+    @classmethod
+    def view_labels_subset(cls) -> Tuple['Rendering']:
+        return (cls.TRANSLUCENT, cls.ISO_CATEGORICAL)
