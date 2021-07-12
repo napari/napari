@@ -282,9 +282,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._attenuation = attenuation
         self._mode = mode
         self._plane = Plane3D()
-        self._plane_thickness = 1
-        self._plane_position = np.zeros(3)
-        self._plane_angles = np.zeros(2)
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
