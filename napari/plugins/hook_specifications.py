@@ -36,7 +36,7 @@ For more general background on the plugin hook calling mechanism, see the
 from __future__ import annotations
 
 from types import FunctionType
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from napari_plugin_engine import napari_hook_specification
 
@@ -499,20 +499,23 @@ def napari_experimental_provide_dock_widget() -> Union[
 
 
 @napari_hook_specification(historic=True)
-def napari_provide_theme() -> Dict[str, Dict[str, str]]:
+def napari_provide_theme() -> Dict[str, Dict[str, Union[str, Tuple, List]]]:
     """Provide GUI with a set of colors used through napari. This hook allows you to
     provide additional color schemes so you can accomplish your desired styling.
 
     Themes are provided as `dict` with several required fields and correctly formatted
-    color values. Colors must be specified using RGB color in 0-255 range using e.g.
-    ``rgb(255,0,127)``
+    color values. Colors can be specified using color names (e.g. ``white``), rgb
+    color in 0-255 range (e.g. ``rgb(255, 0, 127)`` or as 3- or 4-element tuples
+    or lists (e.g. ``(255, 0, 127)``. The `Theme` model will automatically handle
+    the conversion.
+    See :class:`~napari.utils.theme.Theme` for more detail of what are the required keys.
 
     This hook specification is marked as experimental as the API or how the returned
     value is handled may change here more frequently than the rest of the codebase.
 
     Returns
     -------
-    color_dict : Dict[str, Dict[str, str]
+    color_dict : Dict[str, Dict[str, Union[str, Tuple, List]]
         A dictionary containing new color scheme to be used by napari. You can replace
         existing themes by using the same names.
 

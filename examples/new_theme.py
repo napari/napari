@@ -16,11 +16,13 @@ print('Originally themes', available_themes())
 
 blue_theme = get_theme('dark', False)
 blue_theme.folder = "blue"
-blue_theme.icon = 'rgb(0, 255, 255)'
-blue_theme.background = 'rgb(28, 31, 48)'
-blue_theme.foreground = 'rgb(45, 52, 71)'
-blue_theme.primary = 'rgb(80, 88, 108)'
-blue_theme.current = 'rgb(184, 112, 0)'
+blue_theme.icon = (
+    'rgb(0, 255, 255)'  # you can provide colors as rgb(XXX, YYY, ZZZ)
+)
+blue_theme.background = 28, 31, 48  # or as tuples
+blue_theme.foreground = [45, 52, 71]  # or as list
+blue_theme.primary = '#50586c'  # or as hexes
+blue_theme.current = 'orange'  # or as color name
 
 register_theme('blue', blue_theme)
 register_napari_theme()
