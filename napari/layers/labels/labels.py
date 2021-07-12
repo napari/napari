@@ -216,6 +216,7 @@ class Labels(_ImageBase):
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering=rendering,
+            iso_threshold=0,
             name=name,
             metadata=metadata,
             scale=scale,

@@ -87,6 +87,7 @@ uniform float gamma;
 uniform float u_threshold;
 uniform float u_attenuation; // todo add to vispy from napari
 uniform float u_relative_step_size;
+uniform float u_equality_threshold = 0.0001;
 
 //varyings
 // varying vec3 v_texcoord;
@@ -126,6 +127,22 @@ vec4 applyColormap(float data) {{
 
     data = (data - clim.x) / (clim.y - clim.x);
     return $cmap(pow(data, gamma));
+}}
+
+bool floatNotEqual(float val1, float val2, float equality_threshold)
+{{
+    // check if val1 and val2 are not equal
+    bool not_equal = abs(val1 - val2) > equality_threshold;
+
+    return not_equal;
+}}
+
+bool floatEqual(float val1, float val2, float equality_threshold)
+{{
+    // check if val1 and val2 are equal
+    bool equal = abs(val1 - val2) < equality_threshold;
+
+    return equal;
 }}
 
 
@@ -204,7 +221,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 int detectAdjacentBackground(float val, float val_neg, float val_pos)
 {{
     // determine if the adjacent voxels along an axis are both background
-    int adjacent_bg = int(val_neg < val) * int(val_pos < val);
+    int adjacent_bg = int( floatEqual(val_neg, u_threshold, u_equality_threshold) ) * int( floatEqual(val_pos, u_threshold, u_equality_threshold) );
     return adjacent_bg;
 }}
 
@@ -472,12 +489,12 @@ ISO_CATEGORICAL_SNIPPETS = dict(
     """,
     in_loop="""
         // background is assumed to be 0
-        if (val > 0) {
+        if ( floatNotEqual(val, u_threshold, u_equality_threshold) ) {
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $sample(u_volumetex, iloc);
-                if (color.g > 0) {
+                if (floatNotEqual(color.g, u_threshold, u_equality_threshold) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
                     color = applyColormap(color.g);
