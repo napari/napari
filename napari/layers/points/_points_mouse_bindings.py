@@ -44,12 +44,15 @@ def select(layer, event):
 
     yield
 
+    is_moving = False
     # on move
     while event.type == 'mouse_move':
         coordinates = layer.world_to_data(event.position)
         # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
-            layer._move(layer.selected_data, coordinates)
+            is_moving = True
+            with layer.events.data.blocker():
+                layer._move(layer.selected_data, coordinates)
         else:
             coord = [coordinates[i] for i in layer._dims_displayed]
             layer._is_selecting = True
@@ -60,12 +63,12 @@ def select(layer, event):
         yield
 
     # only emit data once dragging has finished
-    if layer._is_moving:
-        layer.events.data(value=layer.data)
+    if is_moving:
+        layer._move([], coordinates)
+        is_moving = False
 
     # on release
     layer._drag_start = None
-    layer._is_moving = False
     if layer._is_selecting:
         layer._is_selecting = False
         if len(layer._view_data) > 0:
