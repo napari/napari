@@ -210,7 +210,7 @@ int detectAdjacentBackground(float val, float val_neg, float val_pos)
 
 vec4 calculateCategoricalColor(vec4 betterColor, vec3 loc, vec3 step)
 {{   
-    // Calculate color by incorporating lighting
+    // Calculate color by incorporating ambient and diffuse lighting
     vec4 color0 = $sample(u_volumetex, loc);
     vec4 color1;
     vec4 color2;
