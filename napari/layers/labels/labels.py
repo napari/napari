@@ -251,6 +251,10 @@ class Labels(_ImageBase):
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
+        self._default_color = {
+            None: transform_color('black')[0],
+            self._background_label: transform_color('transparent')[0],
+        }
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -423,16 +427,14 @@ class Labels(_ImageBase):
         else:
             color_mode = LabelColorMode.DIRECT
 
-        if self._background_label not in color:
-            color[self._background_label] = 'transparent'
-
-        if None not in color:
-            color[None] = 'black'
-
         colors = {
             label: transform_color(color_str)[0]
             for label, color_str in color.items()
         }
+
+        for label, color_rgba in self._default_color:
+            if label not in colors:
+                colors[label] = color_rgba
 
         self._color = colors
         self.color_mode = color_mode
@@ -444,13 +446,8 @@ class Labels(_ImageBase):
         if len(color) != 2:
             return False
 
-        default_color = {
-            None: transform_color('black')[0],
-            self._background_label: transform_color('transparent')[0],
-        }
-
         for key, value in color.items():
-            default_value = default_color.get(key)
+            default_value = self._default_color.get(key)
             if not np.array_equal(value, default_value):
                 return False
 
