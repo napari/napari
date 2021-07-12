@@ -498,57 +498,8 @@ def napari_experimental_provide_dock_widget() -> Union[
     """
 
 
-@napari_hook_specification(firstresult=True)
-def napari_experimental_provide_qss() -> List[str]:
-    """Provide GUI stylesheets that will supplement or overwrite existing
-    napari stylesheets.
-
-    This hook specification is marked as experimental as the API or how the returned
-    value is handled may change here more frequently than the rest of the codebase.
-
-    Returns
-    -------
-    qss_files : List[str]
-        A list of Qt stylesheets with the file extension .qss. Napari provides
-        several default stylesheets with names `00_base.qss`, `01_buttons.qss` etc
-        which are first sorted (hence the number at the front) and then progressively
-        read and appended to single stylesheet. You can provide your own stylesheets
-        that override the napari defaults by creating a new stylesheet with progressively
-        larger name.
-
-    Examples
-    --------
-    """
-
-
-@napari_hook_specification(firstresult=True)
-def napari_experimental_provide_icons() -> List[str]:
-    """Provide GUI svg icons that will supplement or overwrite existing napari icons.
-
-    Icons are built into a Qt resource file that is imported when napari is run. Typically,
-    icons are used in the qss stylesheets with the `{{ folder }}` variable used to expand
-    the current theme name:
-
-        QWidget {
-            image: url(":/themes/{{ folder }}/icon_name.svg");
-        }
-
-    This hook specification is marked as experimental as the API or how the returned
-    value is handled may change here more frequently than the rest of the codebase.
-
-    Returns
-    -------
-    svg_paths : List[str]
-        A list of svg files to be colorized and used in napari. These can be new icons that
-        are required by your own plugin or icons to replace the currently available icons.
-
-    Examples
-    --------
-    """
-
-
 @napari_hook_specification(historic=True)
-def napari_experimental_provide_theme() -> Dict[str, Dict[str, str]]:
+def napari_provide_theme() -> Dict[str, Dict[str, str]]:
     """Provide GUI with a set of colors used through napari. This hook allows you to
     provide additional color schemes so you can accomplish your desired styling.
 

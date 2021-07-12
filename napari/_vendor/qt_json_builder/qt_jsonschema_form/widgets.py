@@ -595,6 +595,7 @@ class ShortcutsWidget(SchemaWidgetMixin, ShortcutEditor):
         self.setGraphicsEffect(self.opacity)
         self.opacity.setOpacity(1)
 
+
 class ObjectSchemaWidget(SchemaWidgetMixin, QtWidgets.QGroupBox):
     def __init__(
         self,

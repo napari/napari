@@ -2,18 +2,6 @@
 from napari_plugin_engine import napari_hook_implementation
 
 
-def custom_qss():
-    """Get list qss stylesheets."""
-    qss_files = ["04_theme.qss"]
-    return qss_files
-
-
-def custom_icons():
-    """Get list of svg icons."""
-    svg_icons = ["delete.svg"]
-    return svg_icons
-
-
 def custom_theme():
     """Get dictionary of color schemes."""
     themes = {
@@ -37,18 +25,6 @@ def custom_theme():
 
 
 @napari_hook_implementation
-def napari_experimental_provide_qss():
-    """A basic implementation of the `napari_experimental_provide_qss` hook specification."""
-    return custom_qss
-
-
-@napari_hook_implementation
-def napari_experimental_provide_icons():
-    """A basic implementation of the `napari_experimental_provide_icons` hook specification."""
-    return custom_icons
-
-
-@napari_hook_implementation
-def napari_experimental_provide_theme():
+def napari_provide_theme():
     """A basic implementation of the `napari_experimental_provide_theme` hook specification."""
     return custom_theme()
