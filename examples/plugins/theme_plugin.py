@@ -26,5 +26,5 @@ def custom_theme():
 
 @napari_hook_implementation
 def napari_provide_theme():
-    """A basic implementation of the `napari_experimental_provide_theme` hook specification."""
+    """A basic implementation of the `napari_provide_theme` hook specification."""
     return custom_theme()

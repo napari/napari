@@ -566,7 +566,7 @@ class Window:
 
         This is really only required whenever there are changes to the `icon`
         attribute on the `Theme` model. Most other attributes simply update
-        recompile the stylesheet.
+        the stylesheet.
         """
         from .._qt.qt_resources import (
             _register_napari_resources,

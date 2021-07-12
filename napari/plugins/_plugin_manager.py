@@ -296,12 +296,12 @@ class NapariPluginManager(PluginManager):
     def register_theme_colors(
         self, data: Dict[str, Dict[str, str]], hookimpl: HookImplementation
     ):
-        """Register theme data dict returned by `napari_experimental_provide_theme`.
+        """Register theme data dict returned by `napari_provide_theme`.
 
         Each key in `data` is a `theme_name` and the value is dictionary of values.
         """
         plugin_name = hookimpl.plugin_name
-        hook_name = '`napari_experimental_provide_theme`'
+        hook_name = '`napari_provide_theme`'
         if not isinstance(data, dict):
             warn_message = trans._(
                 'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
@@ -356,7 +356,7 @@ class NapariPluginManager(PluginManager):
         """
         if self._theme_data:
             return
-        self.hook.napari_experimental_provide_theme.call_historic(
+        self.hook.napari_provide_theme.call_historic(
             result_callback=partial(self.register_theme_colors), with_impl=True
         )
 
