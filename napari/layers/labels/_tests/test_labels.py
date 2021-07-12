@@ -13,6 +13,7 @@ from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
+from napari.layers.image._image_constants import Rendering
 from napari.utils import Colormap
 from napari.utils.colormaps import low_discrepancy_image
 
@@ -978,3 +979,12 @@ def test_paint_3d_negative_scale(scale):
     np.testing.assert_array_equal(
         np.sum(labels_layer.data, axis=(1, 2, 3)), [0, 95, 0]
     )
+
+
+def test_rendering_init():
+    shape = (6, 10, 15)
+    np.random.seed(0)
+    data = np.random.randint(20, size=shape)
+    layer = Labels(data, rendering='iso_categorical')
+
+    assert layer.rendering == Rendering.ISO_CATEGORICAL.value

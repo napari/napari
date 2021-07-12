@@ -180,6 +180,7 @@ class Labels(_ImageBase):
         affine=None,
         opacity=0.7,
         blending='translucent',
+        rendering='translucent',
         visible=True,
         multiscale=None,
     ):
@@ -210,7 +211,7 @@ class Labels(_ImageBase):
             colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
-            rendering='translucent',
+            rendering=rendering,
             name=name,
             metadata=metadata,
             scale=scale,
