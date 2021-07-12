@@ -432,7 +432,7 @@ class Labels(_ImageBase):
             for label, color_str in color.items()
         }
 
-        for label, color_rgba in self._default_color:
+        for label, color_rgba in self._default_color.items():
             if label not in colors:
                 colors[label] = color_rgba
 
