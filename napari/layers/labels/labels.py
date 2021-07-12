@@ -250,11 +250,11 @@ class Labels(_ImageBase):
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
-        self.color = color
         self._default_color = {
             None: transform_color('black')[0],
             self._background_label: transform_color('transparent')[0],
         }
+        self.color = color
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
