@@ -67,7 +67,7 @@ class Rendering(StringEnum):
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
             * iso_categorical: isosurface for categorical data (e.g., labels).
-              Cast a ray until a certain threshold is encountered. At that
+              Cast a ray until a value greater than zero is encountered. At that
               location, lighning calculations are performed to give the visual
               appearance of a surface.
             * average: average intensity projection. Cast a ray and display the
