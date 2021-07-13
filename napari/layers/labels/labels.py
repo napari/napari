@@ -19,7 +19,7 @@ from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import validate_properties
+from ..utils.layer_utils import clamp_point_to_bbox, validate_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -892,6 +892,26 @@ class Labels(_ImageBase):
             val = self._raw_to_displayed(np.array([label]))
             col = self.colormap.map(val)[0]
         return col
+
+    def _get_value_ray(self, start_point, end_point):
+        """get the first non-background value encountered along a ray"""
+        sample_ray = end_point - start_point
+        length_sample_vector = np.linalg.norm(sample_ray)
+        increment_vector = sample_ray / (2 * length_sample_vector)
+        n_iterations = int(2 * length_sample_vector)
+
+        for i in range(n_iterations):
+            sample_point = np.asarray(start_point + i * increment_vector)
+            sample_point = clamp_point_to_bbox(
+                sample_point, self._display_bounding_box
+            ).astype(int)
+            value = self.data[
+                sample_point[0], sample_point[1], sample_point[2]
+            ]
+            if value != 0:
+                return value
+
+        return None
 
     def _reset_history(self, event=None):
         self._undo_history = deque()

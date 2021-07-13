@@ -20,10 +20,15 @@ from ...utils.transforms import Affine, TransformChain
 from ...utils.transforms.transform_utils import expand_upper_triangular
 from ...utils.translations import trans
 from .._source import current_source
+from ..utils._layer_constants import FACE_NORMALS
 from ..utils.layer_utils import (
+    bounding_box_to_face_vertices,
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
+    face_intercepts_from_bbox,
+    inside_triangles,
+    vector_axis_aligned_plane_intersection,
 )
 from ._base_constants import Blending
 
@@ -1024,6 +1029,97 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ).T @ np.linalg.inv(scale_matrix)
 
         return tuple(vector @ world_to_layer)
+
+    @property
+    def _display_bounding_box(self):
+        """An axis aligned (self._ndisplay, 2) bounding box around the data"""
+        return self._extent_data[:, self._dims_displayed].T
+
+    def _data_face_intersection(
+        self, vertices: np.ndarray, world_to_canvas, click_pos_canv
+    ):
+
+        # convert the vertex coordinates to world coordinates
+        vertices_world = self._data_to_world(vertices)
+
+        # convert vertex world to canvas coordinates
+        vertices_canv = world_to_canvas.map(
+            np.asarray(vertices_world)[:, [2, 1, 0]]
+        )
+        vertices_canv = vertices_canv[:, :2] / vertices_canv[:, 3:]
+        triangle_vertices_canv = np.stack(
+            (vertices_canv[[0, 1, 2]], vertices_canv[[0, 2, 3]])
+        )
+        in_triangles = inside_triangles(
+            triangle_vertices_canv - click_pos_canv
+        )
+        if in_triangles.sum() > 0:
+            return True
+        else:
+            return False
+
+    def _cursor_ray(self, event, world_to_canvas):
+        """Get the start and end point for the ray extending from the cursor through the data"""
+
+        # create the bounding box in data coordinates
+        bbox = self._display_bounding_box
+
+        # get the view direction
+        view_dir = np.asarray(self.vector_world_to_data(event.view_direction))
+
+        # iterate through the bounding box faces and determine if the front or back face goes through
+        front_face = None
+        back_face = None
+        click_pos_canv = event.pos
+        bbox_face_coords = bounding_box_to_face_vertices(bbox)
+        for k, v in FACE_NORMALS.items():
+            if (np.dot(view_dir, v) + 0.001) < 0:
+                if self._data_face_intersection(
+                    bbox_face_coords[k], world_to_canvas, click_pos_canv
+                ):
+                    front_face = k
+            elif (np.dot(view_dir, v) + 0.001) > 0:
+                if self._data_face_intersection(
+                    bbox_face_coords[k], world_to_canvas, click_pos_canv
+                ):
+                    back_face = k
+            if front_face is not None and back_face is not None:
+                # stop looping if both the front and back faces have been found
+                break
+
+        if front_face is not None and back_face is not None:
+            # get the location of the click in data coordinates
+            mapped_click = self.world_to_data(event.position)
+            face_intercepts = face_intercepts_from_bbox(bbox)
+
+            # find the intersection of the view ray with the front face of the data cube
+            front_face_normal = FACE_NORMALS[front_face]
+            front_face_intercept = face_intercepts[front_face]
+            start_point = np.squeeze(
+                vector_axis_aligned_plane_intersection(
+                    front_face_intercept,
+                    front_face_normal,
+                    mapped_click,
+                    -view_dir,
+                )
+            )
+
+            # find the intersection of the view ray with the back face of the data cube
+            back_face_normal = FACE_NORMALS[back_face]
+            back_face_intercept = face_intercepts[back_face]
+            end_point = np.squeeze(
+                vector_axis_aligned_plane_intersection(
+                    back_face_intercept,
+                    back_face_normal,
+                    mapped_click,
+                    view_dir,
+                )
+            )
+        else:
+            start_point = np.empty((0, self._ndisplay))
+            end_point = np.empty((0, self._ndisplay))
+
+        return start_point, end_point
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.

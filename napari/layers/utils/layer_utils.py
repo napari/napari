@@ -499,3 +499,131 @@ def coerce_affine(affine, ndim, name=None):
     if name is not None:
         affine.name = name
     return affine
+
+
+FACE_INTERCEPTS = {
+    "x_pos": [2, 1],
+    "x_neg": [2, 0],
+    "y_pos": [1, 1],
+    "y_neg": [1, 0],
+    "z_pos": [0, 1],
+    "z_neg": [0, 0],
+}
+
+
+def clamp_point_to_bbox(point: np.ndarray, bbox: np.ndarray):
+    clamped_point = np.clip(point, bbox[:, 0], bbox[:, 1] - 1)
+
+    return clamped_point
+
+
+def face_intercepts_from_bbox(bbox: np.ndarray):
+
+    face_intercepts = {k: bbox[v[0], v[1]] for k, v in FACE_INTERCEPTS.items()}
+
+    return face_intercepts
+
+
+def vector_axis_aligned_plane_intersection(
+    face_intercept: float,
+    face_normal: np.ndarray,
+    point: np.ndarray,
+    dir: np.ndarray,
+) -> np.ndarray:
+    # find the axis the plane exists in
+    plane_axis = np.squeeze(np.argwhere(face_normal))
+
+    # get the intersection coordinate
+    t = (face_intercept - point[plane_axis]) / dir[plane_axis]
+    intersection_point = point + t * dir
+
+    return intersection_point
+
+
+def bounding_box_to_face_vertices(bounding_box: np.ndarray) -> dict:
+    """
+    From a layer bounding box (N, 2), N=ndim, return a dictionary containing
+    the vertices of each face of the bounding_box
+    """
+    x_min, x_max = bounding_box[-1, :]
+    y_min, y_max = bounding_box[-2, :]
+    z_min, z_max = bounding_box[-3, :]
+
+    face_coords = {
+        "x_pos": np.array(
+            [
+                [z_min, y_min, x_max],
+                [z_min, y_max, x_max],
+                [z_max, y_max, x_max],
+                [z_max, y_min, x_max],
+            ]
+        ),
+        "x_neg": np.array(
+            [
+                [z_min, y_min, x_min],
+                [z_min, y_max, x_min],
+                [z_max, y_max, x_min],
+                [z_max, y_min, x_min],
+            ]
+        ),
+        "y_pos": np.array(
+            [
+                [z_min, y_max, x_min],
+                [z_min, y_max, x_max],
+                [z_max, y_max, x_max],
+                [z_max, y_max, x_min],
+            ]
+        ),
+        "y_neg": np.array(
+            [
+                [z_min, y_min, x_min],
+                [z_min, y_min, x_max],
+                [z_max, y_min, x_max],
+                [z_max, y_min, x_min],
+            ]
+        ),
+        "z_pos": np.array(
+            [
+                [z_max, y_min, x_min],
+                [z_max, y_min, x_max],
+                [z_max, y_max, x_max],
+                [z_max, y_max, x_min],
+            ]
+        ),
+        "z_neg": np.array(
+            [
+                [z_min, y_min, x_min],
+                [z_min, y_min, x_max],
+                [z_min, y_max, x_max],
+                [z_min, y_max, x_min],
+            ]
+        ),
+    }
+    return face_coords
+
+
+def inside_triangles(triangles):
+    """Checks which triangles contain the origin
+
+    Parameters
+    ----------
+    triangles : (N, 3, 2) array
+        Array of N triangles that should be checked
+
+    Returns
+    -------
+    inside : (N,) array of bool
+        Array with `True` values for trinagles containing the origin
+    """
+
+    AB = triangles[:, 1, :] - triangles[:, 0, :]
+    AC = triangles[:, 2, :] - triangles[:, 0, :]
+    BC = triangles[:, 2, :] - triangles[:, 1, :]
+
+    s_AB = -AB[:, 0] * triangles[:, 0, 1] + AB[:, 1] * triangles[:, 0, 0] >= 0
+    s_AC = -AC[:, 0] * triangles[:, 0, 1] + AC[:, 1] * triangles[:, 0, 0] >= 0
+    s_BC = -BC[:, 0] * triangles[:, 1, 1] + BC[:, 1] * triangles[:, 1, 0] >= 0
+
+    inside = np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
+
+    return inside

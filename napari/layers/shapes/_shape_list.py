@@ -1,10 +1,11 @@
 import numpy as np
 
 from ...utils.translations import trans
+from ..utils.layer_utils import inside_triangles
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
 from ._shapes_models import Line, Path, Shape
-from ._shapes_utils import inside_triangles, triangles_intersect_box
+from ._shapes_utils import triangles_intersect_box
 
 
 class ShapeList:
