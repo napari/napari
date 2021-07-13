@@ -17,6 +17,7 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, TransformChain
+from ...utils.transforms.transform_utils import expand_upper_triangular
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -997,6 +998,32 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         affine * (rotate * shear * scale + translate)
         """
         return self._transforms[1:3].simplified
+
+    def vector_world_to_data(self, vector) -> tuple:
+        """Convert a vector defining an orientation from world coordinates to data coordinates.
+        For example, this would be used to convert the view ray.
+
+        Parameters
+        ----------
+        vector : tuple, list, 1D array
+            A vector in world coordinates.
+
+        Returns
+        -------
+        tuple
+            Vector in data coordinates.
+        """
+        vector = np.asarray(vector)
+
+        # create transform for view direction (world -> layer data)
+        shear_matrix = expand_upper_triangular(self.shear)
+        rot_matrix = self.rotate
+        scale_matrix = np.diag(self.scale)
+        world_to_layer = np.linalg.inv(
+            shear_matrix @ rot_matrix
+        ).T @ np.linalg.inv(scale_matrix)
+
+        return tuple(vector @ world_to_layer)
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.

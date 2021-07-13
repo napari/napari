@@ -34,7 +34,12 @@ from .containers import QtLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .utils import QImg2array, circle_pixmap, square_pixmap
+from .utils import (
+    QImg2array,
+    circle_pixmap,
+    get_view_direction_in_scene_coordinates,
+    square_pixmap,
+)
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
@@ -754,10 +759,19 @@ class QtViewer(QSplitter):
             Position in world coordinates, matches the total dimensionality
             of the viewer.
         """
+        # nd = self.viewer.dims.ndisplay
+        # transform = self.view.camera.transform.inverse
+        # mapped_position = transform.map(list(position))[:nd]
+        # position_world_slice = mapped_position[::-1]
+        #
+        # position_world = list(self.viewer.dims.point)
+        # for i, d in enumerate(self.viewer.dims.displayed):
+        #     position_world[d] = position_world_slice[i]
+
         nd = self.viewer.dims.ndisplay
-        transform = self.view.camera.transform.inverse
-        mapped_position = transform.map(list(position))[:nd]
-        position_world_slice = mapped_position[::-1]
+        transform = self.view.scene.transform
+        mapped_position = transform.imap(list(position))[[2, 1, 0]]
+        position_world_slice = mapped_position[:nd]
 
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
@@ -804,6 +818,11 @@ class QtViewer(QSplitter):
 
         # Add the cursor position to the event
         event.position = self.viewer.cursor.position
+
+        # Add the view ray to the event
+        event.view_direction = get_view_direction_in_scene_coordinates(
+            self.view
+        )
 
         # Put a read only wrapper on the event
         event = ReadOnlyWrapper(event)
