@@ -230,7 +230,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.setContentsMargins(0, 0, 0, 5)
 
         renderComboBox = QComboBox(self)
-        rendering_options = [i.value for i in Rendering.view_labels_subset()]
+        rendering_options = [i.value for i in Rendering.labels_layer_subset()]
         renderComboBox.addItems(rendering_options)
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString

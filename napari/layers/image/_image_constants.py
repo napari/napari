@@ -84,7 +84,7 @@ class Rendering(StringEnum):
     AVERAGE = auto()
 
     @classmethod
-    def view_image_subset(cls) -> Tuple['Rendering']:
+    def image_layer_subset(cls) -> Tuple['Rendering']:
         return (
             cls.TRANSLUCENT,
             cls.ADDITIVE,
@@ -96,5 +96,5 @@ class Rendering(StringEnum):
         )
 
     @classmethod
-    def view_labels_subset(cls) -> Tuple['Rendering']:
+    def labels_layer_subset(cls) -> Tuple['Rendering']:
         return (cls.TRANSLUCENT, cls.ISO_CATEGORICAL)
