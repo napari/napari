@@ -111,6 +111,11 @@ class QtAboutKeyBindings(QDialog):
         self.viewer.events.theme.connect(self.update_active_layer)
         self.update_active_layer()
 
+    def closeEvent(self, event):
+        """Close event."""
+        self.viewer.events.theme.disconnect(self.update_active_layer)
+        super().closeEvent(event)
+
     def change_layer_type(self, text):
         """Change layer type selected in dropdown menu.
 
