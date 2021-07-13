@@ -988,3 +988,13 @@ def test_rendering_init():
     layer = Labels(data, rendering='iso_categorical')
 
     assert layer.rendering == Rendering.ISO_CATEGORICAL.value
+
+
+def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
+    # See the GitHub issue for more details:
+    # https://github.com/napari/napari/issues/2967
+    data = np.zeros((3, 5, 11, 11), dtype=int)
+    labels = Labels(data, scale=(2, 1, 1), translate=(5, 5, 5))
+
+    np.testing.assert_array_equal(labels.scale, (1, 2, 1, 1))
+    np.testing.assert_array_equal(labels.translate, (0, 5, 5, 5))
