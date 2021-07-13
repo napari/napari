@@ -645,7 +645,6 @@ class Window:
         else:
             self._qt_window._preferences_dialog.raise_()
 
-    
     def _update_player_settings(self):
         """Keep player settings up to date with settings values."""
 
