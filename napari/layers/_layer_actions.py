@@ -48,12 +48,15 @@ def _project(ll: LayerList, axis: int = 0, mode='max'):
     layer = ll.selection.active
     if not layer:
         return
+    if layer._type_string != 'image':
+        raise NotImplementedError
 
-    new = Layer.create(
-        getattr(np, mode)(layer.data, axis=axis),
-        {'name': f'{layer} {mode}-proj'},
-        layer._type_string,
-    )
+    # this is not the desired behavior for coordinate-based layers
+    # but the action is currently only enabled for 'image_active and ndim > 2'
+    # before opening up to other layer types, this line should be updated.
+    data = (getattr(np, mode)(layer.data, axis=axis, keepdims=True),)
+    meta = {'name': f'{layer} {mode}-proj', 'scale': layer.scale}
+    new = Layer.create(data, meta, layer._type_string)
     ll.append(new)
 
 
@@ -129,7 +132,7 @@ def _projdict(key):
     return {
         'description': key,
         'action': partial(_project, mode=key),
-        'enable_when': 'ndim > 2',
+        'enable_when': 'image_active and ndim > 2',
         'show_when': 'True',
     }
 
