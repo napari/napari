@@ -33,12 +33,16 @@ def test_show_key_bindings_dialog(make_napari_viewer, monkeypatch):
     # create the dialog and make sure that it now exists
     view.show_key_bindings_dialog()
     assert isinstance(view.findChild(QtAboutKeyBindings), QtAboutKeyBindings)
+    # explicitly close at end to disconnect events
+    view.findChild(QtAboutKeyBindings).close()
 
 
 def test_updating_with_layer_change(make_napari_viewer, monkeypatch):
     """Test that the dialog text updates when the active layer is changed."""
     viewer = make_napari_viewer()
     view = viewer.window.qt_viewer
+    # check that dialog does not exist yet
+    assert not view.findChild(QtAboutKeyBindings)
     # turn off showing the dialog for test
     monkeypatch.setattr(QtAboutKeyBindings, 'show', lambda *a: None)
     view.show_key_bindings_dialog()
@@ -63,3 +67,5 @@ def test_updating_with_layer_change(make_napari_viewer, monkeypatch):
     dialog.update_active_layer()  # force an update to dialog
     # check that the text didn't update without a change in the active layer
     assert dialog.textEditBox.toHtml() == active_shape_layer_text
+    # explicitly close at end to disconnect events
+    view.findChild(QtAboutKeyBindings).close()
