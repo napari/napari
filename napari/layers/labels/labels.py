@@ -81,6 +81,7 @@ class Labels(_ImageBase):
         3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
         'translucent' renders without lighting. 'iso_categorical' uses isosurface
         rendering to calculate lighting effects on labeled surfaces.
+        The default value is 'iso_categorical'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -184,7 +185,7 @@ class Labels(_ImageBase):
         affine=None,
         opacity=0.7,
         blending='translucent',
-        rendering='translucent',
+        rendering='iso_categorical',
         visible=True,
         multiscale=None,
     ):
