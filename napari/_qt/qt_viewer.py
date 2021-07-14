@@ -760,6 +760,7 @@ class QtViewer(QSplitter):
             of the viewer.
         """
         # nd = self.viewer.dims.ndisplay
+        #
         # transform = self.view.camera.transform.inverse
         # mapped_position = transform.map(list(position))[:nd]
         # position_world_slice = mapped_position[::-1]
@@ -770,8 +771,8 @@ class QtViewer(QSplitter):
 
         nd = self.viewer.dims.ndisplay
         transform = self.view.scene.transform
-        mapped_position = transform.imap(list(position))[[2, 1, 0]]
-        position_world_slice = mapped_position[:nd]
+        mapped_position = transform.imap(list(position))[:nd]
+        position_world_slice = mapped_position[::-1]
 
         position_world = list(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):
