@@ -1434,6 +1434,7 @@ class Points(Layer):
                 self.data[np.ix_(index, disp)] + shift
             )
             self.refresh()
+        self.events.data(value=self.data)
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
