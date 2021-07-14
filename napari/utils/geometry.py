@@ -275,6 +275,12 @@ def intersect_line_with_plane_3d(
     plane_intersection : np.ndarray
         the intersection of the line with the plane, shape (3,)
     """
+    # cast to arrays
+    line_position = np.asarray(line_position, dtype=float)
+    line_direction = np.asarray(line_direction, dtype=float)
+    plane_position = np.asarray(plane_position, dtype=float)
+    plane_normal = np.asarray(plane_normal, dtype=float)
+
     # project direction between line and plane onto the plane normal
     line_plane_direction = plane_position - line_position
     line_plane_on_plane_normal = np.dot(line_plane_direction, plane_normal)
