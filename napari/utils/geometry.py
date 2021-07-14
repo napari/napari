@@ -244,3 +244,45 @@ FACE_INTERCEPTS = {
     "z_pos": [0, 1],
     "z_neg": [0, 0],
 }
+
+
+def intersect_line_with_plane_3d(
+    line_position: np.ndarray,
+    line_direction: np.ndarray,
+    plane_position: np.ndarray,
+    plane_normal: np.ndarray,
+) -> np.ndarray:
+    """
+    Find the intersection of a line with an arbitrarily oriented plane in 3D.
+    The line is defined by a position and a direction vector.
+    The plane is defined by a position and a normal vector.
+    https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
+
+
+    Parameters
+    ----------
+    line_position : np.ndarray
+        a position on a 3D line with shape (3,).
+    line_direction : np.ndarray
+        direction of the 3D line with shape (3,).
+    plane_position : np.ndarray
+        a position on a plane in 3D with shape (3,).
+    plane_normal : np.ndarray
+        a vector normal to the plane in 3D with shape (3,).
+
+    Returns
+    -------
+    plane_intersection : np.ndarray
+        the intersection of the line with the plane, shape (3,)
+    """
+    # project direction between line and plane onto the plane normal
+    line_plane_direction = plane_position - line_position
+    line_plane_on_plane_normal = np.dot(line_plane_direction, plane_normal)
+
+    # project line direction onto the plane normal
+    line_direction_on_plane_normal = np.dot(line_direction, plane_normal)
+
+    # find scale factor for line direction
+    scale_factor = line_plane_on_plane_normal / line_direction_on_plane_normal
+
+    return line_position + (scale_factor * line_direction)
