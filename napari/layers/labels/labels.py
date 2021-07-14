@@ -15,11 +15,12 @@ from ...utils.colormaps import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
+from ...utils.geometry import clamp_point_to_bounding_box
 from ...utils.translations import trans
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
-from ..utils.layer_utils import clamp_point_to_bbox, validate_properties
+from ..utils.layer_utils import validate_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
@@ -902,7 +903,7 @@ class Labels(_ImageBase):
 
         for i in range(n_iterations):
             sample_point = np.asarray(start_point + i * increment_vector)
-            sample_point = clamp_point_to_bbox(
+            sample_point = clamp_point_to_bounding_box(
                 sample_point, self._display_bounding_box
             ).astype(int)
             value = self.data[

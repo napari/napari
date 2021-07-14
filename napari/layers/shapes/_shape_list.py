@@ -1,7 +1,7 @@
 import numpy as np
 
+from ...utils.geometry import inside_triangles
 from ...utils.translations import trans
-from ..utils.layer_utils import inside_triangles
 from ._mesh import Mesh
 from ._shapes_constants import ShapeType, shape_classes
 from ._shapes_models import Line, Path, Shape

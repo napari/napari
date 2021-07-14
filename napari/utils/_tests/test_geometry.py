@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 
-from napari.layers.utils.geometry_utils import (
+from ..geometry import (
+    intersect_line_with_plane_3d,
     project_point_to_plane,
     rotation_matrix_from_vectors,
 )
@@ -43,3 +44,20 @@ def test_rotation_matrix_from_vectors(vec_1, vec_2):
     unit_vec_2 = vec_2 / np.linalg.norm(vec_2)
 
     np.testing.assert_allclose(unit_rotated_1, unit_vec_2)
+
+
+@pytest.mark.parametrize(
+    "line_position, line_direction, plane_position, plane_normal, expected",
+    [
+        ([0, 0, 1], [0, 0, -1], [0, 0, 0], [0, 0, 1], [0, 0, 0]),
+        ([1, 1, 1], [-1, -1, -1], [0, 0, 0], [0, 0, 1], [0, 0, 0]),
+        ([2, 2, 2], [-1, -1, -1], [1, 1, 1], [0, 0, 1], [1, 1, 1]),
+    ],
+)
+def test_intersect_line_with_plane_3d(
+    line_position, line_direction, plane_position, plane_normal, expected
+):
+    intersection = intersect_line_with_plane_3d(
+        line_position, line_direction, plane_position, plane_normal
+    )
+    np.testing.assert_allclose(expected, intersection)

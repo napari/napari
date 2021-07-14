@@ -11,6 +11,14 @@ from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
+from ...utils.geometry import (
+    bounding_box_to_face_vertices,
+    face_intercepts_from_bounding_box,
+    inside_triangles,
+    intersect_line_with_axis_aligned_plane,
+    project_point_to_plane,
+    rotation_matrix_from_vectors,
+)
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -21,18 +29,10 @@ from ...utils.transforms.transform_utils import expand_upper_triangular
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils._layer_constants import FACE_NORMALS
-from ..utils.geometry_utils import (
-    project_point_to_plane,
-    rotation_matrix_from_vectors,
-)
 from ..utils.layer_utils import (
-    bounding_box_to_face_vertices,
     coerce_affine,
     compute_multiscale_level_and_corners,
     convert_to_uint8,
-    face_intercepts_from_bbox,
-    inside_triangles,
-    vector_axis_aligned_plane_intersection,
 )
 from ._base_constants import Blending
 
@@ -1102,13 +1102,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if front_face is not None and back_face is not None:
             # get the location of the click in data coordinates
             mapped_click = self.world_to_data(event.position)
-            face_intercepts = face_intercepts_from_bbox(bbox)
+            face_intercepts = face_intercepts_from_bounding_box(bbox)
 
             # find the intersection of the view ray with the front face of the data cube
             front_face_normal = FACE_NORMALS[front_face]
             front_face_intercept = face_intercepts[front_face]
             start_point = np.squeeze(
-                vector_axis_aligned_plane_intersection(
+                intersect_line_with_axis_aligned_plane(
                     front_face_intercept,
                     front_face_normal,
                     mapped_click,
@@ -1120,7 +1120,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             back_face_normal = FACE_NORMALS[back_face]
             back_face_intercept = face_intercepts[back_face]
             end_point = np.squeeze(
-                vector_axis_aligned_plane_intersection(
+                intersect_line_with_axis_aligned_plane(
                     back_face_intercept,
                     back_face_normal,
                     mapped_click,
