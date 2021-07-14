@@ -68,6 +68,10 @@ def select(layer, event):
             update_thumbnail = True
         yield
 
+    # only emit data once dragging has finished
+    if layer._is_moving:
+        layer.events.data(value=layer.data)
+
     # on release
     shift = 'Shift' in event.modifiers
     if not layer._is_moving and not layer._is_selecting and not shift:

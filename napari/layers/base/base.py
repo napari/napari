@@ -24,7 +24,7 @@ from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
-from ...utils.transforms import Affine, TransformChain
+from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.transforms.transform_utils import expand_upper_triangular
 from ...utils.translations import trans
 from .._source import current_source
@@ -231,11 +231,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
-                Affine(
+                CompositeAffine(
                     scale,
                     translate,
                     rotate=rotate,
                     shear=shear,
+                    ndim=ndim,
                     name='data2physical',
                 ),
                 coerce_affine(affine, ndim, name='physical2world'),
