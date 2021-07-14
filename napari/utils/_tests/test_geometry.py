@@ -1,10 +1,7 @@
 import numpy as np
 import pytest
 
-from napari.layers.utils.geometry_utils import (
-    project_point_to_plane,
-    rotation_matrix_from_vectors,
-)
+from ..geometry import project_point_to_plane, rotation_matrix_from_vectors
 
 single_point = np.array([10, 10, 10])
 expected_point_single = np.array([[10, 0, 10]])
