@@ -87,7 +87,6 @@ uniform float gamma;
 uniform float u_threshold;
 uniform float u_attenuation; // todo add to vispy from napari
 uniform float u_relative_step_size;
-uniform float u_equality_tolerance = 0.0001;
 
 //varyings
 // varying vec3 v_texcoord;
@@ -100,6 +99,12 @@ const vec4 u_ambient = vec4(0.2, 0.2, 0.2, 1.0);
 const vec4 u_diffuse = vec4(0.8, 0.2, 0.2, 1.0);
 const vec4 u_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const float u_shininess = 40.0;
+
+// the tolerance for testing equality of floats with floatEqual and floatNotEqual
+const float u_equality_tolerance = 1e-8;
+
+// the background value for the iso_categorical shader
+const floatq u_categorical_bg_value = 0;
 
 //varying vec3 lightDirs[1];
 
@@ -221,7 +226,8 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
 int detectAdjacentBackground(float val_neg, float val_pos)
 {{
     // determine if the adjacent voxels along an axis are both background
-    int adjacent_bg = int( floatEqual(val_neg, u_threshold, u_equality_tolerance) ) * int( floatEqual(val_pos, u_threshold, u_equality_tolerance) );
+    int adjacent_bg = int( floatEqual(val_neg, u_categorical_bg_value, u_equality_tolerance) );
+    adjacent_bg = adjacent_bg * int( floatEqual(val_pos, u_categorical_bg_value, u_equality_tolerance) );
     return adjacent_bg;
 }}
 
@@ -488,13 +494,13 @@ ISO_CATEGORICAL_SNIPPETS = dict(
         gl_FragColor = vec4(0.0);
     """,
     in_loop="""
-        // background is assumed to be 0
-        if ( floatNotEqual(val, u_threshold, u_equality_tolerance) ) {
+        // check if value is different from the background value
+        if ( floatNotEqual(val, u_categorical_bg_value, u_equality_tolerance) ) {
             // Take the last interval in smaller steps
             vec3 iloc = loc - step;
             for (int i=0; i<10; i++) {
                 color = $sample(u_volumetex, iloc);
-                if (floatNotEqual(color.g, u_threshold, u_equality_tolerance) ) {
+                if (floatNotEqual(color.g, u_categorical_bg_value, u_equality_tolerance) ) {
                     // when the non-background value is reached
                     // calculate the color (apply lighting effects)
                     color = applyColormap(color.g);
