@@ -46,7 +46,7 @@ volume_layer = viewer.add_image(volume, blending='additive')
 
 # callback function, called on mouse click when volume layer is active
 @volume_layer.mouse_drag_callbacks.append
-def on_click(layer):
+def on_click(layer, event):
     near_point, far_point = layer._cursor_ray(event, world_to_canvas)
     ray_points = np.linspace(near_point, far_point, n_points, endpoint=True)
     if ray_points.shape[1] != 0:
