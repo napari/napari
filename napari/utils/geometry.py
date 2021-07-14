@@ -95,7 +95,7 @@ def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
     point : np.ndarray
         n-dimensional point as an (n,) ndarray
     bounding_box: np.ndarray
-        n-dimensional bounding box as a (2, n) ndarray
+        n-dimensional bounding box as a (n, 2) ndarray
 
     Returns
     -------
