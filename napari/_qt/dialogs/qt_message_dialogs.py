@@ -28,6 +28,7 @@ class ConfirmDialog(QDialog):
         self._question = QLabel(self)
         self._button_restore = QPushButton(trans._("Restore"))
         self._button_cancel = QPushButton(trans._("Cancel"))
+        self._button_restore.setDefault(True)
 
         # Widget set up
         self._question.setText(text)
