@@ -557,34 +557,11 @@ class Labels(_ImageBase):
     @property
     def brush_shape(self):
         """str: Paintbrush shape"""
-
-        warnings.warn(
-            (
-                trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
-                    deferred=True,
-                )
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
         return str(self._brush_shape)
 
     @brush_shape.setter
     def brush_shape(self, brush_shape):
         """Set current brush shape."""
-
-        warnings.warn(
-            (
-                trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
-                    deferred=True,
-                )
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
 
         self._brush_shape = LabelBrushShape(brush_shape)
         self.cursor = self.brush_shape
@@ -1074,30 +1051,7 @@ class Labels(_ImageBase):
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
-        if str(self._brush_shape) == "square":
-            brush_size_dims = [self.brush_size] * self.ndim
-            if self.n_edit_dimensions < self.ndim:
-                for i in range(self.ndim):
-                    if i not in dims_to_paint:
-                        brush_size_dims[i] = 1
-
-            slice_coord = tuple(
-                slice(
-                    np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
-                        int
-                    ),
-                    np.round(np.clip(c + brush_size / 2 + 0.5, 0, s)).astype(
-                        int
-                    ),
-                    1,
-                )
-                for c, s, brush_size in zip(
-                    coord, self.data.shape, brush_size_dims
-                )
-            )
-            slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
-            slice_coord = indices_in_shape(slice_coord, shape)
-        elif str(self._brush_shape) == "circle":
+        if str(self._brush_shape) == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
             if self.n_edit_dimensions < self.ndim:
                 coord_paint = [coord[i] for i in dims_to_paint]
@@ -1131,6 +1085,13 @@ class Labels(_ImageBase):
                 slice_coord = slice_coord_temp
 
             slice_coord = tuple(slice_coord)
+
+        else:
+            warnings.warn(
+                trans._(
+                    "The only valid brush_shape is a circle.",
+                )
+            )
 
         # Fix indexing for xarray if necessary
         # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing

@@ -57,19 +57,15 @@ class LabelBrushShape(StringEnum):
     LabelBrushShape: Labelling brush shape.
 
     CIRCLE (default) uses circle paintbrush (case insensitive).
-
-    SQUARE uses square paintbrush (case insensitive).
     """
 
     CIRCLE = auto()
-    SQUARE = auto()
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
 LABEL_BRUSH_SHAPE_TRANSLATIONS = OrderedDict(
     [
         (LabelBrushShape.CIRCLE, trans._("circle")),
-        (LabelBrushShape.SQUARE, trans._("square")),
     ]
 )
 LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(

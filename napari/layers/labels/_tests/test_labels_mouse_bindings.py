@@ -27,17 +27,14 @@ def Event():
     )
 
 
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum", [("circle", 244), ("square", 274)]
-)
+@pytest.mark.parametrize("brush_shape, expected_sum", [("circle", 244)])
 def test_paint(Event, brush_shape, expected_sum):
-    """Test painting labels with circle/square brush."""
+    """Test painting labels with circle brush."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
     layer.brush_size = 10
     assert layer.cursor_size == 10
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
+    layer.brush_shape = brush_shape
 
     layer.mode = 'paint'
     layer.selected_label = 3
@@ -69,16 +66,13 @@ def test_paint(Event, brush_shape, expected_sum):
     assert np.sum(layer.data == 3) == expected_sum
 
 
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum", [("circle", 244), ("square", 274)]
-)
+@pytest.mark.parametrize("brush_shape, expected_sum", [("circle", 244)])
 def test_paint_scale(Event, brush_shape, expected_sum):
-    """Test painting labels with circle/square brush when scaled."""
+    """Test painting labels with circle brush when scaled."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data, scale=(2, 2))
     layer.brush_size = 10
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
+    layer.brush_shape = brush_shape
 
     layer.mode = 'paint'
     layer.selected_label = 3
@@ -110,21 +104,17 @@ def test_paint_scale(Event, brush_shape, expected_sum):
     assert np.sum(layer.data == 3) == expected_sum
 
 
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum", [("circle", 156), ("square", 126)]
-)
+@pytest.mark.parametrize("brush_shape, expected_sum", [("circle", 156)])
 def test_erase(Event, brush_shape, expected_sum):
     """Test erasing labels with different brush shapes."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
+    layer.brush_shape = brush_shape
 
     layer.brush_size = 10
     layer.mode = 'erase'
 
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
+    layer.brush_shape = brush_shape
 
     layer.selected_label = 3
 
