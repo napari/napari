@@ -104,7 +104,7 @@ const float u_shininess = 40.0;
 const float u_equality_tolerance = 1e-8;
 
 // the background value for the iso_categorical shader
-const floatq u_categorical_bg_value = 0;
+const float u_categorical_bg_value = 0;
 
 //varying vec3 lightDirs[1];
 
