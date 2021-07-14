@@ -239,6 +239,7 @@ class QtLabelsControls(QtLayerControls):
         renderComboBox.activated[str].connect(self.changeRendering)
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel(trans._('rendering:'))
+        self._on_ndisplay_change()
 
         color_mode_comboBox = QComboBox(self)
         for index, (data, text) in enumerate(
