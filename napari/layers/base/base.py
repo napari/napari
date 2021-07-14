@@ -16,7 +16,7 @@ from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
-from ...utils.transforms import Affine, TransformChain
+from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -221,11 +221,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
-                Affine(
+                CompositeAffine(
                     scale,
                     translate,
                     rotate=rotate,
                     shear=shear,
+                    ndim=ndim,
                     name='data2physical',
                 ),
                 coerce_affine(affine, ndim, name='physical2world'),
@@ -1137,3 +1138,76 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.events.select()
         else:
             self.events.deselect()
+
+    @classmethod
+    def create(
+        cls, data, meta: dict = None, layer_type: Optional[str] = None
+    ) -> 'Layer':
+        """Create layer from `data` of type `layer_type`.
+
+        Primarily intended for usage by reader plugin hooks and creating a
+        layer from an unwrapped layer data tuple.
+
+        Parameters
+        ----------
+        data : Any
+            Data in a format that is valid for the corresponding `layer_type`.
+        meta : dict, optional
+            Dict of keyword arguments that will be passed to the corresponding
+            layer constructor.  If any keys in `meta` are not valid for the
+            corresponding layer type, an exception will be raised.
+        layer_type : str
+            Type of layer to add. Must be the (case insensitive) name of a
+            Layer subclass.  If not provided, the layer is assumed to
+            be "image", unless data.dtype is one of (np.int32, np.uint32,
+            np.int64, np.uint64), in which case it is assumed to be "labels".
+
+        Raises
+        ------
+        ValueError
+            If ``layer_type`` is not one of the recognized layer types.
+        TypeError
+            If any keyword arguments in ``meta`` are unexpected for the
+            corresponding `add_*` method for this layer_type.
+
+        Examples
+        --------
+        A typical use case might be to upack a tuple of layer data with a
+        specified layer_type.
+
+        >>> data = (
+        ...     np.random.random((10, 2)) * 20,
+        ...     {'face_color': 'blue'},
+        ...     'points',
+        ... )
+        >>> Layer.create(*data)
+
+        """
+        from ... import layers
+        from ..image._image_utils import guess_labels
+
+        layer_type = (layer_type or '').lower()
+
+        # assumes that big integer type arrays are likely labels.
+        if not layer_type:
+            layer_type = guess_labels(data)
+
+        if layer_type not in layers.NAMES:
+            raise ValueError(
+                f"Unrecognized layer_type: '{layer_type}'. "
+                f"Must be one of: {layers.NAMES}."
+            )
+
+        Cls = getattr(layers, layer_type.title())
+
+        try:
+            return Cls(data, **(meta or {}))
+        except Exception as exc:
+            if 'unexpected keyword argument' not in str(exc):
+                raise exc
+
+            bad_key = str(exc).split('keyword argument ')[-1]
+            raise TypeError(
+                "_add_layer_from_data received an unexpected keyword "
+                f"argument ({bad_key}) for layer type {layer_type}"
+            ) from exc

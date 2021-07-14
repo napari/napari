@@ -25,9 +25,9 @@ NAMES = {
 }
 
 __all__ = [
-    'Layer',
     'Image',
     'Labels',
+    'Layer',
     'Points',
     'Shapes',
     'Surface',

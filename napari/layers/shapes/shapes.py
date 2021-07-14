@@ -255,8 +255,6 @@ class Shapes(Layer):
         Dictionary containing all the shape data indexed by slice tuple
     _data_view : ShapeList
         Object containing the currently viewed shape data.
-    _mode_history : Mode
-        Interactive mode captured on press of <space>.
     _selected_data_history : set
         Set of currently selected captured on press of <space>.
     _selected_data_stored : set
@@ -516,7 +514,6 @@ class Shapes(Layer):
         # Mode setting logic
         self._mode = Mode.SELECT
         self.mode = Mode.PAN_ZOOM
-        self._mode_history = self._mode
         self._status = self.mode
 
         self._init_shapes(
@@ -1705,6 +1702,7 @@ class Shapes(Layer):
                 face_color=face_color,
                 z_index=z_index,
             )
+            self.events.data(value=self.data)
 
     def _init_shapes(
         self,
@@ -2249,6 +2247,7 @@ class Shapes(Layer):
             )
         self.selected_data = set()
         self._finish_drawing()
+        self.events.data(value=self.data)
 
     def _rotate_box(self, angle, center=[0, 0]):
         """Perform a rotation on the selected box.

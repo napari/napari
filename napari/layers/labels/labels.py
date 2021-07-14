@@ -253,7 +253,6 @@ class Labels(_ImageBase):
         self.color = color
 
         self._mode = Mode.PAN_ZOOM
-        self._mode_history = self._mode
         self._status = self.mode
         self._preserve_labels = False
         self._help = trans._('enter paint or fill mode to edit labels')
