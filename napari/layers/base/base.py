@@ -1040,26 +1040,26 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._extent_data[:, self._dims_displayed].T
 
     def _data_face_intersection(
-        self, vertices: np.ndarray, click_pos_world, view_dir_world
+        self,
+        vertices: np.ndarray,
+        click_pos_data: np.ndarray,
+        view_dir_data: np.ndarray,
     ):
-
-        # convert the vertex coordinates to world coordinates
-        vertices_world = self._data_to_world(vertices)
 
         # project the vertices on to the view plane
         vertices_plane = project_point_to_plane(
-            point=vertices_world,
-            plane_point=click_pos_world,
-            plane_normal=view_dir_world,
+            point=vertices,
+            plane_point=click_pos_data,
+            plane_normal=view_dir_data,
         )
 
         # rotate the plane to make the triangles 2D
         rotation_matrix = rotation_matrix_from_vectors(
-            view_dir_world, [0, 0, 1]
+            view_dir_data, [0, 0, 1]
         )
         rotated_vertices = vertices_plane @ rotation_matrix.T
         vertices_2D = rotated_vertices[:, :2]
-        click_pos_2D = rotation_matrix.dot(click_pos_world)[:2]
+        click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
 
         triangle_vertices_2D = np.stack(
             (vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]])
@@ -1082,18 +1082,17 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # iterate through the bounding box faces and determine if the front or back face goes through
         front_face = None
         back_face = None
-        click_pos_world = event.position
-        view_dir_world = event.view_direction
+        click_pos_data = self.world_to_data(event.position)
         bbox_face_coords = bounding_box_to_face_vertices(bbox)
         for k, v in FACE_NORMALS.items():
             if (np.dot(view_dir, v) + 0.001) < 0:
                 if self._data_face_intersection(
-                    bbox_face_coords[k], click_pos_world, view_dir_world
+                    bbox_face_coords[k], click_pos_data, view_dir
                 ):
                     front_face = k
             elif (np.dot(view_dir, v) + 0.001) > 0:
                 if self._data_face_intersection(
-                    bbox_face_coords[k], click_pos_world, view_dir_world
+                    bbox_face_coords[k], click_pos_data, view_dir
                 ):
                     back_face = k
             if front_face is not None and back_face is not None:
