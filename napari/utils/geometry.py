@@ -302,12 +302,10 @@ def intersect_line_with_plane_3d(
     plane_position: np.ndarray,
     plane_normal: np.ndarray,
 ) -> np.ndarray:
-    """
-    Find the intersection of a line with an arbitrarily oriented plane in 3D.
+    """Find the intersection of a line with an arbitrarily oriented plane in 3D.
     The line is defined by a position and a direction vector.
     The plane is defined by a position and a normal vector.
     https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
-
 
     Parameters
     ----------
@@ -344,9 +342,39 @@ def intersect_line_with_plane_3d(
     return line_position + (scale_factor * line_direction)
 
 
-def click_in_quadrilateral(
-    vertices: np.ndarray,
+def point_in_quadrilateral_2d(
+    point: np.ndarray, quadrilateral: np.ndarray
+) -> bool:
+    """Determines whether a point is inside a 2D quadrilateral.
+
+    Parameters
+    ----------
+    point : np.ndarray
+        (2,) array containing coordinates of a point.
+    quadrilateral : np.ndarray
+        (4, 2) array containing the coordinates for the 4 corners
+        of a quadrilateral. The vertices should be in clockwise order
+        such that indexing with [0, 1, 2], and [0, 2, 3] results in
+        the two triangles non-overlapping triangles that divide the
+        quadrilateral.
+
+    Returns
+    -------
+
+    """
+    triangle_vertices = np.stack(
+        (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
+    )
+    in_triangles = inside_triangles(triangle_vertices - point)
+    if in_triangles.sum() < 1:
+        return False
+    else:
+        return True
+
+
+def click_in_quadrilateral_3d(
     click_pos_data: np.ndarray,
+    quadrilateral: np.ndarray,
     view_dir_data: np.ndarray,
 ) -> bool:
     """Determine if a click occurred within a specified quadrilateral.
@@ -355,16 +383,16 @@ def click_in_quadrilateral(
 
     Parameters
     ----------
-    vertices : np.ndarray
+    click_pos_data : np.ndarray
+        (3,) array containing the location that was clicked. This
+        should be in the same coordinate system as the vertices.
+    quadrilateral : np.ndarray
         (4, 3) array containing the coordinates for the 4 corners
         of a quadrilateral. The vertices should be in clockwise order
         such that indexing with [0, 1, 2], and [0, 2, 3] results in
         the two triangles non-overlapping triangles that divide the
         quadrilateral.
-    click_pos_data: np.ndarray
-        (3,) array containing the location that was clicked. This
-        should be in the same coordinate system as the vertices.
-    view_dir_data
+    view_dir_data : np.ndarray
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as
         the vertices.
@@ -377,7 +405,7 @@ def click_in_quadrilateral(
 
     # project the vertices on to the view plane
     vertices_plane = project_point_to_plane(
-        point=vertices,
+        point=quadrilateral,
         plane_point=click_pos_data,
         plane_normal=view_dir_data,
     )
@@ -388,14 +416,8 @@ def click_in_quadrilateral(
     vertices_2D = rotated_vertices[:, :2]
     click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
 
-    triangle_vertices_2D = np.stack(
-        (vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]])
-    )
-    in_triangles = inside_triangles(triangle_vertices_2D - click_pos_2D)
-    if in_triangles.sum() > 0:
-        return True
-    else:
-        return False
+    quadrilateral = np.stack((vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]]))
+    return point_in_quadrilateral_2d(click_pos_2D, quadrilateral)
 
 
 def find_front_back_face(
@@ -432,13 +454,13 @@ def find_front_back_face(
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
         if (np.dot(view_dir, v) + 0.001) < 0:
-            if click_in_quadrilateral(
-                bbox_face_coords[k], click_pos, view_dir
+            if click_in_quadrilateral_3d(
+                click_pos, bbox_face_coords[k], view_dir
             ):
                 front_face_normal = v
         elif (np.dot(view_dir, v) + 0.001) > 0:
-            if click_in_quadrilateral(
-                bbox_face_coords[k], click_pos, view_dir
+            if click_in_quadrilateral_3d(
+                click_pos, bbox_face_coords[k], view_dir
             ):
                 back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:

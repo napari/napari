@@ -8,6 +8,7 @@ from ..geometry import (
     inside_triangles,
     intersect_line_with_axis_aligned_plane,
     intersect_line_with_plane_3d,
+    point_in_quadrilateral_2d,
     project_point_to_plane,
     rotation_matrix_from_vectors,
 )
@@ -232,4 +233,23 @@ def test_inside_triangles(triangle, expected):
     contain the origin, False otherwise.
     """
     inside = np.all(inside_triangles(triangle))
+    assert inside == expected
+
+
+@pytest.mark.parametrize(
+    'point, quadrilateral, expected',
+    [
+        (
+            np.array([0.5, 0.5]),
+            np.array([[0, 0], [0, 1], [1, 1], [0, 1]]),
+            True,
+        ),
+        (np.array([2, 2]), np.array([[0, 0], [0, 1], [1, 0], [1, 1]]), False),
+    ],
+)
+def test_point_in_quadrilateral_2d(point, quadrilateral, expected):
+    """Test that point_in_quadrilateral_2d determines whether a point
+    is inside a quadrilateral.
+    """
+    inside = point_in_quadrilateral_2d(point, quadrilateral)
     assert inside == expected
