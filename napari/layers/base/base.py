@@ -11,14 +11,7 @@ from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
-from ...utils.geometry import (
-    bounding_box_to_face_vertices,
-    face_coordinate_from_bounding_box,
-    inside_triangles,
-    intersect_line_with_axis_aligned_plane,
-    project_point_to_plane,
-    rotation_matrix_from_vectors,
-)
+from ...utils.geometry import find_front_back_face, find_start_end_point
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -28,7 +21,6 @@ from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.transforms.transform_utils import expand_upper_triangular
 from ...utils.translations import trans
 from .._source import current_source
-from ..utils._layer_constants import FACE_NORMALS
 from ..utils.layer_utils import (
     coerce_affine,
     compute_multiscale_level_and_corners,
@@ -1040,37 +1032,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, self._dims_displayed].T
 
-    def _data_face_intersection(
-        self,
-        vertices: np.ndarray,
-        click_pos_data: np.ndarray,
-        view_dir_data: np.ndarray,
-    ):
-
-        # project the vertices on to the view plane
-        vertices_plane = project_point_to_plane(
-            point=vertices,
-            plane_point=click_pos_data,
-            plane_normal=view_dir_data,
-        )
-
-        # rotate the plane to make the triangles 2D
-        rotation_matrix = rotation_matrix_from_vectors(
-            view_dir_data, [0, 0, 1]
-        )
-        rotated_vertices = vertices_plane @ rotation_matrix.T
-        vertices_2D = rotated_vertices[:, :2]
-        click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
-
-        triangle_vertices_2D = np.stack(
-            (vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]])
-        )
-        in_triangles = inside_triangles(triangle_vertices_2D - click_pos_2D)
-        if in_triangles.sum() > 0:
-            return True
-        else:
-            return False
-
     def _cursor_ray(self, event):
         """Get the start and end point for the ray extending from the cursor through the data"""
 
@@ -1080,60 +1041,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # get the view direction
         view_dir = np.asarray(self.vector_world_to_data(event.view_direction))
 
-        # iterate through the bounding box faces and determine if the front or back face goes through
-        front_face = None
-        back_face = None
+        # Determine the front and back faces
         click_pos_data = self.world_to_data(event.position)
-        bbox_face_coords = bounding_box_to_face_vertices(bbox)
-        for k, v in FACE_NORMALS.items():
-            if (np.dot(view_dir, v) + 0.001) < 0:
-                if self._data_face_intersection(
-                    bbox_face_coords[k], click_pos_data, view_dir
-                ):
-                    front_face = k
-            elif (np.dot(view_dir, v) + 0.001) > 0:
-                if self._data_face_intersection(
-                    bbox_face_coords[k], click_pos_data, view_dir
-                ):
-                    back_face = k
-            if front_face is not None and back_face is not None:
-                # stop looping if both the front and back faces have been found
-                break
+        front_face_normal, back_face_normal = find_front_back_face(
+            click_pos_data, bbox, view_dir
+        )
 
-        if front_face is not None and back_face is not None:
-            # get the location of the click in data coordinates
-            mapped_click = self.world_to_data(event.position)
-
-            # find the intersection of the view ray with the front face of the data cube
-            front_face_normal = FACE_NORMALS[front_face]
-            front_face_coordinate = face_coordinate_from_bounding_box(
-                bbox, front_face_normal
-            )
-            start_point = np.squeeze(
-                intersect_line_with_axis_aligned_plane(
-                    front_face_coordinate,
-                    front_face_normal,
-                    mapped_click,
-                    -view_dir,
-                )
-            )
-
-            # find the intersection of the view ray with the back face of the data cube
-            back_face_normal = FACE_NORMALS[back_face]
-            back_face_coordinate = face_coordinate_from_bounding_box(
-                bbox, back_face_normal
-            )
-            end_point = np.squeeze(
-                intersect_line_with_axis_aligned_plane(
-                    back_face_coordinate,
-                    back_face_normal,
-                    mapped_click,
-                    view_dir,
-                )
-            )
-        else:
-            start_point = np.empty((0, self._ndisplay))
-            end_point = np.empty((0, self._ndisplay))
+        # Get the locations in the plane where the ray intersects
+        start_point, end_point = find_start_end_point(
+            front_face_normal, back_face_normal, click_pos_data, bbox, view_dir
+        )
 
         return start_point, end_point
 

@@ -2,6 +2,17 @@ from typing import Dict
 
 import numpy as np
 
+# normal vectors for a 3D axis-aligned box
+# coordinates are ordered [z, y, x]
+FACE_NORMALS = {
+    "x_pos": np.array([0, 0, 1]),
+    "x_neg": np.array([0, 0, -1]),
+    "y_pos": np.array([0, 1, 0]),
+    "y_neg": np.array([0, -1, 0]),
+    "z_pos": np.array([1, 0, 0]),
+    "z_neg": np.array([-1, 0, 0]),
+}
+
 
 def project_point_to_plane(
     point: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
@@ -332,3 +343,177 @@ def intersect_line_with_plane_3d(
     scale_factor = line_plane_on_plane_normal / line_direction_on_plane_normal
 
     return line_position + (scale_factor * line_direction)
+
+
+def click_in_region(
+    vertices: np.ndarray,
+    click_pos_data: np.ndarray,
+    view_dir_data: np.ndarray,
+) -> bool:
+    """Determine if a click occurred within a specified region.
+    For example, this could be used to determine if a click was
+    in a specific face of a bounding box.
+
+    Parameters
+    ----------
+    vertices : np.ndarray
+        (4, 3) array containing the coordinates for the 4 corners
+        of a quadrilateral. The vertices should be in clockwise order
+        such that indexing with [0, 1, 2], and [0, 2, 3] results in
+        the two triangles non-overlapping triangles that divide the
+        quadrilateral.
+    click_pos_data: np.ndarray
+        (3,) array containing the location that was clicked. This
+        should be in the same coordinate system as the vertices.
+    view_dir_data
+        (3,) array describing the direction camera is pointing in
+        the scene. This should be in the same coordinate system as
+        the vertices.
+
+    Returns
+    -------
+    in_region : bool
+        True if the click is in the region specified by vertices.
+    """
+
+    # project the vertices on to the view plane
+    vertices_plane = project_point_to_plane(
+        point=vertices,
+        plane_point=click_pos_data,
+        plane_normal=view_dir_data,
+    )
+
+    # rotate the plane to make the triangles 2D
+    rotation_matrix = rotation_matrix_from_vectors(view_dir_data, [0, 0, 1])
+    rotated_vertices = vertices_plane @ rotation_matrix.T
+    vertices_2D = rotated_vertices[:, :2]
+    click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
+
+    triangle_vertices_2D = np.stack(
+        (vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]])
+    )
+    in_triangles = inside_triangles(triangle_vertices_2D - click_pos_2D)
+    if in_triangles.sum() > 0:
+        return True
+    else:
+        return False
+
+
+def find_front_back_face(
+    click_pos: np.ndarray, bounding_box: np.ndarray, view_dir: np.ndarray
+):
+    """Find the faces of an axis aligned bounding box a
+    click intersects with.
+
+    Parameters
+    ----------
+    click_pos : np.ndarray
+        (3,) array containing the location that was clicked.
+    bounding_box : np.ndarray
+        (N, 2), N=ndim array with the min and max value for each dimension of
+        the bounding box. The bounding box is take form the last
+        three rows, which are assumed to be in order (z, y, x).
+        This should be in the same coordinate system as click_pos.
+    view_dir
+        (3,) array describing the direction camera is pointing in
+        the scene. This should be in the same coordinate system as click_pos.
+
+    Returns
+    -------
+    front_face_normal : np.ndarray
+        The (3,) normal vector of the face closest to the camera the click
+        intersects with.
+    back_face_normal : np.ndarray
+        The (3,) normal vector of the face farthest from the camera the click
+        intersects with.
+    """
+    front_face_normal = None
+    back_face_normal = None
+
+    bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
+    for k, v in FACE_NORMALS.items():
+        if (np.dot(view_dir, v) + 0.001) < 0:
+            if click_in_region(bbox_face_coords[k], click_pos, view_dir):
+                front_face_normal = v
+        elif (np.dot(view_dir, v) + 0.001) > 0:
+            if click_in_region(bbox_face_coords[k], click_pos, view_dir):
+                back_face_normal = v
+        if front_face_normal is not None and back_face_normal is not None:
+            # stop looping if both the front and back faces have been found
+            break
+
+    return front_face_normal, back_face_normal
+
+
+def find_start_end_point(
+    front_face_normal,
+    back_face_normal,
+    click_pos: np.ndarray,
+    bounding_box: np.ndarray,
+    view_dir: np.ndarray,
+):
+    """
+
+    Parameters
+    ----------
+    front_face_normal : np.ndarray
+        The (3,) normal vector of the face closest to the camera the click
+        intersects with.
+    back_face_normal : np.ndarray
+        The (3,) normal vector of the face farthest from the camera the click
+        intersects with.
+    click_pos : np.ndarray
+        (3,) array containing the location that was clicked.
+    bounding_box : np.ndarray
+        (N, 2), N=ndim array with the min and max value for each dimension of
+        the bounding box. The bounding box is take form the last
+        three rows, which are assumed to be in order (z, y, x).
+        This should be in the same coordinate system as click_pos.
+    view_dir
+        (3,) array describing the direction camera is pointing in
+        the scene. This should be in the same coordinate system as click_pos.
+
+    Returns
+    -------
+    start_point : np.ndarray
+        (3,) array containing the coordinate for the intersection of the click on
+        the front_face
+    end_point : np.ndarray
+        (3,) array containing the coordinate for the intersection of the click on
+        the front_face
+    """
+    if front_face_normal is not None and back_face_normal is not None:
+        # find the intersection of the view ray with the front face of the data cube
+        front_face_coordinate = face_coordinate_from_bounding_box(
+            bounding_box, front_face_normal
+        )
+        start_point = np.squeeze(
+            intersect_line_with_axis_aligned_plane(
+                front_face_coordinate,
+                front_face_normal,
+                click_pos,
+                -view_dir,
+            )
+        )
+
+        # find the intersection of the view ray with the back face of the data cube
+        back_face_coordinate = face_coordinate_from_bounding_box(
+            bounding_box, back_face_normal
+        )
+        end_point = np.squeeze(
+            intersect_line_with_axis_aligned_plane(
+                back_face_coordinate,
+                back_face_normal,
+                click_pos,
+                view_dir,
+            )
+        )
+    else:
+        # get the number of displayed dimensions
+        n_display = len(view_dir)
+
+        # create empty vectors for the points
+        start_point = np.empty((0, n_display))
+        end_point = np.empty((0, n_display))
+
+    return start_point, end_point
