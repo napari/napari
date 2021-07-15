@@ -513,3 +513,36 @@ def find_click_bbox_face_intersection(
     )
 
     return intersection_point
+
+
+def distance_between_point_and_line_3d(
+    point: np.ndarray, line_position: np.ndarray, line_direction: np.ndarray
+):
+    """Determine the minimum distance between a point and a line in 3D.
+
+    Parameters
+    ----------
+    point : np.ndarray
+        (3,) array containing coordinates of a point in 3D space.
+    line_position : np.ndarray
+        (3,) array containing coordinates of a point on a line in 3D space.
+    line_direction : np.ndarray
+        (3,) array containing a vector describing the direction of a line in
+        3D space.
+
+    Returns
+    -------
+    distance : float
+        The minimum distance between `point` and the line defined by
+        `line_position` and `line_direction`.
+    """
+    line_direction_normalized = line_direction / np.linalg.norm(line_direction)
+    projection_on_line_direction = np.dot(
+        (point - line_position), line_direction
+    )
+    closest_point_on_line = (
+        line_position
+        + line_direction_normalized * projection_on_line_direction
+    )
+    distance = np.linalg.norm(point - closest_point_on_line)
+    return distance
