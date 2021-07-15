@@ -52,22 +52,8 @@ class LabelColorMode(StringEnum):
     DIRECT = auto()
 
 
-class LabelBrushShape(StringEnum):
-    """
-    LabelBrushShape: Labelling brush shape.
-
-    CIRCLE (default) uses circle paintbrush (case insensitive).
-    """
-
-    CIRCLE = auto()
-
-
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
-LABEL_BRUSH_SHAPE_TRANSLATIONS = OrderedDict(
-    [
-        (LabelBrushShape.CIRCLE, trans._("circle")),
-    ]
-)
+
 LABEL_COLOR_MODE_TRANSLATIONS = OrderedDict(
     [
         (LabelColorMode.AUTO, trans._("auto")),

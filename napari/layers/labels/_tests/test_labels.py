@@ -625,7 +625,6 @@ def test_paint():
     data[:10, :10] = 1
     layer = Labels(data)
 
-    layer.brush_shape = 'circle'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
@@ -654,7 +653,6 @@ def test_paint_with_preserve_labels():
     data[:3, :3] = 1
     layer = Labels(data)
 
-    layer.brush_shape = 'circle'
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
@@ -666,16 +664,12 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum",
-    [("circle", [41, 137, 137, 41, 349])],
-)
-def test_paint_2d(brush_shape, expected_sum):
+@pytest.mark.parametrize("expected_sum", [([41, 137, 137, 41, 349])])
+def test_paint_2d(expected_sum):
     """Test painting labels with circle brush."""
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
@@ -700,16 +694,15 @@ def test_paint_2d(brush_shape, expected_sum):
 
 @pytest.mark.timeout(1)
 @pytest.mark.parametrize(
-    "brush_shape, expected_sum",
-    [("circle", 411)],
+    "expected_sum",
+    [(411)],
 )
-def test_paint_2d_xarray(brush_shape, expected_sum):
+def test_paint_2d_xarray(expected_sum):
     """Test the memory usage of painting an xarray indirectly via timeout."""
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
@@ -717,15 +710,14 @@ def test_paint_2d_xarray(brush_shape, expected_sum):
 
 
 @pytest.mark.parametrize(
-    "brush_shape, expected_sum",
-    [("circle", [137, 1189, 1103])],
+    "expected_sum",
+    [([137, 1189, 1103])],
 )
-def test_paint_3d(brush_shape, expected_sum):
+def test_paint_3d(expected_sum):
     """Test painting labels with circle brush on 3D image."""
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = brush_shape
     layer.mode = 'paint'
 
     # Paint in 2D
@@ -798,10 +790,9 @@ def test_world_data_extent():
 
 
 @pytest.mark.parametrize(
-    'brush_shape, brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    'brush_size, mode, selected_label, preserve_labels, n_dimensional',
     list(
         itertools.product(
-            ['circle'],
             list(range(1, 22, 5)),
             ['fill', 'erase', 'paint'],
             [1, 20, 100],
@@ -811,7 +802,6 @@ def test_world_data_extent():
     ),
 )
 def test_undo_redo(
-    brush_shape,
     brush_size,
     mode,
     selected_label,
@@ -821,7 +811,6 @@ def test_undo_redo(
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    layer.brush_shape = brush_shape
     layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
@@ -868,7 +857,6 @@ def test_ndim_paint():
     test_array = np.zeros((5, 6, 7, 8), dtype=int)
     layer = Labels(test_array)
     layer.n_edit_dimensions = 3
-    layer.brush_shape = 'circle'
     layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
     layer.paint((1, 1, 1, 1), 1)
 

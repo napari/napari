@@ -20,7 +20,7 @@ from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import validate_properties
-from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
+from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
 
@@ -199,7 +199,6 @@ class Labels(_ImageBase):
         )
         self._all_vals[0] = 0
         self._color_mode = LabelColorMode.AUTO
-        self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
         self._contour = 0
 
@@ -555,18 +554,6 @@ class Labels(_ImageBase):
         self.refresh()
 
     @property
-    def brush_shape(self):
-        """str: Paintbrush shape"""
-        return str(self._brush_shape)
-
-    @brush_shape.setter
-    def brush_shape(self, brush_shape):
-        """Set current brush shape."""
-
-        self._brush_shape = LabelBrushShape(brush_shape)
-        self.cursor = self.brush_shape
-
-    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -620,7 +607,7 @@ class Labels(_ImageBase):
             )
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
-            self.cursor = str(self._brush_shape)
+            self.cursor = 'circle'
             self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
@@ -635,7 +622,7 @@ class Labels(_ImageBase):
             )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
-            self.cursor = str(self._brush_shape)
+            self.cursor = 'circle'
             self.cursor_size = self._calculate_cursor_size()
             self.interactive = False
             self.help = trans._(
@@ -1051,47 +1038,40 @@ class Labels(_ImageBase):
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
-        if str(self._brush_shape) == "circle":
-            slice_coord = [int(np.round(c)) for c in coord]
-            if self.n_edit_dimensions < self.ndim:
-                coord_paint = [coord[i] for i in dims_to_paint]
-                shape = [shape[i] for i in dims_to_paint]
-            else:
-                coord_paint = coord
 
-            # Ensure circle doesn't have spurious point
-            # on edge by keeping radius as ##.5
-            radius = np.floor(self.brush_size / 2) + 0.5
-            mask_indices = sphere_indices(radius, tuple(paint_scale))
-
-            mask_indices = mask_indices + np.round(
-                np.array(coord_paint)
-            ).astype(int)
-
-            # discard candidate coordinates that are out of bounds
-            mask_indices = indices_in_shape(mask_indices, shape)
-
-            # Transfer valid coordinates to slice_coord,
-            # or expand coordinate if 3rd dim in 2D image
-            slice_coord_temp = [m for m in mask_indices.T]
-            if self.n_edit_dimensions < self.ndim:
-                for j, i in enumerate(dims_to_paint):
-                    slice_coord[i] = slice_coord_temp[j]
-                for i in dims_not_painted:
-                    slice_coord[i] = slice_coord[i] * np.ones(
-                        mask_indices.shape[0], dtype=int
-                    )
-            else:
-                slice_coord = slice_coord_temp
-
-            slice_coord = tuple(slice_coord)
-
+        slice_coord = [int(np.round(c)) for c in coord]
+        if self.n_edit_dimensions < self.ndim:
+            coord_paint = [coord[i] for i in dims_to_paint]
+            shape = [shape[i] for i in dims_to_paint]
         else:
-            warnings.warn(
-                trans._(
-                    "The only valid brush_shape is a circle.",
+            coord_paint = coord
+
+        # Ensure circle doesn't have spurious point
+        # on edge by keeping radius as ##.5
+        radius = np.floor(self.brush_size / 2) + 0.5
+        mask_indices = sphere_indices(radius, tuple(paint_scale))
+
+        mask_indices = mask_indices + np.round(np.array(coord_paint)).astype(
+            int
+        )
+
+        # discard candidate coordinates that are out of bounds
+        mask_indices = indices_in_shape(mask_indices, shape)
+
+        # Transfer valid coordinates to slice_coord,
+        # or expand coordinate if 3rd dim in 2D image
+        slice_coord_temp = [m for m in mask_indices.T]
+        if self.n_edit_dimensions < self.ndim:
+            for j, i in enumerate(dims_to_paint):
+                slice_coord[i] = slice_coord_temp[j]
+            for i in dims_not_painted:
+                slice_coord[i] = slice_coord[i] * np.ones(
+                    mask_indices.shape[0], dtype=int
                 )
-            )
+        else:
+            slice_coord = slice_coord_temp
+
+        slice_coord = tuple(slice_coord)
 
         # Fix indexing for xarray if necessary
         # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing

@@ -43,7 +43,6 @@ class Labels2DSuite:
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
-        self.layer.brush_shape = 'circle'
         self.layer.paint((0,) * 2, self.layer.selected_label)
 
     def time_fill(self, n):
@@ -99,7 +98,6 @@ class Labels3DSuite:
 
     def time_paint_circle(self, n):
         """Time to paint circle."""
-        self.layer.brush_shape = 'circle'
         self.layer.paint((0,) * 3, self.layer.selected_label)
 
     def time_fill(self, n):

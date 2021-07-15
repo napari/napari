@@ -27,14 +27,13 @@ def Event():
     )
 
 
-@pytest.mark.parametrize("brush_shape, expected_sum", [("circle", 244)])
-def test_paint(Event, brush_shape, expected_sum):
+@pytest.mark.parametrize("expected_sum", [(244)])
+def test_paint(Event, expected_sum):
     """Test painting labels with circle brush."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
     layer.brush_size = 10
     assert layer.cursor_size == 10
-    layer.brush_shape = brush_shape
 
     layer.mode = 'paint'
     layer.selected_label = 3
