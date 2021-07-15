@@ -921,17 +921,6 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_key_bindings = QAction(
-            trans._("Show Key Bindings"), self._qt_window
-        )
-        about_key_bindings.setShortcut("Ctrl+Alt+/")
-        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_key_bindings.setStatusTip(trans._('key_bindings'))
-        about_key_bindings.triggered.connect(
-            self.qt_viewer.show_key_bindings_dialog
-        )
-        self.help_menu.addAction(about_key_bindings)
-
     def _toggle_activity_dock(self, event):
         is_currently_visible = self._qt_window._activity_dialog.isVisible()
         if not is_currently_visible:
