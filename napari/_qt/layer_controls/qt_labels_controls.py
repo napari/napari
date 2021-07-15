@@ -282,14 +282,14 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel(trans._('contiguous:')), 10, 0, 1, 1)
         self.grid_layout.addWidget(self.contigCheckBox, 10, 1, 1, 1)
         self.grid_layout.addWidget(
-            QLabel(trans._('preserve\nlabels:')), 10, 0, 1, 2
+            QLabel(trans._('preserve\nlabels:')), 11, 0, 1, 2
         )
         self.grid_layout.addWidget(self.preserveLabelsCheckBox, 11, 1, 1, 1)
         self.grid_layout.addWidget(
-            QLabel(trans._('show\nselected:')), 10, 2, 1, 1
+            QLabel(trans._('show\nselected:')), 11, 2, 1, 1
         )
         self.grid_layout.addWidget(self.selectedColorCheckbox, 11, 3, 1, 1)
-        self.grid_layout.setRowStretch(11, 1)
+        self.grid_layout.setRowStretch(12, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
