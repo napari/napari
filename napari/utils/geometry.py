@@ -61,6 +61,7 @@ def project_point_to_plane(
 def rotation_matrix_from_vectors(vec_1, vec_2):
     """Calculate the rotation matrix that aligns vec1 to vec2.
 
+
     Parameters
     ----------
     vec_1 : np.ndarray
@@ -162,12 +163,13 @@ def intersect_line_with_axis_aligned_plane(
     line_start: np.ndarray,
     line_direction: np.ndarray,
 ) -> np.ndarray:
-    """Find the intersection of a ray with an axis aligned plane
+    """Find the intersection of a line with an axis aligned plane.
 
     Parameters
     ----------
     plane_intercept: float
-        The coordinate on the axis the plane is normal that the plane intersects.
+        The coordinate that the plane intersects on the axis to which plane is
+        normal.
         For example, if the plane is described by y=42, plane_intercept is 42.
     plane_normal : np.ndarray
         normal vector of the plane as an (n,)  ndarray
@@ -186,9 +188,7 @@ def intersect_line_with_axis_aligned_plane(
 
     # get the intersection coordinate
     t = (plane_intercept - line_start[plane_axis]) / line_direction[plane_axis]
-    intersection_point = line_start + t * line_direction
-
-    return intersection_point
+    return line_start + t * line_direction
 
 
 def bounding_box_to_face_vertices(
@@ -283,7 +283,6 @@ def inside_triangles(triangles):
     inside : (N,) array of bool
         Array with `True` values for trinagles containing the origin
     """
-
     AB = triangles[:, 1, :] - triangles[:, 0, :]
     AC = triangles[:, 2, :] - triangles[:, 0, :]
     BC = triangles[:, 2, :] - triangles[:, 1, :]
@@ -345,12 +344,12 @@ def intersect_line_with_plane_3d(
     return line_position + (scale_factor * line_direction)
 
 
-def click_in_region(
+def click_in_quadrilateral(
     vertices: np.ndarray,
     click_pos_data: np.ndarray,
     view_dir_data: np.ndarray,
 ) -> bool:
-    """Determine if a click occurred within a specified region.
+    """Determine if a click occurred within a specified quadrilateral.
     For example, this could be used to determine if a click was
     in a specific face of a bounding box.
 
@@ -433,10 +432,14 @@ def find_front_back_face(
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
         if (np.dot(view_dir, v) + 0.001) < 0:
-            if click_in_region(bbox_face_coords[k], click_pos, view_dir):
+            if click_in_quadrilateral(
+                bbox_face_coords[k], click_pos, view_dir
+            ):
                 front_face_normal = v
         elif (np.dot(view_dir, v) + 0.001) > 0:
-            if click_in_region(bbox_face_coords[k], click_pos, view_dir):
+            if click_in_quadrilateral(
+                bbox_face_coords[k], click_pos, view_dir
+            ):
                 back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
