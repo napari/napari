@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 
 
@@ -88,7 +90,9 @@ def rotation_matrix_from_vectors(vec_1, vec_2):
 
 
 def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
-    """
+    """Ensure that a point is inside of the bounding box. If the point has a
+    coordinate outside of the bounding box, the value is clipped to the max
+    extent of the bounding box.
 
     Parameters
     ----------
@@ -101,32 +105,61 @@ def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
     -------
     clamped_point : np.ndarray
         `point` clamped to the limits of `bounding_box`
-
     """
     clamped_point = np.clip(point, bounding_box[:, 0], bounding_box[:, 1] - 1)
     return clamped_point
 
 
-def face_intercepts_from_bounding_box(bbox: np.ndarray):
-    """TODO: kevin, can you remember what this does?"""
-    face_intercepts = {k: bbox[v[0], v[1]] for k, v in FACE_INTERCEPTS.items()}
-    return face_intercepts
-
-
-def intersect_line_with_axis_aligned_plane(
-    face_intercept: float,
-    face_normal: np.ndarray,
-    line_start: np.ndarray,
-    line_direction: np.ndarray,
-) -> np.ndarray:
-    """
-    Find the intersection of a ray with an axis aligned plane
+def face_coordinate_from_bounding_box(
+    bounding_box: np.ndarray, face_normal: np.ndarray
+) -> float:
+    """Get the coordinate for a given face in an axis-aligned bounding box.
+    For example, if the bounding box has extents [[0, 10], [0, 20], [0, 30]]
+    (ordered zyx), then the face with normal [0, 1, 0] is described by
+    y=20. Thus, the face_coordinate in this case is 20.
 
     Parameters
     ----------
-    face_intercept: TODO: kevin?
+    bounding_box: np.ndarray
+        n-dimensional bounding box as a (n, 2) ndarray.
+        Each row should contain the [min, max] extents for the
+        axis.
     face_normal : np.ndarray
         normal vector of the face as an (n,)  ndarray
+
+    Returns
+    -------
+    face_coordinate : float
+        The value where the bounding box face specified by face_normal intersects
+        the axis its normal is aligned with.
+    """
+    axis = np.argwhere(face_normal)
+    if face_normal[axis] > 0:
+        # face is pointing in the positive direction,
+        # take the max extent
+        face_coordinate = bounding_box[axis, 1]
+    else:
+        # face is pointing in the negative direction,
+        # take the min extent
+        face_coordinate = bounding_box[axis, 0]
+    return face_coordinate
+
+
+def intersect_line_with_axis_aligned_plane(
+    plane_intercept: float,
+    plane_normal: np.ndarray,
+    line_start: np.ndarray,
+    line_direction: np.ndarray,
+) -> np.ndarray:
+    """Find the intersection of a ray with an axis aligned plane
+
+    Parameters
+    ----------
+    plane_intercept: float
+        The coordinate on the axis the plane is normal that the plane intersects.
+        For example, if the plane is described by y=42, plane_intercept is 42.
+    plane_normal : np.ndarray
+        normal vector of the plane as an (n,)  ndarray
     line_start : np.ndarray
         start point of the line as an (n,) ndarray
     line_direction : np.ndarray
@@ -138,19 +171,36 @@ def intersect_line_with_axis_aligned_plane(
         point where the line intersects the axis aligned plane
     """
     # find the axis the plane exists in
-    plane_axis = np.squeeze(np.argwhere(face_normal))
+    plane_axis = np.squeeze(np.argwhere(plane_normal))
 
     # get the intersection coordinate
-    t = (face_intercept - line_start[plane_axis]) / line_direction[plane_axis]
+    t = (plane_intercept - line_start[plane_axis]) / line_direction[plane_axis]
     intersection_point = line_start + t * line_direction
 
     return intersection_point
 
 
-def bounding_box_to_face_vertices(bounding_box: np.ndarray) -> dict:
-    """
-    From a layer bounding box (N, 2), N=ndim, return a dictionary containing
-    the vertices of each face of the bounding_box
+def bounding_box_to_face_vertices(
+    bounding_box: np.ndarray,
+) -> Dict[str, np.ndarray]:
+    """From a layer bounding box (N, 2), N=ndim, return a dictionary containing
+    the vertices of each face of the bounding_box.
+
+    Parameters
+    ----------
+    bounding_box : np.ndarray
+        (N, 2), N=ndim array with the min and max value for each dimension of
+        the bounding box. The bounding box is take form the last
+        three rows, which are assumed to be in order (z, y, x).
+
+    Returns
+    -------
+    face_coords : Dict[str, np.ndarray]
+        A dictionary containing the coordinates for the vertices for each face.
+        The keys are strings: 'x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg'.
+        'x_pos' is the face with the normal in the positive x direction and
+        'x_neg' is the face with the normal in the negative direction.
+        Coordinates are ordered (z, y, x).
     """
     x_min, x_max = bounding_box[-1, :]
     y_min, y_max = bounding_box[-2, :]
@@ -234,16 +284,6 @@ def inside_triangles(triangles):
     inside = np.all(np.array([s_AB != s_AC, s_AB == s_BC]), axis=0)
 
     return inside
-
-
-FACE_INTERCEPTS = {
-    "x_pos": [2, 1],
-    "x_neg": [2, 0],
-    "y_pos": [1, 1],
-    "y_neg": [1, 0],
-    "z_pos": [0, 1],
-    "z_neg": [0, 0],
-}
 
 
 def intersect_line_with_plane_3d(

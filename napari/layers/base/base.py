@@ -13,7 +13,7 @@ from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
     bounding_box_to_face_vertices,
-    face_intercepts_from_bounding_box,
+    face_coordinate_from_bounding_box,
     inside_triangles,
     intersect_line_with_axis_aligned_plane,
     project_point_to_plane,
@@ -1103,14 +1103,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         if front_face is not None and back_face is not None:
             # get the location of the click in data coordinates
             mapped_click = self.world_to_data(event.position)
-            face_intercepts = face_intercepts_from_bounding_box(bbox)
 
             # find the intersection of the view ray with the front face of the data cube
             front_face_normal = FACE_NORMALS[front_face]
-            front_face_intercept = face_intercepts[front_face]
+            front_face_coordinate = face_coordinate_from_bounding_box(
+                bbox, front_face_normal
+            )
             start_point = np.squeeze(
                 intersect_line_with_axis_aligned_plane(
-                    front_face_intercept,
+                    front_face_coordinate,
                     front_face_normal,
                     mapped_click,
                     -view_dir,
@@ -1119,10 +1120,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
             # find the intersection of the view ray with the back face of the data cube
             back_face_normal = FACE_NORMALS[back_face]
-            back_face_intercept = face_intercepts[back_face]
+            back_face_coordinate = face_coordinate_from_bounding_box(
+                bbox, back_face_normal
+            )
             end_point = np.squeeze(
                 intersect_line_with_axis_aligned_plane(
-                    back_face_intercept,
+                    back_face_coordinate,
                     back_face_normal,
                     mapped_click,
                     view_dir,
