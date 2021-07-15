@@ -445,23 +445,19 @@ def find_front_back_face(
     return front_face_normal, back_face_normal
 
 
-def find_start_end_point(
-    front_face_normal,
-    back_face_normal,
+def find_click_bbox_face_intersection(
+    face_normal,
     click_pos: np.ndarray,
     bounding_box: np.ndarray,
     view_dir: np.ndarray,
 ):
-    """
+    """Find the locations of where a click intersects with the
+    specified face of an axis-aligned bounding box
 
     Parameters
     ----------
-    front_face_normal : np.ndarray
-        The (3,) normal vector of the face closest to the camera the click
-        intersects with.
-    back_face_normal : np.ndarray
-        The (3,) normal vector of the face farthest from the camera the click
-        intersects with.
+    face_normal : np.ndarray
+        The (3,) normal vector of the face the click intersects with.
     click_pos : np.ndarray
         (3,) array containing the location that was clicked.
     bounding_box : np.ndarray
@@ -475,45 +471,20 @@ def find_start_end_point(
 
     Returns
     -------
-    start_point : np.ndarray
+    intersection_point : np.ndarray
         (3,) array containing the coordinate for the intersection of the click on
-        the front_face
-    end_point : np.ndarray
-        (3,) array containing the coordinate for the intersection of the click on
-        the front_face
+        the specified face.
     """
-    if front_face_normal is not None and back_face_normal is not None:
-        # find the intersection of the view ray with the front face of the data cube
-        front_face_coordinate = face_coordinate_from_bounding_box(
-            bounding_box, front_face_normal
+    front_face_coordinate = face_coordinate_from_bounding_box(
+        bounding_box, face_normal
+    )
+    intersection_point = np.squeeze(
+        intersect_line_with_axis_aligned_plane(
+            front_face_coordinate,
+            face_normal,
+            click_pos,
+            -view_dir,
         )
-        start_point = np.squeeze(
-            intersect_line_with_axis_aligned_plane(
-                front_face_coordinate,
-                front_face_normal,
-                click_pos,
-                -view_dir,
-            )
-        )
+    )
 
-        # find the intersection of the view ray with the back face of the data cube
-        back_face_coordinate = face_coordinate_from_bounding_box(
-            bounding_box, back_face_normal
-        )
-        end_point = np.squeeze(
-            intersect_line_with_axis_aligned_plane(
-                back_face_coordinate,
-                back_face_normal,
-                click_pos,
-                view_dir,
-            )
-        )
-    else:
-        # get the number of displayed dimensions
-        n_display = len(view_dir)
-
-        # create empty vectors for the points
-        start_point = np.empty((0, n_display))
-        end_point = np.empty((0, n_display))
-
-    return start_point, end_point
+    return intersection_point

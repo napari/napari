@@ -11,7 +11,10 @@ from ...utils._magicgui import add_layer_to_viewer, get_layers
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
-from ...utils.geometry import find_front_back_face, find_start_end_point
+from ...utils.geometry import (
+    find_click_bbox_face_intersection,
+    find_front_back_face,
+)
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
@@ -1048,9 +1051,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         )
 
         # Get the locations in the plane where the ray intersects
-        start_point, end_point = find_start_end_point(
-            front_face_normal, back_face_normal, click_pos_data, bbox, view_dir
-        )
+        if front_face_normal is not None and back_face_normal is not None:
+            start_point = find_click_bbox_face_intersection(
+                front_face_normal, click_pos_data, bbox, view_dir
+            )
+            end_point = find_click_bbox_face_intersection(
+                back_face_normal, click_pos_data, bbox, view_dir
+            )
+        else:
+            # if the click doesn't intersect the data bounding box,
+            # return empty points
+            n_displayed = len(view_dir)
+            start_point = np.empty((n_displayed,))
+            end_point = np.empty((n_displayed,))
 
         return start_point, end_point
 
