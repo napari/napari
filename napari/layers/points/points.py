@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
 from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.translations import trans
-from ..base import Layer
+from ..base import Layer, no_op
 from ..utils._color_manager_constants import ColorMode
 from ..utils.color_manager import ColorManager
 from ..utils.color_transformations import ColorType
@@ -26,7 +26,6 @@ from ._points_utils import create_box, fix_data_points, points_to_squares
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -1057,56 +1056,39 @@ class Points(Layer):
         """
         return str(self._mode)
 
+    _drag_modes = {Mode.ADD: add, Mode.SELECT: select, Mode.PAN_ZOOM: no_op}
+
+    _move_modes = {
+        Mode.ADD: no_op,
+        Mode.SELECT: highlight,
+        Mode.PAN_ZOOM: no_op,
+    }
+    _cursor_modes = {
+        Mode.ADD: 'pointing',
+        Mode.SELECT: 'standard',
+        Mode.PAN_ZOOM: 'standard',
+    }
+
     @mode.setter
     def mode(self, mode):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
-            return
+        mode = self._mode_setter_helper(mode, Mode)
+        assert mode is not None, mode
         old_mode = self._mode
 
-        if old_mode == Mode.ADD:
-            self.mouse_drag_callbacks.remove(add)
-        elif old_mode == Mode.SELECT:
-            # add mouse drag and move callbacks
-            self.mouse_drag_callbacks.remove(select)
-            self.mouse_move_callbacks.remove(highlight)
-
         if mode == Mode.ADD:
-            self.cursor = 'pointing'
-            self.interactive = True
-            self.help = trans._('hold <space> to pan/zoom')
             self.selected_data = set()
-            self._set_highlight()
-            self.mouse_drag_callbacks.append(add)
-        elif mode == Mode.SELECT:
-            self.cursor = 'standard'
-            self.interactive = False
-            self.help = trans._('hold <space> to pan/zoom')
-            # add mouse drag and move callbacks
-            self.mouse_drag_callbacks.append(select)
-            self.mouse_move_callbacks.append(highlight)
-        elif mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
             self.interactive = True
+
+        if mode == Mode.PAN_ZOOM:
             self.help = ''
+            self.interactive = True
         else:
-            raise ValueError(
-                trans._(
-                    "Mode not recognized",
-                    deferred=True,
-                )
-            )
+            self.help = trans._('hold <space> to pan/zoom')
 
         if mode != Mode.SELECT or old_mode != Mode.SELECT:
             self._selected_data_stored = set()
 
-        self._mode = mode
         self._set_highlight()
-
         self.events.mode(mode=mode)
 
     @property

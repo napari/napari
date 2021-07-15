@@ -29,6 +29,16 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
+def no_op(layer, even):
+    """
+    A convenient no-op event for the layer mouse binding.
+
+    This makes it easier to handle many cases by inserting this as
+    as place holder
+    """
+    return None
+
+
 @_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
 class Layer(KeymapProvider, MousemapProvider, ABC):
     """Base layer class.
@@ -291,6 +301,41 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def __repr__(self):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+
+    def _mode_setter_helper(self, mode, Modeclass):
+        """
+        Helper to manage callbacks in multiple layers
+
+        """
+        mode = Modeclass(mode)
+        assert mode is not None
+        if not self.editable:
+            mode = Modeclass.PAN_ZOOM
+        if mode == self._mode:
+            return mode
+        if mode.value not in Modeclass.keys():
+            raise ValueError(
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
+            )
+        old_mode = self._mode
+        self._mode = mode
+
+        for callback_list, mode_dict in [
+            (self.mouse_drag_callbacks, self._drag_modes),
+            (self.mouse_move_callbacks, self._move_modes),
+        ]:
+            if mode_dict[old_mode] in callback_list:
+                callback_list.remove(mode_dict[old_mode])
+            callback_list.append(mode_dict[mode])
+        self.cursor = self._cursor_modes[mode]
+
+        if mode == Modeclass.PAN_ZOOM:
+            self.interactive = True
+        else:
+            self.interactive = False
+        return mode
 
     @classmethod
     def _basename(cls):

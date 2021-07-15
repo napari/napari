@@ -17,7 +17,7 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.misc import ensure_iterable
 from ...utils.translations import trans
-from ..base import Layer
+from ..base import Layer, no_op
 from ..utils.color_manager_utils import guess_continuous, map_property
 from ..utils.color_transformations import (
     ColorType,
@@ -43,7 +43,6 @@ from ._shapes_mouse_bindings import (
     add_path_polygon_creating,
     add_rectangle,
     highlight,
-    no_op,
     select,
     vertex_insert,
     vertex_remove,
@@ -1539,38 +1538,9 @@ class Shapes(Layer):
         return str(self._mode)
 
     @mode.setter
-    def mode(self, mode):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
-            return
-        if mode.value not in Mode.keys():
-            raise ValueError(
-                trans._(
-                    "Mode not recognized: {mode}", deferred=True, mode=mode
-                )
-            )
-
+    def mode(self, mode: Union[str, Mode]):
         old_mode = self._mode
-        self._mode = mode
-
-        for callback_list, mode_dict in [
-            (self.mouse_drag_callbacks, self._drag_modes),
-            (self.mouse_move_callbacks, self._move_modes),
-        ]:
-            if mode_dict[old_mode] in callback_list:
-                callback_list.remove(mode_dict[old_mode])
-            callback_list.append(mode_dict[mode])
-
-        self.cursor = self._cursor_modes[mode]
-
-        if mode == Mode.PAN_ZOOM:
-            self.interactive = True
-        else:
-            self.interactive = False
+        mode = self._mode_setter_helper(mode, Mode)
 
         self.help = _FWD_SHAPE_HELP[mode]
 
