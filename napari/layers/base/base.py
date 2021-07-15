@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -29,12 +31,24 @@ from ._base_constants import Blending
 Extent = namedtuple('Extent', 'data world step')
 
 
-def no_op(layer, even):
+def no_op(layer: Layer, event: Event) -> None:
     """
     A convenient no-op event for the layer mouse binding.
 
     This makes it easier to handle many cases by inserting this as
     as place holder
+
+    Parameters
+    ----------
+    layer : Layer
+        Current layer on which this will be bound as a callback
+    event : Event
+        event that triggered this mouse callback.
+
+    Returns
+    -------
+    None
+
     """
     return None
 
@@ -306,13 +320,25 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         Helper to manage callbacks in multiple layers
 
+        Parameters
+        ----------
+        mode : Modeclass | str
+            New mode for the current layer.
+        Modeclass : Enum
+            Enum for the current class representing the modes it can takes,
+            this is usually specific on each subclass.
+
+        Returns
+        -------
+        tuple (new Mode, mode changed)
+
         """
         mode = Modeclass(mode)
         assert mode is not None
         if not self.editable:
             mode = Modeclass.PAN_ZOOM
         if mode == self._mode:
-            return mode
+            return mode, False
         if mode.value not in Modeclass.keys():
             raise ValueError(
                 trans._(
@@ -335,7 +361,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             self.interactive = True
         else:
             self.interactive = False
-        return mode
+        return mode, True
 
     @classmethod
     def _basename(cls):
@@ -1190,7 +1216,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @classmethod
     def create(
         cls, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> 'Layer':
+    ) -> Layer:
         """Create layer from `data` of type `layer_type`.
 
         Primarily intended for usage by reader plugin hooks and creating a

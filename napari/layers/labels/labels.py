@@ -628,7 +628,9 @@ class Labels(_ImageBase):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode = self._mode_setter_helper(mode, Mode)
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
+            return
 
         self.help = _FWD_SHAPE_HELP[mode]
 

@@ -1071,7 +1071,9 @@ class Points(Layer):
 
     @mode.setter
     def mode(self, mode):
-        mode = self._mode_setter_helper(mode, Mode)
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
+            return
         assert mode is not None, mode
         old_mode = self._mode
 

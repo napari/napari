@@ -1540,7 +1540,9 @@ class Shapes(Layer):
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
         old_mode = self._mode
-        mode = self._mode_setter_helper(mode, Mode)
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
+            return
 
         self.help = _FWD_SHAPE_HELP[mode]
 
