@@ -355,7 +355,7 @@ def point_in_quadrilateral_2d(
         (4, 2) array containing the coordinates for the 4 corners
         of a quadrilateral. The vertices should be in clockwise order
         such that indexing with [0, 1, 2], and [0, 2, 3] results in
-        the two triangles non-overlapping triangles that divide the
+        the two non-overlapping triangles that divide the
         quadrilateral.
 
     Returns
