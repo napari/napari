@@ -12,8 +12,8 @@ from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.events.event import WarningEmitter
 from ...utils.geometry import (
-    find_click_bbox_face_intersection,
     find_front_back_face,
+    intersect_ray_with_axis_aligned_bounding_box_3d,
 )
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
@@ -1051,10 +1051,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         # Get the locations in the plane where the ray intersects
         if front_face_normal is not None and back_face_normal is not None:
-            start_point = find_click_bbox_face_intersection(
+            start_point = intersect_ray_with_axis_aligned_bounding_box_3d(
                 front_face_normal, click_pos_data, bbox, view_dir
             )
-            end_point = find_click_bbox_face_intersection(
+            end_point = intersect_ray_with_axis_aligned_bounding_box_3d(
                 back_face_normal, click_pos_data, bbox, view_dir
             )
         else:

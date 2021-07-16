@@ -10,6 +10,7 @@ from ..geometry import (
     inside_triangles,
     intersect_line_with_axis_aligned_plane,
     intersect_line_with_plane_3d,
+    intersect_ray_with_axis_aligned_bounding_box_3d,
     point_in_quadrilateral_2d,
     project_point_onto_plane,
     rotation_matrix_from_vectors,
@@ -336,3 +337,52 @@ def test_find_front_back_face(
             np.testing.assert_allclose(item, expected[idx])
         else:
             assert item == expected[idx]
+
+
+@pytest.mark.parametrize(
+    'line_position, line_direction, bounding_box, face_normal, expected',
+    [
+        (
+            np.array([5, 5, 5]),
+            np.array([0, 0, 1]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 0, 1]),
+            np.array([5, 5, 10]),
+        ),
+        (
+            np.array([5, 5, 5]),
+            np.array([0, 0, 1]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 0, -1]),
+            np.array([5, 5, 0]),
+        ),
+        (
+            np.array([5, 5, 5]),
+            np.array([0, 1, 0]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 1, 0]),
+            np.array([5, 10, 5]),
+        ),
+        (
+            np.array([5, 5, 5]),
+            np.array([0, 1, 0]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 1, 0]),
+            np.array([5, 10, 5]),
+        ),
+        (
+            np.array([5, 5, 5]),
+            np.array([1, 0, 0]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([1, 0, 0]),
+            np.array([10, 5, 5]),
+        ),
+    ],
+)
+def test_intersect_line_axis_aligned_bounding_box_3d(
+    line_position, line_direction, bounding_box, face_normal, expected
+):
+    result = intersect_ray_with_axis_aligned_bounding_box_3d(
+        line_position, line_direction, bounding_box, face_normal
+    )
+    np.testing.assert_allclose(expected, result)

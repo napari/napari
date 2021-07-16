@@ -468,27 +468,27 @@ def find_front_back_face(
     return front_face_normal, back_face_normal
 
 
-def find_click_bbox_face_intersection(
-    face_normal,
-    click_pos: np.ndarray,
+def intersect_ray_with_axis_aligned_bounding_box_3d(
+    ray_position: np.ndarray,
+    ray_direction: np.ndarray,
     bounding_box: np.ndarray,
-    view_dir: np.ndarray,
+    face_normal: np.ndarray,
 ):
-    """Find the locations of where a click intersects with the
-    specified face of an axis-aligned bounding box
+    """Find the intersection of a ray with the specified face of an
+    axis-aligned bounding box.
 
     Parameters
     ----------
     face_normal : np.ndarray
         The (3,) normal vector of the face the click intersects with.
-    click_pos : np.ndarray
+    ray_position : np.ndarray
         (3,) array containing the location that was clicked.
     bounding_box : np.ndarray
         (N, 2), N=ndim array with the min and max value for each dimension of
         the bounding box. The bounding box is take form the last
         three rows, which are assumed to be in order (z, y, x).
         This should be in the same coordinate system as click_pos.
-    view_dir
+    ray_direction
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as click_pos.
 
@@ -505,8 +505,8 @@ def find_click_bbox_face_intersection(
         intersect_line_with_axis_aligned_plane(
             front_face_coordinate,
             face_normal,
-            click_pos,
-            -view_dir,
+            ray_position,
+            -ray_direction,
         )
     )
 
