@@ -803,7 +803,13 @@ class QtViewer(QSplitter):
         self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
     def _process_mouse_event(self, mouse_callbacks, event):
-        """Called whenever mouse pressed in canvas.
+        """Add properties to the mouse event before passing the event to the
+        napari events system. Called whenever mouse pressed in canvas.
+        This method adds following:
+            position: the position of the click in world coordinates
+            view_direction: a unit vector giving the direction of the camera in world coordinates
+            dims_displayed: a list of the dimensions currently being displayed in the viewer.
+
         Parameters
         ----------
         mouse_callbacks : function
@@ -824,6 +830,9 @@ class QtViewer(QSplitter):
         event.view_direction = get_view_direction_in_scene_coordinates(
             self.view
         )
+
+        # Add the displayed dimensions to the event
+        event.dims_displayed = list(self.viewer.dims.displayed)
 
         # Put a read only wrapper on the event
         event = ReadOnlyWrapper(event)
