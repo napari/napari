@@ -372,10 +372,10 @@ def point_in_quadrilateral_2d(
         return True
 
 
-def click_in_quadrilateral_3d(
-    click_pos_data: np.ndarray,
+def ray_in_quadrilateral_3d(
+    ray_position: np.ndarray,
     quadrilateral: np.ndarray,
-    view_dir_data: np.ndarray,
+    ray_direction: np.ndarray,
 ) -> bool:
     """Determine if a click occurred within a specified quadrilateral.
     For example, this could be used to determine if a click was
@@ -383,18 +383,19 @@ def click_in_quadrilateral_3d(
 
     Parameters
     ----------
-    click_pos_data : np.ndarray
+    ray_position : np.ndarray
         (3,) array containing the location that was clicked. This
         should be in the same coordinate system as the vertices.
+    ray_direction : np.ndarray
+        (3,) array describing the direction camera is pointing in
+        the scene. This should be in the same coordinate system as
+        the vertices.
     quadrilateral : np.ndarray
         (4, 3) array containing the coordinates for the 4 corners
         of a quadrilateral. The vertices should be in clockwise order
         such that indexing with [0, 1, 2], and [0, 2, 3] results in
         the two non-overlapping triangles that divide the quadrilateral.
-    view_dir_data : np.ndarray
-        (3,) array describing the direction camera is pointing in
-        the scene. This should be in the same coordinate system as
-        the vertices.
+
 
     Returns
     -------
@@ -405,15 +406,15 @@ def click_in_quadrilateral_3d(
     # project the vertices of the bound region on to the view plane
     vertices_plane = project_point_onto_plane(
         point=quadrilateral,
-        plane_point=click_pos_data,
-        plane_normal=view_dir_data,
+        plane_point=ray_position,
+        plane_normal=ray_direction,
     )
 
     # rotate the plane to make the triangles 2D
-    rotation_matrix = rotation_matrix_from_vectors(view_dir_data, [0, 0, 1])
+    rotation_matrix = rotation_matrix_from_vectors(ray_direction, [0, 0, 1])
     rotated_vertices = vertices_plane @ rotation_matrix.T
     quadrilateral_2D = rotated_vertices[:, :2]
-    click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
+    click_pos_2D = rotation_matrix.dot(ray_position)[:2]
 
     return point_in_quadrilateral_2d(click_pos_2D, quadrilateral_2D)
 
@@ -452,12 +453,12 @@ def find_front_back_face(
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
         if (np.dot(view_dir, v) + 0.001) < 0:
-            if click_in_quadrilateral_3d(
+            if ray_in_quadrilateral_3d(
                 click_pos, bbox_face_coords[k], view_dir
             ):
                 front_face_normal = v
         elif (np.dot(view_dir, v) + 0.001) > 0:
-            if click_in_quadrilateral_3d(
+            if ray_in_quadrilateral_3d(
                 click_pos, bbox_face_coords[k], view_dir
             ):
                 back_face_normal = v

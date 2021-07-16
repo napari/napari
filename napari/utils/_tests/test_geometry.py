@@ -4,7 +4,6 @@ import pytest
 from ..geometry import (
     bounding_box_to_face_vertices,
     clamp_point_to_bounding_box,
-    click_in_quadrilateral_3d,
     distance_between_point_and_line_3d,
     face_coordinate_from_bounding_box,
     find_front_back_face,
@@ -14,6 +13,7 @@ from ..geometry import (
     intersect_ray_with_axis_aligned_bounding_box_3d,
     point_in_quadrilateral_2d,
     project_point_onto_plane,
+    ray_in_quadrilateral_3d,
     rotation_matrix_from_vectors,
 )
 
@@ -291,7 +291,7 @@ def test_click_in_quadrilateral_3d(
     of a 3D point onto a plane falls within a 3d quadrilateral projected
     onto the same plane
     """
-    in_quadrilateral = click_in_quadrilateral_3d(
+    in_quadrilateral = ray_in_quadrilateral_3d(
         click_position, quadrilateral, view_dir
     )
     assert in_quadrilateral == expected

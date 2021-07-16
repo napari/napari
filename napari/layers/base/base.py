@@ -1052,10 +1052,10 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         # Get the locations in the plane where the ray intersects
         if front_face_normal is not None and back_face_normal is not None:
             start_point = intersect_ray_with_axis_aligned_bounding_box_3d(
-                front_face_normal, click_pos_data, bbox, view_dir
+                click_pos_data, view_dir, bbox, front_face_normal
             )
             end_point = intersect_ray_with_axis_aligned_bounding_box_3d(
-                back_face_normal, click_pos_data, bbox, view_dir
+                click_pos_data, view_dir, bbox, back_face_normal
             )
         else:
             # if the click doesn't intersect the data bounding box,
