@@ -4,12 +4,13 @@ import pytest
 from ..geometry import (
     bounding_box_to_face_vertices,
     clamp_point_to_bounding_box,
+    click_in_quadrilateral_3d,
     face_coordinate_from_bounding_box,
     inside_triangles,
     intersect_line_with_axis_aligned_plane,
     intersect_line_with_plane_3d,
     point_in_quadrilateral_2d,
-    project_point_to_plane,
+    project_point_onto_plane,
     rotation_matrix_from_vectors,
 )
 
@@ -29,7 +30,9 @@ expected_multiple_point = np.array([[10, 0, 10], [20, 0, 30], [20, 0, 20]])
 def test_project_point_to_plane(point, expected_projected_point):
     plane_point = np.array([20, 0, 0])
     plane_normal = np.array([0, 1, 0])
-    projected_point = project_point_to_plane(point, plane_point, plane_normal)
+    projected_point = project_point_onto_plane(
+        point, plane_point, plane_normal
+    )
 
     np.testing.assert_allclose(projected_point, expected_projected_point)
 
@@ -253,3 +256,39 @@ def test_point_in_quadrilateral_2d(point, quadrilateral, expected):
     """
     inside = point_in_quadrilateral_2d(point, quadrilateral)
     assert inside == expected
+
+
+@pytest.mark.parametrize(
+    'click_position, quadrilateral, view_dir, expected',
+    [
+        (
+            np.array([0, 0, 0]),
+            np.array([[-1, -1, 0], [-1, 1, 0], [1, 1, 0], [1, -1, 0]]),
+            np.array([0, 0, 1]),
+            True,
+        ),
+        (
+            np.array([0, 0, 5]),
+            np.array([[-1, -1, 0], [-1, 1, 0], [1, 1, 0], [1, -1, 0]]),
+            np.array([0, 0, 1]),
+            True,
+        ),
+        (
+            np.array([0, 5, 0]),
+            np.array([[-1, -1, 0], [-1, 1, 0], [1, 1, 0], [1, -1, 0]]),
+            np.array([0, 0, 1]),
+            False,
+        ),
+    ],
+)
+def test_click_in_quadrilateral_3d(
+    click_position, quadrilateral, view_dir, expected
+):
+    """Test that click in quadrilateral 3d determines whether the projection
+    of a 3D point onto a plane falls within a 3d quadrilateral projected
+    onto the same plane
+    """
+    in_quadrilateral = click_in_quadrilateral_3d(
+        click_position, quadrilateral, view_dir
+    )
+    assert in_quadrilateral == expected

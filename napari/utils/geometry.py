@@ -14,7 +14,7 @@ FACE_NORMALS = {
 }
 
 
-def project_point_to_plane(
+def project_point_onto_plane(
     point: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
 ) -> np.ndarray:
     """Project a point on to a plane that has
@@ -362,6 +362,7 @@ def point_in_quadrilateral_2d(
     -------
 
     """
+    print(quadrilateral.shape)
     triangle_vertices = np.stack(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )
@@ -390,8 +391,7 @@ def click_in_quadrilateral_3d(
         (4, 3) array containing the coordinates for the 4 corners
         of a quadrilateral. The vertices should be in clockwise order
         such that indexing with [0, 1, 2], and [0, 2, 3] results in
-        the two triangles non-overlapping triangles that divide the
-        quadrilateral.
+        the two non-overlapping triangles that divide the quadrilateral.
     view_dir_data : np.ndarray
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as
@@ -403,8 +403,8 @@ def click_in_quadrilateral_3d(
         True if the click is in the region specified by vertices.
     """
 
-    # project the vertices on to the view plane
-    vertices_plane = project_point_to_plane(
+    # project the vertices of the bound region on to the view plane
+    vertices_plane = project_point_onto_plane(
         point=quadrilateral,
         plane_point=click_pos_data,
         plane_normal=view_dir_data,
@@ -413,11 +413,10 @@ def click_in_quadrilateral_3d(
     # rotate the plane to make the triangles 2D
     rotation_matrix = rotation_matrix_from_vectors(view_dir_data, [0, 0, 1])
     rotated_vertices = vertices_plane @ rotation_matrix.T
-    vertices_2D = rotated_vertices[:, :2]
+    quadrilateral_2D = rotated_vertices[:, :2]
     click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
 
-    quadrilateral = np.stack((vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]]))
-    return point_in_quadrilateral_2d(click_pos_2D, quadrilateral)
+    return point_in_quadrilateral_2d(click_pos_2D, quadrilateral_2D)
 
 
 def find_front_back_face(
