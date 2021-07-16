@@ -400,8 +400,8 @@ def test_distance_between_point_and_line_3d():
     # find a point a random distance away on the line
     point_on_line = line_position + np.random.random(1) * line_direction
 
-    # find a point a fixed distance from the point on the line in a random
-    # direction
+    # find a point a fixed distance from the point in a direction perpendicular
+    # to the line direction.
     expected_distance = np.random.random(1)
     point = point_on_line + expected_distance * np.array([0, 1, 0])
 
