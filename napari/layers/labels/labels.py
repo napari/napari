@@ -1,6 +1,6 @@
 import warnings
 from collections import deque
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -894,7 +894,9 @@ class Labels(_ImageBase):
             col = self.colormap.map(val)[0]
         return col
 
-    def _get_value_ray(self, start_point, end_point):
+    def _get_value_ray(
+        self, start_point, end_point, dims_displayed: List[int]
+    ):
         """get the first non-background value encountered along a ray"""
         sample_ray = end_point - start_point
         length_sample_vector = np.linalg.norm(sample_ray)
@@ -904,7 +906,7 @@ class Labels(_ImageBase):
         for i in range(n_iterations):
             sample_point = np.asarray(start_point + i * increment_vector)
             sample_point = clamp_point_to_bounding_box(
-                sample_point, self._display_bounding_box
+                sample_point, self._display_bounding_box(dims_displayed)
             ).astype(int)
             value = self.data[
                 sample_point[0], sample_point[1], sample_point[2]

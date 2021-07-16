@@ -1030,16 +1030,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
         return tuple(vector @ world_to_layer)
 
-    @property
-    def _display_bounding_box(self):
+    def _display_bounding_box(self, dims_displayed: List[int]):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
-        return self._extent_data[:, self._dims_displayed].T
+        return self._extent_data[:, dims_displayed].T
 
     def _cursor_ray(self, event):
         """Get the start and end point for the ray extending from the cursor through the data"""
 
         # create the bounding box in data coordinates
-        bbox = self._display_bounding_box
+        bbox = self._display_bounding_box(event.dims_displayed)
 
         # get the view direction
         view_dir = np.asarray(self.vector_world_to_data(event.view_direction))
