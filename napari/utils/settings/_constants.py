@@ -1,6 +1,6 @@
 from enum import auto
 
-from ..utils.misc import StringEnum
+from ...utils.misc import StringEnum
 
 
 class LoopMode(StringEnum):
