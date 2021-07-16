@@ -27,8 +27,7 @@ def Event():
     )
 
 
-@pytest.mark.parametrize("expected_sum", [(244)])
-def test_paint(Event, expected_sum):
+def test_paint(Event):
     """Test painting labels with circle brush."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
@@ -62,16 +61,14 @@ def test_paint(Event, expected_sum):
     assert np.unique(layer.data[-8:, -8:]) == 3
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
-    assert np.sum(layer.data == 3) == expected_sum
+    assert np.sum(layer.data == 3) == 244
 
 
-@pytest.mark.parametrize("brush_shape, expected_sum", [("circle", 244)])
-def test_paint_scale(Event, brush_shape, expected_sum):
+def test_paint_scale(Event):
     """Test painting labels with circle brush when scaled."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data, scale=(2, 2))
     layer.brush_size = 10
-    layer.brush_shape = brush_shape
 
     layer.mode = 'paint'
     layer.selected_label = 3
@@ -100,20 +97,15 @@ def test_paint_scale(Event, brush_shape, expected_sum):
     assert np.unique(layer.data[-8:, -8:]) == 3
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
-    assert np.sum(layer.data == 3) == expected_sum
+    assert np.sum(layer.data == 3) == 244
 
 
-@pytest.mark.parametrize("brush_shape, expected_sum", [("circle", 156)])
-def test_erase(Event, brush_shape, expected_sum):
+def test_erase(Event):
     """Test erasing labels with different brush shapes."""
     data = np.ones((20, 20), dtype=np.int32)
     layer = Labels(data)
-    layer.brush_shape = brush_shape
-
     layer.brush_size = 10
     layer.mode = 'erase'
-
-    layer.brush_shape = brush_shape
 
     layer.selected_label = 3
 
@@ -141,7 +133,7 @@ def test_erase(Event, brush_shape, expected_sum):
     assert np.unique(layer.data[-8:, -8:]) == 0
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
-    assert np.sum(layer.data == 1) == expected_sum
+    assert np.sum(layer.data == 1) == 156
 
 
 def test_pick(Event):

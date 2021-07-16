@@ -664,8 +664,7 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
-@pytest.mark.parametrize("expected_sum", [([41, 137, 137, 41, 349])])
-def test_paint_2d(expected_sum):
+def test_paint_2d():
     """Test painting labels with circle brush."""
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
@@ -685,19 +684,15 @@ def test_paint_2d(expected_sum):
     layer.brush_size = 20
     layer.paint((15, 27), 7)
 
-    assert np.sum(layer.data[:8, :8] == 3) == expected_sum[0]
-    assert np.sum(layer.data[9:22, 2:15] == 4) == expected_sum[1]
-    assert np.sum(layer.data[24:37, 2:15] == 5) == expected_sum[2]
-    assert np.sum(layer.data[33:, 33:] == 6) == expected_sum[3]
-    assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
+    assert np.sum(layer.data[:8, :8] == 3) == 41
+    assert np.sum(layer.data[9:22, 2:15] == 4) == 137
+    assert np.sum(layer.data[24:37, 2:15] == 5) == 137
+    assert np.sum(layer.data[33:, 33:] == 6) == 41
+    assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
 @pytest.mark.timeout(1)
-@pytest.mark.parametrize(
-    "expected_sum",
-    [(411)],
-)
-def test_paint_2d_xarray(expected_sum):
+def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
@@ -706,14 +701,10 @@ def test_paint_2d_xarray(expected_sum):
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
-    assert layer.data.sum() == expected_sum
+    assert layer.data.sum() == 411
 
 
-@pytest.mark.parametrize(
-    "expected_sum",
-    [([137, 1189, 1103])],
-)
-def test_paint_3d(expected_sum):
+def test_paint_3d():
     """Test painting labels with circle brush on 3D image."""
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
@@ -732,9 +723,9 @@ def test_paint_3d(expected_sum):
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
-    assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == expected_sum[0]
-    assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == expected_sum[1]
-    assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == expected_sum[2]
+    assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == 137
+    assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == 1189
+    assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == 1103
 
 
 def test_fill():
