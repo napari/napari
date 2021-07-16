@@ -1,3 +1,6 @@
+import numpy as np
+from vispy.scene.widgets.viewbox import ViewBox
+
 from ..layers import (
     Image,
     Labels,
@@ -63,3 +66,40 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
             dtype=type(layer),
         )
     )
+
+
+def get_view_direction_in_scene_coordinates(
+    view: ViewBox,
+) -> np.ndarray:
+    """calculate the unit vector pointing in the direction of the view
+
+    Adapted From:
+    https://stackoverflow.com/questions/37877592/
+        get-view-direction-relative-to-scene-in-vispy/37882984
+
+    Parameters
+    ----------
+    view : vispy.scene.widgets.viewbox.ViewBox
+        The vispy view box object to get the view direction from.
+
+    Returns
+    -------
+    view_vector : np.ndarray
+        Unit vector in the direction of the view in scene coordinates
+    """
+    tform = view.scene.transform
+    w, h = view.canvas.size
+    # in homogeneous screen coordinates
+    screen_center = np.array([w / 2, h / 2, 0, 1])
+    d1 = np.array([0, 0, 1, 0])
+    point_in_front_of_screen_center = screen_center + d1
+    p1 = tform.imap(point_in_front_of_screen_center)
+    p0 = tform.imap(screen_center)
+    assert abs(p1[3] - 1.0) < 1e-5
+    assert abs(p0[3] - 1.0) < 1e-5
+    d2 = p1 - p0
+    assert abs(d2[3]) < 1e-5
+    # in 3D screen coordinates
+    d3 = d2[0:3]
+    d4 = d3 / np.linalg.norm(d3)
+    return d4[[2, 1, 0]]
