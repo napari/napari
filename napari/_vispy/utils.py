@@ -85,7 +85,8 @@ def get_view_direction_in_scene_coordinates(
     Returns
     -------
     view_vector : np.ndarray
-        Unit vector in the direction of the view in scene coordinates
+        Unit vector in the direction of the view in scene coordinates.
+        Axes are ordered zyx.
     """
     tform = view.scene.transform
     w, h = view.canvas.size
