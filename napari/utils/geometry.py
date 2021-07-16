@@ -362,7 +362,6 @@ def point_in_quadrilateral_2d(
     -------
 
     """
-    print(quadrilateral.shape)
     triangle_vertices = np.stack(
         (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
     )

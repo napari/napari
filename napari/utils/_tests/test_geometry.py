@@ -6,6 +6,7 @@ from ..geometry import (
     clamp_point_to_bounding_box,
     click_in_quadrilateral_3d,
     face_coordinate_from_bounding_box,
+    find_front_back_face,
     inside_triangles,
     intersect_line_with_axis_aligned_plane,
     intersect_line_with_plane_3d,
@@ -292,3 +293,46 @@ def test_click_in_quadrilateral_3d(
         click_position, quadrilateral, view_dir
     )
     assert in_quadrilateral == expected
+
+
+@pytest.mark.parametrize(
+    'click_position, bounding_box, view_dir, expected',
+    [
+        (
+            np.array([5, 5, 5]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 0, 1]),
+            ([0, 0, -1], [0, 0, 1]),
+        ),
+        (
+            np.array([-5, -5, -5]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 0, 1]),
+            (None, None),
+        ),
+        (
+            np.array([5, 5, 5]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([0, 1, 0]),
+            ([0, -1, 0], [0, 1, 0]),
+        ),
+        (
+            np.array([5, 5, 5]),
+            np.array([[0, 10], [0, 10], [0, 10]]),
+            np.array([1, 0, 0]),
+            ([-1, 0, 0], [1, 0, 0]),
+        ),
+    ],
+)
+def test_find_front_back_face(
+    click_position, bounding_box, view_dir, expected
+):
+    """Test that find front_back face finds the faces of an axis aligned
+    bounding box that a ray intersects with.
+    """
+    result = find_front_back_face(click_position, bounding_box, view_dir)
+    for idx, item in enumerate(result):
+        if item is not None:
+            np.testing.assert_allclose(item, expected[idx])
+        else:
+            assert item == expected[idx]
