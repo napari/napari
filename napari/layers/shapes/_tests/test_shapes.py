@@ -274,6 +274,16 @@ def test_text_error(properties):
         Shapes(data, properties=copy(properties), text=123)
 
 
+def test_select_properties_object_dtype():
+    """selecting points when they have a property of object dtype should not fail"""
+    # pandas uses object as dtype for strings by default
+    properties = pd.DataFrame({'color': ['red', 'green']})
+    pl = Shapes(np.ones((2, 2, 2)), properties=properties)
+    selection = {0, 1}
+    pl.selected_data = selection
+    assert pl.selected_data == selection
+
+
 def test_refresh_text():
     """Test refreshing the text after setting new properties"""
     shape = (10, 4, 2)

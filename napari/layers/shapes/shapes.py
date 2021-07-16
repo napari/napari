@@ -1145,10 +1145,14 @@ class Shapes(Layer):
                 edge_width = edge_width[0]
                 with self.block_update_properties():
                     self.current_edge_width = edge_width
-            properties = {
-                k: np.unique(v[selected_data_indices], axis=0)
-                for k, v in self.properties.items()
-            }
+
+            properties = {}
+            for k, v in self.properties.items():
+                # pandas uses `object` as dtype for strings by default, which
+                # combined with the axis argument breaks np.unique
+                axis = 0 if v.ndim > 1 else None
+                properties[k] = np.unique(v[selected_data_indices], axis=axis)
+
             n_unique_properties = np.array(
                 [len(v) for v in properties.values()]
             )
