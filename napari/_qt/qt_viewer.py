@@ -9,6 +9,7 @@ from qtpy.QtCore import QCoreApplication, QObject, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 
+from .._vispy.utils import get_view_direction_in_scene_coordinates
 from ..components.camera import Camera
 from ..components.layerlist import LayerList
 from ..utils import config, perf
@@ -34,12 +35,7 @@ from .containers import QtLayerList
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
-from .utils import (
-    QImg2array,
-    circle_pixmap,
-    get_view_direction_in_scene_coordinates,
-    square_pixmap,
-)
+from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
