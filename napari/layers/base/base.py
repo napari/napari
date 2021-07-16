@@ -446,6 +446,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @affine.setter
     def affine(self, affine):
+        # Assignment by transform name is not supported by TransformChain and
+        # EventedList, so use the integer index instead. For more details, see:
+        # https://github.com/napari/napari/issues/3058
         self._transforms[2] = coerce_affine(
             affine, ndim=self.ndim, name='physical2world'
         )
