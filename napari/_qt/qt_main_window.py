@@ -650,12 +650,8 @@ class Window:
         settings = get_settings()
 
         for widget in self.qt_viewer.dims.slider_widgets:
-            widget.__class__.fps.fset(
-                widget, settings.application.playback_fps
-            )
-            widget.__class__.loop_mode.fset(
-                widget, settings.application.playback_mode
-            )
+            setattr(widget, 'fps', settings.application.playback_fps)
+            setattr(widget, 'loop_mode', settings.application.playback_mode)
 
     def _reset_preference_states(self):
         # resetting plugin states in plugin manager
