@@ -39,7 +39,7 @@ See :ref:`plugins-hook-implement`.
 3. **Plugin discovery**: Plugins that are installed in the same python
 environment as napari can make themselves known to napari. ``napari`` will then
 scan plugin modules for *hook implementations* that will be called at the
-appropriate place during the execution of ``napari``.
+appropriate time and place during the execution of ``napari``.
 See :ref:`plugin-discovery`.
 
 4. **Plugin sharing**: When you are ready to share your plugin, tag your repo
