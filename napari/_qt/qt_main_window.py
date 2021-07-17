@@ -661,14 +661,12 @@ class Window:
 
         plugin_manager.discover()
 
-        settings = get_settings()
         # need to reset call order to defaults
-        if settings.plugins.call_order is not None:
-            plugin_manager.set_call_order(get_settings().plugins.call_order)
-        else:
-            plugin_manager.set_call_order(
-                settings._defaults['plugins'].call_order
-            )
+        settings = get_settings()
+        plugin_manager.set_call_order(
+            settings.plugins.call_order
+            or settings.plugins._defaults.get('call_order', {})
+        )
 
         # reset the keybindings in action manager
         self.qt_viewer._bind_shortcuts()

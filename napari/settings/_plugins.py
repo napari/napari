@@ -27,7 +27,7 @@ class PluginsSettings(EventedModel):
     # 3. You don't need to touch this value if you're just adding a new option
     schema_version: Union[SchemaVersion, Tuple[int, int, int]] = (0, 1, 1)
     call_order: CallOrderDict = Field(
-        None,
+        default_factory=dict,
         title=trans._("Plugin sort order"),
         description=trans._(
             "Sort plugins for each action in the order to be called.",
