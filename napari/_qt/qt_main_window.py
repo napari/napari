@@ -26,7 +26,6 @@ from qtpy.QtWidgets import (
 from ..plugins import menu_item_template as plugin_menu_item_template
 from ..plugins import plugin_manager
 from ..settings import get_settings
-from ..settings._constants import LoopMode
 from ..utils import config, perf
 from ..utils.history import get_save_history, update_save_history
 from ..utils.io import imsave
@@ -653,12 +652,8 @@ class Window:
         settings = get_settings()
 
         for widget in self.qt_viewer.dims.slider_widgets:
-            widget.__class__.fps.fset(
-                widget, settings.application.playback_fps
-            )
-            widget.__class__.loop_mode.fset(
-                widget, LoopMode(settings.application.playback_mode)
-            )
+            setattr(widget, 'fps', settings.application.playback_fps)
+            setattr(widget, 'loop_mode', settings.application.playback_mode)
 
     def _reset_preference_states(self):
         # resetting plugin states in plugin manager

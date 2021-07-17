@@ -174,7 +174,8 @@ class PreferencesDialog(QDialog):
         # Need to remove certain properties that will not be displayed on the GUI
         properties = schema.pop('properties')
         model = setting['model']
-        values = model.dict()
+        with model.enums_as_values():
+            values = model.dict()
         napari_config = getattr(model, "NapariConfig", None)
         if napari_config is not None:
             for val in napari_config.preferences_exclude:
