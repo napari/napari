@@ -9,8 +9,8 @@ import math
 import numpy as np
 import warnings
 
-from .globject import GLObject
-from .util import check_enum
+from vispy.gloo.globject import GLObject
+from vispy.gloo.util import check_enum
 
 
 F64_PRECISION_WARNING = ("GPUs can't support floating point data with more "
