@@ -290,7 +290,7 @@ def add_flash_animation(
 
     # now  set an actual time for the flashing and an intermediate color
     widget._flash_animation.setDuration(duration)
-    widget._flash_animation.setKeyValueAt(0.5, QColor(*color))
+    widget._flash_animation.setKeyValueAt(0.1, QColor(*color))
 
 
 def remove_flash_animation(widget: QWidget):
