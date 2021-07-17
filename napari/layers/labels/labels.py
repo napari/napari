@@ -115,6 +115,10 @@ class Labels(_ImageBase):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    render_as_plane : bool
+        Whether the data should be rendered as a plane in 3D. If True, data is
+        rendered as a plane through the 3D volume. If False, data is rendered
+        as a 3D volume.
 
     Attributes
     ----------
@@ -211,6 +215,7 @@ class Labels(_ImageBase):
         rendering='iso_categorical',
         visible=True,
         multiscale=None,
+        render_as_plane=False,
     ):
 
         self._seed = seed
@@ -251,6 +256,7 @@ class Labels(_ImageBase):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            render_as_plane=render_as_plane,
         )
 
         self.events.add(
