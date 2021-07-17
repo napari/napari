@@ -1020,24 +1020,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         tuple
             Vector in data coordinates.
         """
-        # if len(vector) >= self.ndim:
-        #     vector = list(vector[-self.ndim :])
-        # else:
-        #     vector = [0] * (self.ndim - len(vector)) + list(vector)
-        vector = np.asarray(vector)
-
-        # # create transform for view direction (world -> layer data)
-        # shear_matrix = expand_upper_triangular(self.shear)
-        # rot_matrix = self.rotate
-        # scale_matrix = np.diag(self.scale)
-        # world_to_layer = np.linalg.inv(
-        #     shear_matrix @ rot_matrix
-        # ).T @ np.linalg.inv(scale_matrix)
-        #
-        # transformed_vector = vector @ world_to_layer
-        # normalized_vector = transformed_vector / np.linalg.norm(
-        #     transformed_vector
-        # )
         p1 = np.asarray(self.world_to_data(vector))
         p0 = np.asarray(self.world_to_data(np.zeros_like(vector)))
         normalized_vector = (p1 - p0) / np.linalg.norm(p1 - p0)
