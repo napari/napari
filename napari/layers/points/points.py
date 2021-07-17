@@ -1008,9 +1008,13 @@ class Points(Layer):
             with self.block_update_properties():
                 self.current_size = size
 
-        properties = {
-            k: np.unique(v[index], axis=0) for k, v in self.properties.items()
-        }
+        properties = {}
+        for k, v in self.properties.items():
+            # pandas uses `object` as dtype for strings by default, which
+            # combined with the axis argument breaks np.unique
+            axis = 0 if v.ndim > 1 else None
+            properties[k] = np.unique(v[index], axis=axis)
+
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
             with self.block_update_properties():
@@ -1434,6 +1438,7 @@ class Points(Layer):
                 self.data[np.ix_(index, disp)] + shift
             )
             self.refresh()
+        self.events.data(value=self.data)
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
