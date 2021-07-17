@@ -34,8 +34,6 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
-from numpy.typing import ArrayLike
-
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from vispy.gloo import VertexBuffer, IndexBuffer
 from vispy.gloo.texture import should_cast_to_f32
@@ -1082,7 +1080,7 @@ class VolumeVisual(Visual):
         return self._plane_position
 
     @plane_position.setter
-    def plane_position(self, value: ArrayLike):
+    def plane_position(self, value):
         value = np.array(value, dtype=np.float32).ravel()
         if value.shape != (3,):
             raise ValueError('plane_position must be a 3 element array-like object')
@@ -1095,7 +1093,7 @@ class VolumeVisual(Visual):
         return self._plane_normal
 
     @plane_normal.setter
-    def plane_normal(self, value: ArrayLike):
+    def plane_normal(self, value):
         value = np.array(value, dtype=np.float32).ravel()
         if value.shape != (3,):
             raise ValueError('plane_normal must be a 3 element array-like object')
