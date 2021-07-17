@@ -25,7 +25,7 @@ volume_layer = viewer.add_image(
 # add the same volume and render as plane
 # plane should be in 'additive' blending mode or depth looks all wrong
 plane_layer = viewer.add_image(
-    blobs, rendering='average', name='plane', blending='additive', opacity=0.5,
+    blobs, rendering='average', name='plane', blending='additive', opacity=0.5
 )
 plane_layer.render_as_plane = True
 
