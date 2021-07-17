@@ -20,6 +20,7 @@ class PreferencesDialog(QDialog):
     """Preferences Dialog for Napari user settings."""
 
     valueChanged = Signal()
+    updatedValues = Signal()
 
     ui_schema = {
         "call_order": {"ui:widget": "plugins"},
@@ -95,6 +96,11 @@ class PreferencesDialog(QDialog):
             text=text_str,
         )
         widget.exec_()
+
+    def accept(self):
+        """Override to emit signal."""
+        self.closed.emit()
+        super().accept()
 
     def closeEvent(self, event):
         """Override to emit signal."""
@@ -202,7 +208,7 @@ class PreferencesDialog(QDialog):
 
         if event is True:
             get_settings().reset()
-            self.close()
+            self.accept()
             self.valueChanged.emit()
             self._list.clear()
 
@@ -218,7 +224,8 @@ class PreferencesDialog(QDialog):
 
     def on_click_ok(self):
         """Keeps the selected preferences saved to settings."""
-        self.close()
+        self.updatedValues.emit()
+        self.accept()
 
     def on_click_cancel(self):
         """Restores the settings in place when dialog was launched."""

@@ -16,13 +16,36 @@ from ...utils.events import Event
 from ...utils.events.custom_types import Array
 from ...utils.events.event import WarningEmitter
 from ...utils.translations import trans
+from ..base import no_op
 from ..image._image_utils import guess_multiscale
 from ..image.image import _ImageBase
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import validate_properties
-from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
+from ._labels_constants import LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import indices_in_shape, sphere_indices
+
+_REV_SHAPE_HELP = {
+    trans._('enter paint or fill mode to edit labels'): {Mode.PAN_ZOOM},
+    trans._('hold <space> to pan/zoom, click to pick a label'): {
+        Mode.PICK,
+        Mode.FILL,
+    },
+    trans._(
+        'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
+    ): {Mode.PAINT},
+    trans._('hold <space> to pan/zoom, drag to erase a label'): {Mode.ERASE},
+}
+
+
+# This avoid duplicating the trans._ help messages above
+# as some modes have the same help.
+# while most tooling will recognise identical messages,
+# this can lead to human error.
+_FWD_SHAPE_HELP = {}
+for t, modes in _REV_SHAPE_HELP.items():
+    for m in modes:
+        _FWD_SHAPE_HELP[m] = t
 
 
 class Labels(_ImageBase):
@@ -77,6 +100,11 @@ class Labels(_ImageBase):
         One of a list of preset blending modes that determines how RGB and
         alpha values of the layer visual get mixed. Allowed values are
         {'opaque', 'translucent', and 'additive'}.
+    rendering : str
+        3D Rendering mode used by vispy. Must be one {'translucent', 'iso_categorical'}.
+        'translucent' renders without lighting. 'iso_categorical' uses isosurface
+        rendering to calculate lighting effects on labeled surfaces.
+        The default value is 'iso_categorical'.
     visible : bool
         Whether the layer visual is currently being displayed.
     multiscale : bool
@@ -180,6 +208,7 @@ class Labels(_ImageBase):
         affine=None,
         opacity=0.7,
         blending='translucent',
+        rendering='iso_categorical',
         visible=True,
         multiscale=None,
     ):
@@ -193,7 +222,6 @@ class Labels(_ImageBase):
         )
         self._all_vals[0] = 0
         self._color_mode = LabelColorMode.AUTO
-        self._brush_shape = LabelBrushShape.CIRCLE
         self._show_selected_label = False
         self._contour = 0
 
@@ -210,7 +238,8 @@ class Labels(_ImageBase):
             colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
-            rendering='translucent',
+            rendering=rendering,
+            iso_threshold=0,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -474,6 +503,7 @@ class Labels(_ImageBase):
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'properties': self._properties,
+                'rendering': self.rendering,
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
@@ -547,41 +577,6 @@ class Labels(_ImageBase):
         self.refresh()
 
     @property
-    def brush_shape(self):
-        """str: Paintbrush shape"""
-
-        warnings.warn(
-            (
-                trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
-                    deferred=True,
-                )
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        return str(self._brush_shape)
-
-    @brush_shape.setter
-    def brush_shape(self, brush_shape):
-        """Set current brush shape."""
-
-        warnings.warn(
-            (
-                trans._(
-                    "The square brush shape is deprecated and will be removed in version 0.4.9. Afterward, only the circle brush shape will be available, and the layer.brush_shape attribute will be removed.",
-                    deferred=True,
-                )
-            ),
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
-        self._brush_shape = LabelBrushShape(brush_shape)
-        self.cursor = self.brush_shape
-
-    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -608,59 +603,39 @@ class Labels(_ImageBase):
         """
         return str(self._mode)
 
+    _drag_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.PICK: pick,
+        Mode.PAINT: draw,
+        Mode.FILL: draw,
+        Mode.ERASE: draw,
+    }
+
+    _move_modes = {
+        Mode.PAN_ZOOM: no_op,
+        Mode.PICK: no_op,
+        Mode.PAINT: no_op,
+        Mode.FILL: no_op,
+        Mode.ERASE: no_op,
+    }
+    _cursor_modes = {
+        Mode.PAN_ZOOM: 'standard',
+        Mode.PICK: 'cross',
+        Mode.PAINT: 'circle',
+        Mode.FILL: 'cross',
+        Mode.ERASE: 'circle',
+    }
+
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-        mode = Mode(mode)
-
-        if not self.editable:
-            mode = Mode.PAN_ZOOM
-
-        if mode == self._mode:
+        mode, changed = self._mode_setter_helper(mode, Mode)
+        if not changed:
             return
 
-        if self._mode == Mode.PICK:
-            self.mouse_drag_callbacks.remove(pick)
-        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
-            self.mouse_drag_callbacks.remove(draw)
+        self.help = _FWD_SHAPE_HELP[mode]
 
-        if mode == Mode.PAN_ZOOM:
-            self.cursor = 'standard'
-            self.interactive = True
-            self.help = trans._('enter paint or fill mode to edit labels')
-        elif mode == Mode.PICK:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, click to pick a label'
-            )
-            self.mouse_drag_callbacks.append(pick)
-        elif mode == Mode.PAINT:
-            self.cursor = str(self._brush_shape)
+        if mode in (Mode.PAINT, Mode.ERASE):
             self.cursor_size = self._calculate_cursor_size()
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, hold <control> to fill, hold <alt> to erase, drag to paint a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.FILL:
-            self.cursor = 'cross'
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, click to fill a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.ERASE:
-            self.cursor = str(self._brush_shape)
-            self.cursor_size = self._calculate_cursor_size()
-            self.interactive = False
-            self.help = trans._(
-                'hold <space> to pan/zoom, drag to erase a label'
-            )
-            self.mouse_drag_callbacks.append(draw)
-        else:
-            raise ValueError(trans._("Mode not recognized"))
-
-        self._mode = mode
 
         self.events.mode(mode=mode)
         self.refresh()
@@ -1066,63 +1041,40 @@ class Labels(_ImageBase):
         paint_scale = np.array(
             [self.scale[i] for i in dims_to_paint], dtype=float
         )
-        if str(self._brush_shape) == "square":
-            brush_size_dims = [self.brush_size] * self.ndim
-            if self.n_edit_dimensions < self.ndim:
-                for i in range(self.ndim):
-                    if i not in dims_to_paint:
-                        brush_size_dims[i] = 1
 
-            slice_coord = tuple(
-                slice(
-                    np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
-                        int
-                    ),
-                    np.round(np.clip(c + brush_size / 2 + 0.5, 0, s)).astype(
-                        int
-                    ),
-                    1,
+        slice_coord = [int(np.round(c)) for c in coord]
+        if self.n_edit_dimensions < self.ndim:
+            coord_paint = [coord[i] for i in dims_to_paint]
+            shape = [shape[i] for i in dims_to_paint]
+        else:
+            coord_paint = coord
+
+        # Ensure circle doesn't have spurious point
+        # on edge by keeping radius as ##.5
+        radius = np.floor(self.brush_size / 2) + 0.5
+        mask_indices = sphere_indices(radius, tuple(paint_scale))
+
+        mask_indices = mask_indices + np.round(np.array(coord_paint)).astype(
+            int
+        )
+
+        # discard candidate coordinates that are out of bounds
+        mask_indices = indices_in_shape(mask_indices, shape)
+
+        # Transfer valid coordinates to slice_coord,
+        # or expand coordinate if 3rd dim in 2D image
+        slice_coord_temp = [m for m in mask_indices.T]
+        if self.n_edit_dimensions < self.ndim:
+            for j, i in enumerate(dims_to_paint):
+                slice_coord[i] = slice_coord_temp[j]
+            for i in dims_not_painted:
+                slice_coord[i] = slice_coord[i] * np.ones(
+                    mask_indices.shape[0], dtype=int
                 )
-                for c, s, brush_size in zip(
-                    coord, self.data.shape, brush_size_dims
-                )
-            )
-            slice_coord = tuple(map(np.ravel, np.mgrid[slice_coord]))
-            slice_coord = indices_in_shape(slice_coord, shape)
-        elif str(self._brush_shape) == "circle":
-            slice_coord = [int(np.round(c)) for c in coord]
-            if self.n_edit_dimensions < self.ndim:
-                coord_paint = [coord[i] for i in dims_to_paint]
-                shape = [shape[i] for i in dims_to_paint]
-            else:
-                coord_paint = coord
+        else:
+            slice_coord = slice_coord_temp
 
-            # Ensure circle doesn't have spurious point
-            # on edge by keeping radius as ##.5
-            radius = np.floor(self.brush_size / 2) + 0.5
-            mask_indices = sphere_indices(radius, tuple(paint_scale))
-
-            mask_indices = mask_indices + np.round(
-                np.array(coord_paint)
-            ).astype(int)
-
-            # discard candidate coordinates that are out of bounds
-            mask_indices = indices_in_shape(mask_indices, shape)
-
-            # Transfer valid coordinates to slice_coord,
-            # or expand coordinate if 3rd dim in 2D image
-            slice_coord_temp = [m for m in mask_indices.T]
-            if self.n_edit_dimensions < self.ndim:
-                for j, i in enumerate(dims_to_paint):
-                    slice_coord[i] = slice_coord_temp[j]
-                for i in dims_not_painted:
-                    slice_coord[i] = slice_coord[i] * np.ones(
-                        mask_indices.shape[0], dtype=int
-                    )
-            else:
-                slice_coord = slice_coord_temp
-
-            slice_coord = tuple(slice_coord)
+        slice_coord = tuple(slice_coord)
 
         # Fix indexing for xarray if necessary
         # See http://xarray.pydata.org/en/stable/indexing.html#vectorized-indexing

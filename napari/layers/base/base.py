@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -27,6 +29,28 @@ from ..utils.layer_utils import (
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
+
+
+def no_op(layer: Layer, event: Event) -> None:
+    """
+    A convenient no-op event for the layer mouse binding.
+
+    This makes it easier to handle many cases by inserting this as
+    as place holder
+
+    Parameters
+    ----------
+    layer : Layer
+        Current layer on which this will be bound as a callback
+    event : Event
+        event that triggered this mouse callback.
+
+    Returns
+    -------
+    None
+
+    """
+    return None
 
 
 @_mgui.register_type(choices=get_layers, return_callback=add_layer_to_viewer)
@@ -229,7 +253,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                     ndim=ndim,
                     name='data2physical',
                 ),
-                coerce_affine(affine, ndim, name='physical2world'),
+                coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -291,6 +315,53 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     def __repr__(self):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
+
+    def _mode_setter_helper(self, mode, Modeclass):
+        """
+        Helper to manage callbacks in multiple layers
+
+        Parameters
+        ----------
+        mode : Modeclass | str
+            New mode for the current layer.
+        Modeclass : Enum
+            Enum for the current class representing the modes it can takes,
+            this is usually specific on each subclass.
+
+        Returns
+        -------
+        tuple (new Mode, mode changed)
+
+        """
+        mode = Modeclass(mode)
+        assert mode is not None
+        if not self.editable:
+            mode = Modeclass.PAN_ZOOM
+        if mode == self._mode:
+            return mode, False
+        if mode.value not in Modeclass.keys():
+            raise ValueError(
+                trans._(
+                    "Mode not recognized: {mode}", deferred=True, mode=mode
+                )
+            )
+        old_mode = self._mode
+        self._mode = mode
+
+        for callback_list, mode_dict in [
+            (self.mouse_drag_callbacks, self._drag_modes),
+            (self.mouse_move_callbacks, self._move_modes),
+        ]:
+            if mode_dict[old_mode] in callback_list:
+                callback_list.remove(mode_dict[old_mode])
+            callback_list.append(mode_dict[mode])
+        self.cursor = self._cursor_modes[mode]
+
+        if mode == Modeclass.PAN_ZOOM:
+            self.interactive = True
+        else:
+            self.interactive = False
+        return mode, True
 
     @classmethod
     def _basename(cls):
@@ -446,8 +517,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @affine.setter
     def affine(self, affine):
-        self._transforms['physical2world'] = coerce_affine(
-            affine, self.ndim, name='physical2world'
+        # Assignment by transform name is not supported by TransformChain and
+        # EventedList, so use the integer index instead. For more details, see:
+        # https://github.com/napari/napari/issues/3058
+        self._transforms[2] = coerce_affine(
+            affine, ndim=self.ndim, name='physical2world'
         )
         self._update_dims()
         self.events.affine()
@@ -1142,7 +1216,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @classmethod
     def create(
         cls, data, meta: dict = None, layer_type: Optional[str] = None
-    ) -> 'Layer':
+    ) -> Layer:
         """Create layer from `data` of type `layer_type`.
 
         Primarily intended for usage by reader plugin hooks and creating a

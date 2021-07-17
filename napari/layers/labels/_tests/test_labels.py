@@ -13,6 +13,7 @@ from skimage import data
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
+from napari.layers.image._image_constants import Rendering
 from napari.utils import Colormap
 from napari.utils.colormaps import low_discrepancy_image
 
@@ -618,31 +619,32 @@ def test_show_selected_label():
 
 
 def test_paint():
-    """Test painting labels with different square brush sizes."""
+    """Test painting labels with different circle brush sizes."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
 
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = 'square'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
     layer.brush_size = 9
     layer.paint([0, 0], 2)
-    assert np.unique(layer.data[:5, :5]) == 2
+    assert np.unique(layer.data[:4, :4]) == 2
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
     layer.brush_size = 10
     layer.paint([0, 0], 2)
-    assert np.unique(layer.data[:6, :6]) == 2
+    assert np.unique(layer.data[0:6, 0:3]) == 2
+    assert np.unique(layer.data[0:3, 0:6]) == 2
     assert np.unique(layer.data[6:10, 6:10]) == 1
 
     layer.brush_size = 19
     layer.paint([0, 0], 2)
-    assert np.unique(layer.data[:5, :5]) == 2
-    assert np.unique(layer.data[5:10, 5:10]) == 2
+    assert np.unique(layer.data[0:4, 0:10]) == 2
+    assert np.unique(layer.data[0:10, 0:4]) == 2
+    assert np.unique(layer.data[3:7, 3:7]) == 2
+    assert np.unique(layer.data[7:10, 7:10]) == 1
 
 
 def test_paint_with_preserve_labels():
@@ -650,30 +652,23 @@ def test_paint_with_preserve_labels():
     data = np.zeros((15, 10), dtype=np.uint32)
     data[:3, :3] = 1
     layer = Labels(data)
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = 'square'
+
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
     layer.brush_size = 9
     layer.paint([0, 0], 2)
 
-    assert np.unique(layer.data[3:5, 0:5]) == 2
-    assert np.unique(layer.data[0:5, 3:5]) == 2
+    assert np.unique(layer.data[3:5, 0:3]) == 2
+    assert np.unique(layer.data[0:3, 3:5]) == 2
     assert np.unique(layer.data[:3, :3]) == 1
 
 
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum",
-    [("circle", [41, 137, 137, 41, 349]), ("square", [36, 144, 169, 36, 400])],
-)
-def test_paint_2d(brush_shape, expected_sum):
-    """Test painting labels with circle/square brush."""
+def test_paint_2d():
+    """Test painting labels with circle brush."""
     data = np.zeros((40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
@@ -689,43 +684,31 @@ def test_paint_2d(brush_shape, expected_sum):
     layer.brush_size = 20
     layer.paint((15, 27), 7)
 
-    assert np.sum(layer.data[:8, :8] == 3) == expected_sum[0]
-    assert np.sum(layer.data[9:22, 2:15] == 4) == expected_sum[1]
-    assert np.sum(layer.data[24:37, 2:15] == 5) == expected_sum[2]
-    assert np.sum(layer.data[33:, 33:] == 6) == expected_sum[3]
-    assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
+    assert np.sum(layer.data[:8, :8] == 3) == 41
+    assert np.sum(layer.data[9:22, 2:15] == 4) == 137
+    assert np.sum(layer.data[24:37, 2:15] == 5) == 137
+    assert np.sum(layer.data[33:, 33:] == 6) == 41
+    assert np.sum(layer.data[5:26, 17:38] == 7) == 349
 
 
 @pytest.mark.timeout(1)
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum",
-    [("circle", 411), ("square", 432)],
-)
-def test_paint_2d_xarray(brush_shape, expected_sum):
+def test_paint_2d_xarray():
     """Test the memory usage of painting an xarray indirectly via timeout."""
     data = xr.DataArray(np.zeros((3, 3, 1024, 1024), dtype=np.uint32))
 
     layer = Labels(data)
     layer.brush_size = 12
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((1, 1, 512, 512), 3)
     assert isinstance(layer.data, xr.DataArray)
-    assert layer.data.sum() == expected_sum
+    assert layer.data.sum() == 411
 
 
-@pytest.mark.parametrize(
-    "brush_shape, expected_sum",
-    [("circle", [137, 1189, 1103]), ("square", [144, 1728, 1548])],
-)
-def test_paint_3d(brush_shape, expected_sum):
-    """Test painting labels with circle/square brush on 3D image."""
+def test_paint_3d():
+    """Test painting labels with circle brush on 3D image."""
     data = np.zeros((30, 40, 40), dtype=np.uint32)
     layer = Labels(data)
     layer.brush_size = 12
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
     layer.mode = 'paint'
 
     # Paint in 2D
@@ -740,9 +723,9 @@ def test_paint_3d(brush_shape, expected_sum):
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
-    assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == expected_sum[0]
-    assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == expected_sum[1]
-    assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == expected_sum[2]
+    assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == 137
+    assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == 1189
+    assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == 1103
 
 
 def test_fill():
@@ -798,10 +781,9 @@ def test_world_data_extent():
 
 
 @pytest.mark.parametrize(
-    'brush_shape, brush_size, mode, selected_label, preserve_labels, n_dimensional',
+    'brush_size, mode, selected_label, preserve_labels, n_dimensional',
     list(
         itertools.product(
-            ['square', 'circle'],
             list(range(1, 22, 5)),
             ['fill', 'erase', 'paint'],
             [1, 20, 100],
@@ -811,7 +793,6 @@ def test_world_data_extent():
     ),
 )
 def test_undo_redo(
-    brush_shape,
     brush_size,
     mode,
     selected_label,
@@ -821,8 +802,6 @@ def test_undo_redo(
     blobs = data.binary_blobs(length=64, volume_fraction=0.3, n_dim=3)
     layer = Labels(blobs)
     data_history = [blobs.copy()]
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = brush_shape
     layer.brush_size = brush_size
     layer.mode = mode
     layer.selected_label = selected_label
@@ -869,8 +848,6 @@ def test_ndim_paint():
     test_array = np.zeros((5, 6, 7, 8), dtype=int)
     layer = Labels(test_array)
     layer.n_edit_dimensions = 3
-    with pytest.warns(FutureWarning):
-        layer.brush_shape = 'circle'
     layer.brush_size = 2  # equivalent to 18-connected 3D neighborhood
     layer.paint((1, 1, 1, 1), 1)
 
@@ -978,6 +955,15 @@ def test_paint_3d_negative_scale(scale):
     np.testing.assert_array_equal(
         np.sum(labels_layer.data, axis=(1, 2, 3)), [0, 95, 0]
     )
+
+
+def test_rendering_init():
+    shape = (6, 10, 15)
+    np.random.seed(0)
+    data = np.random.randint(20, size=shape)
+    layer = Labels(data, rendering='iso_categorical')
+
+    assert layer.rendering == Rendering.ISO_CATEGORICAL.value
 
 
 def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():

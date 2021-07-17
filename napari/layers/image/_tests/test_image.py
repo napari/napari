@@ -670,3 +670,20 @@ def test_2d_image_with_channels_and_2d_scale_translate_then_scale_translate_padd
 
     np.testing.assert_array_equal(image.scale, (1, 1, 1))
     np.testing.assert_array_equal(image.translate, (0, 3, 4))
+
+
+@pytest.mark.parametrize('affine_size', range(3, 6))
+def test_2d_image_with_channels_and_affine_broadcasts(affine_size):
+    # For more details, see the GitHub issue:
+    # https://github.com/napari/napari/issues/3045
+    image = Image(np.ones((1, 1, 1, 100, 100)), affine=np.eye(affine_size))
+    np.testing.assert_array_equal(image.affine, np.eye(6))
+
+
+@pytest.mark.parametrize('affine_size', range(3, 6))
+def test_2d_image_with_channels_and_affine_assignment_broadcasts(affine_size):
+    # For more details, see the GitHub issue:
+    # https://github.com/napari/napari/issues/3045
+    image = Image(np.ones((1, 1, 1, 100, 100)))
+    image.affine = np.eye(affine_size)
+    np.testing.assert_array_equal(image.affine, np.eye(6))
