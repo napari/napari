@@ -218,10 +218,10 @@ class EventedModel(BaseModel, metaclass=EventedMetaclass):
             return self.dict() == other
 
     @contextmanager
-    def enums_as_values(self, b: bool = True):
+    def enums_as_values(self, asval: bool = True):
         """Temporarily override how enums are retrieved."""
         before = getattr(self.Config, 'use_enum_values', None)
-        self.Config.use_enum_values = b
+        self.Config.use_enum_values = asval
         try:
             yield
         finally:
