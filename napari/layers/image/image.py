@@ -17,12 +17,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ._image_constants import (
-    Interpolation,
-    Interpolation3D,
-    RaycastingMode,
-    Rendering,
-)
+from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
@@ -182,7 +177,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         gamma=1,
         interpolation='nearest',
         rendering='mip',
-        mode='volume',
+        render_as_plane=False,
         iso_threshold=0.5,
         attenuation=0.05,
         name=None,
@@ -196,7 +191,6 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
-        plane_thickness=10,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -247,10 +241,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
-            mode=Event,
-            plane_thickness=Event,
+            render_as_plane=Event,
             plane_position=Event,
-            plane_angles=Event,
+            plane_normal=Event,
+            plane_thickness=Event,
         )
 
         # Set data
@@ -280,7 +274,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self._gamma = gamma
         self._iso_threshold = iso_threshold
         self._attenuation = attenuation
-        self._mode = mode
+        self._render_as_plane = render_as_plane
         self._plane = Plane3D()
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
@@ -299,9 +293,7 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         }
         self.interpolation = interpolation
         self.rendering = rendering
-        self.mode = mode
-        self.plane.position = np.array(self.data.shape) / 2
-        self.plane.normal_vector = (1, 0, 0)
+        self.render_as_plane = render_as_plane
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -501,23 +493,17 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         self.events.rendering()
 
     @property
-    def mode(self):
-        """Return current raycasting mode.
-
-        Selects a preset raycasting mode in vispy that determines how rays are
-        cast during volume rendering. Options include:
-
-        * ``volume``: rays are cast through the entire volume.
-        * ``plane``: rays are cast perpendicular to an arbitrary plane
-          in the volume.
+    def render_as_plane(self):
+        """Should this layer be rendered as a plane.
+        If False, render as volume (default). If True, render as a plane.
         """
-        return str(self._mode)
+        return self._render_as_plane
 
-    @mode.setter
-    def mode(self, value: str):
-        if self._mode != value:
-            self._mode = RaycastingMode(value)
-            self.events.mode()
+    @render_as_plane.setter
+    def render_as_plane(self, value: bool):
+        if self._render_as_plane is not value:
+            self._render_as_plane = value
+            self.events.render_as_plane()
 
     @property
     def plane(self):

@@ -49,7 +49,9 @@ class VispyImageLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.events.mode.connect(self._on_mode_change)
+        self.layer.events.render_as_plane.connect(
+            self._on_render_as_plane_change
+        )
         self.layer.plane.events.position.connect(
             self._on_plane_position_change
         )
@@ -153,9 +155,13 @@ class VispyImageLayer(VispyBaseLayer):
         if isinstance(self.node, VolumeNode):
             self.node.attenuation = self.layer.attenuation
 
-    def _on_mode_change(self, event=None):
+    def _on_render_as_plane_change(self, event=None):
         if isinstance(self.node, VolumeNode):
-            self.node.mode = self.layer.mode
+            if self.layer.render_as_plane is True:
+                raycasting_mode = 'plane'
+            else:
+                raycasting_mode = 'volume'
+            self.node.raycasting_mode = raycasting_mode
 
     def _on_plane_thickness_change(self, event=None):
         if isinstance(self.node, VolumeNode):
@@ -176,6 +182,10 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_contrast_limits_change()
         self._on_gamma_change()
         self._on_rendering_change()
+        self._on_render_as_plane_change()
+        self._on_plane_position_change()
+        self._on_plane_normal_change()
+        self._on_plane_thickness_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
