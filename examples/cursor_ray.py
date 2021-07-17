@@ -30,8 +30,8 @@ point_sizes = np.linspace(0.5, 2, n_points, endpoint=True)
 
 # point colors
 green = [0, 1, 0, 1]
-red = [1, 0, 0, 1]
-point_colors = np.linspace(green, red, n_points, endpoint=True)
+magenta = [1, 0, 1, 1]
+point_colors = np.linspace(green, magenta, n_points, endpoint=True)
 
 # create viewer and add layers for each piece of data
 viewer = napari.Viewer(ndisplay=3)
