@@ -461,19 +461,19 @@ def compute_multiscale_level_and_corners(
     return level, corners
 
 
-def coerce_affine(affine, ndim, name=None):
+def coerce_affine(affine, *, ndim, name=None):
     """Coerce a user input into an affine transform object.
 
     If the input is already an affine transform object, that same object is returned
     with a name change if the given name is not None. If the input is None, an identity
     affine transform object of the given dimensionality is returned.
 
-     Parameters
+    Parameters
     ----------
     affine : array-like or napari.utils.transforms.Affine
         An existing affine transform object or an array-like that is its transform matrix.
     ndim : int
-        The desired dimensionality of the transform. Ignored if implied by affine.
+        The desired dimensionality of the transform. Ignored is affine is an Affine transform object.
     name : str
         The desired name of the transform.
 
@@ -483,11 +483,11 @@ def coerce_affine(affine, ndim, name=None):
         The input coerced into an affine transform object.
     """
     if affine is None:
-        affine = Affine(affine_matrix=np.eye(ndim + 1))
+        affine = Affine(affine_matrix=np.eye(ndim + 1), ndim=ndim)
     elif isinstance(affine, np.ndarray):
-        affine = Affine(affine_matrix=affine)
+        affine = Affine(affine_matrix=affine, ndim=ndim)
     elif isinstance(affine, list):
-        affine = Affine(affine_matrix=np.array(affine))
+        affine = Affine(affine_matrix=np.array(affine), ndim=ndim)
     elif not isinstance(affine, Affine):
         raise TypeError(
             trans._(

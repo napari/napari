@@ -16,7 +16,7 @@ from ...utils.misc import ROOT_DIR
 from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
-from ...utils.transforms import Affine, TransformChain
+from ...utils.transforms import Affine, CompositeAffine, TransformChain
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -221,14 +221,15 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self._transforms = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
-                Affine(
+                CompositeAffine(
                     scale,
                     translate,
                     rotate=rotate,
                     shear=shear,
+                    ndim=ndim,
                     name='data2physical',
                 ),
-                coerce_affine(affine, ndim, name='physical2world'),
+                coerce_affine(affine, ndim=ndim, name='physical2world'),
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -445,8 +446,11 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     @affine.setter
     def affine(self, affine):
-        self._transforms['physical2world'] = coerce_affine(
-            affine, self.ndim, name='physical2world'
+        # Assignment by transform name is not supported by TransformChain and
+        # EventedList, so use the integer index instead. For more details, see:
+        # https://github.com/napari/napari/issues/3058
+        self._transforms[2] = coerce_affine(
+            affine, ndim=self.ndim, name='physical2world'
         )
         self._update_dims()
         self.events.affine()

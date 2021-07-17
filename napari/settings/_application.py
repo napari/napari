@@ -8,6 +8,7 @@ from ..utils._base import _DEFAULT_LOCALE
 from ..utils.events.evented_model import EventedModel
 from ..utils.notifications import NotificationSeverity
 from ..utils.translations import trans
+from ._constants import LoopMode
 from ._fields import Language, SchemaVersion
 
 
@@ -127,6 +128,16 @@ class ApplicationSettings(EventedModel):
         description=trans._(
             "Last saved list of saved folders. This setting is managed by the application."
         ),
+    )
+    playback_fps: int = Field(
+        10,
+        title=trans._("Playback frames per second"),
+        description=trans._("Playback speed in frames per second."),
+    )
+    playback_mode: LoopMode = Field(
+        LoopMode.LOOP,
+        title=trans._("Playback loop mode"),
+        description=trans._("Loop mode for playback."),
     )
 
     class Config:
