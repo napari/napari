@@ -21,7 +21,6 @@ from ...utils.mouse_bindings import MousemapProvider
 from ...utils.naming import magic_name
 from ...utils.status_messages import generate_layer_status
 from ...utils.transforms import Affine, CompositeAffine, TransformChain
-from ...utils.transforms.transform_utils import expand_upper_triangular
 from ...utils.translations import trans
 from .._source import current_source
 from ..utils.layer_utils import (
@@ -1004,7 +1003,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return self._transforms[1:3].simplified
 
-    def vector_world_to_data(self, vector, dims_displayed: List[int]) -> tuple:
+    def vector_world_to_data(self, vector) -> tuple:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
         For example, this would be used to convert the view ray.
 
@@ -1021,62 +1020,104 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         tuple
             Vector in data coordinates.
         """
-        if len(vector) >= self.ndim:
-            vector = list(vector[-self.ndim :])
-        else:
-            vector = [0] * (self.ndim - len(vector)) + list(vector)
+        # if len(vector) >= self.ndim:
+        #     vector = list(vector[-self.ndim :])
+        # else:
+        #     vector = [0] * (self.ndim - len(vector)) + list(vector)
         vector = np.asarray(vector)
 
-        # create transform for view direction (world -> layer data)
-        shear_matrix = expand_upper_triangular(self.shear)
-        rot_matrix = self.rotate
-        scale_matrix = np.diag(self.scale)
-        world_to_layer = np.linalg.inv(
-            shear_matrix @ rot_matrix
-        ).T @ np.linalg.inv(scale_matrix)
+        # # create transform for view direction (world -> layer data)
+        # shear_matrix = expand_upper_triangular(self.shear)
+        # rot_matrix = self.rotate
+        # scale_matrix = np.diag(self.scale)
+        # world_to_layer = np.linalg.inv(
+        #     shear_matrix @ rot_matrix
+        # ).T @ np.linalg.inv(scale_matrix)
+        #
+        # transformed_vector = vector @ world_to_layer
+        # normalized_vector = transformed_vector / np.linalg.norm(
+        #     transformed_vector
+        # )
+        p1 = np.asarray(self.world_to_data(vector))
+        p0 = np.asarray(self.world_to_data(np.zeros_like(vector)))
+        normalized_vector = (p1 - p0) / np.linalg.norm(p1 - p0)
 
-        transformed_vector = vector @ world_to_layer
-        normalized_vector = transformed_vector / np.linalg.norm(
-            transformed_vector
-        )
+        return tuple(normalized_vector)
 
-        return tuple(normalized_vector[dims_displayed])
-
-    def _display_bounding_box(self, dims_displayed: List[int]):
+    def _display_bounding_box(self, dims_displayed_mask: np.ndarray):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
-        return self._extent_data[:, dims_displayed].T
+        return self._extent_data[:, dims_displayed_mask].T
 
     def _cursor_ray(self, event):
-        """Get the start and end point for the ray extending from the cursor through the data"""
-        dims_displayed = event.dims_displayed
-        # create the bounding box in data coordinates
-        bbox = self._display_bounding_box(dims_displayed)
+        """Get the start and end point for the ray extending from the cursor through the data
 
-        # get the view direction
-        view_dir_world = np.zeros_like((event.dims_point), dtype=float)
-        view_dir_world[dims_displayed] = event.view_direction
-        view_dir = np.asarray(
-            self.vector_world_to_data(view_dir_world, dims_displayed)
-        )
+        Parameters
+        ----------
+        event
+            The mouse event containing:
+                position: the position of the click in world coordinates
+                view_direction: a unit vector giving the direction of the camera in world coordinates
+                dims_displayed: a list of the dimensions currently being displayed in the viewer.
+                dims_point: the indices for the data in view
+
+        Returns
+        -------
+        start_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point closest to the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            an emtpy numpy array is returned (i.e., np.empty([]).
+        end_point : np.ndarray
+            The point on the axis-aligned data bounding box that the cursor click
+            intersects with. This is the point farthest from the camera.
+            The point is the full nD coordinates of the layer data.
+            If the click does not intersect the axis-aligned data bounding box,
+            an emtpy numpy array is returned (i.e., np.empty([]).
+        """
+        # create a mask to select the in view dimensions
+        dims_displayed = event.dims_displayed
+        dims_displayed_mask = np.zeros_like(event.dims_point, dtype=bool)
+        dims_displayed_mask[dims_displayed] = True
+
+        # create the bounding box in data coordinates
+        bbox = self._display_bounding_box(dims_displayed_mask)
+
+        # get the view direction in data coords (only displayed dims)
+        view_dir_world = event.view_direction
+        view_dir = np.asarray(self.vector_world_to_data(view_dir_world))[
+            dims_displayed_mask
+        ]
+
+        # Get the clicked point in data coords (only displayed dims)
+        click_pos_data = np.asarray(self.world_to_data(event.position))[
+            dims_displayed_mask
+        ]
 
         # Determine the front and back faces
-        click_pos_world = np.asarray(event.dims_point)
-        click_pos_world[dims_displayed] = event.position
-        click_pos_data = np.asarray(self.world_to_data(click_pos_world))[
-            dims_displayed
-        ]
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bbox, view_dir
         )
 
         # Get the locations in the plane where the ray intersects
         if front_face_normal is not None and back_face_normal is not None:
-            start_point = intersect_ray_with_axis_aligned_bounding_box_3d(
-                click_pos_data, view_dir, bbox, front_face_normal
+            start_point_disp_dims = (
+                intersect_ray_with_axis_aligned_bounding_box_3d(
+                    click_pos_data, view_dir, bbox, front_face_normal
+                )
             )
-            end_point = intersect_ray_with_axis_aligned_bounding_box_3d(
-                click_pos_data, view_dir, bbox, back_face_normal
+            end_point_disp_dims = (
+                intersect_ray_with_axis_aligned_bounding_box_3d(
+                    click_pos_data, view_dir, bbox, back_face_normal
+                )
             )
+
+            # add the coordinates for the axes not displayed
+            start_point = np.asarray(event.dims_point)
+            start_point[dims_displayed_mask] = start_point_disp_dims
+            end_point = np.asarray(event.dims_point)
+            end_point[dims_displayed_mask] = end_point_disp_dims
+
         else:
             # if the click doesn't intersect the data bounding box,
             # return empty points

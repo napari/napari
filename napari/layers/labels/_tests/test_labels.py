@@ -1020,16 +1020,16 @@ def test_get_value_ray_3d():
     labels._slice_dims([1, 0, 0, 0], ndisplay=3)
 
     value = labels._get_value_ray(
-        start_point=np.array([0, 5, 5]),
-        end_point=np.array([20, 5, 5]),
+        start_point=np.array([1, 0, 5, 5]),
+        end_point=np.array([1, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
     )
     assert value == 1
 
     # check with a ray that only goes through background
     value = labels._get_value_ray(
-        start_point=np.array([0, 15, 15]),
-        end_point=np.array([20, 15, 15]),
+        start_point=np.array([1, 0, 15, 15]),
+        end_point=np.array([1, 20, 15, 15]),
         dims_displayed=mouse_event.dims_displayed,
     )
     assert value is None
@@ -1038,8 +1038,8 @@ def test_get_value_ray_3d():
     labels._slice_dims([0, 0, 0, 0], ndisplay=3)
 
     value = labels._get_value_ray(
-        start_point=np.array([0, 5, 5]),
-        end_point=np.array([20, 5, 5]),
+        start_point=np.array([0, 0, 5, 5]),
+        end_point=np.array([0, 20, 5, 5]),
         dims_displayed=mouse_event.dims_displayed,
     )
     assert value is None
@@ -1076,10 +1076,10 @@ def test_cursor_ray_3d():
     # make a mock mouse event
     mouse_event_1 = MouseEvent(
         pos=[25, 25],
-        position=[10, 27, 10],
+        position=[1, 10, 27, 10],
         dims_point=[1, 0, 0, 0],
         dims_displayed=[1, 2, 3],
-        view_direction=[1, 0, 0],
+        view_direction=[0, 1, 0, 0],
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
@@ -1093,39 +1093,46 @@ def test_cursor_ray_3d():
     # axis 1: click at 27 in world coords -> (27 - 5) / 2 = 11
     # axis 2: click at 10 in world coords -> (10 - 5) / 1 = 5
     start_point, end_point = labels._cursor_ray(mouse_event_1)
-    np.testing.assert_allclose(start_point, [0, 11, 5])
-    np.testing.assert_allclose(end_point, [19, 11, 5])
+    np.testing.assert_allclose(start_point, [1, 0, 11, 5])
+    np.testing.assert_allclose(end_point, [1, 19, 11, 5])
 
     # click in the background
     mouse_event_2 = MouseEvent(
         pos=[25, 25],
-        position=[10, 65, 10],
+        position=[1, 10, 65, 10],
         dims_point=[1, 0, 0, 0],
         dims_displayed=[1, 2, 3],
-        view_direction=[1, 0, 0],
+        view_direction=[0, 1, 0, 0],
     )
     start_point, end_point = labels._cursor_ray(mouse_event_2)
     assert len(start_point) == 0
     assert len(end_point) == 0
 
     # click in a slice with no labels
+    mouse_event_3 = MouseEvent(
+        pos=[25, 25],
+        position=[1, 10, 27, 10],
+        dims_point=[0, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[0, 1, 0, 0],
+    )
     labels._slice_dims([0, 0, 0, 0], ndisplay=3)
-    start_point, end_point = labels._cursor_ray(mouse_event_1)
-    np.testing.assert_allclose(start_point, [0, 11, 5])
-    np.testing.assert_allclose(end_point, [19, 11, 5])
+    start_point, end_point = labels._cursor_ray(mouse_event_3)
+    np.testing.assert_allclose(start_point, [0, 0, 11, 5])
+    np.testing.assert_allclose(end_point, [0, 19, 11, 5])
 
 
-def test_cursor_ray_3d_transposed_rolled():
+def test_cursor_ray_3d_rolled():
     """Test that the cursor works when the displayed
-    viewer axes have been rolled and transposed
+    viewer axes have been rolled
     """
     # make a mock mouse event
     mouse_event_1 = MouseEvent(
         pos=[25, 25],
-        position=[10, 10, 27],
-        dims_point=[1, 0, 0, 0],
-        dims_displayed=[0, 2, 1],
-        view_direction=[1, 0, 0],
+        position=[10, 27, 10, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[0, 1, 2],
+        view_direction=[1, 0, 0, 0],
     )
     data = np.zeros((20, 20, 20, 5), dtype=int)
     data[0:10, 0:10, 0:10, 1] = 1
@@ -1135,5 +1142,29 @@ def test_cursor_ray_3d_transposed_rolled():
     labels._slice_dims([0, 0, 0, 1], ndisplay=3)
 
     start_point, end_point = labels._cursor_ray(mouse_event_1)
-    np.testing.assert_allclose(start_point, [0, 5, 11])
-    np.testing.assert_allclose(end_point, [19, 5, 11])
+    np.testing.assert_allclose(start_point, [0, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [19, 11, 5, 1])
+
+
+def test_cursor_ray_3d_transposed():
+    """Test that the cursor works when the displayed
+    viewer axes have been transposed
+    """
+    # make a mock mouse event
+    mouse_event_1 = MouseEvent(
+        pos=[25, 25],
+        position=[10, 27, 10, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[0, 2, 1],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((20, 20, 20, 5), dtype=int)
+    data[0:10, 0:10, 0:10, 1] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
+
+    # set the slice to one with data and the view to 3D
+    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+
+    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    np.testing.assert_allclose(start_point, [0, 11, 5, 1])
+    np.testing.assert_allclose(end_point, [19, 11, 5, 1])

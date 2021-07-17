@@ -38,11 +38,14 @@ def test_get_view_direction_in_scene_coordinates(make_napari_viewer):
     viewer = make_napari_viewer()
 
     # reset view sets the camera angles to (0, 0, 90)
-    viewer.reset_view()
+    viewer.dims.ndim = 3
+    viewer.dims.ndisplay = 3
 
     # get the viewbox
     view_box = viewer.window.qt_viewer.view
 
     # get the view direction
-    view_dir = get_view_direction_in_scene_coordinates(view_box)
-    np.testing.assert_allclose(view_dir, [1, 0, 0])
+    view_dir = get_view_direction_in_scene_coordinates(
+        view_box, viewer.dims.point, viewer.dims.displayed
+    )
+    np.testing.assert_allclose(view_dir, [1, 0, 0], atol=1e-8)

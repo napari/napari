@@ -70,6 +70,8 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
 
 def get_view_direction_in_scene_coordinates(
     view: ViewBox,
+    dims_point,
+    dims_displayed,
 ) -> np.ndarray:
     """calculate the unit vector pointing in the direction of the view
 
@@ -103,4 +105,9 @@ def get_view_direction_in_scene_coordinates(
     # in 3D screen coordinates
     d3 = d2[0:3]
     d4 = d3 / np.linalg.norm(d3)
-    return d4[[2, 1, 0]]
+    d4 = d4[[2, 1, 0]]
+    view_dir_world = list(dims_point)
+    for i, d in enumerate(dims_displayed):
+        view_dir_world[d] = d4[i]
+
+    return view_dir_world

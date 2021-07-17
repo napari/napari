@@ -900,6 +900,8 @@ class Labels(_ImageBase):
         """get the first non-background value encountered along a ray"""
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
+            start_point = start_point[dims_displayed]
+            end_point = end_point[dims_displayed]
             sample_ray = end_point - start_point
             length_sample_vector = np.linalg.norm(sample_ray)
             n_points = int(2 * length_sample_vector)

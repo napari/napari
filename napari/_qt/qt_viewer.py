@@ -825,7 +825,7 @@ class QtViewer(QSplitter):
 
         # Add the view ray to the event
         event.view_direction = get_view_direction_in_scene_coordinates(
-            self.view
+            self.view, self.viewer.dims.point, self.viewer.dims.displayed
         )
 
         # Add the displayed dimensions to the event
