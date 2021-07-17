@@ -416,6 +416,7 @@ class ApplicationSettings(BaseNapariSettings):
 
     class Config:
         # Pydantic specific configuration
+        use_enum_values = False
         schema_extra = {
             "title": trans._("Application"),
             "description": trans._("Main application settings."),
