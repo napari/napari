@@ -31,7 +31,6 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
-from ..utils.settings._constants import LoopMode
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -655,7 +654,7 @@ class Window:
                 widget, settings.application.playback_fps
             )
             widget.__class__.loop_mode.fset(
-                widget, LoopMode(settings.application.playback_mode)
+                widget, settings.application.playback_mode
             )
 
     def _reset_preference_states(self):
