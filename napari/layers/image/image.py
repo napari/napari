@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...components.experimental._plane import Plane3D
 from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
@@ -17,6 +16,7 @@ from ...utils.translations import trans
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
+from ..utils.plane import Plane3D
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData

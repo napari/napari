@@ -2,8 +2,8 @@ from typing import Tuple
 
 from pydantic import validator
 
-from napari.utils.events import EventedModel
-from napari.utils.misc import ensure_n_tuple
+from ...utils.events import EventedModel
+from ...utils.misc import ensure_n_tuple
 
 
 class Plane3D(EventedModel):
