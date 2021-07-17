@@ -1004,7 +1004,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """
         return self._transforms[1:3].simplified
 
-    def vector_world_to_data(self, vector) -> tuple:
+    def vector_world_to_data(self, vector, dims_displayed: List[int]) -> tuple:
         """Convert a vector defining an orientation from world coordinates to data coordinates.
         For example, this would be used to convert the view ray.
 
@@ -1012,12 +1012,19 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         ----------
         vector : tuple, list, 1D array
             A vector in world coordinates.
+        dims_displayed: List[int]
+            The indices of the displayed dimensions. This is used to slice the
+            affine transform parameters.
 
         Returns
         -------
         tuple
             Vector in data coordinates.
         """
+        if len(vector) >= self.ndim:
+            vector = list(vector[-self.ndim :])
+        else:
+            vector = [0] * (self.ndim - len(vector)) + list(vector)
         vector = np.asarray(vector)
 
         # create transform for view direction (world -> layer data)
@@ -1028,7 +1035,12 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             shear_matrix @ rot_matrix
         ).T @ np.linalg.inv(scale_matrix)
 
-        return tuple(vector @ world_to_layer)
+        transformed_vector = vector @ world_to_layer
+        normalized_vector = transformed_vector / np.linalg.norm(
+            transformed_vector
+        )
+
+        return tuple(normalized_vector[dims_displayed])
 
     def _display_bounding_box(self, dims_displayed: List[int]):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
@@ -1036,15 +1048,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
 
     def _cursor_ray(self, event):
         """Get the start and end point for the ray extending from the cursor through the data"""
-
+        dims_displayed = event.dims_displayed
         # create the bounding box in data coordinates
-        bbox = self._display_bounding_box(event.dims_displayed)
+        bbox = self._display_bounding_box(dims_displayed)
 
         # get the view direction
-        view_dir = np.asarray(self.vector_world_to_data(event.view_direction))
+        view_dir_world = np.zeros_like((event.dims_point), dtype=float)
+        view_dir_world[dims_displayed] = event.view_direction
+        view_dir = np.asarray(
+            self.vector_world_to_data(view_dir_world, dims_displayed)
+        )
 
         # Determine the front and back faces
-        click_pos_data = self.world_to_data(event.position)
+        click_pos_world = np.asarray(event.dims_point)
+        click_pos_world[dims_displayed] = event.position
+        click_pos_data = np.asarray(self.world_to_data(click_pos_world))[
+            dims_displayed
+        ]
         front_face_normal, back_face_normal = find_front_back_face(
             click_pos_data, bbox, view_dir
         )

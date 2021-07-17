@@ -994,10 +994,12 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 
 @dataclass
 class MouseEvent:
+    # mock mouse event clas
     pos: List[int]
     position: List[int]
     dims_point: List[int]
     dims_displayed: List[int]
+    view_direction: List[int]
 
 
 def test_get_value_ray_3d():
@@ -1008,10 +1010,11 @@ def test_get_value_ray_3d():
         position=[10, 5, 5],
         dims_point=[1, 0, 0, 0],
         dims_displayed=[1, 2, 3],
+        view_direction=[1, 0, 0],
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
-    labels = Labels(data, scale=(2, 1, 1), translate=(5, 5, 5))
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
     # set the dims to the slice with labels
     labels._slice_dims([1, 0, 0, 0], ndisplay=3)
@@ -1049,20 +1052,88 @@ def test_get_value_ray_2d():
     # make a mock mouse event
     mouse_event = MouseEvent(
         pos=[25, 25],
-        position=[10, 5, 5],
-        dims_point=[1, 0, 0, 0],
+        position=[5, 5],
+        dims_point=[1, 10, 0, 0],
         dims_displayed=[2, 3],
+        view_direction=[1, 0, 0],
     )
     data = np.zeros((5, 20, 20, 20), dtype=int)
     data[1, 0:10, 0:10, 0:10] = 1
-    labels = Labels(data, scale=(2, 1, 1), translate=(5, 5, 5))
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5))
 
     # set the dims to the slice with labels, but 2D
-    labels._slice_dims([1, 0, 0, 0], ndisplay=2)
+    labels._slice_dims([1, 10, 0, 0], ndisplay=2)
 
     value = labels._get_value_ray(
-        start_point=np.array([0, 5, 5]),
-        end_point=np.array([20, 5, 5]),
+        start_point=np.empty([]),
+        end_point=np.empty([]),
         dims_displayed=mouse_event.dims_displayed,
     )
     assert value is None
+
+
+def test_cursor_ray_3d():
+    # make a mock mouse event
+    mouse_event_1 = MouseEvent(
+        pos=[25, 25],
+        position=[10, 27, 10],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[1, 0, 0],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(1, 1, 2, 1), translate=(5, 5, 5))
+
+    # set the slice to one with data and the view to 3D
+    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+
+    # axis 0 : [0, 20], bounding box extents along view axis, [1, 0, 0]
+    # click is transformed: (value - translation) / scale
+    # axis 1: click at 27 in world coords -> (27 - 5) / 2 = 11
+    # axis 2: click at 10 in world coords -> (10 - 5) / 1 = 5
+    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    np.testing.assert_allclose(start_point, [0, 11, 5])
+    np.testing.assert_allclose(end_point, [19, 11, 5])
+
+    # click in the background
+    mouse_event_2 = MouseEvent(
+        pos=[25, 25],
+        position=[10, 65, 10],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+        view_direction=[1, 0, 0],
+    )
+    start_point, end_point = labels._cursor_ray(mouse_event_2)
+    assert len(start_point) == 0
+    assert len(end_point) == 0
+
+    # click in a slice with no labels
+    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    np.testing.assert_allclose(start_point, [0, 11, 5])
+    np.testing.assert_allclose(end_point, [19, 11, 5])
+
+
+def test_cursor_ray_3d_transposed_rolled():
+    """Test that the cursor works when the displayed
+    viewer axes have been rolled and transposed
+    """
+    # make a mock mouse event
+    mouse_event_1 = MouseEvent(
+        pos=[25, 25],
+        position=[10, 10, 27],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[0, 2, 1],
+        view_direction=[1, 0, 0],
+    )
+    data = np.zeros((20, 20, 20, 5), dtype=int)
+    data[0:10, 0:10, 0:10, 1] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
+
+    # set the slice to one with data and the view to 3D
+    labels._slice_dims([0, 0, 0, 1], ndisplay=3)
+
+    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    np.testing.assert_allclose(start_point, [0, 5, 11])
+    np.testing.assert_allclose(end_point, [19, 5, 11])
