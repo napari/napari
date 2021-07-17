@@ -14,7 +14,7 @@ FACE_NORMALS = {
 }
 
 
-def project_point_to_plane(
+def project_point_onto_plane(
     point: np.ndarray, plane_point: np.ndarray, plane_normal: np.ndarray
 ) -> np.ndarray:
     """Project a point on to a plane that has
@@ -60,6 +60,7 @@ def project_point_to_plane(
 
 def rotation_matrix_from_vectors(vec_1, vec_2):
     """Calculate the rotation matrix that aligns vec1 to vec2.
+
 
     Parameters
     ----------
@@ -162,12 +163,13 @@ def intersect_line_with_axis_aligned_plane(
     line_start: np.ndarray,
     line_direction: np.ndarray,
 ) -> np.ndarray:
-    """Find the intersection of a ray with an axis aligned plane
+    """Find the intersection of a line with an axis aligned plane.
 
     Parameters
     ----------
     plane_intercept: float
-        The coordinate on the axis the plane is normal that the plane intersects.
+        The coordinate that the plane intersects on the axis to which plane is
+        normal.
         For example, if the plane is described by y=42, plane_intercept is 42.
     plane_normal : np.ndarray
         normal vector of the plane as an (n,)  ndarray
@@ -186,9 +188,7 @@ def intersect_line_with_axis_aligned_plane(
 
     # get the intersection coordinate
     t = (plane_intercept - line_start[plane_axis]) / line_direction[plane_axis]
-    intersection_point = line_start + t * line_direction
-
-    return intersection_point
+    return line_start + t * line_direction
 
 
 def bounding_box_to_face_vertices(
@@ -283,7 +283,6 @@ def inside_triangles(triangles):
     inside : (N,) array of bool
         Array with `True` values for trinagles containing the origin
     """
-
     AB = triangles[:, 1, :] - triangles[:, 0, :]
     AC = triangles[:, 2, :] - triangles[:, 0, :]
     BC = triangles[:, 2, :] - triangles[:, 1, :]
@@ -303,12 +302,10 @@ def intersect_line_with_plane_3d(
     plane_position: np.ndarray,
     plane_normal: np.ndarray,
 ) -> np.ndarray:
-    """
-    Find the intersection of a line with an arbitrarily oriented plane in 3D.
+    """Find the intersection of a line with an arbitrarily oriented plane in 3D.
     The line is defined by a position and a direction vector.
     The plane is defined by a position and a normal vector.
     https://en.wikipedia.org/wiki/Line%E2%80%93plane_intersection
-
 
     Parameters
     ----------
@@ -345,30 +342,60 @@ def intersect_line_with_plane_3d(
     return line_position + (scale_factor * line_direction)
 
 
-def click_in_region(
-    vertices: np.ndarray,
-    click_pos_data: np.ndarray,
-    view_dir_data: np.ndarray,
+def point_in_quadrilateral_2d(
+    point: np.ndarray, quadrilateral: np.ndarray
 ) -> bool:
-    """Determine if a click occurred within a specified region.
+    """Determines whether a point is inside a 2D quadrilateral.
+
+    Parameters
+    ----------
+    point : np.ndarray
+        (2,) array containing coordinates of a point.
+    quadrilateral : np.ndarray
+        (4, 2) array containing the coordinates for the 4 corners
+        of a quadrilateral. The vertices should be in clockwise order
+        such that indexing with [0, 1, 2], and [0, 2, 3] results in
+        the two non-overlapping triangles that divide the
+        quadrilateral.
+
+    Returns
+    -------
+
+    """
+    triangle_vertices = np.stack(
+        (quadrilateral[[0, 1, 2]], quadrilateral[[0, 2, 3]])
+    )
+    in_triangles = inside_triangles(triangle_vertices - point)
+    if in_triangles.sum() < 1:
+        return False
+    else:
+        return True
+
+
+def ray_in_quadrilateral_3d(
+    ray_position: np.ndarray,
+    quadrilateral: np.ndarray,
+    ray_direction: np.ndarray,
+) -> bool:
+    """Determine if a click occurred within a specified quadrilateral.
     For example, this could be used to determine if a click was
     in a specific face of a bounding box.
 
     Parameters
     ----------
-    vertices : np.ndarray
-        (4, 3) array containing the coordinates for the 4 corners
-        of a quadrilateral. The vertices should be in clockwise order
-        such that indexing with [0, 1, 2], and [0, 2, 3] results in
-        the two triangles non-overlapping triangles that divide the
-        quadrilateral.
-    click_pos_data: np.ndarray
+    ray_position : np.ndarray
         (3,) array containing the location that was clicked. This
         should be in the same coordinate system as the vertices.
-    view_dir_data
+    ray_direction : np.ndarray
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as
         the vertices.
+    quadrilateral : np.ndarray
+        (4, 3) array containing the coordinates for the 4 corners
+        of a quadrilateral. The vertices should be in clockwise order
+        such that indexing with [0, 1, 2], and [0, 2, 3] results in
+        the two non-overlapping triangles that divide the quadrilateral.
+
 
     Returns
     -------
@@ -376,27 +403,20 @@ def click_in_region(
         True if the click is in the region specified by vertices.
     """
 
-    # project the vertices on to the view plane
-    vertices_plane = project_point_to_plane(
-        point=vertices,
-        plane_point=click_pos_data,
-        plane_normal=view_dir_data,
+    # project the vertices of the bound region on to the view plane
+    vertices_plane = project_point_onto_plane(
+        point=quadrilateral,
+        plane_point=ray_position,
+        plane_normal=ray_direction,
     )
 
     # rotate the plane to make the triangles 2D
-    rotation_matrix = rotation_matrix_from_vectors(view_dir_data, [0, 0, 1])
+    rotation_matrix = rotation_matrix_from_vectors(ray_direction, [0, 0, 1])
     rotated_vertices = vertices_plane @ rotation_matrix.T
-    vertices_2D = rotated_vertices[:, :2]
-    click_pos_2D = rotation_matrix.dot(click_pos_data)[:2]
+    quadrilateral_2D = rotated_vertices[:, :2]
+    click_pos_2D = rotation_matrix.dot(ray_position)[:2]
 
-    triangle_vertices_2D = np.stack(
-        (vertices_2D[[0, 1, 2]], vertices_2D[[0, 2, 3]])
-    )
-    in_triangles = inside_triangles(triangle_vertices_2D - click_pos_2D)
-    if in_triangles.sum() > 0:
-        return True
-    else:
-        return False
+    return point_in_quadrilateral_2d(click_pos_2D, quadrilateral_2D)
 
 
 def find_front_back_face(
@@ -433,10 +453,14 @@ def find_front_back_face(
     bbox_face_coords = bounding_box_to_face_vertices(bounding_box)
     for k, v in FACE_NORMALS.items():
         if (np.dot(view_dir, v) + 0.001) < 0:
-            if click_in_region(bbox_face_coords[k], click_pos, view_dir):
+            if ray_in_quadrilateral_3d(
+                click_pos, bbox_face_coords[k], view_dir
+            ):
                 front_face_normal = v
         elif (np.dot(view_dir, v) + 0.001) > 0:
-            if click_in_region(bbox_face_coords[k], click_pos, view_dir):
+            if ray_in_quadrilateral_3d(
+                click_pos, bbox_face_coords[k], view_dir
+            ):
                 back_face_normal = v
         if front_face_normal is not None and back_face_normal is not None:
             # stop looping if both the front and back faces have been found
@@ -445,27 +469,27 @@ def find_front_back_face(
     return front_face_normal, back_face_normal
 
 
-def find_click_bbox_face_intersection(
-    face_normal,
-    click_pos: np.ndarray,
+def intersect_ray_with_axis_aligned_bounding_box_3d(
+    ray_position: np.ndarray,
+    ray_direction: np.ndarray,
     bounding_box: np.ndarray,
-    view_dir: np.ndarray,
+    face_normal: np.ndarray,
 ):
-    """Find the locations of where a click intersects with the
-    specified face of an axis-aligned bounding box
+    """Find the intersection of a ray with the specified face of an
+    axis-aligned bounding box.
 
     Parameters
     ----------
     face_normal : np.ndarray
         The (3,) normal vector of the face the click intersects with.
-    click_pos : np.ndarray
+    ray_position : np.ndarray
         (3,) array containing the location that was clicked.
     bounding_box : np.ndarray
         (N, 2), N=ndim array with the min and max value for each dimension of
         the bounding box. The bounding box is take form the last
         three rows, which are assumed to be in order (z, y, x).
         This should be in the same coordinate system as click_pos.
-    view_dir
+    ray_direction
         (3,) array describing the direction camera is pointing in
         the scene. This should be in the same coordinate system as click_pos.
 
@@ -482,9 +506,42 @@ def find_click_bbox_face_intersection(
         intersect_line_with_axis_aligned_plane(
             front_face_coordinate,
             face_normal,
-            click_pos,
-            -view_dir,
+            ray_position,
+            -ray_direction,
         )
     )
 
     return intersection_point
+
+
+def distance_between_point_and_line_3d(
+    point: np.ndarray, line_position: np.ndarray, line_direction: np.ndarray
+):
+    """Determine the minimum distance between a point and a line in 3D.
+
+    Parameters
+    ----------
+    point : np.ndarray
+        (3,) array containing coordinates of a point in 3D space.
+    line_position : np.ndarray
+        (3,) array containing coordinates of a point on a line in 3D space.
+    line_direction : np.ndarray
+        (3,) array containing a vector describing the direction of a line in
+        3D space.
+
+    Returns
+    -------
+    distance : float
+        The minimum distance between `point` and the line defined by
+        `line_position` and `line_direction`.
+    """
+    line_direction_normalized = line_direction / np.linalg.norm(line_direction)
+    projection_on_line_direction = np.dot(
+        (point - line_position), line_direction
+    )
+    closest_point_on_line = (
+        line_position
+        + line_direction_normalized * projection_on_line_direction
+    )
+    distance = np.linalg.norm(point - closest_point_on_line)
+    return distance
