@@ -1060,9 +1060,8 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         else:
             # if the click doesn't intersect the data bounding box,
             # return empty points
-            n_displayed = len(view_dir)
-            start_point = np.empty((n_displayed,))
-            end_point = np.empty((n_displayed,))
+            start_point = np.empty((0,))
+            end_point = np.empty((0,))
 
         return start_point, end_point
 

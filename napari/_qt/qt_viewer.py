@@ -805,6 +805,7 @@ class QtViewer(QSplitter):
             position: the position of the click in world coordinates
             view_direction: a unit vector giving the direction of the camera in world coordinates
             dims_displayed: a list of the dimensions currently being displayed in the viewer.
+            dims_point: the indices for the data in view
 
         Parameters
         ----------
@@ -829,6 +830,9 @@ class QtViewer(QSplitter):
 
         # Add the displayed dimensions to the event
         event.dims_displayed = list(self.viewer.dims.displayed)
+
+        # Add the current dims indices
+        event.dims_point = list(self.viewer.dims.point)
 
         # Put a read only wrapper on the event
         event = ReadOnlyWrapper(event)

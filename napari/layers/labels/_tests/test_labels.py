@@ -1,5 +1,7 @@
 import itertools
+from dataclasses import dataclass
 from tempfile import TemporaryDirectory
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -988,3 +990,79 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 
     np.testing.assert_array_equal(labels.scale, (1, 2, 1, 1))
     np.testing.assert_array_equal(labels.translate, (0, 5, 5, 5))
+
+
+@dataclass
+class MouseEvent:
+    pos: List[int]
+    position: List[int]
+    dims_point: List[int]
+    dims_displayed: List[int]
+
+
+def test_get_value_ray_3d():
+    """Test using _get_value_ray to interrogate labels in 3D"""
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[1, 2, 3],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(2, 1, 1), translate=(5, 5, 5))
+
+    # set the dims to the slice with labels
+    labels._slice_dims([1, 0, 0, 0], ndisplay=3)
+
+    value = labels._get_value_ray(
+        start_point=np.array([0, 5, 5]),
+        end_point=np.array([20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value == 1
+
+    # check with a ray that only goes through background
+    value = labels._get_value_ray(
+        start_point=np.array([0, 15, 15]),
+        end_point=np.array([20, 15, 15]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value is None
+
+    # set the dims to a slice without labels
+    labels._slice_dims([0, 0, 0, 0], ndisplay=3)
+
+    value = labels._get_value_ray(
+        start_point=np.array([0, 5, 5]),
+        end_point=np.array([20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value is None
+
+
+def test_get_value_ray_2d():
+    """_get_value_ray currently only returns None in 2D
+    (i.e., it shouldn't be used for 2D).
+    """
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5],
+        dims_point=[1, 0, 0, 0],
+        dims_displayed=[2, 3],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(2, 1, 1), translate=(5, 5, 5))
+
+    # set the dims to the slice with labels, but 2D
+    labels._slice_dims([1, 0, 0, 0], ndisplay=2)
+
+    value = labels._get_value_ray(
+        start_point=np.array([0, 5, 5]),
+        end_point=np.array([20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value is None

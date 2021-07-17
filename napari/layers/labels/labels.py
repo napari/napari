@@ -898,21 +898,22 @@ class Labels(_ImageBase):
         self, start_point, end_point, dims_displayed: List[int]
     ):
         """get the first non-background value encountered along a ray"""
-        sample_ray = end_point - start_point
-        length_sample_vector = np.linalg.norm(sample_ray)
-        increment_vector = sample_ray / (2 * length_sample_vector)
-        n_iterations = int(2 * length_sample_vector)
-
-        for i in range(n_iterations):
-            sample_point = np.asarray(start_point + i * increment_vector)
-            sample_point = clamp_point_to_bounding_box(
-                sample_point, self._display_bounding_box(dims_displayed)
+        if len(dims_displayed) == 3:
+            # only use get_value_ray on 3D for now
+            sample_ray = end_point - start_point
+            length_sample_vector = np.linalg.norm(sample_ray)
+            n_points = int(2 * length_sample_vector)
+            sample_points = np.linspace(
+                start_point, end_point, n_points, endpoint=True
             ).astype(int)
-            value = self.data[
-                sample_point[0], sample_point[1], sample_point[2]
-            ]
-            if value != 0:
-                return value
+            im_slice = self._slice.image.raw
+            for point in sample_points:
+                point = clamp_point_to_bounding_box(
+                    point, self._display_bounding_box(dims_displayed)
+                ).astype(int)
+                value = im_slice[point[0], point[1], point[2]]
+                if value != 0:
+                    return value
 
         return None
 
