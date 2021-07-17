@@ -23,7 +23,7 @@ SETTINGS = _SettingsProxy()
 _SETTINGS: Optional[NapariSettings] = None
 
 
-def get_settings(path: Union[Path, str, None] = _NOT_SET) -> NapariSettings:
+def get_settings(path=_NOT_SET) -> NapariSettings:
     """
     Get settings for a given path.
 

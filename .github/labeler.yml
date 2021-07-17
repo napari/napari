@@ -8,7 +8,7 @@ documentation:
 
 preferences:
   - 'napari/_qt/**/*/preferences_dialog.py'
-  - 'napari/utils/settings/**/*.py'
+  - 'napari/settings/**/*.py'
 
 qt:
   - 'napari/_qt/**/*.py'

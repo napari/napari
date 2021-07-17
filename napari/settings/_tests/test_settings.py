@@ -307,7 +307,7 @@ def test_no_save_path():
     with pytest.raises(ValueError):
         # the original `save()` method is patched in conftest.fresh_settings
         # so we "unmock" it here to assert the failure
-        NapariSettings.__original_save__(s)
+        NapariSettings.__original_save__(s)  # type: ignore
 
 
 def test_settings_events(test_settings):

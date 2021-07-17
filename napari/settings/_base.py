@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     MappingIntStrAny = Mapping[IntStr, Any]
 
 
-class EventedSettings(BaseSettings, EventedModel):
+class EventedSettings(BaseSettings, EventedModel):  # type: ignore[misc]
     """A variant of EventedModel designed for settings.
 
     Pydantic's BaseSettings model will attempt to determine the values of any
@@ -248,7 +248,7 @@ def nested_env_settings(super_eset=None) -> SettingsSourceCallable:
     return _inner
 
 
-def config_file_settings_source(settings: EventedConfigFileSettings) -> dict:
+def config_file_settings_source(settings: BaseSettings) -> Dict[str, Any]:
     """Read config files during init of an EventedConfigFileSettings obj.
 
     The two important values are the `settings._config_path`
@@ -329,7 +329,7 @@ def config_file_settings_source(settings: EventedConfigFileSettings) -> dict:
                 )
             )
             data = {}
-    settings._config_file_settings = data
+    setattr(settings, '_config_file_settings', data)
     return data
 
 
@@ -358,7 +358,7 @@ def _remove_bad_keys(data: dict, keys: List[Tuple[str, ...]]):
             continue  # pragma: no cover
         d = data
         while True:
-            base, *key = key
+            base, *key = key  # type: ignore
             if not key:
                 break
             d = d[base]

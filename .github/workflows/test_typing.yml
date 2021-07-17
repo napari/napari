@@ -22,4 +22,4 @@ jobs:
           pip install mypy
       - name: Run mypy on typed modules
         run: |
-          mypy napari/utils/settings
+          mypy napari/settings
