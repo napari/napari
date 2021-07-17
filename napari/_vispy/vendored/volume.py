@@ -34,7 +34,7 @@ The ray is expressed in coordinates local to the volume (i.e. texture
 coordinates).
 
 """
-from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
+from vispy.visuals._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from vispy.gloo import VertexBuffer, IndexBuffer
 from vispy.gloo.texture import should_cast_to_f32
 from vispy.visuals import Visual
