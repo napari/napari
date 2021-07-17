@@ -300,10 +300,24 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """str: Unique name of the layer."""
         return self._name
 
+    @name.setter
+    def name(self, name):
+        if name == self.name:
+            return
+        if not name:
+            name = self._basename()
+        self._name = name
+        self.events.name()
+
     @property
     def metadata(self) -> dict:
         """Key/value map for user-stored data."""
         return self._metadata
+
+    @metadata.setter
+    def metadata(self, value: dict) -> None:
+        self._metadata.clear()
+        self._metadata.update(value)
 
     @property
     def source(self):
@@ -317,15 +331,6 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         Derived classes that do asynchronous loading can override this.
         """
         return True
-
-    @name.setter
-    def name(self, name):
-        if name == self.name:
-            return
-        if not name:
-            name = self._basename()
-        self._name = name
-        self.events.name()
 
     @property
     def opacity(self):
