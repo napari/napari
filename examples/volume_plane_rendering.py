@@ -10,6 +10,7 @@ from skimage import data
 from superqt import QLabeledDoubleSlider
 
 import napari
+from napari._qt import get_app
 
 blobs = data.binary_blobs(length=64, volume_fraction=0.1, n_dim=3).astype(
     float
@@ -223,6 +224,7 @@ def create_plane_widget():
     return widget
 
 
+app = get_app()
 plane_widget = create_plane_widget()
 viewer.window.add_dock_widget(plane_widget)
 napari.run()
