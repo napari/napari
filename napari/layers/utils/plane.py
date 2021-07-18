@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import numpy as np
 from pydantic import validator
 
 from ...utils.events import EventedModel
@@ -26,3 +27,11 @@ class Plane3D(EventedModel):
     @validator('position', 'normal_vector', pre=True)
     def _ensure_3_tuple(cls, v):
         return ensure_n_tuple(v, n=3)
+
+    @property
+    def normalised_normal_vector(self):
+        return self.normal_vector / np.linalg.norm(self.normal_vector)
+
+    def shift_along_normal_vector(self, distance: float):
+        """Shift the plane along its normal vector by a given distance."""
+        self.position += distance * self.normalised_normal_vector
