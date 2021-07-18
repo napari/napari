@@ -107,6 +107,10 @@ class _ImageBase(IntensityVisualizationMixin, Layer):
         should be the largest. Please note multiscale rendering is only
         supported in 2D. In 3D, only the lowest resolution scale is
         displayed.
+    render_as_plane : bool
+        Whether 3D data should be rendered as a plane in 3D.
+        True - data is rendered as a plane.
+        False - data is rendered as a volume.
 
     Attributes
     ----------
