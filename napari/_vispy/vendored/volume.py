@@ -36,7 +36,7 @@ coordinates).
 """
 from ._scalable_textures import CPUScaledTexture3D, GPUScaledTextured3D
 from vispy.gloo import VertexBuffer, IndexBuffer
-from vispy.gloo.texture import should_cast_to_f32
+from .gloo.texture import should_cast_to_f32
 from vispy.visuals import Visual
 from vispy.visuals.shaders import Function
 from vispy.color import get_colormap
