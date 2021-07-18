@@ -895,9 +895,26 @@ class Labels(_ImageBase):
         return col
 
     def _get_value_ray(
-        self, start_point, end_point, dims_displayed: List[int]
+        self,
+        start_point: np.ndarray,
+        end_point: np.ndarray,
+        dims_displayed: List[int],
     ) -> Optional[int]:
-        """get the first non-background value encountered along a ray"""
+        """Get the first non-background value encountered along a ray.
+
+        Parameters
+        ----------
+        start_point : np.ndarray
+            (n,) array containing the start point of the ray in data coordinates.
+        end_point : np.ndarray
+            (n,) array containing the end point of the ray in data coordinates.
+
+        Returns
+        -------
+        value : Optional[int]
+            The first non-zero value encountered along the ray. If none
+            was encountered or the viewer is in 2D mode, None is returned.
+        """
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
             # we use dims_displayed because the image slice
