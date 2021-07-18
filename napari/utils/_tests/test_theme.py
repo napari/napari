@@ -1,3 +1,7 @@
+import pytest
+from pydantic import ValidationError
+
+from napari.utils.settings import get_settings
 from napari.utils.theme import (
     Theme,
     available_themes,
@@ -81,3 +85,32 @@ def test_unregister_theme():
     unregister_theme("test_blue")
     themes = available_themes()
     assert 'test_blue' not in themes
+
+
+def test_rebuild_theme_settings():
+    settings = get_settings()
+    # theme is not updated
+    with pytest.raises(ValidationError):
+        settings.appearance.theme = "blue"
+    blue_theme = get_theme("dark")
+    register_theme("blue", blue_theme)
+    settings.appearance.theme = "blue"
+
+
+@pytest.mark.parametrize(
+    "color",
+    [
+        "#FF0000",
+        "white",
+        (0, 127, 127),
+        (0, 255, 255, 0.5),
+        [50, 200, 200],
+        [140, 140, 140, 0.7],
+    ],
+)
+def test_theme(color):
+    theme = get_theme("dark", False)
+    theme.background = color
+
+    with pytest.raises(ValidationError):
+        theme.syntax_style = "invalid"

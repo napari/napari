@@ -31,7 +31,7 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter, running_as_bundled_app
 from ..utils.notifications import Notification
 from ..utils.settings import get_settings
-from ..utils.theme import _themes
+from ..utils.theme import _themes, rebuild_theme_settings
 from ..utils.translations import trans
 from .dialogs.activity_dialog import ActivityDialog, ActivityToggleItem
 from .dialogs.preferences_dialog import PreferencesDialog
@@ -388,7 +388,6 @@ class Window:
 
         # discover any themes provided by plugins
         plugin_manager.discover_themes()
-        self._add_plugins_theme(None)
 
         self._status_bar.showMessage(trans._('Ready'))
         self._help = QLabel('')
@@ -429,7 +428,6 @@ class Window:
         plugin_manager.events.disabled.connect(self._remove_plugins_theme)
         plugin_manager.events.registered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.registered.connect(self._rebuild_samples_menu)
-        plugin_manager.events.registered.connect(self._add_plugins_theme)
         plugin_manager.events.unregistered.connect(self._rebuild_plugins_menu)
         plugin_manager.events.unregistered.connect(self._rebuild_samples_menu)
         plugin_manager.events.unregistered.connect(self._remove_plugins_theme)
@@ -440,7 +438,9 @@ class Window:
         viewer.events.theme.connect(self._update_theme)
 
         _themes.events.added.connect(self._add_theme)
+        _themes.events.added.connect(rebuild_theme_settings)
         _themes.events.removed.connect(self._remove_theme)
+        _themes.events.removed.connect(rebuild_theme_settings)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
@@ -452,20 +452,8 @@ class Window:
         if show:
             self.show()
 
-    def _add_plugins_theme(self, event=None):
-        """Update stylesheet/icon/theme."""
-        from ..utils.theme import register_theme
-
-        # clear out all data to make sure it's up to date (e.g. after
-        # plugin was disabled or unregistered)
-        plugin_manager._theme_data.clear()
-        plugin_manager.discover_themes()
-        for theme_name, theme_data in plugin_manager.iter_themes():
-            register_theme(theme_name, theme_data)
-        self._rebuild_theme_settings()
-
     def _remove_plugins_theme(self, event=None):
-        """Remove plugin."""
+        """Remove plugin theme."""
         from ..utils.theme import unregister_theme
 
         plugin_name = event.value
@@ -484,7 +472,7 @@ class Window:
                 message=trans._(
                     "The current theme {current_theme!r} was provided by the"
                     " plugin {plugin_name!r} which was disabled or removed."
-                    " Switched theme to the default",
+                    " Switched theme to the default.",
                     deferred=True,
                     plugin_name=plugin_name,
                     current_theme=current_theme,
@@ -495,9 +483,6 @@ class Window:
         for theme_name in plugin_manager._theme_data[plugin_name].keys():
             unregister_theme(theme_name)
 
-        self._rebuild_theme_settings()
-        self._update_theme()
-
     def _setup_existing_themes(self):
         """This function is only executed once at the startup of napari
         to connect events to themes that have not been connected yet."""
@@ -505,6 +490,7 @@ class Window:
             self._connect_theme(theme)
 
     def _add_theme(self, event):
+        """Add new theme and connect events."""
         theme = event.value
         self._connect_theme(theme)
 
@@ -519,13 +505,22 @@ class Window:
         theme.events.text.connect(lambda _: self._update_theme())
         theme.events.warning.connect(lambda _: self._update_theme())
         theme.events.current.connect(lambda _: self._update_theme())
-        theme.events.icon.connect(self._theme_changed)
-        theme.events.canvas.connect(self._theme_canvas_changed)
-        theme.events.console.connect(self._theme_console_changed)
-        theme.events.syntax_style.connect(self._theme_console_changed)
-        self._rebuild_theme_settings()
+        theme.events.icon.connect(self._theme_icon_changed)
+        theme.events.canvas.connect(
+            lambda _: self.qt_viewer.canvas._set_theme_change(
+                get_settings().appearance.theme
+            )
+        )
+        # connect console-specific attributes only if QtConsole
+        # is present
+        if self.qt_viewer.console:
+            theme.events.console.connect(self.qt_viewer.console._update_theme)
+            theme.events.syntax_style.connect(
+                self.qt_viewer.console._update_theme
+            )
 
     def _remove_theme(self, event):
+        """Remove theme and disconnect events."""
         theme = event.value
         theme.events.background.disconnect(lambda _: self._update_theme())
         theme.events.foreground.disconnect(lambda _: self._update_theme())
@@ -535,33 +530,23 @@ class Window:
         theme.events.text.disconnect(lambda _: self._update_theme())
         theme.events.warning.disconnect(lambda _: self._update_theme())
         theme.events.current.disconnect(lambda _: self._update_theme())
-        theme.events.icon.disconnect(self._theme_changed)
-        theme.events.canvas.disconnect(self._theme_canvas_changed)
-        theme.events.console.disconnect(self._theme_console_changed)
-        theme.events.syntax_style.disconnect(self._theme_console_changed)
-        self._rebuild_theme_settings(event)
-
-    @staticmethod
-    def _rebuild_theme_settings(event=None):
-        """Update theme information in settings.
-
-        Here we simply update the settings to reflect current list of available
-        themes.
-        """
-        settings = get_settings()
-        settings.appearance.refresh_themes()
-
-    def _theme_console_changed(self, event=None):
-        """Update console background color or syntax format."""
+        theme.events.icon.disconnect(self._theme_icon_changed)
+        theme.events.canvas.disconnect(
+            lambda _: self.qt_viewer.canvas._set_theme_change(
+                get_settings().appearance.theme
+            )
+        )
+        # disconnect console-specific attributes only if QtConsole
+        # is present and they were previously connected
         if self.qt_viewer.console:
-            self.qt_viewer.console._update_theme()
+            theme.events.console.disconnect(
+                self.qt_viewer.console._update_theme
+            )
+            theme.events.syntax_style.disconnect(
+                self.qt_viewer.console._update_theme
+            )
 
-    def _theme_canvas_changed(self, event=None):
-        """Update canvas color."""
-        settings = get_settings()
-        self.qt_viewer.canvas._set_theme_change(settings.appearance.theme)
-
-    def _theme_changed(self, event=None):
+    def _theme_icon_changed(self, event=None):
         """Trigger rebuild of theme and all resources.
 
         This is really only required whenever there are changes to the `icon`

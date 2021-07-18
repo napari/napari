@@ -4,8 +4,8 @@ from napari_plugin_engine import napari_hook_implementation
 
 def custom_theme():
     """Get dictionary of color schemes."""
-    themes = {
-        "super_dark": {
+    themes = [
+        {
             "folder": "super_dark",
             "background": "rgb(12, 12, 12)",
             "foreground": "rgb(65, 72, 81)",
@@ -20,7 +20,7 @@ def custom_theme():
             "console": "rgb(0, 0, 0)",
             "canvas": "black",
         }
-    }
+    ]
     return themes
 
 

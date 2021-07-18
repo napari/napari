@@ -1,3 +1,4 @@
+import collections.abc
 import importlib
 import sys
 from functools import partial
@@ -11,6 +12,7 @@ from typing import (
     Iterator,
     List,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -25,7 +27,7 @@ from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.settings import get_settings
-from ..utils.theme import THEME_KEYS
+from ..utils.theme import register_theme
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -117,6 +119,7 @@ class NapariPluginManager(PluginManager):
         for _dict in (
             self._dock_widgets,
             self._sample_data,
+            self._theme_data,
             self._function_widgets,
         ):
             _dict.pop(_name, None)
@@ -294,17 +297,20 @@ class NapariPluginManager(PluginManager):
     # THEME DATA ------------------------------------
 
     def register_theme_colors(
-        self, data: Dict[str, Dict[str, str]], hookimpl: HookImplementation
+        self,
+        data: Sequence[Dict[str, Union[str, Tuple, List]]],
+        hookimpl: HookImplementation,
     ):
         """Register theme data dict returned by `napari_provide_theme`.
 
-        Each key in `data` is a `theme_name` and the value is dictionary of values.
+        The `theme` data should be provided as an iterable containing dictionary
+        of values, where the ``folder`` value will be used as theme name.
         """
         plugin_name = hookimpl.plugin_name
         hook_name = '`napari_provide_theme`'
-        if not isinstance(data, dict):
+        if not isinstance(data, collections.abc.Sequence):
             warn_message = trans._(
-                'Plugin {plugin_name!r} provided a non-dict object to {hook_name!r}: data ignored.',
+                'Plugin {plugin_name!r} provided a non-iterable object to {hook_name!r}: data ignored',
                 deferred=True,
                 plugin_name=plugin_name,
                 hook_name=hook_name,
@@ -313,34 +319,14 @@ class NapariPluginManager(PluginManager):
             return
 
         _data = {}
-        for name, theme_colors in list(data.items()):
-            if isinstance(theme_colors, dict):
-                if not all(key in theme_colors for key in THEME_KEYS):
-                    warn_message = trans._(
-                        'In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object for key {name!r} that'
-                        ' does not have required keys: {keys!r}. Missing keys: {missing!r}. Ignoring',
-                        deferred=True,
-                        hook_name=hook_name,
-                        plugin_name=plugin_name,
-                        name=name,
-                        keys=", ".join(THEME_KEYS),
-                        missing=", ".join(
-                            set(THEME_KEYS) - set(theme_colors.keys())
-                        ),
-                    )
-                    warn(message=warn_message)
-                    continue
-                _data[name] = theme_colors
+        for theme_colors in data:
+            theme_name = theme_colors["folder"]  # name of the theme
+            _data[theme_name] = theme_colors
+            register_theme(theme_name, theme_colors)
 
         if plugin_name not in self._theme_data:
             self._theme_data[plugin_name] = {}
         self._theme_data[plugin_name].update(_data)
-
-    def available_themes(self) -> Tuple[Tuple[str, str], ...]:
-        """Return dictionary containing theme colors"""
-        return tuple(
-            (p, s) for p in self._theme_data for s in self._theme_data[p]
-        )
 
     def iter_themes(self) -> Iterator[Tuple[str, Dict[str, str]]]:
         """Return theme_name : theme_colors mapping."""

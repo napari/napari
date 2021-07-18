@@ -4,6 +4,7 @@ import re
 from ast import literal_eval
 from typing import Union
 
+from pydantic import validator
 from pydantic.color import Color
 
 try:
@@ -18,24 +19,36 @@ from ..utils.translations import trans
 from .events import EventedModel
 from .events.containers._evented_dict import EventedDict
 
-THEME_KEYS = [
-    "folder",
-    "background",
-    "foreground",
-    "primary",
-    "highlight",
-    "text",
-    "icon",
-    "warning",
-    "current",
-    "syntax_style",
-    "console",
-    "canvas",
-]
-
 
 class Theme(EventedModel):
-    """Theme model."""
+    """Theme model.
+
+    Attributes
+    ----------
+    folder : str
+        Name of the virtual folder where icons will be saved to.
+    syntax_style : str
+        Name of the console style.
+        See for more details: https://pygments.org/docs/styles/
+    canvas : Color
+        Background color of the canvas.
+    background : Color
+        Color of the application background.
+    foreground : Color
+        Color to contrast with the background.
+    primary : Color
+        Color used to make part of a widget more visible.
+    secondary : Color
+        Alternative color used to make part of a widget more visible.
+    highlight : Color
+        Color used to highlight visual element.
+    text : Color
+        Color used to display text.
+    warning : Color
+        Color used to indicate something is wrong.
+    current : Color
+        Color used to highlight Qt widget.
+    """
 
     folder: str
     syntax_style: str
@@ -50,6 +63,16 @@ class Theme(EventedModel):
     icon: Color
     warning: Color
     current: Color
+
+    @validator("syntax_style", pre=True)
+    def _ensure_syntax_style(value: str) -> str:
+        from pygments.styles import STYLE_MAP
+
+        assert value in STYLE_MAP, (
+            "Incorrect `syntax_style` value provided. Please use one of the following:"
+            f" {', '.join(STYLE_MAP)}"
+        )
+        return value
 
 
 _themes = EventedDict(
@@ -266,3 +289,20 @@ def available_themes():
         Names of available themes.
     """
     return tuple(_themes)
+
+
+def rebuild_theme_settings(event=None):
+    """update theme information in settings.
+
+    here we simply update the settings to reflect current list of available
+    themes.
+
+    parameters
+    ----------
+    event : event
+        Unused event.
+    """
+    from ..utils.settings import get_settings
+
+    settings = get_settings()
+    settings.appearance.refresh_themes()
