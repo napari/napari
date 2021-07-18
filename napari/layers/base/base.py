@@ -1031,18 +1031,21 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         return self._extent_data[:, dims_displayed_mask].T
 
     def _cursor_ray(
-        self, event
+        self,
+        position: List[float],
+        view_direction: np.ndarray,
+        dims_displayed: List[int],
     ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
         """Get the start and end point for the ray extending from the cursor through the data
 
         Parameters
         ----------
-        event
-            The mouse event containing:
-                position: the position of the click in world coordinates
-                view_direction: a unit vector giving the direction of the camera in world coordinates
-                dims_displayed: a list of the dimensions currently being displayed in the viewer.
-                dims_point: the indices for the data in view
+        position :
+            the position of the click in world coordinates
+        view_direction : np.ndarray
+            a unit vector giving the direction of the camera in world coordinates
+        dims_displayed :
+            a list of the dimensions currently being displayed in the viewer.
 
         Returns
         -------
@@ -1059,23 +1062,23 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             If the click does not intersect the axis-aligned data bounding box,
             an emtpy numpy array is returned (i.e., np.empty([]).
         """
-        if len(event.dims_displayed) == 3:
+        if len(dims_displayed) == 3:
             # create a mask to select the in view dimensions
-            dims_displayed = event.dims_displayed
-            dims_displayed_mask = np.zeros_like(event.dims_point, dtype=bool)
+            dims_displayed = dims_displayed
+            dims_displayed_mask = np.zeros_like(position, dtype=bool)
             dims_displayed_mask[dims_displayed] = True
 
             # create the bounding box in data coordinates
             bbox = self._display_bounding_box(dims_displayed_mask)
 
             # get the view direction in data coords (only displayed dims)
-            view_dir_world = event.view_direction
+            view_dir_world = view_direction
             view_dir = np.asarray(self.vector_world_to_data(view_dir_world))[
                 dims_displayed_mask
             ]
 
             # Get the clicked point in data coords (only displayed dims)
-            click_pos_data = np.asarray(self.world_to_data(event.position))[
+            click_pos_data = np.asarray(self.world_to_data(position))[
                 dims_displayed_mask
             ]
 
@@ -1098,16 +1101,16 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
                 )
 
                 # add the coordinates for the axes not displayed
-                start_point = np.asarray(event.dims_point)
+                start_point = np.asarray(position)
                 start_point[dims_displayed_mask] = start_point_disp_dims
-                end_point = np.asarray(event.dims_point)
+                end_point = np.asarray(position)
                 end_point[dims_displayed_mask] = end_point_disp_dims
 
             else:
                 # if the click doesn't intersect the data bounding box,
-                # return empty points
-                start_point = np.empty((0,))
-                end_point = np.empty((0,))
+                # return None
+                start_point = None
+                end_point = None
 
             return start_point, end_point
         else:

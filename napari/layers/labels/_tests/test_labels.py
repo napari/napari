@@ -1148,7 +1148,11 @@ def test_cursor_ray_3d():
     # click is transformed: (value - translation) / scale
     # axis 1: click at 27 in world coords -> (27 - 5) / 2 = 11
     # axis 2: click at 10 in world coords -> (10 - 5) / 1 = 5
-    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    start_point, end_point = labels._cursor_ray(
+        mouse_event_1.position,
+        mouse_event_1.view_direction,
+        mouse_event_1.dims_displayed,
+    )
     np.testing.assert_allclose(start_point, [1, 0, 11, 5])
     np.testing.assert_allclose(end_point, [1, 19, 11, 5])
 
@@ -1160,20 +1164,28 @@ def test_cursor_ray_3d():
         dims_displayed=[1, 2, 3],
         view_direction=[0, 1, 0, 0],
     )
-    start_point, end_point = labels._cursor_ray(mouse_event_2)
-    assert len(start_point) == 0
-    assert len(end_point) == 0
+    start_point, end_point = labels._cursor_ray(
+        mouse_event_2.position,
+        mouse_event_2.view_direction,
+        mouse_event_2.dims_displayed,
+    )
+    assert start_point is None
+    assert end_point is None
 
     # click in a slice with no labels
     mouse_event_3 = MouseEvent(
         pos=[25, 25],
-        position=[1, 10, 27, 10],
+        position=[0, 10, 27, 10],
         dims_point=[0, 0, 0, 0],
         dims_displayed=[1, 2, 3],
         view_direction=[0, 1, 0, 0],
     )
     labels._slice_dims([0, 0, 0, 0], ndisplay=3)
-    start_point, end_point = labels._cursor_ray(mouse_event_3)
+    start_point, end_point = labels._cursor_ray(
+        mouse_event_3.position,
+        mouse_event_3.view_direction,
+        mouse_event_3.dims_displayed,
+    )
     np.testing.assert_allclose(start_point, [0, 0, 11, 5])
     np.testing.assert_allclose(end_point, [0, 19, 11, 5])
 
@@ -1197,7 +1209,11 @@ def test_cursor_ray_3d_rolled():
     # set the slice to one with data and the view to 3D
     labels._slice_dims([0, 0, 0, 1], ndisplay=3)
 
-    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    start_point, end_point = labels._cursor_ray(
+        mouse_event_1.position,
+        mouse_event_1.view_direction,
+        mouse_event_1.dims_displayed,
+    )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
     np.testing.assert_allclose(end_point, [19, 11, 5, 1])
 
@@ -1221,6 +1237,10 @@ def test_cursor_ray_3d_transposed():
     # set the slice to one with data and the view to 3D
     labels._slice_dims([0, 0, 0, 1], ndisplay=3)
 
-    start_point, end_point = labels._cursor_ray(mouse_event_1)
+    start_point, end_point = labels._cursor_ray(
+        mouse_event_1.position,
+        mouse_event_1.view_direction,
+        mouse_event_1.dims_displayed,
+    )
     np.testing.assert_allclose(start_point, [0, 11, 5, 1])
     np.testing.assert_allclose(end_point, [19, 11, 5, 1])
