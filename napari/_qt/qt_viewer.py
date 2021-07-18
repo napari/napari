@@ -755,16 +755,6 @@ class QtViewer(QSplitter):
             Position in world coordinates, matches the total dimensionality
             of the viewer.
         """
-        # nd = self.viewer.dims.ndisplay
-        #
-        # transform = self.view.camera.transform.inverse
-        # mapped_position = transform.map(list(position))[:nd]
-        # position_world_slice = mapped_position[::-1]
-        #
-        # position_world = list(self.viewer.dims.point)
-        # for i, d in enumerate(self.viewer.dims.displayed):
-        #     position_world[d] = position_world_slice[i]
-
         nd = self.viewer.dims.ndisplay
         transform = self.view.scene.transform
         mapped_position = transform.imap(list(position))[:nd]
@@ -802,10 +792,13 @@ class QtViewer(QSplitter):
         """Add properties to the mouse event before passing the event to the
         napari events system. Called whenever mouse pressed in canvas.
         This method adds following:
-            position: the position of the click in world coordinates
-            view_direction: a unit vector giving the direction of the camera in world coordinates
-            dims_displayed: a list of the dimensions currently being displayed in the viewer.
-            dims_point: the indices for the data in view
+            position: the position of the click in world coordinates.
+            view_direction: a unit vector giving the direction of the camera in
+                world coordinates.
+            dims_displayed: a list of the dimensions currently being displayed
+                in the viewer. This comes from viewer.dims.displayed.
+            dims_point: the indices for the data in view in world coordinates.
+                This comes from viewer.dims.point
 
         Parameters
         ----------
