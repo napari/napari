@@ -510,6 +510,7 @@ class Labels(_ImageBase):
                 'num_colors': self.num_colors,
                 'properties': self._properties,
                 'rendering': self.rendering,
+                'render_as_plane': self.render_as_plane,
                 'seed': self.seed,
                 'data': self.data,
                 'color': self.color,
