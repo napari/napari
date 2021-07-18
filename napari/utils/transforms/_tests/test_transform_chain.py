@@ -1,10 +1,17 @@
 import numpy.testing as npt
 import pytest
 
-from napari.utils.transforms import Affine, ScaleTranslate, TransformChain
+from napari.utils.transforms import (
+    Affine,
+    CompositeAffine,
+    ScaleTranslate,
+    TransformChain,
+)
+
+transform_types = [Affine, CompositeAffine, ScaleTranslate]
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_transform_chain(Transform):
     coord = [10, 13]
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
@@ -18,7 +25,7 @@ def test_transform_chain(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_transform_chain_simplified(Transform):
     coord = [10, 13]
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
@@ -32,7 +39,7 @@ def test_transform_chain_simplified(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_transform_chain_inverse(Transform):
     coord = [10, 13]
     transform_a = Transform(scale=[2, 3], translate=[8, -5])
@@ -46,7 +53,7 @@ def test_transform_chain_inverse(Transform):
     npt.assert_allclose(coord, orig_coord)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_transform_chain_slice(Transform):
     coord = [10, 13]
     transform_a = Transform(scale=[2, 3, 3], translate=[8, 2, -5])
@@ -64,7 +71,7 @@ def test_transform_chain_slice(Transform):
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+@pytest.mark.parametrize('Transform', transform_types)
 def test_transform_chain_expanded(Transform):
     coord = [10, 3, 13]
     transform_a = Transform(scale=[2, 1, 3], translate=[8, 0, -5])

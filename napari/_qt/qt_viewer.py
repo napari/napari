@@ -31,7 +31,6 @@ from ..utils.key_bindings import KeymapHandler
 from ..utils.theme import get_theme
 from ..utils.translations import trans
 from .containers import QtLayerList
-from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .perf.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
@@ -120,7 +119,6 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._key_map_handler = KeymapHandler()
         self._key_map_handler.keymap_providers = [self.viewer]
-        self._key_bindings_dialog = None
         self._console = None
 
         layerList = QWidget()
@@ -388,10 +386,6 @@ class QtViewer(QSplitter):
             if self.viewer.layers.selection.active is None
             else [self.viewer.layers.selection.active, self.viewer]
         )
-
-        # If a QtAboutKeyBindings exists, update its text.
-        if self._key_bindings_dialog is not None:
-            self._key_bindings_dialog.update_active_layer()
 
     def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
@@ -730,17 +724,6 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
-
-    def show_key_bindings_dialog(self, event=None):
-        if self._key_bindings_dialog is None:
-            self._key_bindings_dialog = QtAboutKeyBindings(
-                self.viewer, self._key_map_handler, parent=self
-            )
-        # make sure the dialog is shown
-        self._key_bindings_dialog.show()
-        # make sure the the dialog gets focus
-        self._key_bindings_dialog.raise_()  # for macOS
-        self._key_bindings_dialog.activateWindow()  # for Windows
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.

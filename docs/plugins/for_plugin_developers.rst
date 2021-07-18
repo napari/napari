@@ -38,13 +38,43 @@ See :ref:`plugins-hook-implement`.
 
 3. **Plugin discovery**: Plugins that are installed in the same python
 environment as napari can make themselves known to napari. ``napari`` will then
-scan plugin modules for *hook implementations* that will then be called at the
-appropriate time place during the execution of ``napari``.
+scan plugin modules for *hook implementations* that will be called at the
+appropriate time and place during the execution of ``napari``.
 See :ref:`plugin-discovery`.
 
 4. **Plugin sharing**: When you are ready to share your plugin, tag your repo
 with `napari-plugin`, push a release to pypi, and announce it on Image.sc.
-See :ref:`plugin-sharing`.
+Your plugin will then be available for users on the `napari hub 
+<https://napari-hub.org/>`_ See :ref:`plugin-sharing`.
+
+.. _plugin-cookiecutter-template:
+
+Cookiecutter template
+---------------------
+
+Hook implementations defined by plugin developers typically live inside a
+module of a Python package. This allows them to be "pip installable" and
+shared via `PyPI <https://pypi.org/>`_ and the `napari hub
+<https://napari-hub.org/>`_.
+
+To quickly generate a new napari plugin project, you may wish to use the
+`cookiecutter-napari-plugin
+<https://github.com/napari/cookiecutter-napari-plugin>`_ template.  This uses
+the `cookiecutter <https://github.com/cookiecutter/cookiecutter>`_ command line
+utility, which will ask you a few questions about your project and get you
+started with a ready-to-go package layout where you can begin implementing your
+plugin.
+
+Install cookiecutter and use the template as follows:
+
+.. code-block:: bash
+
+   pip install cookiecutter
+   cookiecutter https://github.com/napari/cookiecutter-napari-plugin
+
+The cookiecutter template is a great place to start if you want to focus on
+implementing your plugin functionality without having to manually create a
+package and all its associated configuration.
 
 .. _plugins-hook-spec:
 
@@ -55,13 +85,14 @@ The functionality of plugins, as currently designed and implemented in
 ``napari``, is rather specific in scope: They are *not* just independent code
 blocks with their own GUIs that show up next to the main napari window. Rather,
 plugin developers must decide which of the current *hook specifications*
-defined by napari that they would like to implement.
+defined by napari they would like to implement.
 
 For a complete list of *hook specifications* that developers can implement, see
 the :ref:`hook-specifications-reference`.
 
-A single plugin package may implement more than one *hook specification*, but
-may not declare more the one *hook implementation* for any given specification.
+A single plugin package may implement more than one *hook specification*, and
+each *hook specification* could have multiple *hook implementations* within
+a single package.
 
 
 .. NOTE::
@@ -133,7 +164,7 @@ with :func:`numpy.save`)
    # this line is explained below in "Decorating your function..."
    @napari_hook_implementation
    def napari_get_reader(path):
-      # remember, path can be a list, so we check it's type first...
+      # remember, path can be a list, so we check its type first...
       # (this example plugin doesn't handle lists)
       if isinstance(path, str) and path.endswith(".npy"):
          # If we recognize the format, we return the actual reader function
@@ -169,7 +200,7 @@ Matching hook implementations to specifications
 
 By default, ``napari`` matches your implementation to one of our hook
 specifications by looking at the *name* of your decorated function.  So in the
-example above, because hook implementation was literally
+example above, because the hook implementation was literally
 named ``napari_get_reader``, it gets interpreted as an implementation for the
 hook specification of the same name.
 
@@ -217,13 +248,13 @@ implementations, then if you include in ``setup.py``:
 
    setup(
       ...
-      entry_points={'napari.plugin': 'plugin_name = mypackage.napari_plugin'},
+      entry_points={'napari.plugin': 'plugin-name = mypackage.napari_plugin'},
       ...
    )
 
 ... then napari will search the ``mypackage.napari_plugin`` module for
 functions decorated with the ``HookImplementationMarker("napari")`` decorator
-and register them the plugin name ``"plugin_name"``.
+and register them under the plugin name ``"plugin-name"``.
 
 A user would then be able to use ``napari``, extended with your package's
 functionality by simply installing your package along with napari:
@@ -233,9 +264,57 @@ functionality by simply installing your package along with napari:
    pip install napari mypackage
 
 
+Step 4: Preparing for release
+----------------------------------------
+
+To make your plugin easily discoverable by napari users, you can use the 
+`'Framework :: napari'` [classifier](https://pypi.org/classifiers/) in your 
+`setup.py` file, which will allow your package to be 
+[displayed on the napari-hub](https://napari-hub.org/) and easily searched
+for on PyPI.
+
+Once your package, with its `'Framework :: napari'` classifier,  is listed on `PyPI 
+<https://pypi.org/>`_, it will also be visible
+on the `napari hub <https://napari-hub.org/>`_, alongside all other napari plugins.
+
+The napari hub reads the metadata of your package and displays it in a number of places
+so that users can easily find your plugin and decide if it provides functionality they 
+need. Most of this metadata lives inside your package configuration files. You can customize 
+your plugin's listing for the hub by following `this guide 
+<https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md>`_.
+
+You can also include a napari hub specific description file at `/.napari/DESCRIPTION.md`.
+The hub preferentially displays this file over your repository's `README.md` when it's
+available. This file allows you to maintain a more developer/repository oriented `README.md`
+while still making sure potential users get all the information they need to get started
+with your plugin. For more information on this file, see `the guide 
+<https://github.com/chanzuckerberg/napari-hub/blob/main/docs/customizing-plugin-listing.md>`_.
+
+Finally, once you have curated your package metadata and description, you can preview your
+metadata, and check any missing fields using the ``napari-hub-cli`` tool. Install this tool
+using 
+
+.. code:: bash
+
+   pip install napari-hub-cli
+
+and preview your metadata with 
+
+.. code:: bash
+
+   napari-hub-cli preview-metadata /tmp/example-plugin
+
+For more information on the tool see `the repository README 
+<https://github.com/chanzuckerberg/napari-hub-cli>`_
+
+If you want your plugin to be available on PyPI, but not visible on the napari hub, 
+submit an issue on the `napari hub repository 
+<https://github.com/chanzuckerberg/napari-hub/issues/new>`_ or send an email to 
+`team@napari-hub.org` and it will be removed.
+
 .. _plugin-sharing:
 
-Step 4: Share your plugin with the world
+Step 5: Share your plugin with the world
 ----------------------------------------
 
 Once you are ready to share your plugin, `upload the Python package to PyPI
@@ -244,40 +323,12 @@ and it can then be installed with a simple `pip install mypackage`.
 If you used the :ref:`plugin-cookiecutter-template`, you can also `setup automated deployments
 <https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments>`_.
 
-Be sure to use the `'Framework :: napari'`
-[classifier](https://pypi.org/classifiers/) in your `setup.py` file, which will
-allow your package to be [easily searched on
-PyPI](https://pypi.org/search/?c=Framework+%3A%3A+napari) as offering
-functionality for napari.
-
 If you are using Github, add the `"napari-plugin" topic
 <https://github.com/topics/napari-plugin>`_ to your repo so other developers can
 see your work.
 
-
 When you are ready for users, announce your plugin on the `Image.sc Forum
 <https://forum.image.sc/tag/napari>`_.
-
-.. _plugin-cookiecutter-template:
-
-Cookiecutter template
----------------------
-
-To quickly generate a new napari plugin project, you may wish to use the
-`cookiecutter-napari-plugin
-<https://github.com/napari/cookiecutter-napari-plugin>`_ template.  This uses
-the `cookiecutter <https://github.com/cookiecutter/cookiecutter>`_ command line
-utility, which will ask you a few questions about your project and get you
-started with a ready-to-go package layout where you can begin implementing your
-plugin.
-
-Install cookiecutter and use the template as follows:
-
-.. code-block:: bash
-
-   pip install cookiecutter
-   cookiecutter https://github.com/napari/cookiecutter-napari-plugin
-
 
 Example Plugins
 ---------------
@@ -293,8 +344,8 @@ community plugins developed for napari.  This plugin takes advantage of
 :ref:`entry_point discovery <plugin-discovery>` to offer multiple
 readers for both in-memory and lazy-loading of image files.
 
-More examples of plugins can be found on the `"napari-plugin" Github topic
-<https://github.com/topics/napari-plugin>`_.
+More examples of plugins can be found on the `napari hub
+<https://napari-hub.org/>`_.
 
 Help
 ----

@@ -47,7 +47,7 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='green')
 
     # as string that is valid, but not a default colormap
-    assert viewer.add_image(data, colormap='cubehelix')
+    assert viewer.add_image(data, colormap='fire')
 
     # as tuple
     cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
