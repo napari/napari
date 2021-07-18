@@ -52,9 +52,9 @@ def on_click(layer, event):
         event.view_direction,
         event.dims_displayed
     )
-    ray_points = np.linspace(near_point, far_point, n_points, endpoint=True)
-    if ray_points.shape[1] != 0:
-        ray_layer.data = ray_points
-
+    if (near_point is not None) and (far_point is not None):
+        ray_points = np.linspace(near_point, far_point, n_points, endpoint=True)
+        if ray_points.shape[1] != 0:
+            ray_layer.data = ray_points
 
 napari.run()
