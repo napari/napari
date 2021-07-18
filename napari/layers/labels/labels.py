@@ -896,10 +896,13 @@ class Labels(_ImageBase):
 
     def _get_value_ray(
         self, start_point, end_point, dims_displayed: List[int]
-    ):
+    ) -> Optional[int]:
         """get the first non-background value encountered along a ray"""
         if len(dims_displayed) == 3:
             # only use get_value_ray on 3D for now
+            # we use dims_displayed because the image slice
+            # has its dimensions  in th same order as the vispy
+            # Volume
             start_point = start_point[dims_displayed]
             end_point = end_point[dims_displayed]
             sample_ray = end_point - start_point
@@ -907,15 +910,16 @@ class Labels(_ImageBase):
             n_points = int(2 * length_sample_vector)
             sample_points = np.linspace(
                 start_point, end_point, n_points, endpoint=True
-            ).astype(int)
+            )
             im_slice = self._slice.image.raw
-            for point in sample_points:
-                point = clamp_point_to_bounding_box(
-                    point, self._display_bounding_box(dims_displayed)
-                ).astype(int)
-                value = im_slice[point[0], point[1], point[2]]
-                if value != 0:
-                    return value
+            clamped = clamp_point_to_bounding_box(
+                sample_points, self._display_bounding_box(dims_displayed)
+            ).astype(int)
+            values = im_slice[tuple(clamped.T)]
+            nonzero_indices = np.flatnonzero(values)
+            if len(nonzero_indices > 0):
+                # if a nonzer0 value was found, return the first one
+                return values[nonzero_indices[0]]
 
         return None
 

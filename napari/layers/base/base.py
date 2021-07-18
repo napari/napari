@@ -2,7 +2,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import List, Optional
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -1030,7 +1030,9 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         """An axis aligned (self._ndisplay, 2) bounding box around the data"""
         return self._extent_data[:, dims_displayed_mask].T
 
-    def _cursor_ray(self, event):
+    def _cursor_ray(
+        self, event
+    ) -> Union[Tuple[np.ndarray, np.ndarray], Tuple[None, None]]:
         """Get the start and end point for the ray extending from the cursor through the data
 
         Parameters
@@ -1057,56 +1059,59 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             If the click does not intersect the axis-aligned data bounding box,
             an emtpy numpy array is returned (i.e., np.empty([]).
         """
-        # create a mask to select the in view dimensions
-        dims_displayed = event.dims_displayed
-        dims_displayed_mask = np.zeros_like(event.dims_point, dtype=bool)
-        dims_displayed_mask[dims_displayed] = True
+        if len(event.dims_displayed) == 3:
+            # create a mask to select the in view dimensions
+            dims_displayed = event.dims_displayed
+            dims_displayed_mask = np.zeros_like(event.dims_point, dtype=bool)
+            dims_displayed_mask[dims_displayed] = True
 
-        # create the bounding box in data coordinates
-        bbox = self._display_bounding_box(dims_displayed_mask)
+            # create the bounding box in data coordinates
+            bbox = self._display_bounding_box(dims_displayed_mask)
 
-        # get the view direction in data coords (only displayed dims)
-        view_dir_world = event.view_direction
-        view_dir = np.asarray(self.vector_world_to_data(view_dir_world))[
-            dims_displayed_mask
-        ]
+            # get the view direction in data coords (only displayed dims)
+            view_dir_world = event.view_direction
+            view_dir = np.asarray(self.vector_world_to_data(view_dir_world))[
+                dims_displayed_mask
+            ]
 
-        # Get the clicked point in data coords (only displayed dims)
-        click_pos_data = np.asarray(self.world_to_data(event.position))[
-            dims_displayed_mask
-        ]
+            # Get the clicked point in data coords (only displayed dims)
+            click_pos_data = np.asarray(self.world_to_data(event.position))[
+                dims_displayed_mask
+            ]
 
-        # Determine the front and back faces
-        front_face_normal, back_face_normal = find_front_back_face(
-            click_pos_data, bbox, view_dir
-        )
-
-        # Get the locations in the plane where the ray intersects
-        if front_face_normal is not None and back_face_normal is not None:
-            start_point_disp_dims = (
-                intersect_ray_with_axis_aligned_bounding_box_3d(
-                    click_pos_data, view_dir, bbox, front_face_normal
-                )
-            )
-            end_point_disp_dims = (
-                intersect_ray_with_axis_aligned_bounding_box_3d(
-                    click_pos_data, view_dir, bbox, back_face_normal
-                )
+            # Determine the front and back faces
+            front_face_normal, back_face_normal = find_front_back_face(
+                click_pos_data, bbox, view_dir
             )
 
-            # add the coordinates for the axes not displayed
-            start_point = np.asarray(event.dims_point)
-            start_point[dims_displayed_mask] = start_point_disp_dims
-            end_point = np.asarray(event.dims_point)
-            end_point[dims_displayed_mask] = end_point_disp_dims
+            # Get the locations in the plane where the ray intersects
+            if front_face_normal is not None and back_face_normal is not None:
+                start_point_disp_dims = (
+                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                        click_pos_data, view_dir, bbox, front_face_normal
+                    )
+                )
+                end_point_disp_dims = (
+                    intersect_ray_with_axis_aligned_bounding_box_3d(
+                        click_pos_data, view_dir, bbox, back_face_normal
+                    )
+                )
 
+                # add the coordinates for the axes not displayed
+                start_point = np.asarray(event.dims_point)
+                start_point[dims_displayed_mask] = start_point_disp_dims
+                end_point = np.asarray(event.dims_point)
+                end_point[dims_displayed_mask] = end_point_disp_dims
+
+            else:
+                # if the click doesn't intersect the data bounding box,
+                # return empty points
+                start_point = np.empty((0,))
+                end_point = np.empty((0,))
+
+            return start_point, end_point
         else:
-            # if the click doesn't intersect the data bounding box,
-            # return empty points
-            start_point = np.empty((0,))
-            end_point = np.empty((0,))
-
-        return start_point, end_point
+            return None, None
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
         """Update canvas scale and corner values on draw.
