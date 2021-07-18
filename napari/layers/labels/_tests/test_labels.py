@@ -994,7 +994,7 @@ def test_3d_video_and_3d_scale_translate_then_scale_translate_padded():
 
 @dataclass
 class MouseEvent:
-    # mock mouse event clas
+    # mock mouse event class
     pos: List[int]
     position: List[int]
     dims_point: List[int]
