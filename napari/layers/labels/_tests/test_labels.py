@@ -1045,6 +1045,62 @@ def test_get_value_ray_3d():
     assert value is None
 
 
+def test_get_value_ray_3d_rolled():
+    """Test using _get_value_ray to interrogate labels in 3D
+    with the dimensions rolled.
+    """
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[0, 1, 2],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((20, 20, 20, 5), dtype=int)
+    data[0:10, 0:10, 0:10, 1] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(5, 5, 5, 0))
+
+    # set the dims to the slice with labels
+    labels._slice_dims((0, 0, 0, 1), ndisplay=3, order=(3, 0, 1, 2))
+    labels.set_view_slice()
+
+    value = labels._get_value_ray(
+        start_point=np.array([0, 5, 5, 1]),
+        end_point=np.array([20, 5, 5, 1]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value == 1
+
+
+def test_get_value_ray_3d_transposed():
+    """Test using _get_value_ray to interrogate labels in 3D
+    with the dimensions trasposed.
+    """
+    # make a mock mouse event
+    mouse_event = MouseEvent(
+        pos=[25, 25],
+        position=[10, 5, 5, 1],
+        dims_point=[0, 0, 0, 1],
+        dims_displayed=[1, 3, 2],
+        view_direction=[1, 0, 0, 0],
+    )
+    data = np.zeros((5, 20, 20, 20), dtype=int)
+    data[1, 0:10, 0:10, 0:10] = 1
+    labels = Labels(data, scale=(1, 2, 1, 1), translate=(0, 5, 5, 5))
+
+    # set the dims to the slice with labels
+    labels._slice_dims((1, 0, 0, 0), ndisplay=3, order=(0, 1, 3, 2))
+    labels.set_view_slice()
+
+    value = labels._get_value_ray(
+        start_point=np.array([1, 0, 5, 5]),
+        end_point=np.array([1, 20, 5, 5]),
+        dims_displayed=mouse_event.dims_displayed,
+    )
+    assert value == 1
+
+
 def test_get_value_ray_2d():
     """_get_value_ray currently only returns None in 2D
     (i.e., it shouldn't be used for 2D).
