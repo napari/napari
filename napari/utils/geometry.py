@@ -109,7 +109,8 @@ def clamp_point_to_bounding_box(point: np.ndarray, bounding_box: np.ndarray):
     Parameters
     ----------
     point : np.ndarray
-        n-dimensional point as an (n,) ndarray
+        n-dimensional point as an (n,) ndarray. Multiple points can
+        be passed as an (n, D) array.
     bounding_box: np.ndarray
         n-dimensional bounding box as a (n, 2) ndarray
 
