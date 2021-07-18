@@ -97,6 +97,15 @@ def test_clamp_point_to_bounding_box(point, bounding_box, expected):
     np.testing.assert_allclose(expected, clamped_point)
 
 
+def test_clamp_multiple_points_to_bounding_box():
+    """test that an array of points can be clamped to the bbox"""
+    points = np.array([[10, 10, 10], [0, 5, 0], [20, 0, 20]])
+    bbox = np.array([[0, 25], [0, 10], [3, 25]])
+    expected_points = np.array([[10, 9, 10], [0, 5, 3], [20, 0, 20]])
+    clamped_points = clamp_point_to_bounding_box(points, bbox)
+    np.testing.assert_array_equal(clamped_points, expected_points)
+
+
 @pytest.mark.parametrize(
     'bounding_box, face_normal, expected',
     [
