@@ -20,6 +20,7 @@ from warnings import warn
 
 from napari_plugin_engine import HookImplementation
 from napari_plugin_engine import PluginManager as PluginManager
+from pydantic import ValidationError
 from typing_extensions import TypedDict
 
 from ..types import AugmentedWidget, LayerData, SampleDict, WidgetCallable
@@ -27,7 +28,7 @@ from ..utils._appdirs import user_site_packages
 from ..utils.events import EmitterGroup, EventedSet
 from ..utils.misc import camel_to_spaces, running_as_bundled_app
 from ..utils.settings import get_settings
-from ..utils.theme import register_theme
+from ..utils.theme import Theme, register_theme
 from ..utils.translations import trans
 from . import _builtins, hook_specifications
 
@@ -82,7 +83,7 @@ class NapariPluginManager(PluginManager):
         self._function_widgets: Dict[
             str, Dict[str, Callable[..., Any]]
         ] = dict()
-        self._theme_data: Dict[str, Dict[str, str]] = dict()
+        self._theme_data: Dict[str, Dict[str, Theme]] = dict()
 
         if sys.platform.startswith('linux') and running_as_bundled_app():
             sys.path.append(user_site_packages())
@@ -320,15 +321,28 @@ class NapariPluginManager(PluginManager):
 
         _data = {}
         for theme_colors in data:
-            theme_name = theme_colors["folder"]  # name of the theme
-            _data[theme_name] = theme_colors
-            register_theme(theme_name, theme_colors)
+            try:
+                theme_name = theme_colors["folder"]  # name of the theme
+                theme = Theme.parse_obj(theme_colors)
+                register_theme(theme_name, theme)
+                _data[theme_name] = theme
+            except (KeyError, ValidationError) as err:
+                warn_msg = trans._(
+                    "In {hook_name!r}, plugin {plugin_name!r} provided an invalid dict object"
+                    " for creating themes. {err!r}",
+                    deferred=True,
+                    hook_name=hook_name,
+                    plugin_name=plugin_name,
+                    err=err,
+                )
+                warn(message=warn_msg)
+                continue
 
         if plugin_name not in self._theme_data:
             self._theme_data[plugin_name] = {}
         self._theme_data[plugin_name].update(_data)
 
-    def iter_themes(self) -> Iterator[Tuple[str, Dict[str, str]]]:
+    def iter_themes(self) -> Iterator[Tuple[str, Theme]]:
         """Return theme_name : theme_colors mapping."""
         for plugin_name in self._theme_data:
             yield from self._theme_data[plugin_name].items()
