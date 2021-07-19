@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Sequence
 
 from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
@@ -23,6 +23,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from typing_extensions import Literal
 
 import napari.resources
 
@@ -62,10 +63,8 @@ class Installer:
         # create install process
         self._output_widget = None
         self.process = QProcess()
-        if self._use_conda:
-            self.process.setProgram(
-                "conda"
-            )  # This could be set to mamba as well
+        if installer != "pip":
+            self.process.setProgram(installer)
         else:
             self.process.setProgram(sys.executable)
 
